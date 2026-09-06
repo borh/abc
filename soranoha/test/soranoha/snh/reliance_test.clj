@@ -46,16 +46,38 @@
     {:plaintext text :tei tei :tei-validation validation
      :source-content-hash (str "sha256:" (apply str (repeat 64 "1")))}))
 
+(defn- assembly-inputs [cas-dir]
+  {:cas-dir cas-dir
+   :corpus {"upstream_origin" "https://example.invalid/corpus.git"
+            "upstream_rev" (apply str (repeat 40 "2"))}
+   :toolchain {} :selection-params {} :policy-id "synthetic-reliance-test"
+   :policy-hash (hash/sha256-string "synthetic-reliance-policy")
+   :candidates (get (snapshot) "candidates")
+   :works (into {} (map (fn [slug] [slug (work! cas-dir slug)])) ["independent" "relied"])
+   :source-hashes {"relied" (str "sha256:" (apply str (repeat 64 "1")))}
+   :selection ["independent" "relied" "unavailable"]})
+
 (defn- assembler [cas-dir]
-  (assemble/release-assembler
-   {:cas-dir cas-dir
-    :corpus {"upstream_origin" "https://example.invalid/corpus.git"
-             "upstream_rev" (apply str (repeat 40 "2"))}
-    :toolchain {} :selection-params {} :policy-id "synthetic-reliance-test"
-    :policy-hash (hash/sha256-string "synthetic-reliance-policy")
-    :candidates (get (snapshot) "candidates")
-    :works (into {} (map (fn [slug] [slug (work! cas-dir slug)])) ["independent" "relied"])
-    :selection ["independent" "relied" "unavailable"]}))
+  (assemble/release-assembler (assembly-inputs cas-dir)))
+
+(deftest withdrawn-reliance-keeps-source-binding-without-demanding-artifacts
+  (let [dir (fs/create-temp-dir {:prefix "withdrawn-reliance"})]
+    (try
+      (let [inputs (assembly-inputs (str (fs/path dir "cas")))
+            withdrawn {"withdrawn" [{"slug" "relied"}]}
+            unbuilt (update inputs :works dissoc "relied")
+            wrong-hash (str "sha256:" (apply str (repeat 64 "2")))]
+        (is (= ["independent"]
+               (mapv #(get % "slug")
+                     (get-in ((assemble/release-assembler unbuilt) withdrawn) [:core "works"]))))
+        (doseq [bad [(dissoc unbuilt :source-hashes)
+                     (assoc-in unbuilt [:source-hashes "relied"] wrong-hash)
+                     (assoc-in inputs [:works "relied" :source-content-hash] wrong-hash)]]
+          (is (= :reliance-source-content-mismatch
+                 (reason #((assemble/release-assembler bad) withdrawn)))))
+        (is (= :admitted-work-not-built
+               (reason #((assemble/release-assembler unbuilt) nil)))))
+      (finally (fs/delete-tree dir)))))
 
 (defn- artifact [clone commit id]
   (:value (decode/decode (second (re-find #"snh:1:([^:]+):" id))

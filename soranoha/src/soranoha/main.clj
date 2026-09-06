@@ -70,21 +70,22 @@
                       {:aozora-root (str aozora-root) :status status})))
     commit))
 
-(defn- build-stages [{:keys [clj-toolchain-id assets-root
-                             adapter profile]}]
-  {:extract (stages/extract-stage clj-toolchain-id)
-   :metadata (stages/metadata-stage clj-toolchain-id assets-root)
-   :parse (stages/parse-stage adapter)
-   :convert (stages/convert-stage adapter)
-   :render (stages/render-stage clj-toolchain-id)
-   :validate (stages/validate-tei-stage clj-toolchain-id profile)
-   :fidelity (stages/source-fidelity-stage clj-toolchain-id)})
+(defn- build-stages [{:keys [clj-toolchain-id assets-root]}]
+  (let [adapter (stages/resolve-adapter)
+        profile (validate/profile-paths assets-root)]
+    {:extract (stages/extract-stage clj-toolchain-id)
+     :metadata (stages/metadata-stage clj-toolchain-id assets-root)
+     :parse (stages/parse-stage adapter)
+     :convert (stages/convert-stage adapter)
+     :render (stages/render-stage clj-toolchain-id)
+     :validate (stages/validate-tei-stage clj-toolchain-id profile)
+     :fidelity (stages/source-fidelity-stage clj-toolchain-id)}))
 
 (defn- read-cas-json [store hex]
   (json/read-json (String. ^bytes (cas/get-bytes (:cas-dir store) hex) "UTF-8")))
 
 (defn run-work!
-  "Execute (or trace-skip) the full chain for one selected work.
+  "Execute (or trace-skip) the supplied stages for one selected work.
   Returns {:slug :zip-hex :source-facts
   :outputs {stage-key {name hex}} :cached {stage-key bool}
   :trace-keys {stage-key derivation-key-hex}}."
@@ -113,34 +114,17 @@
                                                     "persons")})
         validate-r (engine/run-stage! store validate
                                       {"tei" (get (:outputs render-r) "tei")})
-        fidelity-r (engine/run-stage! store fidelity
-                                      {"source" (get (:outputs extract-r) "primary-text")
-                                       "tei" (get (:outputs render-r) "tei")
-                                       "plaintext" (get (:outputs render-r) "plaintext")})]
-    {:slug slug
-     :zip-hex zip-hex
-     :source-facts facts
-     :outputs {:extract (:outputs extract-r)
-               :metadata (:outputs metadata-r)
-               :parse (:outputs parse-r)
-               :convert (:outputs convert-r)
-               :render (:outputs render-r)
-               :validate (:outputs validate-r)
-               :fidelity (:outputs fidelity-r)}
-     :cached {:extract (:cached? extract-r)
-              :metadata (:cached? metadata-r)
-              :parse (:cached? parse-r)
-              :convert (:cached? convert-r)
-              :render (:cached? render-r)
-              :validate (:cached? validate-r)
-              :fidelity (:cached? fidelity-r)}
-     :trace-keys {:extract (:trace-key extract-r)
-                  :metadata (:trace-key metadata-r)
-                  :parse (:trace-key parse-r)
-                  :convert (:trace-key convert-r)
-                  :render (:trace-key render-r)
-                  :validate (:trace-key validate-r)
-                  :fidelity (:trace-key fidelity-r)}}))
+        fidelity-r (when fidelity
+                     (engine/run-stage! store fidelity
+                                        {"source" (get (:outputs extract-r) "primary-text")
+                                         "tei" (get (:outputs render-r) "tei")
+                                         "plaintext" (get (:outputs render-r) "plaintext")}))
+        results (cond-> {:extract extract-r :metadata metadata-r :parse parse-r
+                         :convert convert-r :render render-r :validate validate-r}
+                  fidelity-r (assoc :fidelity fidelity-r))
+        project (fn [field] (into {} (map (fn [[stage result]] [stage (get result field)])) results))]
+    {:slug slug :zip-hex zip-hex :source-facts facts
+     :outputs (project :outputs) :cached (project :cached?) :trace-keys (project :trace-key)}))
 
 (defn- export-build!
   "Write reviewable outputs to a new directory, outside the computation cache."
@@ -155,14 +139,15 @@
         (fs/create-dir dir)
         (doseq [[kind filename] [["tei" "tei.xml"] ["plaintext" "plain.txt"]
                                  ["tei-validation" "tei-validation.json"]
-                                 ["source-fidelity" "source-fidelity.json"]]]
+                                 ["source-fidelity" "source-fidelity.json"]]
+                :when (contains? work kind)]
           (fs/write-bytes (fs/path dir filename)
                           (cas/get-bytes (config/cas-dir root) (get work kind))))))
     (spit (str (fs/path out "build.json"))
           (abc-json/write-deterministic-json-str report))))
 
 (defn- capture-build!
-  [{:keys [root aozora-root assets-root clj-toolchain-id limit out]}]
+  [{:keys [root aozora-root clj-toolchain-id limit out]}]
   (when (string/blank? clj-toolchain-id)
     ;; fail closed: the toolchain identity keys every pure-Clojure stage's
     ;; derivations and lands in release provenance; a constant default
@@ -171,24 +156,25 @@
                     {:option "--clj-toolchain-id"})))
   (when (and out (fs/exists? out))
     (throw (ex-info "build export directory already exists" {:reason :export-output-exists})))
-  (binding [assets/*root* (str assets-root)]
-    (let [root (config/ensure-layout! (config/root root))
-          commit (source-provenance! aozora-root)
-          {:keys [csv-text catalog-csv-hash]} (catalog/read-catalog-zip aozora-root)
-          rows (catalog/read-rows-from-string csv-text)
-          {:keys [candidates rejected]} (select/select-candidates aozora-root rows)
-          candidates (if (and limit (pos? limit))
-                       (vec (take limit candidates))
-                       candidates)]
-      (let [selected-work-ids (set (map #(catalog/row-work-id (:row %)) candidates))]
-        (doseq [row rows
-                :when (and (selected-work-ids (catalog/row-work-id row))
-                           (get row catalog/ragged-key))]
-          (throw (ex-info "selected work has a ragged catalog row"
-                          {:reason :ragged-metadata-row
-                           :work-id (catalog/row-work-id row)}))))
-      {:root root :commit commit :catalog-csv-hash catalog-csv-hash
-       :rows rows :candidates candidates :rejected rejected})))
+  (let [root (config/ensure-layout! (config/root root))
+        commit (source-provenance! aozora-root)
+        {:keys [csv-text catalog-csv-hash]} (catalog/read-catalog-zip aozora-root)
+        rows (catalog/read-rows-from-string csv-text)
+        {:keys [candidates rejected]} (select/select-candidates aozora-root rows)
+        candidates (if (and limit (pos? limit))
+                     (vec (take limit candidates))
+                     candidates)]
+    {:root root :commit commit :catalog-csv-hash catalog-csv-hash
+     :rows rows :candidates candidates :rejected rejected}))
+
+(defn- selected-metadata! [{:keys [rows candidates]}]
+  (let [selected-work-ids (set (map #(catalog/row-work-id (:row %)) candidates))]
+    (doseq [row rows
+            :when (and (selected-work-ids (catalog/row-work-id row))
+                       (get row catalog/ragged-key))]
+      (throw (ex-info "selected work has a ragged catalog row"
+                      {:reason :ragged-metadata-row
+                       :work-id (catalog/row-work-id row)})))))
 
 (defn execute-build!
   "Run the supplied candidates with the supplied stages and export their build report."
@@ -196,96 +182,88 @@
    {:keys [root commit catalog-csv-hash rows candidates rejected]} stage-set]
   (binding [assets/*root* (str assets-root)]
     (let [store (engine/open-store! {:cas-dir (config/cas-dir root)
-                                     :db-path (config/trace-db-path root)})
-          rows-by-work (group-by catalog/row-work-id rows)
-          n (if (pos? concurrency)
-              concurrency
-              (.availableProcessors (Runtime/getRuntime)))
-          started (System/currentTimeMillis)
-          results (parallel/ordered-pmap
-                   n
-                   (fn [candidate]
-                     (try
-                       (run-work! store stage-set candidate
-                                  (get rows-by-work (catalog/row-work-id (:row candidate))))
-                       (catch Exception e
-                         (throw (ex-info (ex-message e)
-                                         (assoc (ex-data e) :slug (:slug candidate)) e)))))
-                   candidates)
-          relpath-of (into {} (map (juxt :slug :relpath)) candidates)
+                                     :db-path (config/trace-db-path root)})]
+      (try
+        (let [rows-by-work (group-by catalog/row-work-id rows)
+              n (if (pos? concurrency)
+                  concurrency
+                  (.availableProcessors (Runtime/getRuntime)))
+              started (System/currentTimeMillis)
+              results (parallel/ordered-pmap
+                       n
+                       (fn [candidate]
+                         (try
+                           (run-work! store stage-set candidate
+                                      (get rows-by-work (catalog/row-work-id (:row candidate))))
+                           (catch Exception e
+                             (throw (ex-info (ex-message e)
+                                             (assoc (ex-data e) :slug (:slug candidate)) e)))))
+                       candidates)
+              relpath-of (into {} (map (juxt :slug :relpath)) candidates)
           ;; the report is a disposable trace-store export, but it must
           ;; carry everything the second-revision delta oracle consumes:
           ;; per-work source identity, per-stage cache decisions, the
           ;; selection join, and the stage coordinates
-          report {"aozora_git_commit" commit
-                  "catalog_csv_hash" catalog-csv-hash
-                  ;; captured from the selection join, before work
-                  ;; execution and independent of the works projection:
-                  ;; the release driver's totality comparison runs
-                  ;; against this set, never against the works keys
-                  "selected_slugs" (vec (sort (map :slug candidates)))
-                  "rejected_count" (count rejected)
-                  "executed_stage_count" (count (filter false?
-                                                        (mapcat (comp vals :cached)
-                                                                results)))
-                  "clj_toolchain_id" clj-toolchain-id
+              report {"aozora_git_commit" commit
+                      "catalog_csv_hash" catalog-csv-hash
+                  ;; Captured before execution, independently of result rows.
+                      "selected_slugs" (vec (sort (map :slug candidates)))
+                      "rejected_count" (count rejected)
+                      "executed_stage_count" (count (filter false?
+                                                            (mapcat (comp vals :cached)
+                                                                    results)))
+                      "clj_toolchain_id" clj-toolchain-id
                   ;; coordinate values pass through unchanged; only the
                   ;; outer logical stage keys become strings
-                  "stages" (into (sorted-map)
-                                 (map (fn [[stage coordinate]]
-                                        [(name stage) coordinate]))
-                                 (trace/stage-coordinates stage-set))
-                  "works" (into (sorted-map)
-                                (map (fn [{:keys [slug outputs cached zip-hex
-                                                  source-facts trace-keys]}]
-                                       [slug {"tei" (get-in outputs [:render "tei"])
-                                              "plaintext" (get-in outputs
-                                                                  [:render "plaintext"])
-                                              "tei-validation"
-                                              (get-in outputs
-                                                      [:validate "tei-validation"])
-                                              "source-fidelity"
-                                              (get-in outputs [:fidelity "source-fidelity"])
-                                              "parser-ir" (get-in outputs
-                                                                  [:convert "parser-ir"])
-                                              "source_zip" zip-hex
-                                              "source_relpath" (get relpath-of slug)
-                                              "source_content_hash"
-                                              (get source-facts "work_content_hash")
-                                              "cached" (into (sorted-map)
-                                                             (map (fn [[stage hit?]]
-                                                                    [(name stage)
-                                                                     hit?]))
-                                                             cached)
-                                              ;; with equal stage-coordinate
-                                              ;; tables across two runs, an
-                                              ;; executed stage must carry a
-                                              ;; changed derivation key — the
-                                              ;; delta oracle's explanation
-                                              ;; invariant runs on these
-                                              "trace_keys"
-                                              (into (sorted-map)
-                                                    (map (fn [[stage k]]
-                                                           [(name stage) k]))
-                                                    trace-keys)}]))
-                                results)}
-          report-path (str (fs/path root "runs" (str "run-" started ".json")))]
-      (fs/create-dirs (fs/parent report-path))
-      (spit report-path (abc-json/write-deterministic-json-str report))
-      (when out (export-build! root out report))
-      (engine/close-store! store)
-      (println (str "run_report: " report-path))
-      (println (str "selected: " (count candidates)))
-      (when out (println (str "exports: " (fs/absolutize out))))
-      report)))
+                      "stages" (into (sorted-map)
+                                     (map (fn [[stage coordinate]]
+                                            [(name stage) coordinate]))
+                                     (trace/stage-coordinates stage-set))
+                      "works" (into (sorted-map)
+                                    (map (fn [{:keys [slug outputs cached zip-hex
+                                                      source-facts trace-keys]}]
+                                           [slug (cond-> {"tei" (get-in outputs [:render "tei"])
+                                                          "plaintext" (get-in outputs
+                                                                              [:render "plaintext"])
+                                                          "tei-validation"
+                                                          (get-in outputs
+                                                                  [:validate "tei-validation"])
+                                                          "parser-ir" (get-in outputs
+                                                                              [:convert "parser-ir"])
+                                                          "source_zip" zip-hex
+                                                          "source_relpath" (get relpath-of slug)
+                                                          "source_content_hash"
+                                                          (get source-facts "work_content_hash")
+                                                          "cached" (into (sorted-map)
+                                                                         (map (fn [[stage hit?]]
+                                                                                [(name stage)
+                                                                                 hit?]))
+                                                                         cached)
+                                                      ;; The delta oracle explains execution using
+                                                      ;; changed derivation keys at equal coordinates.
+                                                          "trace_keys"
+                                                          (into (sorted-map)
+                                                                (map (fn [[stage k]]
+                                                                       [(name stage) k]))
+                                                                trace-keys)}
+                                                   (:fidelity outputs)
+                                                   (assoc "source-fidelity" (get-in outputs [:fidelity "source-fidelity"])))]))
+                                    results)}
+              report-path (str (fs/path root "runs" (str "run-" started ".json")))]
+          (fs/create-dirs (fs/parent report-path))
+          (spit report-path (abc-json/write-deterministic-json-str report))
+          (when out (export-build! root out report))
+          (println (str "run_report: " report-path))
+          (println (str "selected: " (count candidates)))
+          (when out (println (str "exports: " (fs/absolutize out))))
+          report)
+        (finally (engine/close-store! store))))))
 
 (defn build! [opts]
   (let [captured (capture-build! opts)]
+    (selected-metadata! captured)
     (execute-build! opts captured
-                    (build-stages {:clj-toolchain-id (:clj-toolchain-id opts)
-                                   :assets-root (:assets-root opts)
-                                   :adapter (stages/resolve-adapter)
-                                   :profile (validate/profile-paths (:assets-root opts))}))))
+                    (build-stages opts))))
 
 (defn delta!
   "Upstream-revision qualification: the three-set delta oracle over two
@@ -570,43 +548,52 @@
                                          (sign/manifest-message manifest-hex)))}))))
 
 (defn release!
-  "One scheduled release invocation: preflight every fail-closed file
-  input, then the kernel build at the current checkout, then the za
-  driver's release assembly and publication transaction."
-  [{:keys [root chain-clone branch upstream-origin] :as opts}]
+  "Preflight the full selection, then build the artifacts requested by verified-head assembly."
+  [{:keys [root chain-clone branch upstream-origin out] :as opts}]
   (let [{:keys [snapshot-bytes policy-id policy-hash pinned sign-release
                 source-commit source-hashes assessment-source-bytes assessment-inputs]}
         (release-preflight! opts)
-        report (build! opts)
-        _ (when-not (and (= source-commit (get report "aozora_git_commit")
-                            (source-provenance! (:aozora-root opts)))
-                         (every? (fn [[slug digest]]
-                                   (= digest (get-in report ["works" slug "source_content_hash"])))
-                                 source-hashes))
-            (throw (ex-info "built sources differ from assessment inputs"
-                            {:reason :assessment-source-changed-during-build})))
-        _ (committed-assessment-inputs! opts assessment-source-bytes snapshot-bytes)
-        _ (when (seq (get-in assessment-inputs [:source "reliances"]))
-            (let [current (evaluate-assessment! (dissoc opts :rdf-out) assessment-inputs)]
-              (when-not (and (= source-commit (:source-commit current))
-                             (java.util.Arrays/equals ^bytes snapshot-bytes
-                                                      ^bytes (get-in current [:snapshot :bytes])))
-                (throw (ex-info "Aozora reliance changed during the build"
-                                {:reason :reliance-changed-during-build})))))
-        _ (committed-assessment-inputs! opts assessment-source-bytes snapshot-bytes)
-        outcome (za-release/release!
-                 {:report report
-                  :cas-dir (config/cas-dir (config/root root))
-                  :upstream-origin upstream-origin
-                  ;; v1's selector has no production parameters
-                  :selection-params {}
-                  :policy-id policy-id
-                  :policy-hash policy-hash
-                  :snapshot-bytes snapshot-bytes
-                  :clone (str chain-clone)
-                  :branch branch
-                  :pinned-keys pinned
-                  :sign-release sign-release})]
+        captured (capture-build! opts)
+        last-report (volatile! nil)
+        outcome
+        (za-release/release!
+         {:selection (mapv :slug (:candidates captured))
+          :source-hashes source-hashes
+          :build-works!
+          (fn [slugs]
+            (let [requested (set slugs)
+                  inputs (update captured :candidates #(filterv (comp requested :slug) %))
+                  _ (selected-metadata! inputs)
+                  stage-set (if (seq requested) (dissoc (build-stages opts) :fidelity) {})
+                  report (execute-build! (dissoc opts :out) inputs stage-set)]
+              (when-not (and (= source-commit (get report "aozora_git_commit")
+                                (source-provenance! (:aozora-root opts)))
+                             (every? (fn [[slug digest]]
+                                       (= digest (get-in report ["works" slug "source_content_hash"])))
+                                     (select-keys source-hashes slugs)))
+                (throw (ex-info "built sources differ from assessment inputs"
+                                {:reason :assessment-source-changed-during-build})))
+              (committed-assessment-inputs! opts assessment-source-bytes snapshot-bytes)
+              (let [current (evaluate-assessment! (dissoc opts :rdf-out) assessment-inputs)]
+                (when-not (and (= source-commit (:source-commit current))
+                               (= source-hashes (:source-hashes current)))
+                  (throw (ex-info "assessed sources changed during the build"
+                                  {:reason :assessment-source-changed-during-build})))
+                (when-not (java.util.Arrays/equals ^bytes snapshot-bytes
+                                                   ^bytes (get-in current [:snapshot :bytes]))
+                  (throw (ex-info "assessment changed during the build"
+                                  {:reason :reliance-changed-during-build}))))
+              (committed-assessment-inputs! opts assessment-source-bytes snapshot-bytes)
+              (vreset! last-report report)
+              report))
+          :cas-dir (config/cas-dir (config/root root))
+          :upstream-origin upstream-origin
+          :selection-params {}
+          :policy-id policy-id :policy-hash policy-hash
+          :snapshot-bytes snapshot-bytes
+          :clone (str chain-clone) :branch branch
+          :pinned-keys pinned :sign-release sign-release})]
+    (when out (export-build! (config/root root) out @last-report))
     (println (abc-json/write-deterministic-json-str
               (into (sorted-map)
                     (keep (fn [[k v]] (when v [k v])))

@@ -1,7 +1,6 @@
 (ns soranoha.za.release
-  "The automated release driver: one scheduled invocation carries one
-  kernel build run through release assembly and the publication
-  transaction. Admission is a fail-closed input — the assessment
+  "The automated release driver requests kernel artifacts during release
+  assembly and the publication transaction. Admission is a fail-closed input — the assessment
   snapshot arrives as protocol bytes and is boundary-decoded before
   anything else runs, so a malformed or non-canonical snapshot publishes
   nothing. The driver adds no transaction semantics of its own: outcomes
@@ -11,6 +10,7 @@
   (:require [clojure.edn :as edn]
             [soranoha.core.hash :as hash]
             [soranoha.snh.decode :as decode]
+            [soranoha.snh.admission :as admission]
             [soranoha.snh.transact :as transact]
             [soranoha.za.assemble :as assemble])
   (:import (java.nio ByteBuffer)
@@ -96,50 +96,44 @@
         (get report "stages"))))
 
 (defn release!
-  "Assemble and publish one release from a build run report.
-  - :report — the kernel build's run report (in-process map): supplies
-    the upstream revision, the stage-coordinate table, the selected
-    slug set, and every work's artifact and source-content hashes;
-  - :cas-dir — the kura CAS the report's artifact hashes resolve in;
-  - :snapshot-bytes — the assessment snapshot as snh protocol bytes
-    (versioned admission data), strictly boundary-decoded here;
-  - :upstream-origin / :selection-params / :policy-id / :policy-hash —
-    manifest coordinates;
-  - :clone / :branch / :pinned-keys / :sign-release / :push-fn — the
-    publication transaction's origin clone, protected branch, pinned
-    verifier keys, and release signer.
-  Returns the transaction outcome map."
-  [{:keys [report cas-dir upstream-origin selection-params
+  "Account for the full selection, then request artifacts for each verified head.
+  :selection is captured independently of assessment and execution.
+  :build-works! accepts the published slugs and returns their kernel run report;
+  it must recheck source and assessment inputs before returning on every attempt.
+  :source-hashes binds assessed source facts even when no artifact is requested."
+  [{:keys [selection build-works! source-hashes cas-dir upstream-origin selection-params
            policy-id policy-hash snapshot-bytes
            clone branch pinned-keys sign-release push-fn]}]
   (let [snapshot (:value (decode/decode "assessment-snapshot" snapshot-bytes))
         candidates (get snapshot "candidates")
-        ;; the selected population is captured from the selection join
-        ;; before work execution; requiring the built works to equal it
-        ;; keeps the assembler's totality comparison independent — a work
-        ;; co-omitted from both the works and the snapshot cannot pass
-        selected (get report "selected_slugs")
-        works (set (keys (get report "works")))]
-    (when-not (and (seq selected) (= (set selected) works))
-      (throw (ex-info "report works do not cover the selected population"
-                      {:reason :selection-works-mismatch
-                       :selected-only (vec (sort (remove works selected)))
-                       :works-only (vec (sort (remove (set selected) works)))})))
+        selected (set selection)
+        candidate-slugs (set (map #(get % "slug") candidates))
+        admitted (:admitted (admission/partition-candidates admission/inclusion-rule candidates))]
+    (when-not (and (seq selected) (= selected candidate-slugs))
+      (throw (ex-info "snapshot does not cover the selected population"
+                      {:reason :totality-violation
+                       :only-in-selection (vec (sort (remove candidate-slugs selected)))
+                       :only-in-snapshot (vec (sort (remove selected candidate-slugs)))})))
     (transact/publish-build!
-     (cond-> {:clone clone
-              :branch branch
-              :pinned-keys pinned-keys
-              :sign-release sign-release
-              :assemble (assemble/release-assembler
-                         {:cas-dir cas-dir
-                          :corpus {"upstream_origin" upstream-origin
-                                   "upstream_rev" (get report
-                                                       "aozora_git_commit")}
-                          :toolchain (report-toolchain report)
-                          :selection-params selection-params
-                          :policy-id policy-id
-                          :policy-hash policy-hash
-                          :candidates candidates
-                          :works (report-works report)
-                          :selection selected})}
+     (cond-> {:clone clone :branch branch :pinned-keys pinned-keys :sign-release sign-release
+              :assemble
+              (fn [head]
+                (let [withdrawn (set (map #(get % "slug") (get head "withdrawn")))
+                      demanded (vec (sort (remove withdrawn admitted)))
+                      report (build-works! demanded)
+                      built (set (keys (get report "works")))]
+                  (when-not (= (set demanded) built (set (get report "selected_slugs")))
+                    (throw (ex-info "build report does not cover the requested artifacts"
+                                    {:reason :selection-works-mismatch
+                                     :selected-only (vec (sort (remove built demanded)))
+                                     :works-only (vec (sort (remove (set demanded) built)))})))
+                  ((assemble/release-assembler
+                    {:cas-dir cas-dir
+                     :corpus {"upstream_origin" upstream-origin
+                              "upstream_rev" (get report "aozora_git_commit")}
+                     :toolchain (report-toolchain report)
+                     :selection-params selection-params
+                     :policy-id policy-id :policy-hash policy-hash
+                     :candidates candidates :works (report-works report)
+                     :source-hashes source-hashes :selection selected}) head)))}
        push-fn (assoc :push-fn push-fn)))))

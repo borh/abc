@@ -1,6 +1,6 @@
 (ns soranoha.za.assemble
   "Release assembly: the bridge from kernel outputs to the publication
-  transaction's input. The kernel builds every selected work policy-blind;
+  transaction's input. Kernel stages build requested works policy-blind;
   admission is decided here — the assessment snapshot commits facts or attributed reliance,
   the inclusion rule derives the total admitted/excluded/quarantined
   partition, and both evidence artifacts publish with the release. Works
@@ -113,17 +113,20 @@
     unselected candidate blocks emission);
   - :works — slug -> {:plaintext :tei :tei-validation <cas hex>,
     :source-content-hash \"sha256:<hex>\"} kernel outputs, covering at
-    least every admitted candidate;
+    least every published candidate;
+  - :source-hashes — assessed source-content hashes, independent of built artifacts;
   - :withdrawn-slugs — the chain head's withdrawn set; works = admitted
     minus withdrawn."
   [{:keys [cas-dir corpus toolchain selection-params policy-id policy-hash
-           candidates works withdrawn-slugs selection]}]
+           candidates works source-hashes withdrawn-slugs selection]}]
   (let [snapshot-enc (decode/encode "assessment-snapshot"
                                     (snapshot-value candidates))
         rule admission/inclusion-rule
         _ (doseq [{:strs [slug reliance]} candidates
                   :when (= "relied-upon" (get reliance "status"))]
-            (when-not (= (get reliance "source_content_hash") (:source-content-hash (get works slug)))
+            (when-not (and (= (get reliance "source_content_hash") (get source-hashes slug))
+                           (or (not (contains? works slug))
+                               (= (get reliance "source_content_hash") (:source-content-hash (get works slug)))))
               (fail! :reliance-source-content-mismatch {:slug slug})))
         partition (admission/partition-candidates rule
                                                   (get (:value snapshot-enc) "candidates"))

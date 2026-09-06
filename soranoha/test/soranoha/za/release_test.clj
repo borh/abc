@@ -17,6 +17,7 @@
             [soranoha.snh.decode :as decode]
             [soranoha.snh.fixture :as fx]
             [soranoha.snh.sign :as sign]
+            [soranoha.snh.repo :as repo]
             [soranoha.snh.verify :as verify]
             [soranoha.snh.view :as view]
             [soranoha.yomi.catalog :as catalog]
@@ -68,7 +69,7 @@
    "selected_slugs" (vec (sort (map :slug (:candidates run))))
    "stages" (into {}
                   (map (fn [[stage coordinate]] [(name stage) coordinate]))
-                  (:stage-coordinates run))
+                  (dissoc (:stage-coordinates run) :fidelity))
    "works" (into {}
                  (map (fn [[slug {:keys [outputs]}]]
                         [slug {"plaintext" (get-in outputs [:render "plaintext"])
@@ -80,19 +81,23 @@
                                     "work_content_hash")}]))
                  (:results run))})
 
+(defn- driver-inputs [clone report cas-dir snapshot]
+  {:selection (get report "selected_slugs")
+   :source-hashes (into {} (map (fn [[slug work]] [slug (get work "source_content_hash")])) (get report "works"))
+   :build-works! (fn [slugs] (assoc report "selected_slugs" slugs "works" (select-keys (get report "works") slugs)))
+   :cas-dir cas-dir
+   :upstream-origin "https://forge.example/za/fixture-corpus.git"
+   :selection-params {}
+   :policy-id "za-fixture-policy-v1"
+   :policy-hash policy-hash
+   :snapshot-bytes snapshot
+   :clone clone
+   :branch fx/branch
+   :pinned-keys (fx/pinned-keys)
+   :sign-release fx/sign-release})
+
 (defn- drive-report! [clone report cas-dir snapshot]
-  (release/release!
-   {:report report
-    :cas-dir cas-dir
-    :upstream-origin "https://forge.example/za/fixture-corpus.git"
-    :selection-params {}
-    :policy-id "za-fixture-policy-v1"
-    :policy-hash policy-hash
-    :snapshot-bytes snapshot
-    :clone clone
-    :branch fx/branch
-    :pinned-keys (fx/pinned-keys)
-    :sign-release fx/sign-release}))
+  (release/release! (driver-inputs clone report cas-dir snapshot)))
 
 (defn- drive! [clone run snapshot]
   (drive-report! clone (run->report run) (:cas-dir run) snapshot))
@@ -176,12 +181,19 @@
         {:keys [clone]} (fx/make-repos!)
         head-before (fx/head-of clone)
         broken (update (run->report run) "works" dissoc (slug-of kumo))
-        outcome (try (drive-report! clone broken (:cas-dir run)
-                                    (snapshot-bytes [(pd merosu)]))
+        outcome (try (release/release!
+                      (assoc (driver-inputs clone broken (:cas-dir run)
+                                            (snapshot-bytes [(pd merosu)]))
+                             :build-works! (fn [_] (throw (ex-info "must refuse before building" {})))))
                      nil
                      (catch clojure.lang.ExceptionInfo e (ex-data e)))]
-    (is (= :selection-works-mismatch (:reason outcome)))
-    (is (= [(slug-of kumo)] (:selected-only outcome)))
+    (is (= :totality-violation (:reason outcome)))
+    (is (= [(slug-of kumo)] (:only-in-selection outcome)))
+    (is (= :selection-works-mismatch
+           (try (drive-report! clone broken (:cas-dir run)
+                               (snapshot-bytes [(pd merosu) (pd kumo)]))
+                nil
+                (catch clojure.lang.ExceptionInfo e (:reason (ex-data e))))))
     (is (= head-before (fx/head-of clone)))))
 
 (deftest governance-withdrawal-executes-end-to-end
@@ -245,6 +257,32 @@
                   nil
                   (catch clojure.lang.ExceptionInfo e
                     (:reason (ex-data e)))))))))
+
+(deftest artifact-demand-follows-the-verified-head-after-a-rejected-push
+  (let [root (corpus/init-corpus! [merosu kumo])
+        run (corpus/run-corpus! root (temp-store!))
+        {:keys [clone] :as repos} (fx/make-repos!)
+        competitor (fx/second-clone! repos)
+        snapshot (snapshot-bytes [(pd merosu) (pd kumo)])
+        _ (drive! clone run snapshot)
+        inputs (driver-inputs clone (run->report run) (:cas-dir run) snapshot)
+        calls (atom [])
+        next-release (assoc inputs :selection-params {"round" 2}
+                            :build-works! (fn [slugs]
+                                            (swap! calls conj slugs)
+                                            ((:build-works! inputs) slugs)))
+        event (fx/event-value "withdrawal"
+                              [{"slug" (slug-of kumo) "reason_code" "rights" "statement" ""}])
+        outcome (release/release!
+                 (assoc next-release :push-fn
+                        (fn [dir branch commit expected]
+                          (is (= :published (:outcome (fx/publish-event! competitor event))))
+                          (repo/push! dir branch commit expected))))]
+    (is (= :requeue (:outcome outcome)))
+    (is (= [(vec (sort [(slug-of merosu) (slug-of kumo)])) [(slug-of merosu)]] @calls))
+    (is (= :published (:outcome (release/release! next-release))))
+    (is (= [(slug-of merosu)]
+           (mapv #(get % "slug") (get (:head-manifest (verified-chain clone)) "works"))))))
 
 (deftest rights-policy-must-be-one-whole-document
   ;; a reader stopping at the first value would authorize — and hash —
@@ -460,8 +498,10 @@
           (fs/write-bytes source-path (:bytes (records/encode reviewed)))
           (commit-assessment-inputs! dir)
           (is (= :uncommitted-assessment-input
-                 (with-redefs [main/build!
-                               (fn [_]
+                 (with-redefs [main/build-stages (constantly corpus/stage-set)
+                               release/release! (fn [{:keys [build-works!]}] (build-works! []))
+                               main/execute-build!
+                               (fn [& _]
                                  (fs/write-bytes
                                   source-path
                                   (:bytes (records/encode
@@ -478,8 +518,10 @@
             (commit-assessment-inputs! dir)))))
     (testing "source movement between preflight and publication is refused"
       (let [before (main/source-provenance! root)
-            error (with-redefs [main/build!
-                                (fn [_]
+            error (with-redefs [main/build-stages (constantly corpus/stage-set)
+                                release/release! (fn [{:keys [build-works!]}] (build-works! []))
+                                main/execute-build!
+                                (fn [& _]
                                   (corpus/write-catalog! root
                                                          [(assoc translated :title "changed during build") kumo])
                                   (corpus/commit-corpus! root)
@@ -503,7 +545,7 @@
                     (:reason (ex-data e)))))))))
 
 (deftest current-reliance-is-rechecked-after-build
-  (let [root (corpus/init-corpus! [merosu])
+  (let [root (corpus/init-corpus! [merosu kumo])
         dir (fs/create-temp-dir {:prefix "reliance-cli"})
         run (corpus/run-corpus! root (str (fs/create-dirs (fs/path dir "build"))))
         slug (slug-of merosu)
@@ -520,7 +562,8 @@
                      "card_sha256" (hash/sha256-string "card")
                      "file_sha256" (hash/sha256-string "file")
                      "rules_sha256" (hash/sha256-string "rules") "exception" nil}
-        opts {:root (str (fs/path dir "store")) :aozora-root root
+        {:keys [clone]} (fx/make-repos!)
+        opts {:concurrency 1 :root (str (fs/path dir "store")) :aozora-root root
               :evidence-root (str (fs/path dir "evidence"))
               :clj-toolchain-id "reliance-cli-test" :as-of "2026-09-06"
               :assessment-source (write! "source.json"
@@ -532,7 +575,7 @@
               :release-pub (write! "release.pub" (str (get-in ks ["release" "pub"]) "\n"))
               :governance-pub (write! "governance.pub" (str (get-in ks ["governance" "pub"]) "\n"))
               :release-key (write! "release.seed" (get-in ks ["release" "seed"]))
-              :chain-clone "unused" :branch "main"
+              :chain-clone clone :branch fx/branch
               :upstream-origin "https://forge.example/fixture.git"}
         current (atom {slug {:state "available" :reason nil}})
         published? (atom false)]
@@ -554,17 +597,62 @@
       (main/assessment-evaluate! (assoc opts :out (:assessment opts)))
       (commit-assessment-inputs! dir)
       (is (nil? (main/release-preflight-drift opts)))
+      (testing "release builds only admitted artifacts; research stages and quarantined conversion are independent"
+        (let [convert (get-in corpus/stage-set [:convert :f])
+              selected-stages (atom (-> corpus/stage-set
+                                        (assoc-in [:convert :stage-version] "quarantine-fault")
+                                        (assoc-in [:convert :f]
+                                                  (fn [{:keys [blob] :as context} inputs]
+                                                    (when (str/includes? (get (json/read-json (String. ^bytes (blob (get inputs "aat")) "UTF-8")) "text")
+                                                                         "蜘蛛")
+                                                      (throw (ex-info "synthetic invalid converter input"
+                                                                      {:reason :invalid-converter-input})))
+                                                    (convert context inputs)))
+                                        (assoc-in [:fidelity :f]
+                                                  (fn [& _] (throw (ex-info "research-only stage executed" {}))))))
+              exported (str (fs/path dir "release-export"))]
+          (with-redefs-fn {#'main/build-stages (fn [_] @selected-stages)}
+            (fn []
+              (is (= :published (:outcome (main/release! (assoc opts :out exported)))))
+              (let [manifest (:head-manifest (verified-chain clone))
+                    report (json/read-json (slurp (str (fs/path exported "build.json"))))]
+                (is (= [slug] (mapv #(get % "slug") (get manifest "works"))))
+                (is (= [slug] (get report "selected_slugs")))
+                (is (= #{slug} (set (keys (get report "works")))))
+                (is (not (contains? (get report "stages") "fidelity")))
+                (is (not (contains? (get-in report ["works" slug]) "source-fidelity")))
+                (is (not (fs/exists? (fs/path exported slug "source-fidelity.json"))))
+                (is (not (contains? (get manifest "toolchain") "source-fidelity"))))
+              (swap! selected-stages assoc-in [:fidelity :stage-version] "research-only-change")
+              (is (= :already-published (:outcome (main/release! opts))))
+              (swap! selected-stages assoc :fidelity (:fidelity corpus/stage-set))
+              (is (= :invalid-converter-input
+                     (try (main/build! opts) nil
+                          (catch clojure.lang.ExceptionInfo e (:reason (ex-data e))))))))))
+      (testing "an entirely withdrawn artifact demand does not resolve unused toolchains"
+        (is (= :published
+               (:outcome (fx/publish-event!
+                          clone (fx/event-value "withdrawal"
+                                                [{"slug" slug "reason_code" "rights" "statement" ""}])))))
+        (with-redefs [main/build-stages (fn [_] (throw (ex-info "unused toolchain resolved" {})))]
+          (is (= :published (:outcome (main/release! opts)))))
+        (let [manifest (:head-manifest (verified-chain clone))]
+          (is (empty? (get manifest "works")))
+          (is (empty? (get manifest "toolchain")))))
       (testing "withdrawal after preflight refuses before publication"
-        (with-redefs [main/build! (fn [_]
-                                    (reset! current {slug {:state "unavailable" :reason "official-work-protected"}})
-                                    report)
-                      release/release! (fn [_] (reset! published? true))]
+        (with-redefs [main/build-stages (constantly corpus/stage-set)
+                      main/execute-build! (fn [& _]
+                                            (reset! current {slug {:state "unavailable" :reason "official-work-protected"}})
+                                            report)
+                      release/release! (fn [{:keys [build-works!]}]
+                                         (build-works! [slug])
+                                         (reset! published? true))]
           (is (= :reliance-changed-during-build
                  (try (main/release! opts) nil
                       (catch clojure.lang.ExceptionInfo e (or (:reason (ex-data e)) (ex-message e))))))
           (is (false? @published?))))
       (testing "a stale accepted snapshot refuses before the build"
-        (with-redefs [main/build! (fn [_] (throw (ex-info "must not build" {})))]
+        (with-redefs [main/execute-build! (fn [& _] (throw (ex-info "must not build" {})))]
           (is (= :snapshot-regeneration-drift
                  (try (main/release! opts) nil
                       (catch clojure.lang.ExceptionInfo e (or (:reason (ex-data e)) (ex-message e)))))))))))

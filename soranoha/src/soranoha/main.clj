@@ -429,34 +429,53 @@
 
 (defn aozora-reliance-prepare!
   "Capture official edition evidence and write a draft owner source file.
-  Refresh the requested edition while preserving any recorded exception.
+  Refresh one edition or the full selection, preserving recorded exceptions.
   Preparing evidence does not publish or commit an acceptance."
-  [{:keys [aozora-root evidence-root slug out assessment-source as-of]}]
+  [{:keys [aozora-root evidence-root slug all out assessment-source as-of]}]
   (require-flags! "aozora-reliance-prepare"
                   {"--aozora-root" aozora-root "--evidence-root" evidence-root
-                   "--slug" slug "--out" out})
+                   "--out" out})
+  (when (= (boolean slug) (boolean all))
+    (throw (ex-info "choose exactly one of --slug or --all"
+                    {:reason :invalid-preparation-selection})))
   (let [before (source-provenance! aozora-root)
         source (if assessment-source
                  (:value (assessment-records/decode (fs/read-all-bytes assessment-source)))
                  assessment-records/empty-source)
         today (str (java.time.LocalDate/now java.time.ZoneOffset/UTC))
-        prior (first (filter #(= slug (get % "slug")) (get source "reliances")))
-        record (cond-> (aozora/prepare! aozora-root evidence-root slug
-                                        {:observed-at today :decision-date (or as-of today)})
-                 prior (assoc "exception" (get prior "exception")))
-        _ (when-not (= before (source-provenance! aozora-root) (get record "source_revision"))
+        prior (into {} (map (juxt #(get % "slug") identity)) (get source "reliances"))
+        options {:observed-at today :decision-date (or as-of today)}
+        {:keys [records unavailable]}
+        (if all
+          (aozora/prepare-batch! aozora-root evidence-root nil options)
+          {:records [(aozora/prepare! aozora-root evidence-root slug options)]
+           :unavailable []})
+        _ (when-not (and (= before (source-provenance! aozora-root))
+                         (every? #(= before (get % "source_revision")) records))
             (throw (ex-info "source checkout changed during reliance preparation"
                             {:reason :assessment-source-changed})))
+        refreshed (remove #(some? (get (prior (get % "slug")) "exception")) records)
         result (assessment-records/encode
-                (update source "reliances"
-                        (fn [records]
-                          (vec (sort-by #(get % "slug")
-                                        (conj (vec (remove #(= slug (get % "slug")) records)) record))))))]
+                (assoc source "reliances"
+                       (->> refreshed
+                            (reduce #(assoc %1 (get %2 "slug") %2) prior)
+                            vals (sort-by #(get % "slug")) vec)))]
     (fs/write-bytes out (:bytes result))
     (println (abc-json/write-deterministic-json-str
-              {"assessment_source" out "slug" slug
-               "source_content_hash" (get record "source_content_hash")}))
+              {"assessment_source" out
+               "attempted" (+ (count records) (count unavailable))
+               "refreshed" (count refreshed)
+               "exceptions_preserved" (- (count records) (count refreshed))
+               "unavailable" unavailable}))
     result))
+
+(defn publication-init!
+  "Initialize an absent publication branch using the normal pre-genesis commit."
+  [{:keys [chain-clone branch]}]
+  (require-flags! "publication-init" {"--chain-clone" chain-clone "--branch" branch})
+  (let [commit (transact/init-publication-branch! chain-clone branch)]
+    (println (abc-json/write-deterministic-json-str {"commit" commit "branch" branch}))
+    commit))
 
 (defn assessment-evaluate!
   "Evaluate versioned assessment inputs against the current checkout and
@@ -727,6 +746,7 @@
    :assessment-source {:coerce :string}
    :evidence-root {:coerce :string}
    :slug {:coerce :string}
+   :all {:coerce :boolean}
    :as-of {:coerce :string}
    :rdf-out {:coerce :string}
    :rdf-base {:coerce :string}
@@ -764,6 +784,7 @@
                        (when-not (#{:published :already-applied} outcome)
                          (System/exit 1)))
         "serving-tree" (serving-tree! opts)
+        "publication-init" (publication-init! opts)
         "assessment-evaluate" (assessment-evaluate! opts)
         "aozora-reliance-prepare" (aozora-reliance-prepare! opts)
         "archive-verify" (when-not (= :success (:result (archive-verify! opts)))
@@ -771,7 +792,7 @@
         "verify" (when-not (:ok? (verify! opts))
                    (System/exit 1))
         (do (binding [*out* *err*]
-              (println "usage: build|delta|release|governance|serving-tree|assessment-evaluate|aozora-reliance-prepare|archive-verify|verify [--root R --aozora-root A --assets-root S ...]"))
+              (println "usage: build|delta|release|governance|serving-tree|publication-init|assessment-evaluate|aozora-reliance-prepare|archive-verify|verify [--root R --aozora-root A --assets-root S ...]"))
             (System/exit 2)))
       (System/exit 0)
       (catch clojure.lang.ExceptionInfo e

@@ -1,8 +1,7 @@
-# The production scheduled release job (ledger: D5 driver + scheduled-runner
-# exit contract, runner/secrets contract, one-pointer serving contract).
-# DISPATCH-ONLY until unattended activation: the cron trigger is added at
-# activation, which still gates on the owner inputs — until they exist this
-# job fails closed at the owner-inputs guard.
+# Manually dispatched publication on the dedicated repository runner.
+# The private tailnet deployment uses the ordinary signed release path.
+# Public exposure requires the fresh-genesis procedure in
+# docs/private-publication.md.
 #
 # The contract carried here:
 #   - runs ONLY on the dedicated repository-scoped runner (label

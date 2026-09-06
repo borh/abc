@@ -275,13 +275,20 @@ numbers live in the findings sections and Git history, not here):
   (abc/data/assessment-snapshot.json) — the pins and the policy
   file now pass the guard's presence checks, the policy content
   still blocks release, and the entire remaining path to genesis
-  runs through the adoption boundary. Remaining before FIRST PUBLICATION OF THE
-  SIGNED GENESIS RELEASE: deploy the accepted four-work D23 batch and
-  its assessment-required publication policy, then the ONE-TIME
+  runs through the adoption boundary. Owner amendment (2026-09-06):
+  private tailnet publication supports full-corpus testing and iteration
+  through the normal signing, verification and serving implementation.
+  Its history is disposable and explicitly resettable; source checkouts,
+  reviewed evidence and build caches survive resets. Public launch uses a
+  fresh reviewed genesis, excluding private test history. External
+  anchoring gates PUBLIC EXPOSURE, not private testing. The accepted
+  four-work D23 batch and assessment-required policy are committed;
+  whole-corpus reliance preparation and fidelity measurement are underway.
+  Remaining before PUBLIC EXPOSURE: the ONE-TIME
   GENESIS CEREMONY — the
   anchor must contain the exact genesis manifest and signature and
   the ORCID record must name the deposit's version DOI before
-  publication, but the release command assembles, signs, commits,
+  public exposure, but the release command assembles, signs, commits,
   and pushes in one operation, so genesis is prepared out-of-band
   once, with no permanent prepare/publish protocol added: (1)
   produce the candidate genesis against a QUARANTINE ref rooted at
@@ -291,7 +298,8 @@ numbers live in the findings sections and Git history, not here):
   credential-separated from release CI); (4) add the deposit's
   version DOI to the ORCID record (F75/F145); (5) CAS-push that
   exact prepared commit to the production branch; (6) the scheduled
-  workflow serves only later releases;
+  workflow then serves the public chain. Private releases use the ordinary
+  workflow before this ceremony;
   production acceptances (1)–(3) — acceptance (3)'s SWH observation
   gates on public exposure. The tailnet-testable F12 probes EXECUTED
   2026-08-27 (results at the end of this ledger): capacity,
@@ -3327,12 +3335,12 @@ Production-deployment prerequisites (local implementation is complete;
 these gate deployment and the first public signed release, never the
 fixture/local work): O1 RATIFIED (owner, 2026-08-25, with the round-4
 wording: public-release-allowed is the inclusion rule's decision) —
-the assessment evidence committed as versioned data (F24 snapshot
-source) is PARTIALLY in place — the total quarantine baseline is
-committed (2026-08-28) and preflight-bound to its checkout; the
-completed per-work assessments that would let any work be admitted
-remain outstanding, and the policy stays blocked until the first
-assessed batch (round-31 finding 3); O2 host named and
+the assessment evidence is committed as versioned data (F24 snapshot
+source): total accounting covers all 17,602 selected works, including
+explicit not-evaluated facts. The first four-work D23 reliance batch and
+the authorized assessment-required policy are committed (2026-09-06).
+Whole-corpus preparation is underway for private testing; only currently
+applicable assessments admit a work. O2 host named and
 F12-probed; rights admission consumed-from-abc or transferred (F14c);
 F12 repo-growth probe run against the chosen origin ON REAL
 adjacent-revision artifacts from Slices 1/2 — smallest representative
@@ -3346,8 +3354,9 @@ controlled encrypted media (the copy operation recorded in the
 custody inventory); NO key copies in the publication repository or
 serving trees — deployment source may carry the public keys as
 non-authenticating pinned verifier configuration (F122 as clarified
-2026-08-28); **the F54 minimal trust anchor published BEFORE FIRST
-PUBLICATION OF THE SIGNED GENESIS RELEASE: the
+2026-08-28); **the F54 minimal trust anchor published BEFORE PUBLIC
+EXPOSURE OF THE FRESH SIGNED GENESIS RELEASE (owner amendment
+2026-09-06: disposable private testing does not require this anchor): the
 ROLE-BOUND assignment — RELEASE = {release key}, GOVERNANCE =
 {governance key} — as key bytes + fingerprints in the FIRST immutable
 Zenodo deposit (F126: the anchor authenticates roles, never a flat
@@ -3520,8 +3529,8 @@ back by citing the previous release tag.
   bytes + fingerprints + the ACTUAL genesis manifest bytes and
   signature — never a record that merely names a head — making it
   both the first pin and the first independent authorship
-  checkpoint) BEFORE FIRST PUBLICATION OF THE SIGNED GENESIS
-  RELEASE — owner, before Slice 3. **F70: the Zenodo credential
+  checkpoint) BEFORE PUBLIC EXPOSURE OF THE FRESH SIGNED GENESIS
+  RELEASE — owner, after disposable private testing. **F70: the Zenodo credential
   must be UNAVAILABLE to release CI — deposits are a manual owner action
   or a separately controlled MFA workflow; only then is the checkpoint
   operationally independent.** Quarterly Zenodo deposits thereafter
@@ -3531,7 +3540,7 @@ back by citing the previous release tag.
   root key or key-manifest exists in v1.)
 - **F75 pre-release discovery channel — NAMED by owner 2026-08-25:
   the ORCID record; form corrected by round-27 F145.** Remaining
-  obligation (owner, before the first signed release): deposit the
+  obligation (owner, before public exposure of the fresh genesis): deposit the
   role-bound COMPLETE anchor in the first immutable Zenodo record,
   then add that record's specific VERSION DOI (not merely the concept
   DOI — a version DOI's files are fixed) as a public ORCID work. ONE

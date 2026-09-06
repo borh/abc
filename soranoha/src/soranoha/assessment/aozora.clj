@@ -11,7 +11,7 @@
             [soranoha.ported.source-bundle :as bundle]
             [soranoha.yomi.catalog :as catalog]
             [soranoha.yomi.select :as select])
-  (:import [java.io ByteArrayInputStream ByteArrayOutputStream StringReader]
+  (:import [java.io ByteArrayInputStream ByteArrayOutputStream IOException StringReader]
            [java.net HttpURLConnection URI]
            [java.nio ByteBuffer]
            [java.nio.charset CodingErrorAction StandardCharsets]
@@ -54,13 +54,30 @@
       (.setConnectTimeout c 15000)
       (.setReadTimeout c 15000)
       (.setRequestProperty c "Accept-Encoding" "identity")
-      (when-not (= 200 (.getResponseCode c)) (refuse! "http-status"))
+      (let [status (.getResponseCode c)]
+        (when-not (= 200 status)
+          (throw (ex-info "Aozora reliance unavailable: http-status"
+                          {:reason "http-status" :status status}))))
       (with-open [in (.getInputStream c)] (bounded-bytes in))
       (finally (.disconnect c)))))
 
 (defn- fetch [opts url]
   (official-uri url)
-  (let [b ((or (:fetch opts) fetch-http) url)]
+  (let [b (loop [attempt 0]
+            (let [result (try
+                           {:bytes ((or (:fetch opts) fetch-http) url)}
+                           (catch IOException e {:failure e})
+                           (catch clojure.lang.ExceptionInfo e
+                             (if (and (= "http-status" (:reason (ex-data e)))
+                                      (#{429 502 503 504} (:status (ex-data e))))
+                               {:failure e}
+                               (throw e))))]
+              (if-let [failure (:failure result)]
+                (if (< attempt 2)
+                  (do (Thread/sleep (* 250 (inc attempt)))
+                      (recur (inc attempt)))
+                  (throw failure))
+                (:bytes result))))]
     (when-not (and (bytes? b) (pos? (alength ^bytes b))
                    (<= (alength ^bytes b) response-limit))
       (refuse! "invalid-response"))

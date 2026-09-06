@@ -33,6 +33,35 @@
             baseline @responses
             check #(get (aozora/check! root evidence [record] {:fetch fetch}) slug)]
         (is (= {:state "available" :reason nil} (check)))
+        (testing "transient acquisition retries fetch fresh evidence"
+          (doseq [failure [(java.io.IOException. "Temporary network failure")
+                           (ex-info "Temporary HTTP failure" {:reason "http-status" :status 503})]]
+            (let [calls (atom 0)
+                  retry-fetch (fn [url]
+                                (if (and (= url aozora/catalog-url)
+                                         (= 1 (swap! calls inc)))
+                                  (throw failure)
+                                  (fetch url)))]
+              (is (= {:state "available" :reason nil}
+                     (get (aozora/check! root evidence [record] {:fetch retry-fetch}) slug)))
+              (is (= 2 @calls)))))
+        (testing "persistent transient failures have a bounded acquisition budget"
+          (doseq [failure [(java.io.IOException. "Network unavailable")
+                           (ex-info "Service unavailable" {:reason "http-status" :status 503})]]
+            (let [calls (atom 0)]
+              (is (= "unavailable"
+                     (:state (get (aozora/check! root evidence [record]
+                                                 {:fetch (fn [_] (swap! calls inc) (throw failure))}) slug))))
+              (is (= 3 @calls)))))
+        (testing "permanent failures and invalid bytes are not retried"
+          (doseq [response [(fn [] (throw (ex-info "Not found" {:reason "http-status" :status 404})))
+                            (fn [] (throw (IllegalArgumentException. "Invalid caller value")))
+                            (fn [] (byte-array 0))]]
+            (let [calls (atom 0)]
+              (is (= "unavailable"
+                     (:state (get (aozora/check! root evidence [record]
+                                                 {:fetch (fn [_] (swap! calls inc) (response))}) slug))))
+              (is (= 1 @calls)))))
         (testing "malformed unrelated links do not hide the edition link"
           (swap! responses assoc card-url
                  (utf8-bytes "<a href='https://example.org/%'>Unrelated</a><h1>図書カード：No.100</h1><a href=' ./files/100_ruby_1001.zip '>Download</a>"))

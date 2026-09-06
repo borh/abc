@@ -118,10 +118,20 @@
              :current-paragraph-attrs nil))
     (assoc acc :current-paragraph-attrs nil)))
 
+(defn- normalize-layout-siblings [children]
+  ;; TEI permits prose before divisions, but later prose must belong to a
+  ;; division. Neutral wrappers keep those later paragraphs outside the
+  ;; source's indented division without inventing an embedded text.
+  (let [[before remaining] (split-with #(not= :div (first %)) children)]
+    (into (vec before)
+          (mapcat (fn [run]
+                    (if (= :div (ffirst run)) run [(into [:div] run)])))
+          (partition-by #(= :div (first %)) remaining))))
+
 (defn- flush-division [acc]
   (if (seq (:current-division acc))
     (-> acc
-        (update :body-children conj (into [:div] (:current-division acc)))
+        (update :body-children conj (into [:div] (normalize-layout-siblings (:current-division acc))))
         (assoc :current-division []))
     acc))
 
@@ -557,16 +567,6 @@
                          (get block "align") (conj "text-align: center")
                          (get block "border") (conj "border-style: solid")))})
 
-(defn- normalize-layout-siblings [children]
-  ;; TEI permits prose before divisions, but later prose must belong to a
-  ;; division. Neutral wrappers keep those later paragraphs outside the
-  ;; source's indented division without inventing an embedded text.
-  (let [[before remaining] (split-with #(not= :div (first %)) children)]
-    (into (vec before)
-          (mapcat (fn [run]
-                    (if (= :div (ffirst run)) run [(into [:div] run)])))
-          (partition-by #(= :div (first %)) remaining))))
-
 (defn- close-layout-blocks [acc frames paragraph-end]
   (loop [acc acc frames frames]
     (if-let [{:keys [block target start]} (peek frames)]
@@ -599,7 +599,6 @@
                         (map-indexed vector paragraphs))]
     (finalize-result
      (cond-> (-> result (render-node-seq (subvec nodes end)) flush-paragraph)
-       (seq layout-blocks) (update :current-division normalize-layout-siblings)
        (seq layout-blocks) (update :body-children normalize-layout-siblings)))))
 
 (defn- render-flat [nodes]

@@ -33,7 +33,10 @@
 
 (deftest layout-scopes-allow-surrounding-prose-in-the-publication-profile
   (doseq [scope [(block 1 5) (dissoc (block 1 5) "direction" "align" "border")]
-          heading? [false true]]
+          heading? [false true]
+          boundary [nil {"type" "heading" "text" "次章" "level" 2}
+                    {"type" "source-note" "note_type" "source-attribution" "text" "底本：本" "placement" "back"}
+                    {"type" "source-note" "note_type" "source-attribution" "text" "序文" "placement" "front"}]]
     (let [dir (fs/create-temp-dir {:prefix "embedded-sign"})
           xml-path (str (fs/path dir "tei.xml"))
           ir (cond-> (document [scope])
@@ -41,7 +44,8 @@
                heading? (update "paragraphs" #(mapv (fn [paragraph]
                                                       (-> paragraph
                                                           (update-in ["node_range" "start"] inc)
-                                                          (update-in ["node_range" "end"] inc))) %)))
+                                                          (update-in ["node_range" "end"] inc))) %))
+               boundary (update "nodes" conj boundary))
           result (render/render-work
                   {:parser-ir (assoc ir "sentence_segmentation" {"coordinate_system" "parser_text_utf8"})
                    :metadata-record {"work" {"title" "試験" "aozora_modified" "2026-09-06"} "contributors" []}

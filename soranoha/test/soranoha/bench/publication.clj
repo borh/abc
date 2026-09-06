@@ -3,10 +3,17 @@
   All mutable state and public fixture keys live beneath a fresh output directory."
   (:require [babashka.cli :as cli]
             [babashka.fs :as fs]
+            [babashka.process :as process]
+            [soranoha.assessment.source :as source]
+            [soranoha.assessment.aozora :as aozora]
+            [soranoha.assessment.evaluate :as evaluation]
+            [soranoha.snh.verify :as verify]
             [charred.api :as json]
             [clojure.string :as string]
+            [clojure.java.io :as io]
             [soranoha.bench.replay :as replay]
             [soranoha.core.hash :as hash]
+            [soranoha.kura.engine :as engine]
             [soranoha.main :as main]
             [soranoha.snh.fixture :as fixture]
             [soranoha.snh.repo :as repo]
@@ -67,23 +74,58 @@
                "user.email=publication-replay@localhost" "commit" "--allow-empty"
                "-qm" "Recorded publication simulation inputs"))
 
+(defn- phase-times [f]
+  (let [totals (atom {})
+        executions (atom {})
+        run-stage engine/run-stage!
+        phases {#'main/release-preflight! :preflight-ms
+                #'main/execute-build! :build-ms
+                #'main/evaluate-assessment! :assessment-ms
+                #'source/capture-checkout :capture-ms
+                #'aozora/check! :aozora-ms
+                #'evaluation/evaluate! :evaluate-ms
+                #'verify/verify-repository-at :verify-ms}
+        wrappers (into {} (map (fn [[v phase]]
+                                 [v (let [original @v]
+                                      (fn [& args]
+                                        (let [start (System/nanoTime)]
+                                          (try (apply original args)
+                                               (finally
+                                                 (swap! totals update phase (fnil + 0)
+                                                        (/ (- (System/nanoTime) start) 1e6)))))))])) phases)
+        result (with-redefs-fn
+                 (assoc wrappers #'engine/run-stage!
+                        (fn [store stage inputs]
+                          (let [result (run-stage store stage inputs)]
+                            (when-not (:cached? result)
+                              (swap! executions update (:stage-id stage) (fnil inc 0)))
+                            result))) f)]
+    {:result result :phases @totals :executions @executions}))
+
 (defn- measured-release! [opts]
-  (let [runs (fs/path (:root opts) "runs")
-        before (set (fs/glob runs "*.json"))
-        run (replay/measure #(main/release! opts))
-        reports (mapv #(json/read-json (slurp (str %)))
-                      (remove before (fs/glob runs "*.json")))]
-    (assoc run :executed-stages (reduce + 0 (map #(get % "executed_stage_count") reports))
-           :executions (frequencies
-                        (for [report reports work (vals (get report "works"))
-                              [stage cached?] (get work "cached") :when (false? cached?)]
-                          stage)))))
+  (let [timed (phase-times (fn [] (replay/measure #(main/release! opts))))]
+    (assoc (:result timed) :phases (:phases timed)
+           :executed-stages (reduce + 0 (vals (:executions timed)))
+           :executions (:executions timed))))
+
+(defn- fixture-options [out {:keys [evidence-root assets-root clj-toolchain-id concurrency]}]
+  {:root (str (fs/path out "build")) :aozora-root (str (fs/path out "checkout"))
+   :assessment-source (str (fs/path out "review" "source.json"))
+   :assessment (str (fs/path out "review" "snapshot.json"))
+   :policy (str (fs/path out "review" "policy.edn"))
+   :evidence-root evidence-root :assets-root assets-root
+   :clj-toolchain-id clj-toolchain-id :concurrency (or concurrency 1)
+   :chain-clone (str (fs/path out "chain")) :branch "main" :serve-root (str (fs/path out "serve"))
+   :upstream-origin "https://example.invalid/publication-replay/source.git"
+   :release-key (str (fs/path out "release.seed"))
+   :release-pub (str (fs/path out "release.pub"))
+   :governance-pub (str (fs/path out "governance.pub"))})
 
 (defn replay!
   "Run complete releases and unchanged repeats using one explicit round per source
   revision. Input policy and assessments are copied; origins and keys are fixture-owned.
   Timings describe simulation with supplied observations, not historical live state."
-  [{:keys [recording assessment-source policy evidence-root assets-root clj-toolchain-id concurrency]
+  [{:keys [recording assessment-source policy evidence-root concurrency]
     :as input}]
   (doseq [option [:repo :from :to :out :recording :assessment-source :policy
                   :evidence-root :assets-root :clj-toolchain-id]]
@@ -115,17 +157,9 @@
         key-file! (fn [role field]
                     (let [path (str (fs/path out (str role "." field)))]
                       (spit path (str (get-in @fixture/keys* [role field]) "\n")) path))
-        opts {:root (str (fs/path out "build")) :aozora-root (str checkout)
-              :assessment-source (str (fs/path review "source.json"))
-              :assessment (str (fs/path review "snapshot.json"))
-              :policy (str (fs/path review "policy.edn"))
-              :evidence-root evidence-root :assets-root assets-root
-              :clj-toolchain-id clj-toolchain-id :concurrency (or concurrency 1)
-              :chain-clone clone :branch "main" :serve-root (str serve-root)
-              :upstream-origin "https://example.invalid/publication-replay/source.git"
-              :release-key (key-file! "release" "seed")
-              :release-pub (key-file! "release" "pub")
-              :governance-pub (key-file! "governance" "pub")}
+        _ (doseq [[role field] [["release" "seed"] ["release" "pub"] ["governance" "pub"]]]
+            (key-file! role field))
+        opts (fixture-options out input)
         emit! (fn [row]
                 (let [line (str (json/write-json-str row) "\n")]
                   (spit (str (fs/path out "measurements.jsonl")) line :append true)
@@ -139,9 +173,10 @@
              provider (:result observation-run)
              opts (assoc opts :as-of (get round "as_of") :aozora-fetch (:fetch provider))
              checkout-run (replay/measure #(replay/git! checkout "checkout" "--detach" commit))
-             assessment-ms (:milliseconds
-                            (replay/measure
-                             #(main/assessment-evaluate! (assoc opts :out (:assessment opts)))))
+             assessment-run (phase-times
+                             (fn [] (:milliseconds
+                                     (replay/measure
+                                      #(main/assessment-evaluate! (assoc opts :out (:assessment opts)))))))
              _ ((:assert-complete! provider))
              review-run (replay/measure #(commit-review! review))
              release-run (measured-release! opts)
@@ -162,7 +197,10 @@
                  :checkout-ms (:milliseconds checkout-run)
                  :observation-ms (:milliseconds observation-run)
                  :review-ms (:milliseconds review-run)
-                 :assessment-ms assessment-ms
+                 :assessment-ms (:result assessment-run)
+                 :assessment-executions (:executions assessment-run)
+                 :release-phases (:phases release-run)
+                 :repeat-phases (:phases repeat-run)
                  :release-ms (:milliseconds release-run)
                  :serving-ms (:milliseconds serving-run)
                  :repeat-release-ms (:milliseconds repeat-run)
@@ -175,7 +213,84 @@
      {"works" []} commits)
     {:out (str out) :revisions (count commits)}))
 
+(defn repeat!
+  "Measure an unchanged release in a completed replay's owned fixture. Phase times
+  are inclusive and may nest; this times calls, never profiles a signing JVM."
+  [{:keys [repeat-run recording evidence-root] :as input}]
+  (let [out (fs/real-path repeat-run)
+        opts (fixture-options out input)
+        setup (with-open [reader (io/reader (str (fs/path out "measurements.jsonl")))]
+                (json/read-json (.readLine ^java.io.BufferedReader reader)))]
+    (when-not (= "publication simulation with recorded observations" (get setup "scope"))
+      (throw (ex-info "Repeat requires a publication replay fixture" {})))
+    (doseq [child ["build" "checkout" "review" "chain" "origin.git" "serve"]]
+      (when-not (fs/starts-with? (fs/real-path (fs/path out child)) out)
+        (throw (ex-info "Replay state escapes its output directory" {:child child}))))
+    (when-not (= (str (fs/path out "origin.git"))
+                 (replay/git! (:chain-clone opts) "remote" "get-url" "origin"))
+      (throw (ex-info "Repeat requires the replay's local origin" {})))
+    (doseq [role ["release" "governance"]]
+      (when-not (= (get-in @fixture/keys* [role "pub"])
+                   (string/trim (slurp (str (fs/path out (str role ".pub"))))))
+        (throw (ex-info "Repeat requires public fixture keys" {:role role}))))
+    (let [commit (main/source-provenance! (:aozora-root opts))
+          recording (json/read-json (slurp recording))
+          round (get-in recording ["rounds" (get-in recording ["revisions" commit])])
+          provider (recorded-provider evidence-root (get round "responses"))
+          opts (assoc opts :as-of (get round "as_of") :aozora-fetch (:fetch provider))
+          before (replay/git! (:chain-clone opts) "rev-parse" "HEAD")
+          run (measured-release! opts)
+          _ ((:assert-complete! provider))
+          served (replay/measure #(main/serving-activate! opts))
+          result {:release (:result run) :served (:result served)}]
+      (when-not (and (= :already-published (get-in run [:result :outcome]))
+                     (zero? (:executed-stages run))
+                     (= before (replay/git! (:chain-clone opts) "rev-parse" "HEAD"))
+                     (= before (get-in served [:result :commit]))
+                     (get-in served [:result :reused?]))
+        (throw (ex-info "Repeated publication changed the fixture" {:result result})))
+      (let [row {:release-ms (:milliseconds run) :phases (:phases run)
+                 :serving-ms (:milliseconds served) :executed-stages (:executed-stages run)
+                 :result result}]
+        (println (json/write-json-str row))
+        row))))
+
+(defn compare!
+  "Compare installed replay programs in ABBA/BAAB order on one completed fixture.
+  Each child has a fresh JVM. Results and GNU time measurements remain under --out."
+  [{:keys [baseline candidate time-bin out repeat-run recording evidence-root concurrency]}]
+  (fs/create-dir out)
+  (let [rows
+        (mapv
+         (fn [index variant]
+           (let [program (if (= variant "A") baseline candidate)
+                 timing (str (fs/path out (str index ".time")))
+                 child (process/sh time-bin "--output" timing "--format" "%e %U %S %M"
+                                   program "--repeat-run" repeat-run "--recording" recording
+                                   "--evidence-root" evidence-root "--concurrency" (str (or concurrency 1)))]
+             (spit (str (fs/path out (str index ".stdout"))) (:out child))
+             (spit (str (fs/path out (str index ".stderr"))) (:err child))
+             (when-not (zero? (:exit child))
+               (throw (ex-info "Publication comparison failed" {:index index :exit (:exit child)})))
+             (let [[elapsed user system rss] (mapv parse-double
+                                                   (string/split (string/trim (slurp timing)) #"\s+"))
+                   row (assoc (json/read-json (last (string/split-lines (:out child))))
+                              "index" index "variant" variant "program" program
+                              "elapsed-seconds" elapsed "user-seconds" user "system-seconds" system
+                              "peak-rss-kib" rss)]
+               (spit (str (fs/path out "measurements.jsonl"))
+                     (str (json/write-json-str row) "\n") :append true)
+               (println (json/write-json-str row)) (flush)
+               row)))
+         (range) ["A" "B" "B" "A" "B" "A" "A" "B"])]
+    (when-not (apply = (map #(get % "result") rows))
+      (throw (ex-info "Publication variants produced different results" {:out out})))
+    rows))
+
 (defn -main [& args]
   (try
-    (replay! (cli/parse-opts args {:coerce {:concurrency :long :limit :long}}))
+    (let [opts (cli/parse-opts args {:coerce {:concurrency :long :limit :long}})]
+      (cond (:baseline opts) (compare! opts)
+            (:repeat-run opts) (repeat! opts)
+            :else (replay! opts)))
     (finally (shutdown-agents))))

@@ -89,7 +89,9 @@
     (try
       (is (= live-observation replay-observation))
       (with-redefs-fn {#'main/build-stages (constantly (dissoc corpus/stage-set :fidelity))}
-        #(is (= 5 (:revisions (publication/replay! input)))))
+        #(do (is (= 5 (:revisions (publication/replay! input))))
+             (is (zero? (:executed-stages
+                         (publication/repeat! (assoc input :repeat-run (:out input))))))))
       (let [rows (mapv json/read-json (string/split-lines
                                        (slurp (str (fs/path (:out input) "measurements.jsonl")))))]
         (is (= 6 (count rows)))
@@ -98,6 +100,7 @@
         (is (= [1 0 1 0 0] (mapv #(get-in % ["works-delta" "added"]) (rest rows))))
         (is (= [0 1 0 1 0] (mapv #(get-in % ["works-delta" "removed"]) (rest rows))))
         (is (pos? (get-in rows [1 "executed-stages"])))
+        (is (pos? (reduce + (vals (get-in rows [1 "assessment-executions"])))))
         (is (every? zero? (map #(get % "executed-stages") (drop 2 rows)))))
       (is (= last-commit (main/source-provenance! source)))
       (is (thrown? java.nio.file.FileAlreadyExistsException (publication/replay! input)))

@@ -17,6 +17,7 @@
        "<ruby><rb><g ref='#g1'>犍</g>陀多</rb><rt>かんだた</rt></ruby>。</s></p>"
        "<note type='source-attribution'><seg type='source-line'>底本：本</seg><lb/>"
        "<seg type='source-line' style='padding-inline-start: 3em'>初刷</seg></note>"
+       "<note type='transcriber-note'><seg type='source-line'>入力：人</seg></note>"
        "</div></body></text></TEI>"))
 
 (def plaintext "一\n\n　池の　底に、犍陀多。\n")
@@ -65,7 +66,7 @@
     (is (= "passed" (get r "status")))
     (is (= "windows-31j" (get r "source_encoding"))))
   (let [s (str/replace source "\n\n底本：" "\n［＃地から１字上げ］（日付）\n\n底本：")
-        t (str/replace tei "<note " "<p xmlns:abc='https://w3id.org/abc/ns/tei' abc:layout-kind='chitsuki' abc:layout-params='align=right;offset-from-end=1'>（日付）</p><note ")
+        t (str/replace-first tei "<note " "<p xmlns:abc='https://w3id.org/abc/ns/tei' abc:layout-kind='chitsuki' abc:layout-params='align=right;offset-from-end=1'>（日付）</p><note ")
         r (report s t (str plaintext "（日付）\n"))]
     (is (= "passed" (status r "closing-date-layout")))
     (is (= "passed" (get r "status")))
@@ -74,12 +75,12 @@
 
 (deftest structure-and-zero-indentation-are-source-dependent
   (let [s (str/replace source "\n\n底本：" "\n次。\n\n底本：")
-        t (str/replace tei "<note " "<p>次。</p><note ")
+        t (str/replace-first tei "<note " "<p>次。</p><note ")
         p (str plaintext "次。\n")]
     (is (= "passed" (get (report s t p) "status"))))
   (let [moved (-> tei
                   (str/replace "<head n='2' style='padding-inline-start: 8em'>一</head>" "")
-                  (str/replace "<note " "<head n='2' style='padding-inline-start: 8em'>一</head><note "))]
+                  (str/replace-first "<note " "<head n='2' style='padding-inline-start: 8em'>一</head><note "))]
     (is (= "failed" (status (report source moved plaintext) "tei-block-order"))))
   (let [s (str/replace source "\n\n底本：" "\n次。\n\n底本：")
         t (-> tei
@@ -94,3 +95,14 @@
                          plaintext) "tei-source-note-layout")))
   (is (= "failed" (get (report source (str/replace tei "http://www.tei-c.org/ns/1.0" "urn:other")
                                plaintext) "status"))))
+
+(deftest colophon-explanations-and-credits-are-preserved
+  (let [note "※「□」には、底本では「◆」が内接しています。"
+        s (str/replace source "入力：人" (str note "\n入力：人"))
+        t (str/replace tei "<seg type='source-line'>入力：人</seg>"
+                       (str "<seg type='source-line'>" note "</seg><lb/>"
+                            "<seg type='source-line'>入力：人</seg>"))]
+    (is (= "passed" (get (report s t plaintext) "status")))
+    (is (= "failed" (status (report s tei plaintext) "tei-source-note-layout")))
+    (is (= "failed" (status (report s (str/replace t "入力：人" "入力：別人") plaintext)
+                            "tei-source-note-layout")))))

@@ -103,7 +103,6 @@
         (when (= 2 (count parts))
           {:lines (mapv parse-line (remove str/blank? (str/split-lines (first parts))))
            :notes (->> (str/split-lines (second parts))
-                       (take-while #(not (str/starts-with? % "入力：")))
                        (remove str/blank?) vec)})))))
 
 (defn- result [id status message]
@@ -126,9 +125,9 @@
                         (map #(vector % (visible %)))
                         (remove #(str/blank? (second %))) vec)
         source-paragraphs (vec (remove :heading lines))
-        note (first (filter #(= "source-attribution" (attr % "type"))
-                            (elements doc "note")))
-        note-lines (when note (vec (elements note "seg")))
+        source-notes (filter #(#{"source-attribution" "transcriber-note"} (attr % "type"))
+                             (elements doc "note"))
+        note-lines (vec (mapcat #(elements % "seg") source-notes))
         indent-style? (fn [node property n]
                         (let [style (or (attr node "style") "")]
                           (or (and (zero? n) (not (str/includes? style property)))
@@ -218,4 +217,4 @@
                     (statuses "not-evaluated") "not-evaluated" :else "passed")
      "checks" checks
      "limitations" ["Limited to separator-delimited Aozora prose with a 底本 colophon, basic ruby, plane-1 third-level JIS gaiji, middle headings, and leading fullwidth indentation."
-                    "Blank-line spacing, title/author metadata and colophon fields after 入力 are not certified. Passing is scoped to these comparisons, not complete editorial fidelity."]}))
+                    "Blank-line spacing and title/author metadata are not certified. Passing is scoped to these comparisons, not complete editorial fidelity."]}))

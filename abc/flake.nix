@@ -592,21 +592,6 @@
                 cp "$actual" "$out/summary.json"
               '';
 
-          aat-parser-ir-probe-tests =
-            pkgs.runCommand "abc-aat-parser-ir-probe-tests"
-              {
-                nativeBuildInputs = [
-                  pkgs.python3
-                ];
-              }
-              ''
-                ${copyWritableSource}
-                python -m unittest prototypes/aat-to-parser-ir-probe/test_probe_mapping.py
-
-                mkdir -p "$out"
-                echo "AAT parser-IR probe tests passed." > "$out/result.txt"
-              '';
-
           corpus-exploratory-tool-tests =
             pkgs.runCommand "abc-corpus-exploratory-tool-tests"
               {

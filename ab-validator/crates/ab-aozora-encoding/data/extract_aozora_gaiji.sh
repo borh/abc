@@ -7,8 +7,8 @@
 #
 # Steps:
 #   1. download Chuki.xml (~4 MB, CC0)
-#   2. awk-walk it, emitting `description<TAB>character` rows
-#   3. perl-filter: keep only single-codepoint values, dedupe,
+#   2. extract descriptions, source characters, and explicit Unicode codes
+#   3. perl-filter: use explicit Unicode for composed glyphs, dedupe,
 #      decode XML entities, format codepoint as hex
 #   4. prepend the schema-comment header
 #
@@ -30,18 +30,26 @@ curl -sLf --max-time 60 -o "$TMP/Chuki.xml" "$UPSTREAM"
 
 echo "→ awk-extracting raw pairs"
 awk '
-  /<entry / { in_entry=1; char=""; desc=""; next }
+  /<entry / { in_entry=1; char=""; desc=""; unicode=""; in_characters=0; components=0; next }
   /<\/entry>/ {
-    if (char != "" && desc != "") print desc "\t" char;
+    if (char != "" && desc != "") print desc "\t" char "\t" unicode "\t" components;
     in_entry=0; char=""; desc=""; next
   }
+  in_entry && /<characters>/ { in_characters=1; next }
+  in_entry && /<\/characters>/ { in_characters=0; next }
   in_entry && /<character>/ {
-    if (char == "") {
-      line = $0;
-      sub(/.*<character>/, "", line);
-      sub(/<\/character>.*/, "", line);
-      char = line;
-    }
+    line = $0;
+    sub(/.*<character>/, "", line);
+    sub(/<\/character>.*/, "", line);
+    if (in_characters) components++;
+    if (in_characters || char == "") char = char line;
+    next
+  }
+  in_entry && /<unicode code=/ {
+    line = $0;
+    sub(/.*code="/, "", line);
+    sub(/".*/, "", line);
+    unicode = line;
     next
   }
   in_entry && /<description>/ {
@@ -60,10 +68,15 @@ perl -CSD -E '
   my %seen;
   while (<>) {
     chomp;
-    my ($desc, $char) = split /\t/, $_, 2;
+    my ($desc, $char, $unicode, $components) = split /\t/, $_, 4;
     next unless defined $desc && defined $char;
     next if $desc eq "" || $char eq "";
-    next unless length($char) == 1;            # exactly one codepoint
+    if ($components > 1) {
+      next unless defined $unicode && $unicode =~ /\A[0-9A-Fa-f]{4,6}\z/;
+      my $codepoint = hex $unicode;
+      next if $codepoint > 0x10FFFF || ($codepoint >= 0xD800 && $codepoint <= 0xDFFF);
+      $char = chr $codepoint;
+    }
     next if $desc =~ /[\x00-\x1F]/;
     # decode XML entities (apply &amp; LAST so it does not double-decode)
     for my $s ($desc, $char) {
@@ -73,6 +86,7 @@ perl -CSD -E '
       $s =~ s/&apos;/'\''/g;
       $s =~ s/&amp;/&/g;
     }
+    next unless length($char) == 1;
     next if $seen{$desc}++;
     say "$desc\t" . sprintf("%X", ord $char);
   }
@@ -88,7 +102,8 @@ echo "→ writing $OUT"
   echo "# License: CC0 1.0 Universal (Public Domain Dedication)."
   echo "#"
   echo "# Filtering applied during extraction:"
-  echo "#  * exactly 1 Unicode codepoint per entry (multi-codepoint forms dropped)"
+  echo "#  * composed glyphs use the explicit Unicode code; omit them when absent"
+  echo "#  * otherwise retain exactly 1 Unicode codepoint per entry"
   echo "#  * surrounding 「」 stripped from descriptions"
   echo "#  * XML entities (&lt;, &gt;, &amp;) decoded"
   echo "#  * first-wins on duplicate descriptions"

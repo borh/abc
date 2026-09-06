@@ -1351,6 +1351,21 @@ mod tests {
     }
 
     #[test]
+    fn description_table_does_not_truncate_composed_characters() {
+        for (description, expected) in [
+            ("糸＋率", Some('\u{7E42}')),
+            ("口＋苦", Some('\u{20E0B}')),
+            ("冫＋車", None),
+        ] {
+            assert_eq!(
+                lookup(None, None, description),
+                expected.map(Resolved::Char),
+                "{description}"
+            );
+        }
+    }
+
+    #[test]
     fn description_table_preserves_special_placeholders() {
         // 〓 / 〻 are hand-curated specials kept in
         // `aozora-gaiji-special.tsv` and merged into the generated map.

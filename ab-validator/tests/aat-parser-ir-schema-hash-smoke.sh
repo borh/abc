@@ -10,7 +10,8 @@ out="$(python "$repo_root/reports/aat-fidelity/aat_parser_ir_mapping/c14n.py" \
 
 printf '%s\n' "$out"
 
-printf '%s\n' "$out" | rg -F \
-  "$abc_root/schemas/aat-parser-ir-mapping.schema.json	sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2"
-printf '%s\n' "$out" | rg -F \
-  "$abc_root/schemas/parser-ir.schema.json	sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec"
+for schema_name in aat-parser-ir-mapping.schema.json parser-ir.schema.json; do
+  expected_hash="$(jq -er --arg id "https://w3id.org/abc/schemas/$schema_name" \
+    '.schemas[] | select(.id == $id) | .hash' "$abc_root/schemas/schema-contracts.json")"
+  printf '%s\n' "$out" | rg -F "$abc_root/schemas/$schema_name"$'\t'"$expected_hash"
+done

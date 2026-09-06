@@ -136,7 +136,7 @@ jq -e 'any(.transform_rule_descriptions[]; .category == "UNSUPPORTED" and .aat_p
 jq -e 'all(.transform_rule_descriptions[]; (.category != "LOSS") or ((.description | contains("warigaki")) | not))' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .category == "AMBIGUITY" and .parser_ir_pointer == "span")' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .aat_pointer == "blocks[].content[].gaiji.description" and .parser_ir_pointer == "gaiji.raw_marker")' "$out_dir/mapping.json"
-jq -e 'any(.transform_rule_descriptions[]; .category == "LOSS" and .aat_pointer == "blocks[].content[].ruby.base_content")' "$out_dir/mapping.json"
+jq -e 'all(.transform_rule_descriptions[]; .category != "LOSS" or .aat_pointer != "blocks[].content[].ruby.base_content")' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .category == "LOSS" and .aat_pointer == "blocks[].content[].ruby.reading_content")' "$out_dir/mapping.json"
 jq -e 'all(.transform_rule_descriptions[]; .aat_pointer != "blocks[].content[].gaiji.raw_marker" and .aat_pointer != "blocks[].content[].gaiji.unicode")' "$out_dir/mapping.json"
 jq -e 'all(.transform_rule_descriptions[]; (.aat_pointer // "") | contains("/") | not)' "$out_dir/mapping.json"

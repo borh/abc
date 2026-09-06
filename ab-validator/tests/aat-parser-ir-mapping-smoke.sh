@@ -5,6 +5,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$repo_root/tests/lib/smoke-env.sh"
 out_dir="${AB_DB_ROOT:-$repo_root/scratch/state}/aat-fidelity/aat-parser-ir-mapping-smoke"
 abc_root="${AB_ABC_ROOT:-$repo_root/data/abc-schemas}"
+parser_ir_schema_hash="$(jq -er '.schemas[] | select(.id == "https://w3id.org/abc/schemas/parser-ir.schema.json") | .hash' "$abc_root/schemas/schema-contracts.json")"
 
 # The normal lane audits the pinned five-adapter corpus. Nix checks cannot
 # depend on machine-local corpus paths, so their hermetic lane exercises the
@@ -20,7 +21,7 @@ if [[ "${AB_MAPPING_SMOKE_HERMETIC:-0}" == "1" ]]; then
   for mapping in \
     "$repo_root/data/aat-to-parser-ir-mapping-v1.json" \
     "$repo_root/data/aat-to-parser-ir-mapping-v2.json"; do
-    jq -e '.target_parser_ir_schema_hash == "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec"' "$mapping"
+    jq -e --arg hash "$parser_ir_schema_hash" '.target_parser_ir_schema_hash == $hash' "$mapping"
     jq -e 'any(.transform_rule_descriptions[]; .aat_pointer == "meta.primary_text_hash" and .parser_ir_pointer == "source.primary_text_hash")' "$mapping"
     jq -e 'any(.transform_rule_descriptions[]; .aat_pointer == "meta.source_hash" and .parser_ir_pointer == "source.primary_text_hash")' "$mapping"
     jq -e 'all(.transform_rule_descriptions[]; .parser_ir_pointer != "source.work_content_hash")' "$mapping"
@@ -88,7 +89,7 @@ jq -e '(.aat_dirs | length) == 5' "$out_dir/summary.json"
 jq -e 'all(.transform_rule_descriptions[]; .aat_pointer != "meta.adapter" and .aat_pointer != "meta.adapter_version")' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .category == "LOSS" and .aat_pointer == "meta.parse_complete")' "$out_dir/mapping.json"
 jq -e '.mapping_schema_hash == "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2"' "$out_dir/summary.json"
-jq -e '.target_parser_ir_schema_hash == "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec"' "$out_dir/summary.json"
+jq -e --arg hash "$parser_ir_schema_hash" '.target_parser_ir_schema_hash == $hash' "$out_dir/summary.json"
 jq -e 'all(.transform_rule_descriptions[]; (.category != "STRUCTURAL") or ((.aat_pointer // "") | contains("paragraph") | not))' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .category == "UNSUPPORTED" and (.description | test("warigaki")))' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .category == "AMBIGUITY" and .parser_ir_pointer == "span")' "$out_dir/mapping.json"

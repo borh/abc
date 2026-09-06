@@ -782,7 +782,12 @@ fn mapping_preflight_accepts_checked_in_v1_artifact() {
         mapping.target_parser_ir_schema_hash,
         schema_hash(&schemas.parser_ir_schema).unwrap()
     );
-    assert_eq!(mapping.transform_rule_descriptions.len(), 681);
+    assert!(mapping.transform_rule_descriptions.iter().all(|rule| {
+        !rule.aat_pointer.as_deref().is_some_and(|pointer| {
+            rule.category == "LOSS"
+                && (pointer.ends_with("heading.indent") || pointer.ends_with("ruby.base_content"))
+        })
+    }));
     assert!(mapping.transform_rule_descriptions.iter().all(|rule| {
         !matches!(
             rule.parser_ir_pointer.as_deref(),

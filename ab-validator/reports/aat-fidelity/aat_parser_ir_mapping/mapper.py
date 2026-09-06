@@ -228,7 +228,6 @@ def map_inline(node, offset, ledger_list, path):
         }, span_end(span, fallback_end)
 
     if kind == "ruby":
-        # base_content/reading_content nesting is still outside parser-IR's ruby shape.
         base = node.get("base", "")
         fallback_end = offset + utf8_len(base)
         pir_span = map_span(span, offset, fallback_end, ledger_list, path)
@@ -241,15 +240,6 @@ def map_inline(node, offset, ledger_list, path):
                 "AAT has no scope field; defaulted to 'explicit'",
             )
         )
-        if node.get("base_content"):
-            ledger_list.append(
-                ledger(
-                    "LOSS",
-                    f"{path}.ruby.base_content",
-                    "(none)",
-                    "nested ruby base_content substructure flattened away",
-                )
-            )
         if node.get("reading_content"):
             ledger_list.append(
                 ledger(
@@ -259,7 +249,7 @@ def map_inline(node, offset, ledger_list, path):
                     "nested ruby reading_content substructure flattened away",
                 )
             )
-        return {
+        result = {
             "type": "ruby",
             "span": pir_span,
             "ruby": {
@@ -268,7 +258,18 @@ def map_inline(node, offset, ledger_list, path):
                 "scope": scope,
                 "direction": node.get("direction"),
             },
-        }, span_end(span, fallback_end)
+        }
+        if "base_content" in node:
+            children = []
+            child_offset = offset
+            for i, child in enumerate(node["base_content"]):
+                mapped, child_offset = map_inline(
+                    child, child_offset, ledger_list, f"{path}.ruby.base_content[{i}]"
+                )
+                if mapped is not None:
+                    children.append(mapped)
+            result["inline_children"] = children
+        return result, span_end(span, fallback_end)
 
     if kind == "gaiji":
         visible = node.get("resolved") or node.get("description", "")
@@ -569,6 +570,8 @@ def map_block(block, nodes, ledger_list, offset, path):
                 "level": level,
             }
         )
+        if "indent" in block or "x-indent" in block:
+            nodes[-1]["indent"] = block.get("indent", block.get("x-indent"))
         offset = span_end(block.get("span"), fallback_end)
 
     elif kind == "paragraph":

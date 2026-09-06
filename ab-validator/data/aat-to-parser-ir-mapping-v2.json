@@ -1375,28 +1375,12 @@
       "description": "Observed 3 occurrences; first_path=blocks[11].children[0].children[0].content[1].gaiji.unresolved_reason. unresolved_reason='unresolved' has no parser-IR field"
     },
     {
-      "rule_id": "L-09",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].children[].children[].content[].ruby.base_content",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 112 occurrences; first_path=blocks[30].children[5].children[0].content[1].ruby.base_content. nested ruby base_content substructure flattened away"
-    },
-    {
       "rule_id": "L-10",
       "category": "LOSS",
       "aat_pointer": "blocks[].children[].children[].content[].ruby.reading_content",
       "parser_ir_pointer": null,
       "action": "drop",
       "description": "Observed 39 occurrences; first_path=blocks[128].children[0].children[0].content[2].ruby.reading_content. nested ruby reading_content substructure flattened away"
-    },
-    {
-      "rule_id": "L-11",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].children[].children[].heading.content[].ruby.base_content",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 1 occurrence; first_path=blocks[42].children[0].children[0].heading.content[1].ruby.base_content. nested ruby base_content substructure flattened away"
     },
     {
       "rule_id": "L-12",
@@ -2519,14 +2503,6 @@
       "description": "Observed 812 occurrences; first_path=blocks[3].children[0].content[1].content[2].raw. style text projection dropped inline kind 'raw'"
     },
     {
-      "rule_id": "L-152",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].children[].content[].content[].ruby.base_content",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 926 occurrences; first_path=blocks[2].children[0].content[0].content[1].ruby.base_content. nested ruby base_content substructure flattened away"
-    },
-    {
       "rule_id": "L-153",
       "category": "LOSS",
       "aat_pointer": "blocks[].children[].content[].content[].ruby.reading",
@@ -2575,28 +2551,12 @@
       "description": "Observed 1874 occurrences; first_path=blocks[25].children[4].content[1].gaiji.unresolved_reason. unresolved_reason='image_fallback' has no parser-IR field"
     },
     {
-      "rule_id": "L-159",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].children[].content[].ruby.base_content",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 180100 occurrences; first_path=blocks[16].children[0].content[1].ruby.base_content. nested ruby base_content substructure flattened away"
-    },
-    {
       "rule_id": "L-160",
       "category": "LOSS",
       "aat_pointer": "blocks[].children[].content[].ruby.reading_content",
       "parser_ir_pointer": null,
       "action": "drop",
       "description": "Observed 60953 occurrences; first_path=blocks[0].children[0].content[1].ruby.reading_content. nested ruby reading_content substructure flattened away"
-    },
-    {
-      "rule_id": "L-161",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].children[].content[].warigaki.upper[].ruby.base_content",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 12 occurrences; first_path=blocks[81].children[0].content[0].warigaki.upper[0].ruby.base_content. nested ruby base_content substructure flattened away"
     },
     {
       "rule_id": "L-162",
@@ -2645,14 +2605,6 @@
       "parser_ir_pointer": null,
       "action": "drop",
       "description": "Observed 20 occurrences; first_path=blocks[1].children[0].heading.content[1].gaiji.unresolved_reason. unresolved_reason='image_fallback' has no parser-IR field"
-    },
-    {
-      "rule_id": "L-168",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].children[].heading.content[].ruby.base_content",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 5395 occurrences; first_path=blocks[141].children[0].heading.content[1].ruby.base_content. nested ruby base_content substructure flattened away"
     },
     {
       "rule_id": "L-169",
@@ -4247,14 +4199,6 @@
       "description": "Observed 4359 occurrences; first_path=blocks[108].content[1].content[1].raw. style text projection dropped inline kind 'raw'"
     },
     {
-      "rule_id": "L-368",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].content[].content[].ruby.base_content",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 1058304 occurrences; first_path=blocks[0].content[0].content[2].ruby.base_content. nested ruby base_content substructure flattened away"
-    },
-    {
       "rule_id": "L-369",
       "category": "LOSS",
       "aat_pointer": "blocks[].content[].content[].ruby.reading",
@@ -4285,14 +4229,6 @@
       "parser_ir_pointer": "(emphasis.text)",
       "action": "drop",
       "description": "Observed 1 occurrence; first_path=blocks[133].content[0].content[2].upper[1].ruby.reading. style text projection kept ruby base text only; reading not represented inside emphasis.text"
-    },
-    {
-      "rule_id": "L-373",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].content[].content[].warigaki.upper[].ruby.base_content",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 6 occurrences; first_path=blocks[0].content[0].content[3].warigaki.upper[1].ruby.base_content. nested ruby base_content substructure flattened away"
     },
     {
       "rule_id": "L-374",
@@ -4343,14 +4279,6 @@
       "description": "Observed 20140 occurrences; first_path=blocks[5].content[3].gaiji.unresolved_reason. unresolved_reason='unresolved' has no parser-IR field"
     },
     {
-      "rule_id": "L-380",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].content[].ruby.base_content",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 4710991 occurrences; first_path=blocks[5].content[15].ruby.base_content. nested ruby base_content substructure flattened away"
-    },
-    {
       "rule_id": "L-381",
       "category": "LOSS",
       "aat_pointer": "blocks[].content[].ruby.reading_content",
@@ -4373,14 +4301,6 @@
       "parser_ir_pointer": null,
       "action": "drop",
       "description": "Observed 2 occurrences; first_path=blocks[40].content[45].warigaki.upper[1].gaiji.unresolved_reason. unresolved_reason='unresolved' has no parser-IR field"
-    },
-    {
-      "rule_id": "L-384",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].content[].warigaki.upper[].ruby.base_content",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 7 occurrences; first_path=blocks[81].content[1].warigaki.upper[1].ruby.base_content. nested ruby base_content substructure flattened away"
     },
     {
       "rule_id": "L-385",
@@ -4999,14 +4919,6 @@
       "description": "Observed 13 occurrences; first_path=blocks[515].heading.content[0].gaiji.unresolved_reason. unresolved_reason='image_fallback' has no parser-IR field"
     },
     {
-      "rule_id": "L-462",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].heading.content[].ruby.base_content",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 17177 occurrences; first_path=blocks[4].heading.content[2].ruby.base_content. nested ruby base_content substructure flattened away"
-    },
-    {
       "rule_id": "L-463",
       "category": "LOSS",
       "aat_pointer": "blocks[].heading.content[].ruby.reading_content",
@@ -5453,14 +5365,6 @@
       "parser_ir_pointer": null,
       "action": "flatten",
       "description": "jizume_block container collapsed on mixed-children fallback; layout not projected; children recurse without inherited layout"
-    },
-    {
-      "rule_id": "L-468",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].heading.indent",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "heading indentation has no parser-IR heading layout field; recorded, not projected."
     },
     {
       "rule_id": "S-12",

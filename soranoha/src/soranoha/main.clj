@@ -689,6 +689,38 @@
                "blobs" (:blobs result)}))
     result))
 
+(defn serving-activate!
+  "Activate a verified export under the deployment's provisioned serving root."
+  [{:keys [chain-clone branch serve-root release-pub governance-pub]}]
+  (require-flags! "serving-activate"
+                  {"--chain-clone" chain-clone "--serve-root" serve-root
+                   "--release-pub" release-pub "--governance-pub" governance-pub})
+  (let [result (serve/activate!
+                {:clone chain-clone :branch branch :serve-root serve-root
+                 :pinned-keys (pinned-keys-from-files release-pub governance-pub)})]
+    (println (record-json/write-deterministic-json-str
+              {"head" (:head result) "commit" (:commit result)
+               "releases" (:releases result) "blobs" (:blobs result)
+               "reused" (:reused? result)}))
+    result))
+
+(defn deployment-options
+  "Read deployment-owned CLI defaults. Explicit invocation options take precedence.
+  Only paths and repository coordinates belong in this non-secret configuration."
+  [opts]
+  (if-let [path (:deployment opts)]
+    (let [allowed #{"root" "aozora-root" "chain-clone" "branch" "upstream-origin"
+                    "evidence-root" "serve-root" "release-pub" "governance-pub"}
+          values (json/read-json (slurp path))]
+      (when-not (and (map? values)
+                     (every? (fn [[k v]] (and (contains? allowed k)
+                                              (string? v) (not (string/blank? v))))
+                             values))
+        (throw (ex-info "Invalid deployment configuration"
+                        {:reason :invalid-deployment-configuration :path path})))
+      (merge (update-keys values keyword) opts))
+    opts))
+
 (defn archive-verify!
   "One archival observation: run the chain verifier with the archived
   copy as the sole repository view and print the disposable report,
@@ -746,7 +778,7 @@
    :report-a {:coerce :string}
    :report-b {:coerce :string}
    :chain-clone {:coerce :string}
-   :branch {:coerce :string :default "main"}
+   :branch {:coerce :string}
    :upstream-origin {:coerce :string}
    :assessment {:coerce :string}
    :assessment-source {:coerce :string}
@@ -763,6 +795,8 @@
    :event {:coerce :string}
    :event-sig {:coerce :string}
    :out {:coerce :string}
+   :serve-root {:coerce :string}
+   :deployment {:coerce :string}
    :archive {:coerce :string}
    :commit {:coerce :string}
    ;; default pinned to the measured resource envelope (peak RSS < 8 GiB
@@ -774,32 +808,34 @@
 
 (defn -main [& args]
   (let [[command & rest-args] args
-        opts (cli/parse-opts rest-args {:spec cli-spec})]
+        parsed (cli/parse-opts rest-args {:spec cli-spec})]
     (try
-      (case command
-        "build" (build! opts)
-        "delta" (when-not (get (delta! opts) "ok")
-                  (System/exit 1))
+      (let [opts (merge {:branch "main"} (deployment-options parsed))]
+        (case command
+          "build" (build! opts)
+          "delta" (when-not (get (delta! opts) "ok")
+                    (System/exit 1))
         ;; scheduled-runner exit contract: success covers the no-op; a
         ;; requeue asks the next scheduled run to retry from the new head;
         ;; a determinism halt is an ordinary failure
-        "release" (let [{:keys [outcome]} (release! opts)]
-                    (when-not (#{:published :already-published} outcome)
-                      (System/exit (if (= :requeue outcome) 3 1))))
-        "governance" (let [{:keys [outcome]} (governance! opts)]
-                       (when-not (#{:published :already-applied} outcome)
-                         (System/exit 1)))
-        "serving-tree" (serving-tree! opts)
-        "publication-init" (publication-init! opts)
-        "assessment-evaluate" (assessment-evaluate! opts)
-        "aozora-reliance-prepare" (aozora-reliance-prepare! opts)
-        "archive-verify" (when-not (= :success (:result (archive-verify! opts)))
-                           (System/exit 1))
-        "verify" (when-not (:ok? (verify! opts))
-                   (System/exit 1))
-        (do (binding [*out* *err*]
-              (println "usage: build|delta|release|governance|serving-tree|publication-init|assessment-evaluate|aozora-reliance-prepare|archive-verify|verify [--root R --aozora-root A --assets-root S ...]"))
-            (System/exit 2)))
+          "release" (let [{:keys [outcome]} (release! opts)]
+                      (when-not (#{:published :already-published} outcome)
+                        (System/exit (if (= :requeue outcome) 3 1))))
+          "governance" (let [{:keys [outcome]} (governance! opts)]
+                         (when-not (#{:published :already-applied} outcome)
+                           (System/exit 1)))
+          "serving-tree" (serving-tree! opts)
+          "serving-activate" (serving-activate! opts)
+          "publication-init" (publication-init! opts)
+          "assessment-evaluate" (assessment-evaluate! opts)
+          "aozora-reliance-prepare" (aozora-reliance-prepare! opts)
+          "archive-verify" (when-not (= :success (:result (archive-verify! opts)))
+                             (System/exit 1))
+          "verify" (when-not (:ok? (verify! opts))
+                     (System/exit 1))
+          (do (binding [*out* *err*]
+                (println "usage: build|delta|release|governance|serving-tree|serving-activate|publication-init|assessment-evaluate|aozora-reliance-prepare|archive-verify|verify [--root R --aozora-root A --assets-root S ...]"))
+              (System/exit 2))))
       (System/exit 0)
       (catch clojure.lang.ExceptionInfo e
         (binding [*out* *err*]

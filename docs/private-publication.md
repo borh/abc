@@ -32,7 +32,7 @@ nix run .#soranoha-kernel -- assessment-evaluate \
 
 nix run .#soranoha-kernel -- build \
   --root "$prod/root" --aozora-root "$prod/aozora" \
-  --assets-root "$PWD/abc" --out "$prod/review/full-corpus" \
+  --assets-root "$PWD/soranoha" --out "$prod/review/full-corpus" \
   > "$prod/review/full-build.log"
 ```
 
@@ -53,6 +53,29 @@ Forgejo Actions. The workflow uses the existing release secret without exposing
 it to build children, publishes with both role pins, and installs a verified
 serving tree. Inspect `/releases/HEAD`, the corresponding manifest and signature,
 and the work links named by that manifest. The root URL is not a corpus index.
+
+The NixOS publisher profile provisions the source and chain clones, shared serving
+directories, SSH transport, and `/etc/soranoha/publisher.json`. The workflow reads
+that configuration through `--deployment`; explicit CLI flags override configured
+values. Configuration contains paths and repository coordinates, never signing
+keys. Apply the NixOS configuration before dispatching a workflow that consumes it.
+
+To verify and activate the existing publication again, as the publisher with its
+configured SSH transport:
+
+```sh
+nix run .#soranoha-kernel -- serving-activate \
+  --deployment /etc/soranoha/publisher.json
+```
+
+Activation verifies the complete publication chain. It writes a new export under
+`serve/trees/COMMIT`, or checks every byte, symlink and path in an existing export
+before reusing it. It grants the serving group read access, checks that origin
+has not advanced, and atomically switches `current` last. A file lock serializes
+activators. A failed verification, changed publication head, or failed pointer
+replacement leaves the previous pointer in place. Neither activation nor the
+NixOS profile deletes historical exports; storage retention and backup remain
+server responsibilities.
 
 ## Initialize an empty publication origin
 

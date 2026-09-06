@@ -15,15 +15,10 @@
 #     stdin with the variable additionally scrubbed from the child
 #     environment. (Verified: the hermetic wrapper preserves stdin; a piped
 #     wrong seed fails at the seed-pin correspondence check.)
-#     The runner owns its ssh identity and pinned
-#     known_hosts in its state root; the job addresses them by absolute
-#     path. The role pins are root-owned files under /etc/soranoha/pinned,
-#     immutable to the runner.
-#   - one root: persistent inputs and outputs live under the publisher root
-#     /var/lib/soranoha-runner/soranoha/production (kernel root, chain
-#     clone, aozora mirror) and the serving area /var/lib/soranoha-runner/
-#     serve (versioned trees + the atomic `current` pointer, group-readable
-#     to the serving principal only, `current` installed last).
+#   - deployment paths, SSH transport, role pins and directory provisioning
+#     belong to the NixOS publisher profile. The kernel reads its non-secret
+#     /etc/soranoha/publisher.json configuration and performs input preflight.
+#   - Clojure verifies exports and switches current atomically.
 #   - exit contract: release exits 0 on published/already-published (then
 #     the serving tree is exported and `current` re-pointed), 3 on requeue
 #     (clean stop — the next scheduled run retries from the new head),
@@ -48,81 +43,24 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-      - name: owner inputs present
-        # fail-closed preflight with names: the kernel would also refuse,
-        # but this states exactly which owner input is missing. The pinned
-        # keys are root-owned DEPLOYMENT configuration (/etc/soranoha/
-        # pinned), immutable to this job's own principal, never repository
-        # content (F122/F126: repo-hosted keys cannot authenticate
-        # themselves; key bytes live in the independent anchor and the
-        # pinned verifier configuration only).
-        run: |
-          PINNED=/etc/soranoha/pinned
-          missing=0
-          for f in soranoha/data/assessment-snapshot.json \
-                   soranoha/data/assessment-source.json \
-                   soranoha/data/publication-policy.edn; do
-            if [ ! -f "src/$f" ]; then
-              echo "MISSING owner input (repository): $f"
-              missing=1
-            fi
-          done
-          for f in release.pub governance.pub; do
-            if [ ! -f "$PINNED/$f" ]; then
-              echo "MISSING pinned verifier configuration: $PINNED/$f"
-              missing=1
-            fi
-          done
-          if [ "$missing" != 0 ]; then
-            echo "owner inputs incomplete; the release is fail-closed"
-            exit 1
-          fi
-
-      - name: prepare the publisher root
-        run: |
-          export PATH="/run/current-system/sw/bin:$PATH"
-          PROD=/var/lib/soranoha-runner/soranoha/production
-          umask 077
-          mkdir -p "$PROD/root"
-          if [ ! -d "$PROD/aozora/.git" ]; then
-            echo "aozora mirror absent at $PROD/aozora — one-time provisioning required"
-            exit 1
-          fi
-          if [ ! -d "$PROD/chain/.git" ]; then
-            export GIT_SSH_COMMAND="/run/current-system/sw/bin/ssh -i /var/lib/soranoha-runner/soranoha/.ssh/id_ed25519 -o UserKnownHostsFile=/var/lib/soranoha-runner/soranoha/.ssh/known_hosts -o StrictHostKeyChecking=yes"
-            git clone ssh://forgejo@speely.hyakutake-barbel.ts.net:63333/bor/soranoha-chain.git "$PROD/chain"
-          fi
-
       - name: release
         env:
           SORANOHA_RELEASE_SEED: ${{ secrets.SORANOHA_RELEASE_SEED }}
         run: |
           export PATH="/run/current-system/sw/bin:$PATH"
-          export GIT_SSH_COMMAND="/run/current-system/sw/bin/ssh -i /var/lib/soranoha-runner/soranoha/.ssh/id_ed25519 -o UserKnownHostsFile=/var/lib/soranoha-runner/soranoha/.ssh/known_hosts -o StrictHostKeyChecking=yes"
-          PROD=/var/lib/soranoha-runner/soranoha/production
           _soranoha_release_seed="$SORANOHA_RELEASE_SEED"
           export -n _soranoha_release_seed
           unset SORANOHA_RELEASE_SEED
-          evidence_args=()
-          if [ -n "${SORANOHA_EVIDENCE_ROOT:-}" ]; then
-            evidence_args=(--evidence-root "$SORANOHA_EVIDENCE_ROOT")
-          fi
           set +e
           printf '%s' "$_soranoha_release_seed" |
             env -u SORANOHA_RELEASE_SEED -u _soranoha_release_seed nix run ./src#soranoha-kernel -- release \
-            --root "$PROD/root" \
-            --aozora-root "$PROD/aozora" \
+            --deployment /etc/soranoha/publisher.json \
             --assets-root "$PWD/src/soranoha" \
-            --chain-clone "$PROD/chain" \
-            --branch main \
-            --upstream-origin https://github.com/aozorabunko/aozorabunko.git \
             --assessment "$PWD/src/soranoha/data/assessment-snapshot.json" \
             --assessment-source "$PWD/src/soranoha/data/assessment-source.json" \
             --as-of "$(date -u +%F)" \
             --policy "$PWD/src/soranoha/data/publication-policy.edn" \
-            --release-pub /etc/soranoha/pinned/release.pub \
-            --governance-pub /etc/soranoha/pinned/governance.pub \
-            --release-key /dev/stdin "${evidence_args[@]}"
+            --release-key /dev/stdin
           rc=$?
           set -e
           echo "$rc" > release.rc
@@ -132,48 +70,9 @@ jobs:
             *) exit "$rc" ;;
           esac
 
-      - name: export the serving tree and re-point current
-        # only after a successful release outcome; `current` is the
-        # readiness token, re-pointed atomically and always installed last
+      - name: activate the verified serving tree
         run: |
-          test "$(cat release.rc)" = 0 || { echo "skipping export (requeue)"; exit 0; }
+          test "$(cat release.rc)" = 0 || { echo "skipping activation (requeue)"; exit 0; }
           export PATH="/run/current-system/sw/bin:$PATH"
-          PROD=/var/lib/soranoha-runner/soranoha/production
-          SERVE=/var/lib/soranoha-runner/serve
-          export GIT_SSH_COMMAND="/run/current-system/sw/bin/ssh -i /var/lib/soranoha-runner/soranoha/.ssh/id_ed25519 -o UserKnownHostsFile=/var/lib/soranoha-runner/soranoha/.ssh/known_hosts -o StrictHostKeyChecking=yes"
-          # Publication pushes advance origin, without moving local main.
-          git -C "$PROD/chain" fetch origin main
-          head="$(git -C "$PROD/chain" rev-parse refs/remotes/origin/main)"
-          manifest="$(git -C "$PROD/chain" show "$head:releases/HEAD")"
-          umask 027
-          mkdir -p "$SERVE/trees"
-          chgrp soranoha-serve "$SERVE" "$SERVE/trees"
-          chmod 2750 "$SERVE" "$SERVE/trees"
-          if [ ! -d "$SERVE/trees/$head" ]; then
-            staging="$(mktemp -d "$SERVE/trees/.export.XXXXXX")"
-            trap 'rm -rf -- "$staging"' EXIT
-            nix run ./src#soranoha-kernel -- serving-tree \
-              --chain-clone "$PROD/chain" \
-              --branch main \
-              --out "$staging/tree" \
-              --release-pub /etc/soranoha/pinned/release.pub \
-              --governance-pub /etc/soranoha/pinned/governance.pub
-            if [ "$(git -C "$PROD/chain" rev-parse refs/remotes/origin/main)" != "$head" ] ||
-               [ "$(cat "$staging/tree/releases/HEAD")" != "$manifest" ]; then
-              echo "publication head changed during export; current unchanged"
-              exit 1
-            fi
-            chmod g+rx "$staging/tree"
-            mv -T "$staging/tree" "$SERVE/trees/$head"
-          fi
-          if [ "$(cat "$SERVE/trees/$head/releases/HEAD")" != "$manifest" ]; then
-            echo "serving tree does not match publication commit $head"
-            exit 1
-          fi
-          if [ "$(readlink "$SERVE/current" || true)" = "trees/$head" ]; then
-            echo "serving tree for $head already current"
-            exit 0
-          fi
-          ln -s "trees/$head" "$SERVE/current.new"
-          mv -T "$SERVE/current.new" "$SERVE/current"
-          echo "current -> trees/$head"
+          nix run ./src#soranoha-kernel -- serving-activate \
+            --deployment /etc/soranoha/publisher.json

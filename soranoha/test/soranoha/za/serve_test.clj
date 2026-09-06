@@ -10,6 +10,7 @@
             [clojure.test :refer [deftest is testing]]
             [clojure.string :as str]
             [soranoha.snh.view :as view]
+            [soranoha.main :as main]
             [soranoha.core.hash :as hash]
             [soranoha.snh.fixture :as fx]
             [soranoha.snh.verify :as verify]
@@ -243,3 +244,103 @@
       (is (thrown? java.nio.file.FileSystemException (export! clone out))))
     (is (= "foreign bytes" (slurp (str (fs/path out "foreign")))))
     (is (= ["tree"] (mapv fs/file-name (fs/list-dir (fs/parent out)))))))
+
+(defn- activation-opts [clone]
+  (let [root (fs/create-temp-dir {:prefix "za-activation"})]
+    (fs/create-dir (fs/path root "trees"))
+    {:clone clone :branch fx/branch :pinned-keys (fx/pinned-keys)
+     :serve-root (str root)}))
+
+(deftest activation-verifies-existing-trees-before-reuse
+  (let [{:keys [clone]} (chain-with-withdrawal!)
+        opts (activation-opts clone)
+        first-result (serve/activate! opts)
+        current (fs/path (:serve-root opts) "current")
+        tree (fs/real-path current)
+        before (tree-map tree)]
+    (is (false? (:reused? first-result)))
+    (is (= (str "trees/" (:commit first-result)) (str (fs/read-link current))))
+    (is (= (assoc first-result :reused? true) (serve/activate! opts)))
+    (is (= before (tree-map tree)))
+    (doseq [[label damage! restore!]
+            [["unexpected file"
+              #(spit (str (fs/path tree "foreign")) "foreign")
+              #(fs/delete (fs/path tree "foreign"))]
+             ["changed HEAD bytes"
+              #(spit (str (fs/path tree "releases/HEAD")) "wrong")
+              #(spit (str (fs/path tree "releases/HEAD")) (str (:head first-result) "\n"))]
+             ["wrong route"
+              #(do (fs/delete (fs/path tree "releases/latest"))
+                   (fs/create-sym-link (fs/path tree "releases/latest") "HEAD"))
+              #(do (fs/delete (fs/path tree "releases/latest"))
+                   (fs/create-sym-link (fs/path tree "releases/latest")
+                                       (str (:head first-result) ".json")))]]]
+      (testing label
+        (damage!)
+        (is (= :serving-tree-mismatch
+               (try (serve/activate! opts) nil
+                    (catch clojure.lang.ExceptionInfo e (:reason (ex-data e))))))
+        (is (= tree (fs/real-path current)))
+        (restore!)))))
+
+(deftest activation-failures-preserve-the-live-pointer
+  (let [{:keys [clone]} (chain-with-withdrawal!)
+        opts (activation-opts clone)
+        original (serve/activate! opts)
+        current (fs/path (:serve-root opts) "current")
+        old-target (fs/read-link current)
+        verify-at verify/verify-repository-at]
+    (fx/publish! clone {:admitted [slug-a]
+                        :selection-params {"config" "fixture" "round" 3}})
+    (testing "unverifiable publication"
+      (is (thrown? clojure.lang.ExceptionInfo
+                   (serve/activate! (assoc opts :pinned-keys
+                                           {:release #{} :governance #{}}))))
+      (is (= old-target (fs/read-link current))))
+    (testing "origin advances while the captured commit is exported"
+      (with-redefs [verify/verify-repository-at
+                    (fn [v commit pins]
+                      (let [result (verify-at v commit pins)]
+                        (with-redefs [verify/verify-repository-at verify-at]
+                          (fx/publish! clone {:admitted [slug-a]
+                                              :selection-params {"config" "fixture" "round" 4}}))
+                        result))]
+        (is (= :publication-head-changed
+               (try (serve/activate! opts) nil
+                    (catch clojure.lang.ExceptionInfo e (:reason (ex-data e)))))))
+      (is (= old-target (fs/read-link current))))
+    (testing "failed atomic pointer installation preserves a foreign destination"
+      (fs/delete current)
+      (fs/create-dir current)
+      (spit (str (fs/path current "foreign")) "retain")
+      (is (thrown? java.nio.file.FileSystemException (serve/activate! opts)))
+      (is (= "retain" (slurp (str (fs/path current "foreign")))))
+      (is (not-any? #(and (fs/directory? %) (str/starts-with? (fs/file-name %) ".activation."))
+                    (fs/list-dir (:serve-root opts)))))
+    (is (fs/exists? (fs/path (:serve-root opts) "trees" (:commit original))))))
+
+(deftest deployment-configuration-and-activation-compose
+  (let [{:keys [clone]} (chain-with-withdrawal!)
+        opts (activation-opts clone)
+        root (:serve-root opts)
+        config-path (fs/path root "publisher.json")
+        release-pub (fs/path root "release.pub")
+        governance-pub (fs/path root "governance.pub")]
+    (spit (str release-pub) (str (:release (fx/pinned-keys)) "\n"))
+    (spit (str governance-pub) (str (:governance (fx/pinned-keys)) "\n"))
+    (spit (str config-path)
+          (json/write-json-str {"chain-clone" clone "serve-root" root
+                                "branch" fx/branch
+                                "release-pub" (str release-pub)
+                                "governance-pub" (str governance-pub)}))
+    (let [configured (main/deployment-options {:deployment (str config-path)})
+          output (with-out-str (main/serving-activate! configured))]
+      (is (= (str/trim (slurp (str (fs/path root "current/releases/HEAD"))))
+             (get (json/read-json output) "head")))
+      (is (= "overridden" (:branch (main/deployment-options
+                                    {:deployment (str config-path) :branch "overridden"})))))
+    (doseq [invalid [{"release-key" "/secret"} {"branch" nil} ["not" "a" "map"]]]
+      (spit (str config-path) (json/write-json-str invalid))
+      (is (= :invalid-deployment-configuration
+             (try (main/deployment-options {:deployment (str config-path)}) nil
+                  (catch clojure.lang.ExceptionInfo e (:reason (ex-data e)))))))))

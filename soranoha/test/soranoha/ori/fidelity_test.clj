@@ -200,6 +200,28 @@
       (is (= "failed" (status (report s t (mutation p)) "plaintext-body")))
       (is (= "failed" (status (report s (mutation t) p) "tei-body-text"))))))
 
+(deftest gaiji-source-tokens-retain-ruby-membership-after-resolution
+  (doseq [[marker glyph prefix suffix reading]
+          [["歌記号、1-3-28" "〽" "" "銚子" "ちょうし"]
+           ["全角CC、1-13-53" "㏄" "二〇" "入" "いり"]
+           ["始め二重括弧、1-2-54" "｟" "" "誰" "た"]
+           ["ます記号、1-2-23" "〼" "" "定" "ますさだ"]]]
+    (let [s (compact-source (str prefix "※［＃" marker "］" suffix "《" reading "》"))
+          header (str "<teiHeader><charDecl><char xml:id='g'><mapping type='unicode'>" glyph "</mapping></char></charDecl></teiHeader><text>")
+          t (str/replace (compact-tei (str "<p><ruby><rb>" prefix "<g ref='#g'>" glyph "</g>" suffix
+                                           "</rb><rt>" reading "</rt></ruby></p>")) "<text>" header)
+          p (str prefix glyph suffix "\n")]
+      (is (= "passed" (get (report s t p) "status")))
+      (is (= "failed" (status (report s (str/replace t (str "<ruby><rb>" prefix "<g ref='#g'>" glyph "</g>")
+                                                     (str prefix "<g ref='#g'>" glyph "</g><ruby><rb>")) p) "tei-ruby")))))
+  (let [s (compact-source "〽銚子《ちょうし》")
+        t (compact-tei "<p>〽<ruby><rb>銚子</rb><rt>ちょうし</rt></ruby></p>")]
+    (is (= "passed" (get (report s t "〽銚子\n") "status"))))
+  (let [s (compact-source "※［＃歌記号、1-3-28］｜銚子《ちょうし》")
+        t (str/replace (compact-tei "<p><g ref='#g'>〽</g><ruby><rb>銚子</rb><rt>ちょうし</rt></ruby></p>")
+                       "<text>" "<teiHeader><charDecl><char xml:id='g'><mapping type='unicode'>〽</mapping></char></charDecl></teiHeader><text>")]
+    (is (= "passed" (get (report s t "〽銚子\n") "status")))))
+
 (deftest historical-angle-quotes-retain-nested-markup
   (let [s (compact-source "≪外≪内≫後≫。")
         t (compact-tei "<p>《外《内》後》。</p>")]

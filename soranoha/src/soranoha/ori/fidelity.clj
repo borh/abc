@@ -76,7 +76,12 @@
 (defn- decimal [s]
   (Long/parseLong (apply str (map #(Character/digit ^char % 10) s))))
 
-(def ruby-pattern #"(?:｜([^｜《》\n]+)|([\p{IsHan}々〆ヵヶ]+))《([^《》\n]+)》")
+(def ^:private gaiji-pattern #"※［＃[^］]*?、(?:第([34])水準)?([12])-([0-9]+)-([0-9]+)］")
+;; Aozora2Html groups gaiji source tokens with kanji before resolving their glyphs:
+;; https://github.com/aozorahack/aozora2html/blob/master/lib/aozora2html/tag/gaiji.rb
+(def ruby-pattern
+  (re-pattern (str "(?:｜([^｜《》\\n]+)|((?:[\\p{IsHan}々〆ヵヶ]|"
+                   "※［＃[^］]*?、(?:第[34]水準)?[12]-[0-9]+-[0-9]+］)+))《([^《》\\n]+)》")))
 
 ;; Source notation table: https://www.aozora.gr.jp/accent_separation.html
 (def ^:private accents
@@ -157,26 +162,29 @@
 
 (defn- parse-line [line]
   (let [gaijis (atom [])
-        mapped (outside-corrections line
-                                    #(str/replace (source-accents %) #"※［＃[^］]*?、(?:第([34])水準)?([12])-([0-9]+)-([0-9]+)］"
-                                                  (fn [[_ level plane row cell]]
-                                                    (let [s (or (when (or (nil? level) (= (Long/parseLong level) (+ 2 (Long/parseLong plane))))
-                                                                  (gaiji plane row cell)) "�")]
-                                                      (swap! gaijis conj s) s))))
+        rubies (atom [])
+        resolve-marker (fn [[_ level plane row cell]]
+                         (or (when (or (nil? level) (= (Long/parseLong level) (+ 2 (Long/parseLong plane))))
+                               (gaiji plane row cell)) "�"))
+        resolve-markers #(str/replace % gaiji-pattern resolve-marker)
+        unpointed-source (outside-corrections line
+                                              (fn [text]
+                                                (doseq [marker (re-seq gaiji-pattern text)]
+                                                  (swap! gaijis conj (resolve-marker marker)))
+                                                (str/replace (source-accents text) ruby-pattern
+                                                             (fn [[_ explicit implicit reading]]
+                                                               (let [base (or explicit implicit)]
+                                                                 (swap! rubies conj [(resolve-markers base) (resolve-markers reading)])
+                                                                 base)))))
+        mapped (outside-corrections unpointed-source resolve-markers)
         heading (re-matches #"［＃[０-９0-9]+字下げ］(.+)［＃「(.+)」は中見出し］" mapped)
         closing (re-find #"^［＃地から([０-９0-9]+)字上げ］" mapped)
         text (cond heading (if (= (nth heading 1) (nth heading 2))
                              (nth heading 1) mapped)
                    closing (subs mapped (count (first closing)))
                    :else mapped)
-        rubies (atom [])
-        unpointed (outside-corrections text
-                                       #(str/replace % ruby-pattern
-                                                     (fn [[_ explicit implicit reading]]
-                                                       (swap! rubies conj [(or explicit implicit) reading])
-                                                       (or explicit implicit))))
-        emphasis (source-annotations unpointed)
-        plain (or (:plain emphasis) unpointed)
+        emphasis (source-annotations text)
+        plain (or (:plain emphasis) text)
         unsupported? (boolean (re-find #"[［］《》｜※�]" plain))]
     {:plain (source-angle-quotes plain) :rubies @rubies :gaijis @gaijis
      :emphasis (mapv (fn [[start text rendition]] [start (source-angle-quotes text) rendition]) (:emphasis emphasis))

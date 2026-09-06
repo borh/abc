@@ -4863,7 +4863,7 @@ fn structured_ruby_reading_preserves_resolved_gaiji_in_body_and_heading() {
             "kind": "ruby", "base": "淡絹",
             "reading": "※［＃濁点付き片仮名ヱ、1-7-84］エル",
             "reading_content": [
-                {"kind": "gaiji", "description": "濁点付き片仮名ヱ", "jis_code": "1-7-84", "resolved": "ヹ", "unresolved_reason": null},
+                {"kind": "gaiji", "description": "濁点付き片仮名ヱ", "jis_code": "1-7-84", "resolved": "ヹ", "unresolved_reason": null, "span": {"byte_start": 9, "byte_end": 54, "line_start": 1, "line_end": 1}},
                 {"kind": "text", "value": "エル"}
             ]
         }]});
@@ -4884,6 +4884,33 @@ fn structured_ruby_reading_preserves_resolved_gaiji_in_body_and_heading() {
         assert_eq!(ruby["ruby"]["reading"], "ヹエル");
         assert_eq!(ruby["ruby"]["base"], "淡絹");
         assert_eq!(ruby["span"]["end"], "淡絹".len());
+        let reading = &ruby["reading_children"];
+        assert_eq!(reading[0]["gaiji"]["unicode"], "ヹ");
+        assert_eq!(reading[0]["gaiji"]["reference"], "1-7-84");
+        assert_eq!(reading[0]["gaiji"]["raw_marker"], "濁点付き片仮名ヱ");
+        assert_eq!(
+            reading[0]["source_span"],
+            json!({"start": 9, "end": 54, "coordinate_system": "decoded_utf8", "line": 1})
+        );
+        assert!(reading[0].get("span").is_none());
+        assert!(reading[1].get("source_span").is_none());
+        assert_eq!(reading[1]["text"], "エル");
+        let mut invalid = output.parser_ir.clone();
+        let target = if wrapper == "paragraph" {
+            &mut invalid["nodes"][0]
+        } else {
+            &mut invalid["nodes"][0]["inline_children"][0]
+        };
+        target["reading_children"][0]["span"] =
+            json!({"start": 0, "end": 3, "coordinate_system": "parser_text_utf8"});
+        assert!(
+            validate_value(
+                &schemas.parser_ir_schema,
+                &invalid,
+                "invented reading body span"
+            )
+            .is_err()
+        );
         validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
     }
 }

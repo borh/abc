@@ -202,19 +202,24 @@
   ([acc node depth]
    (let [ruby (get node "ruby")]
      (if (and (present-ruby-text? (get ruby "base"))
-              (present-ruby-text? (get ruby "reading")))
+              (or (present-ruby-text? (get ruby "reading"))
+                  (seq (get node "reading_children"))))
        (let [attrs (cond-> {:type "furigana"}
                      (get ruby "direction")
-                     (assoc :rend (get ruby "direction")))]
-         (let [before (:current-paragraph acc)
-               rendered (if (seq (get node "inline_children"))
-                          (render-inline-children (assoc acc :current-paragraph [])
-                                                  (get node "inline_children") depth)
-                          (assoc acc :current-paragraph [(get ruby "base")]))]
-           (append-inline (assoc rendered :current-paragraph before)
-                          [:ruby attrs
-                           (into [:rb] (:current-paragraph rendered))
-                           [:rt (get ruby "reading")]])))
+                     (assoc :rend (get ruby "direction")))
+             before (:current-paragraph acc)
+             base (if (seq (get node "inline_children"))
+                    (render-inline-children (assoc acc :current-paragraph [])
+                                            (get node "inline_children") depth)
+                    (assoc acc :current-paragraph [(get ruby "base")]))
+             reading (if (seq (get node "reading_children"))
+                       (render-inline-children (assoc base :current-paragraph [])
+                                               (get node "reading_children") depth)
+                       (assoc base :current-paragraph [(get ruby "reading")]))]
+         (append-inline (assoc reading :current-paragraph before)
+                        [:ruby attrs
+                         (into [:rb] (:current-paragraph base))
+                         (into [:rt] (:current-paragraph reading))]))
        (mark-omitted acc "ruby")))))
 
 (defn- render-gaiji-node

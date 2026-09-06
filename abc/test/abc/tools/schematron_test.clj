@@ -290,9 +290,10 @@
           (.delete schema)
           (.delete xml))))))
 
-(deftest ruby-base-may-be-a-declared-source-character-test
+(deftest ruby-components-may-be-declared-source-characters-test
   (with-temp-dir [dir]
-    (doseq [[label base declaration expected]
+    (doseq [component ["rb" "rt"]
+            [label base declaration expected]
             [["unresolved source glyph" "<g ref=\"#gaiji-355-17\"/>"
               "<char xml:id=\"gaiji-355-17\"><localProp name=\"rawMarker\" value=\"凵＜茲\"/></char>" #{}]
              ["resolved source glyph" "<g ref=\"#gaiji-355-17\">字</g>"
@@ -303,8 +304,12 @@
              ["empty declaration" "<g ref=\"#gaiji-355-17\"/>"
               "<char xml:id=\"gaiji-355-17\"><desc> </desc></char>" #{"abc-char-resolution-form"}]
              ["undeclared symbolic glyph" "<g ana=\"unresolved\"/>" "" #{"abc-ruby-base-non-empty"}]]]
-      (let [xml (-> (slurp "fixtures/tei/invalid/ruby-empty-base.xml")
+      (let [expected (if (= component "rt")
+                       (set (map #(if (= % "abc-ruby-base-non-empty") "abc-ruby-reading-non-empty" %) expected))
+                       expected)
+            xml (-> (slurp "fixtures/tei/invalid/ruby-empty-base.xml")
                     (string/replace "<rb></rb>" (str "<rb>" base "</rb>"))
+                    (cond-> (= component "rt") (string/replace #"(?s)<rb>(.*?)</rb><rt>(.*?)</rt>" "<rb>$2</rb><rt>$1</rt>"))
                     (string/replace "</fileDesc>"
                                     (str "</fileDesc><encodingDesc><charDecl>" declaration
                                          "</charDecl></encodingDesc>")))

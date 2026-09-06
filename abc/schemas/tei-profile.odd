@@ -239,11 +239,11 @@
         </constraintSpec>
 
         <constraintSpec ident="abc-ruby-reading-non-empty" scheme="schematron">
-          <desc>Require ruby reading components to carry non-empty text.</desc>
+          <desc>Require ruby readings to carry source text or declared characters.</desc>
           <constraint>
             <sch:rule context="tei:ruby/tei:rt">
-              <sch:assert test="normalize-space(string(.)) != ''">
-                tei:ruby/tei:rt must have non-empty content (abc-ruby-reading-non-empty)
+              <sch:assert test="normalize-space(string(.)) != '' or .//tei:g[starts-with(@ref, '#')]">
+                ABC TEI ruby reading must contain source text or a declared character.
               </sch:assert>
             </sch:rule>
           </constraint>

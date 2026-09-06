@@ -1,6 +1,6 @@
 {
   "schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "schema_hash": "sha256:d58dde3af8aa807a849201c48838729bd2a38189394145f11aa50567b963184b",
+  "schema_hash": "sha256:38b35e9c771db3b30f3d63b532965252ee57951072f6c3d47edefa64216ce320",
   "source": {
     "work_content_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
     "source_path": "cards/000000/files/example.txt",

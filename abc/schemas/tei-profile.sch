@@ -42,7 +42,7 @@
    </pattern>
    <pattern id="abc-ruby-reading-non-empty">
       <rule context="tei:ruby/tei:rt">
-         <assert test="normalize-space(string(.)) != ''"> tei:ruby/tei:rt must have non-empty content (abc-ruby-reading-non-empty)</assert>
+         <assert test="normalize-space(string(.)) != '' or .//tei:g[starts-with(@ref, '#')]"> ABC TEI ruby reading must contain source text or a declared character.</assert>
       </rule>
    </pattern>
    <pattern id="abc-gaiji-reference">

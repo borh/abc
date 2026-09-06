@@ -463,3 +463,19 @@
       (is (some #(= [:g {:ref "#gaiji-12-34"}] %)
                 (hiccup-nodes (:body result)))))))
 
+(deftest ruby-reading-gaiji-retains-declaration-and-source-identity-test
+  (doseq [unicode ["ヹ" nil]]
+    (let [gaiji {"type" "gaiji"
+                 "source_span" {"start" 9 "end" 54 "coordinate_system" "decoded_utf8"}
+                 "gaiji" {"reference" "1-7-84" "unicode" unicode
+                          "raw_marker" "濁点付き片仮名ヱ" "resolved" (some? unicode)}}
+          ir {"nodes" [{"type" "ruby" "span" {"start" 0 "end" 6}
+                        "ruby" {"base" "淡絹" "reading" (or unicode "濁点付き片仮名ヱ") "scope" "explicit"}
+                        "reading_children" [gaiji]}]}
+          result (parser-ir-tei/render ir)
+          rt (some #(when (= :rt (first %)) %) (hiccup-nodes (:body result)))]
+      (is (= (if unicode [:rt [:g {:ref "#gaiji-1-7-84"} unicode]]
+                 [:rt [:g {:ref "#gaiji-1-7-84"}]]) rt))
+      (is (= [{:xml-id "gaiji-1-7-84" :unicode unicode :raw-marker "濁点付き片仮名ヱ"}]
+             (:char_declarations result)))
+      (is (empty? (:omitted result))))))

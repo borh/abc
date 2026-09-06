@@ -4,7 +4,7 @@
   "mapping_schema_hash": "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2",
   "source_aat_version": 2,
   "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "target_parser_ir_schema_hash": "sha256:d58dde3af8aa807a849201c48838729bd2a38189394145f11aa50567b963184b",
+  "target_parser_ir_schema_hash": "sha256:38b35e9c771db3b30f3d63b532965252ee57951072f6c3d47edefa64216ce320",
   "transform_rule_descriptions": [
     {
       "rule_id": "A-01",
@@ -1380,7 +1380,7 @@
       "aat_pointer": "blocks[].children[].children[].content[].ruby.reading_content",
       "parser_ir_pointer": null,
       "action": "drop",
-      "description": "Observed 39 occurrences; first_path=blocks[128].children[0].children[0].content[2].ruby.reading_content. nested ruby reading_content substructure flattened away"
+      "description": "Observed 39 occurrences; first_path=blocks[128].children[0].children[0].content[2].ruby.reading_content. Historical reading_content observation; current conversion retains text and gaiji references in reading_children wherever the containing ruby is emitted, while nested formatting is flattened"
     },
     {
       "rule_id": "L-12",
@@ -2516,7 +2516,7 @@
       "aat_pointer": "blocks[].children[].content[].content[].ruby.reading_content",
       "parser_ir_pointer": null,
       "action": "drop",
-      "description": "Observed 927 occurrences; first_path=blocks[2].children[0].content[0].content[1].ruby.reading_content. nested ruby reading_content substructure flattened away"
+      "description": "Observed 927 occurrences; first_path=blocks[2].children[0].content[0].content[1].ruby.reading_content. Historical reading_content observation; current conversion retains text and gaiji references in reading_children wherever the containing ruby is emitted, while nested formatting is flattened"
     },
     {
       "rule_id": "L-155",
@@ -2556,7 +2556,7 @@
       "aat_pointer": "blocks[].children[].content[].ruby.reading_content",
       "parser_ir_pointer": null,
       "action": "drop",
-      "description": "Observed 60953 occurrences; first_path=blocks[0].children[0].content[1].ruby.reading_content. nested ruby reading_content substructure flattened away"
+      "description": "Observed 60953 occurrences; first_path=blocks[0].children[0].content[1].ruby.reading_content. Historical reading_content observation; current conversion retains text and gaiji references in reading_children wherever the containing ruby is emitted, while nested formatting is flattened"
     },
     {
       "rule_id": "L-162",
@@ -2564,7 +2564,7 @@
       "aat_pointer": "blocks[].children[].content[].warigaki.upper[].ruby.reading_content",
       "parser_ir_pointer": null,
       "action": "drop",
-      "description": "Observed 12 occurrences; first_path=blocks[81].children[0].content[0].warigaki.upper[0].ruby.reading_content. nested ruby reading_content substructure flattened away"
+      "description": "Observed 12 occurrences; first_path=blocks[81].children[0].content[0].warigaki.upper[0].ruby.reading_content. Historical reading_content observation; current conversion retains text and gaiji references in reading_children wherever the containing ruby is emitted, while nested formatting is flattened"
     },
     {
       "rule_id": "L-163",
@@ -2612,7 +2612,7 @@
       "aat_pointer": "blocks[].children[].heading.content[].ruby.reading_content",
       "parser_ir_pointer": null,
       "action": "drop",
-      "description": "Observed 21 occurrences; first_path=blocks[38].children[0].heading.content[4].ruby.reading_content. nested ruby reading_content substructure flattened away"
+      "description": "Observed 21 occurrences; first_path=blocks[38].children[0].heading.content[4].ruby.reading_content. Historical reading_content observation; current conversion retains text and gaiji references in reading_children wherever the containing ruby is emitted, while nested formatting is flattened"
     },
     {
       "rule_id": "L-170",
@@ -4212,7 +4212,7 @@
       "aat_pointer": "blocks[].content[].content[].ruby.reading_content",
       "parser_ir_pointer": null,
       "action": "drop",
-      "description": "Observed 1059499 occurrences; first_path=blocks[0].content[0].content[2].ruby.reading_content. nested ruby reading_content substructure flattened away"
+      "description": "Observed 1059499 occurrences; first_path=blocks[0].content[0].content[2].ruby.reading_content. Historical reading_content observation; current conversion retains text and gaiji references in reading_children wherever the containing ruby is emitted, while nested formatting is flattened"
     },
     {
       "rule_id": "L-371",
@@ -4236,7 +4236,7 @@
       "aat_pointer": "blocks[].content[].content[].warigaki.upper[].ruby.reading_content",
       "parser_ir_pointer": null,
       "action": "drop",
-      "description": "Observed 6 occurrences; first_path=blocks[0].content[0].content[3].warigaki.upper[1].ruby.reading_content. nested ruby reading_content substructure flattened away"
+      "description": "Observed 6 occurrences; first_path=blocks[0].content[0].content[3].warigaki.upper[1].ruby.reading_content. Historical reading_content observation; current conversion retains text and gaiji references in reading_children wherever the containing ruby is emitted, while nested formatting is flattened"
     },
     {
       "rule_id": "L-375",
@@ -4284,7 +4284,7 @@
       "aat_pointer": "blocks[].content[].ruby.reading_content",
       "parser_ir_pointer": null,
       "action": "drop",
-      "description": "Observed 1378390 occurrences; first_path=blocks[1].content[1].ruby.reading_content. nested ruby reading_content substructure flattened away"
+      "description": "Observed 1378390 occurrences; first_path=blocks[1].content[1].ruby.reading_content. Historical reading_content observation; current conversion retains text and gaiji references in reading_children wherever the containing ruby is emitted, while nested formatting is flattened"
     },
     {
       "rule_id": "L-382",
@@ -4308,7 +4308,7 @@
       "aat_pointer": "blocks[].content[].warigaki.upper[].ruby.reading_content",
       "parser_ir_pointer": null,
       "action": "drop",
-      "description": "Observed 7 occurrences; first_path=blocks[81].content[1].warigaki.upper[1].ruby.reading_content. nested ruby reading_content substructure flattened away"
+      "description": "Observed 7 occurrences; first_path=blocks[81].content[1].warigaki.upper[1].ruby.reading_content. Historical reading_content observation; current conversion retains text and gaiji references in reading_children wherever the containing ruby is emitted, while nested formatting is flattened"
     },
     {
       "rule_id": "L-386",
@@ -4924,7 +4924,7 @@
       "aat_pointer": "blocks[].heading.content[].ruby.reading_content",
       "parser_ir_pointer": null,
       "action": "drop",
-      "description": "Observed 16936 occurrences; first_path=blocks[9].heading.content[0].ruby.reading_content. nested ruby reading_content substructure flattened away"
+      "description": "Observed 16936 occurrences; first_path=blocks[9].heading.content[0].ruby.reading_content. Historical reading_content observation; current conversion retains text and gaiji references in reading_children wherever the containing ruby is emitted, while nested formatting is flattened"
     },
     {
       "rule_id": "L-464",

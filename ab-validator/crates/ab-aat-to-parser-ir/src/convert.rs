@@ -895,6 +895,76 @@ fn ruby_component_text(node: &Value, value_key: &str, content_key: &str) -> Resu
     }
 }
 
+fn gaiji_payload(node: &Value) -> Value {
+    json!({
+        "raw_marker": node["description"].as_str().unwrap_or(""),
+        "reference": node.get("jis_code").cloned().unwrap_or(Value::Null),
+        "unicode": node.get("resolved").cloned().unwrap_or(Value::Null),
+        "ivs": null,
+        "image_or_glyph_fallback": null,
+        "resolved": node.get("resolved").is_some_and(|value| !value.is_null())
+    })
+}
+
+fn ruby_reading_children(content: Option<&Value>) -> Result<Vec<Value>> {
+    let mut children = Vec::new();
+    let mut pending: Vec<&Value> = content
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+        .rev()
+        .collect();
+    while let Some(node) = pending.pop() {
+        match node["kind"].as_str().unwrap_or("") {
+            "style" | "font_size" | "tcy" | "keigakomi" | "caption" | "yokogumi" => {
+                pending.extend(
+                    node.get("content")
+                        .and_then(Value::as_array)
+                        .into_iter()
+                        .flatten()
+                        .rev(),
+                );
+            }
+            "warigaki" => {
+                pending.extend(
+                    node.get("lower")
+                        .and_then(Value::as_array)
+                        .into_iter()
+                        .flatten()
+                        .rev(),
+                );
+                pending.extend(
+                    node.get("upper")
+                        .and_then(Value::as_array)
+                        .into_iter()
+                        .flatten()
+                        .rev(),
+                );
+            }
+            "ruby" if node.get("base_content").is_some() => {
+                pending.extend(
+                    node.get("base_content")
+                        .and_then(Value::as_array)
+                        .into_iter()
+                        .flatten()
+                        .rev(),
+                );
+            }
+            "raw" => {}
+            kind => {
+                let mut child = if kind == "gaiji" {
+                    json!({"type": "gaiji", "gaiji": gaiji_payload(node)})
+                } else {
+                    json!({"type": "text", "text": plain_visible_inline_text(node)?})
+                };
+                attach_source_span(&mut child, node.get("span"))?;
+                children.push(child);
+            }
+        }
+    }
+    Ok(children)
+}
+
 fn append_plain_visible_inline_text(node: &Value, out: &mut String) -> Result<()> {
     match node["kind"].as_str().unwrap_or("") {
         "text" => out.push_str(node["value"].as_str().unwrap_or("")),
@@ -1087,6 +1157,12 @@ fn map_inline_to_nodes(
                     0,
                 )?);
             }
+            if let Some(content) = node.get("reading_content") {
+                let reading = ruby_reading_children(Some(content))?;
+                if !reading.is_empty() {
+                    ruby_node["reading_children"] = json!(reading);
+                }
+            }
             nodes.push(ruby_node);
             Ok(end)
         }
@@ -1097,7 +1173,6 @@ fn map_inline_to_nodes(
                 .unwrap_or("");
             let end = offset + utf8_len(visible);
             let span = map_node_span(node.get("span"), offset, end, recorder, path)?;
-            let unicode = node.get("resolved").cloned().unwrap_or(Value::Null);
             let description_pointer = format!("{path}.gaiji.description");
             recorder.record(
                 "INVENTION",
@@ -1139,20 +1214,13 @@ fn map_inline_to_nodes(
                     None,
                 );
             }
-            if unicode.is_null() {
+            if node.get("resolved").is_none_or(Value::is_null) {
                 recorder.record("LOSS", None, Some("gaiji.unicode"), None, Some(Value::Null))?;
             }
             nodes.push(json!({
                 "type": "gaiji",
                 "span": span,
-                "gaiji": {
-                    "raw_marker": node["description"].as_str().unwrap_or(""),
-                    "reference": node.get("jis_code").cloned().unwrap_or(Value::Null),
-                    "unicode": unicode,
-                    "ivs": null,
-                    "image_or_glyph_fallback": null,
-                    "resolved": node.get("resolved").is_some_and(|value| !value.is_null())
-                }
+                "gaiji": gaiji_payload(node)
             }));
             Ok(end)
         }
@@ -1386,6 +1454,12 @@ fn inline_child_node(
                     depth + 1,
                 )?);
             }
+            if let Some(content) = node.get("reading_content") {
+                let reading = ruby_reading_children(Some(content))?;
+                if !reading.is_empty() {
+                    ruby_node["reading_children"] = json!(reading);
+                }
+            }
             nodes.push(ruby_node);
             Ok(end)
         }
@@ -1398,14 +1472,7 @@ fn inline_child_node(
             nodes.push(json!({
                 "type": "gaiji",
                 "span": synthetic_span(offset, end),
-                "gaiji": {
-                    "raw_marker": node["description"].as_str().unwrap_or(""),
-                    "reference": node.get("jis_code").cloned().unwrap_or(Value::Null),
-                    "unicode": node.get("resolved").cloned().unwrap_or(Value::Null),
-                    "ivs": null,
-                    "image_or_glyph_fallback": null,
-                    "resolved": node.get("resolved").is_some_and(|value| !value.is_null())
-                }
+                "gaiji": gaiji_payload(node)
             }));
             Ok(end)
         }

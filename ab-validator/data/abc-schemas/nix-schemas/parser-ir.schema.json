@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
   "title": "ABC Parser IR",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "type": "object",
   "required": ["schema_id", "schema_hash", "source", "nodes", "warnings", "errors"],
   "additionalProperties": false,
@@ -425,31 +425,163 @@
         }
       ]
     },
-    "rubyNode": {
-      "allOf": [
-        { "$ref": "#/$defs/baseNode" },
+    "gaiji": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "raw_marker",
+        "resolved"
+      ],
+      "properties": {
+        "raw_marker": {
+          "type": "string"
+        },
+        "reference": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "unicode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ivs": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "image_or_glyph_fallback": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "resolved": {
+          "type": "boolean"
+        }
+      }
+    },
+    "rubyReadingNode": {
+      "oneOf": [
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["type", "span", "ruby"],
+          "required": [
+            "type",
+            "text"
+          ],
           "properties": {
-            "type": { "const": "ruby" },
-            "span": { "$ref": "#/$defs/span" },
-            "source_span": { "$ref": "#/$defs/sourceSpan" },
+            "type": {
+              "const": "text"
+            },
+            "text": {
+              "type": "string"
+            },
+            "source_span": {
+              "$ref": "#/$defs/sourceSpan"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "gaiji"
+          ],
+          "properties": {
+            "type": {
+              "const": "gaiji"
+            },
+            "gaiji": {
+              "$ref": "#/$defs/gaiji"
+            },
+            "source_span": {
+              "$ref": "#/$defs/sourceSpan"
+            }
+          }
+        }
+      ]
+    },
+    "rubyNode": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/baseNode"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "span",
+            "ruby"
+          ],
+          "properties": {
+            "type": {
+              "const": "ruby"
+            },
+            "span": {
+              "$ref": "#/$defs/span"
+            },
+            "source_span": {
+              "$ref": "#/$defs/sourceSpan"
+            },
             "inline_children": {
               "type": "array",
-              "items": { "$ref": "#/$defs/inlineNode" }
+              "items": {
+                "$ref": "#/$defs/inlineNode"
+              }
             },
             "ruby": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["base", "reading", "scope"],
+              "required": [
+                "base",
+                "reading",
+                "scope"
+              ],
               "properties": {
-                "base": { "type": "string" },
-                "reading": { "type": "string" },
-                "scope": { "type": "string", "enum": ["explicit", "inferred", "group", "mid-word", "ambiguous"] },
-                "direction": { "type": ["string", "null"], "enum": ["left", "right", null], "description": "Ruby reading placement relative to base text: left (before base) or right (after base)." }
+                "base": {
+                  "type": "string"
+                },
+                "reading": {
+                  "type": "string"
+                },
+                "scope": {
+                  "type": "string",
+                  "enum": [
+                    "explicit",
+                    "inferred",
+                    "group",
+                    "mid-word",
+                    "ambiguous"
+                  ]
+                },
+                "direction": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "enum": [
+                    "left",
+                    "right",
+                    null
+                  ],
+                  "description": "Ruby reading placement relative to base text: left (before base) or right (after base)."
+                }
               }
+            },
+            "reading_children": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/rubyReadingNode"
+              },
+              "description": "Ruby reading fragments; excluded from body text coordinates. Only source_span may locate them in decoded source."
             }
           }
         }
@@ -457,27 +589,29 @@
     },
     "gaijiNode": {
       "allOf": [
-        { "$ref": "#/$defs/baseNode" },
+        {
+          "$ref": "#/$defs/baseNode"
+        },
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["type", "span", "gaiji"],
+          "required": [
+            "type",
+            "span",
+            "gaiji"
+          ],
           "properties": {
-            "type": { "const": "gaiji" },
-            "span": { "$ref": "#/$defs/span" },
-            "source_span": { "$ref": "#/$defs/sourceSpan" },
+            "type": {
+              "const": "gaiji"
+            },
+            "span": {
+              "$ref": "#/$defs/span"
+            },
+            "source_span": {
+              "$ref": "#/$defs/sourceSpan"
+            },
             "gaiji": {
-              "type": "object",
-              "additionalProperties": false,
-              "required": ["raw_marker", "resolved"],
-              "properties": {
-                "raw_marker": { "type": "string" },
-                "reference": { "type": ["string", "null"] },
-                "unicode": { "type": ["string", "null"] },
-                "ivs": { "type": ["string", "null"] },
-                "image_or_glyph_fallback": { "type": ["string", "null"] },
-                "resolved": { "type": "boolean" }
-              }
+              "$ref": "#/$defs/gaiji"
             }
           }
         }

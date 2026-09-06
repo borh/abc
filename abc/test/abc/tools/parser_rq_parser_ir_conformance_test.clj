@@ -22,6 +22,7 @@
 (def policy
   (let [work-ids ["valid" "invalid" "no-output"]
         value (assoc committed-policy
+                     :parser_ir_schema_hash (schema/schema-hash "schemas/parser-ir.schema.json")
                      :expected_work_ids work-ids
                      :expected_work_set_hash
                      (hash/format-sha256 (hash/sha256-json-jcs work-ids)))]
@@ -230,7 +231,7 @@
   ;; The committed corpus currently measures 1.0, which is exact under either
   ;; path; that is why the defect was invisible in the report rather than absent.
   (let [work-ids ["valid" "valid-2" "invalid"]
-        ratio-policy (assoc committed-policy
+        ratio-policy (assoc policy
                             :expected_work_ids work-ids
                             :expected_work_set_hash
                             (hash/format-sha256 (hash/sha256-json-jcs work-ids)))

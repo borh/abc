@@ -1631,7 +1631,7 @@
   "sha256:a1e1b5069fdec17cbb1f94eb5e9a582d1b109dd95c07257f4da7d9b76c82cfa2")
 
 (def ^:private current-parser-ir-schema-hash
-  "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec")
+  (schema/schema-hash "schemas/parser-ir.schema.json"))
 
 (def ^:private parser-ir-schema-hash
   legacy-parser-ir-schema-hash)

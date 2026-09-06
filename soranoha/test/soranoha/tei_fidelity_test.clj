@@ -37,3 +37,19 @@
             [:seg {:type "source-line" :style "padding-inline-start: 3em"} "刊行日"]]
            (vec (elements note :seg))))
     (is (= 1 (count (elements note :lb))))))
+
+(deftest heading-indentation-is-preserved
+  (let [body (:body (tei/render {"nodes" [{"type" "heading" "level" 2 "indent" 8 "text" "一"}]}))]
+    (is (= {:n "2" :style "padding-inline-start: 8em"}
+           (second (first (elements body :head)))))))
+
+(deftest gaiji-remains-inside-ruby-base
+  (let [rendered (tei/render
+                  {"nodes" [{"type" "ruby"
+                             "ruby" {"base" "犍陀多" "reading" "かんだた"}
+                             "inline_children" [{"type" "gaiji"
+                                                 "gaiji" {"reference" "1-87-71" "unicode" "犍"}}
+                                                {"type" "text" "text" "陀多"}]}]})
+        rb (first (elements (:body rendered) :rb))]
+    (is (= [:rb [:g {:ref "#gaiji-1-87-71"}] "陀多"] rb))
+    (is (= "犍" (:unicode (first (:char_declarations rendered)))))))

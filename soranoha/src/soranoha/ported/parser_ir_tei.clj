@@ -189,17 +189,22 @@
            (whitespace/source-text->tei-inline (get node "text")))))
 
 (defn- render-ruby-node
-  ([acc node _depth]
+  ([acc node depth]
    (let [ruby (get node "ruby")]
      (if (and (present-ruby-text? (get ruby "base"))
               (present-ruby-text? (get ruby "reading")))
        (let [attrs (cond-> {:type "furigana"}
                      (get ruby "direction")
                      (assoc :rend (get ruby "direction")))]
-         (append-inline acc
-                        [:ruby attrs
-                         [:rb (get ruby "base")]
-                         [:rt (get ruby "reading")]]))
+         (let [before (:current-paragraph acc)
+               rendered (if (seq (get node "inline_children"))
+                          (render-inline-children (assoc acc :current-paragraph [])
+                                                  (get node "inline_children") depth)
+                          (assoc acc :current-paragraph [(get ruby "base")]))]
+           (append-inline (assoc rendered :current-paragraph before)
+                          [:ruby attrs
+                           (into [:rb] (:current-paragraph rendered))
+                           [:rt (get ruby "reading")]])))
        (mark-omitted acc "ruby")))))
 
 (defn- render-gaiji-node
@@ -252,6 +257,11 @@
                                        (assoc :abc/layout-params params))]))
        (mark-omitted acc "layout-span")))))
 
+(defn- heading-attrs [node]
+  (cond-> {:n (str (get node "level"))}
+    (some? (get node "indent"))
+    (assoc :style (str "padding-inline-start: " (get node "indent") "em"))))
+
 (defn- render-heading-node
   ([acc node depth]
    (let [children (seq (get node "inline_children"))
@@ -263,10 +273,10 @@
          (-> rendered
              (assoc :current-paragraph [])
              (update :current-division conj
-                     (into [:head {:n (str (get node "level"))}]
+                     (into [:head (heading-attrs node)]
                            head-fragment))))
        (update base :current-division conj
-               [:head {:n (str (get node "level"))}
+               [:head (heading-attrs node)
                 (get node "text")])))))
 
 (defn- render-indentation-node

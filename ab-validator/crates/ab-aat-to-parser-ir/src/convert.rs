@@ -406,16 +406,6 @@ fn map_block(
                 block.get("style").cloned(),
                 None,
             )?;
-            if let Some(indent) = block.get("indent").or_else(|| block.get("x-indent")) {
-                let indent_pointer = format!("{path}.heading.indent");
-                recorder.record_if_measured(
-                    "LOSS",
-                    Some(indent_pointer.as_str()),
-                    None,
-                    Some(indent.clone()),
-                    None,
-                );
-            }
             let text = plain_visible_content_text(block.get("content"))?;
             let inline_children = inline_children_nodes(
                 block.get("content"),
@@ -427,13 +417,17 @@ fn map_block(
             )?;
             let end = current + utf8_len(&text);
             let span = map_span(block.get("span"), current, end, recorder, path)?;
-            outputs.nodes.push(json!({
+            let mut heading = json!({
                 "type": "heading",
                 "span": span,
                 "text": text,
                 "inline_children": inline_children,
                 "level": block.get("level").and_then(Value::as_u64).unwrap_or(1),
-            }));
+            });
+            if let Some(indent) = block.get("indent").or_else(|| block.get("x-indent")) {
+                heading["indent"] = indent.clone();
+            }
+            outputs.nodes.push(heading);
             current = end;
         }
         "jisage_block" => {
@@ -1050,17 +1044,7 @@ fn map_inline_to_nodes(
                 None,
                 Some(json!("explicit")),
             )?;
-            if node.get("base_content").is_some() {
-                let base_content_pointer = format!("{path}.ruby.base_content");
-                recorder.record_if_measured(
-                    "LOSS",
-                    Some(base_content_pointer.as_str()),
-                    None,
-                    None,
-                    None,
-                );
-            }
-            nodes.push(json!({
+            let mut ruby_node = json!({
                 "type": "ruby",
                 "span": span,
                 "ruby": {
@@ -1069,7 +1053,18 @@ fn map_inline_to_nodes(
                     "scope": "explicit",
                     "direction": node.get("direction").and_then(Value::as_str)
                 }
-            }));
+            });
+            if node.get("base_content").is_some() {
+                ruby_node["inline_children"] = json!(inline_children_nodes(
+                    node.get("base_content"),
+                    recorder,
+                    synthetic_warnings,
+                    offset,
+                    &format!("{path}.ruby.base_content"),
+                    0,
+                )?);
+            }
+            nodes.push(ruby_node);
             Ok(end)
         }
         "gaiji" => {
@@ -1346,7 +1341,7 @@ fn inline_child_node(
         "ruby" => {
             let base = node["base"].as_str().unwrap_or("");
             let end = offset + utf8_len(base);
-            nodes.push(json!({
+            let mut ruby_node = json!({
                 "type": "ruby",
                 "span": synthetic_span(offset, end),
                 "ruby": {
@@ -1355,7 +1350,18 @@ fn inline_child_node(
                     "scope": "explicit",
                     "direction": node.get("direction").and_then(Value::as_str)
                 }
-            }));
+            });
+            if node.get("base_content").is_some() {
+                ruby_node["inline_children"] = json!(inline_children_nodes(
+                    node.get("base_content"),
+                    recorder,
+                    synthetic_warnings,
+                    offset,
+                    &format!("{path}.ruby.base_content"),
+                    depth + 1,
+                )?);
+            }
+            nodes.push(ruby_node);
             Ok(end)
         }
         "gaiji" => {

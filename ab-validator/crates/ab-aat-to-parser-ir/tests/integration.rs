@@ -718,9 +718,11 @@ fn legacy_schema_hashes_match_mapping_artifact() {
         schema_hash(&schemas.mapping_schema).unwrap(),
         "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2"
     );
+    let mapping =
+        MappingDocument::from_path(&repo.join("data/aat-to-parser-ir-mapping-v1.json")).unwrap();
     assert_eq!(
         schema_hash(&schemas.parser_ir_schema).unwrap(),
-        "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec"
+        mapping.target_parser_ir_schema_hash
     );
 }
 
@@ -4605,4 +4607,49 @@ fn adapter_conversion_spans_address_full_source_across_body_and_terminal_provena
         })
         .expect("terminal provenance must be represented by a full-source node span");
     assert!(tail_node["span"]["start"].as_u64().unwrap() as usize > decoded.span_text.len());
+}
+
+#[test]
+fn heading_indent_and_gaiji_ruby_base_survive_conversion() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let ruby = json!({
+        "kind": "ruby", "base": "犍陀多", "reading": "かんだた",
+        "base_content": [
+            {"kind": "gaiji", "description": "特のへん＋廴＋聿", "resolved": "犍", "jis_code": "第3水準1-87-71", "unresolved_reason": null},
+            {"kind": "text", "value": "陀多"}
+        ]
+    });
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat: json!({
+            "version": 1, "work_id": "source-layout",
+            "meta": base_meta("utf-8", "sha256:7777777777777777777777777777777777777777777777777777777777777777"),
+            "blocks": [
+                {"kind": "heading", "level": 2, "x-indent": 8, "style": "normal", "content": [ruby.clone()]},
+                {"kind": "paragraph", "content": [ruby]}
+            ]
+        }),
+        mapping, schemas: schemas.clone(), options: default_test_options(),
+    }).unwrap();
+    assert_eq!(output.parser_ir["nodes"][0]["indent"], 8);
+    for ruby_node in [
+        &output.parser_ir["nodes"][0]["inline_children"][0],
+        &output.parser_ir["nodes"][1],
+    ] {
+        assert_eq!(ruby_node["ruby"]["base"], "犍陀多");
+        assert_eq!(ruby_node["inline_children"][0]["gaiji"]["unicode"], "犍");
+        assert_eq!(ruby_node["inline_children"][1]["text"], "陀多");
+    }
+    assert!(!has_divergence_record(
+        &output,
+        "LOSS",
+        "blocks[].heading.indent",
+        None
+    ));
+    assert!(!has_divergence_record(
+        &output,
+        "LOSS",
+        "blocks[].content[].ruby.base_content",
+        None
+    ));
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
 }

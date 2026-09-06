@@ -203,7 +203,7 @@ pub enum RubySide {
 #[non_exhaustive]
 pub enum RubyBaseClass {
     /// CJK ideographs (main block + Ext A/B..F + compatibility) plus the
-    /// iteration marks `々` / `〆` and the kanji-form `ヶ`.
+    /// Aozora kanji marks `々`, `〆`, `〇`, `〻`, and `ヶ`.
     Kanji,
     /// Hiragana (letters + `ゝ` / `ゞ`).
     Hiragana,
@@ -225,7 +225,7 @@ pub enum RubyBaseClass {
 /// bare reading would re-parse to the *same* base, decided by comparing
 /// classes here — so both sides must move in lockstep.
 ///
-/// Aozora input rules treat `ヶ` as kanji when determining ruby boundaries.
+/// Aozora input rules treat `〇`, `〻`, and `ヶ` as kanji for ruby boundaries.
 /// An explicit `｜` limits the base when preceding kanji must stay outside it.
 /// The small katakana `ヵ` remains outside the supported implicit classes.
 #[must_use]
@@ -237,6 +237,8 @@ pub const fn ruby_base_class(ch: char) -> Option<RubyBaseClass> {
         | '\u{20000}'..='\u{2FFFF}'
         | '々'
         | '〆'
+        | '〇'
+        | '〻'
         | 'ヶ' => RubyBaseClass::Kanji,
         '\u{3041}'..='\u{3096}' | '\u{309D}'..='\u{309E}' => RubyBaseClass::Hiragana,
         // Katakana letters ァ..ヴ, phonetic ヷ..ヺ, and ー / ヽ / ヾ — but

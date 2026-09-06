@@ -2571,7 +2571,7 @@ mod tests {
     }
 
     #[test]
-    fn small_ke_extends_implicit_kanji_ruby_unless_a_bar_limits_it() {
+    fn documented_kanji_marks_extend_ruby_unless_a_bar_limits_it() {
         for (source, expected) in [
             ("松《まつ》ヶ枝《え》", vec![("松", "まつ"), ("ヶ枝", "え")]),
             (
@@ -2583,6 +2583,15 @@ mod tests {
                 vec![("鳥", "てう"), ("森", "もり")],
             ),
             ("六ヶ《むつか》", vec![("六ヶ", "むつか")]),
+            (
+                "〇五〇〇《まるごうまるまる》",
+                vec![("〇五〇〇", "まるごうまるまる")],
+            ),
+            (
+                "〇｜五〇〇《ごうまるまる》",
+                vec![("五〇〇", "ごうまるまる")],
+            ),
+            ("益〻《ますます》", vec![("益〻", "ますます")]),
         ] {
             run!(out, source);
             let actual: Vec<_> = out

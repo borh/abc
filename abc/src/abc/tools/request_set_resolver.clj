@@ -305,8 +305,3 @@
      (assoc request-set
             "request_set_id" (analysis-identity/request-set-id request-set)))))
 
-(defn write-resolved-request-set! [label output-dir]
-  (let [request-set (resolve-request-set label)
-        output-path (io/file output-dir (str label ".json"))]
-    (manifest/write-json-file! output-path request-set)
-    output-path))

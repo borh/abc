@@ -4,10 +4,7 @@
             [babashka.fs :as fs]
             [clojure.edn :as edn]
             [clojure.java.io :as io]
-            [clojure.string :as string])
-  (:import [java.util.zip ZipFile]
-           [javax.xml.parsers DocumentBuilderFactory]
-           [org.apache.jena.riot RDFDataMgr]))
+            [clojure.string :as string]))
 
 (def hash-pattern hash/hash-pattern)
 
@@ -37,9 +34,6 @@
 (defn input-stream [file]
   (io/input-stream file))
 
-(defn reader [file]
-  (io/reader file))
-
 (defn list-files [directory]
   (->> (fs/list-dir directory)
        (filter fs/regular-file?)
@@ -50,9 +44,6 @@
   (if (fs/directory? directory)
     (list-files directory)
     []))
-
-(defn glob [root pattern]
-  (vec (fs/glob root pattern)))
 
 (defn create-dirs! [path]
   (fs/create-dirs path))
@@ -81,22 +72,6 @@
 
 (defn file? [path]
   (fs/regular-file? path))
-
-(defn executable? [path]
-  (fs/executable? path))
-
-(defn with-zip-file [archive f]
-  (with-open [zip (ZipFile. (io/file archive))]
-    (f zip)))
-
-(defn load-jena-model [file]
-  (RDFDataMgr/loadModel (str file)))
-
-(defn parse-xml-document [file]
-  (let [factory (DocumentBuilderFactory/newInstance)]
-    (.setNamespaceAware factory true)
-    (.parse (.newDocumentBuilder factory)
-            (io/file file))))
 
 (defn relative-path [base file]
   (string/replace (str (fs/relativize (fs/path base) (fs/path file))) "\\" "/"))
@@ -133,9 +108,6 @@
     (fs/create-dirs parent))
   (fs/copy source target {:replace-existing true})
   (fs/file target))
-
-(defn bytes->hex [bytes]
-  (hash/bytes->hex bytes))
 
 (defn sha256-file [file]
   (hash/sha256-file file))

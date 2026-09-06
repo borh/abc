@@ -33,20 +33,6 @@
           (swap! cache assoc [::hash path] v)
           v))))
 
-(def checked-in-schema-paths
-  {:manifest "schemas/manifest.schema.json"
-   :parser-ir "schemas/parser-ir.schema.json"
-   :diagnostic "schemas/diagnostic.schema.json"
-   :run-summary "schemas/run-summary.schema.json"
-   :manifest-inputs "schemas/manifest-inputs.schema.json"
-   :comparison-report "schemas/comparison-report.schema.json"})
-
-(defn checked-in-schema-hashes []
-  (into {}
-        (map (fn [[k path]]
-               [k (schema-hash path)]))
-        checked-in-schema-paths))
-
 ;; ---------------------------------------------------------------------------
 ;; SchemaRegistry — created once at namespace load; thread-safe and caches
 ;; Schema objects keyed by $id / content. Draft 2020-12 is the default dialect

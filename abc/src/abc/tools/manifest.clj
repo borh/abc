@@ -2,31 +2,15 @@
   (:require [abc.tools.hash :as hash]
             [abc.tools.jcs :as jcs]
             [abc.tools.json :as abc-json]
-            [abc.tools.schema :as schema]
-            [charred.api :as json]
-            [clojure.java.io :as io]))
+            [abc.tools.schema :as schema]))
 
 (def manifest-schema-id "https://w3id.org/abc/schemas/manifest.schema.json")
-
-(defn bytes->hex [bytes]
-  (hash/bytes->hex bytes))
-
-(defn sha256-string [s]
-  (hash/sha256-string s))
 
 (defn file-hash [file]
   (hash/format-sha256 (hash/sha256-file file)))
 
-(defn json-string [s]
-  (json/write-json-str s))
-
 (defn jcs-json [value]
   (jcs/canonical-json-string value))
-
-(def v0-identity-json jcs-json)
-
-(defn schema-value-hash [schema-value]
-  (hash/format-sha256 (hash/sha256-json-jcs schema-value)))
 
 (defn schema-hash [file]
   (schema/schema-hash file))
@@ -183,9 +167,6 @@
       :was-derived-from (or was-derived-from
                             [(get manifest-inputs "work_content_hash")])
       :notes notes})))
-
-(defn stable-json-value [value]
-  (abc-json/prepare-deterministic-json value))
 
 (defn write-json-file! [file value]
   (abc-json/write-deterministic-json-file! file value))

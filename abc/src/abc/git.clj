@@ -1,17 +1,13 @@
 (ns abc.git
-  (:require [clj-jgit.porcelain :as git :refer
-             [load-repo git-blame]]
-            [clojure.java.io :as io]
-            [clojure.spec.alpha :as s])
+  (:require [clj-jgit.porcelain :refer [load-repo]]
+            [clojure.java.io :as io])
   (:import [java.time Instant]
            [java.util Date TimeZone]
            [org.eclipse.jgit.revwalk RevCommit RevWalk]
            [org.eclipse.jgit.api Git]
-           [org.eclipse.jgit.diff DiffFormatter RawTextComparator]
            [org.eclipse.jgit.lib PersonIdent Repository]
            [org.eclipse.jgit.treewalk TreeWalk]
-           [org.eclipse.jgit.treewalk.filter PathFilter]
-           [org.eclipse.jgit.util.io DisabledOutputStream]))
+           [org.eclipse.jgit.treewalk.filter PathFilter]))
 
 (defn load-git-repo [path]
   (load-repo path))
@@ -31,15 +27,6 @@
 
 (defn get-commit-date [^RevCommit commit]
   (.. commit (getAuthorIdent) (getWhen)))
-
-(s/fdef git-file-log
-  :args (s/cat :repo #(instance? Git %) :path string?)
-  :ret (s/coll-of map?))
-(defn get-file-log [^Git repo path]
-  (map :commit (sort-by
-                (fn [commit-map] (get-commit-date (:commit commit-map)))
-                (comp - compare)
-                (git-blame repo path))))
 
 (defn resolve-ref
   "Resolve `ref` in `repo` to an object id, or throw ex-info."
@@ -96,38 +83,3 @@
        (.addRange command (resolve-ref repo from-ref) until)
        (.add command until))
      (vec (reverse (iterator-seq (.iterator (.call command))))))))
-
-;; Time travel
-
-(s/fdef file-time-span
-  :args (s/cat :repo #(instance? Git %) :file string? :from-time inst? :to-time inst?)
-  :ret (s/coll-of #(instance? RevCommit %)))
-(defn file-time-span
-  [^Git repo
-   ^String file
-   ^Date from-time
-   ^Date to-time]
-  (->> file
-       (get-file-log repo)
-       (drop-while (fn [commit]
-                     #_(println to-time (get-commit-date commit) (compare (get-commit-date commit) to-time))
-                     (pos? (compare (get-commit-date commit) to-time))))
-       (take-while (fn [commit]
-                     #_(println (compare from-time (get-commit-date commit)))
-                     (neg? (compare from-time (get-commit-date commit)))))))
-
-;; https://chris.beams.io/posts/git-commit/
-;;
-(defn to-conventional-commit
-  "https://www.conventionalcommits.org/en/v1.0.0-beta.3/"
-  [_msg])
-
-(comment
-  ;; Look into custom formatters: word formatters
-  ;; https://github.com/someteam/acha/blob/master/src-clj/acha/git_parser.clj
-  (defn diff-formatter
-    [^Git repo]
-    (doto (DiffFormatter. DisabledOutputStream/INSTANCE)
-      (.setRepository (.getRepository repo))
-      (.setDiffComparator RawTextComparator/DEFAULT)
-      (.setDetectRenames true))))

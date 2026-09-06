@@ -6,7 +6,6 @@
   Person as FOAF + RDA Group 2 triples plus an EDTF-typed echo of
   the canonical date string per ADR 0015."
   (:require [abc.tools.hash :as hash]
-            [abc.tools.manifest-to-rdf :as manifest-to-rdf]
             [abc.tools.rdf-prefixes :as rdf-prefixes]
             [abc.tools.schema :as schema]
             [arachne.aristotle :as aa])
@@ -185,7 +184,3 @@
     (aa/add graph (person-data record))
     graph))
 
-(defn record->ttl
-  "Convenience: (comp manifest-to-rdf/graph->ttl record->graph)."
-  [record]
-  (manifest-to-rdf/graph->ttl (record->graph record)))

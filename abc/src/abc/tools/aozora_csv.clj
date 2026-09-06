@@ -4,7 +4,6 @@
   no I/O beyond reading the supplied path or string. NFC normalization
   applied at the parse boundary."
   (:require [charred.api :as charred]
-            [clojure.java.io :as io]
             [clojure.string :as string])
   (:import [java.text Normalizer Normalizer$Form]
            [java.time DateTimeException LocalDate YearMonth]))
@@ -41,10 +40,6 @@
 
 (defn read-rows-from-string [^String s]
   (read-rows* (charred/read-csv s)))
-
-(defn read-rows [^String path]
-  (with-open [r (io/reader path)]
-    (read-rows* (charred/read-csv r))))
 
 (defn- nullable
   "Empty CSV cell -> JSON null. Non-empty -> NFC-normalized."

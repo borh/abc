@@ -105,11 +105,6 @@
   [evidence-class]
   (contains? release-evidence-classes evidence-class))
 
-(defn comparison-evidence-class?
-  "True when `evidence-class` is a comparison/selection research class."
-  [evidence-class]
-  (contains? comparison-evidence-classes evidence-class))
-
 (defn entry-admissible?
   "True when `entry`'s evidence class may support an admission claim."
   [entry]

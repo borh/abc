@@ -20,9 +20,6 @@
 (def index-schema-path "schemas/person-drift-index.schema.json")
 (def index-schema-id "https://w3id.org/abc/schemas/person-drift-index.schema.json")
 
-(def person-id-pattern #"^([0-9]{6}|abc-[0-9a-f]{12})$")
-(def hash-pattern #"^sha256:[0-9a-f]{64}$")
-
 (def rdf-type-uri "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
 (def abc-base "https://w3id.org/abc/")
 (def prov-base "http://www.w3.org/ns/prov#")
@@ -250,13 +247,6 @@
            (sort (set/difference expected actual)))
       (map (fn [type-uri] {:code :unexpected-rdf-type :type type-uri})
            (sort (set/difference actual expected)))))))
-
-(defn assert-typing-coherent! [event graph]
-  (let [failures (typing-coherence-failures event graph)]
-    (when (seq failures)
-      (throw (ex-info "person drift event RDF typing coherence failed"
-                      {:failures failures}))))
-  :ok)
 
 (defn validate-event-shacl! [graph label]
   (shacl/validate! {:shapes-graph (shacl/load-shapes-graph)

@@ -8,9 +8,6 @@
 (defn read-json-file [file]
   (json/read-json (io/file file)))
 
-(defn read-json-str [s]
-  (json/read-json s))
-
 (defn prepare-deterministic-json [value]
   (cond
     (map? value)
@@ -38,12 +35,6 @@
    (json/write-json-str (prepare-deterministic-json value) :indent-str "  ")
    #"[ \t]+(?=\r?\n)"
    ""))
-
-(defn write-deterministic-jsonl-line
-  "Deterministic sorted-key single-line JSON (no indent), for JSONL rows.
-  Matches the non-indented charred call at the JSONL emit sites."
-  [value]
-  (json/write-json-str (prepare-deterministic-json value)))
 
 (defn write-deterministic-json-file!
   "Atomically write deterministic JSON: content lands via a sibling temp file

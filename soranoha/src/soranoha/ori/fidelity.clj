@@ -2,7 +2,7 @@
   "Independent, bounded comparisons of retained Aozora text with its exports.
   Passing these checks does not certify unsupported markup or editorial fidelity."
   (:require [clojure.string :as str]
-            [soranoha.ported.hash :as hash])
+            [soranoha.core.hash :as hash])
   (:import [java.io ByteArrayInputStream]
            [java.nio ByteBuffer]
            [java.nio.charset Charset CodingErrorAction]

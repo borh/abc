@@ -5,14 +5,14 @@
   Copied from abc.tools.person-record with the RDF/Turtle mapping stripped
   (the kernel never renders RDF; the stripped functions were the only
   consumers of the Jena stack)."
-  (:require [soranoha.ported.assets :as assets]
-            [soranoha.ported.hash :as hash]
+  (:require [soranoha.ported.jcs :as jcs]
+            [soranoha.ported.assets :as assets]
+            [soranoha.core.hash :as hash]
             [soranoha.ported.schema :as schema])
   (:import [java.time DateTimeException LocalDate]))
 
 (defn- schema-path []
   (assets/resolve-path "schemas/person-record.schema.json"))
-(def schema-id "https://w3id.org/abc/schemas/person-record.schema.json")
 
 (def ^:private full-date-shape-pattern #"^-?\d{4}-\d{2}-\d{2}$")
 
@@ -36,7 +36,7 @@
 (defn validate!
   "Validate `record` against schemas/person-record.schema.json plus a
   calendar-validity check for full-date shapes. Returns :ok on success;
-  throws ex-info on failure with both :errors (raw m3 vector) and
+  throws ex-info on failure with both :errors (structured error maps) and
   :errors-humanized (readable strings) for schema failures, or with
   :field/:value for calendar-validity failures."
   [record]
@@ -57,32 +57,7 @@
 
 (defn record-hash
   "Compute sha256:<hex> over the canonical-identity form of `record`
-  using RFC 8785 JCS via soranoha.ported.hash/sha256-json-jcs."
+  using the record JSON canonicalization."
   [record]
   (hash/format-sha256
-   (hash/sha256-json-jcs (canonical-identity-form record))))
-
-;; ---------------------------------------------------------------------------
-;; RDF mapping
-;; ---------------------------------------------------------------------------
-
-(defn numeric-person-id? [person-id]
-  (boolean (re-matches #"^[0-9]{6}$" person-id)))
-
-(defn abc-local-person-id? [person-id]
-  (boolean (re-matches #"^abc-[0-9a-f]{12}$" person-id)))
-
-(defn person-iri
-  "Aozora numeric IDs keep their Aozora page IRI. ABC-local IDs use the
-  ADR 0020 local person namespace."
-  [person-id]
-  (cond
-    (numeric-person-id? person-id)
-    (str "http://www.aozora.gr.jp/index_pages/person" person-id ".html")
-
-    (abc-local-person-id? person-id)
-    (str "https://w3id.org/abc/persons/" person-id)
-
-    :else
-    (throw (ex-info (str "unsupported person_id shape: " person-id)
-                    {:person_id person-id}))))
+   (hash/sha256-bytes (jcs/canonical-json-bytes (canonical-identity-form record)))))

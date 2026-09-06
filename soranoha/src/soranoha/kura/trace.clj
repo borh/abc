@@ -117,18 +117,3 @@
           (mapcat (fn [row]
                     (vals (json/read-json (:trace/outputs_json row)))))
           (jdbc/execute! conn ["SELECT outputs_json FROM trace"]))))
-
-(defn trace-rows
-  "All trace rows as maps (build-index queries; disposable views only)."
-  [{:keys [conn] :as store}]
-  (locking store
-    (mapv (fn [row]
-            {:trace-key (:trace/trace_key row)
-             :stage-id (:trace/stage_id row)
-             :stage-version (:trace/stage_version row)
-             :toolchain-id (:trace/toolchain_id row)
-             :inputs (json/read-json (:trace/inputs_json row))
-             :outputs (json/read-json (:trace/outputs_json row))})
-          (jdbc/execute!
-           conn ["SELECT trace_key, stage_id, stage_version, toolchain_id,
-                         inputs_json, outputs_json FROM trace"]))))

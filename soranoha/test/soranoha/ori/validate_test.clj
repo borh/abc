@@ -2,7 +2,7 @@
   (:require [babashka.fs :as fs]
             [clojure.test :refer [deftest is testing]]
             [soranoha.ori.validate :as validate]
-            [soranoha.ported.files :as files]
+            [soranoha.core.hash :as hash]
             [soranoha.ported.json :as json]
             [soranoha.ported.schematron :as schematron]
             [soranoha.ported.tei :as tei]))
@@ -32,7 +32,7 @@
             (let [toolchain (get (run) "toolchain")]
               (is (= "fixture profile generator" (get toolchain "generator")))
               (is (= build-hash (get toolchain "generator_build_hash")))
-              (is (= (str "sha256:" (files/sha256-file (:odd profile)))
+              (is (= (str "sha256:" (hash/sha256-file (:odd profile)))
                      (get toolchain "odd_hash")))))
           (doseq [changed [(assoc metadata "generator_build_hash" "unknown")
                            (assoc metadata "rng_hash" build-hash)

@@ -211,9 +211,3 @@
 
 (defn render [parser-ir]
   (dissoc (render-with-annotations parser-ir) :annotations))
-
-(defn render-string [parser-ir]
-  (:text (render parser-ir)))
-
-(def covered-node-types
-  (set (keys node-renderers)))

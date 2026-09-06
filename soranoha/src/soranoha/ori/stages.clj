@@ -70,46 +70,18 @@
                             "primary_text_hash" (:primary-text-hash inspection)})}))})
 
 (defn metadata-stage
-  "Catalog (by content hash) + work id -> metadata record + person records.
-  `rows-for` returns the parsed catalog rows for a catalog hash (run-scoped
-  parse-once cache; deterministic because it is keyed by content)."
-  [clj-toolchain-id rows-for catalog-provenance]
+  "Catalog hash + work id -> validated metadata record and person records.
+  `rows-for` supplies the run-scoped catalog cache keyed by content hash."
+  [clj-toolchain-id rows-for]
   {:stage-id "metadata"
    :stage-version "2"
    :toolchain-id clj-toolchain-id
    :f (fn [_resolve inputs]
-        (let [rows (rows-for (get inputs "catalog"))
-              work-id (get inputs "work_id")]
-          (with-temp-dir
-            (fn [dir]
-              (let [record-file (str (fs/path dir "metadata-record.json"))
-                    persons-dir (str (fs/path dir "persons"))]
-                (ingest/run-from-rows!
-                 {:rows rows
-                  :work-id work-id
-                  :output record-file
-                  :persons-output-dir persons-dir
-                  :overwrite true
-                  :source-csv-provenance catalog-provenance})
-                (let [record-bytes (fs/read-all-bytes record-file)
-                      record (json/read-json (String. ^bytes record-bytes "UTF-8"))
-                      ;; the renderer-facing persons value drops
-                      ;; source_csv_provenance (which render ignores): the
-                      ;; catalog file hash inside it would otherwise flow
-                      ;; into these bytes and defeat early cutoff — a
-                      ;; catalog edit would re-render every work
-                      persons (into (sorted-map)
-                                    (for [contributor (get record "contributors")
-                                          :let [pid (get contributor "person_id")]]
-                                      [pid (dissoc
-                                            (json/read-json
-                                             (String. ^bytes (fs/read-all-bytes
-                                                              (fs/path persons-dir
-                                                                       (str pid ".json")))
-                                                      "UTF-8"))
-                                            "source_csv_provenance")]))]
-                  {"metadata-record" record-bytes
-                   "persons" (json-bytes persons)}))))))})
+        (let [{:keys [metadata-rec person-records]}
+              (ingest/build-records {:rows (rows-for (get inputs "catalog"))
+                                     :work-id (get inputs "work_id")})]
+          {"metadata-record" (utf8 (str (abc-json/write-deterministic-json-str metadata-rec) "\n"))
+           "persons" (json-bytes person-records)}))})
 
 (defn parse-stage
   "Primary text bytes -> AAT JSON via the ab-aozora adapter."

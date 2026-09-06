@@ -7,7 +7,8 @@
 (ns soranoha.ori.validate
   (:require [clojure.string :as string]
             [clojure.java.io :as io]
-            [soranoha.ported.files :as files]
+            [soranoha.core.hash :as hash]
+            [soranoha.ported.json :as json]
             [soranoha.ported.schematron :as schematron]
             [soranoha.ported.tei :as tei]))
 
@@ -25,11 +26,11 @@
    :generation (str assets-root "/schemas/tei-profile-generation.json")})
 
 (defn- file-hash [path]
-  (str "sha256:" (files/sha256-file path)))
+  (str "sha256:" (hash/sha256-file path)))
 
 (defn- generation-provenance [generation hashes]
   (when (and generation (.exists (io/file generation)))
-    (let [record (files/read-json generation)]
+    (let [record (json/read-json-file generation)]
       (when-not (and (= (set (keys record))
                         #{"generator" "generator_build_hash" "odd_hash" "rng_hash" "schematron_hash"})
                      (string? (get record "generator"))

@@ -541,6 +541,3 @@
     (if paragraphs
       (render-with-paragraphs nodes (vec paragraphs) sentences)
       (render-flat nodes))))
-
-(def covered-node-types
-  (set (keys node-renderers)))

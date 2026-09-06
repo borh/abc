@@ -6,27 +6,10 @@
   (:require [babashka.fs :as fs]
             [clojure.java.io :as io]
             [clojure.string :as string])
-  (:import [javax.xml.parsers DocumentBuilderFactory]
-           [javax.xml.transform.stream StreamSource]
-           [com.helger.schematron.pure SchematronResourcePure]
+  (:import [javax.xml.transform.stream StreamSource]
            [com.helger.schematron.sch SchematronResourceSCH]
            [com.helger.schematron.svrl SVRLFailedAssert SVRLSuccessfulReport]
            [com.helger.schematron.svrl.jaxb ActivePattern FailedAssert FiredRule SuccessfulReport]))
-
-(def ^:private schematron-ns "http://purl.oclc.org/dsdl/schematron")
-
-(defn- namespace-aware-document [path]
-  (let [factory (DocumentBuilderFactory/newInstance)]
-    (.setNamespaceAware factory true)
-    (.. factory newDocumentBuilder (parse (io/file path)))))
-
-(defn pattern-ids
-  "Return Schematron pattern IDs in document order."
-  [schema-path]
-  (let [document (namespace-aware-document schema-path)
-        patterns (.getElementsByTagNameNS document schematron-ns "pattern")]
-    (mapv #(.getAttribute ^org.w3c.dom.Element (.item patterns %) "id")
-          (range (.getLength patterns)))))
 
 (defn- severity [kind role]
   (keyword (or (when-not (string/blank? role) role)
@@ -63,19 +46,6 @@
                             {:schema-path schema-path})))
           (swap! resource-cache assoc cache-key resource)
           resource))))
-
-(defn schema-valid?
-  "Return whether ph-schematron accepts schema-path for the selected backend.
-
-  :xslt is the runtime backend used by validate!. :pure is a stricter
-  in-memory diagnostic model used by artifact-boundary tests."
-  [backend schema-path]
-  (case backend
-    :xslt (.isValidSchematron (SchematronResourceSCH/fromFile (io/file schema-path)))
-    :pure (.isValidSchematron (SchematronResourcePure/fromFile (io/file schema-path)))
-    (throw (ex-info "Unsupported Schematron backend"
-                    {:backend backend
-                     :supported #{:xslt :pure}}))))
 
 (defn- svrl-findings [label svrl]
   (loop [items (seq (.getActivePatternAndFiredRuleAndFailedAssert svrl))

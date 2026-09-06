@@ -9,9 +9,9 @@
                 (str (System/getProperty "java.home") "/bin/java")
                 "-cp" (System/getProperty "java.class.path")
                 "clojure.main" "-e"
-                (str "(require 'soranoha.main 'soranoha.ported.logging) "
+                (str "(require 'soranoha.main) "
                      "(println \"result-marker\") "
-                     "(soranoha.ported.logging/log! :error \"diagnostic-marker\")"))]
-    (is (zero? (:exit result)))
+                     "(soranoha.main/-main \"unknown-command\")"))]
+    (is (= 2 (:exit result)))
     (is (= "result-marker\n" (:out result)))
-    (is (= "error diagnostic-marker\n" (:err result)))))
+    (is (re-matches #"usage: [^\n]+\n" (:err result)))))

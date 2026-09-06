@@ -1,23 +1,16 @@
-# soranoha.ported — the abc copy lane
+# Soranoha per-work conversion and validation
 
-Verbatim copies of abc's per-work pipeline code, `abc.tools.*` →
-`soranoha.ported.*`. Divergence is prevented by the kernel's
-byte-equivalence acceptance test, not by review of these files; do not
-"improve" them here. This lane retires together with abc.
+These maintained namespaces convert catalog records and parser IR into
+publication artifacts, inspect source bundles, and validate artifacts. They
+originated in ABC; Soranoha does not require ABC namespaces. Metadata construction
+returns validated values directly to the build stages.
 
-Deliberate deviations from the abc originals, each with no
-artifact-byte consequence:
+ABC owns record schemas and the TEI profile. Resolve those assets through
+`soranoha.ported.assets/*root*`, supplied explicitly by the application.
 
-- `logging.clj` is a stderr shim (abc binds Telemere).
-- `metadata_record.clj` / `person_record.clj`: RDF/Turtle mapping and the
-  Jena/aristotle requires stripped — the kernel never renders RDF and
-  those functions were the only consumers.
-- `files.clj`: `load-jena-model` removed (same reason).
-- Record JSON-Schema paths resolve through `soranoha.ported.assets/*root*`
-  instead of the working directory (the kernel binds it to the abc
-  checkout; D20 — the schemas stay abc-owned, one source of truth).
+Record and source-bundle identities retain their defined JSON canonicalization
+in `jcs.clj`. Protocol identities use `soranoha.core.canonical`; both share the
+byte hashing implementation in `soranoha.core.hash`.
 
-The kernel-native identity path (`soranoha.core.canonical` /
-`soranoha.core.hash`) is NOT part of this lane: it implements the
-protocol spec's named canonicalizer and is bound to abc by the shared
-cross-language vector fixture.
+Source fidelity and current validation contracts govern changes to these modules.
+Historical artifact comparisons are evidence, not a compatibility requirement.

@@ -1,8 +1,7 @@
 (ns soranoha.ported.source-bundle
-  (:require [soranoha.ported.files :as files]
-            [soranoha.ported.hash :as hash]
+  (:require [babashka.fs :as fs]
+            [soranoha.core.hash :as hash]
             [soranoha.ported.jcs :as jcs]
-            [soranoha.ported.json :as json]
             [clojure.java.io :as io]
             [clojure.string :as string])
   (:import [com.ibm.icu.lang UCharacter]
@@ -20,8 +19,6 @@
             ZipFile]))
 
 (def construction "abc-source-bundle-v1")
-(def schema-id "https://w3id.org/abc/schemas/source-bundle.schema.json")
-(def bundle-hash-algorithm "sha256-rfc8785-jcs-abc-source-bundle-v1")
 (def default-limits {:max-members 1024
                      :max-member-bytes 16777216
                      :max-total-bytes 33554432})
@@ -42,10 +39,6 @@
                           :reason reason
                           :archive-path (str archive-path)}
                          data))))
-
-(defn admission-error? [throwable]
-  (and (instance? clojure.lang.ExceptionInfo throwable)
-       (true? (::admission-error (ex-data throwable)))))
 
 (defn- unicode-fold [s]
   (UCharacter/foldCase ^String s true))
@@ -186,26 +179,6 @@
                            (first candidates)})))))
   identity-object)
 
-(defn validate-persisted-manifest!
-  "Validate a persisted source-bundle manifest's authoritative identity,
-  member projection, and signature. Return the manifest unchanged."
-  [manifest-value]
-  (let [identity-object (validate-identity-object!
-                         (get manifest-value "identity_object"))
-        authoritative-projection
-        (mapv #(select-keys % ["path" "member_hash"])
-              (get manifest-value "members"))]
-    (when-not (= (get identity-object "members") authoritative-projection)
-      (identity-fail! :identity-member-projection
-                      {:identity-members (get identity-object "members")
-                       :member-projection authoritative-projection}))
-    (let [expected (bundle-identity-hash identity-object)]
-      (when-not (= expected (get manifest-value "bundle_hash"))
-        (identity-fail! :identity-bundle-hash
-                        {:bundle-hash (get manifest-value "bundle_hash")
-                         :expected-bundle-hash expected})))
-    manifest-value))
-
 (defn- name-source [^ZipArchiveEntry entry]
   (let [source (.getNameSource entry)]
     (cond
@@ -345,7 +318,7 @@
           members (mapv :metadata reads)
           actuals (mapv :actual-bytes reads)]
       {:archive-path (str archive-path)
-       :archive-hash (hash/format-sha256 (files/sha256-file stable-file))
+       :archive-hash (hash/format-sha256 (hash/sha256-file stable-file))
        :members members
        :semantic-text-candidates (mapv :path candidates)
        :collision-evidence
@@ -412,8 +385,8 @@
         staged (Files/createTempFile
                 "abc-source-bundle-trimmed-" ".zip" attributes)]
     (try
-      (files/write-bytes! (.toFile staged)
-                          (java.util.Arrays/copyOfRange data 0 (int end)))
+      (fs/write-bytes (.toFile staged)
+                      (java.util.Arrays/copyOfRange data 0 (int end)))
       (when-not (.setReadOnly (.toFile staged))
         (throw (IOException. "could not make trimmed source archive read-only")))
       (.toFile staged)
@@ -433,7 +406,7 @@
   trimmed byte count; the archive identity stays the hash of the file as
   shipped, garbage included."
   [zip-file staged limits original-error]
-  (let [data ^bytes (files/read-bytes staged)
+  (let [data ^bytes (fs/read-all-bytes staged)
         n (alength data)
         candidates (->> (eocd-candidate-ends data)
                         (filter #(< % n))
@@ -444,12 +417,12 @@
                   (try
                     (-> (scan-open-zip zip-file trimmed limits)
                         (assoc :archive-hash (hash/format-sha256
-                                              (files/sha256-file staged))
+                                              (hash/sha256-file staged))
                                :trailing-garbage-trimmed (- n end)))
                     (catch clojure.lang.ExceptionInfo e
                       (when-not (unreadable-zip-error? e) (throw e))
                       nil)
-                    (finally (files/delete-file! trimmed)))))
+                    (finally (Files/deleteIfExists (.toPath (io/file trimmed)))))))
               candidates)
         (throw original-error))))
 
@@ -465,7 +438,7 @@
            (if (unreadable-zip-error? e)
              (scan-zip-with-trailing-garbage-recovery zip-file staged limits e)
              (throw e))))
-       (finally (files/delete-file! staged))))))
+       (finally (Files/deleteIfExists (.toPath (io/file staged))))))))
 
 (defn- validate-admission-collisions! [archive-path members]
   (let [{:keys [nfc-collisions unicode-case-collisions]}
@@ -514,17 +487,3 @@
 (defn inspect-zip
   ([zip-file] (inspect-zip zip-file default-limits))
   ([zip-file limits] (admit-scan! (scan-zip zip-file limits))))
-
-(defn write-manifest! [path inspection]
-  (let [file (io/file path)
-        manifest-value
-        {"source_bundle_schema_id" schema-id
-         "bundle_hash_algorithm" bundle-hash-algorithm
-         "bundle_hash" (:bundle-hash inspection)
-         "archive_hash" (:archive-hash inspection)
-         "identity_object" (:identity-object inspection)
-         "members" (:members inspection)}]
-    (validate-persisted-manifest! manifest-value)
-    (json/write-deterministic-json-file!
-     file manifest-value)
-    file))

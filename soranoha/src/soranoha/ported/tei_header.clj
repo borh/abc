@@ -1,7 +1,7 @@
 (ns soranoha.ported.tei-header
   "Pure metadata-record → TEI <teiHeader> hiccup builder + XML emitter.
 
-  build returns nested-vector data; emit-xml serialises to a string.
+  build returns nested-vector data; the XML emitters serialize that tree.
   The data shape is the API: any consumer can serialise the same
   hiccup tree without re-deriving the TEI mapping. No xml/alias-uri
   global side effect; the adapter wraps all unprefixed tag keywords
@@ -275,9 +275,3 @@
   whitespace unchanged. Unknown content models remain unformatted."
   [hiccup]
   (xml/emit-str (indent-structural-elements (->xml-element hiccup) 0)))
-
-(defn emit-xml
-  "Serialise a hiccup TEI header to an XML string. The TEI namespace
-  is the default; xml: prefix is bound to the XML namespace."
-  [hiccup]
-  (hiccup->xml-string hiccup))

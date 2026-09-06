@@ -40,3 +40,12 @@
     (throw (ex-info "Expected a 64-char lowercase hex sha256"
                     {:value value})))
   value)
+
+(def hash-pattern #"^sha256:[0-9a-f]{64}$")
+
+(defn format-sha256 [hex]
+  (let [value (str "sha256:" hex)]
+    (when-not (re-matches hash-pattern value)
+      (throw (ex-info (str "Invalid sha256 hash: " value)
+                      {:hash value})))
+    value))

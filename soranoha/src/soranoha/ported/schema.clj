@@ -1,8 +1,7 @@
 (ns soranoha.ported.schema
-  (:require [soranoha.ported.files :as files]
-            [soranoha.ported.hash :as hash]
+  (:require [soranoha.ported.jcs :as jcs]
+            [soranoha.core.hash :as hash]
             [soranoha.ported.json :as abc-json]
-            [babashka.fs :as fs]
             [charred.api :as json]
             [clojure.string :as str])
   (:import [com.networknt.schema SchemaRegistry InputFormat SpecificationVersion]))
@@ -12,7 +11,7 @@
 
 (defn schema-hash [file]
   (hash/format-sha256
-   (hash/sha256-json-jcs (read-schema file))))
+   (hash/sha256-bytes (jcs/canonical-json-bytes (read-schema file)))))
 
 (let [cache (atom {})]
   (defn cached-schema
@@ -33,54 +32,13 @@
           (swap! cache assoc [::hash path] v)
           v))))
 
-(def checked-in-schema-paths
-  {:manifest "schemas/manifest.schema.json"
-   :parser-ir "schemas/parser-ir.schema.json"
-   :diagnostic "schemas/diagnostic.schema.json"
-   :run-summary "schemas/run-summary.schema.json"
-   :manifest-inputs "schemas/manifest-inputs.schema.json"
-   :comparison-report "schemas/comparison-report.schema.json"})
-
-(defn checked-in-schema-hashes []
-  (into {}
-        (map (fn [[k path]]
-               [k (schema-hash path)]))
-        checked-in-schema-paths))
-
-;; ---------------------------------------------------------------------------
-;; SchemaRegistry — created once at namespace load; thread-safe and caches
-;; Schema objects keyed by $id / content. Draft 2020-12 is the default dialect
-;; when $schema is absent from the schema data.
-;; ---------------------------------------------------------------------------
-(defn- checked-in-schema-resources
-  ([] (checked-in-schema-resources (fs/path "schemas")))
-  ([schema-dir]
-   (if-not (fs/directory? schema-dir)
-     {}
-     (into {}
-           (keep (fn [path]
-                   (when (and (fs/regular-file? path)
-                              (str/ends-with? (str (fs/file-name path))
-                                              ".schema.json"))
-                     (let [file (fs/file path)
-                           content (slurp file)
-                           schema (abc-json/read-json-file file)]
-                       (when-let [schema-id (get schema "$id")]
-                         [schema-id content])))))
-           (->> (files/sorted-path-seq schema-dir)
-                (sort-by #(str (fs/relativize schema-dir %))))))))
-
 (def ^:private schema-registry
-  (SchemaRegistry/withDefaultDialect
-   SpecificationVersion/DRAFT_2020_12
-   (reify java.util.function.Consumer
-     (accept [_ builder]
-       (.schemas builder (checked-in-schema-resources))))))
+  (SchemaRegistry/withDefaultDialect SpecificationVersion/DRAFT_2020_12))
 
 (defn- ^:private instance-location->path-segments
   "Convert a networknt instance-location JSON Pointer string (e.g.
   \"/properties/foo/bar\") into a seq of path segments (e.g.
-  [\"foo\" \"bar\"]), matching the m3 :document-path convention.
+  [\"foo\" \"bar\"]), for structured validation diagnostics.
   Returns an empty vector for the root location."
   [^String location]
   (if (or (nil? location) (= location ""))
@@ -95,23 +53,11 @@
    :schema-path   (str (.getSchemaLocation e))
    :message       (.getMessage e)})
 
-(defn- m3-leaf-errors
-  "Walk an m3 error tree. m3 nests errors via `:errors`; leaves carry
-  `:document-path`, `:schema-path`, and `:message`. Yields a flat seq
-  of leaf maps (descending into `:errors` when present, ignoring
-  intermediate composite-schema messages)."
-  [node]
-  (cond
-    (sequential? node) (mapcat m3-leaf-errors node)
-    (and (map? node) (seq (:errors node))) (mapcat m3-leaf-errors (:errors node))
-    (map? node) [(select-keys node [:document-path :schema-path :message])]
-    :else nil))
-
 (defn humanize-validation-errors
-  "Format an m3 error vector into a flat sequence of readable strings.
+  "Format validation errors as readable strings.
   Returns an empty vector when `errors` is nil or empty."
   [errors]
-  (->> (m3-leaf-errors errors)
+  (->> errors
        (mapv (fn [{:keys [document-path message]}]
                (let [path (when (seq document-path)
                             (str/join "/" (map str document-path)))]
@@ -137,24 +83,3 @@
     (if (seq errors)
       [errors (humanize-validation-errors errors)]
       [nil nil])))
-
-(defn validate-json! [schema path]
-  (when-let [errors (validation-errors schema (abc-json/read-json-file path))]
-    (throw (ex-info (str "JSON Schema validation failed: " path)
-                    {:path (str path)
-                     :errors errors}))))
-
-(defn validate-jsonl! [schema values path]
-  (doseq [value values]
-    (when-let [errors (validation-errors schema value)]
-      (throw (ex-info (str "JSON Schema validation failed: " path)
-                      {:path (str path)
-                       :value value
-                       :errors errors})))))
-
-(defn schema-valid! [schema path]
-  (when-let [errors (validation-errors {"$schema" "https://json-schema.org/draft/2020-12/schema"}
-                                       schema)]
-    (throw (ex-info (str "Invalid JSON Schema: " path)
-                    {:path (str path)
-                     :errors errors}))))

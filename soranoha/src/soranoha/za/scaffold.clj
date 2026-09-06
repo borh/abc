@@ -1,37 +1,9 @@
 (ns soranoha.za.scaffold
-  "Total quarantine baseline: the mechanical starting point of the
-  owner's assessment-evidence input, and the release-time projection
-  that keeps a supplied snapshot bound to the checkout it was scaffolded
-  from.
-
-  For every candidate the kernel's selection join yields, `snapshot`
-  emits one snapshot candidate whose work assessment and whole
-  contribution set are explicit not-evaluated facts — the statement that
-  no completed assessment exists, and nothing else. No status here ever
-  derives from a catalog field: the census predicate is a lexical screen,
-  never assessment evidence (adopted derivation D-3), and completed
-  assessments arrive later under their own authority.
-
-  What this enumerates are CATALOG-LISTED CONTRIBUTION CANDIDATES: every
-  (役割フラグ, 人物ID) row sharing the candidate's 作品ID, deduplicated.
-  They are NOT the rights-relevant contribution set the protocol
-  requires (spec §7). Adopted D-3 is explicit that catalog rows prove
-  neither exhaustive authorship nor that every listed role holds
-  copyright, so this enumeration is a starting list to assess, never a
-  finding about who holds rights. Before any work's facts may become
-  public-domain, its per-work assessment must ESTABLISH the exact
-  rights-relevant contribution set — adding what the catalog omits and
-  discharging what it wrongly lists — and the snapshot must carry that
-  established set. All-not-evaluated candidates are safe because nothing
-  is admitted; flipping statuses on this listing without first
-  establishing the set would admit works on an unestablished
-  contribution basis.
-
-  An unknown role flag, a malformed person id, or a ragged row inside a
-  selected work's row set fails closed: a row this enumeration cannot
-  read is a row it must not silently drop."
-  (:require [soranoha.snh.decode :as decode]
-            [soranoha.yomi.catalog :as catalog]))
+  "Project selected catalog rows into contribution candidate identifiers.
+  Catalog declarations do not establish exhaustive authorship or rights facts.
+  Assessment evaluation and release drift checks share this projection;
+  malformed selected rows fail rather than silently dropping candidates."
+  (:require [soranoha.yomi.catalog :as catalog]))
 
 (def role-token
   "役割フラグ → contribution-id role token. Closed by construction: a
@@ -74,7 +46,7 @@
 
 (defn projection
   "{slug -> [catalog-listed contribution candidate id ...]} over a
-  selection, ids sorted and deduplicated. The scaffold emits it and the
+  selection, ids sorted and deduplicated. Assessment evaluation uses it and
   release preflight re-derives it from the checkout under release: a
   snapshot whose projection differs no longer describes the corpus being
   published, even when every slug still matches."
@@ -128,23 +100,3 @@
         :only-in-snapshot-sample (vec (take sample-limit only-snapshot))
         :contributions-differ-count (count differing)
         :contributions-differ-sample (vec (take sample-limit differing))}))))
-
-(defn snapshot
-  "Canonical snh-assessment-snapshot/1 for the selection: one
-  all-not-evaluated candidate per selected slug over its catalog-listed
-  contribution candidates. Returns the encoder's {:bytes :value :hex :id}
-  — encode round-trips through boundary decode, so the emitted bytes are
-  by construction exactly what the release driver and verifier accept."
-  [rows candidates]
-  (decode/encode
-   "assessment-snapshot"
-   {"schema" "snh-assessment-snapshot/1"
-    "candidates"
-    (vec (sort-by #(get % "slug")
-                  (map (fn [[slug ids]]
-                         {"slug" slug
-                          "work_assessment" not-evaluated
-                          "contributions"
-                          (mapv #(assoc not-evaluated "contribution_id" %)
-                                ids)})
-                       (projection rows candidates))))}))

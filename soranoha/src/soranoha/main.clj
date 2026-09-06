@@ -10,11 +10,8 @@
 ;; file inputs. `assessment-evaluate` regenerates a snapshot and an optional
 ;; internal RDF view. `governance`
 ;; appends one offline-signed event; `serving-tree` exports the verified
-;; chain's serving tree; `assessment-scaffold` emits the total
-;; quarantine baseline over the current selection;
-;; `archive-verify` runs the archival observation over a sole archived
-;; view. `compare` checks per-work TEI/plaintext
-;; bytes against a reference tree through the trace store; `delta` runs
+;; chain's serving tree; `archive-verify` runs the archival observation
+;; over a sole archived view. `delta` runs
 ;; the three-set delta oracle over two run reports; `verify` runs the
 ;; kura determinism + fixity report.
 (ns soranoha.main
@@ -73,10 +70,10 @@
                       {:aozora-root (str aozora-root) :status status})))
     commit))
 
-(defn- build-stages [{:keys [clj-toolchain-id rows-for catalog-provenance
+(defn- build-stages [{:keys [clj-toolchain-id rows-for
                              adapter profile]}]
   {:extract (stages/extract-stage clj-toolchain-id)
-   :metadata (stages/metadata-stage clj-toolchain-id rows-for catalog-provenance)
+   :metadata (stages/metadata-stage clj-toolchain-id rows-for)
    :parse (stages/parse-stage adapter)
    :convert (stages/convert-stage adapter)
    :render (stages/render-stage clj-toolchain-id)
@@ -200,10 +197,6 @@
           stage-set (build-stages
                      {:clj-toolchain-id clj-toolchain-id
                       :rows-for rows-for
-                      :catalog-provenance {"source_url" nil
-                                           "retrieved_at" nil
-                                           "original_file_hash"
-                                           (str "sha256:" catalog-csv-hash)}
                       :adapter (stages/resolve-adapter)
                       :profile (validate/profile-paths assets-root)})
           n (if (pos? concurrency)
@@ -280,41 +273,6 @@
       (println (str "selected: " (count candidates)))
       (when out (println (str "exports: " (fs/absolutize out))))
       report)))
-
-(defn compare!
-  "Acceptance: per-work byte equality of TEI + plaintext against a
-  reference tree, counted through the trace store — artifact hashes come
-  from the run report (a trace-store export) and bytes from the CAS."
-  [{:keys [root reference report]}]
-  (let [_ (config/root root)
-        run-report (json/read-json (slurp report))
-        works (get run-report "works")
-        results
-        (mapv (fn [[slug artifacts]]
-                (let [ref-dir (fs/path reference "publications" slug)
-                      check (fn [name file]
-                              (let [ref-file (fs/path ref-dir file)
-                                    hex (get artifacts name)]
-                                (cond
-                                  (not (fs/exists? ref-file)) "missing-reference"
-                                  (nil? hex) "missing-kernel-artifact"
-                                  (= (core-hash/sha256-file (fs/file ref-file)) hex)
-                                  "equal"
-                                  :else "different")))]
-                  {:slug slug
-                   :tei (check "tei" "tei.xml")
-                   :plaintext (check "plaintext" "plain.txt")}))
-              works)
-        equal (count (filter #(and (= "equal" (:tei %))
-                                   (= "equal" (:plaintext %)))
-                             results))
-        problems (remove #(and (= "equal" (:tei %)) (= "equal" (:plaintext %)))
-                         results)]
-    (println (str "equal: " equal "/" (count results)))
-    (doseq [p (take 20 problems)]
-      (println (str "PROBLEM " (:slug p) " tei=" (:tei p)
-                    " plaintext=" (:plaintext p))))
-    {:equal equal :total (count results) :problems (vec problems)}))
 
 (defn delta!
   "Upstream-revision qualification: the three-set delta oracle over two
@@ -706,41 +664,6 @@
                "blobs" (:blobs result)}))
     result))
 
-(defn assessment-scaffold!
-  "Generate the total quarantine baseline for the current selection at
-  --aozora-root — one all-not-evaluated candidate per selected slug over
-  its catalog-listed contribution candidates — writing canonical
-  protocol bytes to --out. This is the starting list an assessment
-  campaign works through, never a completed assessment migration.
-  --out must not yet exist: the snapshot is versioned owner-input data,
-  and replacing one must be an explicit act, never a rerun side effect.
-  The provenance the ledger records — source commit, catalog hash,
-  snapshot id, counts — is printed as the command's output."
-  [{:keys [aozora-root out]}]
-  (require-flags! "assessment-scaffold"
-                  {"--aozora-root" aozora-root
-                   "--out" out})
-  (when (fs/exists? (str out))
-    (throw (ex-info "refusing to overwrite existing --out"
-                    {:out (str out)})))
-  (let [commit (source-provenance! aozora-root)
-        {:keys [csv-text catalog-csv-hash]} (catalog/read-catalog-zip aozora-root)
-        rows (catalog/read-rows-from-string csv-text)
-        {:keys [candidates]} (select/select-candidates aozora-root rows)
-        enc (scaffold/snapshot rows candidates)]
-    (fs/write-bytes (str out) (:bytes enc))
-    (println (abc-json/write-deterministic-json-str
-              {"aozora_git_commit" commit
-               "catalog_csv_hash" catalog-csv-hash
-               "snapshot_id" (:id enc)
-               "candidates" (count candidates)
-               "contributions" (transduce
-                                (map #(count (get % "contributions")))
-                                + 0 (get (:value enc) "candidates"))
-               "ragged_rows" (count (filter #(get % catalog/ragged-key)
-                                            rows))}))
-    enc))
-
 (defn archive-verify!
   "One archival observation: run the chain verifier with the archived
   copy as the sole repository view and print the disposable report,
@@ -795,8 +718,6 @@
   {:root {:coerce :string}
    :aozora-root {:coerce :string}
    :assets-root {:coerce :string}
-   :reference {:coerce :string}
-   :report {:coerce :string}
    :report-a {:coerce :string}
    :report-b {:coerce :string}
    :chain-clone {:coerce :string}
@@ -831,7 +752,6 @@
     (try
       (case command
         "build" (build! opts)
-        "compare" (compare! opts)
         "delta" (when-not (get (delta! opts) "ok")
                   (System/exit 1))
         ;; scheduled-runner exit contract: success covers the no-op; a
@@ -844,7 +764,6 @@
                        (when-not (#{:published :already-applied} outcome)
                          (System/exit 1)))
         "serving-tree" (serving-tree! opts)
-        "assessment-scaffold" (assessment-scaffold! opts)
         "assessment-evaluate" (assessment-evaluate! opts)
         "aozora-reliance-prepare" (aozora-reliance-prepare! opts)
         "archive-verify" (when-not (= :success (:result (archive-verify! opts)))
@@ -852,7 +771,7 @@
         "verify" (when-not (:ok? (verify! opts))
                    (System/exit 1))
         (do (binding [*out* *err*]
-              (println "usage: build|compare|delta|release|governance|serving-tree|assessment-scaffold|assessment-evaluate|aozora-reliance-prepare|archive-verify|verify [--root R --aozora-root A --assets-root S ...]"))
+              (println "usage: build|delta|release|governance|serving-tree|assessment-evaluate|aozora-reliance-prepare|archive-verify|verify [--root R --aozora-root A --assets-root S ...]"))
             (System/exit 2)))
       (System/exit 0)
       (catch clojure.lang.ExceptionInfo e

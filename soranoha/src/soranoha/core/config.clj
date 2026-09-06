@@ -15,15 +15,11 @@
                        {:reason :missing-root})))
      (str (fs/absolutize value)))))
 
-(defn kura-dir [root] (str (fs/path root "kura")))
 (defn cas-dir [root] (str (fs/path root "kura" "objects")))
 (defn trace-db-path [root] (str (fs/path root "kura" "trace.sqlite")))
-(defn clones-dir [root] (str (fs/path root "clones")))
-(defn tmp-dir [root] (str (fs/path root "tmp")))
 
 (defn ensure-layout!
   "Create the derived directory layout under the root; returns the root."
   [root]
-  (doseq [dir [(kura-dir root) (cas-dir root) (clones-dir root) (tmp-dir root)]]
-    (fs/create-dirs dir))
+  (fs/create-dirs (cas-dir root))
   root)

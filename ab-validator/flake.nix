@@ -1084,7 +1084,7 @@
           testScript = "tests/parser-ir-publication-bundle-smoke.sh";
           nativeBuildInputs = [
             pkgs.jq
-            pkgs.python3
+            pythonWithAatSchemaDeps
             pkgs.ripgrep
           ];
         };
@@ -1094,7 +1094,7 @@
           testScript = "tests/parser-ir-publication-bundle-batch-smoke.sh";
           nativeBuildInputs = [
             pkgs.jq
-            pkgs.python3
+            pythonWithAatSchemaDeps
             pkgs.ripgrep
           ];
         };

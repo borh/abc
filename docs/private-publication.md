@@ -32,7 +32,8 @@ nix run .#soranoha-kernel -- assessment-evaluate \
 
 nix run .#soranoha-kernel -- build \
   --root "$prod/root" --aozora-root "$prod/aozora" \
-  --assets-root "$PWD/abc" > "$prod/review/full-build.log"
+  --assets-root "$PWD/abc" --out "$prod/review/full-corpus" \
+  > "$prod/review/full-build.log"
 ```
 
 Preparation attempts every selected edition with four acquisition workers.
@@ -41,6 +42,9 @@ assertions refresh the draft; previous exception records remain unchanged.
 Acquisition failures do not erase previous records, and evaluation must still
 establish their current applicability. Preparation does not publish anything.
 The build log names the generated JSON report under `production/root/runs`.
+The new export directory contains each work's TEI, plaintext, validation and
+fidelity reports, including works whose assessment does not permit publication.
+Use a new export directory for subsequent iterations; the build cache is reused.
 Review the resulting admission partition and export measurements, then commit
 the accepted source and snapshot together at their repository paths.
 

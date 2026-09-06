@@ -3337,10 +3337,12 @@ fixture/local work): O1 RATIFIED (owner, 2026-08-25, with the round-4
 wording: public-release-allowed is the inclusion rule's decision) —
 the assessment evidence is committed as versioned data (F24 snapshot
 source): total accounting covers all 17,602 selected works, including
-explicit not-evaluated facts. The first four-work D23 reliance batch and
-the authorized assessment-required policy are committed (2026-09-06).
-Whole-corpus preparation is underway for private testing; only currently
-applicable assessments admit a work. O2 host named and
+explicit not-evaluated facts. The whole-corpus D23 reliance batch establishes
+17,308 currently applicable official edition assertions (2026-09-06).
+The remaining 294 works have no applicable assessment: 281 lack the official
+expired classification, seven have different edition content, and six have
+different edition links. The authorized assessment-required policy admits
+only works with currently applicable assessments. O2 host named and
 F12-probed; rights admission consumed-from-abc or transferred (F14c);
 F12 repo-growth probe run against the chosen origin ON REAL
 adjacent-revision artifacts from Slices 1/2 — smallest representative

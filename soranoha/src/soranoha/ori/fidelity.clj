@@ -315,7 +315,9 @@
                             (assoc "writing-mode" "horizontal-tb" "text-align" "center" "border-style" "solid"))])
                        enclosing-layouts)
                  (let [properties ["padding-inline-start" "writing-mode" "text-align" "border-style"]]
-                   (->> (elements body "floatingText")
+                   (->> (tree-seq #(seq (children %)) children body)
+                        (filter #(and (= "http://www.tei-c.org/ns/1.0" (.getNamespaceURI ^Node %))
+                                      (#{"div" "floatingText"} (.getLocalName ^Node %))))
                         (filter #(seq (select-keys (css %) properties)))
                         (mapv (fn [div]
                                 [(vec (keep-indexed (fn [index block]

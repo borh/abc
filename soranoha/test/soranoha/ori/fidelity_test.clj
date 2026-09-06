@@ -230,18 +230,18 @@
 
 (deftest enclosing-indentation-and-line-alignment-are-independent
   (let [s (compact-source "前。\n［＃ここから２字下げ］\n附記。\n［＃地から２字上げ］（大正四年八月）\n［＃ここで字下げ終わり］\n後。")
-        t (compact-tei (str "<p>前。</p><floatingText style='padding-inline-start: 2em'><body><p>附記。</p>"
+        t (compact-tei (str "<p>前。</p><div type='layout' style='padding-inline-start: 2em'><p>附記。</p>"
                             "<p abc:layout-kind='chitsuki' abc:layout-params='align=right;offset-from-end=2'>（大正四年八月）</p>"
-                            "</body></floatingText><p>後。</p>"))
+                            "</div><div><p>後。</p></div>"))
         p "前。\n附記。\n（大正四年八月）\n後。\n"]
     (is (= "passed" (get (report s t p) "status")))
     (doseq [mutation [#(str/replace % "padding-inline-start: 2em" "padding-inline-start: 3em")
-                      #(str/replace % "</body></floatingText><p>後。</p>" "<p>後。</p></body></floatingText>")
-                      #(-> % (str/replace "</body></floatingText>" "")
-                           (str/replace "<p abc:layout-kind" "</body></floatingText><p abc:layout-kind"))]]
+                      #(str/replace % "</div><div><p>後。</p></div>" "<p>後。</p></div>")
+                      #(-> % (str/replace "</div><div><p>後。</p></div>" "<p>後。</p></div>")
+                           (str/replace "<p abc:layout-kind" "</div><div><p abc:layout-kind"))]]
       (is (= "failed" (status (report s (mutation t) p) "tei-enclosing-layout")))))
   (let [s (compact-source "［＃ここから２字下げ］\n附記。\n［＃地から２字上げ］日付\n［＃ここで字下げ終わり］")
-        t (compact-tei "<floatingText style='padding-inline-start: 2em'><body><p>附記。</p><p abc:layout-kind='chitsuki' abc:layout-params='align=right;offset-from-end=3'>日付</p></body></floatingText>")
+        t (compact-tei "<div type='layout' style='padding-inline-start: 2em'><p>附記。</p><p abc:layout-kind='chitsuki' abc:layout-params='align=right;offset-from-end=3'>日付</p></div>")
         report (report s t "附記。\n日付\n")]
     (is (= "passed" (status report "tei-enclosing-layout")))
     (is (= "failed" (status report "closing-date-layout")))))

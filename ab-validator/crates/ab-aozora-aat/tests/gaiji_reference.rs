@@ -52,3 +52,32 @@ fn a_component_identifier_does_not_establish_the_containing_glyph() {
     assert_eq!(gaiji["jis_code"], "289-上-12");
     assert!(document["meta"]["interpretation_facts"].is_null());
 }
+
+#[test]
+fn ruby_association_requires_a_resolved_base_and_supplied_reading() {
+    let marker = "※［＃「需＋頁」、第3水準1-94-6］";
+    for (body, expected) in [
+        (format!("{marker}《じゅ》"), 1),
+        (format!("｜前{marker}《ぜんじゅ》"), 1),
+        (marker.to_owned(), 0),
+        (format!("{marker}字《じ》"), 0),
+        (format!("{marker}《》"), 0),
+        ("※［＃未知の字］《じゅ》".to_owned(), 0),
+    ] {
+        let source = format!("題\n作者\n\n{body}\n\n底本：本\n");
+        let document: Value =
+            serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
+        let claims: Vec<_> = document["meta"]["interpretation_facts"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter(|fact| fact["kind"] == "gaiji-ruby")
+            .collect();
+        assert_eq!(claims.len(), expected, "{body}");
+        for claim in claims {
+            let start = usize::try_from(claim["source_span"]["start"].as_u64().unwrap()).unwrap();
+            let end = usize::try_from(claim["source_span"]["end"].as_u64().unwrap()).unwrap();
+            assert!(&source[start..end] == marker || source[start..end] == body);
+        }
+    }
+}

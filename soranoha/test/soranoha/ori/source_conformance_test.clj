@@ -551,3 +551,15 @@
     (is (= "　内。\n　外。" (:plaintext result)))
     (is (= ["text-indent: 0em" "text-indent: 1em"] (mapv #(attribute % "style") paragraphs)))
     (is (= ["first-line-indent(1)" "first-line-indent(1)"] (mapv #(attribute % "rend") paragraphs)))))
+
+(deftest partial-layout-retains-known-axes-and-exact-uncertainty
+  (let [opening "［＃ここから３字下げ、未対応指定、２０字詰め］"
+        closing "［＃ここで字下げ終わり］"
+        result (transcribe (source (str opening "\n本文\n" closing)))
+        paragraph (first (filter #(= "本文" (view/visible-text %)) (elements result "p")))]
+    (is (= "本文" (:plaintext result)))
+    (is (some? (enclosing-style paragraph "padding-inline-start: 3em; inline-size: 20em")))
+    (is (some #(string/includes? % "未対応指定") (map #(.getTextContent ^Node %) (elements result "note"))))
+    (is (some #(string/includes? % closing) (map #(.getTextContent ^Node %) (elements result "note"))))
+    (is (seq (get-in result [:ir "interpretation_problems"])))
+    (is (empty? (get-in result [:ir "interpretation_facts"])))))

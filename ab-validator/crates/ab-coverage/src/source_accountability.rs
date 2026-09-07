@@ -49,7 +49,11 @@ pub fn source_accountability(
         .filter(|pattern| {
             matches!(
                 pattern.row_id.as_str(),
-                "kunten.kaeriten" | "kunten.okurigana"
+                "kunten.kaeriten"
+                    | "kunten.okurigana"
+                    | "gaiji.marker"
+                    | "gaiji.jis_code"
+                    | "gaiji.unicode_codepoint"
             )
         })
         .cloned()
@@ -76,7 +80,7 @@ pub fn source_accountability(
                 "raw": marker.raw,
                 "region": region,
                 "families": families,
-                "components": kunten_components(marker, &compiled_patterns),
+                "components": nested_components(marker, &compiled_patterns),
             }));
         },
     );
@@ -84,7 +88,7 @@ pub fn source_accountability(
     report
 }
 
-fn kunten_components(
+fn nested_components(
     marker: &SourceMarker<'_>,
     patterns: &[CompiledSourceInventoryPattern],
 ) -> Vec<Value> {
@@ -109,11 +113,21 @@ fn kunten_components(
             }
             if matches!(
                 child.kind,
-                SourceMarkerKind::CommandFullwidth | SourceMarkerKind::CommandAscii
+                SourceMarkerKind::CommandFullwidth
+                    | SourceMarkerKind::CommandAscii
+                    | SourceMarkerKind::GaijiFullwidth
+                    | SourceMarkerKind::GaijiAscii
             ) {
                 let mut families = matching_rows(child.raw, patterns);
                 families.retain(|family| {
-                    matches!(family.as_str(), "kunten.kaeriten" | "kunten.okurigana")
+                    matches!(
+                        family.as_str(),
+                        "kunten.kaeriten"
+                            | "kunten.okurigana"
+                            | "gaiji.marker"
+                            | "gaiji.jis_code"
+                            | "gaiji.unicode_codepoint"
+                    )
                 });
                 families.sort();
                 if !families.is_empty() {

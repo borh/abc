@@ -917,6 +917,7 @@ pub fn diagnostics_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
 enum EstablishedInterpretation {
     Ruby,
     Gaiji,
+    GaijiRuby,
     Emphasis,
     Warichu,
     Kunten,
@@ -995,6 +996,7 @@ impl EstablishedInterpretation {
         match self {
             Self::Ruby => "ruby",
             Self::Gaiji => "gaiji",
+            Self::GaijiRuby => "gaiji-ruby",
             Self::Emphasis => "emphasis",
             Self::Warichu => "warichu",
             Self::Kunten => "kunten",
@@ -1011,7 +1013,9 @@ impl EstablishedInterpretation {
 
     fn aspects(self) -> &'static [&'static str] {
         match self {
-            Self::Ruby | Self::TextVariant | Self::EditorialNote => &["content", "structure"],
+            Self::Ruby | Self::GaijiRuby | Self::TextVariant | Self::EditorialNote => {
+                &["content", "structure"]
+            }
             Self::Gaiji => &["content"],
             Self::Emphasis | Self::Layout | Self::LineLayout => &["layout"],
             Self::Warichu | Self::Heading | Self::Caption | Self::Table | Self::LayoutBreak => {
@@ -1022,11 +1026,52 @@ impl EstablishedInterpretation {
     }
 }
 
+fn gaiji_ruby_facts(ruby: &Value) -> Vec<Value> {
+    let mut pending = ruby["base_content"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>();
+    let mut facts = Vec::new();
+    while let Some(node) = pending.pop() {
+        if matches!(
+            EstablishedInterpretation::for_node(node),
+            Some(EstablishedInterpretation::Gaiji)
+        ) {
+            for marker in ruby["interpretation_marker_spans"]
+                .as_array()
+                .into_iter()
+                .flatten()
+            {
+                let span = if marker["byte_start"] == ruby["span"]["byte_start"] {
+                    marker
+                } else if marker["byte_start"] == node["span"]["byte_end"] {
+                    &node["span"]
+                } else {
+                    continue;
+                };
+                facts.push(json!({"kind":EstablishedInterpretation::GaijiRuby.kind(), "outcome":"established",
+                    "aspects":EstablishedInterpretation::GaijiRuby.aspects(),
+                    "source_span":{"start":span["byte_start"],"end":span["byte_end"],
+                        "line":span["line_start"],"coordinate_system":"decoded_utf8"}}));
+            }
+        }
+        for key in ["content", "base_content"] {
+            pending.extend(node[key].as_array().into_iter().flatten());
+        }
+    }
+    facts.dedup();
+    facts
+}
+
 fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
     let mut facts = Vec::new();
     let mut pending = blocks.iter().rev().collect::<Vec<_>>();
     while let Some(node) = pending.pop() {
         let interpretation = EstablishedInterpretation::for_node(node);
+        if matches!(interpretation, Some(EstablishedInterpretation::Ruby)) {
+            facts.extend(gaiji_ruby_facts(node));
+        }
         if let Some(interpretation) = interpretation {
             let spans = if matches!(
                 node["kind"].as_str(),
@@ -2593,6 +2638,7 @@ fn push_style_node(
             span: marker,
             marker_span: Some(marker),
             container_end: None,
+            unresolved_layout: None,
         };
         let assertion = raw_node(decoded, &variant_node, "base-text-variant");
         if !attach_formatting_variant(&mut style, &assertion, &decoded.text) {

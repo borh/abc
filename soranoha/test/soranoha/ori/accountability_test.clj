@@ -105,6 +105,8 @@
                ["［＃斜体］字［＃「字」の部分はイタリック体］［＃斜体終わり］" "［＃「字」の部分はイタリック体］" 2]
                ["［＃太字］字［＃「字」は斜体］［＃太字終わり］" nil 3]
                ["｜漢字《かんじ》、漢字《かんじ》。" nil 2]
+               ["※［＃「需＋頁」、第3水準1-94-6］《じゅ》" nil 2]
+               ["｜前※［＃「需＋頁」、第3水準1-94-6］《ぜんじゅ》" nil 1]
                ["２）［＃「２）」は縦中横、行右小書き］" nil 1]
                ["漢［＃レ］字［＃（ノ）］。" nil 2]
                ["［＃キャプション］字［＃キャプション終わり］" nil 2]
@@ -142,8 +144,10 @@
             (is (= (if unknown [unknown] [])
                    (mapv #(get % "raw") (filter #(seq (get % "unaccounted_families")) occurrences))))
             (doseq [occurrence claimed claim (get occurrence "claims")]
-              (is (= (select-keys (get occurrence "source_span") ["start" "end"])
-                     (select-keys (get claim "source_span") ["start" "end"])))))))
+              (is (contains? (into #{(select-keys (get occurrence "source_span") ["start" "end"])}
+                                   (map #(select-keys (get % "source_span") ["start" "end"]))
+                                   (get occurrence "components"))
+                             (select-keys (get claim "source_span") ["start" "end"])))))))
       (finally (engine/close-store! store) (fs/delete-tree dir)))))
 
 (deftest native-interpretation-and-oracle-share-the-decoded-coordinate-axis

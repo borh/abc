@@ -24,12 +24,33 @@ fn convert(body: &str) -> Value {
 
 #[test]
 fn paired_frame_and_horizontal_preserve_layout_across_paragraphs() {
-    for (open, close, kind) in [("罫囲み", "罫囲み", "keigakomi"), ("横組み", "横組み", "yokogumi")] {
-        let ir = convert(&format!("前［＃ここから{open}］甲\n乙［＃ここで{close}終わり］後"));
+    for (open, close, kind) in [
+        ("罫囲み", "罫囲み", "keigakomi"),
+        ("横組み", "横組み", "yokogumi"),
+    ] {
+        let ir = convert(&format!(
+            "前［＃ここから{open}］甲\n乙［＃ここで{close}終わり］後"
+        ));
         assert_eq!(ir["layout_blocks"][0]["typography"]["kind"], kind);
-        assert_eq!(ir["paragraphs"].as_array().unwrap().iter().filter(|p| p["role"] == "body").count(), 2);
+        assert_eq!(
+            ir["paragraphs"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter(|p| p["role"] == "body")
+                .count(),
+            2
+        );
         assert_eq!(ir["interpretation_problems"], serde_json::json!([]));
-        assert_eq!(ir["interpretation_facts"].as_array().unwrap().iter().filter(|f| f["kind"] == "layout").count(), 2);
+        assert_eq!(
+            ir["interpretation_facts"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter(|f| f["kind"] == "layout")
+                .count(),
+            2
+        );
     }
 }
 

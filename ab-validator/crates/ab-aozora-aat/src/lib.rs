@@ -974,7 +974,16 @@ impl EstablishedInterpretation {
                     .as_array()
                     .is_some_and(|children| !children.is_empty()) =>
             {
-                Some(if matches!(node["formatting"]["kind"].as_str(), Some("keigakomi" | "yokogumi")) { Self::Layout } else { Self::Emphasis })
+                Some(
+                    if matches!(
+                        node["formatting"]["kind"].as_str(),
+                        Some("keigakomi" | "yokogumi")
+                    ) {
+                        Self::Layout
+                    } else {
+                        Self::Emphasis
+                    },
+                )
             }
             Some("formatting" | "font_size" | "small_script" | "tcy") if has_content => {
                 Some(Self::Emphasis)
@@ -1407,9 +1416,22 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
 
         if matches!(
             node["x-formatting"]["kind"].as_str(),
-            Some("style" | "font_size" | "small_script" | "tcy" | "caption" | "warichu" | "keigakomi" | "yokogumi")
-        ) && (!matches!(node["x-formatting"]["kind"].as_str(), Some("keigakomi" | "yokogumi"))
-            || node["source"].as_str().is_some_and(|source| source.starts_with("［＃ここから")))
+            Some(
+                "style"
+                    | "font_size"
+                    | "small_script"
+                    | "tcy"
+                    | "caption"
+                    | "warichu"
+                    | "keigakomi"
+                    | "yokogumi"
+            )
+        ) && (!matches!(
+            node["x-formatting"]["kind"].as_str(),
+            Some("keigakomi" | "yokogumi")
+        ) || node["source"]
+            .as_str()
+            .is_some_and(|source| source.starts_with("［＃ここから")))
             && let Some(close_index) = native_scopes.get(&index).copied()
             && node["span"]["line_start"] != content[close_index]["span"]["line_start"]
         {
@@ -1629,7 +1651,6 @@ fn push_paragraph_if_not_empty(blocks: &mut Vec<Value>, content: Vec<Value>) {
     }
     blocks.push(paragraph);
 }
-
 
 fn parse_aozora_number_before(source: &str, needle: &str) -> Option<u64> {
     let prefix = source.split_once(needle)?.0;
@@ -3232,7 +3253,12 @@ fn layout_fields(kind: &ProjectedKind) -> Option<Value> {
 
 fn region_formatting(region: RegionFormat) -> Option<(String, Value)> {
     let (key, attr) = match region {
-        RegionFormat::Framed(kind) => return Some((format!("keigakomi:{}", enclosure_kind(kind)), formatting_fields(ForwardAttr::Framed(kind))?)),
+        RegionFormat::Framed(kind) => {
+            return Some((
+                format!("keigakomi:{}", enclosure_kind(kind)),
+                formatting_fields(ForwardAttr::Framed(kind))?,
+            ));
+        }
         RegionFormat::Horizontal => ("yokogumi", ForwardAttr::Horizontal),
         RegionFormat::Warichu => return Some(("warichu".to_owned(), json!({"kind":"warichu"}))),
         RegionFormat::Caption { .. } => {
@@ -3281,7 +3307,9 @@ fn region_formatting(region: RegionFormat) -> Option<(String, Value)> {
 fn region_formatting_close(close: RegionClose) -> Option<String> {
     Some(
         match close {
-            RegionClose::Framed(kind) => return Some(format!("keigakomi:{}", enclosure_kind(kind))),
+            RegionClose::Framed(kind) => {
+                return Some(format!("keigakomi:{}", enclosure_kind(kind)));
+            }
             RegionClose::Horizontal => "yokogumi",
             RegionClose::Warichu => "warichu",
             RegionClose::Caption { .. } => "caption",

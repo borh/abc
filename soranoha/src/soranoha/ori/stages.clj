@@ -154,7 +154,7 @@
            "plaintext-projection" (json-bytes (projection/report :projection/plaintext reading))}))})
 
 (defn markdown-stage [clj-toolchain-id]
-  {:stage-id "markdown" :stage-version "2" :toolchain-id clj-toolchain-id
+  {:stage-id "markdown" :stage-version "3" :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob]} inputs]
         (let [reading (view/from-tei (String. ^bytes (blob (get inputs "tei")) "UTF-8"))]
           {"markdown" (utf8 (projection/markdown reading))

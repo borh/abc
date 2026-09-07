@@ -206,7 +206,7 @@ fn inline_tcy_does_not_terminate_enclosing_indentation() {
         ),
     ] {
         let ir = convert(&format!(
-            "［＃{open}］\nビタミン［＃縦中横］B1［＃「1」は下付き小文字］［＃縦中横終わり］　二ミリグラム\n［＃ここで字下げ終わり］"
+            "［＃{open}］\nビタミン［＃縦中横］B1［＃「1」は下付き小文字］［＃縦中横終わり］　二ミリグラム\n次の行。\n［＃ここで字下げ終わり］"
         ));
         let tcy_index = ir["nodes"]
             .as_array()
@@ -231,6 +231,19 @@ fn inline_tcy_does_not_terminate_enclosing_indentation() {
             .filter_map(|node| node["text"].as_str())
             .collect();
         assert_eq!(text.trim_matches('\n'), "ビタミンB1　二ミリグラム");
+        let next = ir["paragraphs"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|p| p["node_range"]["start"].as_u64() == Some(end as u64))
+            .unwrap();
+        assert_eq!(next["layout"], layout);
+        let next_end = usize::try_from(next["node_range"]["end"].as_u64().unwrap()).unwrap();
+        let next_text: String = ir["nodes"].as_array().unwrap()[end..next_end]
+            .iter()
+            .filter_map(|node| node["text"].as_str())
+            .collect();
+        assert_eq!(next_text.trim_matches('\n'), "次の行。");
         assert_eq!(ir["interpretation_problems"], json!([]));
     }
 }

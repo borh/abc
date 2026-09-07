@@ -1258,17 +1258,19 @@ fn align_end_offset(node: &Value) -> Option<u64> {
     reason = "block assembly may replace or drain the content vector"
 )]
 fn push_burasage_paragraph(blocks: &mut Vec<Value>, first: u64, rest: u64, content: Vec<Value>) {
-    blocks.push(json!({
+    for paragraph in content.split_inclusive(ends_source_line) {
+        blocks.push(json!({
         "kind": "paragraph",
         "content": [{
             "kind": "style",
             "style_type": "burasage",
-            "content": content,
+            "content": paragraph,
             "indent_first": first,
             "indent_rest": rest,
             "x-provenance": "source-derived"
         }]
-    }));
+        }));
+    }
 }
 
 /// As [`push_burasage_paragraph`], but if `jizume_width` is present (the

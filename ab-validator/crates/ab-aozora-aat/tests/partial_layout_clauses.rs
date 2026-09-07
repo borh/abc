@@ -14,24 +14,25 @@ fn has_editorial_marker_fact(aat: &Value, marker: &str) -> bool {
         })
 }
 
-fn assert_only_closer_fact(aat: &Value, source: &str) {
+fn assert_only_closer_facts(aat: &Value, source: &str) {
     let close = "［＃ここで字下げ終わり］";
     let start = source.rfind(close).unwrap();
     let facts = aat["meta"]["interpretation_facts"].as_array().unwrap();
-    assert_eq!(facts.len(), 1, "{aat}");
-    assert_eq!(
-        facts[0]["kind"], "line-layout",
-        "the established close is a layout fact"
+    assert!(
+        facts.iter().any(|fact| fact["kind"] == "line-layout"),
+        "{aat}"
     );
-    assert_eq!(
-        facts[0]["source_span"]["start"], start,
-        "the opener must remain unclaimed"
-    );
-    assert_eq!(
-        facts[0]["source_span"]["end"],
-        start + close.len(),
-        "the fact owns the complete supplied closer"
-    );
+    for fact in facts {
+        assert_eq!(
+            fact["source_span"]["start"], start,
+            "the partial opener remains unclaimed: {aat}"
+        );
+        assert_eq!(
+            fact["source_span"]["end"],
+            start + close.len(),
+            "the fact owns the complete supplied closer: {aat}"
+        );
+    }
 }
 
 #[test]
@@ -52,7 +53,7 @@ fn unknown_clause_keeps_independent_geometry_and_exact_uncertainty() {
     assert_eq!(&source[start..end], "未対応指定");
     let document = ab_aozora_facade::Document::new(source.as_str());
     assert!(document.parse().to_source().contains(marker));
-    assert_only_closer_fact(&aat, &source);
+    assert_only_closer_facts(&aat, &source);
     assert!(layout.to_string().contains("未対応指定"));
     assert!(layout.to_string().contains("本文"));
 }
@@ -69,7 +70,7 @@ fn conflicting_width_is_not_selected_by_clause_order() {
             aat["blocks"][0]["children"][0]["content"][0]["source"],
             widths
         );
-        assert_only_closer_fact(&aat, &source);
+        assert_only_closer_facts(&aat, &source);
     }
 }
 
@@ -116,7 +117,7 @@ fn supplied_unknown_clauses_do_not_erase_indentation() {
         let layout = &aat["blocks"][0];
         assert_eq!(layout["indent"], amount, "{aat}");
         assert_eq!(layout["children"][0]["content"][0]["source"], clause);
-        assert_only_closer_fact(&aat, &source);
+        assert_only_closer_facts(&aat, &source);
     }
 }
 

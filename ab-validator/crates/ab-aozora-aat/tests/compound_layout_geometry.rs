@@ -77,3 +77,35 @@ fn canonical_source_and_native_html_keep_placement_separate() {
     assert_eq!(reparsed.parse().to_html(), html);
     assert_eq!(reparsed.parse().to_source(), canonical);
 }
+
+#[test]
+fn compound_scope_claims_each_established_presentation_family() {
+    for (clause, close, content) in [
+        ("横組み右揃えで", "字下げ、横組み終わり", "本文"),
+        ("罫囲み", "字下げ、罫囲み終わり", "本文"),
+        ("枠囲み", "字下げ、枠囲み終わり", "本文"),
+        (
+            "横組み右揃えで",
+            "字下げ、横組み終わり",
+            "本文\n［＃横組みの下に、左右中央縦組みで］\n縦の説明",
+        ),
+    ] {
+        let opener = format!("［＃ここから２字下げ、{clause}］");
+        let closer = format!("［＃ここで{close}］");
+        let source = format!("{opener}\n{content}\n{closer}");
+        let aat: Value =
+            serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
+        let facts = aat["meta"]["interpretation_facts"].as_array().unwrap();
+        for start in [0, source.find(&closer).unwrap()] {
+            for kind in ["line-layout", "layout"] {
+                assert!(
+                    facts
+                        .iter()
+                        .any(|fact| fact["kind"] == kind && fact["source_span"]["start"] == start),
+                    "{aat}"
+                );
+            }
+        }
+        assert!(!aat.to_string().contains("interpretation_problem"), "{aat}");
+    }
+}

@@ -1882,15 +1882,15 @@ fn source_inventory_classifies_final_reviewed_residual_command_batch() {
             .row_counts
             .get("source.reviewed_residual_command")
             .map(|count| count.occurrences),
-        Some(71)
+        Some(70)
     );
     assert_eq!(
         summary
             .row_counts
             .get("indentation.jisage_block")
             .map(|count| count.occurrences),
-        Some(1),
-        "formatting space inside a closing marker does not change its source family"
+        Some(2),
+        "spacing and co-applied writing direction do not erase the indentation family"
     );
 }
 

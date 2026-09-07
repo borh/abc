@@ -1608,10 +1608,18 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
     let mut pending = blocks.iter().rev().collect::<Vec<_>>();
     while let Some(node) = pending.pop() {
         let interpretation = EstablishedInterpretation::for_node(node);
-        let font_formatting = node["kind"] == "layout_block"
-            && iter::once(&node["formatting"])
+        let mut font_formatting = false;
+        let mut layout_formatting = false;
+        if node["kind"] == "layout_block" {
+            layout_formatting =
+                node["direction"] == "horizontal" || node.get("relative_placement").is_some();
+            for attribute in iter::once(&node["formatting"])
                 .chain(node["formatting"].as_array().into_iter().flatten())
-                .any(|attribute| attribute["kind"] == "font_size");
+            {
+                font_formatting |= attribute["kind"] == "font_size";
+                layout_formatting |= attribute["kind"] == "keigakomi";
+            }
+        }
         if matches!(interpretation, Some(EstablishedInterpretation::Ruby)) {
             facts.extend(gaiji_ruby_facts(node));
         }
@@ -1660,8 +1668,7 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
                         facts.push(json!({"kind":"emphasis", "outcome":"established", "aspects":["layout"],
                             "source_span":{"start":start,"end":end,"line":span["line_start"],"coordinate_system":"decoded_utf8"}}));
                     }
-                    if node.get("relative_placement").is_some() && node["direction"] == "horizontal"
-                    {
+                    if layout_formatting {
                         facts.push(json!({"kind":"layout", "outcome":"established", "aspects":["layout"],
                             "source_span":{"start":start,"end":end,"line":span["line_start"],"coordinate_system":"decoded_utf8"}}));
                     }

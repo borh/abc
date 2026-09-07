@@ -1382,6 +1382,50 @@ impl RecogniseCtx<'_, '_> {
     }
 }
 
+fn page_reference_location<'a>(target: &str, suffix: &'a str) -> Option<&'a str> {
+    let number = target
+        .strip_suffix("頁")
+        .or_else(|| target.strip_suffix("ページ"))?;
+    if number.is_empty()
+        || !number.chars().all(|c| {
+            c.is_ascii_digit()
+                || matches!(
+                    c,
+                    '０'
+                        ..='９'
+                            | '〇'
+                            | '一'
+                            | '二'
+                            | '三'
+                            | '四'
+                            | '五'
+                            | '六'
+                            | '七'
+                            | '八'
+                            | '九'
+                            | '十'
+                            | '百'
+                            | '千'
+                )
+        })
+    {
+        return None;
+    }
+    let location = suffix.strip_prefix('は')?;
+    let mut remaining = location;
+    loop {
+        let quoted = remaining.strip_prefix('「')?;
+        let (title, rest) = quoted.split_once('」')?;
+        if title.is_empty() || title.contains('「') {
+            return None;
+        }
+        if rest.is_empty() {
+            return Some(location);
+        }
+        remaining = rest.strip_prefix('の')?;
+    }
+}
+
 /// Classify target-associated 注記 or 傍記, preserving an explicitly supplied
 /// side. Bare `に` does not establish a side. The native referent extent lets
 /// downstream projections attach interior notes without repeating the target.
@@ -1396,24 +1440,30 @@ impl RecogniseCtx<'_, '_> {
         let [target] = extracted.targets.as_slice() else {
             return None;
         };
-        let (kind, inner) = if let Some(inner) = extracted
-            .suffix
-            .strip_suffix("」の注記")
-            .or_else(|| extracted.suffix.strip_suffix("」注記"))
-        {
-            (MarginNoteKind::Gloss, inner)
-        } else if let Some(inner) = extracted.suffix.strip_suffix("」の傍記") {
-            (MarginNoteKind::Marginal, inner)
-        } else {
-            return None;
-        };
-        let (position, note_text) = if let Some(note) = inner.strip_prefix("の左に「") {
-            (Some(MarginNotePosition::Left), note)
-        } else if let Some(note) = inner.strip_prefix("の右に「") {
-            (Some(MarginNotePosition::Right), note)
-        } else {
-            (None, inner.strip_prefix("に「")?)
-        };
+        let (kind, position, note_text) =
+            if let Some(location) = page_reference_location(target, extracted.suffix) {
+                (MarginNoteKind::CrossReference, None, location)
+            } else {
+                let (kind, inner) = if let Some(inner) = extracted
+                    .suffix
+                    .strip_suffix("」の注記")
+                    .or_else(|| extracted.suffix.strip_suffix("」注記"))
+                {
+                    (MarginNoteKind::Gloss, inner)
+                } else if let Some(inner) = extracted.suffix.strip_suffix("」の傍記") {
+                    (MarginNoteKind::Marginal, inner)
+                } else {
+                    return None;
+                };
+                let (position, note_text) = if let Some(note) = inner.strip_prefix("の左に「") {
+                    (Some(MarginNotePosition::Left), note)
+                } else if let Some(note) = inner.strip_prefix("の右に「") {
+                    (Some(MarginNotePosition::Right), note)
+                } else {
+                    (None, inner.strip_prefix("に「")?)
+                };
+                (kind, position, note_text)
+            };
         if note_text.is_empty() {
             return None;
         }

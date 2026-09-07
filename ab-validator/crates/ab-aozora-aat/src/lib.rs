@@ -2883,7 +2883,7 @@ fn push_annotated_text(content: &mut Vec<Value>, decoded: &DecodedSource, node: 
     let annotation = note_span.and_then(|span| source_fragment(decoded, span.start..span.end));
     let wrapper = |children: &[Value], annotation: &[Value]| {
         let mut value = json!({"kind":"annotated_text", "content":children, "annotation_content":annotation,
-            "note_kind":match kind {MarginNoteKind::Gloss=>"gloss", MarginNoteKind::Marginal=>"marginal", _=>unreachable!("known note kind")},
+            "note_kind":match kind {MarginNoteKind::Gloss=>"gloss", MarginNoteKind::Marginal=>"marginal", MarginNoteKind::CrossReference=>"cross-reference", _=>unreachable!("known note kind")},
             "span":span_json(&marker, &decoded.span_ctx)});
         if let Some(position) = position {
             value["position"] = json!(match position {

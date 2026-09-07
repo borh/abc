@@ -652,3 +652,11 @@
       (is (empty? (get-in result [:ir "interpretation_problems"])))
       (is (some #(= "gaiji-ruby" (get % "kind"))
                 (get-in result [:ir "interpretation_facts"]))))))
+
+(deftest source-page-reference-keeps-the-printed-label
+  (let [result (transcribe (source "三五頁［＃「三五頁」は「須佐の男の神」の「穀物の種」］にある。"))
+        note (first (filter #(= "cross-reference" (attribute % "type")) (elements result "note")))]
+    (is (= "三五頁にある。" (:plaintext result)))
+    (is (= "「須佐の男の神」の「穀物の種」" (.getTextContent ^Node note)))
+    (is (= "" (attribute note "target"))))
+  (is (seq (get-in (transcribe (source "本文［＃「三五頁」は「章」］")) [:ir "interpretation_problems"]))))

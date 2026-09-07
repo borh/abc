@@ -271,9 +271,7 @@ pub enum MarginNotePosition {
 
 /// Which annotation flavour an `ast::MarginNote` carries.
 ///
-/// 注記 and 傍記 share the `MarginNote` structure (a note attached to a
-/// preceding run) but round-trip to distinct keywords, so the flavour is
-/// preserved here even though both render the same.
+/// A note attached to a preceding run, with its source relationship retained.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
@@ -284,6 +282,8 @@ pub enum MarginNoteKind {
     /// 傍記 — `［＃「X」に「Y」の傍記］`, a redaction marker (典型的に ×)
     /// written beside X, used in censorship restoration.
     Marginal,
+    /// A printed page label identified by a supplied section locator.
+    CrossReference,
 }
 
 impl MarginNoteKind {
@@ -293,6 +293,7 @@ impl MarginNoteKind {
         match self {
             Self::Gloss => "注記",
             Self::Marginal => "傍記",
+            Self::CrossReference => "は",
         }
     }
 }

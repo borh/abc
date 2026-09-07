@@ -448,7 +448,7 @@
         "kind":{"const":"annotated_text"},
         "content":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/inline"}},
         "annotation_content":{"type":"array","minItems":1,"items":{"oneOf":[{"$ref":"#/$defs/inline"},{"$ref":"#/$defs/gap"}]}},
-        "note_kind":{"enum":["gloss","marginal","base-edition","source-concealment"]},
+        "note_kind":{"enum":["gloss","marginal","cross-reference","base-edition","source-concealment"]},
         "position":{"enum":["left","right"]},
         "span":{"$ref":"#/$defs/span"}
       }

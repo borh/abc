@@ -2830,3 +2830,25 @@ mod edition_results {
         fs::remove_dir_all(root).unwrap();
     }
 }
+
+#[test]
+fn source_labels_do_not_match_words_inside_other_markup() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    for source in [
+        "［＃「母と共に行方を晦ます」は１段階大きな文字］",
+        "［＃「ギリシャの哲学者たち」は同行小見出し］",
+        "［＃「所天」は底本では「所夫」］",
+        "［＃底本では「お父っあん」となっている］",
+        "※［＃「金＋夫」、第3水準1-93-4］",
+        "｜鸚※［＃「母＋鳥」、U+4CC7、217-9］《おうむ》",
+        "〔佐藤（春夫）［＃「（春夫）」は１段階小さな文字］先生〕",
+    ] {
+        let summary = inventory_document("fixture", source, &patterns);
+        assert!(
+            !summary.row_counts.contains_key("source.note_label"),
+            "{source}"
+        );
+        assert!(summary.unknown_examples.is_empty(), "{source}");
+    }
+}

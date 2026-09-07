@@ -1457,8 +1457,8 @@ fn page_reference_location<'a>(target: &str, suffix: &'a str) -> Option<&'a str>
     }
 }
 
-/// Classify target-associated 注記 or 傍記, preserving an explicitly supplied
-/// side. Bare `に` does not establish a side. The native referent extent lets
+/// Classify target-associated glosses, marginal notes and page references,
+/// preserving an explicitly supplied side. Bare `に` does not establish a side. The native referent extent lets
 /// downstream projections attach interior notes without repeating the target.
 impl RecogniseCtx<'_, '_> {
     fn classify_forward_side_note(

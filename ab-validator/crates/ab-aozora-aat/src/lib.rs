@@ -1751,6 +1751,12 @@ fn heading_block_from_hint(
         "kind": "heading",
         "level": level,
         "style": style,
+        "span": {
+            "byte_start": heading_content[0]["span"]["byte_start"],
+            "byte_end": node["span"]["byte_end"],
+            "line_start": heading_content[0]["span"]["line_start"],
+            "line_end": node["span"]["line_end"]
+        },
         "content": heading_content,
         "interpretation_marker_spans": [node["span"]],
         "x-provenance": "source-derived",

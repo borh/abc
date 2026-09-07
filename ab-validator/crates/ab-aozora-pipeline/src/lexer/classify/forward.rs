@@ -1704,9 +1704,8 @@ fn is_latin_run_char(ch: char) -> bool {
 ///
 /// 太字 → Bold, ゴシック体 → Gothic (a distinct typeface, **not** a fold to
 /// 太字), 斜体 → Italic (per
-/// <https://www.aozora.gr.jp/annotation/emphasis.html>). ゴチック (1 corpus
-/// work) is not recognised — it declines to `Directive{Unknown}` and a Tier1
-/// lint suggests ゴシック体. 上付き小文字 →
+/// <https://www.aozora.gr.jp/annotation/emphasis.html>). ゴチック shares the
+/// gothic typeface meaning. 上付き小文字 →
 /// `SuperScript`, 下付き小文字 → `SubScript`, 行右小書き → `SmallScript(Right)`,
 /// 行左小書き → `SmallScript(Left)`, and `N段階大きな/小さな文字` → `FontSize`
 /// (per <https://www.aozora.gr.jp/annotation/etc.html>). 分数 → `Fraction`
@@ -1718,11 +1717,11 @@ fn is_latin_run_char(ch: char) -> bool {
 pub(super) fn forward_attr_from_suffix(s: &str) -> Option<ForwardAttr> {
     Some(match s {
         "太字" => ForwardAttr::Bold,
-        "ゴシック体" => ForwardAttr::Gothic,
+        "ゴシック体" | "ゴチック" => ForwardAttr::Gothic,
         "斜体" => ForwardAttr::Italic,
         "上付き小文字" => ForwardAttr::SuperScript,
         "下付き小文字" => ForwardAttr::SubScript,
-        "行右小書き" => ForwardAttr::SmallScript(BoutenPosition::Right),
+        "行右小書き" | "小書き右寄せ" => ForwardAttr::SmallScript(BoutenPosition::Right),
         "行左小書き" => ForwardAttr::SmallScript(BoutenPosition::Left),
         "罫囲み" => ForwardAttr::Framed(EnclosureKind::Rule),
         // Other single-target enclosures whose suffix carries no embedded glyph
@@ -1739,7 +1738,7 @@ pub(super) fn forward_attr_from_suffix(s: &str) -> Option<ForwardAttr> {
         "特大文字" => ForwardAttr::FontSizeAbsolute(AbsoluteSize::ExtraLarge),
         "大文字" => ForwardAttr::FontSizeAbsolute(AbsoluteSize::Large),
         "中文字" => ForwardAttr::FontSizeAbsolute(AbsoluteSize::Medium),
-        "小文字" => ForwardAttr::FontSizeAbsolute(AbsoluteSize::Small),
+        "小文字" | "小書き" => ForwardAttr::FontSizeAbsolute(AbsoluteSize::Small),
         // 分数: `「a/b」は分数`. Only the single-target form is matched here; a
         // comma-joined compound (`「3」は上付き小文字、「1/143」は分数`) yields a
         // suffix that is not exactly `分数`, so it stays `Directive{Unknown}`.
@@ -1801,7 +1800,10 @@ fn parse_align_end_suffix(s: &str) -> Option<ForwardAttr> {
 /// a negative one. Returns `None` for a missing/zero magnitude, an `i8`
 /// overflow, or any other suffix (→ `Directive{Unknown}`).
 fn parse_font_size_suffix(s: &str) -> Option<ForwardAttr> {
-    let (magnitude, rest) = parse_decimal_u8_prefix(s)?;
+    let (magnitude, rest) = s
+        .strip_prefix('一')
+        .map(|rest| (1, rest))
+        .or_else(|| parse_decimal_u8_prefix(s))?;
     let steps = i8::try_from(magnitude).ok()?;
     let shift = FontShift(NonZeroI8::new(steps)?);
     match rest {

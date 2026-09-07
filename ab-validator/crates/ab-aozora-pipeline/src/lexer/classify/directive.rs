@@ -1588,23 +1588,14 @@ fn strip_heading_style(s: &str) -> (HeadingStyle, &str) {
     .unwrap_or((HeadingStyle::Standard, s))
 }
 
-/// Heading level for a **close** marker only. Requires the full `見出し`
-/// keyword — the 送り仮名-elided stem (`中見出` for `中見出し`) is **not**
-/// recognised: it declines to `Directive{Unknown}` (lossless) and a
-/// Tier1 lint suggests the canonical `見出し終わり`, matching how the
-/// structurally identical `字下げ` close okurigana is handled. A leveled close
-/// serializes back to the canonical `見出し` keyword, so the round-trip is a
-/// fixed point.
-///
-/// The bare `見出し` close (no 大/中/小 level) yields `None` for the level, but
-/// only in [`HeadingStyle::Standard`]: a level-less serialize drops the style
-/// word, so `窓見出し` etc. must stay Unknown to remain lossless.
+/// Closing headings accept the source spelling with or without the final し.
+/// Openers remain explicit about heading level and presentation.
 fn parse_heading_close_level(s: &str) -> Option<(HeadingStyle, Option<HeadingKind>)> {
     let (style, rest) = strip_heading_style(s);
     let level = match rest {
-        "大見出し" => Some(HeadingKind::Large),
-        "中見出し" => Some(HeadingKind::Medium),
-        "小見出し" => Some(HeadingKind::Small),
+        "大見出し" | "大見出" => Some(HeadingKind::Large),
+        "中見出し" | "中見出" => Some(HeadingKind::Medium),
+        "小見出し" | "小見出" => Some(HeadingKind::Small),
         // Bare close: no level. Style-less only — `窓見出し` etc. never occur, and
         // a level-less serialize drops style, so keep those Unknown (lossless).
         "見出し" if matches!(style, HeadingStyle::Standard) => None,

@@ -16,8 +16,9 @@ null placeholders.
 
 Validation results accompany the published TEI under the existing include-and-flag
 policy. A schema pass does not establish source fidelity or publication rights.
-The separate [source-fidelity report](source-fidelity.md) compares exports against
-the primary Aozora text; assessment evaluation controls admission.
+The independent [source-accountability report](source-accountability.md) records
+lexical source occurrences and supports explicit interpretation claim accounting.
+It does not certify exported semantics; assessment evaluation controls admission.
 
 The pinned generation recipe uses TEI P5 4.11.0 and TEI Stylesheets 7.60.0 with
 Saxon-HE. Run from the repository root after editing the ODD:

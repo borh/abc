@@ -19,8 +19,48 @@ coverage. Source conformance tests exercise expected values and annotation
 placement for specific examples. TEI profile validation checks the exported
 XML against the profile. These are separate kinds of evidence.
 
-The former runtime source-fidelity report duplicated a limited Aozora grammar in
-Clojure. Its removal changes the assurance provided: conformance tests do not
-replace source-derived comparisons for every arbitrary edition. The independent
-accountability report must not be read as an equivalent per-edition fidelity
-certificate or a claim that all source markup is supported.
+A report about one edition does not compare its exported values independently
+against every source construction. Conformance tests support the examples they
+exercise; structural validation and interpreter claims are not equivalent to a
+per-edition source/export fidelity certificate.
+
+`interpretation-coverage.json` joins this lexical evidence to explicit native
+interpretation facts. Family counts distinguish `interpreter_claimed` from
+`unaccounted`; a claimed occurrence has at least one explicit compatible aspect,
+not necessarily every aspect. Individual claims list their established aspects
+and native source extent. A compatible ruby fact can contain its lexical reading marker, while an
+enclosing emphasis fact cannot account for that ruby. Source apparatus is kept
+separate. Missing facts and unclassified markers remain visible. Lossy decoding
+prevents positive claim accounting. Reported interpretation problems retain their
+original influence bounds alongside positive claims: a claim is not evidence that
+an overlapping or document-wide problem has been resolved.
+
+## Review exports
+
+From the repository root, set these variables to absolute paths. The corpus must
+be a clean Git checkout and the export directory must not exist:
+
+```sh
+nix run .#soranoha-kernel -- build \
+  --root "$BUILD_STORE" \
+  --aozora-root "$CORPUS_CHECKOUT" \
+  --assets-root "$PWD/soranoha" \
+  --out "$EXPORT_DIR"
+```
+
+Each work directory contains `tei.xml`, `plain.txt`, `text.md`,
+`tei-validation.json`, `plaintext-projection.json`, `markdown-projection.json`,
+`source-accountability.json` and `interpretation-coverage.json`. A top-level
+`build.json` records artifact hashes and build results. Omitting `--out` retains
+outputs in the computation store. Building exports does not publish them or accept
+an assessment.
+
+TEI retains ruby, gaiji declarations, headings, layout and source apparatus.
+Resolved gaiji contain Unicode text directly in `g`, including inside ruby bases;
+`ref` and `charDecl` retain source mappings. Plaintext contains visible body text.
+Paragraph-leading indentation is encoded as CSS `text-indent`; heading and
+source-note continuation indentation uses `padding-inline-start`. Structural XML
+is indented for inspection while mixed content retains its lexical whitespace.
+
+Validation provenance binds the ODD, RNG and Schematron hashes through
+`schemas/tei-profile-generation.json`. See [TEI validation](tei-validation.md).

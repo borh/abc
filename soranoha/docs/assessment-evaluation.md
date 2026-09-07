@@ -2,7 +2,7 @@
 
 Assessment source records describe owner-reviewed Aozora reliance declarations and independent findings with their precise premises. The evaluator regenerates the publication snapshot using the kernel's CAS and constructive traces. The committed source accepts reliance for the reviewed editions of 蜘蛛の糸, やまなし, 走れメロス and 銀河鉄道の夜. The publication policy requires applicable assessment evidence; other candidates remain quarantined.
 
-The research outputs are TEI and visible-body plaintext. The rights snapshot describes admission evidence only; it does not certify transcription or markup fidelity. See [source fidelity and review exports](source-fidelity.md) for the separate build outputs and checks.
+The research outputs are TEI and visible-body plaintext. The rights snapshot describes admission evidence only; it does not certify transcription or markup fidelity. See [source accountability and review exports](source-accountability.md) for the separate build outputs and checks.
 
 ## Prepare Aozora reliance evidence
 

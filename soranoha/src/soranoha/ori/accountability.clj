@@ -2,9 +2,11 @@
   "Independent source-marker evidence. Recognition does not certify interpretation."
   (:require [babashka.fs :as fs]
             [babashka.process :as process]
+            [charred.api :as json]
             [clojure.java.io :as io]
             [clojure.string :as str]
-            [soranoha.core.hash :as hash]))
+            [soranoha.core.hash :as hash]
+            [soranoha.core.json :as record-json]))
 
 (defn resolve-tool
   "Resolve the independent source scanner and its source-authority matrix."
@@ -40,3 +42,121 @@
                                 {:exit exit :stderr err})))
               {"source-accountability" (java.nio.file.Files/readAllBytes (fs/path output))})
             (finally (fs/delete-tree dir)))))})
+
+(def ^:private compatible-families
+  {"ruby" {:markers #{"RubyExplicit" "RubyImplicit"}
+           :families #{"ruby.basic"} :aspects #{"content" "structure"}}
+   "gaiji" {:markers #{"GaijiFullwidth" "GaijiAscii"}
+            :families #{"gaiji.marker" "gaiji.jis_code" "gaiji.unicode_codepoint"}
+            :aspects #{"content"}}
+   "emphasis" {:markers #{"CommandFullwidth" "CommandAscii"}
+               :families #{"emphasis.basic" "decoration.boten" "decoration.bousen"
+                           "decoration.bold_italic"} :aspects #{"layout"}}
+   "warichu" {:markers #{"CommandFullwidth" "CommandAscii"}
+              :families #{"warichu.basic"} :aspects #{"structure" "layout"}}})
+
+(defn- require-evidence [condition message]
+  (when-not condition (throw (ex-info message {:type :accountability/invalid-evidence}))))
+
+(defn- valid-span? [{:strs [start end coordinate_system]}]
+  (and (= "decoded_utf8" coordinate_system)
+       (integer? start) (integer? end) (<= 0 start) (< start end)))
+
+(defn- validate-fact! [{:strs [kind outcome aspects source_span] :as fact}]
+  (let [allowed (get compatible-families kind)]
+    (require-evidence
+     (and allowed (= #{"kind" "outcome" "aspects" "source_span"} (set (keys fact)))
+          (= "established" outcome) (vector? aspects) (seq aspects)
+          (= (count aspects) (count (set aspects)))
+          (every? (:aspects allowed) aspects) (valid-span? source_span))
+     "Invalid native interpretation fact")))
+
+(defn- occurrence-claims [occurrence active]
+  (into []
+        (keep (fn [fact]
+                (let [{:keys [markers families]} (get compatible-families (get fact "kind"))
+                      matched (filterv families (get occurrence "families"))]
+                  (when (and (markers (get occurrence "kind")) (seq matched)
+                             (>= (get-in fact ["source_span" "end"])
+                                 (get-in occurrence ["source_span" "end"])))
+                    {"kind" (get fact "kind") "families" matched
+                     "aspects" (get fact "aspects")
+                     "source_span" (get fact "source_span")}))))
+        active))
+
+(defn coverage-report
+  "Join lexical evidence to explicit native claims; no source/export certification.
+  Negative problems retain their declared influence, independently of positive claims."
+  [oracle parser-ir]
+  (let [facts (get parser-ir "interpretation_facts")
+        problems (get parser-ir "interpretation_problems")
+        occurrences (get oracle "occurrences")]
+    (require-evidence (= "aozora-source-accountability/1" (get oracle "schema"))
+                      "Unsupported source accountability schema")
+    (require-evidence (and (string? (get oracle "source_sha256"))
+                           (= (get oracle "source_sha256")
+                              (get-in parser-ir ["source" "primary_text_hash"]))
+                           (= (get oracle "encoding")
+                              (get-in parser-ir ["source" "decode_outcome"])))
+                      "Source accountability and interpretation have different inputs")
+    (require-evidence (and (vector? facts) (vector? problems) (vector? occurrences))
+                      "Interpretation evidence requires explicit occurrence, fact and problem arrays")
+    (doseq [fact facts] (validate-fact! fact))
+    (doseq [occurrence occurrences]
+      (require-evidence (and (valid-span? (get occurrence "source_span"))
+                             (vector? (get occurrence "families")))
+                        "Invalid lexical occurrence"))
+    (let [results
+          (loop [remaining (sort-by #(get-in % ["source_span" "start"]) occurrences)
+                 pending (sort-by #(get-in % ["source_span" "start"]) facts)
+                 active [] result (transient [])]
+            (if-let [occurrence (first remaining)]
+              (let [start (get-in occurrence ["source_span" "start"])
+                    [incoming pending] (split-with #(<= (get-in % ["source_span" "start"]) start) pending)
+                    active (into (filterv #(> (get-in % ["source_span" "end"]) start) active) incoming)
+                    apparatus? (#{"front-matter" "body-end-boundary" "back-matter"}
+                                (get occurrence "region"))
+                    claims (if (or apparatus? (not= "lossless" (get oracle "decode_outcome")))
+                             [] (occurrence-claims occurrence active))
+                    claimed (into #{} (mapcat #(get % "families")) claims)]
+                (recur (next remaining) pending active
+                       (conj! result
+                              (assoc occurrence "claims" claims
+                                     "disposition" (if apparatus? "source-apparatus" "interpretation-evidence")
+                                     "unaccounted_families" (if apparatus? []
+                                                                (filterv #(not (claimed %)) (get occurrence "families")))
+                                     "unclassified" (and (not apparatus?) (empty? (get occurrence "families")))))))
+              (persistent! result)))
+          families
+          (reduce (fn [counts occurrence]
+                    (let [claimed (into #{} (mapcat #(get % "families")) (get occurrence "claims"))]
+                      (reduce (fn [counts family]
+                                (update-in counts [family (cond
+                                                            (= "source-apparatus" (get occurrence "disposition")) "source_apparatus"
+                                                            (claimed family) "interpreter_claimed"
+                                                            :else "unaccounted")] (fnil inc 0)))
+                              counts (get occurrence "families"))))
+                  (sorted-map) results)]
+      {"schema" "soranoha-interpretation-coverage/1"
+       "source_sha256" (get oracle "source_sha256")
+       "decode_outcome" (get oracle "decode_outcome")
+       "semantic_certification" "not-assessed"
+       "families" families
+       "unclassified_occurrences" (count (filter #(get % "unclassified") results))
+       "occurrences" results
+       "interpretation_problems" problems})))
+
+(defn coverage-stage
+  "Independent lexical oracle + parser IR -> explicit claim accounting."
+  [clj-toolchain-id]
+  {:stage-id "interpretation-coverage" :stage-version "1" :toolchain-id clj-toolchain-id
+   :f (fn [{:keys [blob]} inputs]
+        (let [input-bytes (into {} (map (fn [name] [name (blob (get inputs name))]))
+                                ["source-accountability" "parser-ir"])
+              read-input #(json/read-json (String. ^bytes (get input-bytes %) "UTF-8"))
+              report (assoc (coverage-report (read-input "source-accountability") (read-input "parser-ir"))
+                            "artifacts" (into {} (map (fn [[name bytes]]
+                                                        [name (str "sha256:" (hash/sha256-bytes bytes))]))
+                                              input-bytes))]
+          {"interpretation-coverage"
+           (.getBytes ^String (record-json/write-deterministic-json-str report) "UTF-8")}))})

@@ -25,8 +25,8 @@
                               {"generator" "fixture profile generator"
                                "generator_build_hash" build-hash})
               write! #(spit (:generation profile) (json/write-deterministic-json-str %))]
-          (testing "persisted validator identity is independent of its namespace"
-            (is (= "soranoha.ported.schematron"
+          (testing "validation identifies its current implementation"
+            (is (= "soranoha.ori.schematron"
                    (get-in (run) ["layers" "schematron" "validator"]))))
           (testing "local profile bytes do not imply a known generation process"
             (is (not (contains? absent "generator")))

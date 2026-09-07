@@ -3957,7 +3957,8 @@ fn push_style_node(
 fn resolve_text_variants_in_blocks(nodes: Vec<Value>, decoded: &DecodedSource) -> Vec<Value> {
     let source = decoded.text.as_str();
     let mut resolved = Vec::with_capacity(nodes.len());
-    for mut node in nodes {
+    let mut pending = nodes.into_iter().peekable();
+    while let Some(mut node) = pending.next() {
         for key in [
             "children",
             "content",
@@ -3982,6 +3983,12 @@ fn resolve_text_variants_in_blocks(nodes: Vec<Value>, decoded: &DecodedSource) -
             )
         {
             if variant["target_kind"] == "text" {
+                if let Some(annotation) =
+                    physical_break_variant(&resolved, &node, pending.peek(), decoded)
+                {
+                    resolved.push(annotation);
+                    continue;
+                }
                 if let Some(children) = take_visible_suffix_matching(
                     &mut resolved,
                     &current_text,
@@ -4020,6 +4027,64 @@ fn resolve_text_variants_in_blocks(nodes: Vec<Value>, decoded: &DecodedSource) -
         resolved.push(node);
     }
     resolved
+}
+
+fn physical_break_variant(
+    preceding: &[Value],
+    marker: &Value,
+    following: Option<&Value>,
+    decoded: &DecodedSource,
+) -> Option<Value> {
+    let variant = &marker["text_variant"];
+    let current = variant["current_content"].as_array()?;
+    let first_break = current
+        .iter()
+        .position(|node| node["x-break-kind"] == "line")?;
+    let (prefix, breaks) = current.split_at(first_break);
+    if prefix.is_empty()
+        || !breaks.iter().all(|node| {
+            node["kind"] == "text" && node["x-break-kind"] == "line" && node["value"] == "\n"
+        })
+    {
+        return None;
+    }
+    let next = following?;
+    if next["kind"] != "text" || next.get("x-break-kind").is_some() {
+        return None;
+    }
+    let marker_span = value_source_span(marker)?;
+    let break_span = value_source_span(next)?;
+    let expected = "\n".repeat(breaks.len());
+    if break_span.start != marker_span.end
+        || next["value"] != expected
+        || normalize_line_endings(decoded.text.get(break_span.start..break_span.end)?) != expected
+    {
+        return None;
+    }
+    // Matching is transactional: the principal nodes remain in their source paragraphs.
+    let mut candidate = preceding.to_vec();
+    let selected = take_visible_suffix_matching(
+        &mut candidate,
+        &content_structured_text(prefix)?,
+        decoded,
+        Some(prefix),
+    )?;
+    let mut targets = selected
+        .iter()
+        .map(value_source_span)
+        .collect::<Option<Vec<_>>>()?;
+    if targets.last()?.end != marker_span.start
+        || targets.windows(2).any(|pair| pair[0].end != pair[1].start)
+    {
+        return None;
+    }
+    targets.push(break_span);
+    let apparatus = json!({"kind":"text-variant", "content":current,
+        "base_content":variant["base_content"], "base_text":content_structured_text(variant["base_content"].as_array()?)?,
+        "source":marker["source"], "span":marker["span"]});
+    Some(json!({"kind":"editorial_note", "note_kind":"base-edition",
+        "annotation_content":[apparatus], "span":marker["span"],
+        "target_source_spans":targets.into_iter().map(|span| decoded_span_json(span, &decoded.span_ctx)).collect::<Vec<_>>()}))
 }
 
 fn adjacent_principal_ruby(nodes: &mut [Value]) -> Option<&mut Value> {

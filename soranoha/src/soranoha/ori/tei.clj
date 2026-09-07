@@ -286,10 +286,14 @@
          (append-inline (sourced node (cond-> [:g {:ref (str "#" id)}]
                                         (seq (:unicode declaration)) (conj (:unicode declaration)))))))))
 
-(defn- render-editor-note-node [acc node _depth]
-  (let [element (sourced node
+(defn- render-editor-note-node [acc node depth]
+  (let [before (:current-paragraph acc)
+        annotation (when-let [children (get node "annotation_children")]
+                     (render-inline-children (assoc acc :current-paragraph []) children depth))
+        acc (if annotation (assoc annotation :current-paragraph before) acc)
+        element (sourced node
                          (if-let [kind (get node "note_kind")]
-                           [:note {:type kind} (get node "text")]
+                           (into [:note {:type kind}] (if annotation (:current-paragraph annotation) [(get node "text")]))
                            (let [note (get node "note")]
                              [:note (cond-> {:type (get note "category")}
                                       (get note "resolution") (assoc :subtype (get note "resolution")))

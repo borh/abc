@@ -429,8 +429,9 @@
     },
     "editorial_note": {
       "type":"object", "additionalProperties":false,
-      "required":["kind","note_kind","text","span"],
-      "properties": {"interpretation_marker_spans":{"type":"array","items":{"$ref":"#/$defs/span"}}, "kind":{"const":"editorial_note"}, "note_kind":{"enum":["base-edition","first-publication","transcription","omission","incompleteness"]}, "text":{"type":"string","minLength":1}, "span":{"$ref":"#/$defs/span"}, "target_source_spans":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/span"}}, "closing_source_span":{"$ref":"#/$defs/span"}}
+      "required":["kind","note_kind","span"],
+      "oneOf":[{"required":["text"],"not":{"required":["annotation_content"]}},{"required":["annotation_content"],"not":{"required":["text"]}}],
+      "properties": {"interpretation_marker_spans":{"type":"array","items":{"$ref":"#/$defs/span"}}, "kind":{"const":"editorial_note"}, "note_kind":{"enum":["base-edition","first-publication","transcription","omission","incompleteness"]}, "text":{"type":"string","minLength":1}, "span":{"$ref":"#/$defs/span"}, "target_source_spans":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/span"}}, "closing_source_span":{"$ref":"#/$defs/span"}, "annotation_content":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/inline"}}}
     },
     "gap": {
       "type":"object", "additionalProperties":false,

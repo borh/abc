@@ -1299,7 +1299,9 @@ fn map_inline_to_nodes(
             Ok(offset)
         }
         "iteration-mark" | "supplied-diacritic" => map_source_realization(node, nodes, offset),
-        "editorial_note" => map_editorial_note(node, nodes, offset),
+        "editorial_note" => {
+            map_editorial_note(node, nodes, recorder, synthetic_warnings, offset, path, 0)
+        }
         "layout_break" => map_layout_break(node, nodes, offset),
         "raw" => map_raw_to_nodes(node, nodes, recorder, offset, path),
         "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi" | "yokogumi"
@@ -1706,15 +1708,45 @@ fn inline_child_node(
             Ok(offset)
         }
         "iteration-mark" | "supplied-diacritic" => map_source_realization(node, nodes, offset),
-        "editorial_note" => map_editorial_note(node, nodes, offset),
+        "editorial_note" => map_editorial_note(
+            node,
+            nodes,
+            recorder,
+            synthetic_warnings,
+            offset,
+            path,
+            depth,
+        ),
         "layout_break" => map_layout_break(node, nodes, offset),
         "raw" => map_raw_to_nodes(node, nodes, recorder, offset, path),
         other => bail!("unsupported inline kind in inline_children projection at {path}: {other}"),
     }
 }
 
-fn map_editorial_note(node: &Value, nodes: &mut Vec<Value>, offset: u64) -> Result<u64> {
-    let mut note = json!({"type":"editor-note", "note_kind":node["note_kind"], "text":node["text"], "span":synthetic_span(offset, offset)});
+fn map_editorial_note(
+    node: &Value,
+    nodes: &mut Vec<Value>,
+    recorder: &mut DivergenceRecorder,
+    warnings: &mut Vec<Value>,
+    offset: u64,
+    path: &str,
+    depth: usize,
+) -> Result<u64> {
+    let mut note = json!({"type":"editor-note", "note_kind":node["note_kind"], "span":synthetic_span(offset, offset)});
+    if let Some(content) = node.get("annotation_content") {
+        let mut children = inline_children_nodes(
+            Some(content),
+            recorder,
+            warnings,
+            0,
+            &format!("{path}.annotation_content"),
+            depth + 1,
+        )?;
+        content_coordinates(&mut children, "annotation_utf8");
+        note["annotation_children"] = json!(children);
+    } else {
+        note["text"] = node["text"].clone();
+    }
     if let Some(targets) = node.get("target_source_spans").and_then(Value::as_array) {
         let mut end = 0;
         let mut spans = Vec::with_capacity(targets.len());

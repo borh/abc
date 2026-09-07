@@ -1199,3 +1199,47 @@ fn editorial_source_targets_reject_overlapping_or_reversed_segments() {
         );
     }
 }
+
+#[test]
+fn physical_break_variant_preserves_discontiguous_source_targets() {
+    let marker = "［＃「白よ、［＃改行］［＃改行］」は底本では「白よ、［＃改行］」］";
+    for breaks in ["\n\n", "\r\n\r\n"] {
+        let ir = convert(&format!("指の白よ、{marker}{breaks}次。"));
+        let all = nodes(&ir);
+        let note = all
+            .iter()
+            .find(|node| node["type"] == "editor-note" && node.get("annotation_children").is_some())
+            .unwrap();
+        assert_eq!(note["target_source_spans"].as_array().unwrap().len(), 2);
+        let targets = &note["target_source_spans"];
+        assert_eq!(targets[0]["end"], note["source_span"]["start"]);
+        assert_eq!(targets[1]["start"], note["source_span"]["end"]);
+        assert_eq!(
+            targets[1]["end"].as_u64().unwrap() - targets[1]["start"].as_u64().unwrap(),
+            u64::try_from(breaks.len()).unwrap()
+        );
+        let app = &note["annotation_children"][0];
+        assert_eq!(app["text"], "白よ、\n\n");
+        assert_eq!(app["variant"]["base_text"], "白よ、\n");
+        assert_eq!(app["span"]["coordinate_system"], "annotation_utf8");
+        assert_eq!(ir["interpretation_problems"], json!([]));
+    }
+    for body in [
+        format!("白よ、{marker}\n次。"),
+        format!("白よ、{marker}別\n\n次。"),
+        format!("白よ、別{marker}\n\n次。"),
+        format!("白よ、\n{marker}\n\n次。"),
+    ] {
+        let ir = convert(&body);
+        assert!(
+            !ir["interpretation_problems"].as_array().unwrap().is_empty(),
+            "{body}"
+        );
+        assert!(
+            !nodes(&ir)
+                .iter()
+                .any(|node| node.get("annotation_children").is_some()),
+            "{body}"
+        );
+    }
+}

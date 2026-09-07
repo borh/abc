@@ -1086,3 +1086,15 @@
         (is (string/includes? rend "gothic")))
       (is (not (string/includes? (:tei result) "level=1")))
       (is (empty? (get-in result [:ir "interpretation_problems"]))))))
+
+(deftest edition-variant-across-physical-breaks-keeps-principal-text
+  (let [result (transcribe (source "指の白よ、［＃「白よ、［＃改行］［＃改行］」は底本では「白よ、［＃改行］」］\n\n次。"))
+        note (first (filter #(= "base-edition" (attribute % "type")) (elements result "note")))
+        lemma (first (elements result "lem"))
+        witness (first (elements result "rdg"))]
+    (is (= "指の白よ、\n次。" (:plaintext result)))
+    (is (= 2 (count (string/split (attribute note "target") #" "))))
+    (is (= 1 (count (elements result "app"))))
+    (is (= "白よ、\n\n" (view/visible-text lemma)))
+    (is (= "白よ、\n" (view/visible-text witness)))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))

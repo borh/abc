@@ -9,7 +9,7 @@ use std::{
 use ab_coverage::{
     matrix::{CoverageMatrix, RepresentabilityStatus, Row},
     source_corpus::{SourceIndexEntry, load_index_entries, read_source_work},
-    source_inventory::{UnknownMarkerExample, inventory_document, patterns_from_rows},
+    source_inventory::{SourceMarkerOccurrence, inventory_document, patterns_from_rows},
 };
 use anyhow::{Context, Result, bail};
 use clap::Parser;
@@ -64,7 +64,7 @@ struct InventoryOutput {
     unknown_classes_total: u64,
     unknown_classes_truncated: bool,
     unknown_classes: Vec<UnknownClassOutput>,
-    unknown_examples: Vec<UnknownMarkerExample>,
+    unknown_examples: Vec<SourceMarkerOccurrence>,
     decode_failures: Vec<DecodeFailure>,
     representability: RepresentabilityOutput,
     source_region_coverage: SourceRegionCoverageOutput,
@@ -244,6 +244,9 @@ fn main() -> Result<()> {
             } => {
                 output.works_scanned += 1;
                 output.markers_total += summary.markers_total;
+                output.representability.out_of_body_occurrences +=
+                    summary.source_region_events.front_matter_occurrences
+                        + summary.source_region_events.body_end_boundary_occurrences;
                 observe_source_region_text(&mut output.source_region_coverage, source_region_text);
                 observe_source_region_events(
                     &mut output.source_region_coverage,
@@ -507,7 +510,7 @@ fn compile_optional_regex(
 }
 
 fn matching_allowlist_rule<'a>(
-    example: &UnknownMarkerExample,
+    example: &SourceMarkerOccurrence,
     allowlist: &'a [CompiledAllowRule],
 ) -> Option<&'a CompiledAllowRule> {
     allowlist.iter().find(|entry| {
@@ -587,6 +590,8 @@ fn observe_source_region_events(
     source_region_coverage: &mut SourceRegionCoverageOutput,
     summary: &ab_coverage::source_inventory::SourceRegionEventSummary,
 ) {
+    source_region_coverage.front_matter_occurrences += summary.front_matter_occurrences;
+    source_region_coverage.body_end_boundary_occurrences += summary.body_end_boundary_occurrences;
     source_region_coverage.terminal_provenance_occurrences +=
         summary.terminal_provenance_occurrences;
     source_region_coverage.back_matter_occurrences += summary.terminal_provenance_occurrences;
@@ -595,7 +600,7 @@ fn observe_source_region_events(
 fn observe_unknown_class(
     classes: &mut BTreeMap<String, UnknownClassOutput>,
     work_id: &str,
-    example: &UnknownMarkerExample,
+    example: &SourceMarkerOccurrence,
     allowlisted: bool,
 ) {
     let key = format!(

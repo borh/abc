@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use ab_source_syntax::{SourceMarkerKind, source_markers};
+use ab_source_syntax::{SourceMarkerKind, aozora_body_range, source_markers};
 use regex::Regex;
 use serde::Serialize;
 
@@ -15,10 +15,14 @@ pub struct SourceInventoryPattern {
 #[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
 pub struct SourceInventorySummary {
     pub work_id: String,
+    /// All lexical source occurrences, including editorial examples.
     pub markers_total: u64,
     pub row_counts: BTreeMap<String, MarkerClassSummary>,
-    pub unknown_examples: Vec<UnknownMarkerExample>,
+    pub unknown_examples: Vec<SourceMarkerOccurrence>,
     pub source_region_events: SourceRegionEventSummary,
+    /// Full source occurrences assigned to packaging or explicit boundaries,
+    /// excluded from body-family and unreviewed-marker counts.
+    pub classified_region_markers: Vec<ClassifiedRegionMarker>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
@@ -29,10 +33,25 @@ pub struct MarkerClassSummary {
 #[derive(Debug, Clone, Default, Serialize, PartialEq, Eq)]
 pub struct SourceRegionEventSummary {
     pub terminal_provenance_occurrences: u64,
+    pub front_matter_occurrences: u64,
+    pub body_end_boundary_occurrences: u64,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq, Eq)]
-pub struct UnknownMarkerExample {
+#[serde(rename_all = "kebab-case")]
+pub enum SourceMarkerRegion {
+    FrontMatter,
+    BodyEndBoundary,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct ClassifiedRegionMarker {
+    pub region: SourceMarkerRegion,
+    pub occurrence: SourceMarkerOccurrence,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub struct SourceMarkerOccurrence {
     pub work_id: String,
     pub line: usize,
     pub kind: String,
@@ -58,6 +77,7 @@ pub fn inventory_document(
 ) -> SourceInventorySummary {
     let compiled_patterns = compile_patterns(patterns);
     let markers = source_markers(text);
+    let (body, _) = aozora_body_range(text);
     let mut summary = SourceInventorySummary {
         work_id: work_id.to_owned(),
         ..SourceInventorySummary::default()
@@ -67,6 +87,44 @@ pub fn inventory_document(
         summary.markers_total += 1;
         if marker.kind == SourceMarkerKind::SegmentBoundaryTerminalProvenance {
             summary.source_region_events.terminal_provenance_occurrences += 1;
+        }
+        // Source packaging examples remain occurrences but do not measure body syntax.
+        let region = if marker.span.end <= body.start {
+            summary.source_region_events.front_matter_occurrences += 1;
+            Some(SourceMarkerRegion::FrontMatter)
+        } else if marker.raw == "［＃本文終わり］"
+            && text[..marker.span.start]
+                .rsplit('\n')
+                .next()
+                .unwrap_or_default()
+                .trim()
+                .is_empty()
+            && text[marker.span.end..]
+                .split('\n')
+                .next()
+                .unwrap_or_default()
+                .trim()
+                .is_empty()
+        {
+            summary.source_region_events.body_end_boundary_occurrences += 1;
+            Some(SourceMarkerRegion::BodyEndBoundary)
+        } else {
+            None
+        };
+        if let Some(region) = region {
+            summary
+                .classified_region_markers
+                .push(ClassifiedRegionMarker {
+                    region,
+                    occurrence: SourceMarkerOccurrence {
+                        work_id: work_id.to_owned(),
+                        line: marker.span.line,
+                        kind: format!("{:?}", marker.kind),
+                        raw: marker.raw.to_owned(),
+                        body: marker.body.to_owned(),
+                    },
+                });
+            continue;
         }
         let mut matched = matching_rows(marker.raw, &compiled_patterns);
         if let Some(next_marker) = markers.get(index + 1)
@@ -96,7 +154,7 @@ pub fn inventory_document(
         }
 
         if matched.is_empty() {
-            summary.unknown_examples.push(UnknownMarkerExample {
+            summary.unknown_examples.push(SourceMarkerOccurrence {
                 work_id: work_id.to_owned(),
                 line: marker.span.line,
                 kind: format!("{:?}", marker.kind),
@@ -296,6 +354,44 @@ mod tests {
                 .map(|count| count.occurrences),
             Some(1)
         );
+    }
+
+    #[test]
+    fn region_classification_preserves_examples_without_body_coverage() {
+        let text = "題名\n著者\n----------\n【テキスト中に現れる記号について】\n［＃］：入力者注\n（例）［＃本文終わり］\n（例）漢字《かんじ》\n----------\n［＃］\n漢字《かんじ》\n［＃本文終わり］\n翻訳の底本：例\n";
+        let summary = inventory_document("w", text, &[pattern("ruby.basic", vec![])]);
+        assert_eq!(summary.markers_total, 6);
+        assert_eq!(summary.source_region_events.front_matter_occurrences, 3);
+        assert_eq!(
+            summary.source_region_events.body_end_boundary_occurrences,
+            1
+        );
+        assert_eq!(summary.classified_region_markers.len(), 4);
+        assert_eq!(summary.row_counts["ruby.basic"].occurrences, 1);
+        assert_eq!(summary.unknown_examples.len(), 1);
+        assert_eq!(summary.unknown_examples[0].line, 9);
+    }
+
+    #[test]
+    fn unfenced_legend_and_inline_boundary_remain_unreviewed() {
+        let summary = inventory_document(
+            "w",
+            "【テキスト中に現れる記号について】\n［＃］\n引用「［＃本文終わり］」\n",
+            &[],
+        );
+        assert_eq!(summary.unknown_examples.len(), 2);
+        assert!(summary.classified_region_markers.is_empty());
+    }
+
+    #[test]
+    fn variant_editorial_header_is_source_apparatus() {
+        let summary = inventory_document(
+            "w",
+            "題名\n［表記について］\n●［＃］は、入力者注を示す。\n----------\n本文\n",
+            &[],
+        );
+        assert_eq!(summary.source_region_events.front_matter_occurrences, 1);
+        assert!(summary.unknown_examples.is_empty());
     }
 
     fn pattern(row_id: &str, source_patterns: Vec<&str>) -> SourceInventoryPattern {

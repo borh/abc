@@ -25,25 +25,53 @@ fn convert(body: &str) -> Value {
 #[test]
 fn inline_heading_does_not_terminate_line_indentation() {
     let ir = convert("［＃１字下げ］［＃同行大見出し］優しき歌［＃同行大見出し終わり］叢書");
-    assert_eq!(ir["layout_blocks"][0]["node_range"],ir["paragraphs"][0]["node_range"]);
+    assert_eq!(
+        ir["layout_blocks"][0]["node_range"],
+        ir["paragraphs"][0]["node_range"]
+    );
 }
 
 #[test]
 fn explicit_break_inside_warichu_does_not_terminate_line_alignment() {
-    let ir = convert("［＃地から１字上げ］［＃ここから割り注］甲［＃改行］乙［＃ここで割り注終わり］作者");
-    assert_eq!(ir["layout_blocks"][0]["node_range"],ir["paragraphs"][0]["node_range"]);
-    assert_eq!(ir["interpretation_problems"],serde_json::json!([]));
+    let ir = convert(
+        "［＃地から１字上げ］［＃ここから割り注］甲［＃改行］乙［＃ここで割り注終わり］作者",
+    );
+    assert_eq!(
+        ir["layout_blocks"][0]["node_range"],
+        ir["paragraphs"][0]["node_range"]
+    );
+    assert_eq!(ir["interpretation_problems"], serde_json::json!([]));
 }
 
 #[test]
 fn removed_boundary_newline_does_not_merge_following_blank_line_into_scope() {
     let ir = convert("［＃ここから２字下げ］\n本文［＃ここで字下げ終わり］\n\n外");
-    assert_eq!(ir["layout_blocks"][0]["node_range"],ir["paragraphs"][0]["node_range"]);
+    assert_eq!(
+        ir["layout_blocks"][0]["node_range"],
+        ir["paragraphs"][0]["node_range"]
+    );
 }
 
 #[test]
 fn explicit_breaks_at_scope_edges_are_not_boundary_whitespace() {
     let ir = convert("［＃ここから２字下げ］［＃改行］甲［＃改行］［＃ここで字下げ終わり］");
-    assert_eq!(ir["nodes"].as_array().unwrap().iter().filter(|n| n["type"] == "line-break").count(), 2);
-    assert_eq!(ir["nodes"].as_array().unwrap().iter().filter(|n| n["type"] == "text").filter_map(|n| n["text"].as_str()).collect::<String>(), "甲");
+    assert_eq!(
+        ir["nodes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|n| n["type"] == "line-break")
+            .count(),
+        2
+    );
+    assert_eq!(
+        ir["nodes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|n| n["type"] == "text")
+            .filter_map(|n| n["text"].as_str())
+            .collect::<String>(),
+        "甲"
+    );
 }

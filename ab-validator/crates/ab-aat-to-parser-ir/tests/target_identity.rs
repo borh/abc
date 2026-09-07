@@ -1575,3 +1575,70 @@ fn a_quoted_source_spelling_inherits_only_its_exact_target_accent_context() {
         );
     }
 }
+
+#[test]
+fn an_edition_target_can_own_the_entire_adjacent_quotation_interior() {
+    for (body, target) in [
+        (
+            "「露西亞車」［＃「露西亞車」は底本では「靈西亞車」］",
+            "露西亞車",
+        ),
+        (
+            "「五・一五事件」［＃「五・一五事件」は底本では「五一・五事件」］",
+            "五・一五事件",
+        ),
+        (
+            "「何かしら」［＃「何かしら」は底本では「何かいら」］",
+            "何かしら",
+        ),
+        (
+            "「漢字《かんじ》」［＃「漢字《かんじ》」は底本では「文字」］",
+            "漢字",
+        ),
+    ] {
+        let ir = convert(body);
+        let all = nodes(&ir);
+        let app = all
+            .iter()
+            .find(|node| node["type"] == "base-text-variant")
+            .unwrap();
+        assert_eq!(app["text"], target);
+        assert_eq!(ir["interpretation_problems"], json!([]));
+        let source = format!("題\n作者\n\n{body}\n\n底本：本\n");
+        let children = app["inline_children"].as_array().unwrap();
+        let start = usize::try_from(
+            children.first().unwrap()["source_span"]["start"]
+                .as_u64()
+                .unwrap(),
+        )
+        .unwrap();
+        let end = usize::try_from(
+            children.last().unwrap()["source_span"]["end"]
+                .as_u64()
+                .unwrap(),
+        )
+        .unwrap();
+        assert_eq!(&source[start - 3..start], "「");
+        assert_eq!(&source[end..end + 3], "」");
+    }
+    for body in [
+        "漢字」［＃「漢字」は底本では「文字」］",
+        "「漢字」別［＃「漢字」は底本では「文字」］",
+        "「漢字」\n［＃「漢字」は底本では「文字」］",
+        "「漢字」［＃「字」は底本では「文」］",
+        "「漢字」「別」［＃「漢字」は底本では「文字」］",
+        "「漢字《かんじ》」［＃「漢字《かんし》」は底本では「文字」］",
+    ] {
+        let ir = convert(body);
+        assert!(
+            !nodes(&ir)
+                .iter()
+                .any(|node| node["type"] == "base-text-variant"),
+            "{body}"
+        );
+        assert!(
+            !ir["interpretation_problems"].as_array().unwrap().is_empty(),
+            "{body}"
+        );
+    }
+}

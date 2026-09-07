@@ -1388,3 +1388,15 @@
     (is (= ["Hätte“."] (texts result "rdg")))
     (is (empty? (get-in result [:ir "interpretation_problems"])))
     (is (every? #(not (string/blank? (attribute % "source"))) (elements result "app")))))
+
+(deftest edition-targets-preserve-their-enclosing-literal-quotation
+  (doseq [[target witness] [["露西亞車" "靈西亞車"] ["五・一五事件" "五一・五事件"] ["何かしら" "何かいら"]]]
+    (let [body (str "「" target "」")
+          original (transcribe (source body))
+          result (transcribe (source (str body "［＃「" target "」は底本では「" witness "」］")))]
+      (is (= body (:plaintext result)))
+      (is (= (:plaintext original) (:plaintext result)))
+      (is (= (projection/markdown (:view original)) (projection/markdown (:view result))))
+      (is (= [target] (texts result "lem")))
+      (is (= [witness] (texts result "rdg")))
+      (is (empty? (get-in result [:ir "interpretation_problems"]))))))

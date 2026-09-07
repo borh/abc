@@ -162,6 +162,7 @@
                ["〔Hu:lshoff［＃「Hu:lshoff」は底本では「Hu:lshoffs」］〕" nil 1]
                ["〔schla:gt［＃「〔schla:gt〕」は底本では「〔scha:gt〕」］〕" nil 1]
                ["〔Der Mu:s&iggang wird〕［＃「〔Mu:s&iggang〕」は底本では「〔Mu:s&igang〕」］" "〔Der Mu:s&iggang wird〕" 1]
+               ["「露西亞車」［＃「露西亞車」は底本では「靈西亞車」］" nil 1]
                ["〔Ha:tte.“〕［＃「Ha:tte.“」は底本では「Ha:tte“.」］" "〔Ha:tte.“〕" 1]
                ["字［＃底本では傍点］" nil 1]
                ["キタ［＃お手伝いさん］" nil 1]

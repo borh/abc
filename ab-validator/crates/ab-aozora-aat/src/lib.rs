@@ -763,24 +763,34 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                         .collect()
                 })
                 .unwrap_or_default();
-            let target_quote = matches!(
-                kind,
-                ProjectedKind::Format(_)
-                    | ProjectedKind::FormatMany(_)
-                    | ProjectedKind::Heading { .. }
-            )
-            .then(|| {
-                let marker = marker_span?;
-                pairs.range(marker.start..marker.end).find_map(|(_, pair)| {
-                    (pair.kind == ab_aozora_facade::PairKind::Quote
-                        && pair.open.start as usize == marker.start + "［＃".len())
-                    .then_some(Span {
+            let target_quote = if matches!(kind, ProjectedKind::TextVariant { .. }) {
+                pairs
+                    .get(&span.start)
+                    .filter(|pair| pair.kind == ab_aozora_facade::PairKind::Quote)
+                    .map(|pair| Span {
                         start: pair.open.end as usize,
                         end: pair.close.start as usize,
                     })
+            } else {
+                matches!(
+                    kind,
+                    ProjectedKind::Format(_)
+                        | ProjectedKind::FormatMany(_)
+                        | ProjectedKind::Heading { .. }
+                )
+                .then(|| {
+                    let marker = marker_span?;
+                    pairs.range(marker.start..marker.end).find_map(|(_, pair)| {
+                        (pair.kind == ab_aozora_facade::PairKind::Quote
+                            && pair.open.start as usize == marker.start + "［＃".len())
+                        .then_some(Span {
+                            start: pair.open.end as usize,
+                            end: pair.close.start as usize,
+                        })
+                    })
                 })
-            })
-            .flatten();
+                .flatten()
+            };
             AozoraNode {
                 kind,
                 span,
@@ -1911,8 +1921,18 @@ fn build_aat(
         ),
         decoded,
     ));
+    let quoted_targets = nodes
+        .iter()
+        .filter_map(|node| {
+            matches!(node.kind, ProjectedKind::TextVariant { .. }).then_some(())?;
+            Some((
+                decoded.span_ctx.to_decoded(node.span.start),
+                node.target_quote?,
+            ))
+        })
+        .collect::<BTreeMap<_, _>>();
     blocks = place_normal_headings(
-        resolve_text_variants_in_blocks(blocks, decoded),
+        resolve_text_variants_in_blocks(blocks, decoded, &quoted_targets),
         &decoded.text,
     );
     let mut warnings = diagnostics
@@ -4156,7 +4176,11 @@ fn push_style_node(
 
 // Resolve quoted targets after scopes are assembled, while source lines and
 // typed principal/reading contributions remain available in one representation.
-fn resolve_text_variants_in_blocks(nodes: Vec<Value>, decoded: &DecodedSource) -> Vec<Value> {
+fn resolve_text_variants_in_blocks(
+    nodes: Vec<Value>,
+    decoded: &DecodedSource,
+    quoted_targets: &BTreeMap<usize, Span>,
+) -> Vec<Value> {
     let mut resolved = Vec::with_capacity(nodes.len());
     let mut pending = nodes.into_iter().peekable();
     while let Some(mut node) = pending.next() {
@@ -4170,7 +4194,8 @@ fn resolve_text_variants_in_blocks(nodes: Vec<Value>, decoded: &DecodedSource) -
             "annotation_content",
         ] {
             if let Some(children) = node.get_mut(key).and_then(Value::as_array_mut) {
-                *children = resolve_text_variants_in_blocks(mem::take(children), decoded);
+                *children =
+                    resolve_text_variants_in_blocks(mem::take(children), decoded, quoted_targets);
             }
         }
         if let Some(variant) = node.get("text_variant")
@@ -4200,6 +4225,20 @@ fn resolve_text_variants_in_blocks(nodes: Vec<Value>, decoded: &DecodedSource) -
                         "current_interpretation_facts":established_interpretations(current),
                         "base_text":base_text, "base_content":base, "source":node["source"], "span":node["span"]}));
                     append_variant_statement(&mut resolved, &node);
+                    continue;
+                }
+                if let Some(target_span) =
+                    value_source_span(&node).and_then(|span| quoted_targets.get(&span.start))
+                    && let Some(content) = quoted_interior_variant_content(
+                        &resolved,
+                        &node,
+                        current,
+                        &current_text,
+                        *target_span,
+                        decoded,
+                    )
+                {
+                    resolved = content;
                     continue;
                 }
                 if attach_accent_scope_variant(
@@ -4238,6 +4277,45 @@ fn resolve_text_variants_in_blocks(nodes: Vec<Value>, decoded: &DecodedSource) -
         resolved.push(node);
     }
     resolved
+}
+
+// The native pair owns both literal delimiters. Only its complete interior can
+// be selected here; punctuation outside that pair is not a target-search boundary.
+fn quoted_interior_variant_content(
+    preceding: &[Value],
+    annotation: &Value,
+    current: &[Value],
+    target: &str,
+    interior: Span,
+    decoded: &DecodedSource,
+) -> Option<Vec<Value>> {
+    let start = decoded.span_ctx.to_decoded(interior.start);
+    let end = decoded.span_ctx.to_decoded_end(interior.end);
+    let marker_start = value_source_span(annotation)?.start;
+    if start >= end || decoded.text.get(end..marker_start)? != "」" {
+        return None;
+    }
+    let mut content = preceding.to_vec();
+    let closing = take_visible_suffix_matching(&mut content, "」", decoded, None)?;
+    if value_source_span(closing.first()?)?.start != end
+        || value_source_span(closing.last()?)?.end != marker_start
+    {
+        return None;
+    }
+    let selected = take_visible_suffix_matching(&mut content, target, decoded, Some(current))?;
+    if value_source_span(selected.first()?)?.start != start
+        || value_source_span(selected.last()?)?.end != end
+    {
+        return None;
+    }
+    content.push(json!({"kind":"text-variant", "content":selected,
+        "current_interpretation_facts":established_interpretations(current),
+        "base_text":content_structured_text(annotation["text_variant"]["base_content"].as_array()?)?,
+        "base_content":annotation["text_variant"]["base_content"],
+        "source":annotation["source"], "span":annotation["span"]}));
+    content.extend(closing);
+    append_variant_statement(&mut content, annotation);
+    Some(content)
 }
 
 fn attach_accent_scope_variant(

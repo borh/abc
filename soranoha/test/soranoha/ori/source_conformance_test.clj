@@ -491,6 +491,18 @@
       (is (empty? (elements result "gap")))
       (is (empty? (get-in result [:ir "interpretation_problems"]))))))
 
+(deftest supplied-labels-remain-explanations-without-inferred-identities
+  (doseq [label ["劇場名" "ホテル名" "お手伝いさん" "夫人" "スカーフ"
+                 "長男" "三男" "次男" "小説家" "長女" "父" "母" "甥" "次女"]]
+    (let [result (transcribe (source (str "名［＃" label "］後")))
+          notes (filter #(= "explanation" (attribute % "type")) (elements result "note"))]
+      (is (= "名後" (:plaintext result)))
+      (is (= "名後" (projection/markdown (:view result))))
+      (is (= [label] (mapv #(.getTextContent ^Node %) notes)))
+      (is (every? #(empty? (attribute % "target")) notes))
+      (is (empty? (elements result "persName")))
+      (is (empty? (get-in result [:ir "interpretation_problems"]))))))
+
 (deftest quoted-variants-do-not-create-body-ruby-or-gaiji
   (doseq [[body plain expected-ruby raw]
           [["煖爐《ストーブ》には［＃「煖爐《ストーブ》には」は底本では「煖燼《ストーブ》には」］、後。"

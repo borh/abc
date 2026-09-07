@@ -2874,3 +2874,29 @@ fn unfinished_work_statement_is_not_a_person_or_role_label() {
         assert!(!summary.row_counts.contains_key("annotation.chuuki"));
     }
 }
+
+#[test]
+fn literal_household_label_is_distinct_from_compound_residual_notes() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let label = inventory_document("fixture", "［＃お手伝いさん］", &patterns);
+    assert_eq!(label.row_counts["source.note_label"].occurrences, 1);
+    assert!(
+        !label
+            .row_counts
+            .contains_key("source.reviewed_residual_command")
+    );
+    for source in [
+        "［＃ルイバコフ家のお手伝い］",
+        "［＃窪川稲子の家のお手伝い］",
+        "［＃海野家のお手伝いさん］",
+        "［＃「お手伝いの」は底本では「お伝いの」］",
+        "［＃「お手伝いさん　ロセット」は太字］",
+    ] {
+        let summary = inventory_document("fixture", source, &patterns);
+        assert_eq!(
+            summary.row_counts["source.reviewed_residual_command"].occurrences, 1,
+            "{source}"
+        );
+    }
+}

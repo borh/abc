@@ -1004,3 +1004,64 @@ fn edition_targets_remain_inside_their_normal_heading() {
         assert!(!ir["interpretation_problems"].as_array().unwrap().is_empty());
     }
 }
+
+#[test]
+fn unresolved_glyph_targets_require_the_same_structured_identity() {
+    let glyph = "※［＃濁点付き井、379-1］";
+    let current = format!("ダ・{glyph}ンチ等の");
+    let ir = convert(&format!(
+        "{current}［＃「{current}」は底本では「ダ{glyph}ンチ等の」］"
+    ));
+    let all = nodes(&ir);
+    let app = all
+        .iter()
+        .find(|node| node["type"] == "base-text-variant")
+        .expect("exact described glyph target");
+    assert_eq!(app["text"], "ダ・\u{fffc}ンチ等の");
+    assert_eq!(app["variant"]["base_text"], "ダ\u{fffc}ンチ等の");
+    assert_eq!(ir["interpretation_problems"], json!([]));
+    assert!(
+        nodes(app)
+            .iter()
+            .any(|node| node["type"] == "gaiji" && node["resolved"].is_null())
+    );
+
+    for (actual, quoted) in [
+        (glyph, "※［＃濁点付き中、379-1］"),
+        (glyph, "※［＃濁点付き井、380-1］"),
+        (glyph, "\u{fffc}"),
+        ("\u{fffc}", glyph),
+    ] {
+        let ir = convert(&format!(
+            "甲{actual}乙［＃「甲{quoted}乙」は底本では「別」］"
+        ));
+        assert!(
+            !nodes(&ir)
+                .iter()
+                .any(|node| node["type"] == "base-text-variant"),
+            "{actual} / {quoted}"
+        );
+        assert!(!ir["interpretation_problems"].as_array().unwrap().is_empty());
+    }
+    for actual in [glyph, "※［＃濁点付き中、379-1］", "\u{fffc}"] {
+        let ir = convert(&format!(
+            "｜甲{actual}《こう》［＃「｜甲{glyph}《こう》」は底本では「別」］"
+        ));
+        assert_eq!(
+            nodes(&ir)
+                .iter()
+                .any(|node| node["type"] == "base-text-variant"),
+            actual == glyph
+        );
+    }
+    for suffix in ["別", "\n", "［＃未知の意味］"] {
+        let ir = convert(&format!(
+            "{current}{suffix}［＃「{current}」は底本では「別」］"
+        ));
+        assert!(
+            !nodes(&ir)
+                .iter()
+                .any(|node| node["type"] == "base-text-variant")
+        );
+    }
+}

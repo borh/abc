@@ -2556,15 +2556,7 @@ fn rebase_variant_spans(kind: &mut ProjectedKind, offset: usize) {
 // exact extent and mapped onto the enclosing document’s decoded coordinates.
 fn source_fragment(decoded: &DecodedSource, range: Range<usize>) -> Option<Vec<Value>> {
     let content = parsed_source_fragment(decoded, range)?;
-    content
-        .iter()
-        .try_for_each(|node| target_text(node).map(|_| ()))?;
-    Some(content)
-}
-
-fn witness_fragment(decoded: &DecodedSource, range: Range<usize>) -> Option<Vec<Value>> {
-    let content = parsed_source_fragment(decoded, range)?;
-    content_witness_text(&content)?;
+    content_structured_text(&content)?;
     Some(content)
 }
 
@@ -3787,7 +3779,7 @@ fn push_style_node(
     if style["content"].as_array().is_some_and(Vec::is_empty)
         && let Some(target) = node.target_quote
         && let Some(quoted) = source_fragment(decoded, target.start..target.end)
-        && let Some(text) = content_target_text(&quoted)
+        && let Some(text) = content_structured_text(&quoted)
         && let Some(children) = take_visible_suffix_matching(content, &text, decoded, Some(&quoted))
     {
         style["span"]["byte_start"] = children[0]["span"]["byte_start"].clone();
@@ -3878,8 +3870,10 @@ fn resolve_text_variants_in_blocks(nodes: Vec<Value>, decoded: &DecodedSource) -
                 variant["current_content"].as_array(),
                 variant["base_content"].as_array(),
             )
-            && let (Some(current_text), Some(base_text)) =
-                (content_target_text(current), content_witness_text(base))
+            && let (Some(current_text), Some(base_text)) = (
+                content_structured_text(current),
+                content_structured_text(base),
+            )
         {
             if variant["target_kind"] == "text" {
                 if let Some(children) = take_visible_suffix_matching(
@@ -3942,7 +3936,7 @@ fn attach_formatting_variant(style: &mut Value, note: &Value, source: &str) -> b
     let Some(base) = note["text_variant"]["base_content"].as_array() else {
         return false;
     };
-    let Some(base_text) = content_witness_text(base) else {
+    let Some(base_text) = content_structured_text(base) else {
         return false;
     };
     let Some(children) = style["content"].as_array() else {
@@ -3951,13 +3945,13 @@ fn attach_formatting_variant(style: &mut Value, note: &Value, source: &str) -> b
     let Some(current) = note["text_variant"]["current_content"].as_array() else {
         return false;
     };
-    let Some(target) = content_target_text(current) else {
+    let Some(target) = content_structured_text(current) else {
         return false;
     };
     if !quoted_structure_matches(current, children) {
         return false;
     }
-    let Some(text) = content_target_text(children) else {
+    let Some(text) = content_structured_text(children) else {
         return false;
     };
     if text == target {
@@ -4015,7 +4009,7 @@ fn attach_principal_subrange(
             let Some(children) = node["content"].as_array_mut() else {
                 return false;
             };
-            let Some(text) = content_target_text(children) else {
+            let Some(text) = content_structured_text(children) else {
                 return false;
             };
             if text.match_indices(target).count() != 1 {
@@ -4024,7 +4018,7 @@ fn attach_principal_subrange(
             if let Some(selected) =
                 take_visible_suffix_matching(children, target, decoded, Some(current))
             {
-                let base_text = content_witness_text(
+                let base_text = content_structured_text(
                     annotation["text_variant"]["base_content"]
                         .as_array()
                         .expect("parsed witness content"),
@@ -4107,7 +4101,7 @@ fn literal_variant_content(
         return None;
     }
     content.push(json!({"kind":"text-variant", "content":[text_node(index, end)],
-        "base_text":content_witness_text(note["text_variant"]["base_content"].as_array()?)?,
+        "base_text":content_structured_text(note["text_variant"]["base_content"].as_array()?)?,
         "base_content":note["text_variant"]["base_content"], "source":note["source"], "span":note["span"]}));
     append_variant_statement(&mut content, note);
     if end < base.len() {
@@ -4304,7 +4298,7 @@ fn content_target_text(nodes: &[Value]) -> Option<String> {
     content_fragment_text(nodes, GlyphRealization::Required)
 }
 
-fn content_witness_text(nodes: &[Value]) -> Option<String> {
+fn content_structured_text(nodes: &[Value]) -> Option<String> {
     content_fragment_text(nodes, GlyphRealization::Placeholder)
 }
 
@@ -4318,6 +4312,8 @@ fn content_fragment_text(nodes: &[Value], glyph: GlyphRealization) -> Option<Str
 
 // The quotation constrains the structures it names. Unquoted typography in
 // the actual target is retained, but a quoted ruby cannot bind another reading.
+// Opaque glyph identities must agree in both directions; their coordinate
+// placeholder is never interchangeable with literal text or another glyph.
 fn quoted_structure_matches(quoted: &[Value], actual: &[Value]) -> bool {
     fn marks(
         nodes: &[Value],
@@ -4326,16 +4322,34 @@ fn quoted_structure_matches(quoted: &[Value], actual: &[Value]) -> bool {
     ) -> Option<()> {
         for node in nodes {
             let start = *offset;
-            let text = target_text(node)?;
+            let text = fragment_text(node, GlyphRealization::Placeholder)?;
             let end = start + text.len();
             match node["kind"].as_str()? {
-                "text" | "gaiji" | "raw" | "editorial_note" => {}
-                "ruby" => output.push((
+                "gaiji" if node["resolved"].is_null() => output.push((
                     start,
                     end,
-                    json!({"kind":"ruby", "base":text,
-                    "reading":node["reading"], "direction":node["direction"]}),
+                    json!({"kind":"unresolved-glyph", "description":node["description"],
+                        "reference":node["jis_code"], "codepoint":node["x-codepoint"]}),
                 )),
+                "text" | "gaiji" | "raw" | "editorial_note" => {}
+                "ruby" => {
+                    let mut reading_glyphs = Vec::new();
+                    if let Some(reading) = node["reading_content"].as_array() {
+                        marks(reading, &mut 0, &mut reading_glyphs)?;
+                        reading_glyphs
+                            .retain(|(_, _, identity)| identity["kind"] == "unresolved-glyph");
+                    }
+                    output.push((
+                        start,
+                        end,
+                        json!({"kind":"ruby", "base":text,
+                        "reading":node["reading"], "direction":node["direction"],
+                        "reading_glyphs":reading_glyphs}),
+                    ));
+                    if let Some(base) = node["base_content"].as_array() {
+                        marks(base, offset, output)?;
+                    }
+                }
                 "text-variant" => {
                     marks(node["content"].as_array()?, offset, output)?;
                 }
@@ -4348,7 +4362,7 @@ fn quoted_structure_matches(quoted: &[Value], actual: &[Value]) -> bool {
                         end,
                         json!({"kind":"annotated_text",
                         "note_kind":node["note_kind"], "position":node["position"],
-                        "text":content_target_text(annotation)?, "structure":annotation_marks}),
+                        "text":content_structured_text(annotation)?, "structure":annotation_marks}),
                     ));
                     marks(node["content"].as_array()?, offset, output)?;
                 }
@@ -4375,6 +4389,10 @@ fn quoted_structure_matches(quoted: &[Value], actual: &[Value]) -> bool {
     marks(quoted, &mut 0, &mut quoted_marks).is_some()
         && marks(actual, &mut 0, &mut actual_marks).is_some()
         && quoted_marks.iter().all(|mark| actual_marks.contains(mark))
+        && actual_marks
+            .iter()
+            .filter(|(_, _, identity)| identity["kind"] == "unresolved-glyph")
+            .all(|mark| quoted_marks.contains(mark))
 }
 
 fn take_visible_suffix(
@@ -4448,7 +4466,14 @@ fn take_visible_suffix_matching(
         if kind == "heading" && node["style"] == "normal" {
             return None;
         }
-        let text = target_text(node)?;
+        let text = fragment_text(
+            node,
+            if quoted.is_some() {
+                GlyphRealization::Placeholder
+            } else {
+                GlyphRealization::Required
+            },
+        )?;
         if text.is_empty() {
             if matches!(kind, "editorial_note" | "kunten")
                 || (kind == "raw" && node.get("text_variant").is_some())
@@ -4928,7 +4953,7 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
         }
         let base_content = base_span.as_ref().map_or_else(
             || Some(Vec::new()),
-            |range| witness_fragment(decoded, range.clone()),
+            |range| source_fragment(decoded, range.clone()),
         );
         if let Some(base_content) = base_content {
             value["text_variant"]["base_content"] = json!(base_content);

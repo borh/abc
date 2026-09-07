@@ -989,3 +989,19 @@
     (let [result (transcribe (source (str "見出し［＃「見出し」は大見出し］" separator "［＃「見出し」は底本では「別題」］")))]
       (is (empty? (elements result "app")))
       (is (seq (get-in result [:ir "interpretation_problems"]))))))
+
+(deftest exact-unmapped-glyph-target-preserves-both-source-alternatives
+  (let [glyph "※［＃濁点付き井、379-1］"
+        current (str "ダ・" glyph "ンチ等の")
+        result (transcribe (source (str current "［＃「" current "」は底本では「ダ" glyph "ンチ等の」］")))
+        glyphs (elements result "g")]
+    (is (= "ダ・\uFFFCンチ等の" (:plaintext result)))
+    (is (= 2 (count glyphs)))
+    (is (= [[0 6] [9 21]] (get-in result [:view :view/eligible-spans])))
+    (is (every? #(string/blank? (.getTextContent ^Node %)) glyphs))
+    (is (every? #(not (string/blank? (attribute % "ref"))) glyphs))
+    (is (= 1 (count (elements result "app")))))
+  (let [result (transcribe (source "甲※［＃濁点付き井、379-1］乙［＃「甲※［＃濁点付き中、379-1］乙」は底本では「別」］"))]
+    (is (= "甲\uFFFC乙" (:plaintext result)))
+    (is (empty? (elements result "app")))
+    (is (seq (get-in result [:ir "interpretation_problems"])))))

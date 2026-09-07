@@ -2011,7 +2011,7 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
                 "span":{"byte_start":node["span"]["byte_start"], "byte_end":content[close_index]["span"]["byte_end"],
                     "line_start":node["span"]["line_start"], "line_end":content[close_index]["span"]["line_end"]},
                 "interpretation_marker_spans":[node["span"],content[close_index]["span"]],
-                "children":blocks_from_inline_content(inner, source)
+                "children":blocks_inside_native_scope(inner, source, &content[close_index])
             });
             blocks.push(container);
             strip_next_leading_newline = marker_ends_source_line(&content[close_index], source);
@@ -2069,7 +2069,11 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
                 strip_boundary_newlines(&mut inner, source);
                 let mut block = layout.clone();
                 block["kind"] = json!("layout_block");
-                let mut children = blocks_from_inline_content(inner, source);
+                let mut children = if explicit_close {
+                    blocks_inside_native_scope(inner, source, &content[boundary])
+                } else {
+                    blocks_from_inline_content(inner, source)
+                };
                 let annotations = node["x-layout-annotations"].as_array();
                 let unresolved =
                     annotations.is_some_and(|notes| notes.iter().any(|note| note["kind"] == "raw"));
@@ -2081,17 +2085,15 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
                         }
                     }
                     children.insert(0, json!({"kind":"paragraph", "content":annotations}));
-                    if unresolved && explicit_close {
-                        children.push(json!({"kind":"paragraph", "content":[content[boundary]]}));
-                    }
                 }
                 block["children"] = json!(children);
-                let mut markers = vec![node["span"].clone()];
+                let mut markers = if unresolved {
+                    Vec::new()
+                } else {
+                    vec![node["span"].clone()]
+                };
                 if explicit_close {
                     markers.push(content[boundary]["span"].clone());
-                }
-                if unresolved {
-                    markers.clear();
                 }
                 block["interpretation_marker_spans"] = json!(markers);
                 let end = if explicit_close {
@@ -2156,6 +2158,18 @@ fn marker_ends_source_line(node: &Value, source: &str) -> bool {
         .and_then(|n| usize::try_from(n).ok())
         .and_then(|end| source.get(end..))
         .is_some_and(|after| after.split('\n').next().unwrap_or("").trim().is_empty())
+}
+
+/// Share the actual ending event only with inner scopes that native pairing
+/// established at that same source marker.
+fn blocks_inside_native_scope(mut content: Vec<Value>, source: &str, close: &Value) -> Vec<Value> {
+    if content
+        .iter()
+        .any(|node| node.get("x-native-close-span") == close.get("span"))
+    {
+        content.push(close.clone());
+    }
+    blocks_from_inline_content(content, source)
 }
 
 /// Resolve native-established scope extents against this source-node sequence.

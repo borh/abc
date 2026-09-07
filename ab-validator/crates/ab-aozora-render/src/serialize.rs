@@ -16,7 +16,9 @@
 //! It runs a decorative-rule isolate post-pass so `serialize ∘ parse` is
 //! a round-trip fixed point.
 
+use ab_aozora_spec::NormalizedOffset;
 use core::fmt::{self, Write};
+use std::collections::BTreeMap;
 
 use crate::spelling::source::{
     NewlineCappedWriter, TrackingWriter, emit_container_close, emit_container_open, emit_line,
@@ -26,9 +28,9 @@ use crate::walk::{SentinelKind, WalkSink, walk};
 use ab_aozora_pipeline::{has_long_rule_line, isolate_decorative_rules};
 use ab_aozora_syntax::accent::ACCENT_TABLE;
 use ab_aozora_syntax::ast::{
-    AngleQuote, Content, ContentRange, Directive, ForwardFormat, Gaiji, GaijiCanonicalOwned,
-    Heading, HeadingHint, Illustration, Kunten, KuntenKind, LexOutput, MarginNote, Node, NodeRef,
-    NodeStore, Ruby, Segment,
+    AngleQuote, ContainerEnd, Content, ContentRange, Directive, ForwardFormat, Gaiji,
+    GaijiCanonicalOwned, Heading, HeadingHint, Illustration, Kunten, KuntenKind, LexOutput,
+    MarginNote, Node, NodeRef, NodeStore, Ruby, Segment,
 };
 use ab_aozora_syntax::degraded::degraded_directive;
 use ab_aozora_syntax::format::ForwardOrigin;
@@ -151,13 +153,31 @@ pub fn serialize_into_with<W: Write>(
         store: &out.store,
         out: &mut tracking,
         directives: opts.directives,
+        shared_closes: shared_close_emissions(out),
     };
     walk(out, &mut sink)
+}
+
+/// Emit a shared source marker once, even though it has several tree endpoints.
+fn shared_close_emissions(out: &LexOutput) -> BTreeMap<NormalizedOffset, &str> {
+    let mut emissions = BTreeMap::new();
+    for pair in out.container_pairs.windows(2) {
+        if let ContainerEnd::ClosingMarker(span) = pair[0].source_end
+            && pair[1].source_end == pair[0].source_end
+        {
+            emissions
+                .entry(pair[0].close)
+                .or_insert_with(|| span.slice(&out.sanitized));
+            emissions.insert(pair[1].close, "");
+        }
+    }
+    emissions
 }
 
 /// [`WalkSink`] that re-emits Aozora source text from the AST,
 /// threading the [`NodeStore`] (the resolve authority) into every AST emitter.
 struct SerializeSink<'a, W: Write> {
+    shared_closes: BTreeMap<NormalizedOffset, &'a str>,
     store: &'a NodeStore,
     out: &'a mut TrackingWriter<W>,
     /// Which notation-hygiene tiers to apply to `DirectiveKind::Unknown`
@@ -171,6 +191,19 @@ impl<W: Write> WalkSink for SerializeSink<'_, W> {
 
     fn on_text(&mut self, text: &str) -> fmt::Result {
         self.out.write_str(text)
+    }
+
+    fn on_node_at(
+        &mut self,
+        position: NormalizedOffset,
+        kind: SentinelKind,
+        node: NodeRef,
+    ) -> fmt::Result {
+        if let Some(source) = self.shared_closes.get(&position) {
+            self.out.write_str(source)
+        } else {
+            self.on_node(kind, node)
+        }
     }
 
     fn on_node(&mut self, kind: SentinelKind, node: NodeRef) -> fmt::Result {

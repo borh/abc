@@ -93,6 +93,17 @@ pub(crate) trait WalkSink {
     /// the owned registry entry at its offset.
     fn on_node(&mut self, kind: SentinelKind, node: NodeRef) -> fmt::Result;
 
+    /// Render with the normalized event position when source ownership needs it.
+    fn on_node_at(
+        &mut self,
+        position: NormalizedOffset,
+        kind: SentinelKind,
+        node: NodeRef,
+    ) -> fmt::Result {
+        let _ = position;
+        self.on_node(kind, node)
+    }
+
     /// Finalise after the last run. Default no-op.
     fn finish(&mut self) -> fmt::Result {
         Ok(())
@@ -124,7 +135,7 @@ fn handle_sentinel<S: WalkSink>(
     if *cursor < cand {
         sink.on_text(&normalized[*cursor..cand])?;
     }
-    sink.on_node(kind, node)?;
+    sink.on_node_at(NormalizedOffset::new(byte_pos), kind, node)?;
     *cursor = cand + 3;
     Ok(())
 }

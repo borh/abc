@@ -28,11 +28,12 @@ fn partial_layout_keeps_body_and_unresolved_source_separate() {
         convert("［＃ここから３字下げ、未対応指定、２０字詰め］\n本文\n［＃ここで字下げ終わり］");
     assert_eq!(ir["layout_blocks"][0]["indent"], 3);
     assert_eq!(ir["layout_blocks"][0]["width"], 20);
-    assert!(ir["interpretation_facts"].as_array().unwrap().is_empty());
+    let facts = ir["interpretation_facts"].as_array().unwrap();
+    assert_eq!(facts.len(), 1);
+    assert_eq!(facts[0]["kind"], "line-layout");
     let problems = ir["interpretation_problems"].as_array().unwrap();
-    assert_eq!(problems.len(), 2);
+    assert_eq!(problems.len(), 1);
     assert_eq!(problems[0]["raw"], "未対応指定");
-    assert_eq!(problems[1]["raw"], "［＃ここで字下げ終わり］");
     assert!(
         ir["nodes"]
             .as_array()

@@ -595,9 +595,9 @@
     (is (= "本文" (:plaintext result)))
     (is (some? (enclosing-style paragraph "padding-inline-start: 3em; inline-size: 20em")))
     (is (some #(string/includes? % "未対応指定") (map #(.getTextContent ^Node %) (elements result "note"))))
-    (is (some #(string/includes? % closing) (map #(.getTextContent ^Node %) (elements result "note"))))
+    (is (not-any? #(string/includes? % closing) (map #(.getTextContent ^Node %) (elements result "note"))))
     (is (seq (get-in result [:ir "interpretation_problems"])))
-    (is (empty? (get-in result [:ir "interpretation_facts"])))))
+    (is (= ["line-layout"] (mapv #(get % "kind") (get-in result [:ir "interpretation_facts"]))))))
 (deftest scoped-frames-and-horizontal-writing-retain-partial-paragraphs
   (doseq [[name rend] [["罫囲み" "keigakomi border(rule)"] ["横組み" "yokogumi horizontal"]]]
     (let [result (transcribe (source (str "前［＃ここから" name "］甲\n乙［＃ここで" name "終わり］後")))
@@ -803,3 +803,26 @@
     (is (= "dogyo" (attribute heading "rend")))
     (is (= 1 (get-in result [:ir "layout_blocks" 0 "indent"])))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest shared-column-and-frame-closure-preserves-both-source-scopes
+  (doseq [closer ["［＃ここで２段組み、罫囲み終わり］" "［＃ここで段組、罫囲み終わり］"]]
+    (let [result (transcribe (source (str "［＃ここから罫囲み］\n［＃ここから２段組］\n甲《こう》［＃改段］乙\n" closer)))
+          scopes (get-in result [:ir "layout_blocks"])]
+      (is (= "甲\n乙" (:plaintext result)))
+      (is (= 1 (count (elements result "cb"))))
+      (is (some #(= "column-count: 2" (attribute % "style")) (elements result "div")))
+      (is (empty? (get-in result [:ir "interpretation_problems"])))
+      (is (= 2 (count scopes)))
+      (is (apply = (map #(get-in % ["source_span" "end"]) scopes))))))
+
+(deftest unresolved-opening-clause-does-not-invalidate-established-shared-close
+  (let [closer "［＃ここで２段組み、罫囲み終わり］"
+        input (source (str "［＃ここから罫囲み］\n［＃ここから２段組み、段間に罫］\n本文\n" closer))
+        result (transcribe input)
+        start (.indexOf ^String input closer)
+        start-bytes (alength (.getBytes (subs input 0 start) java.nio.charset.StandardCharsets/UTF_8))
+        close-facts (filter #(= start-bytes (get-in % ["source_span" "start"]))
+                            (get-in result [:ir "interpretation_facts"]))]
+    (is (= "本文" (:plaintext result)))
+    (is (= #{"layout" "line-layout"} (set (map #(get % "kind") close-facts))))
+    (is (= ["段間に罫"] (mapv #(get % "raw") (get-in result [:ir "interpretation_problems"]))))))

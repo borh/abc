@@ -455,6 +455,15 @@ fn resolve_warichu_closer_aliases(spans: &mut [ClassifiedSpan]) {
                     openers.clear();
                 }
             }
+            SpanKind::BlockCloses { targets, .. } => {
+                if openers.len() >= targets.len()
+                    && openers.iter().rev().zip(targets).all(|(open, close)| {
+                        open.is_some_and(|kind| scope_closer_matches(kind, close))
+                    })
+                {
+                    openers.truncate(openers.len() - targets.len());
+                }
+            }
             SpanKind::Aozora(Node::Directive(directive)) => match directive.kind {
                 DirectiveKind::WarichuOpen => openers.push(None),
                 DirectiveKind::WarichuClose => match openers.last() {

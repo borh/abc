@@ -14,6 +14,26 @@ fn has_editorial_marker_fact(aat: &Value, marker: &str) -> bool {
         })
 }
 
+fn assert_only_closer_fact(aat: &Value, source: &str) {
+    let close = "［＃ここで字下げ終わり］";
+    let start = source.rfind(close).unwrap();
+    let facts = aat["meta"]["interpretation_facts"].as_array().unwrap();
+    assert_eq!(facts.len(), 1, "{aat}");
+    assert_eq!(
+        facts[0]["kind"], "line-layout",
+        "the established close is a layout fact"
+    );
+    assert_eq!(
+        facts[0]["source_span"]["start"], start,
+        "the opener must remain unclaimed"
+    );
+    assert_eq!(
+        facts[0]["source_span"]["end"],
+        start + close.len(),
+        "the fact owns the complete supplied closer"
+    );
+}
+
 #[test]
 fn unknown_clause_keeps_independent_geometry_and_exact_uncertainty() {
     let marker = "［＃ここから３字下げ、未対応指定、２０字詰め］";
@@ -31,11 +51,7 @@ fn unknown_clause_keeps_independent_geometry_and_exact_uncertainty() {
     assert_eq!(&source[start..end], "未対応指定");
     let document = ab_aozora_facade::Document::new(source.as_str());
     assert!(document.parse().to_source().contains(marker));
-    assert!(
-        aat["meta"]["interpretation_facts"]
-            .as_array()
-            .is_none_or(Vec::is_empty)
-    );
+    assert_only_closer_fact(&aat, &source);
     assert!(layout.to_string().contains("未対応指定"));
     assert!(layout.to_string().contains("本文"));
 }
@@ -52,11 +68,7 @@ fn conflicting_width_is_not_selected_by_clause_order() {
             aat["blocks"][0]["children"][0]["content"][0]["source"],
             widths
         );
-        assert!(
-            aat["meta"]["interpretation_facts"]
-                .as_array()
-                .is_none_or(Vec::is_empty)
-        );
+        assert_only_closer_fact(&aat, &source);
     }
 }
 
@@ -109,11 +121,7 @@ fn supplied_unknown_clauses_do_not_erase_indentation() {
         let layout = &aat["blocks"][0];
         assert_eq!(layout["indent"], amount, "{aat}");
         assert_eq!(layout["children"][0]["content"][0]["source"], clause);
-        assert!(
-            aat["meta"]["interpretation_facts"]
-                .as_array()
-                .is_none_or(Vec::is_empty)
-        );
+        assert_only_closer_fact(&aat, &source);
     }
 }
 
@@ -175,11 +183,18 @@ fn edition_statement_does_not_absorb_a_separate_unknown_clause() {
     assert_eq!(annotations[0]["text"], "底本では３字下げ");
     assert_eq!(annotations[1]["kind"], "raw");
     assert_eq!(annotations[1]["source"], "未知の指定");
+    let markers = layout["interpretation_marker_spans"].as_array().unwrap();
+    assert_eq!(markers.len(), 1);
+    assert_eq!(
+        markers[0]["byte_start"],
+        source.rfind("［＃ここで字下げ終わり］").unwrap()
+    );
     assert!(
-        layout["interpretation_marker_spans"]
+        aat["meta"]["interpretation_facts"]
             .as_array()
             .unwrap()
-            .is_empty()
+            .iter()
+            .all(|fact| fact["source_span"]["start"] != 0)
     );
 }
 

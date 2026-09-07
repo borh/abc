@@ -190,6 +190,13 @@ pub enum SpanKind {
     /// `post_process` to diagnose `［＃罫囲み終わり］` closing an
     /// `Indent` opener (kind mismatch).
     BlockClose(RegionClose),
+    /// One supplied marker names two adjacent scopes, in closing order.
+    BlockCloses {
+        /// Supplied targets in inner-to-outer closing order.
+        targets: [RegionClose; 2],
+        /// Exact directive retained when the complete boundary cannot be established.
+        fallback: Node,
+    },
     /// A `\n` in the sanitized text. Retained as its own span kind
     /// because block-level recognizers need line boundaries.
     Newline,
@@ -714,7 +721,7 @@ where
             SpanKind::Newline => YieldKind::Newline,
             SpanKind::Aozora(_) => YieldKind::Aozora,
             SpanKind::BlockOpen(_) => YieldKind::BlockOpen,
-            SpanKind::BlockClose(_) => YieldKind::BlockClose,
+            SpanKind::BlockClose(_) | SpanKind::BlockCloses { .. } => YieldKind::BlockClose,
         });
         self.pending_outputs.push_back(span);
     }
@@ -1717,6 +1724,9 @@ where
             EmitKind::Aozora(node) => SpanKind::Aozora(node),
             EmitKind::BlockOpen(container) => SpanKind::BlockOpen(container),
             EmitKind::BlockClose(container) => SpanKind::BlockClose(container),
+            EmitKind::BlockCloses { targets, fallback } => {
+                SpanKind::BlockCloses { targets, fallback }
+            }
         };
         // Surface any non-fatal warning the recogniser attached
         // (unrecognised container directive / 縦中横 target not found /
@@ -2685,6 +2695,13 @@ enum EmitKind {
     /// Paired-container closer — becomes [`SpanKind::BlockClose`]. Carries the
     /// [`RegionClose`] discriminant (the open payload stays authoritative).
     BlockClose(RegionClose),
+    /// One supplied marker names two adjacent scopes, in closing order.
+    BlockCloses {
+        /// Supplied targets in inner-to-outer closing order.
+        targets: [RegionClose; 2],
+        /// Exact directive retained when the complete boundary cannot be established.
+        fallback: Node,
+    },
 }
 
 // `ruby_base_class` lives in `ab_aozora_syntax` (single source of truth

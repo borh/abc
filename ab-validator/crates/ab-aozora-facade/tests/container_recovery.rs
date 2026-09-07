@@ -88,3 +88,54 @@ fn missing_outer_close_does_not_invalidate_a_matched_inner_scope() {
     );
     assert_eq!(tree.source(), source);
 }
+
+#[test]
+fn one_supplied_closer_can_end_the_named_nested_scopes() {
+    for close in [
+        "［＃ここで２段組み、罫囲み終わり］",
+        "［＃ここで段組、罫囲み終わり］",
+    ] {
+        let source = format!("［＃ここから罫囲み］\n［＃ここから２段組］\n本文\n{close}");
+        let document = Document::new(source.clone());
+        let tree = document.parse();
+        assert!(tree.diagnostics().is_empty(), "{:?}", tree.diagnostics());
+        assert_eq!(tree.container_pairs().len(), 2);
+        assert_eq!(tree.source(), source);
+        let serialized = tree.to_source();
+        assert_eq!(serialized.matches(close).count(), 1);
+        let reparsed_document = Document::new(serialized);
+        let reparsed = reparsed_document.parse();
+        assert!(reparsed.diagnostics().is_empty());
+        assert_eq!(reparsed.container_pairs().len(), 2);
+        assert_eq!(
+            tree.container_pairs()[0].source_end,
+            tree.container_pairs()[1].source_end
+        );
+    }
+}
+
+#[test]
+fn shared_closer_never_partially_consumes_a_mismatched_stack() {
+    let close = "［＃ここで２段組み、罫囲み終わり］";
+    for openers in [
+        "［＃ここから罫囲み］［＃ここから３段組み］",
+        "［＃ここから２段組み］",
+        "［＃ここから罫囲み］［＃ここから太字］［＃ここから２段組み］",
+        "［＃ここから２段組み］［＃ここから罫囲み］",
+    ] {
+        let source = format!("{openers}\n本文\n{close}");
+        let document = Document::new(source.as_str());
+        let tree = document.parse();
+        assert!(tree.container_pairs().is_empty());
+        assert!(!tree.diagnostics().is_empty());
+        assert_eq!(tree.to_source().matches(close).count(), 1);
+        assert_eq!(tree.source(), source);
+    }
+    let source = format!(
+        "［＃ここから罫囲み］［＃ここから３段組み］\n本文\n{close}\n［＃ここで３段組み終わり］［＃罫囲み終わり］"
+    );
+    let document = Document::new(source.as_str());
+    let tree = document.parse();
+    assert_eq!(tree.container_pairs().len(), 2);
+    assert_eq!(tree.to_source().matches(close).count(), 1);
+}

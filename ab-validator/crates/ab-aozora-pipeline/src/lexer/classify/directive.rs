@@ -1197,6 +1197,20 @@ pub(super) fn classify_annotation_body(
                 Some((n, tail)) => (Some(ColumnCount(NonZeroU8::new(n)?)), tail),
                 None => (None, rest),
             };
+            if matches!(rest, "段組、罫囲み終わり" | "段組み、罫囲み終わり") {
+                let directive =
+                    alloc.make_directive(&format!("［＃{body}］"), DirectiveKind::Unknown);
+                return Some((
+                    EmitKind::BlockCloses {
+                        targets: [
+                            RegionClose::Columns(count),
+                            RegionClose::Framed(EnclosureKind::Rule),
+                        ],
+                        fallback: alloc.annotation(directive),
+                    },
+                    None,
+                ));
+            }
             (rest == "段組終わり" || rest == "段組み終わり")
                 .then_some((EmitKind::BlockClose(RegionClose::Columns(count)), None))
         }

@@ -132,7 +132,7 @@ fn classified_source_fact(span: &ClassifiedSpan) -> Option<ClassifiedSourceFact>
             Disposition::StructuralControl,
             EvidenceClass::TypedContainer,
         ),
-        SpanKind::BlockClose(_) => (
+        SpanKind::BlockClose(_) | SpanKind::BlockCloses { .. } => (
             ConstructId::ContainerClose,
             Role::ContainerSyntax,
             Disposition::StructuralControl,
@@ -407,6 +407,10 @@ impl<'src> Normalizer<'src> {
     }
 
     pub(crate) fn emit(&mut self, span: &ClassifiedSpan) {
+        if let SpanKind::BlockCloses { targets, fallback } = &span.kind {
+            self.emit_shared_close(span.source_span, *targets, *fallback);
+            return;
+        }
         self.recorder.record_classified_source(span);
         match &span.kind {
             SpanKind::Plain(_) => {
@@ -471,6 +475,7 @@ impl<'src> Normalizer<'src> {
                 self.open_stack
                     .push((NormalizedOffset::new(pos), *container, span.source_span));
             }
+            SpanKind::BlockCloses { .. } => unreachable!("shared source boundary handled above"),
             SpanKind::BlockClose(close) => {
                 let inline = close.is_inline();
                 if !inline {
@@ -501,6 +506,49 @@ impl<'src> Normalizer<'src> {
                 }
             }
         }
+    }
+
+    /// Validate the complete named stack suffix before establishing any endpoint.
+    fn emit_shared_close(&mut self, span: Span, targets: [RegionClose; 2], fallback: Node) {
+        let matches = self.open_stack.len() >= targets.len()
+            && self
+                .open_stack
+                .iter()
+                .rev()
+                .zip(targets)
+                .all(|((_, open, _), close)| scope_closer_matches(*open, close));
+        if !matches {
+            self.emit(&ClassifiedSpan {
+                source_span: span,
+                kind: SpanKind::Aozora(fallback),
+            });
+            return;
+        }
+        self.recorder.record_classified_source(&ClassifiedSpan {
+            source_span: span,
+            kind: SpanKind::BlockClose(targets[0]),
+        });
+        self.out.push_str("\n\n");
+        for (index, close) in targets.iter().enumerate() {
+            let pos = self.current_pos();
+            self.out.push(BLOCK_CLOSE_SENTINEL);
+            if index == 0 {
+                self.recorder.record_block_close(pos, span, *close);
+            } else {
+                self.recorder
+                    .entries
+                    .push((pos, NodeRef::BlockClose(*close)));
+            }
+            let (open, kind, source_open) = self.open_stack.pop().expect("complete suffix checked");
+            self.container_pairs.push(ContainerPair {
+                kind,
+                open,
+                close: NormalizedOffset::new(pos),
+                source_open,
+                source_end: ContainerEnd::ClosingMarker(span),
+            });
+        }
+        self.out.push_str("\n\n");
     }
 
     /// Report every remaining opening marker before discarding recovery state.

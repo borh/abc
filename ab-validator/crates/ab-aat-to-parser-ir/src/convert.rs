@@ -529,7 +529,6 @@ fn map_block_content(
                     "page_placement",
                     "direction",
                     "align",
-                    "border",
                 ] {
                     if let Some(value) = block.get(property) {
                         scope[property] = value.clone();
@@ -537,7 +536,13 @@ fn map_block_content(
                 }
                 if let Some(formatting) = block.get("formatting") {
                     let mut typography = layout_scope(formatting)?;
-                    typography["source"] = json!("aat-block");
+                    let attributes = match &mut typography {
+                        Value::Array(attributes) => attributes.as_mut_slice(),
+                        attribute => std::slice::from_mut(attribute),
+                    };
+                    for attribute in attributes {
+                        attribute["source"] = json!("aat-block");
+                    }
                     scope["typography"] = typography;
                 }
                 attach_source_span(&mut scope, block.get("span"))?;
@@ -549,11 +554,9 @@ fn map_block_content(
                 block["children"].as_array().into_iter().flatten().collect();
             let layout = paragraph_layout_from_jisage_block(block);
             let node_start = outputs.nodes.len();
-            let block_style = block.get("block_style");
-            let enclosing_scope = block_style.is_some()
-                || children.iter().any(|child| {
-                    child["kind"] != "paragraph" || paragraph_layout_wrapper(child).is_some()
-                });
+            let enclosing_scope = children.iter().any(|child| {
+                child["kind"] != "paragraph" || paragraph_layout_wrapper(child).is_some()
+            });
             for (index, child) in children.into_iter().enumerate() {
                 current = map_block(
                     child,
@@ -567,17 +570,10 @@ fn map_block_content(
                 )?;
             }
             if enclosing_scope && outputs.nodes.len() > node_start {
-                let mut scope = json!({
+                let scope = json!({
                     "node_range": {"start": node_start, "end": outputs.nodes.len()},
                     "indent": layout["indent"], "source_pointer": path
                 });
-                if let Some(style) = block_style {
-                    for property in ["direction", "align", "border"] {
-                        if let Some(value) = style.get(property) {
-                            scope[property] = value.clone();
-                        }
-                    }
-                }
                 outputs.layout_blocks.push(scope);
             }
         }
@@ -1342,6 +1338,13 @@ fn map_inline_to_nodes(
 }
 
 fn layout_scope(node: &Value) -> Result<Value> {
+    if let Some(attributes) = node.as_array() {
+        return attributes
+            .iter()
+            .map(layout_scope)
+            .collect::<Result<Vec<_>>>()
+            .map(Value::Array);
+    }
     match node["kind"].as_str().unwrap_or("") {
         "style" => {
             let mut layout =

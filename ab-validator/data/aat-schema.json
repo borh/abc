@@ -270,7 +270,7 @@
           ]
         },
         "span": { "$ref": "#/$defs/span" },
-        "formatting": {"$ref":"#/$defs/formatting_attribute"},
+        "formatting": {"oneOf":[{"$ref":"#/$defs/formatting_attribute"},{"type":"array","minItems":2,"uniqueItems":true,"items":{"$ref":"#/$defs/formatting_attribute"}}]},
         "interpretation_marker_spans":{"type":"array","items":{"$ref":"#/$defs/span"}},
         "indent": { "type": "integer", "minimum": 0 },
         "width": { "type": "integer", "minimum": 1 },
@@ -283,24 +283,13 @@
         "page_placement": {"const":"horizontal-center"},
         "direction":{"const":"horizontal"},
         "align":{"enum":["center","right"]},
-        "border":{"const":"solid"},
         "source_end":{"type":"object","required":["kind","span"],"additionalProperties":false,
           "properties":{"kind":{"enum":["next-indent-opener","page-break"]},"span":{"$ref":"#/$defs/span"}}},
-        "block_style": {
-          "type": "object",
-          "required": ["direction", "align", "border"],
-          "additionalProperties": false,
-          "properties": {
-            "direction": { "const": "horizontal" },
-            "align": { "const": "center" },
-            "border": { "const": "solid" }
-          }
-        },
         "children": { "type": "array", "items": { "$ref": "#/$defs/block" } }
       },
       "allOf": [
         {"if":{"required":["column_rule"]},"then":{"required":["column_count"],"properties":{"kind":{"const":"layout_block"}}}},
-        {"if":{"anyOf":[{"required":["direction"]},{"required":["align"]},{"required":["border"]},{"required":["continuation_indent"]},{"required":["offset_from_end"]},{"required":["line_count"]},{"required":["page_placement"]},{"required":["source_end"]}]},"then":{"properties":{"kind":{"const":"layout_block"}}}},
+        {"if":{"anyOf":[{"required":["direction"]},{"required":["align"]},{"required":["continuation_indent"]},{"required":["offset_from_end"]},{"required":["line_count"]},{"required":["page_placement"]},{"required":["source_end"]}]},"then":{"properties":{"kind":{"const":"layout_block"}}}},
         {"if":{"properties":{"kind":{"const":"layout_block"}}},"then":{"required":["span","interpretation_marker_spans"],"anyOf":[{"required":["indent"]},{"required":["width"]},{"required":["offset_from_end"]},{"required":["align"]},{"required":["page_placement"]},{"required":["column_count"]},{"required":["role"]}]}},
         {"if":{"properties":{"kind":{"const":"typography_block"}}},"then":{"required":["formatting","span","interpretation_marker_spans"]}},
         {
@@ -310,13 +299,6 @@
         {
           "if": { "properties": { "kind": { "const": "jizume_block" } } },
           "then": { "required": ["width"] }
-        },
-        {
-          "if": { "required": ["block_style"] },
-          "then": { "properties": {
-            "kind": { "const": "jisage_block" },
-            "children": { "items": { "$ref": "#/$defs/paragraph" } }
-          } }
         }
       ]
     },
@@ -473,7 +455,7 @@
     "formatting_attribute": {
       "oneOf": [
         {"type":"object","additionalProperties":false,"required":["kind"],"properties":{"kind":{"enum":["yokogumi","fraction"]}}},
-        {"type":"object","additionalProperties":false,"required":["kind","border"],"properties":{"kind":{"const":"keigakomi"},"border":{"enum":["rule","box","circle","dotted-circle","double-rule"]}}},
+        {"type":"object","additionalProperties":false,"required":["kind","border"],"properties":{"kind":{"const":"keigakomi"},"border":{"enum":["rule","unspecified","dashed-rule","box","circle","dotted-circle","double-rule"]}}},
         {"type":"object","additionalProperties":false,"required":["kind"],"properties":{"kind":{"enum":["caption","warichu"]}}},
         {"type":"object","additionalProperties":false,"required":["kind","style_type"],"properties":{"kind":{"const":"style"},"style_type":{"enum":["bold","italic","gothic","bouten","bosen"]},"decoration":{"type":"object","additionalProperties":false,"required":["kind","position"],"properties":{"kind":{"type":"string"},"position":{"enum":["right","left","both","unknown"]}}}}},
         {"type":"object","additionalProperties":false,"required":["kind","size_type","level"],"properties":{"kind":{"const":"font_size"},"size_type":{"enum":["large","small"]},"level":{"type":"integer","minimum":1}}},
@@ -489,7 +471,7 @@
       "properties": {
         "interpretation_marker_spans": { "type": "array", "items": { "$ref": "#/$defs/span" } },
         "kind": { "enum": ["style", "formatting", "font_size", "small_script", "tcy", "keigakomi", "yokogumi", "caption", "fraction"] },
-        "border": {"enum":["rule","box","circle","dotted-circle","double-rule"]},
+        "border": {"enum":["rule","unspecified","dashed-rule","box","circle","dotted-circle","double-rule"]},
         "decoration": {"type":"object", "additionalProperties":false, "required":["kind","position"], "properties":{"kind":{"type":"string"}, "position":{"enum":["right","left","both","unknown"]}}},
         "attributes": { "type":"array", "minItems":2, "uniqueItems":true, "items": { "$ref":"#/$defs/formatting_attribute" } },
         "style_type": { "type": "string" },

@@ -314,9 +314,11 @@ fn render_format<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W) ->
 /// the slug-keyed `aozora-keigakomi-inline` semantic rendering. Exhaustive so a
 /// future enclosure kind is compiler-flagged here rather than silently sharing
 /// the ruled-frame class.
-const fn framed_span_class(kind: EnclosureKind) -> Option<&'static str> {
+pub(crate) const fn framed_span_class(kind: EnclosureKind) -> Option<&'static str> {
     match kind {
         EnclosureKind::Rule => None,
+        EnclosureKind::Unspecified => Some("aozora-keigakomi-inline"),
+        EnclosureKind::DashedRule => Some("aozora-enclosure-dashed-rule"),
         EnclosureKind::Box => Some("aozora-keigakomi-box"),
         EnclosureKind::Circle => Some("aozora-enclosure-circle"),
         EnclosureKind::CircleDotted => Some("aozora-enclosure-circle-dotted"),

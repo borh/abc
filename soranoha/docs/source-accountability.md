@@ -92,6 +92,9 @@ the physical left and right page edges as `rend="page-horizontal-center"`.
 Page placement and text alignment remain independent.
 Consecutive indentation instructions replace the preceding indentation scope.
 Page placement ends before the next supplied page break, which remains in TEI.
+Frame styles and co-applied typography share the same formatting vocabulary on
+TEI `div` and `hi` scopes. Supplied solid and dashed rules retain their border
+style; framing alone does not establish an independent embedded text.
 
 Validation provenance binds the ODD, RNG and Schematron hashes through
 `schemas/tei-profile-generation.json`. See [TEI validation](tei-validation.md).

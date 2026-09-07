@@ -95,6 +95,9 @@
     "yokogumi" "direction=horizontal"
     nil))
 
+(defn- layout-attributes [layout]
+  (if (vector? layout) layout [layout]))
+
 (defn- inline-layout-rend [layout]
   (case (get layout "kind")
     "emphasis" (string/join " " (remove nil? [(get layout "style")
@@ -371,7 +374,7 @@
 (defn- render-layout-span-node
   ([acc node depth]
    (let [layout (get node "layout")
-         layouts (if (vector? layout) layout [layout])
+         layouts (layout-attributes layout)
          rends (mapv inline-layout-rend layouts)]
      (if (every? some? rends)
        (let [rend (string/join " " rends)
@@ -625,6 +628,15 @@
 
 (defn- layout-block-attrs [block]
   (let [indent (get block "indent")
+        attributes (layout-attributes (get block "typography"))
+        frame-style (some (fn [attribute]
+                            (when (= "keigakomi" (get attribute "kind"))
+                              (case (get attribute "border")
+                                ("rule" "unspecified" "box" "circle") "border-style: solid"
+                                "dashed-rule" "border-style: dashed"
+                                "dotted-circle" "border-style: dotted"
+                                "double-rule" "border-style: double"
+                                nil))) attributes)
         continuation (get block "continuation_indent")
         start-padding (or continuation indent)
         styles (cond-> []
@@ -635,10 +647,10 @@
                  (get block "column_count") (conj (str "column-count: " (get block "column_count")))
                  (get block "direction") (conj "writing-mode: horizontal-tb")
                  (get block "align") (conj (str "text-align: " (get block "align")))
-                 (get block "border") (conj "border-style: solid"))
+                 frame-style (conj frame-style))
         rend (cond-> []
                (get block "column_rule") (conj "column-rule")
-               (get block "typography") (conj (inline-layout-rend (get block "typography")))
+               (get block "typography") (into (keep inline-layout-rend) attributes)
                (get block "page_placement") (conj "page-horizontal-center")
                (get block "line_count") (conj (str "line-count(" (get block "line_count") ")")))]
     (cond-> {:type (get block "role" "layout")}
@@ -744,9 +756,7 @@
       (if (= node-end (get-in block ["node_range" "end"]))
         (let [acc (-> acc flush-paragraph flush-division)
               content (normalize-layout-siblings (:body-children acc))
-              wrapped (if (get block "border")
-                        [:floatingText (layout-block-attrs block) (into [:body] content)]
-                        (into [:div (layout-block-attrs block)] content))]
+              wrapped (into [:div (layout-block-attrs block)] content)]
           (recur (append-structural-child (merge acc parent-content) wrapped) (pop frames)))
         [acc frames])
       [acc frames])))

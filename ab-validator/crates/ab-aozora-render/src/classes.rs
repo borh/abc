@@ -73,6 +73,7 @@ pub const AOZORA_CLASSES: &[&str] = &[
     "aozora-editor-note",
     "aozora-enclosure-circle",
     "aozora-enclosure-circle-dotted",
+    "aozora-enclosure-dashed-rule",
     "aozora-enclosure-double-rule",
     "aozora-font-extra-large",
     "aozora-font-large",
@@ -559,7 +560,7 @@ mod tests {
                 styles: BlockStyles {
                     gothic: true,
                     horizontal: true,
-                    framed: true,
+                    frame: Some(EnclosureKind::DashedRule),
                     font: Some(FontShift(NonZeroI8::new(-1).unwrap())),
                 },
             }),

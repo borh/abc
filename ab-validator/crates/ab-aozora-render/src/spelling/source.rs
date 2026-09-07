@@ -6,8 +6,8 @@ use ab_aozora_syntax::ast::NodeStore;
 use core::fmt::{self, Write};
 
 use ab_aozora_syntax::{
-    BlockStyles, BoutenPosition, HeadingKind, HeadingStyle, IndentBlock, IndentLayout, LineFormat,
-    RegionClose, RegionFormat, SectionKind,
+    BlockStyles, BoutenPosition, ForwardAttr, HeadingKind, HeadingStyle, IndentBlock, IndentLayout,
+    LineFormat, RegionClose, RegionFormat, SectionKind,
 };
 
 /// The source text of the container **open** marker for `open`.
@@ -281,7 +281,7 @@ fn emit_indent_open<W: Write>(block: IndentBlock, store: &NodeStore, out: &mut W
     let BlockStyles {
         gothic,
         horizontal,
-        framed,
+        frame,
         font,
     } = styles;
 
@@ -295,7 +295,7 @@ fn emit_indent_open<W: Write>(block: IndentBlock, store: &NodeStore, out: &mut W
         && matches!(layout, IndentLayout::None)
         && !gothic
         && !horizontal
-        && !framed
+        && frame.is_none()
         && font.is_none();
     if amount == 1 && bare {
         return out.write_str("［＃ここから字下げ］");
@@ -332,7 +332,7 @@ fn emit_block_styles<W: Write>(styles: BlockStyles, out: &mut W) -> fmt::Result 
     let BlockStyles {
         gothic,
         horizontal,
-        framed,
+        frame,
         font,
     } = styles;
     if gothic {
@@ -341,8 +341,8 @@ fn emit_block_styles<W: Write>(styles: BlockStyles, out: &mut W) -> fmt::Result 
     if horizontal {
         out.write_str("、横書き")?;
     }
-    if framed {
-        out.write_str("、罫囲み")?;
+    if let Some(frame) = frame {
+        write!(out, "、{}", ForwardAttr::Framed(frame).keyword())?;
     }
     if let Some(shift) = font {
         // `小さい活字` is the canonical one-stage-smaller spelling (the only

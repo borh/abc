@@ -10,6 +10,7 @@
 
 use core::fmt::{self, Write};
 
+use crate::render_node::framed_span_class;
 use ab_aozora_syntax::{
     BlockStyles, Container, HeadingKind, HeadingStyle, IndentBlock, IndentLayout, LineFormat,
     RegionFormat,
@@ -55,7 +56,7 @@ fn render_block_style_classes<W: Write>(styles: BlockStyles, writer: &mut W) -> 
     let BlockStyles {
         gothic,
         horizontal,
-        framed,
+        frame,
         font,
     } = styles;
     if gothic {
@@ -64,8 +65,11 @@ fn render_block_style_classes<W: Write>(styles: BlockStyles, writer: &mut W) -> 
     if horizontal {
         writer.write_str(" aozora-container-yokogumi")?;
     }
-    if framed {
+    if let Some(frame) = frame {
         writer.write_str(" aozora-container-keigakomi")?;
+        if let Some(class) = framed_span_class(frame) {
+            write!(writer, " {class}")?;
+        }
     }
     if let Some(shift) = font {
         writer.write_str(if shift.larger() {
@@ -392,7 +396,7 @@ fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::R
             // co-applied decorative styles — flat classes on the same
             // `<div>` (close stays a single `</div>`), reusing each
             // attribute's standalone-container class so one stylesheet rule
-            // serves both forms. Canonical order = gothic, horizontal, framed,
+            // serves both forms. Canonical order = gothic, horizontal, frame,
             // font (matches `BlockStyles::iter_formats` / the serializer).
             render_block_style_classes(styles, writer)?;
             write!(writer, r#"" data-amount="{amount}""#)?;

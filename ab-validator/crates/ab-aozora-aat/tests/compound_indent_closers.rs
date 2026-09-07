@@ -7,7 +7,9 @@ use serde_json::Value;
 fn supplied_style_closers_end_the_matching_indentation_scope() {
     for (style, field, expected) in [
         ("横組み", "direction", "horizontal"),
-        ("罫囲み", "border", "solid"),
+        ("罫囲み", "formatting", "rule"),
+        ("枠囲み", "formatting", "unspecified"),
+        ("破線枠囲み", "formatting", "dashed-rule"),
     ] {
         let source = format!(
             "［＃ここから３字下げ、{style}］\n本文\n［＃ここで字下げ、{style}終わり］\n外側"
@@ -16,7 +18,12 @@ fn supplied_style_closers_end_the_matching_indentation_scope() {
             serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
         let block = &aat["blocks"][0];
         assert_eq!(block["kind"], "layout_block", "{aat}");
-        assert_eq!(block[field], expected, "{aat}");
+        let actual = if field == "formatting" {
+            &block[field]["border"]
+        } else {
+            &block[field]
+        };
+        assert_eq!(actual, expected, "{aat}");
         assert!(!block.to_string().contains("外側"), "{aat}");
         assert!(!aat.to_string().contains("interpretation_problem"), "{aat}");
         let document = ab_aozora_facade::Document::new(source.as_str());

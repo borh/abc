@@ -87,26 +87,17 @@ impl AbsoluteSize {
     }
 }
 
-/// The style of an enclosure (囲み) — a ruled frame, a box glyph, and so on.
-///
-/// 青空文庫 attests a family of enclosures that share the [`Format::Framed`]
-/// identity and differ only on this style axis: 罫囲み (a ruled frame),
-/// 「□」囲み (a box glyph), ○付き文字 (an encircled character), 点線丸囲み (a
-/// dotted circle), and 二重罫囲み (a double rule). The non-canonical, corpus-
-/// vanishing 枠囲み / 枠囲い / 表罫囲み / ミシン罫囲み are **not** members: the
-/// core declines them to `Directive{Unknown}` (lossless) rather than fold their
-/// spelling onto [`Self::Rule`]. This mirrors how the 傍点 kinds share
-/// [`Format::Bouten`] via [`BoutenKind`].
-//
-// Deliberately NOT `#[non_exhaustive]`: every classifier / render / serialize
-// site must handle each kind explicitly, so a new member is compiler-flagged
-// at every site rather than silently folded into a `_` fallback (the §7.6
-// param-drop bug class). `Bouten(BoutenKind)` is the template.
+/// The supplied shape and rule style of an enclosure.
+/// All scopes reuse this vocabulary without inferring an independent text role.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum EnclosureKind {
+    /// 枠囲み — a frame whose rule pattern is not specified.
+    Unspecified,
     /// 罫囲み — a ruled rectangular frame.
     Rule,
+    /// 破線枠囲み — a rectangular frame with dashed rules.
+    DashedRule,
     /// 「□」囲み — a box-glyph enclosure. The glyph is □ (U+25A1); the box is
     /// drawn by the stylesheet, so the glyph is re-emitted only on serialize.
     Box,
@@ -180,33 +171,8 @@ pub enum IndentLayout {
     Kumi(Kumi),
 }
 
-/// Co-applied decorative styles stacked on a block-layout opener.
-///
-/// The `［＃ここから N字下げ、…］` compound lets several typographic attributes
-/// ride one indent opener and close with the single generic `字下げ終わり`
-/// (pairing is by family — the decorations never touch the close). This is the
-/// *closed* set of those decorations.
-///
-/// A struct of named fields (not a bitset, not a `Vec`) is deliberate:
-/// - `font` carries a magnitude no bit can hold (`小さい活字` = one step
-///   smaller), and a single `Option<FontShift>` makes "two conflicting sizes"
-///   and "the size flag set with no magnitude" both unrepresentable;
-/// - the three `bool`s make a duplicated attribute unrepresentable;
-/// - it stays `Copy` (a `Vec<Format>` would break the arena `Copy` chain).
-///
-/// Each field projects to the scope-independent [`Format`] identity via
-/// [`Self::iter_formats`], so render / serialize / wire reuse the existing
-/// per-[`Format`] machinery rather than re-deciding keyword/class/tag here.
-///
-/// The name is deliberately generic (not `IndentStyles`): a future block
-/// anchor can carry the same decoration set without a second rearchitecture.
-//
-// Deliberately NOT `#[non_exhaustive]`: a fifth decoration must be
-// compiler-flagged everywhere it is consumed, never silently defaulting to
-// "absent" (the §7.6 param-drop bug class). The serialize and render sites
-// destructure `{ gothic, horizontal, framed, font }` with no `..` directly; the
-// Pandoc kvs + JSON projection funnel through [`Self::iter_formats`], which
-// destructures exhaustively too — so every channel is guarded.
+/// Independent presentation attributes supplied on a block-layout opener.
+/// Fields remain `Copy` and project through the shared formatting identities.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct BlockStyles {
@@ -214,51 +180,39 @@ pub struct BlockStyles {
     pub gothic: bool,
     /// `横書き` / `横組み` — horizontal writing (`Format::Horizontal`).
     pub horizontal: bool,
-    /// `罫囲み` — ruled box around the block (`Format::Framed`).
-    pub framed: bool,
-    /// `小さい活字` (= `FontShift(-1)`) / `N段階…文字` — relative font shift
-    /// (`Format::FontSize`). `None` = no shift; a single `Option` forbids two
-    /// conflicting sizes.
+    /// The supplied enclosing shape and rule style (`Format::Framed`).
+    pub frame: Option<EnclosureKind>,
+    /// Relative font shift (`Format::FontSize`).
     pub font: Option<FontShift>,
 }
 
 impl BlockStyles {
-    /// No decorations — the overwhelmingly common plain-indent case.
+    /// No co-applied presentation attributes.
     pub const EMPTY: Self = Self {
         gothic: false,
         horizontal: false,
-        framed: false,
+        frame: None,
         font: None,
     };
 
-    /// Whether no decoration is set (a plain indent that serializes byte-exact
-    /// to today's `［＃ここから N字下げ］`).
+    /// Whether no presentation attribute is set.
     #[must_use]
     pub fn is_empty(self) -> bool {
         self == Self::EMPTY
     }
 
-    /// Project the set to its [`Format`] identities in **canonical order**
-    /// (`gothic`, `horizontal`, `framed`, `font`). Serialize, render, and the
-    /// Pandoc / wire `modifiers` path all consume this one order, so the
-    /// canonical emission never drifts.
-    ///
-    /// This is the **single chokepoint** the Pandoc kvs + JSON projection feed
-    /// through, so it destructures exhaustively (no `..`): a fifth decoration is
-    /// compiler-flagged here, not silently dropped from those channels —
-    /// completing the §7.6 param-drop guard the per-site destructures provide
-    /// for serialize / render.
+    /// Project attributes in canonical typeface, direction, frame and font order.
     pub fn iter_formats(self) -> impl Iterator<Item = Format> {
         let Self {
             gothic,
             horizontal,
-            framed,
+            frame,
             font,
         } = self;
         [
             gothic.then_some(Format::Gothic),
             horizontal.then_some(Format::Horizontal),
-            framed.then_some(Format::Framed(EnclosureKind::Rule)),
+            frame.map(Format::Framed),
             font.map(Format::FontSize),
         ]
         .into_iter()
@@ -634,6 +588,8 @@ impl ForwardAttr {
             Self::SmallScript(BoutenPosition::Right) => "行右小書き",
             Self::SmallScript(BoutenPosition::Left) => "行左小書き",
             Self::Framed(EnclosureKind::Rule) => "罫囲み",
+            Self::Framed(EnclosureKind::Unspecified) => "枠囲み",
+            Self::Framed(EnclosureKind::DashedRule) => "破線枠囲み",
             // 「□」囲み: the source keyword embeds the quoted glyph, so serialize
             // reconstructs it in a dedicated arm; this bare base word only feeds
             // the keyword round-trip table.

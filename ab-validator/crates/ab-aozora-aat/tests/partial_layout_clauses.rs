@@ -36,7 +36,7 @@ fn assert_only_closer_fact(aat: &Value, source: &str) {
 
 #[test]
 fn unknown_clause_keeps_independent_geometry_and_exact_uncertainty() {
-    let marker = "［＃ここから３字下げ、未対応指定、２０字詰め］";
+    let marker = "［＃ここから３字下げ、未対応指定、２０字詰め、破線枠囲み］";
     let source = format!("{marker}\n本文\n［＃ここで字下げ終わり］");
     let aat: Value =
         serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
@@ -44,6 +44,7 @@ fn unknown_clause_keeps_independent_geometry_and_exact_uncertainty() {
     assert_eq!(layout["kind"], "layout_block", "{aat}");
     assert_eq!(layout["indent"], 3);
     assert_eq!(layout["width"], 20);
+    assert_eq!(layout["formatting"]["border"], "dashed-rule");
     let retained = &layout["children"][0]["content"][0];
     assert_eq!(retained["source"], "未対応指定");
     let start = usize::try_from(retained["span"]["byte_start"].as_u64().unwrap()).unwrap();
@@ -111,7 +112,6 @@ fn supplied_unknown_clauses_do_not_erase_indentation() {
         (3, "「甲」は返り点"),
         (5, "ここから数式"),
         (5, "本文よりひとまわり大きい太ゴシック体"),
-        (4, "破線枠囲み"),
     ] {
         let source =
             format!("［＃ここから{amount}字下げ、{clause}］\n本文\n［＃ここで字下げ終わり］");

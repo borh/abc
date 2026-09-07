@@ -60,6 +60,8 @@ fn absent_target_is_retained_as_uncertain_source() {
 fn native_enclosure_kinds_do_not_collapse_to_one_border() {
     for (notation, expected) in [
         ("罫囲み", "rule"),
+        ("枠囲み", "unspecified"),
+        ("破線枠囲み", "dashed-rule"),
         ("「□」囲み", "box"),
         ("○付き文字", "circle"),
         ("点線丸囲み", "dotted-circle"),

@@ -57,3 +57,74 @@ fn page_placement_and_nested_indentation_are_distinct_scopes() {
             < ir["nodes"].as_array().unwrap().len() as u64
     );
 }
+
+#[test]
+fn compound_frames_reuse_typed_formatting_without_losing_coapplied_attributes() {
+    for (clause, border) in [("罫囲み", "rule"), ("破線枠囲み", "dashed-rule")] {
+        let ir = convert(&format!(
+            "［＃ここから３字下げ、ゴシック体、{clause}］\n本文\n［＃ここで字下げ終わり］"
+        ));
+        let block = &ir["layout_blocks"][0];
+        assert!(block.get("border").is_none(), "{ir}");
+        let attributes = block["typography"]
+            .as_array()
+            .expect("independent attributes");
+        assert!(
+            attributes
+                .iter()
+                .any(|value| value["kind"] == "emphasis" && value["style"] == "gothic"),
+            "{ir}"
+        );
+        assert!(
+            attributes
+                .iter()
+                .any(|value| value["kind"] == "keigakomi" && value["border"] == border),
+            "{ir}"
+        );
+        assert!(
+            attributes
+                .iter()
+                .all(|value| value["source"] == "aat-block"),
+            "{ir}"
+        );
+        assert!(
+            ir["interpretation_problems"].as_array().unwrap().is_empty(),
+            "{ir}"
+        );
+    }
+}
+
+#[test]
+fn conflicting_frame_kinds_preserve_indentation_and_uncertainty() {
+    for clauses in ["罫囲み、破線枠囲み", "破線枠囲み、罫囲み"] {
+        let ir = convert(&format!(
+            "［＃ここから３字下げ、{clauses}］\n本文\n［＃ここで字下げ終わり］"
+        ));
+        let scope = &ir["layout_blocks"][0];
+        assert_eq!(scope["indent"], 3, "{ir}");
+        assert!(scope.get("typography").is_none(), "{ir}");
+        assert!(
+            ir["interpretation_problems"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|problem| problem["raw"] == clauses),
+            "{ir}"
+        );
+    }
+}
+
+#[test]
+fn generic_frame_closer_preserves_the_openers_supplied_rule_pattern() {
+    let ir = convert("［＃ここから４字下げ、破線枠囲み］\n本文\n［＃ここで字下げ、枠囲み終わり］");
+    assert_eq!(
+        ir["layout_blocks"][0]["typography"]["border"],
+        "dashed-rule"
+    );
+    assert!(ir["interpretation_problems"].as_array().unwrap().is_empty());
+    let ir = convert("［＃ここから５字下げ、枠囲み］\n本文\n［＃ここで字下げ終わり］");
+    assert_eq!(
+        ir["layout_blocks"][0]["typography"]["border"],
+        "unspecified"
+    );
+}

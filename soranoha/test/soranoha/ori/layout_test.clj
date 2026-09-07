@@ -1,6 +1,7 @@
 (ns soranoha.ori.layout-test
   (:require [babashka.fs :as fs]
             [clojure.test :refer [deftest is]]
+            [clojure.string :as string]
             [soranoha.ori.render :as render]
             [soranoha.ori.tei :as tei]
             [soranoha.ori.relaxng :as rng]))
@@ -12,28 +13,40 @@
 
 (defn- block [start end]
   {"node_range" {"start" start "end" end} "indent" 4
-   "direction" "horizontal" "align" "center" "border" "solid" "source_pointer" "blocks[1]"})
+   "direction" "horizontal" "align" "center"
+   "typography" {"kind" "keigakomi" "border" "rule" "source" "aat-block"}
+   "source_pointer" "blocks[1]"})
+
+(defn- framed-scopes [body]
+  (filter #(and (vector? %) (= :div (first %))
+                (string/includes? (get-in % [1 :rend] "") "keigakomi"))
+          (tree-seq vector? seq body)))
+
+(defn- rendered-paragraphs [body]
+  (filter #(and (vector? %) (= :p (first %))) (tree-seq vector? seq body)))
 
 (deftest one-layout-scope-encloses-all-and-only-its-paragraphs
-  (let [body (:body (tei/render (document [(block 1 5)])))]
+  (let [body (:body (tei/render (document [(block 1 5)])))
+        scope (first (framed-scopes body))]
     (is (= :text (first body)))
-    (is (= [:p "前"] (get-in body [1 1])))
-    (is (= :floatingText (get-in body [1 2 0])))
+    (is (= [:p "前"] (first (rendered-paragraphs body))))
+    (is (not-any? #(and (vector? %) (= :floatingText (first %))) (tree-seq vector? seq body)))
     (is (= [[:p "RESTAURANT"] [:p "西洋料理店"] [:p "WILDCAT HOUSE"] [:p "山猫軒"]]
-           (subvec (get-in body [1 2 2]) 1)))
-    (is (= [:p "後"] (get-in body [1 3])))))
+           (rendered-paragraphs scope)))
+    (is (= [:p "後"] (last (rendered-paragraphs body))))))
 
 (deftest nested-scopes-remain-nested-and-crossing-scopes-are-refused
-  (let [body (:body (tei/render (document [(block 1 5) (block 2 4)])))]
-    (is (= :floatingText (get-in body [1 2 0])))
-    (is (= :floatingText (get-in body [1 2 2 2 0])))
-    (is (= [[:p "西洋料理店"] [:p "WILDCAT HOUSE"]] (subvec (get-in body [1 2 2 2 2]) 1))))
+  (let [body (:body (tei/render (document [(block 1 5) (block 2 4)])))
+        [outer inner] (framed-scopes body)]
+    (is (= 2 (count (framed-scopes body))))
+    (is (some #{inner} (tree-seq vector? seq outer)))
+    (is (= [[:p "西洋料理店"] [:p "WILDCAT HOUSE"]] (rendered-paragraphs inner))))
   (doseq [blocks [[(block 1 4) (block 2 5)] [(block 2 7)] [(block 3 3)]]]
     (is (thrown? clojure.lang.ExceptionInfo (tei/render (document blocks))))))
 
 (deftest coincident-ranges-retain-source-containment-order
-  (let [inner (dissoc (assoc (block 1 5) "indent" 2) "border" "direction" "align")
-        outer (dissoc (assoc (block 1 5) "indent" 4) "border" "direction" "align")
+  (let [inner (dissoc (assoc (block 1 5) "indent" 2) "typography" "direction" "align")
+        outer (dissoc (assoc (block 1 5) "indent" 4) "typography" "direction" "align")
         body (:body (tei/render (document [inner outer])))]
     (is (= "padding-inline-start: 4em" (get-in body [1 2 1 :style])))
     (is (= "padding-inline-start: 2em" (get-in body [1 2 2 1 :style])))))
@@ -45,7 +58,7 @@
     (is (thrown? clojure.lang.ExceptionInfo (tei/render ir)))))
 
 (deftest layout-scopes-allow-surrounding-prose-in-the-publication-profile
-  (doseq [scope [(block 1 5) (dissoc (block 1 5) "direction" "align" "border")]
+  (doseq [scope [(block 1 5) (dissoc (block 1 5) "direction" "align" "typography")]
           heading? [false true]
           boundary [nil {"type" "heading" "text" "次章" "level" 2}
                     {"type" "source-note" "note_type" "source-attribution" "text" "底本：本" "placement" "back"}
@@ -80,8 +93,7 @@
                      {"type" "text" "text" "札2"} {"type" "text" "text" "後"}]
             "paragraphs" (mapv #(hash-map "role" "body" "node_range" {"start" % "end" (inc %)}) [1 2 4 5])}
         body (:body (tei/render (assoc ir "layout_blocks" [(block 2 5)])))
-        scope (first (filter #(and (vector? %) (= :floatingText (first %)))
-                             (tree-seq vector? seq body)))]
+        scope (first (framed-scopes body))]
     (is (some #{[:head {:n "2"} "B"]} (tree-seq vector? seq scope)))
     (is (not-any? #{[:head {:n "2"} "A"]} (tree-seq vector? seq scope)))
     (is (some #{[:p "札1"]} (tree-seq vector? seq scope)))
@@ -91,9 +103,9 @@
         paragraphs (mapv #(update % "node_range" (fn [r] (update (update r "start" inc) "end" inc)))
                          (get ir "paragraphs"))
         body (:body (tei/render (assoc ir "nodes" nodes "paragraphs" paragraphs)))]
-    (is (= :floatingText (get-in body [1 1 3 0])))
+    (is (= 1 (count (framed-scopes body))))
     (is (= [[:p "RESTAURANT"] [:p "西洋料理店"] [:p "WILDCAT HOUSE"] [:p "山猫軒"]]
-           (subvec (get-in body [1 1 3 2]) 1)))))
+           (rendered-paragraphs (first (framed-scopes body)))))))
 
 (deftest same-gaiji-reference-cannot-alias-different-source-glyphs
   (let [known {"type" "gaiji" "span" {"start" 15308 "end" 15311}
@@ -139,3 +151,14 @@
     (is (= "page-horizontal-center line-count(2)" (:rend attrs)))
     (is (= [:p "前"] (get-in body [1 1])))
     (is (some #{[:p "後"]} (tree-seq vector? seq (get-in body [1 3]))))))
+
+(deftest supplied-frame-kind-and-typeface-share-a-scope
+  (doseq [[border style] [["rule" "solid"] ["dashed-rule" "dashed"]]]
+    (let [scope (assoc (block 1 5) "typography"
+                       [{"kind" "keigakomi" "border" border "source" "aat-block"}
+                        {"kind" "emphasis" "style" "gothic" "source" "aat-block"}])
+          body (:body (tei/render (document [scope])))
+          frame (first (framed-scopes body))]
+      (is (string/includes? (get-in frame [1 :style]) (str "border-style: " style)))
+      (is (string/includes? (get-in frame [1 :rend]) "gothic"))
+      (is (= 4 (count (rendered-paragraphs frame)))))))

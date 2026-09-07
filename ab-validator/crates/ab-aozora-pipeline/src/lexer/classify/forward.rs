@@ -1892,6 +1892,8 @@ pub(super) fn forward_attr_from_suffix(s: &str) -> Option<ForwardAttr> {
         "行右小書き" | "小書き右寄せ" => ForwardAttr::SmallScript(BoutenPosition::Right),
         "行左小書き" => ForwardAttr::SmallScript(BoutenPosition::Left),
         "罫囲み" => ForwardAttr::Framed(EnclosureKind::Rule),
+        "枠囲み" => ForwardAttr::Framed(EnclosureKind::Unspecified),
+        "破線枠囲み" => ForwardAttr::Framed(EnclosureKind::DashedRule),
         // Other single-target enclosures whose suffix carries no embedded glyph
         // (unlike 「□」囲み). Each has its own EnclosureKind so serialize
         // round-trips the exact keyword rather than folding onto 罫囲み.
@@ -2024,14 +2026,18 @@ mod tests {
             forward_attr_from_suffix("二重罫囲み"),
             Some(ForwardAttr::Framed(EnclosureKind::DoubleRule))
         );
-        // The ruled-frame spellings stay folded onto Rule.
         assert_eq!(
             forward_attr_from_suffix("罫囲み"),
             Some(ForwardAttr::Framed(EnclosureKind::Rule))
         );
-        // 破線枠囲み is a block-compound segment, not a forward suffix — it must
-        // NOT be claimed here (it stays Unknown).
-        assert_eq!(forward_attr_from_suffix("破線枠囲み"), None);
+        assert_eq!(
+            forward_attr_from_suffix("破線枠囲み"),
+            Some(ForwardAttr::Framed(EnclosureKind::DashedRule))
+        );
+        assert_eq!(
+            forward_attr_from_suffix("枠囲み"),
+            Some(ForwardAttr::Framed(EnclosureKind::Unspecified))
+        );
         // A near-miss glyph-bearing form is not one of these bare suffixes.
         assert_eq!(forward_attr_from_suffix("丸囲み"), None);
     }

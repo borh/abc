@@ -4471,6 +4471,8 @@ fn formatting_fields(attr: ForwardAttr) -> Option<Value> {
 const fn enclosure_kind(kind: EnclosureKind) -> &'static str {
     match kind {
         EnclosureKind::Rule => "rule",
+        EnclosureKind::Unspecified => "unspecified",
+        EnclosureKind::DashedRule => "dashed-rule",
         EnclosureKind::Box => "box",
         EnclosureKind::Circle => "circle",
         EnclosureKind::CircleDotted => "dotted-circle",
@@ -4513,8 +4515,8 @@ fn apply_block_styles(fields: &mut Value, block: BlockStyles) -> Option<()> {
     if block.horizontal {
         fields["direction"] = json!("horizontal");
     }
-    if block.framed {
-        fields["border"] = json!("solid");
+    if let Some(frame) = block.frame {
+        styles.push(formatting_fields(ForwardAttr::Framed(frame))?);
     }
     if block.gothic {
         styles.push(formatting_fields(ForwardAttr::Gothic)?);
@@ -4525,7 +4527,7 @@ fn apply_block_styles(fields: &mut Value, block: BlockStyles) -> Option<()> {
     match styles.len() {
         0 => {}
         1 => fields["formatting"] = styles.remove(0),
-        _ => fields["formatting"] = json!({"kind":"compound", "attributes":styles}),
+        _ => fields["formatting"] = Value::Array(styles),
     }
     Some(())
 }

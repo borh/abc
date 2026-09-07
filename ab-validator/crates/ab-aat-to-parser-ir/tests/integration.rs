@@ -4598,7 +4598,8 @@ fn source_corrections_and_one_compound_sign_survive_validated_conversion() {
     assert_eq!(block["indent"], 4);
     assert_eq!(block["direction"], "horizontal");
     assert_eq!(block["align"], "center");
-    assert_eq!(block["border"], "solid");
+    assert_eq!(block["typography"]["kind"], "keigakomi");
+    assert_eq!(block["typography"]["border"], "rule");
     for paragraph in &ir["paragraphs"].as_array().unwrap()[1..5] {
         assert!(
             paragraph.get("layout").is_none(),

@@ -1887,6 +1887,7 @@ fn parse_indent_compound(
     let mut end_offset = ClauseAxis::Absent;
     let mut layout = ClauseAxis::Absent;
     let mut font = ClauseAxis::Absent;
+    let mut frame = ClauseAxis::Absent;
     let mut columns = ClauseAxis::Absent;
     let mut clauses = Vec::new();
     for (segment, span) in source.clauses(after) {
@@ -1923,6 +1924,10 @@ fn parse_indent_compound(
                     .font
                     .and_then(|value| font.observe(value, span)),
                 candidate
+                    .styles
+                    .frame
+                    .and_then(|value| frame.observe(value, span)),
+                candidate
                     .column_count
                     .and_then(|value| columns.observe(value, span)),
             ];
@@ -1937,7 +1942,6 @@ fn parse_indent_compound(
             block.styles.gothic |= candidate.styles.gothic;
             block.page_horizontal_center |= candidate.page_horizontal_center;
             block.styles.horizontal |= candidate.styles.horizontal;
-            block.styles.framed |= candidate.styles.framed;
             problem
         };
         if let Some(problem) = problem {
@@ -1949,6 +1953,7 @@ fn parse_indent_compound(
     block.end_offset = end_offset.value();
     block.layout = layout.value().unwrap_or(IndentLayout::None);
     block.styles.font = font.value();
+    block.styles.frame = frame.value();
     block.column_count = columns.value();
     if !clauses.is_empty() {
         block.partial = Some(alloc.partial_layout(source.text, clauses));
@@ -1974,6 +1979,7 @@ fn parse_column_compound(
     let after = after.strip_prefix('、')?;
     let mut clauses = Vec::new();
     let mut font = ClauseAxis::Absent;
+    let mut frame = ClauseAxis::Absent;
     for (segment, span) in source.clauses(after) {
         if segment == "段間に罫" {
             block.column_rule = true;
@@ -1985,13 +1991,16 @@ fn parse_column_compound(
         } else {
             block.styles.gothic |= candidate.gothic;
             block.styles.horizontal |= candidate.horizontal;
-            block.styles.framed |= candidate.framed;
+            if let Some(conflict) = candidate.frame.and_then(|value| frame.observe(value, span)) {
+                clauses.push(conflict);
+            }
             if let Some(conflict) = candidate.font.and_then(|value| font.observe(value, span)) {
                 clauses.push(conflict);
             }
         }
     }
     block.styles.font = font.value();
+    block.styles.frame = frame.value();
     if !clauses.is_empty() {
         block.partial = Some(alloc.partial_layout(source.text, clauses));
     }
@@ -2058,7 +2067,15 @@ fn resolve_block_style(segment: &str, styles: &mut BlockStyles) -> Option<()> {
         "横書き" | "横組み" | "横組みで" | "文章は横組み" if !styles.horizontal => {
             styles.horizontal = true;
         }
-        "罫囲み" if !styles.framed => styles.framed = true,
+        "罫囲み" if styles.frame.is_none() => {
+            styles.frame = Some(EnclosureKind::Rule);
+        }
+        "枠囲み" if styles.frame.is_none() => {
+            styles.frame = Some(EnclosureKind::Unspecified);
+        }
+        "破線枠囲み" if styles.frame.is_none() => {
+            styles.frame = Some(EnclosureKind::DashedRule);
+        }
         // 小さい活字 = one stage smaller (FontShift(-1)).
         "小さい活字" if styles.font.is_none() => {
             styles.font = Some(FontShift(NonZeroI8::new(-1)?));

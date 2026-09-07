@@ -305,6 +305,11 @@
   border-style: dotted;
 }
 
+.aozora-enclosure-dashed-rule,
+.aozora-container-keigakomi.aozora-enclosure-dashed-rule {
+  border-style: dashed;
+}
+
 .aozora-enclosure-double-rule {
   display: inline-block;
   border: 3px double var(--aozora-fg);

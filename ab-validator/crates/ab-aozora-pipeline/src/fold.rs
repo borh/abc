@@ -34,7 +34,9 @@ use ab_aozora_syntax::ast::{
     ClassifiedSourceFact, ClassifiedSourceRole as Role, ConstructId, ContainerEnd, ContainerPair,
     LexOutput, Node, NodeRef, SourceNode,
 };
-use ab_aozora_syntax::{DirectiveKind, ForwardAttr, LineFormat, RegionClose, RegionFormat};
+use ab_aozora_syntax::{
+    DirectiveKind, EnclosureKind, Format, ForwardAttr, LineFormat, RegionClose, RegionFormat,
+};
 
 /// Run the lex pipeline and materialise the result as an owned, lifetime-free
 /// [`LexOutput`] (`Send + Sync`).
@@ -651,10 +653,15 @@ pub(crate) fn scope_closer_matches(open: RegionFormat, close: RegionClose) -> bo
             RegionClose::Indent { kumi_width: expected_width, .. } if kumi_width == expected_width);
         return width_matches
             && styles.iter_formats().all(|supplied| {
-                block
-                    .styles
-                    .iter_formats()
-                    .any(|established| supplied == established)
+                block.styles.iter_formats().any(|established| {
+                    matches!(
+                        (supplied, established),
+                        (
+                            Format::Framed(EnclosureKind::Unspecified),
+                            Format::Framed(_)
+                        )
+                    ) || supplied == established
+                })
             });
     }
     match (expected, close) {

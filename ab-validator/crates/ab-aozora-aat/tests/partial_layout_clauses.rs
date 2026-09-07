@@ -2,6 +2,18 @@
 use ab_aozora_aat::aat_json_from_bytes;
 use serde_json::Value;
 
+fn has_editorial_marker_fact(aat: &Value, marker: &str) -> bool {
+    aat["meta"]["interpretation_facts"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .any(|fact| {
+            fact["kind"] == "editorial-note"
+                && fact["source_span"]["start"] == 0
+                && fact["source_span"]["end"] == marker.len()
+        })
+}
+
 #[test]
 fn unknown_clause_keeps_independent_geometry_and_exact_uncertainty() {
     let marker = "［＃ここから３字下げ、未対応指定、２０字詰め］";
@@ -116,6 +128,7 @@ fn edition_layout_statements_do_not_change_principal_geometry() {
         let source = format!("{marker}\n本文\n［＃ここで字下げ終わり］");
         let aat: Value =
             serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
+        assert!(has_editorial_marker_fact(&aat, &marker), "{aat}");
         let layout = &aat["blocks"][0];
         assert_eq!(layout["indent"], 2, "{aat}");
         let note = &layout["children"][0]["content"][0];
@@ -177,6 +190,7 @@ fn columns_compose_horizontal_transcription_and_edition_apparatus() {
     let aat: Value =
         serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
     let layout = &aat["blocks"][0];
+    assert!(has_editorial_marker_fact(&aat, marker), "{aat}");
     assert_eq!(layout["column_count"], 2, "{aat}");
     assert_eq!(layout["direction"], "horizontal");
     assert!(layout.get("indent").is_none());
@@ -263,4 +277,20 @@ fn image_insertion_does_not_swallow_an_uninterpreted_tail() {
         content.iter().any(|node| node["kind"] == "raw"
             && node["source"] == "［＃図（fig.png）入る。未対応の指示］")
     );
+}
+
+#[test]
+fn incomplete_layout_never_widens_editorial_ownership() {
+    for (suffix, close) in [
+        ("、未知の指定", "［＃ここで字下げ終わり］"),
+        ("", "［＃ここで段組み終わり］"),
+        ("", ""),
+    ] {
+        let marker = format!("［＃ここから２字下げ、底本では３字下げ{suffix}］");
+        let source = format!("{marker}\n本文\n{close}");
+        let aat: Value =
+            serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
+        assert!(!has_editorial_marker_fact(&aat, &marker), "{aat}");
+        assert!(aat.to_string().contains("底本では３字下げ"));
+    }
 }

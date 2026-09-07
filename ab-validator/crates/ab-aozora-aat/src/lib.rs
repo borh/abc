@@ -1424,7 +1424,7 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
             facts.extend(gaiji_ruby_facts(node));
         }
         if let Some(interpretation) = interpretation {
-            let spans = if matches!(interpretation, EstablishedInterpretation::LayoutBreak)
+            let mut spans = if matches!(interpretation, EstablishedInterpretation::LayoutBreak)
                 || matches!(
                     node["kind"].as_str(),
                     Some(
@@ -1444,6 +1444,14 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
                     .as_array()
                     .map_or_else(Vec::new, |spans| spans.iter().collect())
             };
+            if node["kind"] == "editorial_note" {
+                spans.extend(
+                    node["interpretation_marker_spans"]
+                        .as_array()
+                        .into_iter()
+                        .flatten(),
+                );
+            }
             for span in spans {
                 if let (Some(start), Some(end)) =
                     (span["byte_start"].as_u64(), span["byte_end"].as_u64())
@@ -1996,6 +2004,12 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
                 let unresolved =
                     annotations.is_some_and(|notes| notes.iter().any(|note| note["kind"] == "raw"));
                 if let Some(annotations) = annotations {
+                    let mut annotations = annotations.clone();
+                    if !unresolved {
+                        for annotation in &mut annotations {
+                            annotation["interpretation_marker_spans"] = json!([node["span"]]);
+                        }
+                    }
                     children.insert(0, json!({"kind":"paragraph", "content":annotations}));
                     if unresolved && explicit_close {
                         children.push(json!({"kind":"paragraph", "content":[content[boundary]]}));

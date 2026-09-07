@@ -414,6 +414,8 @@ pub enum Format {
     LineWidth,
     /// 表 (table).
     Table,
+    /// A supplied translation of banknote lettering.
+    BanknoteTranslation,
     /// 段組 (multi-column).
     Columns(ColumnCount),
     /// 割り注 (split annotation).
@@ -458,6 +460,7 @@ impl Format {
             Self::Center => "center",
             Self::LineWidth => "lineWidth",
             Self::Table => "table",
+            Self::BanknoteTranslation => "banknote-translation",
             Self::Columns(_) => "columns",
             Self::Warichu => "warichu",
             Self::Heading { .. } => "heading",
@@ -801,6 +804,8 @@ pub enum RegionFormat {
     LineWidth(LineWidth),
     /// 表 block.
     Table,
+    /// A supplied translation of banknote lettering.
+    BanknoteTranslation,
     /// 段組 block.
     Columns(ColumnBlock),
     /// 横組み block.
@@ -832,6 +837,7 @@ impl RegionFormat {
             Self::AlignEnd { .. } => Format::AlignEnd,
             Self::LineWidth(_) => Format::LineWidth,
             Self::Table => Format::Table,
+            Self::BanknoteTranslation => Format::BanknoteTranslation,
             Self::Columns(block) => Format::Columns(block.count),
             Self::Horizontal(presentation) => Format::Horizontal(presentation),
             Self::RelativePlacement(placement) => Format::RelativePlacement(placement),
@@ -861,6 +867,7 @@ impl RegionFormat {
             Self::Heading { .. } => "heading",
             Self::Columns(_) => "columns",
             Self::Table => "table",
+            Self::BanknoteTranslation => "banknote-translation",
             Self::Horizontal(_) => "horizontal",
             Self::RelativePlacement(_) => "relative-placement",
             Self::FontSize(_) => "fontSize",
@@ -887,6 +894,7 @@ impl RegionFormat {
             Self::Heading { .. } => "heading",
             Self::Columns(_) => "columns",
             Self::Table => "table",
+            Self::BanknoteTranslation => "banknote-translation",
             Self::Horizontal(_) => "horizontal",
             Self::RelativePlacement(_) => "relative-placement",
             Self::FontSize(_) => "font-size",
@@ -930,7 +938,7 @@ impl RegionFormat {
     /// the payload is irrelevant to the discriminant-only tag projections. Lets
     /// the wire-tag exhaustiveness test and the codegen enumerate the family
     /// list without a hand-maintained parallel.
-    pub const ALL: [Self; 18] = [
+    pub const ALL: [Self; 19] = [
         Self::Indent(IndentBlock {
             partial: None,
             column_count: None,
@@ -965,6 +973,7 @@ impl RegionFormat {
             partial: None,
         }),
         Self::Table,
+        Self::BanknoteTranslation,
         Self::Horizontal(HorizontalPresentation { align: None }),
         Self::RelativePlacement(RelativePlacement::BelowHorizontal { anchor: None }),
         Self::FontSize(FontShift(NonZeroI8::MIN)),
@@ -1055,6 +1064,8 @@ pub enum RegionClose {
     Columns(Option<ColumnCount>),
     /// `表終わり`.
     Table,
+    /// A supplied translation of banknote lettering.
+    BanknoteTranslation,
     /// `横組み終わり`.
     Horizontal,
     /// `大きな文字終わり` (`larger`) / `小さな文字終わり`.
@@ -1109,6 +1120,7 @@ impl RegionClose {
             },
             RegionFormat::Columns(block) => Self::Columns(Some(block.count)),
             RegionFormat::Table => Self::Table,
+            RegionFormat::BanknoteTranslation => Self::BanknoteTranslation,
             RegionFormat::Horizontal(_) | RegionFormat::RelativePlacement(_) => Self::Horizontal,
             RegionFormat::FontSize(shift) => Self::FontSize {
                 larger: shift.larger(),
@@ -1138,6 +1150,7 @@ impl RegionClose {
             Self::Heading { .. } => "heading",
             Self::Columns(_) => "columns",
             Self::Table => "table",
+            Self::BanknoteTranslation => "banknote-translation",
             Self::Horizontal => "horizontal",
             Self::FontSize { .. } => "font-size",
             Self::SmallScript(_) => "small-script",

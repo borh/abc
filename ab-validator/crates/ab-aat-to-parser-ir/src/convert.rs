@@ -459,7 +459,7 @@ fn map_block_content(
             outputs.nodes.push(heading);
             current = end;
         }
-        "typography_block" | "caption_block" | "warichu_block" => {
+        "typography_block" | "caption_block" | "warichu_block" | "translation_block" => {
             let start = outputs.nodes.len();
             for (index, child) in block["children"]
                 .as_array()
@@ -484,6 +484,9 @@ fn map_block_content(
                     let mut typography = layout_scope(&block["formatting"])?;
                     typography["source"] = json!("aat-block");
                     scope["typography"] = typography;
+                } else if block["kind"] == "translation_block" {
+                    scope["role"] = json!("translation");
+                    scope["source_kind"] = block["formatting"]["source_kind"].clone();
                 } else if block["kind"] == "caption_block"
                     && block["formatting"]["purpose"] == "figure-explanation"
                 {

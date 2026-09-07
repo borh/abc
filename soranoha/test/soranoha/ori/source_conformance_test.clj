@@ -1220,3 +1220,22 @@
     (is (= "本文" (:plaintext result)))
     (is (seq (get-in result [:ir "interpretation_problems"])))
     (is (empty? (get-in result [:ir "layout_blocks"])))))
+
+(deftest banknote-translation-preserves-lines-independently-of-omitted-image
+  (let [lines ["　　国王の名において" "十リーヴル兌換券" "　軍需品代として交付す"
+               "　平和確立とともに償還す" "第三部　第一〇三九〇号" "　　　ストフレー"
+               "　　正教王党軍（欄外に）"]
+        result (transcribe (source (str "前。\n［＃王家の紙幣の図、図省略］\n［＃ここから紙幣の文字の訳文］\n"
+                                        (string/join "\n" lines) "\n［＃ここで訳文終わり］\n後。")))
+        wrapper (first (filter #(= "translation" (attribute % "type")) (elements result "div")))
+        paragraphs (filter #(= "p" (view/local-name %)) (view/children wrapper))]
+    (is (= "banknote-text" (attribute wrapper "subtype")))
+    (is (= "" (attribute wrapper "corresp")))
+    (is (= 7 (count paragraphs)))
+    (is (= ["first-line-indent(2)" "" "first-line-indent(1)" "first-line-indent(1)" "" "first-line-indent(3)" "first-line-indent(2)"]
+           (mapv #(attribute % "rend") paragraphs)))
+    (is (= (str "前。\n" (string/join "\n" lines) "\n後。") (:plaintext result)))
+    (is (empty? (elements result "figure"))))
+  (let [result (transcribe (source "［＃ここから別の訳文］\n訳文\n［＃ここで訳文終わり］"))]
+    (is (empty? (filter #(= "translation" (attribute % "type")) (elements result "div"))))
+    (is (seq (get-in result [:ir "interpretation_problems"])))))

@@ -529,6 +529,7 @@ fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::R
                 r#"<div class="aozora-container" data-placement="below" style="writing-mode:{direction};text-align:{align}">"#
             )
         }
+        RegionFormat::BanknoteTranslation => writer.write_str(r#"<div class="aozora-container" data-purpose="translation" data-source-kind="banknote-text">"#),
         RegionFormat::Table => {
             writer.write_str(r#"<div class="aozora-container aozora-container-table">"#)
         }

@@ -1434,6 +1434,7 @@ enum EstablishedInterpretation {
     Kunten,
     Heading,
     Caption,
+    Translation,
     TextVariant,
     AnnotatedText,
     Illustration,
@@ -1509,6 +1510,7 @@ impl EstablishedInterpretation {
             Some("supplied-diacritic") => Some(Self::SuppliedDiacritic),
             Some("heading") => Some(Self::Heading),
             Some("caption" | "caption_block") => Some(Self::Caption),
+            Some("translation_block") => Some(Self::Translation),
             Some("text-variant") => Some(Self::TextVariant),
             Some("annotated_text")
                 if matches!(
@@ -1551,6 +1553,7 @@ impl EstablishedInterpretation {
             Self::SuppliedDiacritic => "supplied-diacritic",
             Self::Heading => "heading",
             Self::Caption => "caption",
+            Self::Translation => "translation",
             Self::TextVariant => "text-variant",
             Self::AnnotatedText => "annotated-text",
             Self::Illustration => "illustration",
@@ -1564,7 +1567,7 @@ impl EstablishedInterpretation {
 
     fn aspects(self) -> &'static [&'static str] {
         match self {
-            Self::Exponent => &["structure"],
+            Self::Exponent | Self::Translation => &["structure"],
             Self::Ruby | Self::GaijiRuby | Self::TextVariant | Self::EditorialNote => {
                 &["content", "structure"]
             }
@@ -2149,6 +2152,7 @@ fn blocks_from_inline_content(content: Vec<Value>, decoded: &DecodedSource) -> V
                     | "small_script"
                     | "tcy"
                     | "caption"
+                    | "translation"
                     | "warichu"
                     | "keigakomi"
                     | "yokogumi"
@@ -2161,7 +2165,8 @@ fn blocks_from_inline_content(content: Vec<Value>, decoded: &DecodedSource) -> V
             .is_some_and(|source| source.starts_with("［＃ここから")))
             && let Some(close_index) = native_scopes.get(&index).copied()
             && (node["span"]["line_start"] != content[close_index]["span"]["line_start"]
-                || node["x-formatting"]["purpose"] == "figure-explanation")
+                || node["x-formatting"]["purpose"] == "figure-explanation"
+                || node["x-formatting"]["kind"] == "translation")
         {
             push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
             let mut inner = content[index + 1..close_index].to_vec();
@@ -2169,7 +2174,7 @@ fn blocks_from_inline_content(content: Vec<Value>, decoded: &DecodedSource) -> V
                 strip_boundary_newlines(&mut inner, source);
             }
             let container = json!({
-                "kind":match node["x-formatting"]["kind"].as_str() { Some("caption") => "caption_block", Some("warichu") => "warichu_block", _ => "typography_block" }, "formatting":node["x-formatting"],
+                "kind":match node["x-formatting"]["kind"].as_str() { Some("caption") => "caption_block", Some("translation") => "translation_block", Some("warichu") => "warichu_block", _ => "typography_block" }, "formatting":node["x-formatting"],
                 "span":{"byte_start":node["span"]["byte_start"], "byte_end":content[close_index]["span"]["byte_end"],
                     "line_start":node["span"]["line_start"], "line_end":content[close_index]["span"]["line_end"]},
                 "interpretation_marker_spans":[node["span"],content[close_index]["span"]],
@@ -5002,6 +5007,12 @@ fn region_formatting(region: RegionFormat) -> Option<(String, Value)> {
             ));
         }
         RegionFormat::Horizontal(_) => ("yokogumi", ForwardAttr::Horizontal),
+        RegionFormat::BanknoteTranslation => {
+            return Some((
+                "banknote-translation".to_owned(),
+                json!({"kind":"translation", "source_kind":"banknote-text"}),
+            ));
+        }
         RegionFormat::Warichu => return Some(("warichu".to_owned(), json!({"kind":"warichu"}))),
         RegionFormat::Caption(CaptionScope::FigureExplanationBelow) => {
             return Some((
@@ -5067,6 +5078,7 @@ fn region_formatting_close(close: RegionClose) -> Option<(String, Option<Value>)
             }
             RegionClose::Horizontal => "yokogumi",
             RegionClose::Warichu => "warichu",
+            RegionClose::BanknoteTranslation => "banknote-translation",
             RegionClose::Caption(CaptionScope::FigureExplanationBelow) => "figure-explanation",
             RegionClose::Caption(_) => "caption",
             RegionClose::Bouten { kind, position } => {

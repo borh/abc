@@ -70,6 +70,8 @@
    "illustration" {:markers #{"CommandFullwidth" "CommandAscii"}
                    :families #{"figure.image_inline" "figure.image_caption" "caption.inline"}
                    :aspects #{"content" "structure" "layout"}}
+   "translation" {:markers #{"CommandFullwidth" "CommandAscii"}
+                  :families #{"source.translation_scope"} :aspects #{"structure"}}
    "caption" {:markers #{"CommandFullwidth" "CommandAscii"}
               :families #{"figure.image_caption" "caption.block" "caption.inline"} :aspects #{"structure" "layout"}}
    "text-variant" {:markers #{"CommandFullwidth" "CommandAscii"}
@@ -211,7 +213,7 @@
 (defn coverage-stage
   "Independent lexical oracle + parser IR -> explicit claim accounting."
   [clj-toolchain-id]
-  {:stage-id "interpretation-coverage" :stage-version "14" :toolchain-id clj-toolchain-id
+  {:stage-id "interpretation-coverage" :stage-version "15" :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob]} inputs]
         (let [input-bytes (into {} (map (fn [name] [name (blob (get inputs name))]))
                                 ["source-accountability" "parser-ir"])

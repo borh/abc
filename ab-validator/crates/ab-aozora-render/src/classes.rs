@@ -556,6 +556,7 @@ mod tests {
                 partial: None,
             }),
             RegionFormat::Table,
+            RegionFormat::BanknoteTranslation,
             RegionFormat::Horizontal(ab_aozora_syntax::HorizontalPresentation { align: None }),
             RegionFormat::FontSize(fs(2)),
             RegionFormat::FontSize(fs(-2)),

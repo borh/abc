@@ -191,6 +191,7 @@ pub(crate) fn emit_container_open<W: Write>(
                 out.write_str("［＃横組みの下に、左右中央縦組みで］")
             }
         },
+        RegionFormat::BanknoteTranslation => out.write_str("［＃ここから紙幣の文字の訳文］"),
         RegionFormat::Table => out.write_str("［＃ここから表］"),
         RegionFormat::Horizontal(presentation) => match presentation.align {
             None => out.write_str("［＃ここから横組み］"),
@@ -414,6 +415,7 @@ pub(crate) fn emit_container_close<W: Write>(close: RegionClose, out: &mut W) ->
             }
             out.write_str("段組み終わり］")
         }
+        RegionClose::BanknoteTranslation => out.write_str("［＃ここで訳文終わり］"),
         RegionClose::Table => out.write_str("［＃ここで表終わり］"),
         RegionClose::Horizontal => out.write_str("［＃ここで横組み終わり］"),
         RegionClose::CombineUpright => out.write_str("［＃縦中横終わり］"),

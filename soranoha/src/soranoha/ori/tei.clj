@@ -688,6 +688,7 @@
                (get block "page_placement") (conj "page-horizontal-center")
                (get block "line_count") (conj (str "line-count(" (get block "line_count") ")")))]
     (cond-> {:type (get block "role" "layout")}
+      (get block "source_kind") (assoc :subtype (get block "source_kind"))
       anchor (assoc :corresp (str "#" (source-reference {"source_span" anchor})))
       (source-reference block) (assoc :source (str "#" (source-reference block)))
       (seq styles) (assoc :style (string/join "; " styles))

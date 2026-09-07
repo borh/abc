@@ -185,6 +185,10 @@ enum BodyFamily {
     /// `parse_caption_body` reads the full body for the block-vs-inline form
     /// and open vs close.
     CaptionRange,
+    /// Complete supplied banknote translation opener.
+    BanknoteTranslationOpen,
+    /// Complete supplied translation closer.
+    TranslationClose,
 
     /// `ここから割り注` — block 割り注 opener (the multi-line region form;
     /// the inline `［＃割り注］` is [`Self::WarichuOpen`]). → `Container(Warichu)`.
@@ -244,6 +248,8 @@ const fn body_family_mode(family: BodyFamily) -> MatchMode {
         | BodyFamily::TableBlockEnd
         | BodyFamily::HorizontalBlockOpen
         | BodyFamily::HorizontalBlockEnd
+        | BodyFamily::BanknoteTranslationOpen
+        | BodyFamily::TranslationClose
         | BodyFamily::CombineUprightOpen
         | BodyFamily::CombineUprightClose
         | BodyFamily::WarichuOpen
@@ -458,6 +464,14 @@ static BODY_PATTERNS: &[BodyPattern] = &[
     BodyPattern {
         needle: "ここでキャプション終わり",
         family: BodyFamily::CaptionRange,
+    },
+    BodyPattern {
+        needle: "ここから紙幣の文字の訳文",
+        family: BodyFamily::BanknoteTranslationOpen,
+    },
+    BodyPattern {
+        needle: "ここで訳文終わり",
+        family: BodyFamily::TranslationClose,
     },
     BodyPattern {
         needle: "ここから図表下部解説文",
@@ -1626,6 +1640,12 @@ pub(super) fn classify_annotation_body(
         }
         BodyFamily::CombineUprightClose => {
             Some((EmitKind::BlockClose(RegionClose::CombineUpright), None))
+        }
+        BodyFamily::BanknoteTranslationOpen => {
+            Some((EmitKind::BlockOpen(RegionFormat::BanknoteTranslation), None))
+        }
+        BodyFamily::TranslationClose => {
+            Some((EmitKind::BlockClose(RegionClose::BanknoteTranslation), None))
         }
         BodyFamily::CaptionRange => {
             // `キャプション` (inline) / `ここからキャプション` (block) with an

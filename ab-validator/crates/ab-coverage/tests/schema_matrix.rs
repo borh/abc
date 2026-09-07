@@ -1664,9 +1664,13 @@ fn source_inventory_classifies_source_authority_remaining_command_batch() {
             .row_counts
             .get("source.reviewed_residual_command")
             .map(|count| count.occurrences),
-        Some(35)
+        Some(33)
     );
     assert_eq!(summary.row_counts["source.note_label"].occurrences, 2);
+    assert_eq!(
+        summary.row_counts["source.translation_scope"].occurrences,
+        2
+    );
 }
 
 #[test]

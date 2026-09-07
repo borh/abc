@@ -18,8 +18,8 @@ pub const DIAGNOSTICS_SCHEMA_VERSION: u32 = 3;
 pub const NODES_SCHEMA_VERSION: u32 = 4;
 /// Ruby pair entries and their envelope.
 pub const PAIRS_SCHEMA_VERSION: u32 = 3;
-/// Container pairs, including scoped TCY's `combineUprightRange` tag.
-pub const CONTAINER_PAIRS_SCHEMA_VERSION: u32 = 4;
+/// Container pairs, including supplied banknote translation scopes.
+pub const CONTAINER_PAIRS_SCHEMA_VERSION: u32 = 5;
 /// Canonical annotation slug entries and their envelope.
 pub const SLUGS_SCHEMA_VERSION: u32 = 3;
 /// Gaiji resolution entries and their envelope.
@@ -117,7 +117,7 @@ pub fn pair_entries(tree: &Tree<'_>) -> Vec<Pair> {
 /// source-coordinate container pairs must translate through
 /// [`Tree::source_nodes`].
 ///
-/// Empty parse → `{"schemaVersion":4,"data":[]}`.
+/// Empty parse → `{"schemaVersion":5,"data":[]}`.
 #[cfg(feature = "json")]
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
@@ -641,7 +641,7 @@ mod tests {
 
     #[test]
     fn projection_versions_follow_individual_contracts() {
-        assert_eq!(CONTAINER_PAIRS_SCHEMA_VERSION, 4);
+        assert_eq!(CONTAINER_PAIRS_SCHEMA_VERSION, 5);
         assert_eq!(DIAGNOSTICS_SCHEMA_VERSION, 3);
         assert_eq!(NODES_SCHEMA_VERSION, 4);
         assert_eq!(PAIRS_SCHEMA_VERSION, 3);

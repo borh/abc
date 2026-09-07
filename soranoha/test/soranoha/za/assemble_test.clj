@@ -193,10 +193,10 @@
 
       (testing "(b) stages invalidated and executed"
         (let [executed (oracle/executed-stages run-b)]
-          (is (= #{:extract :metadata :parse :convert :render :plaintext :markdown :validate :fidelity}
+          (is (= #{:extract :metadata :parse :convert :render :plaintext :markdown :validate :accountability :coverage}
                  (executed (slug-of added-work)))
               "a new work executes the full chain")
-          (is (= #{:extract :parse :convert :render :plaintext :markdown :validate :fidelity}
+          (is (= #{:extract :parse :convert :render :plaintext :markdown :validate :accountability :coverage}
                  (executed (slug-of merosu)))
               "a content edit leaves unchanged metadata cached")
           (is (= #{:extract}

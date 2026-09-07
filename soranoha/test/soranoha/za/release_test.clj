@@ -66,7 +66,7 @@
    "selected_slugs" (vec (sort (map :slug (:candidates run))))
    "stages" (into {}
                   (map (fn [[stage coordinate]] [(name stage) coordinate]))
-                  (dissoc (:stage-coordinates run) :fidelity))
+                  (dissoc (:stage-coordinates run) :accountability :coverage))
    "works" (into {}
                  (map (fn [[slug {:keys [outputs]}]]
                         [slug {"plaintext" (get-in outputs [:plaintext "plaintext"])
@@ -491,7 +491,7 @@
           (fs/write-bytes source-path (:bytes (records/encode reviewed)))
           (commit-assessment-inputs! dir)
           (is (= :uncommitted-assessment-input
-                 (with-redefs [main/build-stages (constantly corpus/stage-set)
+                 (with-redefs [main/publication-stages (constantly corpus/stage-set)
                                release/release! (fn [{:keys [build-works!]}] (build-works! []))
                                main/execute-build!
                                (fn [& _]
@@ -511,7 +511,7 @@
             (commit-assessment-inputs! dir)))))
     (testing "source movement between preflight and publication is refused"
       (let [before (main/source-provenance! root)
-            error (with-redefs [main/build-stages (constantly corpus/stage-set)
+            error (with-redefs [main/publication-stages (constantly corpus/stage-set)
                                 release/release! (fn [{:keys [build-works!]}] (build-works! []))
                                 main/execute-build!
                                 (fn [& _]
@@ -613,10 +613,11 @@
                                                       (throw (ex-info "synthetic invalid converter input"
                                                                       {:reason :invalid-converter-input})))
                                                     (convert context inputs)))
-                                        (assoc-in [:fidelity :f]
+                                        (assoc-in [:accountability :f]
                                                   (fn [& _] (throw (ex-info "research-only stage executed" {}))))))
               exported (str (fs/path dir "release-export"))]
-          (with-redefs-fn {#'main/build-stages (fn [_] @selected-stages)}
+          (with-redefs-fn {#'main/publication-stages (fn [_] @selected-stages)
+                           #'main/build-stages (fn [_] @selected-stages)}
             (fn []
               (reset! checks 0)
               (is (= :published (:outcome (main/release! (assoc opts :out exported)))))
@@ -626,15 +627,15 @@
                 (is (= [slug] (mapv #(get % "slug") (get manifest "works"))))
                 (is (= [slug] (get report "selected_slugs")))
                 (is (= #{slug} (set (keys (get report "works")))))
-                (is (not (contains? (get report "stages") "fidelity")))
-                (is (not (contains? (get-in report ["works" slug]) "source-fidelity")))
-                (is (not (fs/exists? (fs/path exported slug "source-fidelity.json"))))
-                (is (not (contains? (get manifest "toolchain") "source-fidelity"))))
-              (swap! selected-stages assoc-in [:fidelity :stage-version] "research-only-change")
+                (is (not (contains? (get report "stages") "accountability")))
+                (is (not (contains? (get-in report ["works" slug]) "source-accountability")))
+                (is (not (fs/exists? (fs/path exported slug "source-accountability.json"))))
+                (is (not (contains? (get manifest "toolchain") "source-accountability"))))
+              (swap! selected-stages assoc-in [:accountability :stage-version] "research-only-change")
               (reset! checks 0)
               (is (= :already-published (:outcome (main/release! opts))))
               (is (= 1 @checks))
-              (swap! selected-stages assoc :fidelity (:fidelity corpus/stage-set))
+              (swap! selected-stages assoc :accountability (:accountability corpus/stage-set))
               (is (= :invalid-converter-input
                      (try (main/build! opts) nil
                           (catch clojure.lang.ExceptionInfo e (:reason (ex-data e))))))))))
@@ -643,14 +644,14 @@
                (:outcome (fx/publish-event!
                           clone (fx/event-value "withdrawal"
                                                 [{"slug" slug "reason_code" "rights" "statement" ""}])))))
-        (with-redefs [main/build-stages (fn [_] (throw (ex-info "unused toolchain resolved" {})))]
+        (with-redefs [main/publication-stages (fn [_] (throw (ex-info "unused toolchain resolved" {})))]
           (is (= :published (:outcome (main/release! opts)))))
         (let [manifest (:head-manifest (verified-chain clone))]
           (is (empty? (get manifest "works")))
           (is (empty? (get manifest "toolchain")))))
       (testing "every assembly attempt receives its own post-build live check"
         (let [events (atom [])]
-          (with-redefs [main/build-stages (constantly corpus/stage-set)
+          (with-redefs [main/publication-stages (constantly corpus/stage-set)
                         main/execute-build! (fn [& _] (swap! events conj :build) report)
                         aozora/check! (fn [& _] (swap! events conj :check) @current)
                         release/release! (fn [{:keys [build-works!]}]
@@ -662,7 +663,7 @@
             (is (= :published (:outcome (main/release! opts)))))
           (is (= [:build :check :retry :build :check :publish] @events))))
       (testing "withdrawal after preflight refuses before publication"
-        (with-redefs [main/build-stages (constantly corpus/stage-set)
+        (with-redefs [main/publication-stages (constantly corpus/stage-set)
                       main/execute-build! (fn [& _]
                                             (reset! current {slug {:state :aozora/unavailable :reason :aozora/protected-card}})
                                             report)
@@ -675,7 +676,7 @@
           (is (false? @published?))))
       (testing "a stale accepted snapshot builds before the final check refuses publication"
         (let [events (atom [])]
-          (with-redefs [main/build-stages (constantly corpus/stage-set)
+          (with-redefs [main/publication-stages (constantly corpus/stage-set)
                         main/execute-build! (fn [& _] (swap! events conj :build) report)
                         aozora/check! (fn [& _] (swap! events conj :check) @current)
                         release/release! (fn [{:keys [build-works!]}]

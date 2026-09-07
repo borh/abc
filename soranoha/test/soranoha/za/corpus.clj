@@ -201,7 +201,20 @@
    :plaintext (stages/plaintext-stage fixture-toolchain)
    :markdown (stages/markdown-stage fixture-toolchain)
    :validate validate-stage
-   :fidelity (stages/source-fidelity-stage fixture-toolchain)})
+   :coverage {:stage-id "interpretation-coverage"
+              :stage-version "1"
+              :toolchain-id fixture-toolchain
+              :f (fn [_ inputs]
+                   {"interpretation-coverage"
+                    (json-bytes {"schema" "fixture-interpretation-coverage/1"
+                                 "inputs" inputs})})}
+   :accountability {:stage-id "source-accountability"
+                    :stage-version "1"
+                    :toolchain-id fixture-toolchain
+                    :f (fn [_ inputs]
+                         {"source-accountability"
+                          (json-bytes {"schema" "fixture-source-accountability/1"
+                                       "source_sha256" (get inputs "source")})})}})
 
 (defn run-corpus!
   "One kernel run at the corpus's current commit into the persistent store

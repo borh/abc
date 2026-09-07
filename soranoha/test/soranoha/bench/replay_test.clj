@@ -25,7 +25,7 @@
                             (replay/revisions repo second-revision first-revision)))
       (is (thrown-with-msg? clojure.lang.ExceptionInfo #"outside the source repository"
                             (replay/replay! (assoc opts :out (str (fs/path repo "run"))))))
-      (with-redefs-fn {#'main/build-stages (constantly (dissoc corpus/stage-set :fidelity))}
+      (with-redefs-fn {#'main/build-stages (constantly (dissoc corpus/stage-set :accountability :coverage))}
         #(is (= 2 (:revisions (replay/replay! opts)))))
       (let [rows (mapv json/read-json (line-seq (java.io.BufferedReader.
                                                  (java.io.StringReader.
@@ -35,7 +35,7 @@
       (is (= second-revision (main/source-provenance! repo)))
       (is (thrown? java.nio.file.FileAlreadyExistsException (replay/replay! opts)))
       (let [run-stage! engine/run-stage!]
-        (with-redefs-fn {#'main/build-stages (constantly (dissoc corpus/stage-set :fidelity))
+        (with-redefs-fn {#'main/build-stages (constantly (dissoc corpus/stage-set :accountability :coverage))
                          #'engine/run-stage! (fn [& args]
                                                (assoc (apply run-stage! args) :cached? false))}
           #(is (thrown-with-msg? clojure.lang.ExceptionInfo #"unchanged derivations"

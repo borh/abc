@@ -4,9 +4,8 @@
             [soranoha.kura.cas :as cas]
             [soranoha.kura.engine :as engine]
             [soranoha.main :as main]
-            [soranoha.ori.fidelity-test :as fixture]
+            [soranoha.ori.accountability :as accountability]
             [soranoha.ori.render :as render]
-            [soranoha.ori.stages :as stages]
             [soranoha.ori.tei-header :as header]
             [soranoha.annotations.view :as text-view]
             [soranoha.ori.projection :as projection]
@@ -77,30 +76,30 @@
       (is (= (texts compact tag) (texts pretty tag)) tag))
     (is (= (subvec (texts compact "div") 1) (subvec (texts pretty "div") 1)))))
 
-(deftest fidelity-is-content-bound-and-review-exports-are-cache-independent
-  (let [dir (fs/create-temp-dir {:prefix "fidelity-output"})
+(deftest accountability-is-content-bound-and-review-exports-are-cache-independent
+  (let [dir (fs/create-temp-dir {:prefix "accountability-output"})
         root (str (fs/path dir "store"))
         objects (str (fs/path root "kura" "objects"))
         store (engine/open-store! {:cas-dir objects :db-path (str (fs/path dir "trace.sqlite"))})
         put! #(cas/put-bytes! objects (.getBytes ^String % "UTF-8"))
-        inputs {"source" (put! fixture/source) "tei" (put! fixture/tei)
-                "plaintext" (put! fixture/plaintext)}
-        stage (stages/source-fidelity-stage "test-runtime")]
+        tei "<TEI xmlns=\"http://www.tei-c.org/ns/1.0\"><text><body><p>本文</p></body></text></TEI>"
+        inputs {"source" (put! "本文")}
+        stage (accountability/source-stage (accountability/resolve-tool))]
     (try
       (let [first-run (engine/run-stage! store stage inputs)
             warm (engine/run-stage! store stage inputs)
-            changed (engine/run-stage! store stage (assoc inputs "plaintext" (put! "omitted")))
-            report {"works" {"work" (assoc (dissoc inputs "source")
-                                           "source-fidelity" (get-in first-run [:outputs "source-fidelity"])
+            changed (engine/run-stage! store stage (assoc inputs "source" (put! "変更した本文")))
+            report {"works" {"work" (assoc {"tei" (put! tei) "plaintext" (put! "本文")}
+                                           "source-accountability" (get-in first-run [:outputs "source-accountability"])
                                            "tei-validation" (put! "{}"))}}
             out (fs/path dir "exports")]
         (is (:cached? warm))
         (is (not (:cached? changed)))
         (is (not= (:outputs first-run) (:outputs changed)))
         (#'main/export-build! root out report)
-        (is (= fixture/plaintext (slurp (str (fs/path out "work" "plain.txt")))))
-        (is (= fixture/tei (slurp (str (fs/path out "work" "tei.xml")))))
-        (is (fs/exists? (fs/path out "work" "source-fidelity.json"))))
+        (is (= "本文" (slurp (str (fs/path out "work" "plain.txt")))))
+        (is (= tei (slurp (str (fs/path out "work" "tei.xml")))))
+        (is (fs/exists? (fs/path out "work" "source-accountability.json"))))
       (finally (engine/close-store! store) (fs/delete-tree dir)))))
 
 (deftest publication-refuses-source-axis-sentence-or-orthography-evidence

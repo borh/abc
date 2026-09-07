@@ -109,6 +109,10 @@
             abValidatorPackages."ab-aat-to-parser-ir"
           }/bin/ab-aat-to-parser-ir"
           export AB_AOZORA_BIN="${abValidatorPackages."ab-aozora"}/bin/ab-aozora"
+          export AB_SOURCE_INVENTORY_BIN="${
+            abValidatorPackages."ab-source-inventory"
+          }/bin/ab-source-inventory"
+          export AB_AOZORA_SYNTAX_MATRIX="${ab-validator}/data/aozora-syntax-coverage.toml"
           export AB_AAT_TO_PARSER_IR_MAPPING_V2="${
             builtins.path {
               path = "${ab-validator}/data/aat-to-parser-ir-mapping-v2.json";
@@ -314,6 +318,15 @@
 
                 export HOME="${soranohaClj.depsCache}"
                 export JAVA_TOOL_OPTIONS="-Duser.home=${soranohaClj.depsCache}"
+                export AB_AOZORA_BIN="${abValidatorPackages."ab-aozora"}/bin/ab-aozora"
+                export AB_AAT_TO_PARSER_IR_BIN="${
+                  abValidatorPackages."ab-aat-to-parser-ir"
+                }/bin/ab-aat-to-parser-ir"
+                export AB_AAT_TO_PARSER_IR_MAPPING_V2="${ab-validator}/data/aat-to-parser-ir-mapping-v2.json"
+                export AB_SOURCE_INVENTORY_BIN="${
+                  abValidatorPackages."ab-source-inventory"
+                }/bin/ab-source-inventory"
+                export AB_AOZORA_SYNTAX_MATRIX="${ab-validator}/data/aozora-syntax-coverage.toml"
                 export CLJ_CONFIG="$HOME/.clojure"
                 export CLJ_CACHE="$TMPDIR/cp-cache"
                 export XDG_CONFIG_HOME="$TMPDIR/xdg-config"

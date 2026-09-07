@@ -13,7 +13,6 @@
             [soranoha.annotations.view :as view]
             [soranoha.ori.projection :as projection]
             [soranoha.ori.render :as render]
-            [soranoha.ori.fidelity :as fidelity]
             [soranoha.ori.validate :as validate]
             [soranoha.aozora.ingest :as ingest]
             [soranoha.core.json :as record-json]
@@ -186,16 +185,3 @@
               {"tei-validation" (json-bytes
                                  (validate/tei-validation-result
                                   profile tei-file))}))))})
-
-(defn source-fidelity-stage
-  "Source and export bytes -> bounded source-to-output fidelity evidence.
-  Rights assessment and TEI schema validity are separate results."
-  [clj-toolchain-id]
-  {:stage-id "source-fidelity"
-   :stage-version "9"
-   :toolchain-id clj-toolchain-id
-   :f (fn [{:keys [blob]} inputs]
-        {"source-fidelity"
-         (json-bytes (fidelity/check (blob (get inputs "source"))
-                                     (blob (get inputs "tei"))
-                                     (blob (get inputs "plaintext"))))})})

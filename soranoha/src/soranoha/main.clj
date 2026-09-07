@@ -36,6 +36,7 @@
             [soranoha.kura.trace :as trace]
             [soranoha.kura.verify :as kura-verify]
             [soranoha.ori.stages :as stages]
+            [soranoha.ori.accountability :as accountability]
             [soranoha.ori.validate :as validate]
             [soranoha.core.json :as record-json]
             [soranoha.core.parallel :as parallel]
@@ -73,7 +74,7 @@
                       {:aozora-root (str aozora-root) :status status})))
     commit))
 
-(defn- build-stages [{:keys [clj-toolchain-id assets-root]}]
+(defn- publication-stages [{:keys [clj-toolchain-id assets-root]}]
   (let [adapter (stages/resolve-adapter)
         profile (validate/profile-paths assets-root)]
     {:extract (stages/extract-stage clj-toolchain-id)
@@ -83,8 +84,12 @@
      :render (stages/render-stage clj-toolchain-id)
      :plaintext (stages/plaintext-stage clj-toolchain-id)
      :markdown (stages/markdown-stage clj-toolchain-id)
-     :validate (stages/validate-tei-stage clj-toolchain-id profile)
-     :fidelity (stages/source-fidelity-stage clj-toolchain-id)}))
+     :validate (stages/validate-tei-stage clj-toolchain-id profile)}))
+
+(defn- build-stages [{:keys [clj-toolchain-id] :as opts}]
+  (assoc (publication-stages opts)
+         :accountability (accountability/source-stage (accountability/resolve-tool))
+         :coverage (accountability/coverage-stage clj-toolchain-id)))
 
 (defn- read-cas-json [store hex]
   (json/read-json (String. ^bytes (cas/get-bytes (:cas-dir store) hex) "UTF-8")))
@@ -94,7 +99,7 @@
   Returns {:slug :zip-hex :source-facts
   :outputs {stage-key {name hex}} :cached {stage-key bool}
   :trace-keys {stage-key derivation-key-hex}}."
-  [store {:keys [extract metadata parse convert render plaintext markdown validate fidelity]}
+  [store {:keys [extract metadata parse convert render plaintext markdown validate accountability coverage]}
    {:keys [slug row file]} catalog-rows]
   (let [zip-hex (cas/put-file! (:cas-dir store) file)
         extract-r (engine/run-stage! store extract {"zip" zip-hex})
@@ -123,15 +128,18 @@
                                       {"tei" (get (:outputs render-r) "tei")})
         validate-r (engine/run-stage! store validate
                                       {"tei" (get (:outputs render-r) "tei")})
-        fidelity-r (when fidelity
-                     (engine/run-stage! store fidelity
-                                        {"source" (get (:outputs extract-r) "primary-text")
-                                         "tei" (get (:outputs render-r) "tei")
-                                         "plaintext" (get (:outputs plaintext-r) "plaintext")}))
+        accountability-r (when accountability
+                           (engine/run-stage! store accountability
+                                              {"source" (get (:outputs extract-r) "primary-text")}))
+        coverage-r (when coverage
+                     (engine/run-stage! store coverage
+                                        {"source-accountability" (get (:outputs accountability-r) "source-accountability")
+                                         "parser-ir" (get (:outputs convert-r) "parser-ir")}))
         results (cond-> {:extract extract-r :metadata metadata-r :parse parse-r
                          :convert convert-r :render render-r :plaintext plaintext-r
                          :markdown markdown-r :validate validate-r}
-                  fidelity-r (assoc :fidelity fidelity-r))
+                  accountability-r (assoc :accountability accountability-r)
+                  coverage-r (assoc :coverage coverage-r))
         project (fn [field] (into {} (map (fn [[stage result]] [stage (get result field)])) results))]
     {:slug slug :zip-hex zip-hex :source-facts facts
      :outputs (project :outputs) :cached (project :cached?) :trace-keys (project :trace-key)}))
@@ -152,7 +160,8 @@
                                  ["plaintext-projection" "plaintext-projection.json"]
                                  ["markdown-projection" "markdown-projection.json"]
                                  ["tei-validation" "tei-validation.json"]
-                                 ["source-fidelity" "source-fidelity.json"]]
+                                 ["source-accountability" "source-accountability.json"]
+                                 ["interpretation-coverage" "interpretation-coverage.json"]]
                 :when (contains? work kind)]
           (fs/write-bytes (fs/path dir filename)
                           (cas/get-bytes (config/cas-dir root) (get work kind))))))
@@ -261,8 +270,10 @@
                                                               (map (fn [[stage k]]
                                                                      [(name stage) k]))
                                                               trace-keys)}
-                                                 (:fidelity outputs)
-                                                 (assoc "source-fidelity" (get-in outputs [:fidelity "source-fidelity"])))]))
+                                                 (:accountability outputs)
+                                                 (assoc "source-accountability" (get-in outputs [:accountability "source-accountability"]))
+                                                 (:coverage outputs)
+                                                 (assoc "interpretation-coverage" (get-in outputs [:coverage "interpretation-coverage"])))]))
                                   results)}
             report-path (str (fs/path root "runs" (str "run-" started ".json")))]
         (fs/create-dirs (fs/parent report-path))
@@ -629,7 +640,7 @@
             (let [requested (set slugs)
                   inputs (update captured :candidates #(filterv (comp requested :slug) %))
                   _ (selected-metadata! inputs)
-                  stage-set (if (seq requested) (dissoc (build-stages opts) :fidelity) {})
+                  stage-set (if (seq requested) (dissoc (publication-stages opts) :accountability :coverage) {})
                   report (execute-build! (dissoc opts :out) inputs stage-set)]
               (when-not (and (= source-commit (get report "aozora_git_commit")
                                 (source-provenance! (:aozora-root opts)))

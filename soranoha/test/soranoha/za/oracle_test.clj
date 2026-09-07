@@ -97,12 +97,16 @@
            (reject-reason (report-json :replace-from hex-a
                                        :replace-to (str/upper-case hex-a)))))))
 
-(deftest fidelity-only-artifact-changes-are-visible
-  (let [with-fidelity (fn [hash]
-                        (report-json :replace-from "\"source_zip\":"
-                                     :replace-to (str "\"source-fidelity\":\"" hash "\",\"source_zip\":")))
-        before (oracle/decode-run (with-fidelity hex-a))
-        after (oracle/decode-run (with-fidelity hex-b))]
+(deftest accountability-only-artifact-changes-are-visible
+  (let [with-accountability (fn [hash]
+                              (.getBytes
+                               ^String (str/replace
+                                        (String. ^bytes (report-json :replace-from "\"source_zip\":"
+                                                                     :replace-to (str "\"source-accountability\":\"" hash "\",\"source_zip\":")) "UTF-8")
+                                        "\"parse\"" "\"accountability\"")
+                               "UTF-8"))
+        before (oracle/decode-run (with-accountability hex-a))
+        after (oracle/decode-run (with-accountability hex-b))]
     (is (= #{"w_1"} (:changed (oracle/report-artifact-delta before after))))
     (is (= #{"w_1"} (:retained (oracle/report-artifact-delta before before))))
-    (is (= :not-a-content-hash (reject-reason (with-fidelity "invalid"))))))
+    (is (= :not-a-content-hash (reject-reason (with-accountability "invalid"))))))

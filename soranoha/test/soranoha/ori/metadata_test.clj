@@ -7,6 +7,7 @@
             [soranoha.kura.cas :as cas]
             [soranoha.kura.engine :as engine]
             [soranoha.ori.stages :as stages]
+            [soranoha.ori.accountability :as accountability]
             [soranoha.core.json :as record-json]
             [soranoha.main :as main]
             [soranoha.za.corpus :as corpus]))
@@ -116,6 +117,8 @@
         build #(binding [*out* (java.io.StringWriter.)] (main/build! opts))]
     (try
       (with-redefs [stages/resolve-adapter (constantly {})
+                    accountability/source-stage (constantly (:accountability corpus/stage-set))
+                    accountability/coverage-stage (constantly (:coverage corpus/stage-set))
                     stages/parse-stage (constantly (:parse corpus/stage-set))
                     stages/convert-stage (constantly (:convert corpus/stage-set))
                     stages/render-stage (constantly (:render corpus/stage-set))

@@ -33,10 +33,14 @@
   (let [complete (get-in parser-ir ["derived_from" "parse_complete"])
         decoding (get-in parser-ir ["source" "decode_outcome"])
         diagnostics (concat (get parser-ir "warnings") (get parser-ir "errors"))]
-    (into (cond-> []
-            (some? complete) (conj [:note {:type "parser-completion" :n (str complete)}
-                                    "Parser completion does not establish exhaustive markup interpretation."])
-            decoding (conj [:note {:type "source-decoding"} decoding]))
+    (into (into (cond-> []
+                  (some? complete) (conj [:note {:type "parser-completion" :n (str complete)}
+                                          "Parser completion does not establish exhaustive markup interpretation."])
+                  decoding (conj [:note {:type "source-decoding"} decoding]))
+                (map (fn [problem]
+                       [:note {:type "interpretation-problem"}
+                        (record-json/write-deterministic-json-str problem)]))
+                (get parser-ir "interpretation_problems"))
           (mapcat (fn [index diagnostic]
                     (let [span (get diagnostic "span")
                           source-id (str "parser-source-" index)]

@@ -89,7 +89,7 @@
                                                                "unavailable" (assoc-in round ["responses" file] {"status" 404})}}))}]
     (try
       (is (= live-observation replay-observation))
-      (with-redefs-fn {#'main/build-stages (constantly (dissoc corpus/stage-set :fidelity))}
+      (with-redefs-fn {#'main/publication-stages (constantly (dissoc corpus/stage-set :accountability :coverage))}
         #(do (is (= 5 (:revisions (publication/replay! input))))
              (is (zero? (:executed-stages
                          (publication/repeat! (assoc input :repeat-run (:out input))))))))

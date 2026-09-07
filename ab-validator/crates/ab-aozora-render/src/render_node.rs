@@ -102,7 +102,8 @@ fn render_content_one<W: Write>(c: Content, store: &NodeStore, out: &mut W) -> f
                 match *seg {
                     Segment::Text(id) => escape_text(store.resolve_str(id), out)?,
                     Segment::Gaiji(g) => render_gaiji(&g, store, out)?,
-                    Segment::Directive(a) => render_annotation(a, store, out)?,
+                    Segment::Directive { value, .. } => render_annotation(value, store, out)?,
+                    Segment::Kunten { value, .. } => render_kunten(value, store, out)?,
                     // `Segment` is `#[non_exhaustive]`; forward-compat skip.
                     _ => {}
                 }

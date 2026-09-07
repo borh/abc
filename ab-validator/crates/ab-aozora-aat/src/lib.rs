@@ -26,7 +26,10 @@ use ab_aozora_facade::{
 // Body/tail boundary detection is the shared `ab-source-syntax` authority
 // so the checker's comparison source (`ab-check::body_text`) can never
 // drift from the parser's own cut.
-use ab_aozora_facade::syntax::{AbsoluteSize, ast::KuntenKind};
+use ab_aozora_facade::syntax::{
+    AbsoluteSize,
+    ast::{Content, KuntenKind, Segment},
+};
 use ab_source_syntax::{RegionError, SourceRegions, aozora_body_range};
 
 /// Sanitization and parsing share the native diagnostic type.
@@ -320,6 +323,20 @@ struct AozoraRubyEntry {
     base: String,
     reading: String,
     side: &'static str,
+    windows: Option<(Span, Span)>,
+    annotations: Vec<LocatedAnnotation>,
+}
+
+#[derive(Debug, Clone)]
+struct LocatedAnnotation {
+    span: Span,
+    payload: NestedAnnotation,
+}
+
+#[derive(Debug, Clone)]
+enum NestedAnnotation {
+    Kunten { kind: KuntenKind, text: String },
+    Directive(DirectiveKind),
 }
 
 #[allow(
@@ -442,16 +459,68 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
 fn ruby_projection(tree: &LexOutput) -> Result<Vec<AozoraRubyEntry>> {
     let store = &tree.store;
     let mut entries = Vec::new();
+    let pairs: BTreeMap<_, _> = tree
+        .pairs
+        .iter()
+        .filter(|pair| pair.kind == ab_aozora_facade::PairKind::Ruby)
+        .map(|pair| (pair.close.end, pair))
+        .collect();
     for source_node in &tree.source_nodes {
         let (NodeRef::Inline(Node::Ruby(ruby)) | NodeRef::BlockLeaf(Node::Ruby(ruby))) =
             source_node.node
         else {
             continue;
         };
-        let (Some(base), Some(reading)) = (
+        let annotations: Vec<_> = [ruby.base, ruby.reading]
+            .into_iter()
+            .flat_map(|range| store.resolve_content_range(range))
+            .filter_map(|content| match content {
+                Content::Segments(range) => Some(store.resolve_seg_range(*range)),
+                _ => None,
+            })
+            .flatten()
+            .filter_map(|segment| match segment {
+                Segment::Kunten { value, source_span } => Some(LocatedAnnotation {
+                    span: (*source_span).into(),
+                    payload: NestedAnnotation::Kunten {
+                        kind: value.kind,
+                        text: store.resolve_str(value.text).to_owned(),
+                    },
+                }),
+                Segment::Directive { value, source_span } => Some(LocatedAnnotation {
+                    span: (*source_span).into(),
+                    payload: NestedAnnotation::Directive(value.kind),
+                }),
+                _ => None,
+            })
+            .collect();
+        let plain = (
             store.content_range_as_plain(ruby.base),
             store.content_range_as_plain(ruby.reading),
-        ) else {
+        );
+        let (base, reading, windows) = if let (Some(base), Some(reading)) = plain {
+            (base.to_owned(), reading.to_owned(), None)
+        } else if !annotations.is_empty() {
+            let Some(pair) = pairs.get(&source_node.source_span.end) else {
+                continue;
+            };
+            let mut base = Span {
+                start: source_node.source_span.start as usize,
+                end: pair.open.start as usize,
+            };
+            if tree.sanitized[base.start..base.end].starts_with('｜') {
+                base.start += '｜'.len_utf8();
+            }
+            let reading = Span {
+                start: pair.open.end as usize,
+                end: pair.close.start as usize,
+            };
+            (
+                tree.sanitized[base.start..base.end].to_owned(),
+                tree.sanitized[reading.start..reading.end].to_owned(),
+                Some((base, reading)),
+            )
+        } else {
             continue;
         };
         let side = match ruby.side {
@@ -461,9 +530,11 @@ fn ruby_projection(tree: &LexOutput) -> Result<Vec<AozoraRubyEntry>> {
         };
         entries.push(AozoraRubyEntry {
             span: source_node.source_span.into(),
-            base: base.to_owned(),
-            reading: reading.to_owned(),
+            base,
+            reading,
             side,
+            windows,
+            annotations,
         });
     }
     Ok(entries)
@@ -659,6 +730,16 @@ fn projections(
         for mut entry in inner_ruby {
             entry.span.start += start;
             entry.span.end += start;
+            if let Some((base, reading)) = &mut entry.windows {
+                base.start += start;
+                base.end += start;
+                reading.start += start;
+                reading.end += start;
+            }
+            for mark in &mut entry.annotations {
+                mark.span.start += start;
+                mark.span.end += start;
+            }
             ruby.push(entry);
         }
     }
@@ -2208,6 +2289,33 @@ fn ruby_node(
     gaiji_by_start: &BTreeMap<usize, AozoraGaiji>,
 ) -> Value {
     if let Some(entry) = ruby_by_span.get(&(node.span.start, node.span.end)) {
+        if let Some((base, reading)) = entry.windows {
+            let annotations: BTreeMap<_, _> = entry
+                .annotations
+                .iter()
+                .map(|mark| (mark.span.start, mark))
+                .collect();
+            let markers = SourceSegments {
+                gaiji: gaiji_by_start,
+                annotations: &annotations,
+            };
+            let mut ruby = json!({"kind":"ruby", "base":entry.base, "reading":entry.reading,
+                "direction":entry.side, "span":span_json(&node.span, &decoded.span_ctx)});
+            for (field, window) in [("base", base), ("reading", reading)] {
+                if let Some(segments) = source_segments(
+                    decoded,
+                    window.start,
+                    &decoded.span_text[window.start..window.end],
+                    &markers,
+                ) {
+                    if let Some(text) = segments.resolved_text {
+                        ruby[field] = json!(text);
+                    }
+                    ruby[format!("{field}_content")] = json!(segments.content);
+                }
+            }
+            return ruby;
+        }
         // A retrospective annotation whose node span is the marker alone
         // (`…《ルビ》［＃「X」の左に「Y」のルビ］`) re-quotes a target that
         // was already emitted; keeping the quoted base would double the
@@ -2272,7 +2380,7 @@ fn ruby_node(
     }
 }
 
-struct GaijiSegments {
+struct SegmentedSource {
     /// One inline node per segment: a gaiji node per marker, a text node
     /// per plain run between markers.
     content: Vec<Value>,
@@ -2289,14 +2397,54 @@ fn gaiji_segments(
     start: usize,
     text: &str,
     gaiji_by_start: &BTreeMap<usize, AozoraGaiji>,
-) -> Option<GaijiSegments> {
+) -> Option<SegmentedSource> {
+    source_segments(
+        decoded,
+        start,
+        text,
+        &SourceSegments {
+            gaiji: gaiji_by_start,
+            annotations: &BTreeMap::new(),
+        },
+    )
+}
+
+struct SourceSegments<'a> {
+    gaiji: &'a BTreeMap<usize, AozoraGaiji>,
+    annotations: &'a BTreeMap<usize, &'a LocatedAnnotation>,
+}
+
+fn source_segments(
+    decoded: &DecodedSource,
+    start: usize,
+    text: &str,
+    markers: &SourceSegments<'_>,
+) -> Option<SegmentedSource> {
     let end = start + text.len();
     let mut content = Vec::new();
     let mut resolved_text = Some(String::new());
-    let mut gaiji_count = 0_usize;
+    let mut marker_count = 0_usize;
     let mut cursor = start;
     while cursor < end {
-        if let Some(gaiji) = gaiji_by_start.get(&cursor) {
+        if let Some(mark) = markers.annotations.get(&cursor) {
+            if mark.span.end <= cursor || mark.span.end > end {
+                return None;
+            }
+            content.push(match &mark.payload {
+                NestedAnnotation::Kunten { kind, text } => kunten_node(decoded, &mark.span, *kind, text),
+                NestedAnnotation::Directive(kind) => {
+                    let start = decoded.span_ctx.to_decoded(mark.span.start);
+                    let end = decoded.span_ctx.to_decoded_end(mark.span.end);
+                    let code = if *kind == DirectiveKind::Unknown { "unknown-notation" } else { "uninterpreted-notation" };
+                    json!({"kind":"raw", "source":&decoded.text[start..end], "span":span_json(&mark.span, &decoded.span_ctx),
+                        "interpretation_problem":{"kind":code,"code":code,"aspects":["content","structure","layout"],"influence":{"kind":"document"}}})
+                }
+            });
+            marker_count += 1;
+            cursor = mark.span.end;
+            continue;
+        }
+        if let Some(gaiji) = markers.gaiji.get(&cursor) {
             if gaiji.end <= cursor || gaiji.end > end {
                 return None;
             }
@@ -2312,14 +2460,22 @@ fn gaiji_segments(
                 (Some(out), Some(glyph)) => out.push_str(glyph),
                 _ => resolved_text = None,
             }
-            gaiji_count += 1;
+            marker_count += 1;
             cursor = gaiji.end;
             continue;
         }
-        let next_start = gaiji_by_start
+        let next_start = markers
+            .gaiji
             .range(cursor..end)
             .next()
-            .map_or(end, |(offset, _)| *offset);
+            .map_or(end, |(offset, _)| *offset)
+            .min(
+                markers
+                    .annotations
+                    .range(cursor..end)
+                    .next()
+                    .map_or(end, |(offset, _)| *offset),
+            );
         let segment = &text[cursor - start..next_start - start];
         content.push(json!({
             "kind": "text",
@@ -2334,7 +2490,7 @@ fn gaiji_segments(
         }
         cursor = next_start;
     }
-    (gaiji_count > 0).then_some(GaijiSegments {
+    (marker_count > 0).then_some(SegmentedSource {
         content,
         resolved_text,
     })

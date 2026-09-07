@@ -240,7 +240,10 @@ fn emit_content_one<W: Write>(c: Content, store: &NodeStore, out: &mut W) -> fmt
                 match *seg {
                     Segment::Text(id) => out.write_str(store.resolve_str(id))?,
                     Segment::Gaiji(g) => emit_gaiji(&g, store, out)?,
-                    Segment::Directive(a) => out.write_str(store.resolve_str(a.raw))?,
+                    Segment::Directive { value, .. } => {
+                        out.write_str(store.resolve_str(value.raw))?;
+                    }
+                    Segment::Kunten { value, .. } => emit_kunten(value, store, out)?,
                     // `Segment` is `#[non_exhaustive]`; forward-compat skip.
                     _ => {}
                 }
@@ -275,7 +278,10 @@ fn emit_content_as_plain_one<W: Write>(c: Content, store: &NodeStore, out: &mut 
                 match *seg {
                     Segment::Text(id) => out.write_str(store.resolve_str(id))?,
                     Segment::Gaiji(g) => out.write_str(store.resolve_str(g.hint))?,
-                    Segment::Directive(a) => out.write_str(store.resolve_str(a.raw))?,
+                    Segment::Directive { value, .. } => {
+                        out.write_str(store.resolve_str(value.raw))?;
+                    }
+                    Segment::Kunten { value, .. } => emit_kunten(value, store, out)?,
                     // `Segment` is `#[non_exhaustive]`; forward-compat skip.
                     _ => {}
                 }

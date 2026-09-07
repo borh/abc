@@ -131,10 +131,10 @@ impl Allocator {
         Segment::Gaiji(g)
     }
 
-    /// `Segment::Directive(a)` — wraps a payload built via [`Self::make_directive`].
+    /// Retain an annotation payload with its sanitized source extent.
     #[must_use]
-    pub fn seg_annotation(&self, a: Directive) -> Segment {
-        Segment::Directive(a)
+    pub fn seg_annotation(&self, value: Directive, source_span: crate::Span) -> Segment {
+        Segment::Directive { value, source_span }
     }
 
     // ---------------------------------------------------------------------

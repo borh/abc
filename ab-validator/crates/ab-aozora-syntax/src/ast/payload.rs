@@ -38,7 +38,19 @@ pub enum Segment {
     /// Nested 外字 reference.
     Gaiji(Gaiji),
     /// Nested generic annotation.
-    Directive(Directive),
+    Directive {
+        /// Native interpretation of the annotation.
+        value: Directive,
+        /// Annotation extent in sanitized UTF-8 source bytes.
+        source_span: crate::Span,
+    },
+    /// Supplied kunten at its native sanitized UTF-8 source coordinates.
+    Kunten {
+        /// Supplied mark or okurigana, without a derived reading order.
+        value: Kunten,
+        /// Annotation extent in sanitized UTF-8 source bytes.
+        source_span: crate::Span,
+    },
 }
 
 impl GaijiCanonicalOwned {

@@ -2362,7 +2362,6 @@ impl RecogniseCtx<'_, '_> {
         // A no-`※` standalone gaiji reaches here as `Aozora(Gaiji)`;
         // wrap it as a `Segment::Gaiji` (not the `Unknown` annotation the
         // payload fallback would build) and flag an unresolved miss.
-        // Every other recogniser keeps the `Segment::Directive` path.
         if let EmitKind::Aozora(Node::Gaiji(g)) = a.emit {
             build.segments.push(self.alloc.seg_gaiji(g));
             if g.resolve(self.alloc.store()).is_none() {
@@ -2372,6 +2371,11 @@ impl RecogniseCtx<'_, '_> {
                         a.consume_end,
                     )));
             }
+        } else if let EmitKind::Aozora(Node::Kunten(value)) = a.emit {
+            build.segments.push(Segment::Kunten {
+                value,
+                source_span: Span::new(a.consume_start, a.consume_end),
+            });
         } else {
             let payload = if let Some(p) = a.annotation_payload {
                 p
@@ -2379,7 +2383,10 @@ impl RecogniseCtx<'_, '_> {
                 let raw = &self.source[open_span.start as usize..close_span.end as usize];
                 self.alloc.make_directive(raw, DirectiveKind::Unknown)
             };
-            build.segments.push(self.alloc.seg_annotation(payload));
+            build.segments.push(
+                self.alloc
+                    .seg_annotation(payload, Span::new(a.consume_start, a.consume_end)),
+            );
         }
         build.text_start = a.consume_end;
         Some(close_idx + 1)

@@ -14,7 +14,8 @@ use std::{
 use ab_aozora_pipeline::lexer::sanitize::{SanitizeMaps, sanitize_mapped};
 use ab_aozora_pipeline::text_variant::{
     EditionNoteKind, TextVariant, TextVariantTarget, base_edition_concealed_characters,
-    concealed_placeholder, edition_note, edition_statement, formatted_text_variant, text_variant,
+    concealed_placeholder, edition_note, edition_statement, formatted_text_variant,
+    formatting_edition_note, text_variant,
 };
 use ab_aozora_pipeline::{LexOutput, Pipeline};
 use anyhow::Result;
@@ -3060,6 +3061,13 @@ fn push_style_node(
         }
     }
     content.push(style);
+    if let Some(marker) = node.marker_span
+        && let Some((_, statement)) =
+            formatting_edition_note(source_slice(&decoded.span_text, &marker))
+        && matches!(node.kind, ProjectedKind::Format(ForwardAttr::Bouten { .. }))
+    {
+        content.push(json!({"kind":"editorial_note", "note_kind":"base-edition", "text":statement, "span":span_json(&marker, &decoded.span_ctx)}));
+    }
     if let ProjectedKind::Format(attr) = node.kind
         && !matches!(
             attr,

@@ -117,6 +117,21 @@ pub fn formatted_text_variant(source: &str) -> Option<(&str, TextVariant<'_>)> {
     ))
 }
 
+/// Separate a formatting suffix and an explicitly attributed edition statement.
+/// The formatting caller must still recognize its complete suffix.
+#[must_use]
+pub fn formatting_edition_note(source: &str) -> Option<(&str, &str)> {
+    let body = source.strip_prefix("［＃「")?.strip_suffix('］')?;
+    let (target, suffix) = body.split_once('」')?;
+    if target.is_empty() || target.contains(['「', '\n']) {
+        return None;
+    }
+    let (formatting, statement) = suffix.split_once("、底本では")?;
+    let statement = &suffix[suffix.len() - statement.len() - "底本では".len()..];
+    edition_statement(statement)?;
+    Some((formatting, statement))
+}
+
 fn variant_parts<'s>(
     statement: &'s str,
     target: TextVariantTarget,

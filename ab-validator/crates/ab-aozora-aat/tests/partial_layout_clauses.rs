@@ -215,3 +215,32 @@ fn columns_count_mismatch_does_not_claim_a_complete_scope() {
     );
     assert!(aat.to_string().contains("本文"));
 }
+
+#[test]
+fn bouten_keeps_current_target_and_base_edition_description_separate() {
+    let marker = "［＃「あとさし」に傍点、底本では「あとさ」に傍点］";
+    let source = format!("あとさし{marker}後");
+    let aat: Value =
+        serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
+    let content = aat["blocks"][0]["content"].as_array().unwrap();
+    let style = content
+        .iter()
+        .find(|node| node["style_type"] == "bouten")
+        .unwrap_or_else(|| panic!("{aat}"));
+    assert_eq!(style["content"][0]["value"], "あとさし", "{aat}");
+    let note = content
+        .iter()
+        .find(|node| node["kind"] == "editorial_note")
+        .unwrap();
+    assert_eq!(note["text"], "底本では「あとさ」に傍点");
+    assert_eq!(note["note_kind"], "base-edition");
+    let start = usize::try_from(note["span"]["byte_start"].as_u64().unwrap()).unwrap();
+    let end = usize::try_from(note["span"]["byte_end"].as_u64().unwrap()).unwrap();
+    assert_eq!(&source[start..end], marker);
+    assert!(
+        ab_aozora_facade::Document::new(source.as_str())
+            .parse()
+            .to_source()
+            .contains(marker)
+    );
+}

@@ -28,7 +28,7 @@ use ab_aozora_syntax::{
     MarginNoteKind, MarginNotePosition, Span,
 };
 
-use crate::text_variant::formatted_text_variant;
+use crate::text_variant::{formatted_text_variant, formatting_edition_note};
 
 use super::super::pair::{PairEvent, PairKind};
 use super::super::token::TriggerKind;
@@ -724,15 +724,46 @@ impl RecogniseCtx<'_, '_> {
         open_idx: usize,
         close_idx: usize,
     ) -> Option<(Node, u32, ForwardDiag)> {
+        let (mut node, start, diagnostic) =
+            self.classify_forward_bouten_inner(view, open_idx, close_idx)?;
+        if let (PairEvent::PairOpen { span: open, .. }, PairEvent::PairClose { span: close, .. }) =
+            (&view.events[open_idx], &view.events[close_idx])
+        {
+            let marker = &self.source[open.start as usize..close.end as usize];
+            if formatting_edition_note(marker).is_some()
+                && let Node::Format(format) = &mut node
+                && let Content::Plain(body) = self
+                    .alloc
+                    .content_plain(&marker["［＃".len()..marker.len() - '］'.len_utf8()])
+            {
+                format.annotation_body = Some(body);
+            }
+        }
+        Some((node, start, diagnostic))
+    }
+
+    fn classify_forward_bouten_inner(
+        &mut self,
+        view: BodyView<'_>,
+        open_idx: usize,
+        close_idx: usize,
+    ) -> Option<(Node, u32, ForwardDiag)> {
         let extracted = extract_forward_quote_targets(view, self.source, open_idx, close_idx)?;
+        let (PairEvent::PairOpen { span: open, .. }, PairEvent::PairClose { span: close, .. }) =
+            (&view.events[open_idx], &view.events[close_idx])
+        else {
+            return None;
+        };
+        let marker = &self.source[open.start as usize..close.end as usize];
+        let suffix = formatting_edition_note(marker).map_or(extracted.suffix, |(suffix, _)| suffix);
         // Shape 1: `に<kind>` — default right-side placement.
         // Shape 2: `の左に<kind>` — left-side placement (position flipped).
         // Shape 3: `の両側に<kind>` — both sides.
-        let (position, kind_suffix) = if let Some(rest) = extracted.suffix.strip_prefix("に") {
+        let (position, kind_suffix) = if let Some(rest) = suffix.strip_prefix("に") {
             (BoutenPosition::Right, rest)
-        } else if let Some(rest) = extracted.suffix.strip_prefix("の左に") {
+        } else if let Some(rest) = suffix.strip_prefix("の左に") {
             (BoutenPosition::Left, rest)
-        } else if let Some(rest) = extracted.suffix.strip_prefix("の両側に") {
+        } else if let Some(rest) = suffix.strip_prefix("の両側に") {
             (BoutenPosition::Both, rest)
         } else {
             return None;

@@ -19,8 +19,7 @@ use core::num::NonZeroI8;
 
 use ab_aozora_spec::Diagnostic;
 use ab_aozora_syntax::accent::{compose_accent, compose_accent_dots};
-use ab_aozora_syntax::alloc::Allocator;
-use ab_aozora_syntax::ast::{Content, KuntenKind, Node, NonEmptySpan, Segment};
+use ab_aozora_syntax::ast::{Content, KuntenKind, Node, NonEmptySpan};
 use ab_aozora_syntax::format::ForwardOrigin;
 use ab_aozora_syntax::lint::canonical_directive;
 use ab_aozora_syntax::{
@@ -754,6 +753,9 @@ impl RecogniseCtx<'_, '_> {
         open_idx: usize,
         close_idx: usize,
     ) -> Option<(Node, u32, ForwardDiag)> {
+        if let Some(selection) = extract_bouten_selection(view, self.source, open_idx, close_idx) {
+            return self.classify_selected_bouten(view, open_idx, close_idx, &selection);
+        }
         let extracted = extract_forward_quote_targets(view, self.source, open_idx, close_idx)?;
         let (PairEvent::PairOpen { span: open, .. }, PairEvent::PairClose { span: close, .. }) =
             (&view.events[open_idx], &view.events[close_idx])
@@ -783,9 +785,10 @@ impl RecogniseCtx<'_, '_> {
         else {
             return None;
         };
-        if let [only] = extracted.targets.as_slice()
-            && !forward_target_is_preceded(view.events, self.source, open_idx, only)
-        {
+        let [only] = extracted.targets.as_slice() else {
+            return None;
+        };
+        if !forward_target_is_preceded(view.events, self.source, open_idx, only) {
             return Some(self.resolve_forward_format(
                 view,
                 open_idx,
@@ -794,34 +797,6 @@ impl RecogniseCtx<'_, '_> {
                 only,
             ));
         }
-        // A forward-reference bouten only makes sense when every named
-        // target actually appears in the preceding text. Otherwise it
-        // has no referent and we fall through to the Directive{Unknown}
-        // catch-all so the reader sees the raw `［＃…］` rather than a
-        // mysterious styling applied to nothing. Each target is checked
-        // independently so a partially-valid multi-quote bracket (rare
-        // but present in corpora) still fails cleanly.
-        for target in &extracted.targets {
-            if !forward_target_is_preceded(view.events, self.source, open_idx, target) {
-                return None;
-            }
-        }
-        // Multi-target `「A」「B」` names non-contiguous runs that cannot be
-        // spliced into one leaf — keep the legacy `Referenced` consume (renders
-        // nothing) and report the loss.
-        let [only] = extracted.targets.as_slice() else {
-            let target = build_bouten_target(&extracted.targets, self.alloc);
-            return Some((
-                self.alloc
-                    .bouten(kind, target, position, ForwardOrigin::Referenced),
-                open_span.start,
-                ForwardDiag::NotStylable,
-            ));
-        };
-        // Single target: shared resolution (`build_bouten_target([x])` ==
-        // `content_plain(x)`, so the bouten node is identical). Then overlay the
-        // bouten ambiguity diagnostic when the styled target occurs ≥2 times in
-        // the look-back (`matches` counts non-overlapping candidate runs).
         let (node, consume_start, diag) = self.resolve_forward_format(
             view,
             open_idx,
@@ -841,37 +816,179 @@ impl RecogniseCtx<'_, '_> {
         };
         Some((node, consume_start, diag))
     }
+
+    fn classify_selected_bouten(
+        &mut self,
+        view: BodyView<'_>,
+        open_idx: usize,
+        close_idx: usize,
+        selection: &BoutenSelection<'_>,
+    ) -> Option<(Node, u32, ForwardDiag)> {
+        let PairEvent::PairOpen { span: open, .. } = view.events[open_idx] else {
+            return None;
+        };
+        let PairEvent::PairClose { span: close, .. } = view.events[close_idx] else {
+            return None;
+        };
+        let kind = bouten_kind_from_suffix(selection.suffix.strip_prefix("に")?)?;
+        let start = self.pending_plain_start?;
+        let spans = selection.resolve(self.source, Span::new(start, open.start))?;
+        let contents: Vec<_> = spans
+            .iter()
+            .map(|span| {
+                self.alloc
+                    .content_plain(&self.source[span.start as usize..span.end as usize])
+            })
+            .collect();
+        let body = &self.source[(open.end as usize + '＃'.len_utf8())..close.start as usize];
+        let reference = self.alloc.selected_forward_format(
+            ForwardAttr::Bouten {
+                kind,
+                position: BoutenPosition::Right,
+            },
+            &contents,
+            body,
+        );
+        for (index, span) in spans.into_iter().enumerate() {
+            let mut detached = reference;
+            detached.origin = ForwardOrigin::Detached;
+            detached.target.start += u32::try_from(index).expect("target index fits arena");
+            detached.target.len = 1;
+            self.pending_decorations
+                .push((Node::Format(detached), span));
+        }
+        Some((Node::Format(reference), open.start, ForwardDiag::None))
+    }
 }
 
-/// Fold a list of forward-bouten target strings into a single
-/// `Content`. A one-element list takes the `Content::from(&str)`
-/// fast path (the overwhelmingly common case); multi-target lists
-/// build a `Segments` run where inter-target separators are modelled
-/// as `Segment::Text("、")` so the renderer emits
-/// `<em>A、B</em>` in document order.
-///
-/// Using `、` as the glue is a deliberate, lossy choice: the raw
-/// source shape `「A」「B」` does not have an explicit separator, but
-/// inserting one in the rendered output makes the targets readable
-/// without requiring a dedicated `Segment::Separator` variant (which
-/// would ripple through every renderer / serializer). Callers that
-/// need the per-target list can walk `Content::iter` and filter on
-/// `SegmentRef::Text`.
-fn build_bouten_target(targets: &[&str], alloc: &mut Allocator) -> Content {
-    match targets {
-        [] => alloc.content_plain(""),
-        [only] => alloc.content_plain(only),
-        many => {
-            let mut segs: Vec<Segment> = Vec::with_capacity(many.len() * 2 - 1);
-            for (i, t) in many.iter().enumerate() {
-                if i > 0 {
-                    segs.push(alloc.seg_text("、"));
-                }
-                segs.push(alloc.seg_text(t));
-            }
-            alloc.content_segments(&segs)
+/// The quoted operands select source ranges; they never supply new text.
+struct BoutenSelection<'a> {
+    targets: BoutenTargets<'a>,
+    suffix: &'a str,
+}
+
+enum BoutenTargets<'a> {
+    Disjoint(Vec<&'a str>),
+    Within { context: &'a str, target: &'a str },
+}
+
+impl BoutenSelection<'_> {
+    fn resolve(&self, source: &str, pending: Span) -> Option<Vec<Span>> {
+        let text = &source[pending.start as usize..pending.end as usize];
+        if text.contains(['\n', '\r']) {
+            return None;
         }
+        if let BoutenTargets::Within { context, target } = &self.targets {
+            let context_start = text.strip_suffix(context)?.len();
+            let offset = unique_selected_offset(context, target)?;
+            let start = pending.start + u32::try_from(context_start + offset).ok()?;
+            return Some(vec![Span::new(
+                start,
+                start + u32::try_from(target.len()).ok()?,
+            )]);
+        }
+        let BoutenTargets::Disjoint(targets) = &self.targets else {
+            return None;
+        };
+        text.strip_suffix(*targets.last()?)?;
+        let mut spans = Vec::with_capacity(targets.len());
+        let mut previous_end = 0;
+        for target in targets {
+            let start = unique_selected_offset(text, target)?;
+            if start < previous_end {
+                return None;
+            }
+            previous_end = start + target.len();
+            spans.push(Span::new(
+                pending.start + u32::try_from(start).ok()?,
+                pending.start + u32::try_from(previous_end).ok()?,
+            ));
+        }
+        Some(spans)
     }
+}
+
+fn unique_selected_offset(text: &str, target: &str) -> Option<usize> {
+    let start = text.find(target)?;
+    let next = start + text[start..].chars().next()?.len_utf8();
+    (!text[next..].contains(target)).then_some(start)
+}
+
+/// Read only complete native quote pairs, with one consistent relation between operands.
+fn extract_bouten_selection<'a>(
+    view: BodyView<'_>,
+    source: &'a str,
+    open_idx: usize,
+    close_idx: usize,
+) -> Option<BoutenSelection<'a>> {
+    let PairEvent::PairClose { span: close, .. } = view.events[close_idx] else {
+        return None;
+    };
+    if !matches!(
+        view.events.get(open_idx + 2),
+        Some(PairEvent::PairOpen {
+            kind: PairKind::Quote,
+            ..
+        })
+    ) {
+        return None;
+    }
+    let mut cursor = open_idx + 2;
+    let mut targets = Vec::new();
+    let mut previous_end = None;
+    let mut relation = None;
+    let mut last_end = 0;
+    while cursor < close_idx {
+        let event = &view.events[cursor];
+        let PairEvent::PairOpen {
+            kind: PairKind::Quote,
+            span: open,
+        } = event
+        else {
+            cursor += 1;
+            continue;
+        };
+        if let Some(end) = previous_end {
+            let connector = &source[end..open.start as usize];
+            if !matches!(connector, "" | "と" | "の") {
+                break;
+            }
+            if relation.is_some_and(|previous| previous != connector) {
+                return None;
+            }
+            relation = Some(connector);
+        }
+        let end_index = usize::try_from(*view.links.get(cursor)?).ok()?;
+        if end_index >= close_idx {
+            return None;
+        }
+        let PairEvent::PairClose { span: end, .. } = view.events[end_index] else {
+            return None;
+        };
+        let target = &source[open.end as usize..end.start as usize];
+        if target.is_empty() {
+            return None;
+        }
+        targets.push(target);
+        last_end = end.end as usize;
+        previous_end = Some(last_end);
+        cursor = end_index + 1;
+    }
+    if targets.len() < 2 {
+        return None;
+    }
+    let targets = if relation == Some("の") {
+        let [context, target] = targets.as_slice() else {
+            return None;
+        };
+        BoutenTargets::Within { context, target }
+    } else {
+        BoutenTargets::Disjoint(targets)
+    };
+    Some(BoutenSelection {
+        targets,
+        suffix: &source[last_end..close.start as usize],
+    })
 }
 
 /// Outcome of [`RecogniseCtx::classify_forward_tcy`].
@@ -1739,7 +1856,7 @@ impl RecogniseCtx<'_, '_> {
     /// target is preceded (not self-contained) and holds the `attr` + open
     /// span. Returns the bracket node, its consume start, and the diagnostic;
     /// for the interior case it also stashes the styled `Detached` decoration
-    /// in `self.pending_decoration` for `try_bracket_emit` to splice.
+    /// in `self.pending_decorations` for `try_bracket_emit` to splice.
     #[allow(
         clippy::too_many_arguments,
         reason = "the caller already holds the body view, bracket index, open-span start, \
@@ -1782,7 +1899,7 @@ impl RecogniseCtx<'_, '_> {
                 let deco = self
                     .alloc
                     .forward_formats(attrs, text, ForwardOrigin::Detached);
-                self.pending_decoration = Some((deco, Span::new(start, end)));
+                self.pending_decorations.push((deco, Span::new(start, end)));
                 let Node::Format(mut reference) = deco else {
                     unreachable!("forward format allocation produces a format node");
                 };

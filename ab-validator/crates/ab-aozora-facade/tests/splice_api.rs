@@ -130,11 +130,8 @@ fn ruby_base_forward_attribute_change_is_coherent() {
 
 #[test]
 fn multi_target_forward_is_coupled_and_identity_safe() {
-    // A 、-joined multi-target forward (`「A」「B」`) is `Referenced`; its target
-    // lowers to a single plain run ("A、B"). The identity splice re-forms it in
-    // a scoped context and is a no-op, but a target change is irreducible: the
-    // canonical "A、B" is not a contiguous source substring (the source reads
-    // "AとB"), so it is honestly declined.
+    // A disjoint target list is source-owned but cannot be replaced by an
+    // unassociated scalar target. Identity editing retains all selected spans.
     let src = "AとB［＃「A」「B」に傍点］";
     let doc = Document::new(src);
     let tree = doc.parse();
@@ -153,8 +150,6 @@ fn multi_target_forward_is_coupled_and_identity_safe() {
         tree.splice(region, own).expect("identity is a no-op"),
         sanitized
     );
-    // A target change is irreducible (the rendered `A、B` is not a source
-    // substring), so it is honestly declined.
     let err = tree
         .splice(region, "［＃「海」に傍点］")
         .expect_err("a multi-segment target change is irreducible");

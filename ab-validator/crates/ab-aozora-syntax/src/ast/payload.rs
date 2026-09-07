@@ -266,7 +266,8 @@ pub struct MarginNote {
 pub struct ForwardFormat {
     /// Which forward-scope attribute decorates the run.
     pub attrs: ForwardAttrs,
-    /// The decorated run.
+    /// Selected content entries. A referenced list shares each entry identity
+    /// with its source-owned detached decoration.
     pub target: ContentRange,
     /// Target-text provenance.
     pub origin: ForwardOrigin,

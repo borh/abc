@@ -463,13 +463,10 @@ pub(crate) struct RecogniseCtx<'al, 's> {
     /// recognizers to locate a non-adjacent referent *inside* that run and
     /// splice a styled decoration at it.
     pub pending_plain_start: Option<u32>,
-    /// Output channel: a styled decoration leaf a forward recognizer carved
-    /// out of the pending plain run at its interior referent, plus that
-    /// referent's source span. `try_bracket_emit` drains it and
-    /// splices the leaf into the plain run before flushing the tail. `None`
-    /// for every other outcome (adjacent / self-contained / declined /
-    /// non-forward).
-    pub pending_decoration: Option<(Node, Span)>,
+    /// Source-owned selected leaves and their disjoint spans in the pending plain run.
+    /// `try_bracket_emit` validates the complete selection before splicing any leaf.
+    /// Empty when the recognizer has not established an interior selection.
+    pub pending_decorations: Vec<(Node, Span)>,
 }
 
 /// One outermost open-pair frame currently being buffered.
@@ -1452,7 +1449,7 @@ where
                 source: self.source,
                 diagnostics: Vec::new(),
                 pending_plain_start: None,
-                pending_decoration: None,
+                pending_decorations: Vec::new(),
             };
             let reading = ctx.build_content_from_body(
                 body,
@@ -1567,7 +1564,7 @@ where
             source: self.source,
             diagnostics: Vec::new(),
             pending_plain_start: None,
-            pending_decoration: None,
+            pending_decorations: Vec::new(),
         };
         let Some(m) = ctx.recognize_ruby(synth_view, synth_open_idx, synth_close_idx) else {
             // `recognize_ruby` rejects an empty `《》` reading; flag the
@@ -1642,7 +1639,7 @@ where
             source: self.source,
             diagnostics: Vec::new(),
             pending_plain_start: None,
-            pending_decoration: None,
+            pending_decorations: Vec::new(),
         };
         let content = ctx.build_content_from_body(
             body,
@@ -1689,16 +1686,12 @@ where
             // The forward recognizers resolve a non-adjacent referent inside
             // the current pending plain run; hand them its start.
             pending_plain_start,
-            pending_decoration: None,
+            pending_decorations: Vec::new(),
         };
         let m = ctx.recognize_annotation(body, open_idx, close_idx)?;
-        // Drain diagnostics raised while building nested reading content
-        // (a gaiji inside a left-ruby / annotation reading) into our sink,
-        // and take the decoration the forward recognizer may have carved out
-        //. Both reads are the last use of `ctx`, so its reborrow of
-        // `self.alloc` ends here (NLL) and the splice below gets full `self`.
+        // End the recognizer's allocator borrow before emitting its selected leaves.
         self.diagnostics.append(&mut ctx.diagnostics);
-        let decoration = ctx.pending_decoration.take();
+        let decorations = mem::take(&mut ctx.pending_decorations);
         if !matches!(
             m.emit,
             EmitKind::Aozora(Node::Kunten(_) | Node::Directive(_) | Node::Format(_))
@@ -1706,19 +1699,20 @@ where
         {
             self.emit_pending_base(pending);
         }
-        // if the recognizer resolved a non-adjacent interior referent,
-        // splice a styled decoration leaf into the pending plain run *before*
-        // flushing the tail up to the bracket. The window invariant is
-        // re-checked defensively (the recognizer computed the span against the
-        // same `pending_plain_start`, so this holds unless a pending refmark
-        // moved the run — in which case we decline and leave today's bytes).
-        if let Some((deco, deco_span)) = decoration
-            && self
-                .pending_plain_start()
-                .is_some_and(|ps| ps <= deco_span.start)
-            && deco_span.end <= m.consume_start
-        {
-            self.splice_plain_around(deco, deco_span);
+        // Validate the complete ordered selection against the retained plain window.
+        // Failure leaves all source text untouched and the reference unassociated.
+        let mut previous_end = self.pending_plain_start();
+        let all_owned = decorations.iter().all(|(_, span)| {
+            let valid = previous_end.is_some_and(|start| start <= span.start)
+                && span.start < span.end
+                && span.end <= m.consume_start;
+            previous_end = Some(span.end);
+            valid
+        });
+        if all_owned {
+            for (decoration, span) in decorations {
+                self.splice_plain_around(decoration, span);
+            }
         }
         let kind = match m.emit {
             EmitKind::Aozora(node) => SpanKind::Aozora(node),
@@ -1848,7 +1842,7 @@ where
             source: self.source,
             diagnostics: Vec::new(),
             pending_plain_start: None,
-            pending_decoration: None,
+            pending_decorations: Vec::new(),
         };
         let m = ctx.recognize_gaiji(body, refmark_span, bracket_open_idx)?;
         // An explicit `｜` (U+FF5C) before the kanji prefix or gaiji is a

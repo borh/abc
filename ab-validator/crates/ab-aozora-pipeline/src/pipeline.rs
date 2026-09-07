@@ -39,6 +39,8 @@
 //! stage + the normalize fold into a single terminal `.build()` call —
 //! inspection up through `Paired` works freely; the final pass is atomic.
 
+use std::collections::BTreeSet;
+
 use crate::lexer::{
     ClassifiedSpan, PairEvent, SpanKind, Token, classify, pair, sanitize, tokenize,
 };
@@ -776,6 +778,16 @@ const fn attr_decorates_ruby_base(attr: ForwardAttr) -> bool {
 /// Returns the directive spans decorated, so the builder can suppress exactly
 /// those warnings.
 fn decorate_ruby_bases(out: &mut [ClassifiedSpan], source: &str, store: &NodeStore) -> Vec<Span> {
+    let detached: BTreeSet<_> = out
+        .iter()
+        .filter_map(|span| {
+            let SpanKind::Aozora(Node::Format(format)) = span.kind else {
+                return None;
+            };
+            (format.origin == ForwardOrigin::Detached)
+                .then_some((format.target.start, format.target.len))
+        })
+        .collect();
     let mut decorated: Vec<Span> = Vec::new();
     for idx in 0..out.len() {
         // Fire only on a declined (Referenced) forward directive with a
@@ -784,6 +796,7 @@ fn decorate_ruby_bases(out: &mut [ClassifiedSpan], source: &str, store: &NodeSto
             continue;
         };
         if !matches!(f.origin, ForwardOrigin::Referenced)
+            || detached.contains(&(f.target.start, f.target.len))
             || !f.attrs.single().is_some_and(attr_decorates_ruby_base)
         {
             continue;

@@ -215,7 +215,7 @@ pub enum SpliceError {
     /// construct, so applying it would silently desync the reference. The
     /// honest terminal outcome for the corpus-attested hard cases — an
     /// ambiguous forward referent, a ruby-base target literal, or a
-    /// 、-joined multi-target. The source is left unchanged.
+    /// disjoint target list. The source is left unchanged.
     Unverifiable {
         /// The edited region's role, for diagnostics.
         role: RegionRole,
@@ -618,6 +618,9 @@ impl Tree<'_> {
         replacement: &str,
     ) -> Result<String, SpliceError> {
         let src = self.sanitized();
+        if replacement == &src[region.span.start as usize..region.span.end as usize] {
+            return Ok(src.to_owned());
+        }
         if replacement.is_empty() {
             return Ok(splice_one(src, region.span, replacement));
         }
@@ -626,7 +629,7 @@ impl Tree<'_> {
             kind,
         };
         // The node's own target text. `None` for a multi-segment target (the
-        // 、-joined case), which is declined.
+        // disjoint case), which is declined.
         let old_target = self.coupled_target_text(region.span).ok_or(unverifiable)?;
 
         // Single-region attempt: with the node's own target byte-adjacent to the
@@ -672,7 +675,7 @@ impl Tree<'_> {
     /// The target text of a split-ownership node (a forward reference's target,
     /// a heading hint's target, or a margin note's base) as a plain string.
     /// `None` when the node is not a split-ownership leaf, or its target is not
-    /// a single plain run (a 、-joined multi-target).
+    /// a single plain run (a disjoint target list).
     fn coupled_target_text(&self, span: Span) -> Option<String> {
         let store = &self.lex_output().store;
         let (NodeRef::Inline(leaf) | NodeRef::BlockLeaf(leaf)) =
@@ -1172,20 +1175,14 @@ mod tests {
 
     #[test]
     fn multi_target_forward_identity_is_a_noop() {
-        // A 、-joined multi-target forward (`「A」「B」`) is `Referenced`; its
-        // canonical target lowers to a single plain run ("A、B"), so its
-        // identity splice re-forms through the scoped single-region verify and
-        // is a no-op. `assert_tiling` runs the real splice machinery on every
-        // region, pinning the identity invariant for this trickiest shape.
+        // Every selected leaf and the single marker retain source identity.
+        // Editing a marker in place must leave all selected target spans intact.
         assert_tiling("AとB［＃「A」「B」に傍点］");
     }
 
     #[test]
     fn multi_target_forward_target_change_declines() {
-        // Changing the target of a multi-target forward is genuinely
-        // irreducible: the canonical "A、B" is not a contiguous source substring
-        // (the source reads "AとB"), so the upstream literal cannot be located
-        // and the edit is honestly declined rather than guessed.
+        // A scalar replacement does not establish edits for a disjoint target list.
         let src = "AとB［＃「A」「B」に傍点］";
         let doc = Document::new(src);
         let tree = doc.parse();

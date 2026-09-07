@@ -1484,3 +1484,14 @@
       (is (= [current] (texts after "lem")))
       (is (= [witness] (texts after "rdg")))
       (is (empty? (get-in after [:ir "interpretation_problems"]))))))
+
+(deftest emphasis-relations-preserve-disjoint-and-contextual-targets
+  (doseq [[body plain selected]
+          [["のれんのねうち［＃「のれん」と「ねうち」に傍点］後" "のれんのねうち後" ["のれん" "ねうち"]]
+           ["法文・法律［＃「法律」の「法」に傍点］後" "法文・法律後" ["法"]]
+           ["生、息、行、意気［＃「生」「息」「行」「意気」に傍点］後" "生、息、行、意気後" ["生" "息" "行" "意気"]]]]
+    (let [result (transcribe (source body))]
+      (is (= plain (:plaintext result)))
+      (is (= selected (texts result "hi")))
+      (is (= [plain] (texts result "p")))
+      (is (empty? (get-in result [:ir "interpretation_problems"]))))))

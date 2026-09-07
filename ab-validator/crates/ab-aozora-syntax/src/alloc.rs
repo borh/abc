@@ -14,7 +14,7 @@
 //!   empty-segments form (an empty [`SegRange`](super::ast::SegRange)).
 //! - `content_segments` collapses an all-`Text` input into a single
 //!   concatenated `Plain` (the concatenation is re-interned).
-//! - Each `NonEmpty<Content>` field becomes a length-1 [`ContentRange`]; the
+//! - Single-target builders produce a length-1 [`ContentRange`]; the
 //!   non-empty contract is upheld with an `expect` message (a classifier bug,
 //!   never reachable for well-formed emit sites).
 //! - `make_gaiji` interns the mencode tail whenever it is present, so the
@@ -374,6 +374,28 @@ impl Allocator {
             origin,
             annotation_body: None,
         })
+    }
+
+    /// One source annotation selecting multiple independently owned target entries.
+    ///
+    /// # Panics
+    /// Panics if the selected target list or any target is empty.
+    pub fn selected_forward_format(
+        &mut self,
+        attr: ForwardAttr,
+        targets: &[Content],
+        body: &str,
+    ) -> ForwardFormat {
+        assert!(
+            !targets.is_empty() && targets.iter().all(|target| !is_empty_content(*target)),
+            "source selection requires nonempty target entries"
+        );
+        ForwardFormat {
+            attrs: ForwardAttrs::One(attr),
+            target: self.store.push_contents(targets),
+            origin: ForwardOrigin::Referenced,
+            annotation_body: Some(self.store.intern(body)),
+        }
     }
 
     /// Resolve a shared target once and apply each attribute without nesting.

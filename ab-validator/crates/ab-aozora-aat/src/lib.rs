@@ -526,10 +526,12 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
             let NodeRef::Inline(Node::Format(format)) = node.node else {
                 return None;
             };
-            (format.origin == ab_aozora_facade::ForwardOrigin::Referenced).then_some((
-                (format.target.start, format.target.len),
-                Span::from(node.source_span),
-            ))
+            (format.origin == ab_aozora_facade::ForwardOrigin::Referenced)
+                .then_some((format.target, Span::from(node.source_span)))
+        })
+        .flat_map(|(target, span)| {
+            iter::once(((target.start, target.len), span))
+                .chain((0..target.len).map(move |index| ((target.start + index, 1), span)))
         })
         .collect();
     let detached_formatting: BTreeSet<_> = tree
@@ -675,7 +677,9 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                 let key = (format.target.start, format.target.len);
                 let origin = format.origin;
                 if origin == ab_aozora_facade::ForwardOrigin::Referenced
-                    && detached_formatting.contains(&key)
+                    && (0..format.target.len).all(|index| {
+                        detached_formatting.contains(&(format.target.start + index, 1))
+                    })
                 {
                     kind = ProjectedKind::FormattingReference;
                 } else if origin == ab_aozora_facade::ForwardOrigin::Referenced

@@ -123,7 +123,7 @@ pub enum RegionRole {
     /// Illustration (`［＃挿絵］`).
     Illustration,
     /// Chinese-reading-order mark (返り点).
-    Kaeriten,
+    Kunten,
     /// Generic annotation (`［＃ママ］`, an unresolved `［＃…］`, …). The
     /// directive bracket is self-contained.
     Directive,
@@ -313,7 +313,7 @@ pub(crate) fn classify_node_ref(node: NodeRef) -> (RegionRole, SpliceSafety) {
             Node::Gaiji(_) => (RegionRole::Gaiji, Direct),
             Node::Warichu(_) => (RegionRole::Warichu, Direct),
             Node::AngleQuote(_) => (RegionRole::AngleQuote, Direct),
-            Node::Kaeriten(_) => (RegionRole::Kaeriten, Direct),
+            Node::Kunten(_) => (RegionRole::Kunten, Direct),
             Node::Illustration(_) => (RegionRole::Illustration, Direct),
             Node::Line(_) => (RegionRole::Line, Direct),
             Node::PageBreak => (RegionRole::PageBreak, Direct),

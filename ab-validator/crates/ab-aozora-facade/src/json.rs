@@ -15,7 +15,7 @@ use crate::{DiagnosticSource, NodeRef, RubySide, Severity, Tree};
 /// Diagnostic records and their envelope.
 pub const DIAGNOSTICS_SCHEMA_VERSION: u32 = 3;
 /// Source-keyed node entries and their envelope.
-pub const NODES_SCHEMA_VERSION: u32 = 3;
+pub const NODES_SCHEMA_VERSION: u32 = 4;
 /// Ruby pair entries and their envelope.
 pub const PAIRS_SCHEMA_VERSION: u32 = 3;
 /// Container pairs, including scoped TCY's `combineUprightRange` tag.
@@ -50,7 +50,7 @@ pub fn diagnostic_entries(diagnostics: &[crate::Diagnostic]) -> Vec<Diagnostic> 
 ///
 /// Every entry has the shape `{ kind, span: { start, end } }`,
 /// source-coordinate, sorted by `span.start`. Empty parse →
-/// `{"schemaVersion":3,"data":[]}`.
+/// `{"schemaVersion":4,"data":[]}`.
 #[cfg(feature = "json")]
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
@@ -640,10 +640,10 @@ mod tests {
     }
 
     #[test]
-    fn scoped_tcy_changes_only_the_container_pair_contract() {
+    fn projection_versions_follow_individual_contracts() {
         assert_eq!(CONTAINER_PAIRS_SCHEMA_VERSION, 4);
         assert_eq!(DIAGNOSTICS_SCHEMA_VERSION, 3);
-        assert_eq!(NODES_SCHEMA_VERSION, 3);
+        assert_eq!(NODES_SCHEMA_VERSION, 4);
         assert_eq!(PAIRS_SCHEMA_VERSION, 3);
         assert_eq!(SLUGS_SCHEMA_VERSION, 3);
         assert_eq!(GAIJI_SCHEMA_VERSION, 3);
@@ -662,7 +662,7 @@ mod tests {
         let doc = Document::new("plain");
         let tree = doc.parse();
         let json = nodes(&tree);
-        assert_eq!(json, r#"{"schemaVersion":3,"data":[]}"#);
+        assert_eq!(json, r#"{"schemaVersion":4,"data":[]}"#);
     }
 
     #[test]
@@ -696,7 +696,7 @@ mod tests {
         let tree = doc.parse();
         let json = nodes(&tree);
         assert!(json.contains(r#""kind":"ruby""#));
-        assert!(json.contains(r#""schemaVersion":3"#));
+        assert!(json.contains(r#""schemaVersion":4"#));
     }
 
     #[test]

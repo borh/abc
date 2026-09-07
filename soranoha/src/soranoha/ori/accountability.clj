@@ -44,7 +44,9 @@
             (finally (fs/delete-tree dir)))))})
 
 (def ^:private compatible-families
-  {"ruby" {:markers #{"RubyExplicit" "RubyImplicit"}
+  {"kunten" {:markers #{"CommandFullwidth" "CommandAscii"}
+             :families #{"kunten.kaeriten" "kunten.okurigana"} :aspects #{"content" "structure" "layout"}}
+   "ruby" {:markers #{"RubyExplicit" "RubyImplicit"}
            :families #{"ruby.basic"} :aspects #{"content" "structure"}}
    "gaiji" {:markers #{"GaijiFullwidth" "GaijiAscii"}
             :families #{"gaiji.marker" "gaiji.jis_code" "gaiji.unicode_codepoint"}

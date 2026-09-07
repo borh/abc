@@ -445,11 +445,13 @@
 .aozora-warichu::after { content: "）"; }
 
 /* ── 返り点 (§kaeriten) ────────────────────────────────────────────── */
-.aozora-kaeriten {
+.aozora-kaeriten,
+.aozora-okurigana {
   font-size: 0.7em;
-  vertical-align: super;
   color: var(--aozora-accent);
 }
+.aozora-kaeriten { vertical-align: sub; }
+.aozora-okurigana { vertical-align: super; }
 
 /* ── 見出し (§heading) ─────────────────────────────────────────────── */
 .aozora-heading {

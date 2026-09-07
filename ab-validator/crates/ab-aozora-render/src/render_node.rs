@@ -19,7 +19,8 @@ use ab_aozora_syntax::GaijiCanonical;
 use ab_aozora_syntax::accent::{compose_accent, compose_accent_dots};
 use ab_aozora_syntax::ast::{
     AngleQuote, Content, ContentRange, Directive, ForwardFormat, Gaiji, GaijiCanonicalOwned,
-    Heading, HeadingHint, Illustration, Kaeriten, MarginNote, Node, NodeStore, Ruby, Segment,
+    Heading, HeadingHint, Illustration, Kunten, KuntenKind, MarginNote, Node, NodeStore, Ruby,
+    Segment,
 };
 use ab_aozora_syntax::format::ForwardOrigin;
 use ab_aozora_syntax::{AccentMark, DirectiveKind, EnclosureKind, ForwardAttr, RubySide};
@@ -60,7 +61,7 @@ pub(crate) fn render<W: Write>(node: Node, store: &NodeStore, out: &mut W) -> fm
             )
         }
         Node::Directive(a) => render_annotation(a, store, out),
-        Node::Kaeriten(k) => render_kaeriten(k, store, out),
+        Node::Kunten(k) => render_kunten(k, store, out),
         Node::AngleQuote(d) => render_angle_quote(d, store, out),
         Node::Illustration(s) => render_sashie(&s, store, out),
         Node::Heading(h) => render_aozora_heading(&h, store, out),
@@ -494,11 +495,15 @@ fn render_annotation<W: Write>(a: Directive, store: &NodeStore, out: &mut W) -> 
     out.write_str("</span>")
 }
 
-/// Render a kaeriten mark as `<sup class="aozora-kaeriten">…</sup>`.
-fn render_kaeriten<W: Write>(k: Kaeriten, store: &NodeStore, out: &mut W) -> fmt::Result {
-    out.write_str(r#"<sup class="aozora-kaeriten">"#)?;
-    escape_text(store.resolve_str(k.mark), out)?;
-    out.write_str("</sup>")
+/// Render supplied annotations in their source-established positions.
+fn render_kunten<W: Write>(k: Kunten, store: &NodeStore, out: &mut W) -> fmt::Result {
+    let (tag, class) = match k.kind {
+        KuntenKind::ReturnMark => ("sub", "aozora-kaeriten"),
+        KuntenKind::Okurigana => ("sup", "aozora-okurigana"),
+    };
+    write!(out, "<{tag} class=\"{class}\">")?;
+    escape_text(store.resolve_str(k.text), out)?;
+    write!(out, "</{tag}>")
 }
 
 /// Render an angle-quote as `<span class="aozora-angle-quote">《…》</span>`.

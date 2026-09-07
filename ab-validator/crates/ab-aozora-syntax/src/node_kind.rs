@@ -68,8 +68,8 @@ pub enum NodeKind {
     HeadingHint,
     /// 挿絵 (sashie) — illustration reference.
     Illustration,
-    /// 返り点 (kaeriten) — kanbun reading marker.
-    Kaeriten,
+    /// Supplied return mark or kunten okurigana.
+    Kunten,
     /// Generic annotation that no specific recogniser claimed.
     Directive,
     /// Double-angle quotation (input `≪…≫`, display `《…》`).
@@ -113,7 +113,7 @@ impl NodeKind {
         Self::Heading,
         Self::HeadingHint,
         Self::Illustration,
-        Self::Kaeriten,
+        Self::Kunten,
         Self::Directive,
         Self::AngleQuote,
         Self::Emphasis,
@@ -150,7 +150,7 @@ impl NodeKind {
             Self::Heading => "heading",
             Self::HeadingHint => "headingHint",
             Self::Illustration => "illustration",
-            Self::Kaeriten => "kaeriten",
+            Self::Kunten => "kunten",
             Self::Directive => "directive",
             Self::AngleQuote => "angleQuote",
             Self::Emphasis => "emphasis",
@@ -187,7 +187,7 @@ mod tests {
         assert_eq!(NodeKind::Heading.as_json_tag(), "heading");
         assert_eq!(NodeKind::HeadingHint.as_json_tag(), "headingHint");
         assert_eq!(NodeKind::Illustration.as_json_tag(), "illustration");
-        assert_eq!(NodeKind::Kaeriten.as_json_tag(), "kaeriten");
+        assert_eq!(NodeKind::Kunten.as_json_tag(), "kunten");
         assert_eq!(NodeKind::Directive.as_json_tag(), "directive");
         assert_eq!(NodeKind::AngleQuote.as_json_tag(), "angleQuote");
         assert_eq!(NodeKind::Emphasis.as_json_tag(), "emphasis");

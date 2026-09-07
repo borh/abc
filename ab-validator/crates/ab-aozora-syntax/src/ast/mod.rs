@@ -40,7 +40,7 @@ pub use intern::{InternStats, StrId, StrInterner};
 pub use output::{LexOutput, SourceNode};
 pub use payload::{
     AngleQuote, Content, Directive, ForwardFormat, Gaiji, GaijiCanonicalOwned, Heading,
-    HeadingHint, Illustration, Kaeriten, MarginNote, Node, Ruby, Segment, Warichu,
+    HeadingHint, Illustration, Kunten, KuntenKind, MarginNote, Node, Ruby, Segment, Warichu,
 };
 pub use registry::{ContainerPair, NodeRef, Registry};
 pub use store::{ContentRange, NodeStore, SegRange};

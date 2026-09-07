@@ -349,16 +349,26 @@
     (is (some #{"入力：人"} (map #(.getTextContent ^Node %) lines)))
     (is (= "padding-inline-start: 3em" (attribute accent "style")))))
 
-(deftest nested-warichu-preserves-forced-break-and-uninterpreted-kaeriten
+(deftest nested-warichu-preserves-forced-break-and-supplied-kunten
   (let [result (transcribe (source "［＃地から３字上げ］［＃割り注］磯。此云［＃レ］志。［＃改行］次［＃割り注終わり］後。"))
         wrapper (first (filter #(= "warichu" (attribute % "type")) (elements result "seg")))
-        note (first (filter #(= "［＃レ］" (.getTextContent ^Node %)) (elements result "note")))
+        note (first (filter #(= "kunten" (attribute % "type")) (elements result "note")))
         problems (get-in result [:view :view/problems])]
     (is (= "磯。此云志。\n次後。" (:plaintext result)))
     (is (= "磯。此云志。  \n次後。" (projection/markdown (:view result))))
     (is (= "磯。此云志。\n次" (view/visible-text wrapper)))
     (is (= 1 (count (filter #(within? wrapper %) (elements result "lb")))))
     (is (within? wrapper note))
-    (is (= "unresolved" (attribute note "subtype")))
-    (is (= ["［＃レ］"] (mapv #(get-in % [:view/evidence "raw"]) problems)))
-    (is (= [] (get-in result [:view :view/eligible-spans])))))
+    (is (= "return-mark" (attribute note "subtype")))
+    (is (empty? problems))
+    (is (seq (get-in result [:view :view/eligible-spans])))))
+
+(deftest supplied-kunten-is-preserved-outside-principal-text
+  (doseq [encoding ["UTF-8" "windows-31j"]]
+    (let [result (transcribe (source "漢［＃レ］字［＃（レ）］給［＃（弖）］［＃一レ］。") encoding)
+          notes (filterv #(= "kunten" (attribute % "type")) (elements result "note"))]
+      (is (= "漢字給。" (:plaintext result)))
+      (is (= ["レ" "レ" "弖" "一レ"] (mapv #(.getTextContent ^Node %) notes)))
+      (is (= ["return-mark" "okurigana" "okurigana" "return-mark"] (mapv #(attribute % "subtype") notes)))
+      (is (= ["subscript" "superscript" "superscript" "subscript"] (mapv #(attribute % "rend") notes)))
+      (is (empty? (get-in result [:ir "interpretation_problems"]))))))

@@ -973,7 +973,7 @@ fn append_plain_visible_inline_text(node: &Value, out: &mut String) -> Result<()
             append_plain_visible_content_text(node.get("upper"), out)?;
             append_plain_visible_content_text(node.get("lower"), out)?;
         }
-        "raw" => {}
+        "raw" | "kunten" => {}
         "figure" => out.push_str(node["alt"].as_str().unwrap_or("")),
         other => bail!("unsupported inline kind in source attribution projection: {other}"),
     }
@@ -1265,6 +1265,10 @@ fn map_inline_to_nodes(
             map_warigaki_to_nodes(node, nodes, recorder, synthetic_warnings, offset, path, 0)
         }
         "figure" => map_figure_to_node(node, nodes, recorder, offset, path),
+        "kunten" => {
+            nodes.push(json!({"type":"kunten", "kunten_kind":node["kunten_kind"], "text":node["text"], "span":synthetic_span(offset, offset)}));
+            Ok(offset)
+        }
         "raw" => map_raw_to_nodes(node, nodes, recorder, offset, path),
         "font_size" | "small_script" | "tcy" | "keigakomi" | "yokogumi" => {
             map_layout_span_to_node(node, nodes, recorder, synthetic_warnings, offset, path, 0)
@@ -1587,6 +1591,10 @@ fn inline_child_node(
         "figure" => {
             let alt = node["alt"].as_str().unwrap_or("");
             push_unrecorded_text_node(alt, nodes, offset)
+        }
+        "kunten" => {
+            nodes.push(json!({"type":"kunten", "kunten_kind":node["kunten_kind"], "text":node["text"], "span":synthetic_span(offset, offset)}));
+            Ok(offset)
         }
         "raw" => map_raw_to_nodes(node, nodes, recorder, offset, path),
         other => bail!("unsupported inline kind in inline_children projection at {path}: {other}"),
@@ -2152,6 +2160,7 @@ fn append_visible_inline_text(
                 out,
             )?;
         }
+        "kunten" => {}
         "raw" => {
             let raw_pointer = format!("{path}.raw");
             record_measured_loss(

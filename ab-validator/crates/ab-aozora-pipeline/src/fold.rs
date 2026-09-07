@@ -207,7 +207,7 @@ fn node_policy(node: Node) -> Option<(ConstructId, Role, Disposition, EvidenceCl
             semantic,
             typed,
         ),
-        Node::Kaeriten(_) => (ConstructId::Kaeriten, Role::Kunten, semantic, typed),
+        Node::Kunten(_) => (ConstructId::Kunten, Role::Kunten, semantic, typed),
         Node::Directive(directive) => match directive.kind {
             DirectiveKind::Unknown => (
                 ConstructId::UnknownDirective,

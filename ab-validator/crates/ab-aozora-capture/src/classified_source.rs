@@ -264,7 +264,7 @@ fn wire_construct(value: ConstructId) -> &'static str {
         ConstructId::Heading => "heading",
         ConstructId::HeadingHint => "heading_hint",
         ConstructId::Illustration => "illustration",
-        ConstructId::Kaeriten => "kaeriten",
+        ConstructId::Kunten => "kunten",
         ConstructId::AngleQuote => "angle_quote",
         ConstructId::Emphasis => "emphasis",
         ConstructId::MarginNote => "margin_note",

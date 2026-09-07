@@ -4886,7 +4886,7 @@ fn raw_source_retention_records_exact_occurrence_independent_of_nesting() {
 }
 
 #[test]
-fn native_forced_break_and_uninterpreted_kaeriten_survive_nested_warichu() {
+fn native_forced_break_and_supplied_kunten_survive_nested_warichu() {
     let source = "題\n作者\n\n前［＃地から３字上げ］［＃割り注］磯。此云［＃レ］志。［＃改行］次［＃割り注終わり］後。\n\n底本：本\n";
     let (schemas, mapping) = v2_schemas_and_mapping();
     let aat =
@@ -4917,14 +4917,14 @@ fn native_forced_break_and_uninterpreted_kaeriten_survive_nested_warichu() {
     assert_eq!(&source[start..end], "［＃改行］");
     let note = children
         .iter()
-        .find(|node| node["type"] == "editor-note")
+        .find(|node| node["type"] == "kunten")
         .unwrap();
-    assert_eq!(note["note"]["raw"], "［＃レ］");
-    let problem = &output.parser_ir["interpretation_problems"][0];
-    assert_eq!(problem["kind"], "uninterpreted-notation");
-    assert_eq!(problem["raw"], "［＃レ］");
-    assert_eq!(problem["source_span"], note["source_span"]);
-    assert_eq!(problem["influence"], json!({"kind":"document"}));
+    assert_eq!(note["kunten_kind"], "return-mark");
+    assert_eq!(note["text"], "レ");
+    let start = note["source_span"]["start"].as_u64().unwrap() as usize;
+    let end = note["source_span"]["end"].as_u64().unwrap() as usize;
+    assert_eq!(&source[start..end], "［＃レ］");
+    assert_eq!(output.parser_ir["interpretation_problems"], json!([]));
 }
 
 #[test]

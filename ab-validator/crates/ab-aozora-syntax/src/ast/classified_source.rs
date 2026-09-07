@@ -77,7 +77,7 @@ pub enum ConstructId {
     Heading,
     HeadingHint,
     Illustration,
-    Kaeriten,
+    Kunten,
     AngleQuote,
     Emphasis,
     MarginNote,

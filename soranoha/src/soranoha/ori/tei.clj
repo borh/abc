@@ -274,6 +274,12 @@
                                            (get note "resolution") (assoc :subtype (get note "resolution")))
                                    (get note "raw")])))))
 
+(defn- render-kunten-node [acc node _depth]
+  (let [kind (get node "kunten_kind")]
+    (append-inline acc (sourced node [:note {:type "kunten" :subtype kind
+                                             :rend (case kind "return-mark" "subscript" "okurigana" "superscript")}
+                                     (get node "text")]))))
+
 (defn- render-base-text-variant-node [acc node depth]
   (let [before (:current-paragraph acc)
         rendered (if (seq (get node "inline_children"))
@@ -426,6 +432,7 @@
    "caption" render-caption-node
    "quote" render-quote-node
    "source-note" render-source-note-node
+   "kunten" render-kunten-node
    "warichu" render-warichu-node})
 
 (defn- render-node
@@ -558,7 +565,7 @@
 (defn- paragraph-inline-node? [node]
   (case (get node "type")
     ("text" "ruby" "gaiji" "editor-note" "emphasis" "layout-span"
-            "indentation" "line-break" "quote" "warichu" "base-text-variant") true
+            "indentation" "line-break" "quote" "warichu" "kunten" "base-text-variant") true
     "source-note" (= "body" (get node "placement"))
     false))
 

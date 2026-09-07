@@ -26,8 +26,8 @@ use crate::walk::{SentinelKind, WalkSink, walk};
 use ab_aozora_pipeline::{has_long_rule_line, isolate_decorative_rules};
 use ab_aozora_syntax::ast::{
     AngleQuote, Content, ContentRange, Directive, ForwardFormat, Gaiji, GaijiCanonicalOwned,
-    Heading, HeadingHint, Illustration, Kaeriten, LexOutput, MarginNote, Node, NodeRef, NodeStore,
-    Ruby, Segment,
+    Heading, HeadingHint, Illustration, Kunten, KuntenKind, LexOutput, MarginNote, Node, NodeRef,
+    NodeStore, Ruby, Segment,
 };
 use ab_aozora_syntax::degraded::degraded_directive;
 use ab_aozora_syntax::format::ForwardOrigin;
@@ -202,7 +202,7 @@ fn emit_aozora<W: Write>(
         Node::Ruby(r) => emit_ruby(&r, store, out),
         Node::Format(f) => emit_format(&f, store, out),
         Node::Gaiji(g) => emit_gaiji(&g, store, out),
-        Node::Kaeriten(k) => emit_kaeriten(k, store, out),
+        Node::Kunten(k) => emit_kunten(k, store, out),
         Node::Directive(a) => emit_annotation(a, store, out, directives),
         Node::AngleQuote(d) => emit_angle_quote(d, store, out),
         Node::MarginNote(s) => emit_side_note(&s, store, out),
@@ -524,9 +524,15 @@ fn write_gaiji_mencode<W: Write>(
 }
 
 /// Serialize a kaeriten mark to its `［＃<mark>］` bracket form.
-fn emit_kaeriten<W: Write>(k: Kaeriten, store: &NodeStore, out: &mut W) -> fmt::Result {
+fn emit_kunten<W: Write>(k: Kunten, store: &NodeStore, out: &mut W) -> fmt::Result {
     out.write_str("［＃")?;
-    out.write_str(store.resolve_str(k.mark))?;
+    if k.kind == KuntenKind::Okurigana {
+        out.write_char('（')?;
+    }
+    out.write_str(store.resolve_str(k.text))?;
+    if k.kind == KuntenKind::Okurigana {
+        out.write_char('）')?;
+    }
     out.write_char('］')
 }
 

@@ -243,11 +243,22 @@ pub struct Directive {
     pub kind: DirectiveKind,
 }
 
-/// Kanbun reading-order mark (返り点).
+/// Source-supplied annotation category; placement follows this distinction.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Kaeriten {
-    /// Kanbun reading-order mark.
-    pub mark: StrId,
+pub enum KuntenKind {
+    /// Return mark printed below the principal line.
+    ReturnMark,
+    /// Supplied okurigana printed above the principal line.
+    Okurigana,
+}
+
+/// Supplied kanbun annotation, separate from principal body text.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Kunten {
+    /// Source-established annotation category.
+    pub kind: KuntenKind,
+    /// Supplied text without notation delimiters.
+    pub text: StrId,
 }
 
 /// Angle quote (`≪…≫` -> `《…》`).
@@ -288,7 +299,7 @@ pub enum Node {
     /// Illustration (挿絵).
     Illustration(Illustration),
     /// Kanbun reading-order mark (返り点).
-    Kaeriten(Kaeriten),
+    Kunten(Kunten),
     /// Generic annotation (注記).
     Directive(Directive),
     /// Angle quote (`≪…≫` -> `《…》`).
@@ -328,7 +339,7 @@ impl Node {
             Self::Heading(_) => NodeKind::Heading,
             Self::HeadingHint(_) => NodeKind::HeadingHint,
             Self::Illustration(_) => NodeKind::Illustration,
-            Self::Kaeriten(_) => NodeKind::Kaeriten,
+            Self::Kunten(_) => NodeKind::Kunten,
             Self::Directive(_) => NodeKind::Directive,
             Self::AngleQuote(_) => NodeKind::AngleQuote,
             Self::MarginNote(_) => NodeKind::MarginNote,
@@ -364,7 +375,7 @@ impl Node {
             Self::Heading(_) => "aozora_heading",
             Self::HeadingHint(_) => "aozora_heading_hint",
             Self::Illustration(_) => "aozora_sashie",
-            Self::Kaeriten(_) => "aozora_kaeriten",
+            Self::Kunten(_) => "aozora_kaeriten",
             Self::Directive(_) => "aozora_annotation",
             Self::AngleQuote(_) => "aozora_angle_quote",
             Self::MarginNote(_) => "aozora_side_note",

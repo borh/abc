@@ -85,6 +85,7 @@ use super::instrumentation::{
     Subsystem, SubsystemGuard, YieldKind, record_pending_size, record_replay_body_size,
     record_yield,
 };
+use ab_aozora_syntax::ast::KuntenKind;
 use core::mem;
 use core::ops::Range;
 use std::collections::VecDeque;
@@ -1647,10 +1648,12 @@ where
         // Record bracketed kaeriten for the end-of-document pairing /
         // context checks (`finalize_kaeriten`). The directive span is the
         // whole `［＃…］`.
-        if let SpanKind::Aozora(Node::Kaeriten(k)) = kind {
+        if let SpanKind::Aozora(Node::Kunten(k)) = kind
+            && k.kind == KuntenKind::ReturnMark
+        {
             let span = Span::new(m.consume_start, m.consume_end);
             let (family, rank, is_ladder) =
-                classify_kaeriten_mark(self.alloc.store().resolve_str(k.mark));
+                classify_kaeriten_mark(self.alloc.store().resolve_str(k.text));
             self.kaeriten_obs.push(KaeritenObs {
                 family,
                 rank,
@@ -2903,8 +2906,8 @@ mod tests {
         let has_kaeriten = out
             .spans
             .iter()
-            .any(|s| matches!(s.kind, SpanKind::Aozora(Node::Kaeriten(_))));
-        assert!(has_kaeriten, "expected a Kaeriten span: {:?}", out.spans);
+            .any(|s| matches!(s.kind, SpanKind::Aozora(Node::Kunten(_))));
+        assert!(has_kaeriten, "expected a Kunten span: {:?}", out.spans);
     }
 
     #[test]

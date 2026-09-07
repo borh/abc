@@ -26,7 +26,7 @@ use ab_aozora_facade::{
 // Body/tail boundary detection is the shared `ab-source-syntax` authority
 // so the checker's comparison source (`ab-check::body_text`) can never
 // drift from the parser's own cut.
-use ab_aozora_facade::syntax::AbsoluteSize;
+use ab_aozora_facade::syntax::{AbsoluteSize, ast::KuntenKind};
 use ab_source_syntax::{RegionError, SourceRegions, aozora_body_range};
 
 /// Sanitization and parsing share the native diagnostic type.
@@ -264,6 +264,10 @@ impl From<ab_aozora_facade::Span> for Span {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum ProjectedKind {
+    Kunten {
+        kind: KuntenKind,
+        text: String,
+    },
     Node(NodeKind),
     Format(ForwardAttr),
     Region(RegionFormat),
@@ -282,6 +286,7 @@ enum ProjectedKind {
 impl ProjectedKind {
     fn as_str(&self) -> &'static str {
         match self {
+            Self::Kunten { .. } => "kunten",
             Self::Node(kind) => kind.as_json_tag(),
             Self::Region(_) => "containerOpen",
             Self::RegionClose(_) => "containerClose",
@@ -330,6 +335,12 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
         .iter()
         .map(|source_node| {
             let kind = match source_node.node {
+                NodeRef::Inline(Node::Kunten(k)) | NodeRef::BlockLeaf(Node::Kunten(k)) => {
+                    ProjectedKind::Kunten {
+                        kind: k.kind,
+                        text: tree.store.resolve_str(k.text).to_owned(),
+                    }
+                }
                 NodeRef::Inline(Node::Format(format))
                 | NodeRef::BlockLeaf(Node::Format(format)) => ProjectedKind::Format(format.attr),
                 NodeRef::BlockOpen(region) => ProjectedKind::Region(region),
@@ -740,6 +751,7 @@ enum EstablishedInterpretation {
     Gaiji,
     Emphasis,
     Warichu,
+    Kunten,
 }
 
 impl EstablishedInterpretation {
@@ -749,6 +761,7 @@ impl EstablishedInterpretation {
             Self::Gaiji => "gaiji",
             Self::Emphasis => "emphasis",
             Self::Warichu => "warichu",
+            Self::Kunten => "kunten",
         }
     }
 
@@ -758,6 +771,7 @@ impl EstablishedInterpretation {
             Self::Gaiji => &["content"],
             Self::Emphasis => &["layout"],
             Self::Warichu => &["structure", "layout"],
+            Self::Kunten => &["content", "structure", "layout"],
         }
     }
 }
@@ -808,10 +822,11 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
                 Some(EstablishedInterpretation::Emphasis)
             }
             Some("warichu") => Some(EstablishedInterpretation::Warichu),
+            Some("kunten") => Some(EstablishedInterpretation::Kunten),
             _ => None,
         };
         if let Some(interpretation) = interpretation {
-            let spans = if node["kind"] == "gaiji" {
+            let spans = if matches!(node["kind"].as_str(), Some("gaiji" | "kunten")) {
                 node.get("span").into_iter().collect::<Vec<_>>()
             } else {
                 node["interpretation_marker_spans"]
@@ -1719,8 +1734,8 @@ fn inline_content(
                 "x-break-kind":"line", "x-break-marker":"forced",
                 "span":span_json(&node.span, &decoded.span_ctx)
             })),
-            ProjectedKind::Node(NodeKind::Kaeriten) => {
-                content.push(raw_node(decoded, node, "kaeriten"));
+            ProjectedKind::Kunten { kind, ref text } => {
+                content.push(kunten_node(decoded, &node.span, kind, text))
             }
             ProjectedKind::Node(NodeKind::Directive)
                 if source_slice(&decoded.span_text, &node.span).contains("返り点") =>
@@ -2089,6 +2104,13 @@ fn contains_aozora_markup(source: &str) -> bool {
         || source.contains("[#")
         || source.contains('《')
         || source.contains('》')
+}
+
+fn kunten_node(decoded: &DecodedSource, span: &Span, kind: KuntenKind, text: &str) -> Value {
+    json!({"kind":"kunten", "kunten_kind":match kind {
+        KuntenKind::ReturnMark => "return-mark",
+        KuntenKind::Okurigana => "okurigana",
+    }, "text":text, "span":span_json(span, &decoded.span_ctx)})
 }
 
 #[allow(
@@ -2529,12 +2551,6 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
     if node.kind == ProjectedKind::Directive(DirectiveKind::BaseTextVariant) {
         value["interpretation_problem"] = json!({"kind":"unresolved-variant", "code":"unresolved-variant",
             "aspects":["content","structure"], "influence":{"kind":"document"}});
-    }
-    if node.kind == ProjectedKind::Node(NodeKind::Kaeriten) {
-        value["interpretation_problem"] = json!({
-            "kind":"uninterpreted-notation", "code":"uninterpreted-notation",
-            "aspects":["content","structure"], "influence":{"kind":"document"}
-        });
     }
     if node.kind == ProjectedKind::Directive(DirectiveKind::Unknown) {
         value["interpretation_problem"] = json!({

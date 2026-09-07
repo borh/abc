@@ -102,6 +102,7 @@ pub const AOZORA_CLASSES: &[&str] = &[
     "aozora-line-futoji",
     "aozora-line-goshikku",
     "aozora-margin-note",
+    "aozora-okurigana",
     "aozora-page-break",
     "aozora-ruby-left",
     "aozora-ruby-note",
@@ -178,7 +179,7 @@ mod tests {
     use crate::render_node::render;
     use crate::spelling::html::render_container;
     use ab_aozora_syntax::alloc::Allocator;
-    use ab_aozora_syntax::ast::{Node, NodeStore};
+    use ab_aozora_syntax::ast::{KuntenKind, Node, NodeStore};
     use ab_aozora_syntax::{
         AbsoluteSize, AccentMark, BOUTEN_KINDS, BlockStyles, BoutenKind, BoutenPosition,
         ColumnCount, Container, DirectiveKind, EnclosureKind, FontShift, ForwardAttr,
@@ -300,7 +301,8 @@ mod tests {
         render_into(a.page_break(), &mut nodes);
         render_into(a.body_end(), &mut nodes);
         render_into(a.forced_break(), &mut nodes);
-        render_into(a.kaeriten("一"), &mut nodes);
+        render_into(a.kunten(KuntenKind::ReturnMark, "一"), &mut nodes);
+        render_into(a.kunten(KuntenKind::Okurigana, "ノ"), &mut nodes);
         render_into(a.line(LineFormat::Center { page: true }), &mut nodes);
         render_into(a.line(LineFormat::Center { page: false }), &mut nodes);
         render_into(

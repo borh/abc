@@ -57,6 +57,12 @@ outputs in the computation store. Building exports does not publish them or acce
 an assessment.
 
 TEI retains ruby, gaiji declarations, headings, layout and source apparatus.
+Supplied kunten uses `note type="kunten"`: `subtype="return-mark"` carries
+subscript rendition and `subtype="okurigana"` carries superscript rendition.
+Annotation text omits syntax parentheses; source spans retain exact notation.
+These notes preserve their insertion position and enclosing context without
+inferring a host character or spoken reading. The principal-body text view
+excludes notes, including kunten, while TEI retains their supplied text.
 Resolved gaiji contain Unicode text directly in `g`, including inside ruby bases;
 `ref` and `charDecl` retain source mappings. Plaintext contains visible body text.
 Paragraph-leading indentation is encoded as CSS `text-indent`; heading and

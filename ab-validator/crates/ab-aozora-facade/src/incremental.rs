@@ -1235,7 +1235,7 @@ fn node_forbids_region_reuse(node: NodeRef) -> bool {
             // depth + keeps the invariant self-documenting).
             | RegionRole::ForwardDetached
             | RegionRole::HeadingSelfContained
-            | RegionRole::Kaeriten
+            | RegionRole::Kunten
     ) || matches!(
         // A ruby whose base carries render-only forward emphasis is
         // `Direct` in bytes (it fully owns its base + reading), but its *render*
@@ -2102,12 +2102,12 @@ mod tests {
 
     #[test]
     fn kaeriten_doc_declines() {
-        // A kaeriten (［＃（レ）］) emits KaeritenOutsideKanbun from a kana-prose
+        // A kaeriten (［＃レ］) emits KaeritenOutsideKanbun from a kana-prose
         // window that spans ±12 chars across a blank-line boundary, so flipping
         // an adjacent region kanji→kana makes a full parse emit it while a splice
         // (whose re-lexed region holds no kaeriten) drops it. The node must
         // forbid region reuse.
-        let cached = output("あいうえお［＃（レ）］\n\n漢字漢字漢字漢字漢\n");
+        let cached = output("あいうえお［＃レ］\n\n漢字漢字漢字漢字漢\n");
         let san = cached.sanitized.clone();
         assert!(
             !cached.diagnostics.iter().any(is_whole_document_scoped),

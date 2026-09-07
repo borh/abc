@@ -35,8 +35,8 @@ use crate::{
 
 use super::ast::{
     AngleQuote, Content, ContentRange, Directive, ForwardFormat, Gaiji, GaijiCanonicalOwned,
-    Heading, HeadingHint, Illustration, Kaeriten, MarginNote, Node, NodeStore, Ruby, Segment,
-    Warichu,
+    Heading, HeadingHint, Illustration, Kunten, KuntenKind, MarginNote, Node, NodeStore, Ruby,
+    Segment, Warichu,
 };
 
 /// `true` for the canonical empty-content form (an empty segment run).
@@ -488,18 +488,15 @@ impl Allocator {
         })
     }
 
-    /// `Node::Kaeriten(Kaeriten { mark })`.
+    /// Allocate a supplied annotation with its source-established category.
     ///
     /// # Panics
-    ///
-    /// Panics if `mark` is empty.
-    pub fn kaeriten(&mut self, mark: &str) -> Node {
-        assert!(
-            !mark.is_empty(),
-            "classify stage must emit Kaeriten with non-empty mark"
-        );
-        Node::Kaeriten(Kaeriten {
-            mark: self.store.intern(mark),
+    /// Panics when supplied text is empty.
+    pub fn kunten(&mut self, kind: KuntenKind, text: &str) -> Node {
+        assert!(!text.is_empty(), "kunten text must be nonempty");
+        Node::Kunten(Kunten {
+            kind,
+            text: self.store.intern(text),
         })
     }
 
@@ -774,10 +771,10 @@ mod tests {
     #[test]
     fn kaeriten_round_trip() {
         let mut a = Allocator::new();
-        let Node::Kaeriten(k) = a.kaeriten("（レ）") else {
-            panic!("expected Kaeriten");
+        let Node::Kunten(k) = a.kunten(KuntenKind::Okurigana, "レ") else {
+            panic!("expected Kunten");
         };
-        assert_eq!(a.store().resolve_str(k.mark), "（レ）");
+        assert_eq!(a.store().resolve_str(k.text), "レ");
     }
 
     #[test]

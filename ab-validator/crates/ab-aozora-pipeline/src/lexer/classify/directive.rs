@@ -9,6 +9,7 @@
 
 #[cfg(feature = "classify-instrument")]
 use super::super::instrumentation::{Subsystem, SubsystemGuard};
+use ab_aozora_syntax::ast::KuntenKind;
 
 use std::sync::OnceLock;
 
@@ -639,12 +640,12 @@ static BODY_PATTERNS: &[BodyPattern] = &[
         needle: "ここでゴシック体終わり",
         family: BodyFamily::Emphasis,
     },
-    // Kaeriten okurigana opener (full-width left paren U+FF08).
+    // Kunten okurigana opener (full-width left paren U+FF08).
     BodyPattern {
         needle: "（",
         family: BodyFamily::OkuriganaPrefix,
     },
-    // Kaeriten compound marks (6) — must precede the single forms in
+    // Kunten compound marks (6) — must precede the single forms in
     // the table only for documentation; LeftmostLongest does the
     // actual disambiguation (`一レ` 6 bytes > `一` 3 bytes).
     BodyPattern {
@@ -681,7 +682,7 @@ static BODY_PATTERNS: &[BodyPattern] = &[
         needle: "下二",
         family: BodyFamily::KaeritenCompound,
     },
-    // Kaeriten single marks (12).
+    // Kunten single marks (12).
     BodyPattern {
         needle: "一",
         family: BodyFamily::KaeritenSingle,
@@ -1135,9 +1136,10 @@ pub(super) fn classify_annotation_body(
             let p2 = alloc.make_directive("［＃割り注終わり］", DirectiveKind::WarichuClose);
             Some((EmitKind::Aozora(node), Some(p2)))
         }
-        BodyFamily::KaeritenSingle | BodyFamily::KaeritenCompound => {
-            Some((EmitKind::Aozora(alloc.kaeriten(body)), None))
-        }
+        BodyFamily::KaeritenSingle | BodyFamily::KaeritenCompound => Some((
+            EmitKind::Aozora(alloc.kunten(KuntenKind::ReturnMark, body)),
+            None,
+        )),
 
         // ----- Prefix-with-parameter families -----
         BodyFamily::AlignEndParamPrefix => {
@@ -1291,7 +1293,12 @@ pub(super) fn classify_annotation_body(
             // The DFA matched `（` at body[0..3]. Defer to the same
             // parens-recognising helper as the legacy code so the
             // length / character-class invariants stay in one place.
-            is_okurigana_body(body).then(|| (EmitKind::Aozora(alloc.kaeriten(body)), None))
+            is_okurigana_body(body).then(|| {
+                (
+                    EmitKind::Aozora(alloc.kunten(KuntenKind::Okurigana, &body[3..body.len() - 3])),
+                    None,
+                )
+            })
         }
         BodyFamily::IndentParamPrefix => {
             // The DFA matched a single digit. Re-parse from body[0]

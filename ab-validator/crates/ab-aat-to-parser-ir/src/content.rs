@@ -36,7 +36,7 @@ pub(crate) fn parser_ir_node_visible_text(node: &Value) -> Result<String> {
             .or_else(|| node.pointer("/gaiji/raw_marker").and_then(Value::as_str))
             .unwrap_or(""),
         "line-break" => "\n",
-        "page-break" | "image" | "editor-note" | "indentation" => "",
+        "page-break" | "image" | "editor-note" | "kunten" | "indentation" => "",
         other => bail!("unsupported parser-IR node type for visible-text projection: {other}"),
     };
     Ok(text.to_owned())

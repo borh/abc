@@ -37,6 +37,26 @@
   {"source" {"primary_text_hash" "sha256:source" "decode_outcome" "utf-8"}
    "interpretation_facts" facts "interpretation_problems" []})
 
+(deftest variant-claims-do-not-resolve-embedded-gaiji
+  (doseq [raw ["［＃「κιν※［＃鋭アクセント付きη、U+1F75、171-10］σεω※［＃ギリシア小文字ファイナルSIGMA、1-6-57］」は底本では「κιν※［＃鋭アクセント付きη、U+1F75、171-10］σε※［＃上方に不鮮明な符号が付いているω、171-10］※［＃ギリシア小文字ファイナルSIGMA、1-6-57］」］"
+               "［＃「醇※［＃「广＋龍」、第3水準1-94-86］博朗」は底本では「醇※［＃「厂＋龍」、348-9］博朗」］"]]
+    (let [source (.getBytes (str "題\n作者\n\n" raw "\n\n底本：本\n") "UTF-8")
+          scanned ((:f (accountability/source-stage (accountability/resolve-tool)))
+                   {:blob {"source-id" source}} {"source" "source-id"})
+          evidence (json/read-json (String. ^bytes (get scanned "source-accountability") "UTF-8"))
+          marker (first (filter #(= raw (get % "raw")) (get evidence "occurrences")))
+          fact {"kind" "text-variant" "outcome" "established" "aspects" ["content" "structure"]
+                "source_span" (get marker "source_span")}
+          parsed (assoc-in (interpretation [fact]) ["source" "primary_text_hash"]
+                           (get evidence "source_sha256"))
+          report (accountability/coverage-report evidence parsed)
+          result (first (filter #(= raw (get % "raw")) (get report "occurrences")))]
+      (is (some #{"annotation.chuuki"} (get marker "families")))
+      (is (= [["annotation.chuuki"]] (mapv #(get % "families") (get result "claims"))))
+      (is (every? #(empty? (get % "claims")) (get result "components")))
+      (is (some #{"gaiji.marker"} (get result "unaccounted_families")))
+      (is (= "not-assessed" (get report "semantic_certification"))))))
+
 (deftest enclosing-claims-cannot-establish-another-marker
   (let [marker (fn [start end] {"source_span" (span start end)
                                 "kind" "CommandFullwidth" "region" "body"

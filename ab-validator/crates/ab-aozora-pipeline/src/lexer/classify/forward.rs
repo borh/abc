@@ -1248,7 +1248,7 @@ struct ForwardTargetExtract<'s> {
 /// pair, first quote empty, or the initial quote crossing out of the
 /// bracket. Subsequent empty quote bodies are silently skipped
 /// (defensive against `「」` placeholders in real corpora) rather
-/// than aborting the recognition.
+/// than aborting the recognition. `「」」` quotes the closing punctuation itself.
 fn extract_forward_quote_targets<'s>(
     view: BodyView<'_>,
     source: &'s str,
@@ -1263,6 +1263,20 @@ fn extract_forward_quote_targets<'s>(
     else {
         return None;
     };
+
+    if let Some(PairEvent::PairOpen {
+        kind: PairKind::Quote,
+        span,
+    }) = events.get(open_idx + 2)
+    {
+        let quoted = &source[span.start as usize..bracket_close_span.start as usize];
+        if let Some(suffix) = quoted.strip_prefix("「」」") {
+            return Some(ForwardTargetExtract {
+                targets: smallvec::smallvec![&quoted['「'.len_utf8().."「」".len()]],
+                suffix: suffix.trim(),
+            });
+        }
+    }
 
     let mut targets: smallvec::SmallVec<[&'s str; 4]> = smallvec::SmallVec::new();
     let mut cursor = open_idx + 2; // skip `［` and `＃`

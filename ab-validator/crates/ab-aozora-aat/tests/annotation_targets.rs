@@ -64,6 +64,7 @@ fn editorial_gloss_does_not_guess_target_or_provenance() {
 #[test]
 fn adjacent_source_targets_retain_rich_principal_content() {
     for (target, child_kind) in [
+        ("」", "text"),
         ("どふ／＼", "iteration-mark"),
         ("※［＃濁点付き片仮名ヱ、1-7-84］", "gaiji"),
         ("※［＃「飮のへん＋旨」、341-5］", "gaiji"),
@@ -97,14 +98,22 @@ fn adjacent_source_targets_retain_rich_principal_content() {
 
 #[test]
 fn different_source_target_is_not_replaced_by_a_visible_match() {
-    let source = "前剌［＃「刺」の左に「テフダ」の注記］後";
-    let aat: Value =
-        serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
-    let content = aat["blocks"][0]["content"].as_array().unwrap();
-    assert!(content.iter().all(|node| node["kind"] != "annotated_text"));
-    assert!(content.iter().any(
-        |node| node["kind"] == "raw" && node["source"] == "［＃「刺」の左に「テフダ」の注記］"
-    ));
+    for (base, marker) in [
+        ("剌", "［＃「刺」の左に「テフダ」の注記］"),
+        ("）", "［＃「」」に「ママ」の注記］"),
+        ("」", "［＃「」に「ママ」の注記］"),
+    ] {
+        let source = format!("前{base}{marker}後");
+        let aat: Value =
+            serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
+        let content = aat["blocks"][0]["content"].as_array().unwrap();
+        assert!(content.iter().all(|node| node["kind"] != "annotated_text"));
+        assert!(
+            content
+                .iter()
+                .any(|node| node["kind"] == "raw" && node["source"] == marker)
+        );
+    }
 }
 
 #[test]

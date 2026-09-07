@@ -1269,3 +1269,11 @@
     (is (= ["こづか" "こづか" "こづか" "こづか"] (texts result "rt")))
     (is (every? #(not (string/blank? (attribute % "source"))) notes))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest closing-quotation-target-retains-supplied-note
+  (let [result (transcribe (source "「本文」［＃「」」に「ママ」の注記］後"))
+        note (first (filter #(= "gloss" (attribute % "type")) (elements result "note")))]
+    (is (= "「本文」後" (:plaintext result)))
+    (is (= "ママ" (.getTextContent ^Node note)))
+    (is (= "」ママ" (.getTextContent (.getParentNode ^Node note))))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))

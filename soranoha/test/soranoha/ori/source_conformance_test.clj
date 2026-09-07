@@ -1258,3 +1258,14 @@
     (is (= "「Ｏ」は覆面の英字です。" (.getTextContent ^Node note)))
     (is (string/blank? (attribute note "target")))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest rich-sic-apparatus-stays-with-its-supplied-variant
+  (let [result (transcribe (source "小突《こづか》かれるので［＃「小突《こづか》かれるので」はママ］［＃「小突《こづか》かれるので［＃「小突《こづか》かれるので」はママ］」は底本では「かれるので小突《こづか》［＃「かれるので小突《こづか》」はママ］」］"))
+        notes (filterv #(= "sic" (attribute % "type")) (elements result "note"))]
+    (is (= "小突かれるので" (:plaintext result)))
+    (is (= ["小突かれるので"] (texts result "lem")))
+    (is (= ["かれるので小突"] (texts result "rdg")))
+    (is (= 2 (count notes)))
+    (is (= ["こづか" "こづか" "こづか" "こづか"] (texts result "rt")))
+    (is (every? #(not (string/blank? (attribute % "source"))) notes))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))

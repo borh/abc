@@ -1627,6 +1627,11 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
     let mut facts = Vec::new();
     let mut pending = blocks.iter().rev().collect::<Vec<_>>();
     while let Some(node) = pending.pop() {
+        if node["kind"] == "text-variant"
+            && let Some(current) = node["current_interpretation_facts"].as_array()
+        {
+            facts.extend(current.iter().cloned());
+        }
         let interpretation = EstablishedInterpretation::for_node(node);
         let mut font_formatting = false;
         let mut layout_formatting = false;
@@ -1713,8 +1718,10 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
         (
             fact["source_span"]["start"].as_u64(),
             fact["source_span"]["end"].as_u64(),
+            fact["kind"].as_str().unwrap_or_default().to_owned(),
         )
     });
+    facts.dedup();
     facts
 }
 
@@ -2773,6 +2780,7 @@ fn directive_node(decoded: &DecodedSource, node: &AozoraNode, kind: DirectiveKin
         DirectiveKind::OmissionNote => "omission",
         DirectiveKind::IncompletenessNote => "incompleteness",
         DirectiveKind::ExplanationNote => "explanation",
+        DirectiveKind::Sic => "sic",
         _ => return raw_node(decoded, node, node.kind.as_str()),
     };
     let raw = source_slice(&decoded.span_text, &node.span);
@@ -2786,7 +2794,7 @@ fn directive_node(decoded: &DecodedSource, node: &AozoraNode, kind: DirectiveKin
         .expect("classified source statement retains its delimiters");
     let mut statement = json!({"kind":"editorial_note", "note_kind":note_kind, "text":text.trim(),
         "span":span_json(&node.span, &decoded.span_ctx)});
-    if kind == DirectiveKind::ExplanationNote {
+    if matches!(kind, DirectiveKind::ExplanationNote | DirectiveKind::Sic) {
         let start = node.span.start + text.as_ptr().addr() - raw.as_ptr().addr();
         let Some(content) = source_fragment(decoded, start..start + text.len()) else {
             return raw_node(decoded, node, node.kind.as_str());
@@ -4080,6 +4088,7 @@ fn resolve_text_variants_in_blocks(nodes: Vec<Value>, decoded: &DecodedSource) -
                     Some(current),
                 ) {
                     resolved.push(json!({"kind":"text-variant", "content":children,
+                        "current_interpretation_facts":established_interpretations(current),
                         "base_text":base_text, "base_content":base, "source":node["source"], "span":node["span"]}));
                     append_variant_statement(&mut resolved, &node);
                     continue;
@@ -4164,6 +4173,7 @@ fn physical_break_variant(
     }
     targets.push(break_span);
     let apparatus = json!({"kind":"text-variant", "content":current,
+        "current_interpretation_facts":established_interpretations(current),
         "base_content":variant["base_content"], "base_text":content_structured_text(variant["base_content"].as_array()?)?,
         "source":marker["source"], "span":marker["span"]});
     Some(json!({"kind":"editorial_note", "note_kind":"base-edition",
@@ -4211,6 +4221,7 @@ fn attach_formatting_variant(style: &mut Value, note: &Value, source: &str) -> b
     };
     if text == target {
         let mut content = vec![json!({"kind":"text-variant", "content":children,
+                        "current_interpretation_facts":established_interpretations(current),
             "base_text":base_text, "base_content":base,
             "source":note["source"], "span":note["span"]})];
         append_variant_statement(&mut content, note);
@@ -4280,6 +4291,7 @@ fn attach_principal_subrange(
                 )
                 .expect("interpreted witness content");
                 children.push(json!({"kind":"text-variant", "content":selected,
+                    "current_interpretation_facts":established_interpretations(current),
                     "base_text":base_text, "base_content":annotation["text_variant"]["base_content"],
                     "source":annotation["source"], "span":annotation["span"]}));
                 append_variant_statement(children, annotation);
@@ -4356,6 +4368,7 @@ fn literal_variant_content(
         return None;
     }
     content.push(json!({"kind":"text-variant", "content":[text_node(index, end)],
+        "current_interpretation_facts":established_interpretations(current),
         "base_text":content_structured_text(note["text_variant"]["base_content"].as_array()?)?,
         "base_content":note["text_variant"]["base_content"], "source":note["source"], "span":note["span"]}));
     append_variant_statement(&mut content, note);
@@ -4502,6 +4515,7 @@ fn attach_reading_variant(
         .remove("reading_content")
         .unwrap_or_else(|| json!([{"kind":"text", "value":reading}]));
     let mut reading_content = vec![json!({"kind":"text-variant", "content":children,
+                        "current_interpretation_facts":established_interpretations(current),
         "base_text":base_text, "base_content":base, "source":note["source"], "span":note["span"]})];
     append_variant_statement(&mut reading_content, note);
     ruby["reading_content"] = json!(reading_content);
@@ -4588,6 +4602,18 @@ fn quoted_structure_matches(quoted: &[Value], actual: &[Value]) -> bool {
                     json!({"kind":"unresolved-glyph", "description":node["description"],
                         "reference":node["jis_code"], "codepoint":node["x-codepoint"]}),
                 )),
+                "editorial_note" if node["note_kind"] == "sic" => {
+                    let literal;
+                    let annotation = if let Some(children) = node["annotation_content"].as_array() {
+                        children.as_slice()
+                    } else {
+                        literal = [json!({"kind":"text", "value":node["text"]})];
+                        &literal
+                    };
+                    let mut annotation_marks = Vec::new();
+                    marks(annotation, &mut 0, &mut annotation_marks)?;
+                    output.push((start, end, json!({"kind":"sic", "text":content_structured_text(annotation)?, "structure":annotation_marks})));
+                }
                 "text" | "gaiji" | "raw" | "editorial_note" => {}
                 "ruby" => {
                     let mut reading_glyphs = Vec::new();
@@ -4628,7 +4654,10 @@ fn quoted_structure_matches(quoted: &[Value], actual: &[Value]) -> bool {
                     identity.retain(|key, _| {
                         !matches!(
                             key.as_str(),
-                            "content" | "span" | "interpretation_marker_spans"
+                            "content"
+                                | "span"
+                                | "interpretation_marker_spans"
+                                | "current_interpretation_facts"
                         ) && !key.starts_with("x-")
                     });
                     output.push((start, end, Value::Object(identity)));

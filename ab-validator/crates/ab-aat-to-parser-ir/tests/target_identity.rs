@@ -1349,3 +1349,70 @@ fn supplied_note_roles_reject_invented_placement_and_missing_targets() {
         assert!(!ir["interpretation_problems"].as_array().unwrap().is_empty());
     }
 }
+
+#[test]
+fn rich_sic_statements_compose_without_weakening_quoted_identity() {
+    let ir = convert(
+        "小突《こづか》かれるので［＃「小突《こづか》かれるので」はママ］［＃「小突《こづか》かれるので［＃「小突《こづか》かれるので」はママ］」は底本では「かれるので小突《こづか》［＃「かれるので小突《こづか》」はママ］」］",
+    );
+    let all = nodes(&ir);
+    let variant = all
+        .iter()
+        .find(|node| node["type"] == "base-text-variant")
+        .expect("exact rich source variant");
+    assert_eq!(variant["text"], "小突かれるので");
+    let notes = all
+        .iter()
+        .filter(|node| node["type"] == "editor-note" && node["note_kind"] == "sic")
+        .collect::<Vec<_>>();
+    assert_eq!(notes.len(), 2);
+    for note in notes {
+        assert!(nodes(note).iter().any(|node| node["type"] == "ruby"));
+        assert_eq!(
+            note["annotation_children"][0]["span"]["coordinate_system"],
+            "annotation_utf8"
+        );
+    }
+    assert_eq!(ir["interpretation_problems"], json!([]));
+    let note_spans = ir["interpretation_facts"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|fact| fact["kind"] == "editorial-note")
+        .map(|fact| fact["source_span"].clone())
+        .collect::<Vec<_>>();
+    assert_eq!(
+        note_spans.len(),
+        3,
+        "principal, checked current quotation, witness"
+    );
+    assert!(
+        note_spans
+            .windows(2)
+            .all(|pair| pair[0]["end"].as_u64() < pair[1]["start"].as_u64())
+    );
+    for body in [
+        "甲［＃「甲」はママ］別［＃「甲［＃「甲」はママ］」は底本では「乙」］",
+        "甲［＃「甲」はママ］［＃「甲［＃底本のまま］」は底本では「乙」］",
+        "甲［＃未解釈指示］［＃「甲［＃未解釈指示］」は底本では「乙」］",
+    ] {
+        let ir = convert(body);
+        assert!(
+            !nodes(&ir)
+                .iter()
+                .any(|node| node["type"] == "base-text-variant")
+        );
+        assert!(!ir["interpretation_problems"].as_array().unwrap().is_empty());
+        let source = format!("題\n作者\n\n{body}\n\n底本：本\n");
+        let outer_start = source.find("［＃「甲［＃").unwrap();
+        assert!(
+            ir["interpretation_facts"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .all(|fact| fact["source_span"]["start"].as_u64().unwrap()
+                    < u64::try_from(outer_start).unwrap()),
+            "an unchecked quoted current or witness receives no positive facts"
+        );
+    }
+}

@@ -432,7 +432,7 @@
       "type":"object", "additionalProperties":false,
       "required":["kind","note_kind","span"],
       "oneOf":[{"required":["text"],"not":{"required":["annotation_content"]}},{"required":["annotation_content"],"not":{"required":["text"]}}],
-      "properties": {"interpretation_marker_spans":{"type":"array","items":{"$ref":"#/$defs/span"}}, "kind":{"const":"editorial_note"}, "note_kind":{"enum":["base-edition","first-publication","transcription","omission","incompleteness","explanation"]}, "text":{"type":"string","minLength":1}, "span":{"$ref":"#/$defs/span"}, "target_source_spans":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/span"}}, "closing_source_span":{"$ref":"#/$defs/span"}, "annotation_content":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/inline"}}}
+      "properties": {"interpretation_marker_spans":{"type":"array","items":{"$ref":"#/$defs/span"}}, "kind":{"const":"editorial_note"}, "note_kind":{"enum":["base-edition","first-publication","transcription","omission","incompleteness","explanation","sic"]}, "text":{"type":"string","minLength":1}, "span":{"$ref":"#/$defs/span"}, "target_source_spans":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/span"}}, "closing_source_span":{"$ref":"#/$defs/span"}, "annotation_content":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/inline"}}}
     },
     "gap": {
       "type":"object", "additionalProperties":false,
@@ -459,6 +459,7 @@
       "additionalProperties": false,
       "properties": {
         "kind": { "const": "text-variant" },
+        "current_interpretation_facts": {"description":"Source-owned claims for the supplied current quotation, emitted only after its target and structural constraints match.", "type":"array", "uniqueItems":true, "items":{"$ref":"#/$defs/interpretationFact"}},
         "content": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/inline" } },
         "base_text": { "type": "string", "description": "Explicit witness text; empty means source-stated absence." },
         "base_content": { "type":"array", "items":{"$ref":"#/$defs/inline"} },

@@ -496,31 +496,8 @@ pub enum ForwardAttr {
 /// A forward emphasis node's target-text provenance — whether `serialize`
 /// must re-emit the leading literal to reconstruct the source.
 ///
-/// A forward reference whose target appears *contiguously* in the source
-/// before the bracket carries the literal's provenance
-/// ([`Reclaimed`](Self::Reclaimed) / [`Referenced`](Self::Referenced)). A
-/// directive whose quoted target is **absent** from the preceding source
-/// (`（例）［＃「国境が消える」に傍点］`) has no upstream copy, so the quote itself
-/// is the styled run — [`SelfContained`](Self::SelfContained). Only a target
-/// split by a ruby run (`牛《ベゴ》の舌［＃「牛の舌」に傍点］`) stays an unresolved
-/// directive, never reaching this type.
-///
-/// This is the one irreducible provenance the normalization waist could not
-/// fold away — it cannot collapse to a constant in either direction:
-/// - **Not always `Reclaimed`** (node owns the literal): when the recognized
-///   target occurrence is itself a **ruby base**
-///   (`我《が》…我［＃「我」に傍点］`; ≥34 in the 17,889-work `aozorabunko_text`
-///   mirror, it cannot be pulled into a text-only forward leaf
-///   (bouten-over-ruby is not representable), so it must stay `Referenced`.
-/// - **Not always `Referenced`** (literal left upstream): an adjacent forward
-///   had its literal pulled into the node and the surrounding plain run
-///   truncated, so without re-emit the literal would be lost.
-///
-/// Deriving it at serialize from a non-local preceding-content scan would
-/// re-introduce exactly the lookback the scope-free core removes, so it is
-/// materialized here as explicit provenance. unbounded-growth
-/// pathology — a `Reclaimed` literal doubled in the plain tail — is separately
-/// cured by the lowering pass's overlap-truncate.)
+/// Records whether principal text is owned by this formatting node or retained
+/// elsewhere. A quoted annotation operand is never itself principal text.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum ForwardOrigin {
@@ -529,22 +506,10 @@ pub enum ForwardOrigin {
     /// so the decorated run is the *sole* visible copy and the serializer
     /// re-emits the literal before the bracket.
     Reclaimed,
-    /// The target is recognized contiguously before the bracket but is *not*
-    /// byte-adjacent to it, so the literal stays in the preceding run; the
-    /// serializer emits the bracket form alone.
+    /// The annotation retains a reference operand without owning principal
+    /// text. Its target may be established elsewhere or remain unresolved; the
+    /// serializer emits the bracket alone.
     Referenced,
-    /// The quoted target is **absent** from the source preceding the bracket
-    /// (the no-referent case: `forward_target_is_preceded` is false), so the
-    /// directive's own quote is the *only* copy of the run. There is no upstream
-    /// literal to truncate and no pull-back, so the consume window equals the
-    /// bracket span exactly: the renderer styles the quoted target (it is **not**
-    /// a no-op like [`Referenced`](Self::Referenced)) and the serializer emits
-    /// the bracket form alone (no leading literal like
-    /// [`Reclaimed`](Self::Reclaimed)). Cannot duplicate the rendered text — with no
-    /// earlier copy there is nothing to double-render. Produced by the
-    /// no-referent classifier paths; everywhere else it is the natural
-    /// fall-through of the guards that special-case `Reclaimed`/`Referenced`.
-    SelfContained,
     /// The styled-literal half of a **non-adjacent** forward-reference split
     /// pair (`太字の［＃「太字」は太字］`). The classifier located the target as an
     /// *interior* occurrence of the current plain run — present, but not

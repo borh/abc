@@ -777,23 +777,15 @@ impl RecogniseCtx<'_, '_> {
         else {
             return None;
         };
-        // A *single* target with no referent is a self-contained bouten: the
-        // quoted run is itself the marked text, so style it directly (consume the
-        // whole bracket, no pull-back) instead of falling through to the hidden
-        // Directive{Unknown}. Cannot duplicate the rendered text — with no earlier copy
-        // there is nothing to duplicate, and a no-referent target has zero
-        // look-back occurrences so it is never ambiguous. (Multi-target keeps
-        // falling through below: non-contiguous targets cannot be spliced into
-        // one leaf.)
         if let [only] = extracted.targets.as_slice()
             && !forward_target_is_preceded(view.events, self.source, open_idx, only)
         {
-            let target = build_bouten_target(&extracted.targets, self.alloc);
-            return Some((
-                self.alloc
-                    .bouten(kind, target, position, ForwardOrigin::SelfContained),
+            return Some(self.resolve_forward_format(
+                view,
+                open_idx,
                 open_span.start,
-                ForwardDiag::None,
+                ForwardAttr::Bouten { kind, position },
+                only,
             ));
         }
         // A forward-reference bouten only makes sense when every named
@@ -1305,15 +1297,8 @@ fn extract_forward_quote_targets<'s>(
 /// at the directive position (information-preserving, never promoted to
 /// an empty or misplaced heading).
 ///
-/// Same `forward_target_is_preceded` gate as forward bouten, but a target
-/// absent from the preceding source is no longer rejected: a single quoted
-/// target with no referent is a *self-contained* forward heading — the
-/// quoted run is itself the heading text, marked `self_contained` on the
-/// hint so render shows it (serialize stays bracket-only, a fixed point,
-/// the `ForwardOrigin::SelfContained` emphasis/bouten analogue). A
-/// multi-quote hint with any missing referent still falls through to
-/// `Directive { Unknown }`, since a non-contiguous referent cannot be
-/// spliced into a single heading leaf.
+/// Quoted operands identify source text. An unpromoted hint retains the
+/// reference without inserting its quoted operand into principal text.
 impl RecogniseCtx<'_, '_> {
     fn classify_forward_heading(
         &mut self,
@@ -1348,22 +1333,14 @@ impl RecogniseCtx<'_, '_> {
                 )
         };
 
-        // A single quoted target absent from the look-back is a *self-contained*
-        // forward heading: the quoted run is itself the heading text (the
-        // `ForwardOrigin::SelfContained` emphasis/bouten analogue). A multi-quote
-        // hint with any missing referent stays Unknown — a non-contiguous referent
-        // cannot be spliced into a single heading leaf. An all-preceded hint renders
-        // hidden and may promote to a block heading in the `promote_headings`
-        // lowering pass when its referent is the bare line directly above it.
-        //
-        // `preceded` is evaluated at most once per target (the ruby-stripped
-        // fallback copies the whole look-back, so a second call per heading would
-        // double the parser's allocation pressure).
-        let self_contained = match extracted.targets.as_slice() {
-            [only] if !only.is_empty() => !preceded(only),
-            targets if targets.iter().any(|t| !t.is_empty() && !preceded(t)) => return None,
-            _ => false,
-        };
+        if extracted.targets.len() > 1
+            && extracted
+                .targets
+                .iter()
+                .any(|target| !target.is_empty() && !preceded(target))
+        {
+            return None;
+        }
 
         // Concatenate targets in the (rare) multi-quote case so the full named run
         // drives the hint content. The 同行 / 窓 styles run into the body on their
@@ -1373,8 +1350,7 @@ impl RecogniseCtx<'_, '_> {
             return None;
         }
         Some((
-            self.alloc
-                .heading_hint(kind, style, &combined, self_contained),
+            self.alloc.heading_hint(kind, style, &combined),
             open_span.start,
         ))
     }
@@ -1722,29 +1698,6 @@ impl RecogniseCtx<'_, '_> {
         else {
             return None;
         };
-        if !forward_target_is_preceded(view.events, self.source, open_idx, only) {
-            if attr == ForwardAttr::Horizontal {
-                return Some(self.resolve_forward_format(
-                    view,
-                    open_idx,
-                    open_span.start,
-                    attr,
-                    only,
-                ));
-            }
-            // No referent: the quoted target has no earlier copy, so it *is* the
-            // styled run (`ForwardOrigin::SelfContained`) rather than falling
-            // through to a hidden `Unknown` directive. Consume the whole bracket
-            // — no pull-back — so the region tiling is byte-identical to the old
-            // `Unknown` and the double-render is structurally impossible.
-            let text = self.alloc.content_plain(only);
-            return Some((
-                self.alloc
-                    .forward_format(attr, text, ForwardOrigin::SelfContained),
-                open_span.start,
-                ForwardDiag::None,
-            ));
-        }
         Some(self.resolve_forward_format(view, open_idx, open_span.start, attr, only))
     }
 }
@@ -1756,7 +1709,7 @@ impl RecogniseCtx<'_, '_> {
 /// suffix, mirroring [`Self::classify_forward_left_ruby`] /
 /// [`Self::classify_forward_side_note`]. Structurally it is an emphasis-style
 /// treatment (it boxes the target run, like `「X」は太字` bolds it), so it reuses
-/// the same `forward_target_is_preceded` pull-back / `SelfContained` logic as
+/// the same source-target resolution as
 /// [`Self::classify_forward_emphasis`]. The `は「` prefix + `」囲み` suffix shape
 /// excludes every `の注記` / `のルビ` / `に…` form; only the canonical `□`
 /// (U+25A1) glyph is claimed — any other glyph stays `Directive{Unknown}` until
@@ -1786,18 +1739,6 @@ impl RecogniseCtx<'_, '_> {
         else {
             return None;
         };
-        if !forward_target_is_preceded(view.events, self.source, open_idx, target) {
-            // No referent: the quoted target is itself the boxed run. Consume the
-            // whole bracket (no pull-back) so region tiling is byte-identical to
-            // the old `Unknown` and the double-render is impossible.
-            let text = self.alloc.content_plain(target);
-            return Some((
-                self.alloc
-                    .forward_format(attr, text, ForwardOrigin::SelfContained),
-                open_span.start,
-                ForwardDiag::None,
-            ));
-        }
         Some(self.resolve_forward_format(view, open_idx, open_span.start, attr, target))
     }
 }

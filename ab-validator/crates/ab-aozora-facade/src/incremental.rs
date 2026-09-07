@@ -1227,7 +1227,6 @@ fn node_forbids_region_reuse(node: NodeRef) -> bool {
     ) || matches!(
         role,
         RegionRole::ForwardReclaimed
-            | RegionRole::ForwardSelfContained
             // A `ForwardDetached` decoration is `Direct` in bytes, but its
             // very *existence* is a whole-prefix predicate — it exists only
             // because a downstream bracket references it, and duplicating the
@@ -1236,7 +1235,6 @@ fn node_forbids_region_reuse(node: NodeRef) -> bool {
             // coupled bracket already forces a full parse; this is defence in
             // depth + keeps the invariant self-documenting).
             | RegionRole::ForwardDetached
-            | RegionRole::HeadingSelfContained
             | RegionRole::Kunten
     ) || matches!(
         // A ruby whose base carries render-only forward emphasis is
@@ -1984,56 +1982,9 @@ mod tests {
         );
     }
 
-    /// E1-1: a no-referent forward ([`ForwardOrigin::SelfContained`]) is
-    /// `Direct` (its rendered bytes are self-contained), but its very
-    /// *classification* is a whole-prefix predicate (target absence): a distant
-    /// edit that introduces an earlier copy of the target flips a full parse to
-    /// `Reclaimed`/`Referenced` and would resurrect the double-render
-    /// across the splice boundary. So its region must not be reused — like the
-    /// reclaimed case above, but for classification rather than diagnostic.
-    /// Constructed directly; the source-driven decline test arrives with the
-    /// producer in E1-2/E1-3.
+    /// Resolving a reference depends on source outside its marker region.
     #[test]
-    fn self_contained_forward_forbids_region_reuse() {
-        use ab_aozora_syntax::alloc::Allocator;
-        use ab_aozora_syntax::{ForwardAttr, ForwardOrigin};
-
-        let mut a = Allocator::new();
-        let t = a.content_plain("X");
-        let node = a.forward_format(ForwardAttr::Bold, t, ForwardOrigin::SelfContained);
-        assert!(
-            node_forbids_region_reuse(NodeRef::Inline(node)),
-            "SelfContained must forbid region reuse: its classification depends \
-             on the whole preceding prefix",
-        );
-    }
-
-    /// E1-4: a self-contained heading hint's classification is a whole-prefix
-    /// predicate (target absence), like the forward case above, so its region
-    /// must not be reused — an earlier 序章 in a far region would flip a full
-    /// parse to a referent-bearing hint.
-    #[test]
-    fn self_contained_heading_forbids_region_reuse() {
-        use ab_aozora_syntax::alloc::Allocator;
-        use ab_aozora_syntax::{HeadingKind, HeadingStyle};
-
-        let mut a = Allocator::new();
-        let node = a.heading_hint(HeadingKind::Medium, HeadingStyle::Standard, "序章", true);
-        assert!(
-            node_forbids_region_reuse(NodeRef::Inline(node)),
-            "self-contained heading hint must forbid region reuse",
-        );
-    }
-
-    #[test]
-    fn self_contained_forward_doc_declines() {
-        // E1-2 producer end-to-end: a no-referent ［＃「強調」は太字］ (no earlier
-        // 強調) parses as a self-contained forward — Direct, but its very
-        // classification is a whole-prefix predicate. Introducing an earlier 強調
-        // in a far region flips a full parse to a referent-present forward; a
-        // naive splice would keep the cached self-contained node *and* the new
-        // upstream copy (the double-render). So the node forbids region
-        // reuse and the incremental reparse must decline.
+    fn unresolved_forward_reference_declines_region_reuse() {
         let cached = output("むかし。\n\n本文［＃「強調」は太字］\n");
         let san = cached.sanitized.clone();
         assert!(
@@ -2041,7 +1992,7 @@ mod tests {
                 .source_nodes
                 .iter()
                 .any(|sn| node_forbids_region_reuse(sn.node)),
-            "fixture must carry the self-contained forward node, got {:?}",
+            "fixture must carry the forward reference, got {:?}",
             cached
                 .source_nodes
                 .iter()

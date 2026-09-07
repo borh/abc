@@ -74,18 +74,10 @@ pub enum RegionRole {
     /// ([`ForwardOrigin::Reclaimed`]). The literal lives inside the region, so
     /// it is self-contained.
     ForwardReclaimed,
-    /// Forward emphasis whose target literal stays in a separate upstream run
-    /// ([`ForwardOrigin::Referenced`]). Ownership is split across two regions
-    /// — the bracket here and the upstream literal — so a coherent target
-    /// edit is a [`Coupled`](SpliceSafety::Coupled) splice.
+    /// Formatting annotation with an external target reference. A target edit
+    /// is coupled to its source referent and is declined when that referent
+    /// cannot be established.
     ForwardReferenced,
-    /// Forward emphasis whose quoted target is absent from the preceding source
-    /// ([`ForwardOrigin::SelfContained`]). The target literal lives wholly
-    /// inside the region — there is no upstream copy — so it is self-contained
-    /// and a coherent target edit is a [`Direct`](SpliceSafety::Direct) splice,
-    /// like [`ForwardReclaimed`](Self::ForwardReclaimed) but with no reclaimed
-    /// prefix.
-    ForwardSelfContained,
     /// The styled-literal half of a **non-adjacent** forward-reference split
     /// ([`ForwardOrigin::Detached`]) — a decoration leaf materialised at an
     /// interior occurrence of the target run. The literal lives wholly
@@ -110,16 +102,8 @@ pub enum RegionRole {
     /// Heading promoted from a bare line above its directive — the referent
     /// line is reclaimed into the region, so it is self-contained.
     Heading,
-    /// Forward heading hint whose referent is *not* the bare line above it, so
-    /// the referent lives elsewhere. A coherent target edit is coupled.
+    /// Unpromoted heading reference. A target edit requires its source referent.
     HeadingHint,
-    /// Forward heading hint whose quoted target is absent from the preceding
-    /// source — a no-referent heading whose target run is itself the heading
-    /// text. There is no upstream copy, so it is self-contained and a coherent
-    /// target edit is a [`Direct`](SpliceSafety::Direct) splice — the
-    /// [`HeadingHint`](Self::HeadingHint) analogue of
-    /// [`ForwardSelfContained`](Self::ForwardSelfContained).
-    HeadingSelfContained,
     /// Illustration (`［＃挿絵］`).
     Illustration,
     /// Chinese-reading-order mark (返り点).
@@ -288,7 +272,6 @@ pub(crate) fn classify_node_ref(node: NodeRef) -> (RegionRole, SpliceSafety) {
                     RegionRole::ForwardReferenced,
                     Coupled(CoupledKind::ForwardReference),
                 ),
-                ForwardOrigin::SelfContained => (RegionRole::ForwardSelfContained, Direct),
                 // The styled-literal half of a non-adjacent split: its
                 // literal lives wholly inside the region, so a byte-replace is a
                 // complete local edit — `Direct`, exactly like the interstitial
@@ -297,15 +280,7 @@ pub(crate) fn classify_node_ref(node: NodeRef) -> (RegionRole, SpliceSafety) {
                 // literal and decline.)
                 ForwardOrigin::Detached => (RegionRole::ForwardDetached, Direct),
             },
-            Node::HeadingHint(h) => {
-                if h.self_contained {
-                    // No upstream referent — the bracket owns its target bytes,
-                    // so editing it is a Direct splice (cf. ForwardSelfContained).
-                    (RegionRole::HeadingSelfContained, Direct)
-                } else {
-                    (RegionRole::HeadingHint, Coupled(CoupledKind::HeadingHint))
-                }
-            }
+            Node::HeadingHint(_) => (RegionRole::HeadingHint, Coupled(CoupledKind::HeadingHint)),
             Node::MarginNote(_) => (RegionRole::MarginNote, Coupled(CoupledKind::MarginNote)),
             Node::TranscribedNotes(_) => (RegionRole::MarginNote, Direct),
             Node::Container(_) => (RegionRole::Container, Coupled(CoupledKind::Container)),
@@ -340,16 +315,7 @@ const INTERSTITIAL: (RegionRole, SpliceSafety) = (RegionRole::Interstitial, Spli
 /// Whether `node` belongs to the same construct family as a coupled `kind` —
 /// the verify predicate for a re-parsed single-region edit.
 ///
-/// A coupled forward reference re-forms only as a *referent-bearing* forward
-/// (`Reclaimed` or `Referenced`). A [`SelfContained`](ForwardOrigin::SelfContained)
-/// re-parse is **not** a re-formation: it owns its target with no upstream copy,
-/// so accepting it would let a target *change* masquerade as a coherent
-/// single-region edit and silently skip the upstream rewrite. Excluding it makes
-/// the single-region attempt fail so the coupled two-region path rewrites (or
-/// honestly declines) the edit. A heading hint re-forms as a referent-bearing
-/// hint *or* a promoted heading, but a `self_contained` re-parse is excluded for
-/// the same reason as `SelfContained` above; a container marker re-forms as an
-/// open or close.
+/// Target identity is verified separately from construct-family membership.
 fn reparsed_in_family(node: NodeRef, kind: CoupledKind) -> bool {
     let leaf = match node {
         NodeRef::Inline(n) | NodeRef::BlockLeaf(n) => Some(n),
@@ -357,11 +323,10 @@ fn reparsed_in_family(node: NodeRef, kind: CoupledKind) -> bool {
     };
     match kind {
         CoupledKind::ForwardReference => {
-            matches!(leaf, Some(Node::Format(f)) if f.origin != ForwardOrigin::SelfContained)
+            matches!(leaf, Some(Node::Format(_)))
         }
         CoupledKind::HeadingHint => {
-            matches!(leaf, Some(Node::HeadingHint(h)) if !h.self_contained)
-                || matches!(leaf, Some(Node::Heading(_)))
+            matches!(leaf, Some(Node::HeadingHint(_))) || matches!(leaf, Some(Node::Heading(_)))
         }
         CoupledKind::MarginNote => matches!(leaf, Some(Node::MarginNote(_))),
         CoupledKind::Container => {
@@ -670,7 +635,7 @@ impl Tree<'_> {
         // the construct in its family.
         let bracket_at = u32::try_from(old_target.len()).map_err(|_| unverifiable)?;
         let ctx = format!("{old_target}{replacement}");
-        if reparsed_family_at(&ctx, bracket_at, kind) {
+        if reparsed_family_at(&ctx, bracket_at, kind, &old_target) {
             return Ok(splice_one(src, region.span, replacement));
         }
 
@@ -791,13 +756,31 @@ fn marker_in_family(marker: &str, kind: CoupledKind) -> bool {
 }
 
 /// Parse `ctx` and report whether the node covering sanitized offset `off` is
-/// in `kind`'s construct family. The single-region split-edit verify, in a
-/// minimal `<target><replacement>` context.
-fn reparsed_family_at(ctx: &str, off: u32, kind: CoupledKind) -> bool {
+/// in `kind`'s construct family and retains a formatting or heading target.
+/// Note nodes can own a replacement base inside their edited region.
+fn reparsed_family_at(ctx: &str, off: u32, kind: CoupledKind, old_target: &str) -> bool {
     let doc = Document::new(ctx);
-    doc.parse()
-        .node_at_source(SourceOffset::new(off))
-        .is_some_and(|sn| reparsed_in_family(sn.node, kind))
+    let tree = doc.parse();
+    tree.node_at_source(SourceOffset::new(off))
+        .is_some_and(|sn| {
+            if !reparsed_in_family(sn.node, kind) {
+                return false;
+            }
+            let store = &tree.lex_output().store;
+            match sn.node {
+                NodeRef::Inline(Node::Format(f)) | NodeRef::BlockLeaf(Node::Format(f)) => {
+                    store.content_range_as_plain(f.target) == Some(old_target)
+                }
+                NodeRef::Inline(Node::HeadingHint(h))
+                | NodeRef::BlockLeaf(Node::HeadingHint(h)) => {
+                    store.resolve_str(h.target) == old_target
+                }
+                NodeRef::Inline(Node::Heading(h)) | NodeRef::BlockLeaf(Node::Heading(h)) => {
+                    store.content_range_as_plain(h.text) == Some(old_target)
+                }
+                _ => true,
+            }
+        })
 }
 
 /// The text inside the first `「…」` of a directive (the quoted target / base of
@@ -819,18 +802,10 @@ fn window_reforms_coupled(window: &str, kind: CoupledKind, new_target: &str) -> 
             return false;
         };
         let text = match (kind, leaf) {
-            // A `SelfContained` re-parse is not a coupled re-formation (it owns
-            // its target), so it must not satisfy the windowed verify either.
-            (CoupledKind::ForwardReference, Node::Format(f))
-                if f.origin != ForwardOrigin::SelfContained =>
-            {
+            (CoupledKind::ForwardReference, Node::Format(f)) => {
                 store.content_range_as_plain(f.target)
             }
-            // A `self_contained` re-parse owns its target (no upstream copy), so
-            // like the forward case above it is not a coupled re-formation.
-            (CoupledKind::HeadingHint, Node::HeadingHint(h)) if !h.self_contained => {
-                Some(store.resolve_str(h.target))
-            }
+            (CoupledKind::HeadingHint, Node::HeadingHint(h)) => Some(store.resolve_str(h.target)),
             // A promoted heading is an equally valid re-formation of the hint.
             (CoupledKind::HeadingHint, Node::Heading(h)) => store.content_range_as_plain(h.text),
             (CoupledKind::MarginNote, Node::MarginNote(m)) => store.content_range_as_plain(m.base),
@@ -986,34 +961,21 @@ mod tests {
         );
     }
 
-    /// E1-1: a no-referent forward ([`ForwardOrigin::SelfContained`]) lives
-    /// wholly inside its region (no upstream copy), so it classifies `Direct` —
-    /// like `ForwardReclaimed` but with no reclaimed prefix. Constructed
-    /// directly because no source produces this origin until E1-2/E1-3.
     #[test]
-    fn self_contained_forward_is_direct() {
-        use ab_aozora_syntax::ForwardAttr;
-        use ab_aozora_syntax::alloc::Allocator;
-
-        let mut a = Allocator::new();
-        let t = a.content_plain("X");
-        let node = a.forward_format(ForwardAttr::Bold, t, ForwardOrigin::SelfContained);
-        assert_eq!(
-            classify_node_ref(NodeRef::Inline(node)),
-            (RegionRole::ForwardSelfContained, SpliceSafety::Direct),
-        );
-    }
-
-    /// E1-4: a no-referent forward heading (`［＃「序章」は中見出し］` with no
-    /// earlier 序章) owns its target bytes, so it classifies `Direct` — the
-    /// heading analogue of `self_contained_forward_is_direct`. `assert_tiling`
-    /// confirms its identity splice round-trips through the Direct path.
-    #[test]
-    fn self_contained_heading_is_direct() {
-        let src = "本文［＃「序章」は中見出し］";
-        assert_tiling(src);
-        let r = role_of(src, RegionRole::HeadingSelfContained);
-        assert_eq!(r.safety, SpliceSafety::Direct);
+    fn unresolved_reference_edits_do_not_rewrite_unrelated_text() {
+        for (source, role) in [
+            ("本文［＃「不在」は太字］", RegionRole::ForwardReferenced),
+            ("本文［＃「不在」は中見出し］", RegionRole::HeadingHint),
+        ] {
+            assert_tiling(source);
+            let document = Document::new(source);
+            let tree = document.parse();
+            let region = role_of(source, role);
+            assert!(matches!(
+                tree.splice(region, "［＃「別名」は太字］").unwrap_err(),
+                SpliceError::Unverifiable { .. }
+            ));
+        }
     }
 
     #[test]
@@ -1163,7 +1125,7 @@ mod tests {
         // Regression: changing the target must rewrite BOTH the bracket and the
         // unique upstream literal. The minimal single-region verify context
         // (`<old_target><new bracket>`) re-parses the new target with no
-        // referent — a `SelfContained` forward — which must NOT be accepted as a
+        // referent, which must not be accepted as a
         // re-formation, or the upstream rewrite is silently skipped.
         let src = "青空がひろがる、その［＃「青空」は太字］";
         let doc = Document::new(src);

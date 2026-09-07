@@ -20,7 +20,7 @@ use ab_aozora_syntax::accent::{compose_accent, compose_accent_dots};
 use ab_aozora_syntax::ast::{
     AngleQuote, Content, ContentRange, Directive, ForwardAttrs, ForwardFormat, Gaiji,
     GaijiCanonicalOwned, Heading, HeadingHint, Illustration, Kunten, KuntenKind, MarginNote, Node,
-    NodeStore, Ruby, Segment,
+    NodeStore, Ruby, Segment, StrId,
 };
 use ab_aozora_syntax::format::ForwardOrigin;
 use ab_aozora_syntax::{AccentMark, DirectiveKind, EnclosureKind, ForwardAttr, RubySide};
@@ -130,23 +130,11 @@ fn render_content_one<W: Write>(c: Content, store: &NodeStore, out: &mut W) -> f
 /// `［＃「X」に傍点/罫囲み/…］` named this ruby's base as its unique referent — the
 /// base is wrapped in that attribute's emphasis element **inside** the `<ruby>`,
 /// before the `<rt>`, so the emphasis marks the base glyphs and not the reading.
-/// The wrapper is derived by reusing [`render_format`] over a synthetic
-/// [`ForwardOrigin::SelfContained`] leaf on the base, so every attribute kind
-/// (傍点 → `<em>`, 罫囲み → framed `<span>`, 行右小書き / 太字 / 二重傍線 / …) wraps
-/// identically; the separate `Referenced` directive leaf still renders nothing,
-/// so exactly one styled copy exists (no double-render).
+/// The existing styled-content renderer decorates the owned base directly.
 fn render_ruby<W: Write>(r: &Ruby, store: &NodeStore, out: &mut W) -> fmt::Result {
     out.write_str("<ruby>")?;
     match r.base_emphasis {
-        Some(attr) => {
-            let deco = ForwardFormat {
-                attrs: ForwardAttrs::One(attr),
-                target: r.base,
-                origin: ForwardOrigin::SelfContained,
-                annotation_body: None,
-            };
-            render_format(&deco, store, out)?;
-        }
+        Some(attr) => render_styled_content(&ForwardAttrs::One(attr), r.base, None, store, out)?,
         None => render_content_range(r.base, store, out)?,
     }
     // A left-side ruby (saidoku building block) marks its `<rt>` with a class
@@ -179,19 +167,25 @@ fn render_side_note<W: Write>(s: &MarginNote, store: &NodeStore, out: &mut W) ->
 /// Render a forward-reference emphasis (bouten / combine-upright / font-size /
 /// italic / span / bold) to its HTML element.
 ///
-/// A `Referenced` origin emits **nothing** — its
-/// target literal already lives in the upstream plain run (or a ruby base), so
-/// re-rendering it here would double the text. A `Detached` decoration is
-/// *not* `Referenced`, so it falls through the gate and renders styled — it is
-/// the styled-literal half of a non-adjacent split, and its literal was removed
-/// from the plain run, so rendering it here is the sole (correct) copy.
+/// A reference operand owns no principal text and emits nothing. Reclaimed
+/// and detached nodes render the source text already transferred into them.
 fn render_format<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W) -> fmt::Result {
     if matches!(f.origin, ForwardOrigin::Referenced) {
         return Ok(());
     }
-    let Some(attr) = f.attrs.single() else {
+    render_styled_content(&f.attrs, f.target, f.annotation_body, store, out)
+}
+
+fn render_styled_content<W: Write>(
+    attrs: &ForwardAttrs,
+    target: ContentRange,
+    annotation_body: Option<StrId>,
+    store: &NodeStore,
+    out: &mut W,
+) -> fmt::Result {
+    let Some(attr) = attrs.single() else {
         out.write_str("<span class=\"")?;
-        for (index, attr) in store.resolve_forward_attrs(&f.attrs).iter().enumerate() {
+        for (index, attr) in store.resolve_forward_attrs(attrs).iter().enumerate() {
             if index > 0 {
                 out.write_char(' ')?;
             }
@@ -211,7 +205,7 @@ fn render_format<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W) ->
             out.write_str(class)?;
         }
         out.write_str("\">")?;
-        render_content_range(f.target, store, out)?;
+        render_content_range(target, store, out)?;
         return out.write_str("</span>");
     };
     match attr {
@@ -222,12 +216,12 @@ fn render_format<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W) ->
                 kind = classes::bouten_kind_slug(kind),
                 pos = classes::bouten_position_slug(position),
             )?;
-            render_content_range(f.target, store, out)?;
+            render_content_range(target, store, out)?;
             out.write_str("</em>")
         }
         ForwardAttr::CombineUpright => {
             out.write_str(r#"<span class="aozora-combine-upright">"#)?;
-            render_content_range(f.target, store, out)?;
+            render_content_range(target, store, out)?;
             out.write_str("</span>")
         }
         // 文字サイズ carries a magnitude, so its open tag is dynamic.
@@ -242,7 +236,7 @@ fn render_format<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W) ->
                 r#"<span class="{class}" data-steps="{}">"#,
                 shift.magnitude()
             )?;
-            render_content_range(f.target, store, out)?;
+            render_content_range(target, store, out)?;
             out.write_str("</span>")
         }
         // 分数: split the target on a slash — ASCII `/` or fullwidth `／` (the
@@ -252,7 +246,7 @@ fn render_format<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W) ->
         ForwardAttr::Fraction => {
             let slug = ab_aozora_spec::roman_slug("分数").unwrap_or("bunsu");
             write!(out, r#"<span class="aozora-{slug}">"#)?;
-            match store.content_range_as_plain(f.target) {
+            match store.content_range_as_plain(target) {
                 Some(t) => match t.split_once(['/', '／']) {
                     Some((num, den)) => {
                         out.write_str("<sup>")?;
@@ -267,7 +261,7 @@ fn render_format<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W) ->
                 },
                 // A structured (non-plain) target can't be split; render it
                 // as-is so no content is dropped.
-                None => render_content_range(f.target, store, out)?,
+                None => render_content_range(target, store, out)?,
             }
             out.write_str("</span>")
         }
@@ -279,18 +273,18 @@ fn render_format<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W) ->
         ForwardAttr::Framed(kind) => match framed_span_class(kind) {
             Some(class) => {
                 write!(out, r#"<span class="{class}">"#)?;
-                render_content_range(f.target, store, out)?;
+                render_content_range(target, store, out)?;
                 out.write_str("</span>")
             }
-            None => render_forward_semantic(f, attr, store, out),
+            None => render_forward_semantic(target, attr, store, out),
         },
         // ドット付き: compose the addressed letters of the reclaimed run
         // into their precomposed dotted glyphs (ṁ / ṣ) — see `render_accent_dot`.
-        ForwardAttr::AccentDot => render_accent_dot(f, store, out),
+        ForwardAttr::AccentDot => render_accent_dot(target, annotation_body, store, out),
         // アクサン / ウムラウト: compose the single target letter with its accent
         // mark into the precomposed glyph (é / ö) — see `render_accent`. Its own
         // arm keeps it off the bold catch-all below (a known bug class).
-        ForwardAttr::Accent(mark) => render_accent(f, mark, store, out),
+        ForwardAttr::Accent(mark) => render_accent(target, mark, store, out),
         // 文末より N字上げ揃え: end-align the run. Reuses the line-form's
         // `aozora-align-end` class / `data-offset` so the two scopes style
         // identically; without this explicit arm the run would fall through to
@@ -300,12 +294,12 @@ fn render_format<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W) ->
                 out,
                 r#"<span class="aozora-align-end" data-offset="{offset}">"#
             )?;
-            render_content_range(f.target, store, out)?;
+            render_content_range(target, store, out)?;
             out.write_str("</span>")
         }
         // The HTML element is semantic; the `aozora-*` slug comes from the
         // spec slug table, keyed by the canonical keyword.
-        attr => render_forward_semantic(f, attr, store, out),
+        attr => render_forward_semantic(target, attr, store, out),
     }
 }
 
@@ -332,7 +326,7 @@ pub(crate) const fn framed_span_class(kind: EnclosureKind) -> Option<&'static st
 /// box / accent-dot / align-end) are handled by their own arms in
 /// [`render_format`]; this is the catch-all for the simple styled runs.
 fn render_forward_semantic<W: Write>(
-    f: &ForwardFormat,
+    target: ContentRange,
     attr: ForwardAttr,
     store: &NodeStore,
     out: &mut W,
@@ -351,7 +345,7 @@ fn render_forward_semantic<W: Write>(
     };
     let slug = ab_aozora_spec::roman_slug(attr.keyword()).unwrap_or("futoji");
     write!(out, r#"<{el} class="aozora-{slug}">"#)?;
-    render_content_range(f.target, store, out)?;
+    render_content_range(target, store, out)?;
     out.write_str(close)
 }
 
@@ -361,16 +355,21 @@ fn render_forward_semantic<W: Write>(
 /// composer (also the classifier's validator) produces the visible run. A
 /// literal class (not slug-derived) keeps this off the `slugs.rs` / Hepburn
 /// path; a body-less or structured target falls back to the run verbatim.
-fn render_accent_dot<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W) -> fmt::Result {
+fn render_accent_dot<W: Write>(
+    target: ContentRange,
+    annotation_body: Option<StrId>,
+    store: &NodeStore,
+    out: &mut W,
+) -> fmt::Result {
     out.write_str(r#"<span class="aozora-accent-dot">"#)?;
-    match (store.content_range_as_plain(f.target), f.annotation_body) {
+    match (store.content_range_as_plain(target), annotation_body) {
         (Some(run), Some(body_id)) => match compose_accent_dots(run, store.resolve_str(body_id)) {
             Some(composed) => escape_text(&composed, out)?,
             // Unreachable post-classify; render the run rather than drop it.
             None => escape_text(run, out)?,
         },
         // A structured / body-less target can't be composed; emit as-is.
-        _ => render_content_range(f.target, store, out)?,
+        _ => render_content_range(target, store, out)?,
     }
     out.write_str("</span>")
 }
@@ -381,13 +380,13 @@ fn render_accent_dot<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W
 /// is the single authority; a structured or non-composable target — unreachable
 /// post-classify — falls back to the target verbatim rather than dropping it.
 fn render_accent<W: Write>(
-    f: &ForwardFormat,
+    target: ContentRange,
     mark: AccentMark,
     store: &NodeStore,
     out: &mut W,
 ) -> fmt::Result {
     out.write_str(r#"<span class="aozora-accent">"#)?;
-    match store.content_range_as_plain(f.target) {
+    match store.content_range_as_plain(target) {
         Some(run) => match run.chars().next().and_then(|c| compose_accent(c, mark)) {
             Some(glyph) => out.write_char(glyph)?,
             // Unreachable post-classify (validated single composable letter);
@@ -395,7 +394,7 @@ fn render_accent<W: Write>(
             None => escape_text(run, out)?,
         },
         // A structured target can't be composed; emit as-is.
-        None => render_content_range(f.target, store, out)?,
+        None => render_content_range(target, store, out)?,
     }
     out.write_str("</span>")
 }
@@ -592,13 +591,7 @@ fn render_aozora_heading<W: Write>(h: &Heading, store: &NodeStore, out: &mut W) 
 
 /// Render a heading hint (`［＃「X」は中見出し］`).
 ///
-/// A referent-present hint that the lowering pass did not promote stays a
-/// hidden marker carrying its level / style / target as data attributes. A
-/// `self_contained` hint (a no-referent forward heading) instead renders its
-/// quoted target visibly, classed as a heading by level — the inline analogue
-/// of a promoted `<hN>`, valid where a block heading is not (the directive sits
-/// mid-line). Both serialize bracket-only, so the round-trip stays a fixed
-/// point.
+/// An unpromoted hint retains its target as hidden reference metadata.
 fn render_heading_hint<W: Write>(h: HeadingHint, store: &NodeStore, out: &mut W) -> fmt::Result {
     write!(
         out,
@@ -609,12 +602,6 @@ fn render_heading_hint<W: Write>(h: HeadingHint, store: &NodeStore, out: &mut W)
     // hint's markup is unchanged.
     if let Some(style) = classes::heading_style_slug(h.style) {
         write!(out, r#" data-style="{style}""#)?;
-    }
-    if h.self_contained {
-        // Visible: the quoted run is itself the heading text.
-        out.write_str(">")?;
-        escape_text(store.resolve_str(h.target), out)?;
-        return out.write_str("</span>");
     }
     // Hidden marker: the heading text lives in the (promotable) referent run.
     out.write_str(r#" data-target=""#)?;

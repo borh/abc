@@ -685,11 +685,6 @@ fn emit_sashie<W: Write>(s: &Illustration, store: &NodeStore, out: &mut W) -> fm
 }
 
 /// Serialize a heading hint back to its `［＃「X」は…見出し］` bracket form.
-///
-/// `self_contained` is deliberately ignored: a no-referent forward heading
-/// serializes to the bracket alone, never fabricating a referent line. That
-/// keeps the round-trip a fixed point (a fabricated line would re-parse as a
-/// promotable referent — see `promote_headings` — diverging on the next pass).
 fn emit_heading_hint<W: Write>(h: HeadingHint, store: &NodeStore, out: &mut W) -> fmt::Result {
     out.write_str("［＃「")?;
     out.write_str(store.resolve_str(h.target))?;
@@ -776,19 +771,16 @@ mod tests {
         }
     }
 
-    /// E1-1: a no-referent forward ([`ForwardOrigin::SelfContained`]) is not
-    /// [`ForwardOrigin::Reclaimed`], so the serializer emits **no** leading
-    /// literal — just the `［＃「X」は太字］` bracket. (`Reclaimed` would prefix
-    /// the literal `X`.) Pinned directly since the producer arrives in E1-2.
+    /// Reference serialization retains the marker without inserting its operand.
     #[test]
-    fn self_contained_forward_serializes_bracket_only() {
+    fn referenced_forward_serializes_bracket_only() {
         use ab_aozora_syntax::alloc::Allocator;
         use ab_aozora_syntax::ast::Node;
         use ab_aozora_syntax::{ForwardAttr, ForwardOrigin};
 
         let mut a = Allocator::new();
         let t = a.content_plain("X");
-        let node = a.forward_format(ForwardAttr::Bold, t, ForwardOrigin::SelfContained);
+        let node = a.forward_format(ForwardAttr::Bold, t, ForwardOrigin::Referenced);
         let Node::Format(f) = node else {
             panic!("forward_format must build a Format node");
         };
@@ -799,17 +791,14 @@ mod tests {
         assert_eq!(s, "［＃「X」は太字］");
     }
 
-    /// E1-4: a self-contained heading hint serializes to the bracket alone — it
-    /// must NOT fabricate a referent line, which would re-parse as a promotable
-    /// heading (`promote_headings`) and break the round-trip fixed point.
     #[test]
-    fn self_contained_heading_serializes_bracket_only() {
+    fn heading_hint_serializes_bracket_only() {
         use ab_aozora_syntax::alloc::Allocator;
         use ab_aozora_syntax::ast::Node;
         use ab_aozora_syntax::{HeadingKind, HeadingStyle};
 
         let mut a = Allocator::new();
-        let node = a.heading_hint(HeadingKind::Medium, HeadingStyle::Standard, "序章", true);
+        let node = a.heading_hint(HeadingKind::Medium, HeadingStyle::Standard, "序章");
         let Node::HeadingHint(h) = node else {
             panic!("heading_hint must build a HeadingHint node");
         };

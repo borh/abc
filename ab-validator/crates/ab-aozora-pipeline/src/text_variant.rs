@@ -105,14 +105,47 @@ pub struct TextVariant<'s> {
     pub target: TextVariantTarget,
     /// The spelling supplied in the Aozora text.
     pub current: &'s str,
-    /// The alternative attributed to the base text; empty only for explicit absence.
+    /// Witness fragment before any separate continuation; empty for explicit absence.
     pub base_text: &'s str,
     /// UTF-8 byte range of the quoted current fragment within the annotation.
     pub current_span: Range<usize>,
     /// UTF-8 byte range of the witness fragment; absent for stated omission.
     pub base_span: Option<Range<usize>>,
+    /// Shared literal continuation supplied after the witness quotation.
+    pub base_continuation: Option<WitnessContinuation<'s>>,
     /// Complete editorial statement when the note makes an additional assertion.
     pub editorial_statement: Option<&'s str>,
+}
+
+/// A source-supplied continuation whose spelling also ends the current quotation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WitnessContinuation<'s> {
+    /// Literal spelling supplied after the closing quote.
+    pub text: &'s str,
+    /// Exact UTF-8 range within the annotation, excluding the preceding quote.
+    pub span: Range<usize>,
+}
+
+fn witness_continuation<'s>(
+    witness: &'s str,
+    current: &str,
+    start: usize,
+) -> Option<WitnessContinuation<'s>> {
+    let (quoted, text) = witness.rsplit_once('」')?;
+    if !quoted
+        .strip_prefix('「')
+        .is_some_and(|interior| !interior.is_empty() && !interior.contains(['「', '」']))
+        || text.is_empty()
+        || !text.chars().all(char::is_alphanumeric)
+        || current.strip_suffix(text).is_none_or(str::is_empty)
+    {
+        return None;
+    }
+    let end = start + witness.len();
+    Some(WitnessContinuation {
+        text,
+        span: end - text.len()..end,
+    })
 }
 
 /// Reading alternatives qualified by the same parenthesized principal continuation.
@@ -318,6 +351,12 @@ fn variant_parts<'s>(
     let editorial_statement =
         (asserted.is_some() || with_statement_tail.is_some()).then_some(statement);
     let witness = asserted.unwrap_or(witness);
+    let base_continuation = (target == TextVariantTarget::Text)
+        .then(|| witness_continuation(witness, current, witness_start))
+        .flatten();
+    let witness = base_continuation.as_ref().map_or(witness, |continuation| {
+        &witness[..witness.len() - continuation.text.len()]
+    });
     let (base_text, quote_prefix) = match witness {
         "欠落" | "なし" | "無し" | "脱落" | "欠如" | "欠" | "脱字" => ("", 0),
         glyph
@@ -374,6 +413,7 @@ fn variant_parts<'s>(
         base_text,
         current_span: current_start..current_start + current.len(),
         base_span,
+        base_continuation,
         editorial_statement,
     })
 }

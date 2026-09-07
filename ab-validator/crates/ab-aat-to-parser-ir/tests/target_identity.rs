@@ -3,6 +3,64 @@ use std::path::Path;
 use ab_aat_to_parser_ir::{ConversionOptions, ConversionRequest, MappingDocument, SchemaSet};
 use serde_json::{Value, json};
 
+#[test]
+fn shared_literal_continuation_remains_outside_the_witness_quote() {
+    for (body, current, witness, continuation) in [
+        (
+            "時藏《ときぞう》は［＃「時藏《ときぞう》は」は底本では「由藏《よしぞう》」は］",
+            "時藏は",
+            "由藏は",
+            "は",
+        ),
+        (
+            "二三歩｜後退《あとしざ》つた［＃「二三歩｜後退《あとしざ》つた」は底本では「二三｜歩退《あとしざ》」つた］",
+            "二三歩後退つた",
+            "二三歩退つた",
+            "つた",
+        ),
+        (
+            "一般與論の［＃「一般與論の」は底本では「一般輿論」の］",
+            "一般與論の",
+            "一般輿論の",
+            "の",
+        ),
+    ] {
+        let ir = convert(body);
+        let all = nodes(&ir);
+        let app = all
+            .iter()
+            .find(|node| node["type"] == "base-text-variant")
+            .unwrap();
+        assert_eq!(app["text"], current);
+        assert_eq!(app["variant"]["base_text"], witness);
+        let children = app["variant"]["base_children"].as_array().unwrap();
+        let tail = children.last().unwrap();
+        assert_eq!(tail["text"], continuation);
+        let source = format!("題\n作者\n\n{body}\n\n底本：本\n");
+        let start = usize::try_from(tail["source_span"]["start"].as_u64().unwrap()).unwrap();
+        let end = usize::try_from(tail["source_span"]["end"].as_u64().unwrap()).unwrap();
+        assert_eq!(&source[start..end], continuation);
+        assert!(source[..start].ends_with('」'));
+        assert_eq!(ir["interpretation_problems"], json!([]));
+    }
+    for body in [
+        "一般與論の［＃「一般與論の」は底本では「一般輿論」は］",
+        "一般與論の［＃「一般與論の」は底本では「一般輿論」のとある］",
+        "一般與論の後［＃「一般與論の」は底本では「一般輿論」の］",
+        "一般與論の［＃「一般與論の」は底本では「一般輿論」「別」の］",
+        "時藏《ときぞう》は［＃「時藏《じぞう》は」は底本では「由藏《よしぞう》」は］",
+    ] {
+        let ir = convert(body);
+        assert!(
+            !nodes(&ir)
+                .iter()
+                .any(|node| node["type"] == "base-text-variant"),
+            "{body}"
+        );
+        assert!(!ir["interpretation_problems"].as_array().unwrap().is_empty());
+    }
+}
+
 fn convert(body: &str) -> Value {
     let source = format!("題\n作者\n\n{body}\n\n底本：本\n");
     let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");

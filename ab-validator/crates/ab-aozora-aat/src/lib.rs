@@ -337,7 +337,7 @@ enum ProjectedKind {
         current: String,
         base_text: String,
         current_span: Range<usize>,
-        base_span: Option<Range<usize>>,
+        base_spans: Vec<Range<usize>>,
         editorial_statement: Option<String>,
     },
     BaseEditionConcealment {
@@ -490,11 +490,25 @@ fn projected_variant(variant: TextVariant<'_>, start: usize) -> ProjectedKind {
         editorial_statement: variant.editorial_statement.map(str::to_owned),
         target: variant.target,
         current: variant.current.to_owned(),
-        base_text: variant.base_text.to_owned(),
+        base_text: format!(
+            "{}{}",
+            variant.base_text,
+            variant
+                .base_continuation
+                .as_ref()
+                .map_or("", |continuation| continuation.text)
+        ),
         current_span: start + variant.current_span.start..start + variant.current_span.end,
-        base_span: variant
+        base_spans: variant
             .base_span
-            .map(|range| start + range.start..start + range.end),
+            .into_iter()
+            .chain(
+                variant
+                    .base_continuation
+                    .map(|continuation| continuation.span),
+            )
+            .map(|range| start + range.start..start + range.end)
+            .collect(),
     }
 }
 
@@ -2800,13 +2814,13 @@ fn rebase_projected_spans(kind: &mut ProjectedKind, offset: usize) {
     }
     if let ProjectedKind::TextVariant {
         current_span,
-        base_span,
+        base_spans,
         ..
     } = kind
     {
         current_span.start += offset;
         current_span.end += offset;
-        if let Some(span) = base_span {
+        for span in base_spans {
             span.start += offset;
             span.end += offset;
         }
@@ -5814,7 +5828,7 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
         current,
         base_text,
         current_span,
-        base_span,
+        base_spans,
         editorial_statement,
     } = &node.kind
     {
@@ -5828,10 +5842,12 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
         if let Some(current_content) = source_fragment(decoded, current_span.clone()) {
             value["text_variant"]["current_content"] = json!(current_content);
         }
-        let base_content = base_span.as_ref().map_or_else(
-            || Some(Vec::new()),
-            |range| witness_fragment(decoded, range.clone()),
-        );
+        let base_content = base_spans
+            .iter()
+            .try_fold(Vec::new(), |mut content, range| {
+                content.extend(witness_fragment(decoded, range.clone())?);
+                Some(content)
+            });
         if let Some(base_content) = base_content {
             value["text_variant"]["base_content"] = json!(base_content);
         }

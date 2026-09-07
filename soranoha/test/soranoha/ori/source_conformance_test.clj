@@ -1457,3 +1457,17 @@
                       (not (string/blank? (attribute % "source")))) (elements result "note")))
       (is (seq (get-in result [:ir "interpretation_problems"])))
       (is (not-any? #(= "text-variant" (get % "kind")) (get-in result [:ir "interpretation_facts"]))))))
+
+(deftest witness-continuations-preserve-source-quotation-boundaries
+  (doseq [[principal marker current witness]
+          [["時藏《ときぞう》は" "［＃「時藏《ときぞう》は」は底本では「由藏《よしぞう》」は］" "時藏は" "由藏は"]
+           ["二三歩｜後退《あとしざ》つた" "［＃「二三歩｜後退《あとしざ》つた」は底本では「二三｜歩退《あとしざ》」つた］" "二三歩後退つた" "二三歩退つた"]
+           ["一般與論の" "［＃「一般與論の」は底本では「一般輿論」の］" "一般與論の" "一般輿論の"]]]
+    (let [before (transcribe (source principal))
+          after (transcribe (source (str principal marker)))]
+      (is (= current (:plaintext after)))
+      (is (= (:plaintext before) (:plaintext after)))
+      (is (= (projection/markdown (:view before)) (projection/markdown (:view after))))
+      (is (= [current] (texts after "lem")))
+      (is (= [witness] (texts after "rdg")))
+      (is (empty? (get-in after [:ir "interpretation_problems"]))))))

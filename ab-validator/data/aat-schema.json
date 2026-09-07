@@ -54,6 +54,21 @@
         "parse_complete": { "type": "boolean" },
         "warnings": { "type": "array", "items": { "$ref": "#/$defs/warning" } },
         "interpretation_facts": {"type":"array", "items":{"$ref":"#/$defs/interpretationFact"}},
+        "interpretation_problems": {
+          "type": "array",
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["kind", "code", "aspects", "influence", "raw", "source_span"],
+            "properties": {
+              "kind": {"$ref":"#/$defs/raw/properties/interpretation_problem/properties/kind"},
+              "code": {"$ref":"#/$defs/raw/properties/interpretation_problem/properties/code"},
+              "aspects": {"$ref":"#/$defs/raw/properties/interpretation_problem/properties/aspects"},
+              "influence": {"$ref":"#/$defs/raw/properties/interpretation_problem/properties/influence"},
+              "raw": {"type":"string"},
+              "source_span": {"$ref":"#/$defs/interpretationFact/properties/source_span"}
+            }
+          }
+        },
         "metrics": { "$ref": "#/$defs/metrics" },
         "semantic_summary": { "$ref": "#/$defs/semantic_summary" }
       }

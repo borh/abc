@@ -557,11 +557,18 @@ fn projections(
     Vec<Diagnostic>,
     Vec<AozoraGaiji>,
     Vec<AozoraRubyEntry>,
+    Vec<Span>,
 )> {
-    let tree = Pipeline::from_sanitized(span_text)
-        .tokenize()
-        .pair()
-        .build();
+    let paired = Pipeline::from_sanitized(span_text).tokenize().pair();
+    let retained_accents = paired
+        .retained_multiline_accent_spans()
+        .into_iter()
+        .map(|span| Span {
+            start: span.start as usize,
+            end: span.end as usize,
+        })
+        .collect();
+    let tree = paired.build();
     let initial_nodes = node_projection(&tree);
     let diagnostics = tree.diagnostics.clone();
     let gaiji = encoding::gaiji::gaiji_resolutions(span_text);
@@ -616,7 +623,7 @@ fn projections(
         }
     }
     nodes.sort_by_key(|node| (node.span.start, node.span.end));
-    Ok((nodes, diagnostics, gaiji, ruby))
+    Ok((nodes, diagnostics, gaiji, ruby, retained_accents))
 }
 
 /// Transform Aozora source bytes into AAT JSON output.
@@ -626,8 +633,24 @@ fn projections(
 /// Returns an error if source decoding, projection parsing, or JSON serialization fails.
 pub fn aat_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
     let decoded = decode_source_bytes(bytes)?;
-    let (nodes, diagnostics, gaiji, ruby) = projections(&decoded.span_text)?;
-    let aat = build_aat(&decoded, &nodes, &diagnostics, &gaiji, &ruby);
+    let (nodes, diagnostics, gaiji, ruby, retained_accents) = projections(&decoded.span_text)?;
+    let mut aat = build_aat(&decoded, &nodes, &diagnostics, &gaiji, &ruby);
+    if !retained_accents.is_empty() {
+        aat["meta"]["interpretation_problems"] = Value::Array(
+            retained_accents
+                .iter()
+                .map(|span| {
+                    let start = decoded.span_ctx.to_decoded(span.start);
+                    let end = decoded.span_ctx.to_decoded_end(span.end);
+                    json!({"kind":"uninterpreted-notation", "code":"uninterpreted-notation",
+                "raw": &decoded.text[start..end],
+                "source_span": {"coordinate_system":"decoded_utf8", "start":start, "end":end,
+                    "line":decoded.span_ctx.line_of(start)},
+                "aspects":["content","layout"], "influence":{"kind":"document"}})
+                })
+                .collect(),
+        );
+    }
     let mut out = Vec::new();
     serde_json::to_writer(&mut out, &aat)?;
     out.push(b'\n');
@@ -3983,7 +4006,7 @@ mod tests {
     fn inline_array_for(line: &str) -> Vec<Value> {
         let src = format!("{line}\n");
         let decoded = decode_source_bytes(src.as_bytes()).unwrap();
-        let (nodes, _diagnostics, gaiji, ruby) = projections(&decoded.span_text).unwrap();
+        let (nodes, _diagnostics, gaiji, ruby, _) = projections(&decoded.span_text).unwrap();
         let gaiji_by_start = gaiji
             .iter()
             .map(|entry| (entry.start, entry.clone()))
@@ -4295,7 +4318,7 @@ mod tests {
         // block kinds, paragraph segmentation, jizume terminator handling,
         // spans, provenance: everything.
         let decoded = decode_source_bytes(src.as_bytes()).unwrap();
-        let (nodes, _diagnostics, gaiji, ruby) = projections(&decoded.span_text).unwrap();
+        let (nodes, _diagnostics, gaiji, ruby, _) = projections(&decoded.span_text).unwrap();
         let gaiji_by_start = gaiji
             .iter()
             .map(|entry| (entry.start, entry.clone()))

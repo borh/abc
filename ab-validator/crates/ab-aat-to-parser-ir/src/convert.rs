@@ -875,7 +875,10 @@ fn gaiji_payload(node: &Value) -> Value {
 }
 
 fn interpretation_problems(aat: &Value, nodes: &[Value]) -> Result<Vec<Value>> {
-    let mut problems = Vec::new();
+    let mut problems = aat["meta"]["interpretation_problems"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default();
     let mut pending = vec![aat];
     while let Some(node) = pending.pop() {
         if let Some(problem) = node.get("interpretation_problem") {

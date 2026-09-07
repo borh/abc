@@ -44,6 +44,7 @@ use crate::lexer::{
 };
 use ab_aozora_spec::{Diagnostic, PairLink};
 
+use ab_aozora_syntax::accent::decompose_fragment_sites;
 use ab_aozora_syntax::alloc::Allocator;
 use ab_aozora_syntax::ast::canonicalize_classified_source_facts;
 use ab_aozora_syntax::ast::{LexOutput, Node, NodeStore, Registry};
@@ -240,6 +241,25 @@ impl Pipeline<'_, Paired> {
     #[must_use]
     pub fn links(&self) -> &[PairLink] {
         &self.state.links
+    }
+
+    /// Complete multiline accent scopes retained as source text rather than decoded.
+    /// Ordinary tortoiseshell punctuation without accent digraphs is excluded.
+    #[must_use]
+    pub fn retained_multiline_accent_spans(&self) -> Vec<Span> {
+        self.state
+            .links
+            .iter()
+            .filter_map(|link| {
+                if link.kind != ab_aozora_spec::PairKind::Tortoise {
+                    return None;
+                }
+                let body =
+                    &self.state.sanitized_text[link.open.end as usize..link.close.start as usize];
+                (body.contains(['\r', '\n']) && !decompose_fragment_sites(body).is_empty())
+                    .then(|| Span::new(link.open.start, link.close.end))
+            })
+            .collect()
     }
 
     /// Drive the classify stage + the owned normalizer fold and return the final

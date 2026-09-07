@@ -352,3 +352,45 @@ fn write_zip_text(path: &Path, name: &str, text: &str) {
     zip.write_all(text.as_bytes()).unwrap();
     zip.finish().unwrap();
 }
+
+#[test]
+fn census_and_index_keep_all_text_members_and_explicit_failures() {
+    let root = std::env::temp_dir().join(format!("ab-index-census-{}", std::process::id()));
+    let files = root.join("cards/000001/files");
+    fs::create_dir_all(&files).unwrap();
+    let mut archive = zip::ZipWriter::new(fs::File::create(files.join("1.zip")).unwrap());
+    for (name, bytes) in [
+        ("first.txt", b"first".as_slice()),
+        ("second.txt", b"second"),
+        ("README.txt", b"notes"),
+        ("image.png", b"png"),
+    ] {
+        archive
+            .start_file(name, zip::write::SimpleFileOptions::default())
+            .unwrap();
+        archive.write_all(bytes).unwrap();
+    }
+    archive.finish().unwrap();
+    fs::write(files.join("broken.zip"), b"not a zip").unwrap();
+    write_zip_text(&files.join("2.html"), "third.txt", "third");
+    let census = ab_index::index::source_census(&root).unwrap();
+    assert_eq!(census.files.len(), 3);
+    assert_eq!(census.files[0].members.len(), 4);
+    assert_eq!(
+        census.files[0]
+            .members
+            .iter()
+            .filter(|m| m.role == "source-text")
+            .count(),
+        2
+    );
+    assert_eq!(census.files[0].members[2].role, "auxiliary-text");
+    assert_eq!(census.files[0].members[3].role, "non-text");
+    assert_eq!(census.files[1].container_format, "zip");
+    assert!(census.files[2].error.is_some());
+    let patterns = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../data/feature-patterns.toml");
+    let index = build_index(&root, &FeatureDetector::from_toml(&patterns).unwrap()).unwrap();
+    assert_eq!(index.works_count, 3);
+    assert_ne!(index.works[0].txt_path, index.works[1].txt_path);
+    fs::remove_dir_all(root).unwrap();
+}

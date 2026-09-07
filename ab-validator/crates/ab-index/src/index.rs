@@ -197,17 +197,14 @@ fn collect_source_files(corpus_root: &Path) -> Result<Vec<SourceFile>> {
         if !is_aozora_work_source_path(path, corpus_root) {
             continue;
         }
-        if is_text_file(path) {
-            if is_zip_file(path)? {
-                push_zip_sources(&mut sources, path);
-            } else {
-                sources.push(SourceFile::Plain(path.to_owned()));
-            }
-        } else if path
+        if path
             .extension()
             .is_some_and(|ext| ext.eq_ignore_ascii_case("zip"))
+            || is_zip_file(path)?
         {
             push_zip_sources(&mut sources, path);
+        } else if is_text_file(path) {
+            sources.push(SourceFile::Plain(path.to_owned()));
         }
     }
     sources.sort_by_key(|source| source_index_path(source, corpus_root));
@@ -310,16 +307,17 @@ fn zip_text_entries(path: &Path) -> Result<Vec<String>> {
         fs::File::open(path).with_context(|| format!("failed to open {}", path.display()))?;
     let mut archive =
         ZipArchive::new(file).with_context(|| format!("failed to read zip {}", path.display()))?;
+    let mut entries = Vec::new();
     for idx in 0..archive.len() {
         let file = archive
             .by_index_raw(idx)
             .with_context(|| format!("failed to read zip entry {idx} in {}", path.display()))?;
         let name = file.name();
         if is_zip_text_entry(name) && !file.is_dir() {
-            return Ok(vec![name.to_owned()]);
+            entries.push(name.to_owned());
         }
     }
-    Ok(Vec::new())
+    Ok(entries)
 }
 
 fn read_source_bytes(source: &SourceFile) -> Result<Vec<u8>> {
@@ -584,4 +582,171 @@ mod tests {
             other => panic!("expected a plain source, got {other:?}"),
         }
     }
+}
+
+#[derive(Debug, Serialize)]
+pub struct SourceCensus {
+    pub schema_version: &'static str,
+    pub files: Vec<CensusFile>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CensusFile {
+    pub container_format: &'static str,
+    pub path: String,
+    pub sha256: String,
+    pub bytes: u64,
+    pub members: Vec<CensusMember>,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CensusMember {
+    pub ordinal: Option<usize>,
+    pub name: String,
+    pub name_bytes_hex: String,
+    pub role: &'static str,
+    pub bytes: Option<u64>,
+    pub sha256: Option<String>,
+    pub read_error: Option<String>,
+    pub decode_error: Option<String>,
+    pub encoding: Option<String>,
+}
+
+/// Enumerate every physical file under cards/*/files and every archive member.
+/// Archive read failures remain records; directory traversal failures abort.
+pub fn source_census(corpus_root: &Path) -> Result<SourceCensus> {
+    let mut paths = Vec::new();
+    for entry in WalkDir::new(corpus_root).follow_links(false) {
+        let entry = entry?;
+        if is_aozora_work_source_path(entry.path(), corpus_root)
+            && (entry.file_type().is_file()
+                || (entry.file_type().is_symlink() && fs::metadata(entry.path())?.is_file()))
+        {
+            paths.push(entry.into_path());
+        }
+    }
+    paths.sort();
+    let files = paths
+        .par_iter()
+        .map(|path| census_file(corpus_root, path))
+        .collect::<Result<Vec<_>>>()?;
+    Ok(SourceCensus {
+        schema_version: "aozora-source-census-v1",
+        files,
+    })
+}
+
+fn census_member(
+    ordinal: Option<usize>,
+    name: String,
+    name_bytes: &[u8],
+    directory: bool,
+    bytes: Result<Vec<u8>>,
+) -> CensusMember {
+    let text = Path::new(&name)
+        .extension()
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("txt"));
+    let role = if directory {
+        "directory"
+    } else if text && is_zip_text_entry(&name) {
+        "source-text"
+    } else if text {
+        "auxiliary-text"
+    } else {
+        "non-text"
+    };
+    let mut member = CensusMember {
+        ordinal,
+        name,
+        name_bytes_hex: name_bytes.iter().map(|b| format!("{b:02x}")).collect(),
+        role,
+        bytes: None,
+        sha256: None,
+        read_error: None,
+        decode_error: None,
+        encoding: None,
+    };
+    match bytes {
+        Ok(bytes) => {
+            member.bytes = Some(bytes.len() as u64);
+            member.sha256 = Some(hex_sha256(&bytes));
+            if text && !directory {
+                match decode_source_bytes(&bytes) {
+                    Ok(decoded) => member.encoding = Some(decoded.encoding),
+                    Err(error) => member.decode_error = Some(format!("{error:#}")),
+                }
+            }
+        }
+        Err(error) => member.read_error = Some(format!("{error:#}")),
+    }
+    member
+}
+
+fn census_file(corpus_root: &Path, path: &Path) -> Result<CensusFile> {
+    let bytes = fs::read(path).with_context(|| format!("read {}", path.display()))?;
+    let mut record = CensusFile {
+        container_format: "file",
+        path: normalize_relative_path(path.strip_prefix(corpus_root)?),
+        sha256: hex_sha256(&bytes),
+        bytes: bytes.len() as u64,
+        members: Vec::new(),
+        error: None,
+    };
+    let archive = path
+        .extension()
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("zip"))
+        || bytes.starts_with(b"PK\x03\x04");
+    if !archive {
+        let name = path.file_name().unwrap().to_string_lossy().into_owned();
+        record.members.push(census_member(
+            None,
+            name.clone(),
+            name.as_bytes(),
+            false,
+            Ok(bytes),
+        ));
+        return Ok(record);
+    }
+    record.container_format = "zip";
+    let mut zip = match ZipArchive::new(std::io::Cursor::new(bytes)) {
+        Ok(zip) => zip,
+        Err(error) => {
+            record.error = Some(error.to_string());
+            return Ok(record);
+        }
+    };
+    for ordinal in 0..zip.len() {
+        let (name, raw_name, directory) = match zip.by_index_raw(ordinal) {
+            Ok(entry) => (
+                entry.name().to_owned(),
+                entry.name_raw().to_vec(),
+                entry.is_dir(),
+            ),
+            Err(error) => {
+                record.members.push(census_member(
+                    Some(ordinal),
+                    String::new(),
+                    &[],
+                    false,
+                    Err(error.into()),
+                ));
+                continue;
+            }
+        };
+        let content = (|| -> Result<Vec<u8>> {
+            let mut entry = zip.by_index(ordinal)?;
+            let mut bytes = Vec::new();
+            entry.read_to_end(&mut bytes)?;
+            Ok(bytes)
+        })();
+        record.members.push(census_member(
+            Some(ordinal),
+            name,
+            &raw_name,
+            directory,
+            content,
+        ));
+    }
+    Ok(record)
 }

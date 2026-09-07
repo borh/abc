@@ -2742,3 +2742,54 @@ fn join_errors(errors: &[RowError]) -> String {
         .collect::<Vec<_>>()
         .join("\n")
 }
+
+mod edition_results {
+    use std::{fs, process::Command};
+
+    #[test]
+    fn edition_results_preserve_unknown_occurrences_beyond_report_sample_limit() {
+        let root = std::env::temp_dir().join(format!("edition-results-{}", std::process::id()));
+        fs::create_dir_all(&root).unwrap();
+        fs::write(
+            root.join("source.txt"),
+            format!("\u{feff}{}", "［＃］\n".repeat(125)),
+        )
+        .unwrap();
+        fs::write(
+            root.join("index.json"),
+            r#"{"works":[{"id":"one","txt_path":"source.txt"}]}"#,
+        )
+        .unwrap();
+        let status = Command::new(env!("CARGO_BIN_EXE_ab-source-inventory"))
+            .args(["--index", root.join("index.json").to_str().unwrap()])
+            .args(["--corpus", root.to_str().unwrap()])
+            .args([
+                "--matrix",
+                concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/../../data/aozora-syntax-coverage.toml"
+                ),
+            ])
+            .args(["--output-json", root.join("report.json").to_str().unwrap()])
+            .args(["--report-md", root.join("report.md").to_str().unwrap()])
+            .args([
+                "--edition-results",
+                root.join("editions.jsonl").to_str().unwrap(),
+            ])
+            .status()
+            .unwrap();
+        assert!(status.success());
+        let row: serde_json::Value =
+            serde_json::from_slice(&fs::read(root.join("editions.jsonl")).unwrap()).unwrap();
+        assert_eq!(row["indexed_path"], "source.txt");
+        assert_eq!(
+            row["summary"]["unknown_examples"].as_array().unwrap().len(),
+            125
+        );
+        let report: serde_json::Value =
+            serde_json::from_slice(&fs::read(root.join("report.json")).unwrap()).unwrap();
+        assert_eq!(report["unknown_examples"].as_array().unwrap().len(), 100);
+        assert_eq!(report["unknown_markers_total"], 125);
+        fs::remove_dir_all(root).unwrap();
+    }
+}

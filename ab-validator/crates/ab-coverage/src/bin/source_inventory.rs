@@ -2,6 +2,7 @@ use std::{
     cmp::Reverse,
     collections::{BTreeMap, BTreeSet},
     fs,
+    io::{BufWriter, Write},
     path::{Path, PathBuf},
 };
 
@@ -39,6 +40,8 @@ struct Cli {
     report_md: PathBuf,
     #[arg(long)]
     unknown_workset: Option<PathBuf>,
+    #[arg(long)]
+    edition_results: Option<PathBuf>,
     #[arg(long)]
     fail_on_unknown: bool,
     #[arg(long)]
@@ -215,7 +218,24 @@ fn main() -> Result<()> {
         .map(|entry| scan_work(entry, &cli.corpus, &patterns))
         .collect::<Vec<_>>();
 
-    for result in work_results {
+    let mut edition_results = cli
+        .edition_results
+        .as_ref()
+        .map(|path| fs::File::create(path).map(BufWriter::new))
+        .transpose()?;
+    for (entry, result) in work_entries.iter().zip(work_results) {
+        if let Some(writer) = &mut edition_results {
+            let record = match &result {
+                WorkInventoryResult::Scanned { summary, .. } => serde_json::json!({
+                    "indexed_path": entry.indexed_path, "summary": summary
+                }),
+                WorkInventoryResult::Failed { error, .. } => serde_json::json!({
+                    "indexed_path": entry.indexed_path, "work_id": entry.work_id, "error": error
+                }),
+            };
+            serde_json::to_writer(&mut *writer, &record)?;
+            writeln!(writer)?;
+        }
         match result {
             WorkInventoryResult::Scanned {
                 work_id,
@@ -276,6 +296,9 @@ fn main() -> Result<()> {
     }
 
     observe_row_representability(&mut output, &rows_by_id, &mut strict_errors);
+    if let Some(writer) = &mut edition_results {
+        writer.flush()?;
+    }
     if output.works_failed > 0 {
         strict_errors.push(format!(
             "{} works failed source inventory read/decode",

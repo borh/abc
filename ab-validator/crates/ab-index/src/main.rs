@@ -6,7 +6,7 @@ use std::{
 
 use ab_index::{
     features::FeatureDetector,
-    index::{build_index, query_all, query_any, read_index, sample, write_index},
+    index::{build_index, query_all, query_any, read_index, sample, source_census, write_index},
 };
 use anyhow::{Result, bail};
 use clap::Parser;
@@ -19,6 +19,9 @@ struct Args {
 
     #[arg(long)]
     index: Option<PathBuf>,
+
+    #[arg(long, requires = "corpus")]
+    source_census: Option<PathBuf>,
 
     #[arg(long)]
     output: Option<PathBuf>,
@@ -43,6 +46,10 @@ fn main() -> Result<()> {
     let args = Args::parse();
 
     if let Some(corpus) = &args.corpus {
+        if let Some(output) = &args.source_census {
+            serde_json::to_writer_pretty(fs::File::create(output)?, &source_census(corpus)?)?;
+            return Ok(());
+        }
         let detector = FeatureDetector::from_toml(&args.patterns)?;
         let index = build_index(corpus, &detector)?;
         if let Some(output) = &args.output {

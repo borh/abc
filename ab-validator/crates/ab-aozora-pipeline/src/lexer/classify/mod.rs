@@ -1731,6 +1731,7 @@ where
         };
         let adjacent = self.pending_ruby_base.as_ref().is_some_and(|pending| {
             pending.bar.is_some()
+                && pending.end() <= span.source_span.start
                 && (pending.end() == span.source_span.start
                     || self.pending_plain_start() == Some(pending.end()))
         });
@@ -1749,7 +1750,14 @@ where
         let Some(start) = self.pending_plain_start() else {
             return false;
         };
-        let before = &self.source[start as usize..span.source_span.start as usize];
+        // A reclaimed target can precede the pending plain fragment. Only an
+        // ordered fragment containing its own bar establishes this deferred base.
+        let Some(before) = self
+            .source
+            .get(start as usize..span.source_span.start as usize)
+        else {
+            return false;
+        };
         let Some(offset) = before.rfind('｜') else {
             return false;
         };

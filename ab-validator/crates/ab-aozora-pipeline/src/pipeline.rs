@@ -147,6 +147,20 @@ impl<'src> Pipeline<'src, Source> {
 // ---------------------------------------------------------------------
 
 impl<'src> Pipeline<'src, Sanitized> {
+    /// Parse text whose caller already owns sanitization and its source maps.
+    /// Token and source-node spans index these exact bytes. The caller retains
+    /// any diagnostics produced by its sanitization pass.
+    #[must_use]
+    pub fn from_sanitized(source: &'src str) -> Self {
+        Self {
+            source,
+            diagnostics: Vec::new(),
+            state: Sanitized {
+                sanitized_text: source.to_owned(),
+            },
+        }
+    }
+
     /// Sanitized text.
     #[must_use]
     pub fn sanitized_text(&self) -> &str {
@@ -248,7 +262,7 @@ impl Pipeline<'_, Paired> {
             links,
         } = self.state;
         let sanitized_len =
-            u32::try_from(sanitized_text.len()).expect("sanitize asserts source.len() <= u32::MAX");
+            u32::try_from(sanitized_text.len()).expect("sanitized source exceeds u32::MAX bytes");
 
         let mut alloc = Allocator::new();
 

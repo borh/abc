@@ -4,6 +4,7 @@ use std::{collections::BTreeMap, fmt::Write as _, mem, ops::Range, str, sync::La
 
 use ab_aozora_pipeline::lexer::sanitize::{SanitizeMaps, sanitize_mapped};
 use ab_aozora_pipeline::text_variant::{TextVariantTarget, text_variant};
+use ab_aozora_pipeline::{LexOutput, Pipeline};
 use anyhow::Result;
 use encoding_rs::SHIFT_JIS;
 use regex::Regex;
@@ -12,22 +13,15 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
 use ab_aozora_facade::{
-    self, BoutenPosition, Diagnostic, DirectiveKind, Document, ForwardAttr, Node, NodeKind,
-    NodeRef, Severity, Tree, encoding, json as aozora_json,
+    self, BoutenPosition, Diagnostic, DirectiveKind, ForwardAttr, Node, NodeKind, NodeRef,
+    Severity, encoding, json as aozora_json,
 };
 // Body/tail boundary detection is the shared `ab-source-syntax` authority
 // so the checker's comparison source (`ab-check::body_text`) can never
 // drift from the parser's own cut.
 use ab_source_syntax::{RegionError, SourceRegions, aozora_body_range};
 
-/// The sanitize stage's `Diagnostic` type is the exact same
-/// `ab_aozora_spec::Diagnostic` the facade re-exports as `Diagnostic` (and
-/// the same type `Tree::diagnostics()` returns).
-///
-/// Confirmed via `crates/ab-aozora-pipeline/src/lexer/sanitize.rs`'s
-/// `use ab_aozora_spec::Diagnostic;` and `crates/ab-aozora-facade/src/lib.rs`'s
-/// `pub use ab_aozora_spec::{..., Diagnostic, ...};`. One alias, one
-/// `aozora_json::diagnostic_entries` call serves both diagnostic families.
+/// Sanitization and parsing share the native diagnostic type.
 pub type AozoraSanitizeDiagnostic = Diagnostic;
 
 /// Fallback for ruby nodes with no resolvable `ruby_entries` entry
@@ -310,8 +304,8 @@ struct AozoraRubyEntry {
     side: &'static str,
 }
 
-fn node_projection(tree: &Tree<'_>) -> Vec<AozoraNode> {
-    tree.source_nodes()
+fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
+    tree.source_nodes
         .iter()
         .map(|source_node| {
             let kind = match source_node.node {
@@ -328,7 +322,7 @@ fn node_projection(tree: &Tree<'_>) -> Vec<AozoraNode> {
                 kind,
                 ProjectedKind::Directive(DirectiveKind::BaseTextVariant | DirectiveKind::Unknown)
             ) {
-                text_variant(&tree.sanitized()[span.start..span.end]).map_or(kind, |variant| {
+                text_variant(&tree.sanitized[span.start..span.end]).map_or(kind, |variant| {
                     ProjectedKind::TextVariant {
                         target: variant.target,
                         current: variant.current.to_owned(),
@@ -343,10 +337,10 @@ fn node_projection(tree: &Tree<'_>) -> Vec<AozoraNode> {
         .collect()
 }
 
-fn ruby_projection(tree: &Tree<'_>) -> Result<Vec<AozoraRubyEntry>> {
-    let store = &tree.lex_output().store;
+fn ruby_projection(tree: &LexOutput) -> Result<Vec<AozoraRubyEntry>> {
+    let store = &tree.store;
     let mut entries = Vec::new();
-    for source_node in tree.source_nodes() {
+    for source_node in &tree.source_nodes {
         let (NodeRef::Inline(Node::Ruby(ruby)) | NodeRef::BlockLeaf(Node::Ruby(ruby))) =
             source_node.node
         else {
@@ -496,15 +490,17 @@ fn projections(
     Vec<AozoraGaiji>,
     Vec<AozoraRubyEntry>,
 )> {
-    let doc = Document::new(span_text);
-    let tree = doc.parse();
+    let tree = Pipeline::from_sanitized(span_text)
+        .tokenize()
+        .pair()
+        .build();
     let initial_nodes = node_projection(&tree);
-    let diagnostics = tree.diagnostics().to_vec();
+    let diagnostics = tree.diagnostics.clone();
     let gaiji = encoding::gaiji::gaiji_resolutions(span_text);
     let mut ruby = ruby_projection(&tree)?;
     let mut nodes = Vec::new();
     let mut pending = initial_nodes;
-    // The facade exposes only outer nodes. Reparse recognized quote interiors
+    // The source-node projection exposes only outer nodes. Parse quote interiors
     // to recover ruby with exact source offsets; the worklist avoids recursive
     // stack growth, and every new interior is strictly smaller than its owner.
     while let Some(node) = pending.pop() {
@@ -528,8 +524,10 @@ fn projections(
                 end: node.span.end,
             },
         });
-        let inner_doc = Document::new(&span_text[start..end]);
-        let inner_tree = inner_doc.parse();
+        let inner_tree = Pipeline::from_sanitized(&span_text[start..end])
+            .tokenize()
+            .pair()
+            .build();
         let inner_nodes = node_projection(&inner_tree);
         for mut inner in inner_nodes {
             inner.span.start += start;
@@ -593,12 +591,9 @@ fn rebase_spans(
 /// per input — the `--mode diagnostics` payload.
 ///
 /// Single owner of the diagnostics path: decoding,
-/// sanitization, and body selection are the EXACT same
-/// `decode_source_bytes` path as `aat_json_from_bytes`; the parse mirrors
-/// `projections()`. Entry order: sanitize-stage diagnostics, then parser
-/// diagnostics. Duplicates are impossible by construction (the inner
-/// re-sanitize sees already-rewritten text) — the
-/// merge-order test pins this.
+/// sanitization, and body selection use `decode_source_bytes`, as for AAT.
+/// The parser consumes that normalized body without sanitizing it again.
+/// Entry order is sanitize-stage diagnostics, then parser diagnostics.
 ///
 /// # Errors
 ///
@@ -606,15 +601,15 @@ fn rebase_spans(
 /// serialization fails.
 pub fn diagnostics_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
     let decoded = decode_source_bytes(bytes)?;
-    let source = encoding::decode_auto(decoded.span_text.as_bytes())
-        .map_err(|err| anyhow::anyhow!("decode_auto: {err:?}"))?;
-    let doc = Document::new(source);
-    let tree = doc.parse();
+    let tree = Pipeline::from_sanitized(&decoded.span_text)
+        .tokenize()
+        .pair()
+        .build();
     let mut data = serde_json::to_value(aozora_json::diagnostic_entries(
         &decoded.sanitize_diagnostics,
     ))?;
     let mut parser_entries =
-        serde_json::to_value(aozora_json::diagnostic_entries(tree.diagnostics()))?;
+        serde_json::to_value(aozora_json::diagnostic_entries(&tree.diagnostics))?;
     // Sanitize-stage entries carry full-sanitized-text offsets → through
     // the maps directly (no body offset). Parser entries carry
     // body-relative offsets → body offset + maps. Both land in decoded-
@@ -1917,9 +1912,11 @@ fn push_source_gap(content: &mut Vec<Value>, decoded: &DecodedSource, start: usi
             end: start + segment.end,
         };
         if contains_aozora_markup(segment_source) {
+            let source_start = decoded.span_ctx.to_decoded(span.start);
+            let source_end = decoded.span_ctx.to_decoded_end(span.end);
             content.push(json!({
                 "kind": "raw",
-                "source": segment_source,
+                "source": &decoded.text[source_start..source_end],
                 "x-provenance": "source-derived",
                 "x-source-marker-kind": "unparsed-source-gap",
                 "span": span_json(&span, &decoded.span_ctx)
@@ -2228,8 +2225,10 @@ fn marker_target(source: &str) -> Option<&str> {
 }
 
 fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Value {
+    let source_start = decoded.span_ctx.to_decoded(node.span.start);
+    let source_end = decoded.span_ctx.to_decoded_end(node.span.end);
     let mut value = json!({
-        "kind": "raw", "source": source_slice(&decoded.span_text, &node.span),
+        "kind": "raw", "source": &decoded.text[source_start..source_end],
         "x-provenance": "parser-derived", "x-source-marker-kind": marker_kind,
         "span": span_json(&node.span, &decoded.span_ctx)
     });

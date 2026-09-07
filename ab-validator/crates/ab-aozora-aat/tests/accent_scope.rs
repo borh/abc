@@ -1,7 +1,98 @@
 //! Accent notation is decoded without removing literal bracket text.
 
 use ab_aozora_aat::aat_json_from_bytes;
+use proptest::prelude::*;
 use serde_json::Value;
+
+fn raw_nodes(value: &Value) -> Vec<&Value> {
+    let mut pending = vec![value];
+    let mut raw = Vec::new();
+    while let Some(value) = pending.pop() {
+        match value {
+            Value::Object(fields) => {
+                if value["kind"] == "raw" {
+                    raw.push(value);
+                }
+                pending.extend(fields.values());
+            }
+            Value::Array(values) => pending.extend(values),
+            _ => {}
+        }
+    }
+    raw
+}
+
+#[test]
+fn nested_accent_scopes_do_not_shift_later_source_notes() {
+    let note = "［＃「平和」は底本では「価格」、正誤表による訂正］";
+    for source in [
+        format!("〔a'〔e'〕o'〕\n平和{note}"),
+        format!("≪〔a'〔e'〕o'〕平和{note}≫"),
+    ] {
+        let aat: Value =
+            serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
+        let raw = raw_nodes(&aat);
+        assert!(raw.iter().any(|node| node["source"] == note), "{aat}");
+        for node in raw {
+            let start = usize::try_from(node["span"]["byte_start"].as_u64().unwrap()).unwrap();
+            let end = usize::try_from(node["span"]["byte_end"].as_u64().unwrap()).unwrap();
+            assert_eq!(node["source"], &source[start..end], "{node}");
+        }
+    }
+}
+
+#[test]
+fn raw_variant_spelling_preserves_original_accent_notation() {
+    let source = "〔sorgfa:ltig［＃「sorgfa:ltig」は底本では「sorgfa:tig」］〕";
+    let aat: Value =
+        serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
+    let raw = raw_nodes(&aat);
+    let note = raw
+        .iter()
+        .find(|node| node.get("text_variant").is_some())
+        .unwrap();
+    assert_eq!(note["text_variant"]["current"], "sorgfältig");
+    assert_eq!(note["text_variant"]["base_text"], "sorgfätig");
+    assert_eq!(
+        note["source"],
+        "［＃「sorgfa:ltig」は底本では「sorgfa:tig」］"
+    );
+    let start = usize::try_from(note["span"]["byte_start"].as_u64().unwrap()).unwrap();
+    let end = usize::try_from(note["span"]["byte_end"].as_u64().unwrap()).unwrap();
+    assert_eq!(note["source"], &source[start..end]);
+}
+
+#[test]
+fn unparsed_source_gaps_preserve_accent_syntax_and_line_endings() {
+    let source = "前〔cafe'〕［＃tail\r\n";
+    let aat: Value =
+        serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
+    let raw = raw_nodes(&aat);
+    assert_eq!(raw.len(), 1);
+    assert_eq!(raw[0]["source"], source);
+}
+
+proptest! {
+    #[test]
+    fn retained_raw_notes_match_their_decoded_source_slices(
+        prefix in "[a-zあ-ん]{0,30}",
+        accents in prop::collection::vec(prop::sample::select(vec!["〔a'〕", "〔a'〔e'〕o'〕", "〔本全集〕"]), 0..5),
+        quote in any::<bool>(),
+        crlf in any::<bool>(),
+    ) {
+        let note = "［＃「平和」は底本では「価格」、正誤表による訂正］";
+        let body = format!("{prefix}{}{}平和{note}", accents.join(""), if crlf { "\r\n" } else { "\n" });
+        let source = if quote { format!("≪{body}≫") } else { body };
+        let aat: Value = serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
+        let raw = raw_nodes(&aat);
+        prop_assert!(raw.iter().any(|node| node["source"] == note));
+        for node in raw {
+            let start = usize::try_from(node["span"]["byte_start"].as_u64().unwrap()).unwrap();
+            let end = usize::try_from(node["span"]["byte_end"].as_u64().unwrap()).unwrap();
+            prop_assert_eq!(node["source"].as_str(), source.get(start..end));
+        }
+    }
+}
 
 #[test]
 fn accent_scope_delimiters_are_syntax_but_literal_brackets_are_text() {

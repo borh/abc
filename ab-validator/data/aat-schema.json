@@ -409,19 +409,7 @@
             "influence": {"const": {"kind": "document"}}
           }
         },
-        "annotated_text": {
-      "type":"object", "additionalProperties":false,
-      "required":["kind","content","annotation_content","note_kind","span"],
-      "properties":{
-        "kind":{"const":"annotated_text"},
-        "content":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/inline"}},
-        "annotation_content":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/inline"}},
-        "note_kind":{"enum":["gloss","marginal"]},
-        "position":{"enum":["left","right"]},
-        "span":{"$ref":"#/$defs/span"}
-      }
-    },
-    "text_variant": {
+            "text_variant": {
           "type": "object", "required": ["target_kind", "current", "base_text"], "additionalProperties": false,
           "properties": {
             "target_kind": { "enum": ["ruby-reading", "text"] },
@@ -440,14 +428,20 @@
       "required":["kind","note_kind","text","span"],
       "properties": {"kind":{"const":"editorial_note"}, "note_kind":{"enum":["base-edition","first-publication"]}, "text":{"type":"string","minLength":1}, "span":{"$ref":"#/$defs/span"}}
     },
+    "gap": {
+      "type":"object", "additionalProperties":false,
+      "required":["kind","reason"],
+      "oneOf":[{"required":["quantity","unit"],"not":{"required":["extent"]}},{"required":["extent"],"not":{"anyOf":[{"required":["quantity"]},{"required":["unit"]}]}}],
+      "properties":{"kind":{"const":"gap"},"reason":{"const":"concealed"},"unit":{"const":"chars"},"quantity":{"type":"integer","minimum":1},"extent":{"const":"unknown"}}
+    },
     "annotated_text": {
       "type":"object", "additionalProperties":false,
       "required":["kind","content","annotation_content","note_kind","span"],
       "properties":{
         "kind":{"const":"annotated_text"},
         "content":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/inline"}},
-        "annotation_content":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/inline"}},
-        "note_kind":{"enum":["gloss","marginal"]},
+        "annotation_content":{"type":"array","minItems":1,"items":{"oneOf":[{"$ref":"#/$defs/inline"},{"$ref":"#/$defs/gap"}]}},
+        "note_kind":{"enum":["gloss","marginal","base-edition","source-concealment"]},
         "position":{"enum":["left","right"]},
         "span":{"$ref":"#/$defs/span"}
       }

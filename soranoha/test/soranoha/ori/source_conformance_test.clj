@@ -594,3 +594,23 @@
     (is (= "前後。" (:plaintext result)))
     (is (= [marker] (mapv #(get % "raw") (get-in result [:ir "interpretation_problems"]))))
     (is (some #(= marker (.getTextContent ^Node %)) (elements result "note")))))
+
+(deftest supplied-concealment-preserves-placeholder-and-stated-extent
+  (doseq [[body text note-kind quantity extent]
+          [["前□□［＃底本２字伏字］後" "前□□後" "base-edition" "2" ""]
+           ["前＊［＃「＊」は伏せ字］後" "前＊後" "source-concealment" "" "unknown"]]]
+    (let [result (transcribe (source body))
+          gap (first (elements result "gap"))]
+      (is (= text (:plaintext result) (projection/markdown (:view result))))
+      (is (= quantity (attribute gap "quantity")))
+      (is (= extent (attribute gap "extent")))
+      (is (= "concealed" (attribute gap "reason")))
+      (is (= note-kind (attribute (.getParentNode ^Node gap) "type")))
+      (is (empty? (get-in result [:ir "interpretation_problems"]))))))
+
+(deftest conflicting-concealment-count-remains-explicit
+  (let [result (transcribe (source "□□□［＃底本２字伏字］"))]
+    (is (= "□□□" (:plaintext result)))
+    (is (empty? (elements result "gap")))
+    (is (seq (get-in result [:ir "interpretation_problems"])))
+    (is (empty? (get-in result [:view :view/eligible-spans])))))

@@ -1,6 +1,6 @@
-//! Explicit witness alternatives and absence supplied by Aozora base-text notes.
+//! Source-stated witness alternatives, editorial notes, and concealment.
 
-use std::ops::Range;
+use std::{num::NonZeroU32, ops::Range};
 
 /// Content addressed by a quoted base-text note.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -185,6 +185,31 @@ fn variant_parts<'s>(
     })
 }
 
+/// The supplied placeholder explicitly identified as concealed text, without a quantity.
+#[must_use]
+pub fn concealed_placeholder(source: &str) -> Option<&str> {
+    let target = source
+        .strip_prefix("［＃「")?
+        .strip_suffix("」は伏せ字］")?;
+    (!target.is_empty() && !target.contains(['「', '」', '［', '］', '\n', '\r'])).then_some(target)
+}
+
+/// Number of concealed characters explicitly attributed to the base edition.
+/// Placeholder identity and quantity agreement are established at the target.
+#[must_use]
+pub fn base_edition_concealed_characters(source: &str) -> Option<NonZeroU32> {
+    let digits = source.strip_prefix("［＃底本")?.strip_suffix("字伏字］")?;
+    let count = digits.chars().try_fold(0u32, |count, ch| {
+        let digit = match ch {
+            '0'..='9' => u32::from(ch) - u32::from('0'),
+            '０'..='９' => u32::from(ch) - u32::from('０'),
+            _ => return None,
+        };
+        count.checked_mul(10)?.checked_add(digit)
+    })?;
+    NonZeroU32::new(count)
+}
+
 /// Preserve edition statements as apparatus without applying their descriptions
 /// to the principal text. Mixed transcription instructions and malformed quoted
 /// alternatives remain outside this grammar.
@@ -257,7 +282,35 @@ pub fn edition_note(source: &str) -> Option<(EditionNoteKind, &str)> {
 
 #[cfg(test)]
 mod tests {
-    use super::{TextVariantTarget, text_variant};
+    use super::{TextVariantTarget, base_edition_concealed_characters, text_variant};
+
+    #[test]
+    fn concealment_quantity_retains_only_explicit_base_edition_character_counts() {
+        for (source, quantity) in [
+            ("［＃底本１字伏字］", 1),
+            ("［＃底本２字伏字］", 2),
+            ("［＃底本４字伏字］", 4),
+            ("［＃底本12字伏字］", 12),
+        ] {
+            assert_eq!(
+                base_edition_concealed_characters(source).unwrap().get(),
+                quantity
+            );
+        }
+        for source in [
+            "［＃底本０字伏字］",
+            "［＃底本字伏字］",
+            "［＃底本2行伏字］",
+            "［＃初出２字伏字］",
+            "［＃底本２字伏字、復元］",
+            "［＃底本4294967296字伏字］",
+        ] {
+            assert!(
+                base_edition_concealed_characters(source).is_none(),
+                "{source}"
+            );
+        }
+    }
 
     #[test]
     fn quoted_alternatives_preserve_the_attribution_without_asserting_error() {

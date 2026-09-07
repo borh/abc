@@ -5,6 +5,7 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     fmt::Write as _,
     mem,
+    num::NonZeroU32,
     ops::Range,
     str,
     sync::LazyLock,
@@ -12,8 +13,8 @@ use std::{
 
 use ab_aozora_pipeline::lexer::sanitize::{SanitizeMaps, sanitize_mapped};
 use ab_aozora_pipeline::text_variant::{
-    EditionNoteKind, TextVariant, TextVariantTarget, edition_note, formatted_text_variant,
-    text_variant,
+    EditionNoteKind, TextVariant, TextVariantTarget, base_edition_concealed_characters,
+    concealed_placeholder, edition_note, formatted_text_variant, text_variant,
 };
 use ab_aozora_pipeline::{LexOutput, Pipeline};
 use anyhow::Result;
@@ -300,6 +301,12 @@ enum ProjectedKind {
         base_span: Option<Range<usize>>,
         editorial_statement: Option<String>,
     },
+    BaseEditionConcealment {
+        quantity: NonZeroU32,
+    },
+    ConcealedPlaceholder {
+        target: String,
+    },
     EditorialNote {
         kind: EditionNoteKind,
         text: String,
@@ -325,9 +332,11 @@ impl ProjectedKind {
             Self::Format(_) | Self::FormatMany(_) => "emphasis",
             Self::Directive(DirectiveKind::WarichuOpen) => "warichuOpen",
             Self::Directive(DirectiveKind::WarichuClose) => "warichuClose",
-            Self::Directive(_) | Self::TextVariant { .. } | Self::EditorialNote { .. } => {
-                "directive"
-            }
+            Self::Directive(_)
+            | Self::TextVariant { .. }
+            | Self::EditorialNote { .. }
+            | Self::BaseEditionConcealment { .. }
+            | Self::ConcealedPlaceholder { .. } => "directive",
             Self::QuoteOpen => "angleQuoteOpen",
             Self::QuoteClose => "angleQuoteClose",
             Self::RecoveredSource => "unparsed-source-gap",
@@ -374,6 +383,14 @@ fn project_text_variant(kind: ProjectedKind, source: &str, span: Span) -> Projec
         kind,
         ProjectedKind::Directive(DirectiveKind::BaseTextVariant | DirectiveKind::Unknown)
     ) {
+        if let Some(quantity) = base_edition_concealed_characters(&source[span.start..span.end]) {
+            return ProjectedKind::BaseEditionConcealment { quantity };
+        }
+        if let Some(target) = concealed_placeholder(&source[span.start..span.end]) {
+            return ProjectedKind::ConcealedPlaceholder {
+                target: target.to_owned(),
+            };
+        }
         text_variant(&source[span.start..span.end]).map_or_else(
             || {
                 edition_note(&source[span.start..span.end]).map_or(kind, |(kind, text)| {
@@ -2055,6 +2072,7 @@ fn inline_content_range(
                     if kind.is_line() { "bosen" } else { "bouten" },
                 );
             }
+            ProjectedKind::BaseEditionConcealment { .. } | ProjectedKind::ConcealedPlaceholder { .. } => push_concealment(&mut content, decoded, node),
             ProjectedKind::MarginNote { .. } => push_annotated_text(&mut content, decoded, node),
             ProjectedKind::Format(_) | ProjectedKind::FormatMany(_) => {
                 push_style_node(&mut content, decoded, node, "emphasis");
@@ -2661,6 +2679,40 @@ fn gaiji_json(decoded: &DecodedSource, span: &Span, gaiji: &AozoraGaiji) -> Valu
         "x-codepoint": gaiji.codepoint,
         "span": span_json(span, &decoded.span_ctx)
     })
+}
+
+fn push_concealment(content: &mut Vec<Value>, decoded: &DecodedSource, node: &AozoraNode) {
+    let start = decoded.span_ctx.to_decoded(node.span.start);
+    let before = &decoded.text[..start];
+    let supplied = match &node.kind {
+        ProjectedKind::BaseEditionConcealment { quantity } => {
+            let count = before.chars().rev().take_while(|ch| *ch == '□').count();
+            (u32::try_from(count).ok() == Some(quantity.get())).then(|| (
+                &before[before.len() - count * '□'.len_utf8()..],
+                "base-edition",
+                json!({"kind":"gap","reason":"concealed","quantity":quantity.get(),"unit":"chars"}),
+            ))
+        }
+        ProjectedKind::ConcealedPlaceholder { target } => before.ends_with(target).then(|| {
+            (
+                target.as_str(),
+                "source-concealment",
+                json!({"kind":"gap","reason":"concealed","extent":"unknown"}),
+            )
+        }),
+        _ => unreachable!("concealment projection"),
+    };
+    if let Some((target, note_kind, gap)) = supplied
+        && let Some(children) = take_visible_suffix(content, target, &decoded.text)
+    {
+        content.push(json!({"kind":"annotated_text", "content":children,
+                "annotation_content":[gap], "note_kind":note_kind,
+                "span":span_json(&node.span,&decoded.span_ctx)}));
+        return;
+    }
+    let mut retained = raw_node(decoded, node, "unresolved-annotation");
+    retained["interpretation_problem"] = json!({"kind":"uninterpreted-notation", "code":"uninterpreted-notation", "aspects":["content","structure"], "influence":{"kind":"document"}});
+    content.push(retained);
 }
 
 fn push_annotated_text(content: &mut Vec<Value>, decoded: &DecodedSource, node: &AozoraNode) {

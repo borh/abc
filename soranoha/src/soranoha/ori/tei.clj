@@ -286,6 +286,13 @@
                                              :rend (case kind "return-mark" "subscript" "okurigana" "superscript")}
                                       (get node "text")]))))
 
+(defn- render-gap-node [acc node _depth]
+  (append-inline acc
+                 [:gap (cond-> {:reason (get node "reason")}
+                         (get node "quantity") (assoc :quantity (get node "quantity")
+                                                      :unit (get node "unit"))
+                         (get node "extent") (assoc :extent (get node "extent")))]))
+
 (defn- render-annotated-text-node [acc node depth]
   (let [before (:current-paragraph acc)
         principal (render-inline-children (assoc acc :current-paragraph [])
@@ -472,6 +479,7 @@
    "editor-note" render-editor-note-node
    "base-text-variant" render-base-text-variant-node
    "annotated-text" render-annotated-text-node
+   "gap" render-gap-node
    "emphasis" render-emphasis-node
    "layout-span" render-layout-span-node
    "heading" render-heading-node

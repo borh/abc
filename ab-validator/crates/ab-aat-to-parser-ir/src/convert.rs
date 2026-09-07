@@ -1515,6 +1515,17 @@ fn inline_child_node(
     }
 
     match node["kind"].as_str().unwrap_or("") {
+        "gap" => {
+            let mut gap =
+                json!({"type":"gap","span":synthetic_span(offset,offset),"reason":node["reason"]});
+            for key in ["quantity", "unit", "extent"] {
+                if let Some(value) = node.get(key) {
+                    gap[key] = value.clone();
+                }
+            }
+            nodes.push(gap);
+            Ok(offset)
+        }
         "heading" => map_heading_inline(
             node,
             nodes,

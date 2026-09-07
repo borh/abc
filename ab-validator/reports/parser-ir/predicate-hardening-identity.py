@@ -61,7 +61,6 @@ INSTRUMENTS = {
             pathlib.Path("ab-validator/crates/ab-aat-to-parser-ir/src/divergence.rs"),
             pathlib.Path("ab-validator/crates/ab-aat-to-parser-ir/src/mapping.rs"),
             pathlib.Path("ab-validator/crates/ab-aat-to-parser-ir/src/ortho_annotations.rs"),
-            pathlib.Path("ab-validator/crates/ab-aat-to-parser-ir/src/sentences.rs"),
         ),
         artifacts=(pathlib.Path("ab-validator/research/schemas/parser-ir.schema.json"),),
         validator_id="ab-validator/parser-ir-schema-conformance/v1",

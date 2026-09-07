@@ -31,7 +31,8 @@ use ab_aozora_facade::{
 // so the checker's comparison source (`ab-check::body_text`) can never
 // drift from the parser's own cut.
 use ab_aozora_facade::syntax::{
-    AbsoluteSize, Centering, EnclosureKind, HeadingStyle, IndentLayout, LineFormat,
+    AbsoluteSize, Centering, EnclosureKind, HeadingStyle, IndentLayout, LineFormat, MarginNoteKind,
+    MarginNotePosition,
     ast::{ContainerEnd, Content, KuntenKind, Segment},
 };
 use ab_source_syntax::{RegionError, SourceRegions, aozora_body_range};
@@ -254,7 +255,7 @@ fn paragraph_segments(source: &str) -> Vec<Range<usize>> {
     out
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Span {
     start: usize,
     end: usize,
@@ -271,6 +272,13 @@ impl From<ab_aozora_facade::Span> for Span {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum ProjectedKind {
+    MarginNote {
+        kind: MarginNoteKind,
+        position: Option<MarginNotePosition>,
+        target: String,
+        note_span: Option<Span>,
+        target_span: Option<Span>,
+    },
     Kunten {
         kind: KuntenKind,
         text: String,
@@ -304,6 +312,7 @@ impl ProjectedKind {
     fn as_str(&self) -> &'static str {
         match self {
             Self::Kunten { .. } => "kunten",
+            Self::MarginNote { .. } => "sideNote",
             Self::Node(kind) => kind.as_json_tag(),
             Self::Section(_) => "sectionBreak",
             Self::Line(line) => Node::Line(*line).kind().as_json_tag(),
@@ -415,6 +424,18 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
         .iter()
         .map(|source_node| {
             let kind = match source_node.node {
+                NodeRef::Inline(Node::MarginNote(note))
+                | NodeRef::BlockLeaf(Node::MarginNote(note)) => ProjectedKind::MarginNote {
+                    kind: note.kind,
+                    position: note.position,
+                    target: tree
+                        .store
+                        .content_range_as_plain(note.base)
+                        .unwrap_or_default()
+                        .to_owned(),
+                    note_span: note.note_span.map(Into::into),
+                    target_span: note.target_span.map(Into::into),
+                },
                 NodeRef::Inline(Node::Kunten(k)) | NodeRef::BlockLeaf(Node::Kunten(k)) => {
                     ProjectedKind::Kunten {
                         kind: k.kind,
@@ -454,6 +475,9 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                 | NodeRef::BlockLeaf(Node::Format(format))
                     if format.origin != ab_aozora_facade::ForwardOrigin::Detached =>
                 {
+                    Some(ab_aozora_facade::PairKind::Bracket)
+                }
+                NodeRef::Inline(Node::MarginNote(_)) | NodeRef::BlockLeaf(Node::MarginNote(_)) => {
                     Some(ab_aozora_facade::PairKind::Bracket)
                 }
                 NodeRef::Inline(Node::Ruby(_)) | NodeRef::BlockLeaf(Node::Ruby(_)) => {
@@ -924,6 +948,7 @@ enum EstablishedInterpretation {
     Heading,
     Caption,
     TextVariant,
+    AnnotatedText,
     Layout,
     EditorialNote,
     LineLayout,
@@ -993,6 +1018,7 @@ impl EstablishedInterpretation {
             Some("heading") => Some(Self::Heading),
             Some("caption" | "caption_block") => Some(Self::Caption),
             Some("text-variant") => Some(Self::TextVariant),
+            Some("annotated_text") => Some(Self::AnnotatedText),
             Some("editorial_note") => Some(Self::EditorialNote),
             Some("layout_block") if node["role"] == "table" => Some(Self::Table),
             Some("layout_break") => Some(Self::LayoutBreak),
@@ -1019,6 +1045,7 @@ impl EstablishedInterpretation {
             Self::Heading => "heading",
             Self::Caption => "caption",
             Self::TextVariant => "text-variant",
+            Self::AnnotatedText => "annotated-text",
             Self::Layout => "layout",
             Self::EditorialNote => "editorial-note",
             Self::LineLayout => "line-layout",
@@ -1037,7 +1064,7 @@ impl EstablishedInterpretation {
             Self::Warichu | Self::Heading | Self::Caption | Self::Table | Self::LayoutBreak => {
                 &["structure", "layout"]
             }
-            Self::Kunten => &["content", "structure", "layout"],
+            Self::Kunten | Self::AnnotatedText => &["content", "structure", "layout"],
         }
     }
 }
@@ -1092,7 +1119,7 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
             let spans = if matches!(interpretation, EstablishedInterpretation::LayoutBreak)
                 || matches!(
                     node["kind"].as_str(),
-                    Some("gaiji" | "kunten" | "text-variant" | "editorial_note" | "layout_break")
+                    Some("gaiji" | "kunten" | "text-variant" | "annotated_text" | "editorial_note" | "layout_break")
                 ) {
                 node.get("span").into_iter().collect::<Vec<_>>()
             } else {
@@ -1117,6 +1144,7 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
             "lower",
             "base_content",
             "reading_content",
+            "annotation_content",
         ] {
             if let Some(children) = node.get(key).and_then(Value::as_array) {
                 pending.extend(children.iter().rev());
@@ -1859,6 +1887,17 @@ fn strip_trailing_newline(node: &mut Value, source: &str) {
 }
 
 fn rebase_variant_spans(kind: &mut ProjectedKind, offset: usize) {
+    if let ProjectedKind::MarginNote {
+        note_span,
+        target_span,
+        ..
+    } = kind
+    {
+        for span in [note_span, target_span].into_iter().flatten() {
+            span.start += offset;
+            span.end += offset;
+        }
+    }
     if let ProjectedKind::TextVariant {
         current_span,
         base_span,
@@ -1877,6 +1916,14 @@ fn rebase_variant_spans(kind: &mut ProjectedKind, offset: usize) {
 // Source fragments reuse the native inline interpreter, restricted to their
 // exact extent and mapped onto the enclosing document’s decoded coordinates.
 fn source_fragment(decoded: &DecodedSource, range: Range<usize>) -> Option<Vec<Value>> {
+    let content = parsed_source_fragment(decoded, range)?;
+    content
+        .iter()
+        .try_for_each(|node| target_text(node).map(|_| ()))?;
+    Some(content)
+}
+
+fn parsed_source_fragment(decoded: &DecodedSource, range: Range<usize>) -> Option<Vec<Value>> {
     let (mut nodes, _diagnostics, mut gaiji, mut ruby, accents) =
         projections(decoded.span_text.get(range.clone())?).ok()?;
     if !accents.is_empty() {
@@ -1925,9 +1972,6 @@ fn source_fragment(decoded: &DecodedSource, range: Range<usize>) -> Option<Vec<V
         .map(|entry| ((entry.span.start, entry.span.end), entry))
         .collect();
     let content = pair_bare_toggles(inline_content_range(decoded, &nodes, &gaiji, &ruby, range));
-    content
-        .iter()
-        .try_for_each(|node| target_text(node).map(|_| ()))?;
     Some(content)
 }
 
@@ -1993,6 +2037,7 @@ fn inline_content_range(
                     if kind.is_line() { "bosen" } else { "bouten" },
                 );
             }
+            ProjectedKind::MarginNote { .. } => push_annotated_text(&mut content, decoded, node),
             ProjectedKind::Format(_) | ProjectedKind::FormatMany(_) => {
                 push_style_node(&mut content, decoded, node, "emphasis");
             }
@@ -2584,6 +2629,117 @@ fn gaiji_json(decoded: &DecodedSource, span: &Span, gaiji: &AozoraGaiji) -> Valu
     })
 }
 
+fn push_annotated_text(content: &mut Vec<Value>, decoded: &DecodedSource, node: &AozoraNode) {
+    let ProjectedKind::MarginNote {
+        kind,
+        position,
+        target,
+        note_span,
+        target_span,
+    } = &node.kind
+    else {
+        return;
+    };
+    let Some(marker) = node.marker_span else {
+        content.push(raw_node(decoded, node, "unresolved-annotation"));
+        return;
+    };
+    let annotation = note_span.and_then(|span| source_fragment(decoded, span.start..span.end));
+    let wrapper = |children: &[Value], annotation: &[Value]| {
+        let mut value = json!({"kind":"annotated_text", "content":children, "annotation_content":annotation,
+            "note_kind":match kind {MarginNoteKind::Gloss=>"gloss", MarginNoteKind::Marginal=>"marginal", _=>unreachable!("known note kind")},
+            "span":span_json(&marker, &decoded.span_ctx)});
+        if let Some(position) = position {
+            value["position"] = json!(match position {
+                MarginNotePosition::Left => "left",
+                MarginNotePosition::Right => "right",
+            });
+        }
+        value
+    };
+    if let (Some(target_span), Some(annotation)) = (target_span, &annotation)
+        && target_span.end < marker.start
+        && let Some((before, selected, after)) =
+            exact_literal_partition(content.last(), *target_span, decoded)
+    {
+        let attached = wrapper(&[selected], annotation);
+        content.pop();
+        content.extend(before);
+        content.push(attached);
+        content.extend(after);
+        return;
+    }
+    let children = if node.span.start < marker.start {
+        parsed_source_fragment(decoded, node.span.start..marker.start)
+    } else {
+        take_visible_suffix(content, target, &decoded.text)
+    };
+    if let (Some(children), Some(annotation)) = (&children, &annotation)
+        && content_target_text(children).as_deref() == Some(target)
+    {
+        content.push(wrapper(children, annotation));
+        return;
+    }
+    if let Some(children) = children {
+        content.extend(children);
+    }
+    let mut retained = raw_node(
+        decoded,
+        &AozoraNode {
+            span: marker,
+            ..node.clone()
+        },
+        "unresolved-annotation",
+    );
+    retained["interpretation_problem"] = json!({"kind":"uninterpreted-notation", "code":"uninterpreted-notation", "aspects":["content","structure"], "influence":{"kind":"document"}});
+    content.push(retained);
+}
+
+fn exact_literal_partition(
+    node: Option<&Value>,
+    target: Span,
+    decoded: &DecodedSource,
+) -> Option<(Option<Value>, Value, Option<Value>)> {
+    let node = node?;
+    if node["kind"] != "text" {
+        return None;
+    }
+    let text = node["value"].as_str()?;
+    let start = usize::try_from(node["span"]["byte_start"].as_u64()?).ok()?;
+    let end = usize::try_from(node["span"]["byte_end"].as_u64()?).ok()?;
+    if decoded.text.get(start..end)? != text {
+        return None;
+    }
+    let span = span_json(&target, &decoded.span_ctx);
+    let target_start = usize::try_from(span["byte_start"].as_u64()?).ok()?;
+    let target_end = usize::try_from(span["byte_end"].as_u64()?).ok()?;
+    let from = target_start.checked_sub(start)?;
+    let to = target_end.checked_sub(start)?;
+    let selected_text = text.get(from..to)?;
+    let suffix = text.get(to..)?;
+    if suffix.contains(['\n', '\r']) {
+        return None;
+    }
+    let mut selected = node.clone();
+    selected["value"] = json!(selected_text);
+    selected["span"] = span.clone();
+    let before = (from > 0).then(|| {
+        let mut prefix = node.clone();
+        prefix["value"] = json!(&text[..from]);
+        prefix["span"]["byte_end"] = json!(target_start);
+        prefix["span"]["line_end"] = span["line_start"].clone();
+        prefix
+    });
+    let after = (!suffix.is_empty()).then(|| {
+        let mut suffix_node = node.clone();
+        suffix_node["value"] = json!(suffix);
+        suffix_node["span"]["byte_start"] = json!(target_end);
+        suffix_node["span"]["line_start"] = span["line_end"].clone();
+        suffix_node
+    });
+    Some((before, selected, after))
+}
+
 // Retrospective targets may cross already-emitted ruby or gaiji nodes.
 // Adopt the exact visible suffix instead of copying the marker's quotation.
 fn push_style_node(
@@ -2683,6 +2839,7 @@ fn resolve_text_variants_in_blocks(nodes: Vec<Value>, source: &str) -> Vec<Value
             "lower",
             "base_content",
             "reading_content",
+            "annotation_content",
         ] {
             if let Some(children) = node.get_mut(key).and_then(Value::as_array_mut) {
                 *children = resolve_text_variants_in_blocks(mem::take(children), source);
@@ -2907,7 +3064,7 @@ fn preceding_reading(nodes: &mut [Value]) -> Option<&mut Value> {
             }
             "ruby" => return Some(node),
             "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi"
-            | "yokogumi" | "fraction" | "text-variant" => {
+            | "yokogumi" | "fraction" | "text-variant" | "annotated_text" => {
                 return preceding_reading(node["content"].as_array_mut()?);
             }
             _ => return None,
@@ -2979,7 +3136,7 @@ fn target_text(node: &Value) -> Option<Cow<'_, str>> {
         "gaiji" => Some(Cow::Borrowed(node["resolved"].as_str()?)),
         "editorial_note" | "kunten" => Some(Cow::Borrowed("")),
         "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi"
-        | "yokogumi" | "fraction" | "text-variant" => {
+        | "yokogumi" | "fraction" | "text-variant" | "annotated_text" => {
             let mut text = String::new();
             for child in node["content"].as_array()? {
                 text.push_str(&target_text(child)?);
@@ -3020,6 +3177,19 @@ fn quoted_structure_matches(quoted: &[Value], actual: &[Value]) -> bool {
                     "reading":node["reading"], "direction":node["direction"]}),
                 )),
                 "text-variant" => {
+                    marks(node["content"].as_array()?, offset, output)?;
+                }
+                "annotated_text" => {
+                    let annotation = node["annotation_content"].as_array()?;
+                    let mut annotation_marks = Vec::new();
+                    marks(annotation, &mut 0, &mut annotation_marks)?;
+                    output.push((
+                        start,
+                        end,
+                        json!({"kind":"annotated_text",
+                        "note_kind":node["note_kind"], "position":node["position"],
+                        "text":content_target_text(annotation)?, "structure":annotation_marks}),
+                    ));
                     marks(node["content"].as_array()?, offset, output)?;
                 }
                 _ => {

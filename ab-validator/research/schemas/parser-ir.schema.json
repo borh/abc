@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
   "title": "ABC Parser IR",
-  "version": "0.26.0",
+  "version": "0.27.0",
   "type": "object",
   "required": ["schema_id", "schema_hash", "source", "nodes", "warnings", "errors", "interpretation_problems", "interpretation_facts"],
   "additionalProperties": false,
@@ -47,7 +47,7 @@
       "type": "object", "additionalProperties": false,
       "required": ["kind", "outcome", "aspects", "source_span"],
       "properties": {
-        "kind": {"enum": ["ruby", "gaiji", "gaiji-ruby", "emphasis", "warichu", "kunten", "heading", "caption", "text-variant", "layout", "editorial-note", "line-layout", "table", "layout-break"]},
+        "kind": {"enum": ["ruby", "gaiji", "gaiji-ruby", "emphasis", "warichu", "kunten", "heading", "caption", "text-variant", "annotated-text", "layout", "editorial-note", "line-layout", "table", "layout-break"]},
         "outcome": {"const": "established"},
         "aspects": {"type":"array", "minItems":1, "uniqueItems":true, "items":{"enum":["content","structure","layout"]}},
         "source_span": {"type":"object", "additionalProperties":false, "required":["start","end","coordinate_system"],
@@ -120,13 +120,13 @@
     },
     "span": {
       "type": "object",
-      "$comment": "Half-open UTF-8 byte offsets in the converter's parser text projection, before publication whitespace filtering. parser_text_utf8 includes structural and source-note text traversed by the converter. reading_utf8 is local to the containing ruby reading; each nested ruby reading owns a new axis starting at zero. witness_utf8 is local to the containing base-text alternative, starting at zero independently of the principal text and ruby readings. None of these axes is the decoded source or final plaintext. end must be greater than or equal to start.",
+      "$comment": "Half-open UTF-8 byte offsets in the converter's parser text projection, before publication whitespace filtering. parser_text_utf8 includes structural and source-note text traversed by the converter. reading_utf8 is local to the containing ruby reading; each nested ruby reading owns a new axis starting at zero. witness_utf8 is local to the containing base-text alternative, starting at zero independently of the principal text and ruby readings. annotation_utf8 is local to each target-associated editorial note, independently of its principal target. None of these axes is the decoded source or final plaintext. end must be greater than or equal to start.",
       "required": ["start", "end", "coordinate_system"],
       "additionalProperties": false,
       "properties": {
         "start": { "type": "integer", "minimum": 0 },
         "end": { "type": "integer", "minimum": 0 },
-        "coordinate_system": { "enum": ["parser_text_utf8", "reading_utf8", "witness_utf8"] }
+        "coordinate_system": { "enum": ["parser_text_utf8", "reading_utf8", "witness_utf8", "annotation_utf8"] }
       }
     },
     "sourceSpan": {
@@ -160,6 +160,7 @@
         { "$ref": "#/$defs/editorNoteNode" },
         { "$ref": "#/$defs/kuntenNode" },
         { "$ref": "#/$defs/baseTextVariantNode" },
+        { "$ref": "#/$defs/annotatedTextNode" },
         { "$ref": "#/$defs/warichuNode" },
         { "$ref": "#/$defs/emphasisNode" },
         { "$ref": "#/$defs/layoutSpanNode" },
@@ -185,6 +186,7 @@
         { "$ref": "#/$defs/editorNoteNode" },
         { "$ref": "#/$defs/kuntenNode" },
         { "$ref": "#/$defs/baseTextVariantNode" },
+        { "$ref": "#/$defs/annotatedTextNode" },
         { "$ref": "#/$defs/warichuNode" },
         { "$ref": "#/$defs/emphasisNode" },
         { "$ref": "#/$defs/layoutSpanNode" },
@@ -492,6 +494,19 @@
         { "$ref": "#/$defs/inlineNode" },
         { "properties": { "span": { "properties": { "coordinate_system": { "const": "witness_utf8" } } } } }
       ]
+    },
+    "annotationNode": {
+      "allOf":[{"$ref":"#/$defs/inlineNode"},{"properties":{"span":{"properties":{"coordinate_system":{"const":"annotation_utf8"}}}}}]
+    },
+    "annotatedTextNode": {
+      "type":"object", "additionalProperties":false,
+      "required":["type","span","text","inline_children","annotation_children","note_kind"],
+      "properties":{
+        "type":{"const":"annotated-text"}, "span":{"$ref":"#/$defs/span"}, "source_span":{"$ref":"#/$defs/sourceSpan"},
+        "text":{"type":"string"}, "note_kind":{"enum":["gloss","marginal"]}, "position":{"enum":["left","right"]},
+        "inline_children":{"type":"array","items":{"$ref":"#/$defs/inlineNode"}},
+        "annotation_children":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/annotationNode"}}
+      }
     },
     "baseTextVariantNode": {
       "type": "object",

@@ -12,7 +12,8 @@ use ab_aozora_encoding::gaiji::{GaijiCanonical, MenKuTen, Resolved};
 
 use crate::format::{ForwardAttr, ForwardOrigin, LineFormat};
 use crate::{
-    Container, DirectiveKind, HeadingKind, HeadingStyle, MarginNoteKind, RubySide, SectionKind,
+    Container, DirectiveKind, HeadingKind, HeadingStyle, MarginNoteKind, MarginNotePosition,
+    RubySide, SectionKind,
 };
 
 use super::intern::StrId;
@@ -142,6 +143,14 @@ pub struct Ruby {
 pub struct MarginNote {
     /// 注記 vs 傍記.
     pub kind: MarginNoteKind,
+    /// Physical side explicitly supplied by the source; bare に supplies none.
+    pub position: Option<MarginNotePosition>,
+    /// Exact annotation-text extent in native source coordinates, when sourced.
+    pub note_span: Option<crate::Span>,
+    /// Exact literal target extent when the native resolver established one.
+    pub target_span: Option<crate::Span>,
+    /// Whether this node owns the principal target or only references it.
+    pub origin: ForwardOrigin,
     /// Preceding run the note attaches to.
     pub base: ContentRange,
     /// Gloss / redaction text.

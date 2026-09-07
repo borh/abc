@@ -414,7 +414,7 @@ mod tests {
         let note_base = a.content_plain("孫");
         let note_text = a.content_plain("注");
         render_into(
-            a.side_note(MarginNoteKind::Gloss, note_base, note_text),
+            a.side_note(MarginNoteKind::Gloss, None, note_base, note_text, None),
             &mut nodes,
         );
         let tcy = a.content_plain("囲");

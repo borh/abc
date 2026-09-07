@@ -25,7 +25,7 @@ use ab_aozora_syntax::format::ForwardOrigin;
 use ab_aozora_syntax::lint::canonical_directive;
 use ab_aozora_syntax::{
     AbsoluteSize, AccentMark, BoutenPosition, DirectiveKind, EnclosureKind, FontShift, ForwardAttr,
-    MarginNoteKind, Span,
+    MarginNoteKind, MarginNotePosition, Span,
 };
 
 use crate::text_variant::formatted_text_variant;
@@ -1377,18 +1377,9 @@ impl RecogniseCtx<'_, '_> {
     }
 }
 
-/// Classify a forward-reference **side annotation** — 注記 or 傍記. The
-/// structural twin of [`Self::classify_forward_left_ruby`] (same
-/// single-target pull-back), but the trailing keyword selects a distinct
-/// [`Node::MarginNote`] node and flavour:
-/// - `「X」の左に「Y」の注記` / bare `「X」に「Y」の注記` →
-///   [`MarginNoteKind::Gloss`] (editorial gloss; round-trips `の注記`).
-/// - `「X」に「Y」の傍記` → [`MarginNoteKind::Marginal`] (the censorship-marker
-///   form; round-trips bare `に…の傍記`).
-///
-/// The `の注記` / `の傍記` suffixes are disjoint from `のルビ` and every
-/// bouten kind, so the bouten and left-ruby classifiers above have already
-/// declined.
+/// Classify target-associated 注記 or 傍記, preserving an explicitly supplied
+/// side. Bare `に` does not establish a side. The native referent extent lets
+/// downstream projections attach interior notes without repeating the target.
 impl RecogniseCtx<'_, '_> {
     fn classify_forward_side_note(
         &mut self,
@@ -1400,20 +1391,23 @@ impl RecogniseCtx<'_, '_> {
         let [target] = extracted.targets.as_slice() else {
             return None;
         };
-        // Pick the flavour by trailing keyword, then the note text:
-        //   注記: explicit `の左に「Y」の注記` or bare `に「Y」の注記` — both map
-        //         to the same node (`MarginNote` has no side axis).
-        //   傍記: bare `に「Y」の傍記` only (the corpus's sole 傍記 shape; an
-        //         unattested `の左に…の傍記` would be ambiguous to round-trip).
-        let (kind, note_text) = if let Some(inner) = extracted.suffix.strip_suffix("」の注記") {
-            let note = inner
-                .strip_prefix("の左に「")
-                .or_else(|| inner.strip_prefix("に「"))?;
-            (MarginNoteKind::Gloss, note)
+        let (kind, inner) = if let Some(inner) = extracted
+            .suffix
+            .strip_suffix("」の注記")
+            .or_else(|| extracted.suffix.strip_suffix("」注記"))
+        {
+            (MarginNoteKind::Gloss, inner)
         } else if let Some(inner) = extracted.suffix.strip_suffix("」の傍記") {
-            (MarginNoteKind::Marginal, inner.strip_prefix("に「")?)
+            (MarginNoteKind::Marginal, inner)
         } else {
             return None;
+        };
+        let (position, note_text) = if let Some(note) = inner.strip_prefix("の左に「") {
+            (Some(MarginNotePosition::Left), note)
+        } else if let Some(note) = inner.strip_prefix("の右に「") {
+            (Some(MarginNotePosition::Right), note)
+        } else {
+            (None, inner.strip_prefix("に「")?)
         };
         if note_text.is_empty() {
             return None;
@@ -1427,12 +1421,40 @@ impl RecogniseCtx<'_, '_> {
         else {
             return None;
         };
-        let consume_start =
-            find_immediate_predecessor_target_position(view.events, self.source, open_idx, target)
-                .unwrap_or(open_span.start);
+        let (consume_start, target_span, origin) = match resolve_forward_referent(
+            view.events,
+            self.source,
+            open_idx,
+            target,
+            self.pending_plain_start,
+        ) {
+            ForwardReferent::Adjacent(start) => (
+                start,
+                Some(Span::new(start, open_span.start)),
+                ForwardOrigin::Reclaimed,
+            ),
+            ForwardReferent::Interior { start, end } => (
+                open_span.start,
+                Some(Span::new(start, end)),
+                ForwardOrigin::Referenced,
+            ),
+            ForwardReferent::Unresolvable => (open_span.start, None, ForwardOrigin::Referenced),
+        };
         let base = self.alloc.content_plain(target);
         let note = self.alloc.content_plain(note_text);
-        Some((self.alloc.side_note(kind, base, note), consume_start))
+        let note_start = note_text.as_ptr().addr() - self.source.as_ptr().addr();
+        let note_span = Span::new(
+            u32::try_from(note_start).ok()?,
+            u32::try_from(note_start + note_text.len()).ok()?,
+        );
+        let mut result = self
+            .alloc
+            .side_note(kind, position, base, note, Some(note_span));
+        if let Node::MarginNote(note) = &mut result {
+            note.target_span = target_span;
+            note.origin = origin;
+        }
+        Some((result, consume_start))
     }
 
     /// Classify a `「caption」のキャプション付きの(図|挿絵)（file）入る`

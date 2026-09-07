@@ -997,7 +997,7 @@ fn append_plain_visible_inline_text(node: &Value, out: &mut String) -> Result<()
         ),
         "accent" => out.push_str(node["resolved"].as_str().unwrap_or("")),
         "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi" | "caption"
-        | "yokogumi" | "fraction" | "warichu" | "text-variant" | "heading" => {
+        | "yokogumi" | "fraction" | "warichu" | "text-variant" | "annotated_text" | "heading" => {
             append_plain_visible_content_text(node.get("content"), out)?;
         }
         "warigaki" => {
@@ -1145,6 +1145,9 @@ fn map_inline_to_nodes(
 ) -> Result<u64> {
     match node["kind"].as_str().unwrap_or("") {
         "heading" => map_heading_inline(node, nodes, recorder, synthetic_warnings, offset, path, 0),
+        "annotated_text" => {
+            map_annotated_text(node, nodes, recorder, synthetic_warnings, offset, path, 0)
+        }
         "text-variant" => {
             map_text_variant_to_node(node, nodes, recorder, synthetic_warnings, offset, path, 0)
         }
@@ -1519,6 +1522,15 @@ fn inline_child_node(
             path,
             depth,
         ),
+        "annotated_text" => map_annotated_text(
+            node,
+            nodes,
+            recorder,
+            synthetic_warnings,
+            offset,
+            path,
+            depth,
+        ),
         "text-variant" => map_text_variant_to_node(
             node,
             nodes,
@@ -1793,6 +1805,43 @@ fn accent_text(node: &Value) -> String {
 
 fn accent_style(node: &Value) -> String {
     node["code"].as_str().unwrap_or("accent").to_owned()
+}
+
+fn map_annotated_text(
+    node: &Value,
+    nodes: &mut Vec<Value>,
+    recorder: &mut DivergenceRecorder,
+    warnings: &mut Vec<Value>,
+    offset: u64,
+    path: &str,
+    depth: usize,
+) -> Result<u64> {
+    let text = plain_visible_content_text(node.get("content"))?;
+    let end = offset + utf8_len(&text);
+    let children = inline_children_nodes(
+        node.get("content"),
+        recorder,
+        warnings,
+        offset,
+        &format!("{path}.content"),
+        depth + 1,
+    )?;
+    let mut annotation = inline_children_nodes(
+        node.get("annotation_content"),
+        recorder,
+        warnings,
+        0,
+        &format!("{path}.annotation_content"),
+        depth + 1,
+    )?;
+    content_coordinates(&mut annotation, "annotation_utf8");
+    let mut result = json!({"type":"annotated-text", "span":synthetic_span(offset,end), "text":text,
+        "inline_children":children, "annotation_children":annotation, "note_kind":node["note_kind"]});
+    if let Some(position) = node.get("position") {
+        result["position"] = position.clone();
+    }
+    nodes.push(result);
+    Ok(end)
 }
 
 fn map_text_variant_to_node(
@@ -2129,7 +2178,9 @@ fn append_visible_inline_text(
     out: &mut String,
 ) -> Result<()> {
     match node["kind"].as_str().unwrap_or("") {
-        "text-variant" => append_plain_visible_content_text(node.get("content"), out)?,
+        "text-variant" | "annotated_text" => {
+            append_plain_visible_content_text(node.get("content"), out)?
+        }
         "text" => out.push_str(node["value"].as_str().unwrap_or("")),
         "ruby" => {
             let container_pointer = format!("{path}.ruby");

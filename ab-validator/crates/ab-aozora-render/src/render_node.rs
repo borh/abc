@@ -157,8 +157,14 @@ fn render_ruby<W: Write>(r: &Ruby, store: &NodeStore, out: &mut W) -> fmt::Resul
 }
 
 /// Render a margin note as a `<ruby>` whose `<rt class="aozora-margin-note">`
-/// carries the note text. The note's `kind` is ignored in HTML (serialize-only).
+/// carries the note text. Referenced targets are already present in the body,
+/// so their note is emitted without repeating the target.
 fn render_side_note<W: Write>(s: &MarginNote, store: &NodeStore, out: &mut W) -> fmt::Result {
+    if s.origin == ForwardOrigin::Referenced {
+        out.write_str("<span class=\"aozora-margin-note\">")?;
+        render_content_range(s.note, store, out)?;
+        return out.write_str("</span>");
+    }
     out.write_str("<ruby>")?;
     render_content_range(s.base, store, out)?;
     out.write_str(r#"<rp>(</rp><rt class="aozora-margin-note">"#)?;

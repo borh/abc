@@ -286,6 +286,19 @@
                                              :rend (case kind "return-mark" "subscript" "okurigana" "superscript")}
                                       (get node "text")]))))
 
+(defn- render-annotated-text-node [acc node depth]
+  (let [before (:current-paragraph acc)
+        principal (render-inline-children (assoc acc :current-paragraph [])
+                                          (get node "inline_children") depth)
+        annotation (render-inline-children (assoc principal :current-paragraph [])
+                                           (get node "annotation_children") depth)
+        note (into [:note (cond-> {:type (get node "note_kind")}
+                            (get node "position") (assoc :place (get node "position")))]
+                   (:current-paragraph annotation))]
+    (append-inline (assoc annotation :current-paragraph before)
+                   (sourced node (conj (into [:seg {:type "annotated-text"}]
+                                             (:current-paragraph principal)) note)))))
+
 (defn- render-base-text-variant-node [acc node depth]
   (let [before (:current-paragraph acc)
         rendered (if (seq (get node "inline_children"))
@@ -453,6 +466,7 @@
    "gaiji" render-gaiji-node
    "editor-note" render-editor-note-node
    "base-text-variant" render-base-text-variant-node
+   "annotated-text" render-annotated-text-node
    "emphasis" render-emphasis-node
    "layout-span" render-layout-span-node
    "heading" render-heading-node

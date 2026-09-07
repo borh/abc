@@ -596,13 +596,20 @@ fn emit_angle_quote<W: Write>(d: AngleQuote, store: &NodeStore, out: &mut W) -> 
 /// Serialize a margin note to its `base［＃「base」…］` form, using the kind's
 /// connector / suffix affixes around the note text.
 fn emit_side_note<W: Write>(s: &MarginNote, store: &NodeStore, out: &mut W) -> fmt::Result {
-    let (connector, suffix) = s.kind.serialize_affixes();
-    emit_content_range(s.base, store, out)?;
+    if s.origin != ForwardOrigin::Referenced {
+        emit_content_range(s.base, store, out)?;
+    }
     out.write_str("［＃「")?;
     emit_content_range(s.base, store, out)?;
-    out.write_str(connector)?;
+    out.write_str(match s.position {
+        Some(ab_aozora_syntax::MarginNotePosition::Left) => "」の左に「",
+        Some(ab_aozora_syntax::MarginNotePosition::Right) => "」の右に「",
+        None => "」に「",
+    })?;
     emit_content_range(s.note, store, out)?;
-    out.write_str(suffix)
+    out.write_str("」の")?;
+    out.write_str(s.kind.keyword())?;
+    out.write_char('］')
 }
 
 /// Serialize an illustration to its `［＃…（file）…入る］` bracket form (a
@@ -670,6 +677,19 @@ mod tests {
         let first = serialize(&ab_aozora_pipeline::lex(src));
         let second = serialize(&ab_aozora_pipeline::lex(&first));
         assert_eq!(first, second, "serialize fixed point diverged for {src:?}");
+    }
+
+    #[test]
+    fn annotation_side_is_preserved_without_inventing_a_side_for_bare_ni() {
+        for source in [
+            "刺［＃「刺」に「テフダ」の注記］",
+            "刺［＃「刺」の左に「テフダ」の注記］",
+            "刺［＃「刺」の右に「テフダ」の注記］",
+            "刺［＃「刺」に「×」の傍記］",
+            "土を堀り［＃「堀」に「ママ」の注記］かへす",
+        ] {
+            assert_eq!(serialize(&ab_aozora_pipeline::lex(source)), source);
+        }
     }
 
     #[test]

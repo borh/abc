@@ -259,6 +259,16 @@ pub const fn is_ruby_base_char(ch: char) -> bool {
     matches!(ruby_base_class(ch), Some(RubyBaseClass::Kanji))
 }
 
+/// Explicit physical side supplied for an editorial annotation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum MarginNotePosition {
+    /// The source says の左に.
+    Left,
+    /// The source says の右に.
+    Right,
+}
+
 /// Which annotation flavour an `ast::MarginNote` carries.
 ///
 /// 注記 and 傍記 share the `MarginNote` structure (a note attached to a
@@ -268,7 +278,7 @@ pub const fn is_ruby_base_char(ch: char) -> bool {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub enum MarginNoteKind {
-    /// 注記 — `［＃「X」の左に「Y」の注記］`, a left-side editorial gloss.
+    /// 注記 — an editorial gloss, with side recorded separately when supplied.
     #[default]
     Gloss,
     /// 傍記 — `［＃「X」に「Y」の傍記］`, a redaction marker (典型的に ×)
@@ -277,20 +287,12 @@ pub enum MarginNoteKind {
 }
 
 impl MarginNoteKind {
-    /// The `(connector, suffix)` source literals that wrap the note text
-    /// when an `ast::MarginNote` of this flavour round-trips
-    /// back to source as `base［＃「base{connector}note{suffix}`.
-    ///
-    /// Renderers call this instead of matching the (`non_exhaustive`)
-    /// variants, so a future flavour must add its affixes here — keeping
-    /// the round-trip vocabulary beside the variant definition.
+    /// Source keyword identifying the annotation kind independently of its side.
     #[must_use]
-    pub const fn serialize_affixes(self) -> (&'static str, &'static str) {
+    pub const fn keyword(self) -> &'static str {
         match self {
-            // 注記 normalises bare `に` input to the canonical `の左に…の注記`.
-            Self::Gloss => ("」の左に「", "」の注記］"),
-            // 傍記 keeps the bare `に` — there is no 左 in the source.
-            Self::Marginal => ("」に「", "」の傍記］"),
+            Self::Gloss => "注記",
+            Self::Marginal => "傍記",
         }
     }
 }

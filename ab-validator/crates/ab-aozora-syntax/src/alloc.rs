@@ -30,7 +30,7 @@ use ab_aozora_encoding::gaiji::GaijiCanonical;
 use crate::format::{ForwardAttr, ForwardOrigin, LineFormat};
 use crate::{
     BoutenKind, BoutenPosition, Container, DirectiveKind, HeadingKind, HeadingStyle,
-    MarginNoteKind, RubySide, SectionKind,
+    MarginNoteKind, MarginNotePosition, RubySide, SectionKind,
 };
 
 use super::ast::{
@@ -251,12 +251,19 @@ impl Allocator {
         })
     }
 
-    /// `Node::MarginNote(MarginNote { kind, base, note })`.
+    /// a target-associated note with optional source provenance.
     ///
     /// # Panics
     ///
     /// Panics if `base` or `note` is empty.
-    pub fn side_note(&mut self, kind: MarginNoteKind, base: Content, note: Content) -> Node {
+    pub fn side_note(
+        &mut self,
+        kind: MarginNoteKind,
+        position: Option<MarginNotePosition>,
+        base: Content,
+        note: Content,
+        note_span: Option<crate::Span>,
+    ) -> Node {
         let base = self.push_nonempty(
             base,
             "classify stage must emit MarginNote with non-empty base",
@@ -265,7 +272,15 @@ impl Allocator {
             note,
             "classify stage must emit MarginNote with non-empty note",
         );
-        Node::MarginNote(MarginNote { kind, base, note })
+        Node::MarginNote(MarginNote {
+            kind,
+            position,
+            note_span,
+            target_span: None,
+            origin: ForwardOrigin::Reclaimed,
+            base,
+            note,
+        })
     }
 
     /// `Node::Format` with a 傍点 attribute.
@@ -650,7 +665,7 @@ mod tests {
         let mut a = Allocator::new();
         let base = a.content_plain("未来");
         let note = a.content_plain("みらい");
-        let Node::MarginNote(s) = a.side_note(MarginNoteKind::Gloss, base, note) else {
+        let Node::MarginNote(s) = a.side_note(MarginNoteKind::Gloss, None, base, note, None) else {
             panic!("expected MarginNote");
         };
         assert_eq!(s.kind, MarginNoteKind::Gloss);

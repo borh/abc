@@ -44,9 +44,11 @@
 //!   gaiji `［＃「口＋「皐」…］`, a typo-note quoting literal quotes — from
 //!   swallowing the `］` so the bracket never closes and the classifier
 //!   sinks the rest of the document to plain. A balanced body never
-//!   triggers it (the top *is* the bracket, matched directly). A `」`
+//!   triggers it, except a closing delimiter quoted as a single glyph. That
+//!   glyph is text when immediately followed by its quote closer. A `」`
 //!   still cannot cross a bracket downward — only `］` gets this scope.
 
+use core::iter::Peekable;
 use core::mem;
 
 use ab_aozora_syntax::Span;
@@ -79,7 +81,7 @@ const MULTILINE_DIRECTIVE_NEWLINE_ALLOWANCE: u8 = 32;
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum PairEvent {
-    /// Unchanged from [`Token::Text`] — a byte run between triggers.
+    /// A source text run, including a quoted scalar delimiter glyph.
     Text {
         /// Sanitized-source byte span of the run; may be empty.
         range: Span,
@@ -202,7 +204,7 @@ pub struct PairStream<I>
 where
     I: Iterator<Item = Token>,
 {
-    tokens: I,
+    tokens: Peekable<I>,
     stack: SmallVec<[(PairKind, Span, u8); 8]>,
     diagnostics: Vec<Diagnostic>,
     /// Resolved (open, close) pairs collected as the stack matches.
@@ -220,7 +222,7 @@ where
 {
     fn new(tokens: I) -> Self {
         Self {
-            tokens,
+            tokens: tokens.peekable(),
             stack: SmallVec::new(),
             diagnostics: Vec::new(),
             links: Vec::new(),
@@ -267,6 +269,18 @@ where
         }
 
         if let Some(pair_kind) = close_kind_of(kind) {
+            if pair_kind != PairKind::Quote
+                && self
+                    .stack
+                    .last()
+                    .is_some_and(|&(top, open, _)| top == PairKind::Quote && open.end == span.start)
+                && matches!(self.tokens.peek(), Some(Token::Trigger {
+                    kind: TriggerKind::QuoteClose, span: close,
+                }) if close.start == span.end)
+            {
+                return PairEvent::Text { range: span };
+            }
+
             if let Some(&(top, open_span, _)) = self.stack.last()
                 && top == pair_kind
             {
@@ -285,7 +299,7 @@ where
             // `［＃「…（fig）入る］` or the composed-glyph gaiji
             // `［＃「口＋「皐」…］` — from burying the `］` so the bracket never
             // closes and the classifier sinks the rest of the document to plain.
-            // The balanced case never reaches here (the fast path above returns).
+            // A quoted scalar closer is already retained as text above.
             if pair_kind == PairKind::Bracket
                 && let Some(bracket_pos) = self
                     .stack
@@ -454,6 +468,59 @@ mod tests {
         let events: Vec<PairEvent> = (&mut stream).collect();
         let diagnostics = stream.take_diagnostics();
         (events, diagnostics)
+    }
+
+    #[test]
+    fn quoted_closing_glyph_belongs_to_the_quote_not_the_annotation_boundary() {
+        let source = "［＃「〕」は底本では「］」］";
+        let mut stream = pair(tokenize(source));
+        let events = (&mut stream).collect::<Vec<_>>();
+        assert!(
+            stream.diagnostics().is_empty(),
+            "{:?}",
+            stream.diagnostics()
+        );
+        let bracket = stream
+            .links()
+            .iter()
+            .filter(|p| p.kind == PairKind::Bracket)
+            .collect::<Vec<_>>();
+        assert_eq!(bracket.len(), 1);
+        assert_eq!(bracket[0].open.start, 0);
+        assert_eq!(usize::try_from(bracket[0].close.end).unwrap(), source.len());
+        assert!(events.iter().any(
+            |event| matches!(event, PairEvent::Text { range } if range.slice(source) == "］")
+        ));
+    }
+
+    #[test]
+    fn quoted_scalar_closers_do_not_disable_malformed_quote_recovery() {
+        for glyph in ["］", "〕", "》", "≫"] {
+            let source = format!("［＃「{glyph}」］");
+            let (_, diagnostics) = run(&source);
+            assert!(diagnostics.is_empty(), "{source}: {diagnostics:?}");
+        }
+        for source in ["［＃「未完］後", "［＃「口＋「皐」］後"] {
+            let (events, diagnostics) = run(source);
+            assert!(events.iter().any(|event| matches!(
+                event,
+                PairEvent::PairClose {
+                    kind: PairKind::Bracket,
+                    ..
+                }
+            )));
+            assert!(!diagnostics.is_empty());
+        }
+        let source = "［＃「］」";
+        let (events, diagnostics) = run(source);
+        assert!(events.iter().any(|event| matches!(
+            event,
+            PairEvent::Unclosed {
+                kind: PairKind::Bracket,
+                ..
+            }
+        )));
+        assert!(!diagnostics.is_empty());
     }
 
     fn pair_kinds(events: &[PairEvent]) -> Vec<(&'static str, PairKind)> {

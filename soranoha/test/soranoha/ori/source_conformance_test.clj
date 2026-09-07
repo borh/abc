@@ -925,3 +925,12 @@
       (is (= "前後" (:plaintext result)))
       (is (empty? (get-in result [:ir "interpretation_facts"])))
       (is (= ["uninterpreted-notation"] (mapv #(get % "kind") (get-in result [:ir "interpretation_problems"])))))))
+
+(deftest quoted-closing-delimiter-stays-in-edition-apparatus
+  (let [marker "［＃「〕」は底本では「］」］"
+        result (transcribe (source (str "前〕" marker "後")))]
+    (is (= "前〕後" (:plaintext result)))
+    (is (= ["〕"] (texts result "lem")))
+    (is (= ["］"] (texts result "rdg")))
+    (is (= 1 (count (get-in result [:ir "interpretation_facts"]))))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))

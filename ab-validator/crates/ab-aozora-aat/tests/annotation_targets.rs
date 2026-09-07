@@ -22,6 +22,13 @@ fn editorial_gloss_keeps_edition_provenance_and_original_ruby() {
     assert_eq!(note["note_kind"], "gloss");
     assert_eq!(note["annotation_content"][0]["value"], statement);
     assert!(note.get("position").is_none());
+    let fact = aat["meta"]["interpretation_facts"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|fact| fact["kind"] == "annotated-text")
+        .unwrap();
+    assert_eq!(fact["aspects"], serde_json::json!(["content", "structure"]));
     assert!(content.iter().all(|node| node["kind"] != "raw"));
     let document = ab_aozora_facade::Document::new(source.as_str());
     let tree = document.parse();
@@ -138,6 +145,16 @@ fn annotations_inside_ruby_bases_keep_the_full_reading_association() {
             .unwrap();
         assert_eq!(note["content"][0]["value"], target);
         assert_eq!(note["position"], "left");
+        let fact = aat["meta"]["interpretation_facts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|fact| fact["kind"] == "annotated-text")
+            .unwrap();
+        assert_eq!(
+            fact["aspects"],
+            serde_json::json!(["content", "structure", "layout"])
+        );
         assert!(content.iter().all(|node| node["kind"] != "raw"));
     }
 }
@@ -184,5 +201,13 @@ fn supplied_note_roles_keep_each_operand_occurrence_independent() {
             assert_eq!(&source[start..end], marker);
         }
         assert_ne!(notes[0]["span"], notes[1]["span"]);
+        for fact in aat["meta"]["interpretation_facts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|fact| fact["kind"] == "annotated-text")
+        {
+            assert_eq!(fact["aspects"], serde_json::json!(["content", "structure"]));
+        }
     }
 }

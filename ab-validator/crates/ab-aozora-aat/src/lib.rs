@@ -1571,8 +1571,9 @@ impl EstablishedInterpretation {
         }
     }
 
-    fn aspects(self) -> &'static [&'static str] {
+    fn aspects(self, node: &Value) -> &'static [&'static str] {
         match self {
+            Self::AnnotatedText if node["position"].as_str().is_none() => &["content", "structure"],
             Self::Exponent | Self::Translation | Self::ExternalTableReference => &["structure"],
             Self::Ruby | Self::GaijiRuby | Self::TextVariant | Self::EditorialNote => {
                 &["content", "structure"]
@@ -1616,7 +1617,7 @@ fn gaiji_ruby_facts(ruby: &Value) -> Vec<Value> {
                     continue;
                 };
                 facts.push(json!({"kind":EstablishedInterpretation::GaijiRuby.kind(), "outcome":"established",
-                    "aspects":EstablishedInterpretation::GaijiRuby.aspects(),
+                    "aspects":EstablishedInterpretation::GaijiRuby.aspects(node),
                     "source_span":{"start":span["byte_start"],"end":span["byte_end"],
                         "line":span["line_start"],"coordinate_system":"decoded_utf8"}}));
             }
@@ -1693,7 +1694,7 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
                     (span["byte_start"].as_u64(), span["byte_end"].as_u64())
                     && start < end
                 {
-                    facts.push(json!({"kind":interpretation.kind(), "outcome":"established", "aspects":interpretation.aspects(),
+                    facts.push(json!({"kind":interpretation.kind(), "outcome":"established", "aspects":interpretation.aspects(node),
                         "source_span":{"start":start,"end":end,"line":span["line_start"],"coordinate_system":"decoded_utf8"}}));
                     if font_formatting {
                         facts.push(json!({"kind":"emphasis", "outcome":"established", "aspects":["layout"],

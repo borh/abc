@@ -1,10 +1,10 @@
 {
   "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
-  "mapping_version": "0.5.0",
+  "mapping_version": "0.6.0",
   "mapping_schema_hash": "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2",
   "source_aat_version": 1,
   "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "target_parser_ir_schema_hash": "sha256:38b35e9c771db3b30f3d63b532965252ee57951072f6c3d47edefa64216ce320",
+  "target_parser_ir_schema_hash": "sha256:7420573406b124eb3e1ca137712d0b14eddf02848ad70c497ede54a9cef19f62",
   "transform_rule_descriptions": [
     {
       "rule_id": "A-01",
@@ -1061,14 +1061,6 @@
       "parser_ir_pointer": "warnings[].span.line",
       "action": "project",
       "description": "Observed 115938 occurrences; first_path=meta.warnings[].line. AAT warning.line vs parser-IR diagnostic.span; coordinate not assembled"
-    },
-    {
-      "rule_id": "I-01",
-      "category": "INVENTION",
-      "aat_pointer": null,
-      "parser_ir_pointer": "errors[]",
-      "action": "invent",
-      "description": "Observed 89169 occurrences; first_path=(none). parser-IR requires errors[]; AAT has no errors concept -> defaulted empty"
     },
     {
       "rule_id": "I-02",
@@ -4949,14 +4941,6 @@
       "parser_ir_pointer": null,
       "action": "drop",
       "description": "Observed 17894 occurrences; first_path=meta.metrics. performance/fallback metrics dropped; adapter-fidelity concern not representable"
-    },
-    {
-      "rule_id": "L-466",
-      "category": "LOSS",
-      "aat_pointer": "meta.parse_complete",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 89169 occurrences; first_path=meta.parse_complete. parse_complete=True preserved in divergence bundle; parser-IR derived_from does not model parse completeness"
     },
     {
       "rule_id": "L-467",

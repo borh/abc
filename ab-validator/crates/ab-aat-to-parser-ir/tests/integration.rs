@@ -778,7 +778,7 @@ fn mapping_preflight_accepts_checked_in_v1_artifact() {
 
     let index = mapping.preflight(&schemas).unwrap();
 
-    assert_eq!(mapping.mapping_version, "0.5.0");
+    assert_eq!(mapping.mapping_version, "0.6.0");
     assert_eq!(
         mapping.target_parser_ir_schema_hash,
         schema_hash(&schemas.parser_ir_schema).unwrap()
@@ -831,7 +831,7 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
     let mapping =
         MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2.json"))
             .unwrap();
-    assert_eq!(mapping.mapping_version, "0.6.0");
+    assert_eq!(mapping.mapping_version, "0.7.0");
     assert_eq!(mapping.source_aat_version, 2);
     let schemas = SchemaSet::load_for_aat_version(&repo_root, &research_root, 2).unwrap();
     mapping.preflight(&schemas).unwrap();
@@ -2162,8 +2162,7 @@ fn v2_schemas_and_mapping() -> (SchemaSet, MappingDocument) {
 }
 
 /// A schema-valid v2 `meta` block for tests: `warnings: []` keeps the fixture
-/// minimal (the individual warning-field LOSS accounting is exercised
-/// separately in `map_warnings`, not by these layout/source-note tests).
+/// minimal; diagnostic preservation is exercised separately.
 fn v2_test_meta() -> Value {
     json!({
         "adapter": "fixture",
@@ -2495,58 +2494,69 @@ fn emitted_colophon_note_converts_to_transcriber_note() {
 }
 
 #[test]
-fn v2_warning_span_loss_record_is_schema_valid_scalar() {
-    // C3 audit blocker regression: a v2 `meta.warnings[].span` is a
-    // structured object (line_start/line_end/byte_start/byte_end), not a
-    // schema-legal `source_value` scalar (string/integer/boolean/null per
-    // aat-parser-ir-divergence.schema.json). Conversion must still succeed,
-    // and the resulting divergence record's `source_value` must validate
-    // against the divergence-record schema (which `recorder.bundle()`
-    // already enforces per-record; this pins the regression at the
-    // integration level too).
+fn preserves_source_diagnostics_and_parse_completion() {
     let (schemas, mapping) = v2_schemas_and_mapping();
-    let mut meta = v2_test_meta();
-    meta["warnings"] = json!([{
-        "code": "FIXTURE_WARNING",
-        "severity": "warning",
-        "message": "fixture warning with span",
-        "span": { "line_start": 3, "line_end": 3, "byte_start": 10, "byte_end": 20 }
-    }]);
-    let aat = json!({
-        "version": 2, "work_id": "t-warning-span",
-        "blocks": [{ "kind": "paragraph", "content": [{ "kind": "text", "value": "本文" }] }],
-        "meta": meta
-    });
+    let converter = ab_aat_to_parser_ir::PreparedConverter::new(mapping, schemas).unwrap();
+    for complete in [true, false] {
+        let mut meta = v2_test_meta();
+        meta["parse_complete"] = json!(complete);
+        meta["warnings"] = json!([
+            {"code": "unclosed-bracket", "severity": "error", "message": "unclosed bracket",
+             "span": {"line_start": 3, "line_end": 4, "byte_start": 10, "byte_end": 20}},
+            {"code": "source-note", "severity": "note", "message": "source note"},
+            {"code": "future.warning", "severity": "warning", "message": "retained warning"}
+        ]);
+        let output = converter.convert(json!({
+            "version": 2, "work_id": "diagnostics", "meta": meta,
+            "blocks": [{"kind": "paragraph", "content": [{"kind": "text", "value": "本文"}]}]
+        }), default_test_options()).unwrap();
+        assert_eq!(output.parser_ir["derived_from"]["parse_complete"], complete);
+        assert_eq!(
+            output.parser_ir["errors"],
+            json!([{
+                "severity": "error", "code": "unclosed-bracket", "message": "unclosed bracket",
+                "span": {"start": 10, "end": 20, "coordinate_system": "decoded_utf8", "line": 3, "end_line": 4},
+                "construct": null, "recovery": null
+            }])
+        );
+        assert_eq!(output.parser_ir["warnings"][0]["severity"], "note");
+        assert_eq!(output.parser_ir["warnings"][0]["code"], "source-note");
+        assert_eq!(output.parser_ir["warnings"][1]["code"], "future.warning");
+        let records = output.divergence_bundle["records"].as_array().unwrap();
+        assert!(!records.iter().any(|record| {
+            record["category"] == "LOSS"
+                && record["aat_pointer"].as_str().is_some_and(|pointer| {
+                    pointer == "meta.parse_complete" || pointer.starts_with("meta.warnings[].")
+                })
+        }));
+    }
+}
 
+#[test]
+fn malformed_source_retains_parser_error_through_conversion() {
+    let source = "本文\nstray］";
+    let aat =
+        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
+            .unwrap();
+    let (schemas, mapping) = v2_schemas_and_mapping();
     let output = ab_aat_to_parser_ir::convert(ConversionRequest {
         aat,
         mapping,
-        schemas: schemas.clone(),
+        schemas,
         options: default_test_options(),
     })
     .unwrap();
-
-    let span_record = output
-        .divergence_bundle
-        .pointer("/records")
-        .and_then(Value::as_array)
-        .expect("divergence bundle records")
-        .iter()
-        .find(|record| record["aat_pointer"] == "meta.warnings[].span")
-        .expect("meta.warnings[].span LOSS record present");
-    assert!(
-        span_record["source_value"].is_null(),
-        "structured span must not leak into source_value: {span_record}"
+    assert_eq!(output.parser_ir["derived_from"]["parse_complete"], false);
+    let error = &output.parser_ir["errors"][0];
+    assert_eq!(error["code"], "unmatched-close");
+    assert_eq!(error["severity"], "error");
+    assert_eq!(
+        error["span"],
+        json!({
+            "start": 12, "end": 15, "line": 2, "end_line": 2,
+            "coordinate_system": "decoded_utf8"
+        })
     );
-
-    validate_value(
-        &schemas.abc_divergence_record_schema,
-        span_record,
-        "ABC divergence record",
-    )
-    .unwrap();
-    validate_value(&schemas.bundle_schema, &output.divergence_bundle, "bundle").unwrap();
-    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
 }
 
 #[test]

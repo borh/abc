@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
   "title": "ABC Parser IR",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "type": "object",
   "required": ["schema_id", "schema_hash", "source", "nodes", "warnings", "errors"],
   "additionalProperties": false,
@@ -15,6 +15,7 @@
       "required": [
         "aat_version",
         "aat_adapter",
+        "parse_complete",
         "mapping_id",
         "mapping_version",
         "mapping_schema_hash"
@@ -23,6 +24,7 @@
         "aat_version": { "type": "integer", "minimum": 1 },
         "aat_adapter": { "type": "string" },
         "aat_adapter_version": { "type": ["string", "null"] },
+        "parse_complete": { "type": "boolean" },
         "mapping_id": { "type": "string", "format": "uri" },
         "mapping_version": { "type": "string" },
         "mapping_schema_hash": { "$ref": "#/$defs/hash" }
@@ -106,6 +108,7 @@
         "start": { "type": "integer", "minimum": 0 },
         "end": { "type": "integer", "minimum": 0 },
         "line": { "type": ["integer", "null"], "minimum": 1 },
+        "end_line": { "type": ["integer", "null"], "minimum": 1 },
         "column": { "type": ["integer", "null"], "minimum": 1 },
         "coordinate_system": { "const": "decoded_utf8" }
       }
@@ -841,8 +844,8 @@
       "required": ["severity", "code", "message"],
       "additionalProperties": false,
       "properties": {
-        "severity": { "type": "string", "enum": ["fatal", "error", "warning", "info"] },
-        "code": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]+$" },
+        "severity": { "type": "string", "enum": ["fatal", "error", "warning", "info", "note"] },
+        "code": { "type": "string" },
         "message": { "type": "string" },
         "span": {
           "anyOf": [

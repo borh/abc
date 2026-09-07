@@ -167,12 +167,8 @@ fn convert_preflighted_for_qualification(
 
     let source = map_source(&aat, &options, &mut recorder)?;
     recorder.record("INVENTION", None, Some("schema_id/schema_hash"), None, None)?;
-    let mut warnings = map_warnings(&aat, &mut recorder)?;
-    warnings
-        .as_array_mut()
-        .expect("warnings array")
-        .append(&mut synthetic_warnings);
-    recorder.record("INVENTION", None, Some("errors[]"), None, None)?;
+    let (mut warnings, errors) = map_diagnostics(&aat, &mut recorder)?;
+    warnings.append(&mut synthetic_warnings);
 
     let orthographic_annotations = options.orthographic_annotations;
     if let Some(orthographic_annotations) = orthographic_annotations.as_ref() {
@@ -203,7 +199,7 @@ fn convert_preflighted_for_qualification(
         "paragraphs": paragraphs,
         "layout_blocks": layout_blocks,
         "warnings": warnings,
-        "errors": [],
+        "errors": errors,
     });
 
     let parser_ir_object = parser_ir.as_object_mut().expect("parser_ir is an object");
@@ -2168,12 +2164,21 @@ fn map_node_span(
 }
 
 fn attach_source_span(value: &mut Value, aat_span: Option<&Value>) -> Result<()> {
-    let Some(span) = aat_span else { return Ok(()) };
+    if let Some(span) = source_span(aat_span)? {
+        value["source_span"] = span;
+    }
+    Ok(())
+}
+
+fn source_span(aat_span: Option<&Value>) -> Result<Option<Value>> {
+    let Some(span) = aat_span else {
+        return Ok(None);
+    };
     let (Some(start), Some(end)) = (
         span.get("byte_start").and_then(Value::as_u64),
         span.get("byte_end").and_then(Value::as_u64),
     ) else {
-        return Ok(());
+        return Ok(None);
     };
     if start > end {
         bail!("AAT source span is inverted: {start}..{end}");
@@ -2182,8 +2187,7 @@ fn attach_source_span(value: &mut Value, aat_span: Option<&Value>) -> Result<()>
     if let Some(line) = span.get("line_start") {
         source["line"] = line.clone();
     }
-    value["source_span"] = source;
-    Ok(())
+    Ok(Some(source))
 }
 
 fn attach_single_source_span(nodes: &mut [Value], aat_span: Option<&Value>) -> Result<()> {
@@ -2201,10 +2205,14 @@ fn derived_from(aat: &Value, mapping: &MappingDocument) -> Result<Value> {
     let Some(adapter) = meta["adapter"].as_str() else {
         bail!("AAT meta.adapter is required for parser-IR derived_from");
     };
+    let Some(parse_complete) = meta["parse_complete"].as_bool() else {
+        bail!("AAT meta.parse_complete is required for parser-IR derived_from");
+    };
     Ok(json!({
         "aat_version": aat_version,
         "aat_adapter": adapter,
         "aat_adapter_version": meta.get("adapter_version").and_then(Value::as_str),
+        "parse_complete": parse_complete,
         "mapping_id": mapping.mapping_id,
         "mapping_version": mapping.mapping_version,
         "mapping_schema_hash": mapping.mapping_schema_hash,
@@ -2280,15 +2288,6 @@ fn map_source(
         None,
         Some(Value::Null),
     )?;
-    let field = "parse_complete";
-    let field_pointer = format!("meta.{field}");
-    recorder.record(
-        "LOSS",
-        Some(field_pointer.as_str()),
-        None,
-        meta.get(field).cloned(),
-        None,
-    )?;
     if meta.get("metrics").is_some() {
         recorder.record("LOSS", Some("meta.metrics"), None, None, None)?;
     }
@@ -2314,76 +2313,60 @@ fn is_sha256_hash(value: &str) -> bool {
             .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
 }
 
-fn map_warnings(aat: &Value, recorder: &mut DivergenceRecorder) -> Result<Value> {
+fn map_diagnostics(
+    aat: &Value,
+    recorder: &mut DivergenceRecorder,
+) -> Result<(Vec<Value>, Vec<Value>)> {
     let mut warnings = Vec::new();
+    let mut errors = Vec::new();
     for warning in aat
         .pointer("/meta/warnings")
         .and_then(Value::as_array)
         .into_iter()
         .flatten()
     {
-        recorder.record(
-            "INVENTION",
-            None,
-            Some("warnings[].severity"),
-            None,
-            Some(json!("warning")),
-        )?;
-        recorder.record(
-            "INVENTION",
-            None,
-            Some("warnings[].code"),
-            None,
-            Some(json!("AAT_WARNING")),
-        )?;
-        // v2 AAT warnings carry their own `code`/`severity`/`span`, but
-        // parser-IR's warnings channel always uses the fixed AAT_WARNING/
-        // warning invention above; the input's richer fields are dropped
-        // (sidecar-recorded), never projected. v1 warnings never have these
-        // fields, so these are no-ops under the v1 tuple.
-        if let Some(code) = warning.get("code") {
-            recorder.record_if_measured(
-                "LOSS",
-                Some("meta.warnings[].code"),
+        let severity = warning.get("severity").and_then(Value::as_str);
+        if severity.is_none() {
+            recorder.record(
+                "INVENTION",
                 None,
-                Some(code.clone()),
+                Some("warnings[].severity"),
                 None,
-            );
+                Some(json!("warning")),
+            )?;
         }
-        if let Some(severity) = warning.get("severity") {
-            recorder.record_if_measured(
-                "LOSS",
-                Some("meta.warnings[].severity"),
+        let code = warning.get("code").and_then(Value::as_str);
+        if code.is_none() {
+            recorder.record(
+                "INVENTION",
                 None,
-                Some(severity.clone()),
+                Some("warnings[].code"),
                 None,
-            );
+                Some(json!("AAT_WARNING")),
+            )?;
         }
-        if let Some(span) = warning.get("span") {
-            // `span` is a structured object (start/end), not a schema-legal
-            // scalar `source_value` (string/integer/boolean/null per
-            // aat-parser-ir-divergence.schema.json). `scalar_divergence_value`
-            // is the established convention for this (see
-            // `record_optional_figure_loss` above): non-scalars collapse to
-            // `None` since the rule + count already carry the accounting.
-            recorder.record_if_measured(
-                "LOSS",
-                Some("meta.warnings[].span"),
-                None,
-                scalar_divergence_value(span),
-                None,
-            );
-        }
-        warnings.push(json!({
-            "severity": "warning",
-            "code": "AAT_WARNING",
+        let severity = severity.unwrap_or("warning");
+        let mut diagnostic = json!({
+            "severity": severity,
+            "code": code.unwrap_or("AAT_WARNING"),
             "message": warning["message"].as_str().unwrap_or(""),
             "span": null,
             "construct": warning.get("path").cloned().unwrap_or(Value::Null),
             "recovery": null,
-        }));
+        });
+        if let Some(mut span) = source_span(warning.get("span"))? {
+            if let Some(end_line) = warning.pointer("/span/line_end") {
+                span["end_line"] = end_line.clone();
+            }
+            diagnostic["span"] = span;
+        }
+        if matches!(severity, "error" | "fatal") {
+            errors.push(diagnostic);
+        } else {
+            warnings.push(diagnostic);
+        }
     }
-    Ok(Value::Array(warnings))
+    Ok((warnings, errors))
 }
 
 fn aat_meta(aat: &mut Value) -> AatMeta {

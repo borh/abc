@@ -985,6 +985,16 @@ where
                     if let Some(pending) = self.pending_ruby_base.take() {
                         self.emit_pending_base(pending);
                     }
+                    if !matches!(
+                        view.events.get(open_idx + 1),
+                        Some(PairEvent::Solo {
+                            kind: TriggerKind::Hash,
+                            ..
+                        })
+                    ) {
+                        self.replay_unrecognised_body(body, Some(rm_span));
+                        return;
+                    }
                     self.push_plain(rm_span, PlainProvenance::RecoveredVerbatim);
                     if self.try_bracket_emit(view, open_idx, close_idx).is_some() {
                         return;
@@ -1098,7 +1108,7 @@ where
                 // still reaches its recognizer. Replaying a whole literal
                 // bracket as plain would hide nested gaiji and annotations.
                 if matches!(kind, PairKind::Quote | PairKind::Tortoise)
-                    || self.is_literal_bracket(kind, span)
+                    || (self.pending_refmark.is_none() && self.is_literal_bracket(kind, span))
                 {
                     // Fold any pending refmark into plain first, then
                     // start the new plain run at the open's first byte.
@@ -1216,7 +1226,7 @@ where
                 kind,
                 PairKind::Ruby | PairKind::AngleQuote | PairKind::Bracket
             )
-            && !self.is_literal_bracket(*kind, *span)
+            && (self.pending_refmark.is_some() || !self.is_literal_bracket(*kind, *span))
         {
             // None of the three flush `pending_plain_start`, so the
             // recogniser can pull `consume_start` back over the preceding

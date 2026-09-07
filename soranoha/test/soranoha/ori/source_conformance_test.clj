@@ -587,3 +587,10 @@
     (is (= ["（どういふ形にするのです？）" "（正方形にやりますか。）院長は云った。"] (texts result "p")))
     (is (= ["（どういふ形にするのです？）" "（正方形にやりますか。）"] (mapv view/visible-text scopes)))
     (is (= 1 (count (set (map #(attribute % "source") scopes)))))))
+
+(deftest noncanonical-gaiji-keeps-surrounding-prose-visible
+  (let [marker "※［「纏」の「广」に代えて「厂」、54-14］"
+        result (transcribe (source (str "前" marker "後。")))]
+    (is (= "前後。" (:plaintext result)))
+    (is (= [marker] (mapv #(get % "raw") (get-in result [:ir "interpretation_problems"]))))
+    (is (some #(= marker (.getTextContent ^Node %)) (elements result "note")))))

@@ -161,3 +161,23 @@ fn recovery_output_characterization() {
         assert_eq!(serialize(&out), source, "verbatim source: {source:?}");
     }
 }
+
+#[test]
+fn noncanonical_gaiji_recovery_owns_only_its_marker() {
+    let marker = "※［「纏」の「广」に代えて「厂」、54-14］";
+    for source in [format!("前{marker}後。"), format!("「前{marker}後。」")] {
+        let out = lex(&source);
+        assert_eq!(serialize(&out), source);
+        let recovered: Vec<_> = plain_provenance(&source)
+            .into_iter()
+            .filter(|(_, _, provenance)| *provenance == PlainProvenance::RecoveredVerbatim)
+            .map(|(start, end, _)| &source[start as usize..end as usize])
+            .collect();
+        assert!(recovered.contains(&marker), "{recovered:?}");
+        assert!(
+            !recovered
+                .iter()
+                .any(|text| text.contains('前') || text.contains('後'))
+        );
+    }
+}

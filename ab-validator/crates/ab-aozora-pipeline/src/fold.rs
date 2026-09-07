@@ -644,6 +644,19 @@ impl<'src> Normalizer<'src> {
 /// Match supplied closing attributes, including source-defined omitted payloads.
 pub(crate) fn scope_closer_matches(open: RegionFormat, close: RegionClose) -> bool {
     let expected = RegionClose::of(open);
+    if let (RegionFormat::Indent(block), RegionClose::Indent { kumi_width, styles }) = (open, close)
+    {
+        let width_matches = kumi_width.is_none()
+            || matches!(expected,
+            RegionClose::Indent { kumi_width: expected_width, .. } if kumi_width == expected_width);
+        return width_matches
+            && styles.iter_formats().all(|supplied| {
+                block
+                    .styles
+                    .iter_formats()
+                    .any(|established| supplied == established)
+            });
+    }
     match (expected, close) {
         (
             RegionClose::Heading {
@@ -663,8 +676,7 @@ pub(crate) fn scope_closer_matches(open: RegionFormat, close: RegionClose) -> bo
         (RegionClose::Columns(expected), RegionClose::Columns(actual)) => {
             actual.is_none() || expected == actual
         }
-        (RegionClose::Indent { .. }, RegionClose::Indent { kumi_width: None })
-        | (RegionClose::Bold { .. }, RegionClose::Bold { .. })
+        (RegionClose::Bold { .. }, RegionClose::Bold { .. })
         | (RegionClose::Gothic { .. }, RegionClose::Gothic { .. })
         | (RegionClose::Italic { .. }, RegionClose::Italic { .. })
         | (RegionClose::Caption { .. }, RegionClose::Caption { .. }) => true,

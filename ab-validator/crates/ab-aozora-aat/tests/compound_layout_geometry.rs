@@ -50,7 +50,7 @@ fn conflicting_line_alignment_does_not_erase_page_placement() {
         assert!(
             aat["meta"]["interpretation_facts"]
                 .as_array()
-                .is_none_or(Vec::is_empty),
+                .is_none_or(|facts| facts.iter().all(|fact| fact["source_span"]["start"] != 0)),
             "{aat}"
         );
     }

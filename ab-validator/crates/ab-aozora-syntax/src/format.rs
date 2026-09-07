@@ -979,6 +979,9 @@ pub enum RegionClose {
         /// The `W` of a `字組み終わり` compound; `None` for the generic
         /// `字下げ終わり` (plain / 字詰め / 折り返して / 中央 indents).
         kumi_width: Option<LineWidth>,
+        /// Presentation explicitly named by the closer; omitted axes do not
+        /// constrain the opening marker.
+        styles: BlockStyles,
     },
     /// `割り注終わり`.
     Warichu,
@@ -1059,6 +1062,7 @@ impl RegionClose {
     pub const fn of(region: RegionFormat) -> Self {
         match region {
             RegionFormat::Indent(block) => Self::Indent {
+                styles: BlockStyles::EMPTY,
                 kumi_width: match block.layout {
                     IndentLayout::Kumi(kumi) => Some(LineWidth(kumi.width)),
                     IndentLayout::LineWidth(_) | IndentLayout::None => None,
@@ -1244,6 +1248,7 @@ mod tests {
             RegionClose::of(kumi),
             RegionClose::Indent {
                 kumi_width: Some(LineWidth(NonZeroU8::new(20).unwrap())),
+                styles: BlockStyles::EMPTY,
             }
         );
         let plain = RegionFormat::Indent(IndentBlock {
@@ -1259,7 +1264,10 @@ mod tests {
         });
         assert_eq!(
             RegionClose::of(plain),
-            RegionClose::Indent { kumi_width: None }
+            RegionClose::Indent {
+                kumi_width: None,
+                styles: BlockStyles::EMPTY
+            }
         );
     }
 

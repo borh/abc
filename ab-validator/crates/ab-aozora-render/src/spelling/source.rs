@@ -384,11 +384,14 @@ pub(crate) fn emit_container_close<W: Write>(close: RegionClose, out: &mut W) ->
         RegionClose::Gothic { padded: true } => out.write_str("［＃ここでゴシック体終わり］"),
         RegionClose::Italic { padded: false } => out.write_str("［＃斜体終わり］"),
         RegionClose::Italic { padded: true } => out.write_str("［＃ここで斜体終わり］"),
-        // 字組み compound — the close keeps its own width so the marker
-        // round-trips byte-exact; every other indent close is the generic form.
-        RegionClose::Indent {
-            kumi_width: Some(width),
-        } => write!(out, "［＃ここで字下げ、{}字組み終わり］", width.0),
+        RegionClose::Indent { kumi_width, styles } => {
+            out.write_str("［＃ここで字下げ")?;
+            if let Some(width) = kumi_width {
+                write!(out, "、{}字組み", width.0)?;
+            }
+            emit_block_styles(styles, out)?;
+            out.write_str("終わり］")
+        }
         RegionClose::LineWidth => out.write_str("［＃ここで字詰め終わり］"),
         // Level-less bare close (`ここで見出し終わり` / `見出し終わり`): the open
         // payload drives pairing/render, so the close carries no level word.

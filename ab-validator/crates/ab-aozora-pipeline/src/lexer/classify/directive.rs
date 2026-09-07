@@ -151,7 +151,7 @@ enum BodyFamily {
     SashiePrefix,             // 挿絵（ → 挿絵（X）入る
     IndentBlockParamPrefix,   // ここから → ここから{N}字下げ
     AlignEndBlockParamPrefix, // ここから地から → ここから地から{N}字上げ
-    IndentKumiBlockEnd,       // ここで字下げ、 → ここで字下げ、{W}字組み終わり
+    IndentCompoundBlockEnd,   // ここで字下げ、 + supplied width or presentation
     OkuriganaPrefix,          // （ → kaeriten okurigana （X）
 
     // === Body-equals-pattern then parse from body[0] ===
@@ -254,7 +254,7 @@ const fn body_family_mode(family: BodyFamily) -> MatchMode {
         | BodyFamily::IndentBlockParamPrefix
         | BodyFamily::AlignEndBlockParamPrefix
         | BodyFamily::IndentBlockEnd
-        | BodyFamily::IndentKumiBlockEnd
+        | BodyFamily::IndentCompoundBlockEnd
         | BodyFamily::ParamBlockEnd
         | BodyFamily::OkuriganaPrefix
         | BodyFamily::TopIndentPrefix
@@ -312,7 +312,7 @@ static BODY_PATTERNS: &[BodyPattern] = &[
     // `ここで字下げ` is `、` vs `終`, so the two needles never overlap.
     BodyPattern {
         needle: "ここで字下げ、",
-        family: BodyFamily::IndentKumiBlockEnd,
+        family: BodyFamily::IndentCompoundBlockEnd,
     },
     BodyPattern {
         needle: "ここで地付き終わり",
@@ -1149,7 +1149,10 @@ pub(super) fn classify_annotation_body(
             // non-`、` tail is not this family → decline to Unknown.
             let tail = &body[match_end..];
             (tail.is_empty() || (tail.starts_with('、') && tail.ends_with("終わり"))).then_some((
-                EmitKind::BlockClose(RegionClose::Indent { kumi_width: None }),
+                EmitKind::BlockClose(RegionClose::Indent {
+                    kumi_width: None,
+                    styles: BlockStyles::EMPTY,
+                }),
                 None,
             ))
         }
@@ -1159,7 +1162,22 @@ pub(super) fn classify_annotation_body(
             // authoritative when pairing (mirrors the generic 字下げ終わり).
             Some((EmitKind::BlockClose(RegionClose::LineWidth), None))
         }
-        BodyFamily::IndentKumiBlockEnd => {
+        BodyFamily::IndentCompoundBlockEnd => {
+            let rest = &body[match_end..];
+            let mut styles = BlockStyles::EMPTY;
+            if rest.strip_suffix("終わり").is_some_and(|clauses| {
+                clauses
+                    .split('、')
+                    .all(|clause| resolve_block_style(clause, &mut styles).is_some())
+            }) {
+                return Some((
+                    EmitKind::BlockClose(RegionClose::Indent {
+                        kumi_width: None,
+                        styles,
+                    }),
+                    None,
+                ));
+            }
             // ここで字下げ、{W}字組み終わり — the 字組み compound closer.
             // The close carries its own `W` so the marker round-trips byte-exact
             // (it pairs with the Indent open by family). Tolerate an optional
@@ -1174,6 +1192,7 @@ pub(super) fn classify_annotation_body(
                     (
                         EmitKind::BlockClose(RegionClose::Indent {
                             kumi_width: Some(LineWidth(w)),
+                            styles: BlockStyles::EMPTY,
                         }),
                         None,
                     )

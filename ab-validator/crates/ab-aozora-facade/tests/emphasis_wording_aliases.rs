@@ -5,6 +5,7 @@ use ab_aozora_facade::Document;
 fn supplied_emphasis_aliases_match_canonical_source_semantics() {
     for (alias, canonical) in [
         ("は傍点", "に傍点"),
+        ("の傍点", "に傍点"),
         ("傍点", "に傍点"),
         ("に黒丸傍点", "に丸傍点"),
         ("の左に黒丸傍点", "の左に丸傍点"),
@@ -38,10 +39,12 @@ fn supplied_emphasis_aliases_match_canonical_source_semantics() {
 fn emphasis_aliases_do_not_select_missing_or_annotation_only_targets() {
     for source in [
         "前［＃「不在」は傍点］後",
+        "前［＃「不在」の傍点］後",
         "前［＃「不在」傍点］後",
         "前［＃「不在」に黒丸傍点］後",
         "前［＃「語」は未定］［＃「語」傍点］後",
         "前語［＃「語」は傍点追加］後",
+        "前語［＃「語」の傍点追加］後",
         "前語［＃「語」傍点追加］後",
         "前語［＃「語」に黒丸傍点追加］後",
     ] {

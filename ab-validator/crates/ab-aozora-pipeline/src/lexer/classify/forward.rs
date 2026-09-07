@@ -771,7 +771,7 @@ impl RecogniseCtx<'_, '_> {
             (BoutenPosition::Left, rest)
         } else if let Some(rest) = suffix.strip_prefix("の両側に") {
             (BoutenPosition::Both, rest)
-        } else if matches!(suffix, "は傍点" | "傍点") {
+        } else if matches!(suffix, "は傍点" | "の傍点" | "傍点") {
             (BoutenPosition::Right, "傍点")
         } else {
             return None;

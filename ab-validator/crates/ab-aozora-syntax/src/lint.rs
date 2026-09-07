@@ -194,11 +194,6 @@ fn forward_form(body: &str) -> Option<String> {
         return Some(format!("{head}は小文字"));
     }
 
-    if let Some(head) = body.strip_suffix("の傍点")
-        && head.ends_with('」')
-    {
-        return Some(format!("{head}に傍点"));
-    }
     None
 }
 
@@ -228,7 +223,6 @@ pub const CATALOGUE_SAMPLES: &[&str] = &[
     "「幕。」は地付け",
     "「GHQ」の小文字",
     "「強調」ゴシック体",
-    "「語」の傍点",
     // the parser declines these; the lint suggests the canonical.
     "ゴチック",
     "ここでゴチック終わり",
@@ -354,6 +348,7 @@ mod tests {
         );
         assert_eq!(canonical_directive("「梅」傍点"), None);
         assert_eq!(canonical_directive("「語」は傍点"), None);
+        assert_eq!(canonical_directive("「語」の傍点"), None);
     }
 
     #[test]
@@ -366,7 +361,6 @@ mod tests {
             ("「幕。」は地付け", "「幕。」は地付き"),
             ("「GHQ」の小文字", "「GHQ」は小文字"),
             ("「強調」ゴシック体", "「強調」はゴシック体"),
-            ("「語」の傍点", "「語」に傍点"),
         ] {
             assert_eq!(canonical_directive(v).as_deref(), Some(c), "variant {v:?}");
             // Idempotent: the emitted canonical is not itself a catalogue key.

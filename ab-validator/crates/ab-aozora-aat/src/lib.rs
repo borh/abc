@@ -3803,14 +3803,15 @@ fn resolve_text_variants_in_blocks(nodes: Vec<Value>, source: &str) -> Vec<Value
                 ) {
                     continue;
                 }
-            } else if attach_reading_variant(
-                &mut resolved,
-                &node,
-                current,
-                &current_text,
-                base,
-                &base_text,
-            ) {
+            }
+            let ruby = if variant["target_kind"] == "text" {
+                adjacent_principal_ruby(&mut resolved)
+            } else {
+                preceding_reading(&mut resolved)
+            };
+            if ruby.is_some_and(|ruby| {
+                attach_reading_variant(ruby, &node, current, &current_text, base, &base_text)
+            }) {
                 continue;
             }
         }
@@ -4003,16 +4004,13 @@ fn preceding_reading(nodes: &mut [Value]) -> Option<&mut Value> {
 }
 
 fn attach_reading_variant(
-    nodes: &mut [Value],
+    ruby: &mut Value,
     note: &Value,
     current: &[Value],
     current_text: &str,
     base: &[Value],
     base_text: &str,
 ) -> bool {
-    let Some(ruby) = preceding_reading(nodes) else {
-        return false;
-    };
     if ruby["span"]["line_end"].as_u64().is_none()
         || ruby["span"]["line_end"] != note["span"]["line_start"]
     {

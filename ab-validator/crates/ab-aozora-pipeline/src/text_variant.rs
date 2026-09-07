@@ -21,9 +21,9 @@ pub enum EditionNoteKind {
 }
 
 fn split_attribution(body: &str, edition: EditionNoteKind) -> Option<(&str, &str)> {
-    let delimiters = match edition {
-        EditionNoteKind::BaseEdition => ["」は底本では", "」は、底本では"],
-        EditionNoteKind::FirstPublication => ["」は初出では", "」は、初出では"],
+    let delimiters: &[&str] = match edition {
+        EditionNoteKind::BaseEdition => &["」は底本では", "」は、底本では", "」底本では"],
+        EditionNoteKind::FirstPublication => &["」は初出では", "」は、初出では"],
     };
     if delimiters
         .iter()
@@ -157,13 +157,19 @@ fn variant_parts<'s>(
     witness: &'s str,
     witness_start: usize,
 ) -> Option<TextVariant<'s>> {
-    let asserted = ["と誤記", "と誤植", "となっている", "と欠字"]
-        .iter()
-        .find_map(|suffix| {
-            witness
-                .strip_suffix(suffix)
-                .filter(|quoted| quoted.ends_with('」'))
-        });
+    let asserted = [
+        "と誤記",
+        "と誤植",
+        "となっている",
+        "となっている。誤記か",
+        "と欠字",
+    ]
+    .iter()
+    .find_map(|suffix| {
+        witness
+            .strip_suffix(suffix)
+            .filter(|quoted| quoted.ends_with('」'))
+    });
     let editorial_statement = asserted.map(|_| statement);
     let witness = asserted.unwrap_or(witness);
     let base_text = match witness {

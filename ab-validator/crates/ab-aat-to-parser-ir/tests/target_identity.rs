@@ -572,3 +572,69 @@ fn mixed_edition_targets_require_unique_literal_source_evidence() {
         );
     }
 }
+
+#[test]
+fn unqualified_variant_can_address_the_immediately_adjacent_whole_reading() {
+    for body in [
+        "下根岸《しもねぎし》［＃「しもねぎし」は底本では「しもねがし」と誤記］",
+        "腕車《くるま》［＃「くるま」は底本では「くまる」と誤記］",
+    ] {
+        let ir = convert(body);
+        let all = nodes(&ir);
+        let ruby = all.iter().find(|node| node["type"] == "ruby").unwrap();
+        let reading = nodes(&ruby["reading_children"]);
+        assert!(
+            reading
+                .iter()
+                .any(|node| node["type"] == "base-text-variant")
+        );
+        assert!(reading.iter().any(|node| node["type"] == "editor-note"));
+        assert_eq!(ir["interpretation_problems"], json!([]));
+    }
+    for body in [
+        "下根岸《しもねぎし》へ［＃「しもねぎし」は底本では「しもねがし」］",
+        "下根岸《しもねぎし》腕車《くるま》［＃「しもねぎし」は底本では「しもねがし」］",
+        "下根岸《しもねぎし》［＃「ねぎし」は底本では「ねがし」］",
+    ] {
+        let ir = convert(body);
+        assert!(
+            !nodes(&ir)
+                .iter()
+                .any(|node| node["type"] == "base-text-variant")
+        );
+        assert_eq!(
+            ir["interpretation_problems"][0]["kind"],
+            "unresolved-variant"
+        );
+    }
+}
+
+#[test]
+fn attributed_variants_preserve_qualified_editorial_wording() {
+    let ir = convert("特殊化［＃「特殊化」は底本では「殊特化」となっている。誤記か］");
+    let all = nodes(&ir);
+    let app = all
+        .iter()
+        .find(|node| node["type"] == "base-text-variant")
+        .unwrap();
+    assert_eq!(app["variant"]["base_text"], "殊特化");
+    let note = all
+        .iter()
+        .find(|node| node["type"] == "editor-note")
+        .unwrap();
+    assert_eq!(
+        note["text"],
+        "「特殊化」は底本では「殊特化」となっている。誤記か"
+    );
+    assert_eq!(ir["interpretation_problems"], json!([]));
+
+    let ir = convert("ＡとＢとは［＃「ＡとＢとは」底本では「ＡととＢとは」］");
+    let all = nodes(&ir);
+    let app = all
+        .iter()
+        .find(|node| node["type"] == "base-text-variant")
+        .unwrap();
+    assert_eq!(app["text"], "ＡとＢとは");
+    assert_eq!(app["variant"]["base_text"], "ＡととＢとは");
+    assert_eq!(ir["interpretation_problems"], json!([]));
+}

@@ -51,6 +51,7 @@ pub fn source_accountability(
                 pattern.row_id.as_str(),
                 "kunten.kaeriten"
                     | "kunten.okurigana"
+                    | "ruby.basic"
                     | "iteration.kunoji"
                     | "gaiji.marker"
                     | "gaiji.jis_code"
@@ -101,6 +102,9 @@ fn nested_components(
             SourceMarkerKind::RubyExplicit
                 | SourceMarkerKind::RubyImplicit
                 | SourceMarkerKind::BracketNote
+                | SourceMarkerKind::CommandFullwidth
+                | SourceMarkerKind::CommandAscii
+                | SourceMarkerKind::EditorialNoteBottomTextCorrection
         ) {
             continue;
         }
@@ -112,26 +116,24 @@ fn nested_components(
             if child.span.start <= parent.span.start && child.span.end >= parent.span.end {
                 continue;
             }
-            if matches!(
-                child.kind,
-                SourceMarkerKind::CommandFullwidth
-                    | SourceMarkerKind::IterationNotation
-                    | SourceMarkerKind::CommandAscii
-                    | SourceMarkerKind::GaijiFullwidth
-                    | SourceMarkerKind::GaijiAscii
-            ) {
+            // The terminal reading delimiters belong to the enclosing explicit ruby.
+            let same_ruby = parent.kind == SourceMarkerKind::RubyExplicit
+                && child.kind == SourceMarkerKind::RubyImplicit
+                && child.span.end == parent.span.end;
+            let eligible_families: &[&str] = match child.kind {
+                SourceMarkerKind::RubyExplicit | SourceMarkerKind::RubyImplicit => &["ruby.basic"],
+                SourceMarkerKind::IterationNotation => &["iteration.kunoji"],
+                SourceMarkerKind::CommandFullwidth | SourceMarkerKind::CommandAscii => {
+                    &["kunten.kaeriten", "kunten.okurigana"]
+                }
+                SourceMarkerKind::GaijiFullwidth | SourceMarkerKind::GaijiAscii => {
+                    &["gaiji.marker", "gaiji.jis_code", "gaiji.unicode_codepoint"]
+                }
+                _ => &[],
+            };
+            if !same_ruby && !eligible_families.is_empty() {
                 let mut families = matching_rows(child.raw, patterns);
-                families.retain(|family| {
-                    matches!(
-                        family.as_str(),
-                        "kunten.kaeriten"
-                            | "kunten.okurigana"
-                            | "iteration.kunoji"
-                            | "gaiji.marker"
-                            | "gaiji.jis_code"
-                            | "gaiji.unicode_codepoint"
-                    )
-                });
+                families.retain(|family| eligible_families.contains(&family.as_str()));
                 families.sort();
                 if !families.is_empty() {
                     components.push(json!({
@@ -140,9 +142,8 @@ fn nested_components(
                         "kind": format!("{:?}", child.kind), "raw": child.raw, "families": families,
                     }));
                 }
-            } else {
-                pending.push(child);
             }
+            pending.push(child);
         }
     }
     components.sort_by_key(|component| component["source_span"]["start"].as_u64());
@@ -156,10 +157,16 @@ mod tests {
     #[test]
     fn iteration_components_keep_original_coordinates_without_expansion() {
         let source = "題\n作者\n\nフゴ／＼。｜時／″＼《とき／＼》。／゛＼〳〵\n";
-        let patterns = vec![SourceInventoryPattern {
-            row_id: "iteration.kunoji".into(),
-            source_patterns: vec!["／＼".into(), "／″＼".into()],
-        }];
+        let patterns = vec![
+            SourceInventoryPattern {
+                row_id: "iteration.kunoji".into(),
+                source_patterns: vec!["／＼".into(), "／″＼".into()],
+            },
+            SourceInventoryPattern {
+                row_id: "ruby.basic".into(),
+                source_patterns: vec!["《[^》]+》".into()],
+            },
+        ];
         let report = source_accountability(source.as_bytes(), b"matrix", &patterns);
         let occurrences = report["occurrences"].as_array().unwrap();
         assert_eq!(occurrences.len(), 2);
@@ -173,6 +180,80 @@ mod tests {
             assert_eq!(&source[start..end], event["raw"].as_str().unwrap());
             assert_eq!(event["families"], json!(["iteration.kunoji"]));
         }
+    }
+
+    #[test]
+    fn quoted_command_components_are_lexical_evidence_with_exact_spelling() {
+        for (open, close) in [("［＃", "］"), ("[#", "]")] {
+            let source =
+                format!("題\n作者\n\n{open}ルビの「わざ／＼」は底本では「わさ／″＼」{close}\n");
+            let patterns = vec![SourceInventoryPattern {
+                row_id: "iteration.kunoji".into(),
+                source_patterns: vec!["／＼".into(), "／″＼".into()],
+            }];
+            let report = source_accountability(source.as_bytes(), b"matrix", &patterns);
+            let occurrences = report["occurrences"].as_array().unwrap();
+            assert_eq!(occurrences.len(), 1);
+            let components = occurrences[0]["components"].as_array().unwrap();
+            assert_eq!(components.len(), 2, "{report}");
+            for (component, expected) in components.iter().zip(["／＼", "／″＼"]) {
+                let span = &component["source_span"];
+                let start = span["start"].as_u64().unwrap() as usize;
+                let end = span["end"].as_u64().unwrap() as usize;
+                assert_eq!(&source[start..end], expected);
+                assert_eq!(component["raw"], expected);
+                assert_eq!(component["families"], json!(["iteration.kunoji"]));
+                assert!(component.get("claims").is_none());
+            }
+        }
+    }
+
+    #[test]
+    fn quoted_ruby_and_its_nested_marks_remain_distinct_components() {
+        let source = "題\n作者\n\n［＃「漢《かん／＼》」は底本では「字《じ》」］\n";
+        let patterns = vec![
+            SourceInventoryPattern {
+                row_id: "ruby.basic".into(),
+                source_patterns: vec!["《[^》]+》".into()],
+            },
+            SourceInventoryPattern {
+                row_id: "iteration.kunoji".into(),
+                source_patterns: vec!["／＼".into()],
+            },
+        ];
+        let report = source_accountability(source.as_bytes(), b"matrix", &patterns);
+        let occurrences = report["occurrences"].as_array().unwrap();
+        assert_eq!(occurrences.len(), 1);
+        let components = occurrences[0]["components"].as_array().unwrap();
+        assert_eq!(components.len(), 3);
+        for (component, (raw, family)) in components.iter().zip([
+            ("《かん／＼》", "ruby.basic"),
+            ("／＼", "iteration.kunoji"),
+            ("《じ》", "ruby.basic"),
+        ]) {
+            let span = &component["source_span"];
+            assert_eq!(
+                &source[span["start"].as_u64().unwrap() as usize
+                    ..span["end"].as_u64().unwrap() as usize],
+                raw
+            );
+            assert_eq!(component["raw"], raw);
+            assert_eq!(component["families"], json!([family]));
+        }
+
+        let image = "［＃「漢《かん》」のキャプション付きの図（fig1.png、横20×縦30）入る］";
+        let report = source_accountability(image.as_bytes(), b"matrix", &patterns);
+        let components = report["occurrences"][0]["components"].as_array().unwrap();
+        assert_eq!(components.len(), 1);
+        assert_eq!(components[0]["raw"], "《かん》");
+        assert_eq!(components[0]["kind"], "RubyImplicit");
+        assert_eq!(components[0]["families"], json!(["ruby.basic"]));
+        let span = &components[0]["source_span"];
+        assert_eq!(
+            &image
+                [span["start"].as_u64().unwrap() as usize..span["end"].as_u64().unwrap() as usize],
+            "《かん》"
+        );
     }
 
     #[test]

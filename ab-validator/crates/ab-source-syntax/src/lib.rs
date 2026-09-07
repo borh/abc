@@ -518,14 +518,14 @@ fn scan_next_marker(txt: &str, offset: usize, line: usize) -> Option<RawMarker<'
         ));
     }
 
-    if let Some(note_end) = bottom_text_correction_note_end(txt, offset) {
+    if let Some((note_end, content_start)) = bottom_text_correction_note_bounds(txt, offset) {
         return Some(raw_marker(
             txt,
             offset,
             note_end,
             line,
             SourceMarkerKind::EditorialNoteBottomTextCorrection,
-            offset,
+            content_start,
             note_end,
             RawMarkerEvent::Emit(SourceEventKind::EditorialNote {
                 raw: &txt[offset..note_end],
@@ -1084,11 +1084,11 @@ fn ruby_correction_note_bounds(txt: &str, offset: usize) -> Option<(usize, &str,
     ))
 }
 
-fn bottom_text_correction_note_end(txt: &str, offset: usize) -> Option<usize> {
+fn bottom_text_correction_note_bounds(txt: &str, offset: usize) -> Option<(usize, usize)> {
     ["」は底本では「", "」はママ"]
         .iter()
-        .any(|prefix| txt[offset..].starts_with(prefix))
-        .then(|| skip_until_any_bracket(txt, offset))
+        .find(|prefix| txt[offset..].starts_with(**prefix))
+        .map(|prefix| (skip_until_any_bracket(txt, offset), offset + prefix.len()))
 }
 
 fn terminal_provenance_note_end(txt: &str, offset: usize) -> Option<usize> {

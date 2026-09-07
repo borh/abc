@@ -177,6 +177,20 @@ pub(crate) fn emit_container_open<W: Write>(
             }
             out.write_str("］")
         }
+        RegionFormat::RelativePlacement(placement) => match placement {
+            ab_aozora_syntax::RelativePlacement::BelowText {
+                reference,
+                offset_chars,
+                ..
+            } => write!(
+                out,
+                "［＃「{}」の文字の下から{offset_chars}字下げ、横組み右揃えで］",
+                store.resolve_str(reference)
+            ),
+            ab_aozora_syntax::RelativePlacement::BelowHorizontal { .. } => {
+                out.write_str("［＃横組みの下に、左右中央縦組みで］")
+            }
+        },
         RegionFormat::Table => out.write_str("［＃ここから表］"),
         RegionFormat::Horizontal(presentation) => match presentation.align {
             None => out.write_str("［＃ここから横組み］"),

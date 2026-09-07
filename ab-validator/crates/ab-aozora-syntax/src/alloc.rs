@@ -108,6 +108,19 @@ impl Allocator {
         &self.store
     }
 
+    /// Retain a supplied literal anchor quotation before native target resolution.
+    pub fn relative_text_placement(
+        &mut self,
+        reference: &str,
+        offset_chars: u8,
+    ) -> crate::RelativePlacement {
+        crate::RelativePlacement::BelowText {
+            reference: self.store.intern(reference),
+            offset_chars,
+            anchor: None,
+        }
+    }
+
     /// Finish allocation and return the owning [`NodeStore`] so the caller can
     /// move it into the lex output and inspect its interner dedup counters.
     #[must_use]

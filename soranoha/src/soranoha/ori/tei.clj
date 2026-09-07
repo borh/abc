@@ -628,6 +628,8 @@
 
 (defn- layout-block-attrs [block]
   (let [indent (get block "indent")
+        placement (get block "relative_placement")
+        anchor (get placement "anchor_span")
         attributes (layout-attributes (get block "typography"))
         frame-style (some (fn [attribute]
                             (when (= "keigakomi" (get attribute "kind"))
@@ -645,15 +647,20 @@
                  (contains? block "offset_from_end") (conj (str "padding-inline-end: " (get block "offset_from_end") "em"))
                  (contains? block "width") (conj (str "inline-size: " (get block "width") "em"))
                  (get block "column_count") (conj (str "column-count: " (get block "column_count")))
-                 (get block "direction") (conj "writing-mode: horizontal-tb")
+                 (get block "direction") (conj (str "writing-mode: " (case (get block "direction")
+                                                                       "horizontal" "horizontal-tb"
+                                                                       "vertical" "vertical-rl")))
                  (get block "align") (conj (str "text-align: " (get block "align")))
                  frame-style (conj frame-style))
         rend (cond-> []
+               placement (conj "placement-below" (str "anchor-kind(" (get placement "anchor_kind") ")"))
+               (contains? placement "offset_chars") (conj (str "anchor-offset-chars(" (get placement "offset_chars") ")"))
                (get block "column_rule") (conj "column-rule")
                (get block "typography") (into (keep inline-layout-rend) attributes)
                (get block "page_placement") (conj "page-horizontal-center")
                (get block "line_count") (conj (str "line-count(" (get block "line_count") ")")))]
     (cond-> {:type (get block "role" "layout")}
+      anchor (assoc :corresp (str "#" (source-reference {"source_span" anchor})))
       (source-reference block) (assoc :source (str "#" (source-reference block)))
       (seq styles) (assoc :style (string/join "; " styles))
       (seq rend) (assoc :rend (string/join " " rend))
@@ -773,8 +780,10 @@
                                           (let [{start "start" end "end"} (paragraph-range paragraph)]
                                             (when (< start end) [start paragraph])))) paragraphs)]
     (loop [acc (reduce (fn [acc block]
-                         (if-let [reference (source-reference block)]
-                           (assoc-in acc [:source-spans reference] (get block "source_span")) acc))
+                         (reduce (fn [acc span]
+                                   (if-let [reference (source-reference {"source_span" span})]
+                                     (assoc-in acc [:source-spans reference] span) acc))
+                                 acc [(get block "source_span") (get-in block ["relative_placement" "anchor_span"])]))
                        (initial-acc primary-text-hash) layout-blocks)
            index (Long/valueOf 0) frames []]
       (let [[acc frames] (close-layout-blocks acc frames index)]

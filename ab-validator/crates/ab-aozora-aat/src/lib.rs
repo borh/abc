@@ -36,7 +36,7 @@ use ab_aozora_facade::{
 // drift from the parser's own cut.
 use ab_aozora_facade::syntax::{
     AbsoluteSize, BlockStyles, EnclosureKind, HeadingStyle, IndentLayout, LineAlignment,
-    LineFormat, MarginNoteKind, MarginNotePosition,
+    LineFormat, MarginNoteKind, MarginNotePosition, RelativePlacement,
     accent::{compose_accent, compose_accent_dots},
     ast::{ContainerEnd, ContainerPair, Content, IterationMark, KuntenKind, Ruby, Segment},
 };
@@ -863,7 +863,7 @@ fn source_scope_order(node: &AozoraNode) -> (usize, usize, Reverse<u32>) {
     let end = node
         .container_scope
         .map_or(u32::MAX, |scope| match scope.end {
-            ContainerEnd::ClosingMarker(span) | ContainerEnd::IndentReplacement(span) => span.end,
+            ContainerEnd::ClosingMarker(span) | ContainerEnd::SourceReplacement(span) => span.end,
         });
     (node.span.start, node.span.end, Reverse(end))
 }
@@ -1220,7 +1220,7 @@ fn projections(
                 marker.start += start;
                 marker.end += start;
             }
-            if let Some(ContainerEnd::ClosingMarker(span) | ContainerEnd::IndentReplacement(span)) =
+            if let Some(ContainerEnd::ClosingMarker(span) | ContainerEnd::SourceReplacement(span)) =
                 inner.container_scope.as_mut().map(|scope| &mut scope.end)
             {
                 let offset = u32::try_from(start).expect("source offset fits u32");
@@ -1231,7 +1231,10 @@ fn projections(
                 span.start += start;
                 span.end += start;
             }
-            rebase_variant_spans(&mut inner.kind, start);
+            if let Some(scope) = &mut inner.container_scope {
+                rebase_region_anchor(&mut scope.kind, start);
+            }
+            rebase_projected_spans(&mut inner.kind, start);
             rebase_partial_layout(&mut inner.layout_clauses, start);
             pending.push(inner);
         }
@@ -1592,6 +1595,11 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
                 {
                     facts.push(json!({"kind":interpretation.kind(), "outcome":"established", "aspects":interpretation.aspects(),
                         "source_span":{"start":start,"end":end,"line":span["line_start"],"coordinate_system":"decoded_utf8"}}));
+                    if node.get("relative_placement").is_some() && node["direction"] == "horizontal"
+                    {
+                        facts.push(json!({"kind":"layout", "outcome":"established", "aspects":["layout"],
+                            "source_span":{"start":start,"end":end,"line":span["line_start"],"coordinate_system":"decoded_utf8"}}));
+                    }
                 }
             }
         }
@@ -2168,7 +2176,7 @@ fn blocks_from_inline_content(content: Vec<Value>, decoded: &DecodedSource) -> V
                 block["span"] = json!({"byte_start":first_span["byte_start"], "byte_end":end["byte_end"],
                     "line_start":first_span["line_start"], "line_end":end["line_end"]});
                 if replacement.is_some() {
-                    block["source_end"] = json!({"kind":"next-indent-opener", "span":node["x-native-end-before-span"]});
+                    block["source_end"] = json!({"kind":"layout-replacement", "span":node["x-native-end-before-span"]});
                 } else if is_page {
                     block["source_end"] =
                         json!({"kind":"page-break", "span":content[boundary]["span"]});
@@ -2502,7 +2510,23 @@ fn strip_trailing_newline(node: &mut Value, source: &str) {
     }
 }
 
-fn rebase_variant_spans(kind: &mut ProjectedKind, offset: usize) {
+fn rebase_region_anchor(region: &mut RegionFormat, offset: usize) {
+    let RegionFormat::RelativePlacement(placement) = region else {
+        return;
+    };
+    let (RelativePlacement::BelowText { anchor, .. }
+    | RelativePlacement::BelowHorizontal { anchor }) = placement;
+    if let Some(anchor) = anchor {
+        let offset = u32::try_from(offset).expect("source offset fits u32");
+        anchor.start += offset;
+        anchor.end += offset;
+    }
+}
+
+fn rebase_projected_spans(kind: &mut ProjectedKind, offset: usize) {
+    if let ProjectedKind::Region(region) = kind {
+        rebase_region_anchor(region, offset);
+    }
     if let ProjectedKind::Illustration {
         caption_span,
         description_span,
@@ -2578,7 +2602,7 @@ fn parsed_source_fragment(decoded: &DecodedSource, range: Range<usize>) -> Optio
             marker.end += range.start;
         }
         if let Some(end) = &mut node.container_scope {
-            let (ContainerEnd::ClosingMarker(span) | ContainerEnd::IndentReplacement(span)) =
+            let (ContainerEnd::ClosingMarker(span) | ContainerEnd::SourceReplacement(span)) =
                 &mut end.end;
             let offset = u32::try_from(range.start).ok()?;
             span.start = span.start.checked_add(offset)?;
@@ -2588,7 +2612,10 @@ fn parsed_source_fragment(decoded: &DecodedSource, range: Range<usize>) -> Optio
             span.start += range.start;
             span.end += range.start;
         }
-        rebase_variant_spans(&mut node.kind, range.start);
+        if let Some(scope) = &mut node.container_scope {
+            rebase_region_anchor(&mut scope.kind, range.start);
+        }
+        rebase_projected_spans(&mut node.kind, range.start);
         if let ProjectedKind::Accent { marker, .. } = &mut node.kind {
             marker.start += range.start;
             marker.end += range.start;
@@ -4865,7 +4892,7 @@ fn attach_native_scope(
     let Some(scope) = scope else { return };
     let (key, span) = match scope.end {
         ContainerEnd::ClosingMarker(span) => ("x-native-close-span", span),
-        ContainerEnd::IndentReplacement(span) => ("x-native-end-before-span", span),
+        ContainerEnd::SourceReplacement(span) => ("x-native-end-before-span", span),
     };
     value[key] = span_json(&span.into(), &decoded.span_ctx);
     if scope.kind != original {
@@ -4883,6 +4910,11 @@ fn region_raw_fields(
     node: &AozoraNode,
     region: RegionFormat,
 ) {
+    if let RegionFormat::RelativePlacement(placement) = region
+        && let Some(fields) = relative_layout_fields(placement, decoded)
+    {
+        value["x-layout"] = fields;
+    }
     attach_native_scope(value, decoded, node.container_scope, region);
     if let RegionFormat::Heading { level, style, .. } = region {
         let style = match style {
@@ -4916,6 +4948,28 @@ fn region_raw_fields(
     }
     value["interpretation_problem"] = json!({"kind":"uninterpreted-notation", "code":"uninterpreted-notation",
         "aspects":["structure","layout"], "influence":{"kind":"document"}});
+}
+
+fn relative_layout_fields(placement: RelativePlacement, decoded: &DecodedSource) -> Option<Value> {
+    let (anchor, kind, offset, direction, align) = match placement {
+        RelativePlacement::BelowText {
+            anchor: Some(anchor),
+            offset_chars,
+            ..
+        } => (anchor, "text", Some(offset_chars), "horizontal", "right"),
+        RelativePlacement::BelowHorizontal {
+            anchor: Some(anchor),
+        } => (anchor, "horizontal-block", None, "vertical", "center"),
+        _ => return None,
+    };
+    let mut relation = json!({"relation":"below", "anchor_kind":kind,
+        "anchor_span":{"line":decoded.span_ctx.line_of(decoded.span_ctx.to_decoded(anchor.start as usize)),
+        "start":decoded.span_ctx.to_decoded(anchor.start as usize),
+        "end":decoded.span_ctx.to_decoded_end(anchor.end as usize), "coordinate_system":"decoded_utf8"}});
+    if let Some(offset) = offset {
+        relation["offset_chars"] = json!(offset);
+    }
+    Some(json!({"relative_placement":relation, "direction":direction, "align":align}))
 }
 
 fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Value {

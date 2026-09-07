@@ -162,8 +162,8 @@ pub struct ContainerPair {
 pub enum ContainerEnd {
     /// An explicit matching closing marker.
     ClosingMarker(crate::Span),
-    /// A following indentation opener replaces the current indentation.
-    IndentReplacement(crate::Span),
+    /// A supplied following layout instruction replaces this scope.
+    SourceReplacement(crate::Span),
 }
 
 #[cfg(test)]

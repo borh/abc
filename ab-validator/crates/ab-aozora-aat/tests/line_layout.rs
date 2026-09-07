@@ -52,7 +52,7 @@ fn next_indent_opener_is_a_replacement_not_a_closing_marker() {
     let document = Document::new(source);
     let tree = document.parse();
     assert_eq!(tree.container_pairs().len(), 2);
-    let ContainerEnd::IndentReplacement(replacement) = tree.container_pairs()[0].source_end else {
+    let ContainerEnd::SourceReplacement(replacement) = tree.container_pairs()[0].source_end else {
         panic!("replacement boundary expected")
     };
     assert_eq!(
@@ -63,7 +63,7 @@ fn next_indent_opener_is_a_replacement_not_a_closing_marker() {
         serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
     assert_eq!(aat["blocks"].as_array().unwrap().len(), 2, "{aat}");
     assert_eq!(aat["blocks"][0]["indent"], 2);
-    assert_eq!(aat["blocks"][0]["source_end"]["kind"], "next-indent-opener");
+    assert_eq!(aat["blocks"][0]["source_end"]["kind"], "layout-replacement");
     assert_eq!(
         aat["blocks"][0]["interpretation_marker_spans"]
             .as_array()

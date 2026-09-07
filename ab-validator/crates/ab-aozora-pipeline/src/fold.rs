@@ -427,6 +427,21 @@ impl<'src> Normalizer<'src> {
     }
 
     pub(crate) fn emit(&mut self, span: &ClassifiedSpan) {
+        let located = matches!(
+            span.kind,
+            SpanKind::BlockOpen(RegionFormat::RelativePlacement(
+                ab_aozora_syntax::RelativePlacement::BelowHorizontal { anchor: None },
+            ))
+        )
+        .then(|| ClassifiedSpan {
+            source_span: span.source_span,
+            kind: SpanKind::BlockOpen(RegionFormat::RelativePlacement(
+                ab_aozora_syntax::RelativePlacement::BelowHorizontal {
+                    anchor: self.replace_horizontal_for_label(span.source_span),
+                },
+            )),
+        });
+        let span = located.as_ref().unwrap_or(span);
         if let SpanKind::BlockCloses { targets, fallback } = &span.kind {
             self.emit_shared_close(span.source_span, *targets, *fallback);
             return;
@@ -478,7 +493,7 @@ impl<'src> Normalizer<'src> {
                         open,
                         close: NormalizedOffset::new(close),
                         source_open,
-                        source_end: ContainerEnd::IndentReplacement(span.source_span),
+                        source_end: ContainerEnd::SourceReplacement(span.source_span),
                     });
                 }
                 let inline = container.is_inline();
@@ -500,7 +515,72 @@ impl<'src> Normalizer<'src> {
         }
     }
 
+    fn replace_horizontal_for_label(&mut self, marker: Span) -> Option<Span> {
+        let (open, kind, source_open) = self.open_stack.last_mut()?;
+        let presentation = match *kind {
+            RegionFormat::Horizontal(presentation) => Some(presentation),
+            RegionFormat::Indent(block) => block.styles.horizontal,
+            RegionFormat::Columns(block) => block.styles.horizontal,
+            _ => None,
+        }?;
+        let source = &self.source[source_open.end as usize..marker.start as usize];
+        let content = source.trim();
+        if content.is_empty() {
+            return None;
+        }
+        let leading = source.len() - source.trim_start().len();
+        let start = source_open.end + u32::try_from(leading).expect("native source fits u32");
+        let anchor = Span::new(
+            start,
+            start + u32::try_from(content.len()).expect("native source fits u32"),
+        );
+        let (open, source_open) = (*open, *source_open);
+        if matches!(kind, RegionFormat::Horizontal(_)) {
+            self.open_stack.pop();
+        } else {
+            take_compound_presentation(kind, RegionClose::Horizontal);
+        }
+        self.out.push_str("\n\n");
+        let close = self.current_pos();
+        self.out.push(BLOCK_CLOSE_SENTINEL);
+        self.out.push_str("\n\n");
+        self.recorder
+            .entries
+            .push((close, NodeRef::BlockClose(RegionClose::Horizontal)));
+        self.container_pairs.push(ContainerPair {
+            kind: RegionFormat::Horizontal(presentation),
+            open,
+            close: NormalizedOffset::new(close),
+            source_open,
+            source_end: ContainerEnd::SourceReplacement(marker),
+        });
+        Some(anchor)
+    }
+
     fn emit_block_close(&mut self, span: Span, close: RegionClose) {
+        if let RegionClose::Indent {
+            kumi_width,
+            mut styles,
+        } = close
+            && styles.horizontal.take().is_some()
+            && matches!(
+                self.open_stack.last(),
+                Some((
+                    _,
+                    RegionFormat::RelativePlacement(
+                        ab_aozora_syntax::RelativePlacement::BelowHorizontal { anchor: Some(_) }
+                    ),
+                    _
+                ))
+            )
+            && self.open_stack.len() >= 2
+        {
+            let indent = RegionClose::Indent { kumi_width, styles };
+            if scope_closer_matches(self.open_stack[self.open_stack.len() - 2].1, indent) {
+                self.emit_verified_closes(span, [RegionClose::Horizontal, indent]);
+                return;
+            }
+        }
         let inline = close.is_inline();
         if !inline {
             self.out.push_str("\n\n");
@@ -557,6 +637,10 @@ impl<'src> Normalizer<'src> {
             });
             return;
         }
+        self.emit_verified_closes(span, targets);
+    }
+
+    fn emit_verified_closes(&mut self, span: Span, targets: [RegionClose; 2]) {
         self.recorder.record_classified_source(&ClassifiedSpan {
             source_span: span,
             kind: SpanKind::BlockClose(targets[0]),

@@ -98,6 +98,14 @@ style; framing alone does not establish an independent embedded text.
 Presentation supplied on an indentation opener can end before the indentation.
 Alignment supplied within a horizontal-writing clause ends with that clause;
 an unclosed indentation remains explicit uncertainty.
+Relative placement keeps its source anchor and supplied character offset separately
+from absolute indentation. TEI links the placed scope to the anchor's source-span
+record with `corresp`, records `placement-below`, `anchor-kind(text)` or
+`anchor-kind(horizontal-block)`, and any `anchor-offset-chars(N)`
+in `rend`, and preserves supplied writing direction and alignment. A missing or
+multiply matching literal anchor remains unresolved. A vertical label below an
+established horizontal block ends that horizontal presentation without ending
+independent surrounding indentation.
 
 Validation provenance binds the ODD, RNG and Schematron hashes through
 `schemas/tei-profile-generation.json`. See [TEI validation](tei-validation.md).

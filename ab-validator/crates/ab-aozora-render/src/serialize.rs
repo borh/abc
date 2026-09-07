@@ -151,14 +151,19 @@ pub fn serialize_into_with<W: Write>(
         store: &out.store,
         out: writer,
         directives: opts.directives,
-        shared_closes: shared_close_emissions(out),
+        source_boundaries: source_boundary_emissions(out),
     };
     walk(out, &mut sink)
 }
 
-/// Emit a shared source marker once, even though it has several tree endpoints.
-fn shared_close_emissions(out: &LexOutput) -> BTreeMap<NormalizedOffset, &str> {
+/// Preserve physical source boundaries while omitting purely structural endpoints.
+fn source_boundary_emissions(out: &LexOutput) -> BTreeMap<NormalizedOffset, &str> {
     let mut emissions = BTreeMap::new();
+    for pair in &out.container_pairs {
+        if matches!(pair.source_end, ContainerEnd::SourceReplacement(_)) {
+            emissions.insert(pair.close, "");
+        }
+    }
     for pair in out.container_pairs.windows(2) {
         if let ContainerEnd::ClosingMarker(span) = pair[0].source_end
             && pair[1].source_end == pair[0].source_end
@@ -175,7 +180,7 @@ fn shared_close_emissions(out: &LexOutput) -> BTreeMap<NormalizedOffset, &str> {
 /// [`WalkSink`] that re-emits Aozora source text from the AST,
 /// threading the [`NodeStore`] (the resolve authority) into every AST emitter.
 struct SerializeSink<'a, W: Write> {
-    shared_closes: BTreeMap<NormalizedOffset, &'a str>,
+    source_boundaries: BTreeMap<NormalizedOffset, &'a str>,
     store: &'a NodeStore,
     out: &'a mut W,
     /// Which notation-hygiene tiers to apply to `DirectiveKind::Unknown`
@@ -197,7 +202,7 @@ impl<W: Write> WalkSink for SerializeSink<'_, W> {
         kind: SentinelKind,
         node: NodeRef,
     ) -> fmt::Result {
-        if let Some(source) = self.shared_closes.get(&position) {
+        if let Some(source) = self.source_boundaries.get(&position) {
             self.out.write_str(source)
         } else {
             self.on_node(kind, node)

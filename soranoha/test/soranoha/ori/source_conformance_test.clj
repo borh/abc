@@ -1022,3 +1022,23 @@
       (is (not-any? #(= "heading" (attribute % "type")) (elements result "seg")))
       (is (= [marker] (mapv #(get % "raw") problems)))
       (is (= [["structure" "layout"]] (mapv #(get % "aspects") problems))))))
+
+(deftest relative-placement-links-source-anchors-without-absolute-indentation
+  (let [result (transcribe (source "複\n\n［＃「複」の文字の下から２字下げ、横組み右揃えで］\n1500\n7×2\n［＃ここで横組み終わり］\n外側"))
+        placed (first (filter #(= "placement-below anchor-kind(text) anchor-offset-chars(2)" (attribute % "rend")) (elements result "div")))
+        reference (subs (attribute placed "corresp") 1)
+        anchor (first (filter #(= reference (attribute % "xml:id")) (elements result "note")))]
+    (is (= "複\n1500\n7×2\n外側" (:plaintext result)))
+    (is (= "1500\n7×2" (view/visible-text placed)))
+    (is (= "source-span" (attribute anchor "type")))
+    (is (not (string/includes? (attribute placed "style") "padding-inline-start")))
+    (is (empty? (get-in result [:ir "interpretation_problems"]))))
+  (let [result (transcribe (source "［＃ここから２字下げ、横組み右揃えで］\n2000K\n500km\n［＃横組みの下に、左右中央縦組みで］\n逆カモメ型Ｗ\n［＃ここで字下げ、横組み終わり］\n外側"))
+        placed (first (filter #(= "placement-below anchor-kind(horizontal-block)" (attribute % "rend")) (elements result "div")))
+        horizontal (first (filter #(string/includes? (attribute % "style") "writing-mode: horizontal-tb") (elements result "div")))]
+    (is (= "逆カモメ型Ｗ" (view/visible-text placed)))
+    (is (= "2000K\n500km" (view/visible-text horizontal)))
+    (is (= "writing-mode: vertical-rl; text-align: center" (attribute placed "style")))
+    (is (= "2000K\n500km\n逆カモメ型Ｗ\n外側" (:plaintext result)))
+    (is (= "2000K\n\n500km\n\n逆カモメ型Ｗ\n\n外側" (projection/markdown (:view result))))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))

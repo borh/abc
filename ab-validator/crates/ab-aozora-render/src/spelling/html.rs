@@ -508,6 +508,18 @@ fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::R
             }
             writer.write_str(">")
         }
+        RegionFormat::RelativePlacement(placement) => {
+            let (direction, align) = match placement {
+                ab_aozora_syntax::RelativePlacement::BelowText { .. } => ("horizontal-tb", "right"),
+                ab_aozora_syntax::RelativePlacement::BelowHorizontal { .. } => {
+                    ("vertical-rl", "center")
+                }
+            };
+            write!(
+                writer,
+                r#"<div class="aozora-container" data-placement="below" style="writing-mode:{direction};text-align:{align}">"#
+            )
+        }
         RegionFormat::Table => {
             writer.write_str(r#"<div class="aozora-container aozora-container-table">"#)
         }

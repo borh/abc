@@ -1074,6 +1074,12 @@ pub(super) fn classify_annotation_body(
     if body.is_empty() {
         return None;
     }
+    if let Some(placement) = relative_placement(body, alloc) {
+        return Some((
+            EmitKind::BlockOpen(RegionFormat::RelativePlacement(placement)),
+            None,
+        ));
+    }
     // Paired / block headings route through the container machinery as
     // `ContainerKind::Heading`. Tried before the body dispatcher: their
     // keywords overlap the `ここから…` / `…終わり` shapes but always carry a
@@ -1609,6 +1615,22 @@ pub(super) fn illustration_file_spec(spec: &str) -> Option<(&str, Option<&str>)>
 /// `「caption」` (per <https://www.aozora.gr.jp/annotation/graphics.html>),
 /// and confirms the trailing `入る` keyword. Quoted caption text stays
 /// image metadata; visible captions are separate source content.
+fn relative_placement(
+    body: &str,
+    alloc: &mut Allocator,
+) -> Option<ab_aozora_syntax::RelativePlacement> {
+    if body == "横組みの下に、左右中央縦組みで" {
+        return Some(ab_aozora_syntax::RelativePlacement::BelowHorizontal { anchor: None });
+    }
+    let body = body.strip_prefix('「')?;
+    let (reference, rest) = body.split_once("」の文字の下から")?;
+    if reference.is_empty() {
+        return None;
+    }
+    let (offset, rest) = parse_decimal_u8_prefix(rest)?;
+    (rest == "字下げ、横組み右揃えで").then(|| alloc.relative_text_placement(reference, offset))
+}
+
 fn classify_sashie_body(source: &AnnotationBody<'_>, alloc: &mut Allocator) -> Option<EmitKind> {
     let body = source.text;
     // `挿絵（file）入る` and the numbered `挿絵{N}（file）入る` (N a run of

@@ -527,6 +527,7 @@ fn map_block_content(
                     "column_rule",
                     "role",
                     "page_placement",
+                    "relative_placement",
                     "direction",
                     "align",
                 ] {

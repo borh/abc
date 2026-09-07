@@ -238,6 +238,26 @@ pub struct HorizontalPresentation {
     pub align: Option<LineAlignment>,
 }
 
+/// Supplied placement relative to visible text or an established horizontal block.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum RelativePlacement {
+    /// A horizontal, right-aligned block starts below the named character.
+    BelowText {
+        /// Exact source quotation naming the anchor.
+        reference: StrId,
+        /// Fullwidth-character distance supplied from the anchor's lower edge.
+        offset_chars: u8,
+        /// Unique visible source anchor, absent until native ownership is established.
+        anchor: Option<crate::Span>,
+    },
+    /// A vertically written label is horizontally centered below the horizontal block.
+    BelowHorizontal {
+        /// Source extent of the established horizontal content.
+        anchor: Option<crate::Span>,
+    },
+}
+
 /// Clauses not interpreted as layout, retained individually for apparatus interpretation.
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -319,6 +339,8 @@ pub enum Format {
     Framed(EnclosureKind),
     /// Horizontal writing with its supplied line alignment.
     Horizontal(HorizontalPresentation),
+    /// Source-relative placement, without absolute page coordinates.
+    RelativePlacement(RelativePlacement),
     /// N段階大きな / 小さな文字 (relative font size).
     FontSize(FontShift),
     /// 特大 / 大 / 中 / 小文字 (absolute font size).
@@ -376,6 +398,7 @@ impl Format {
             Self::Bouten(_) => "bouten",
             Self::Framed(_) => "framed",
             Self::Horizontal(_) => "horizontal",
+            Self::RelativePlacement(_) => "relative-placement",
             Self::FontSize(_) => "fontSize",
             Self::FontSizeAbsolute(_) => "fontSizeAbsolute",
             Self::Caption => "caption",
@@ -756,6 +779,8 @@ pub enum RegionFormat {
     Columns(ColumnBlock),
     /// 横組み block.
     Horizontal(HorizontalPresentation),
+    /// Source-relative placement, without absolute page coordinates.
+    RelativePlacement(RelativePlacement),
     /// N段階大きな / 小さな文字 block.
     FontSize(FontShift),
     /// 罫囲み block / range ([`EnclosureKind`]).
@@ -783,6 +808,7 @@ impl RegionFormat {
             Self::Table => Format::Table,
             Self::Columns(block) => Format::Columns(block.count),
             Self::Horizontal(presentation) => Format::Horizontal(presentation),
+            Self::RelativePlacement(placement) => Format::RelativePlacement(placement),
             Self::FontSize(f) => Format::FontSize(f),
             Self::Framed(k) => Format::Framed(k),
             Self::Warichu => Format::Warichu,
@@ -810,6 +836,7 @@ impl RegionFormat {
             Self::Columns(_) => "columns",
             Self::Table => "table",
             Self::Horizontal(_) => "horizontal",
+            Self::RelativePlacement(_) => "relative-placement",
             Self::FontSize(_) => "fontSize",
             Self::SmallScript(_) => "smallScript",
             Self::CombineUpright => "combineUprightRange",
@@ -835,6 +862,7 @@ impl RegionFormat {
             Self::Columns(_) => "columns",
             Self::Table => "table",
             Self::Horizontal(_) => "horizontal",
+            Self::RelativePlacement(_) => "relative-placement",
             Self::FontSize(_) => "font-size",
             Self::SmallScript(_) => "small-script",
             Self::CombineUpright => "combine-upright",
@@ -876,7 +904,7 @@ impl RegionFormat {
     /// the payload is irrelevant to the discriminant-only tag projections. Lets
     /// the wire-tag exhaustiveness test and the codegen enumerate the family
     /// list without a hand-maintained parallel.
-    pub const ALL: [Self; 17] = [
+    pub const ALL: [Self; 18] = [
         Self::Indent(IndentBlock {
             partial: None,
             column_count: None,
@@ -912,6 +940,7 @@ impl RegionFormat {
         }),
         Self::Table,
         Self::Horizontal(HorizontalPresentation { align: None }),
+        Self::RelativePlacement(RelativePlacement::BelowHorizontal { anchor: None }),
         Self::FontSize(FontShift(NonZeroI8::MIN)),
         Self::SmallScript(BoutenPosition::Right),
         Self::CombineUpright,
@@ -1056,7 +1085,7 @@ impl RegionClose {
             },
             RegionFormat::Columns(block) => Self::Columns(Some(block.count)),
             RegionFormat::Table => Self::Table,
-            RegionFormat::Horizontal(_) => Self::Horizontal,
+            RegionFormat::Horizontal(_) | RegionFormat::RelativePlacement(_) => Self::Horizontal,
             RegionFormat::FontSize(shift) => Self::FontSize {
                 larger: shift.larger(),
                 magnitude: NonZeroU8::new(shift.magnitude()),
@@ -1164,14 +1193,16 @@ mod tests {
         );
     }
 
-    /// Every open round-trips to a close discriminant and back to the same
-    /// family kebab tag (the open/close diagnostic vocabulary agrees).
+    /// A relative placement uses the supplied horizontal closing family.
     #[test]
     fn region_close_of_round_trips_kind_str() {
         for open in RegionFormat::ALL {
             assert_eq!(
                 RegionClose::of(open).kind_str(),
-                open.kind_str(),
+                match open {
+                    RegionFormat::RelativePlacement(_) => "horizontal",
+                    _ => open.kind_str(),
+                },
                 "close family must mirror open family for {open:?}"
             );
         }

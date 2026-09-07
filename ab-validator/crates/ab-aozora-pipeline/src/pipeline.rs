@@ -404,7 +404,7 @@ fn lower_spans(
     // directly above the directive into promoted `Heading` nodes.
     let spans = promote_headings(spans, source, alloc);
     let mut out: Vec<ClassifiedSpan> = Vec::with_capacity(spans.len());
-    for span in spans {
+    for mut span in spans {
         while let Some(back) = out.last() {
             let (bs, be) = (back.source_span.start, back.source_span.end);
             let back_is_plain = matches!(back.kind, SpanKind::Plain(_));
@@ -426,6 +426,7 @@ fn lower_spans(
                 break;
             }
         }
+        resolve_relative_text_anchor(&mut span, &out, source, alloc.store());
         out.push(span);
     }
     // Apply a declined forward emphasis onto a preceding ruby base
@@ -628,6 +629,56 @@ fn resolve_adjacent_ruby_dots(
         reference.origin = ForwardOrigin::Referenced;
         spans[index].kind = SpanKind::Aozora(Node::Format(reference));
     }
+}
+
+/// Bind a unique literal in the immediately preceding nonempty source paragraph.
+fn resolve_relative_text_anchor(
+    span: &mut ClassifiedSpan,
+    prior: &[ClassifiedSpan],
+    source: &str,
+    store: &NodeStore,
+) {
+    use ab_aozora_syntax::{RegionFormat, RelativePlacement};
+    let SpanKind::BlockOpen(RegionFormat::RelativePlacement(RelativePlacement::BelowText {
+        reference,
+        offset_chars,
+        ..
+    })) = span.kind
+    else {
+        return;
+    };
+    let reference_text = store.resolve_str(reference);
+    let before = &source[..span.source_span.start as usize];
+    let trimmed = before.trim_end();
+    let start = trimmed.rfind('\n').map_or(0, |at| at + 1);
+    let mut matches = trimmed[start..].match_indices(reference_text);
+    let Some((offset, _)) = matches.next() else {
+        return;
+    };
+    if matches.next().is_some() {
+        return;
+    }
+    let start = u32::try_from(start + offset).expect("native source fits u32");
+    let end = start + u32::try_from(reference_text.len()).expect("native source fits u32");
+    if !prior
+        .iter()
+        .rev()
+        .take_while(|span| span.source_span.end > start)
+        .any(|span| {
+            matches!(span.kind, SpanKind::Plain(_))
+                && span.source_span.start <= start
+                && end <= span.source_span.end
+        })
+    {
+        return;
+    }
+    span.kind = SpanKind::BlockOpen(RegionFormat::RelativePlacement(
+        RelativePlacement::BelowText {
+            reference,
+            offset_chars,
+            anchor: Some(Span::new(start, end)),
+        },
+    ));
 }
 
 /// Resolve source quotations within the immediately preceding typed base.

@@ -21,9 +21,10 @@
  :aliases
  {:test
   {:extra-paths ["test"]
+   :jvm-opts ["--enable-native-access=ALL-UNNAMED"]
    :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}}
    :main-opts ["-m" "kaocha.runner"]}
 
   :soranoha/build
-  {:jvm-opts ["-Xmx4g"]
+  {:jvm-opts ["-Xmx4g" "--enable-native-access=ALL-UNNAMED"]
    :main-opts ["-m" "soranoha.main"]}}}

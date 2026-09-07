@@ -52,7 +52,12 @@
 
       lib = nixpkgs.lib;
 
-      pkgsFor = system: import nixpkgs { inherit system; };
+      pkgsFor =
+        system:
+        import nixpkgs {
+          inherit system;
+          overlays = [ (_final: prev: { jdk = prev.jdk25_headless; }) ];
+        };
 
       optionalOutputAttrs =
         flake: outputName: system:
@@ -196,15 +201,15 @@
           }) "Soranoha kernel CLI (build/delta/verify) with content-derived Clojure toolchain identity";
           soranoha-replay = mkScriptApp (mkSoranohaApp system {
             name = "soranoha-replay";
-            invocation = ''clojure -Sthreads 1 -J-Xmx4g -Sdeps '{:paths ["src" "resources" "test"]}' -M -m soranoha.bench.replay --assets-root ${./soranoha}'';
+            invocation = ''clojure -Sthreads 1 -J-Xmx4g -J--enable-native-access=ALL-UNNAMED -Sdeps '{:paths ["src" "resources" "test"]}' -M -m soranoha.bench.replay --assets-root ${./soranoha}'';
           }) "Replay source revisions through the production build and delta oracle";
           soranoha-publication-replay = mkScriptApp (mkSoranohaApp system {
             name = "soranoha-publication-replay";
-            invocation = ''${pkgs.time}/bin/time --format 'replay_elapsed_seconds=%e replay_peak_rss_kib=%M' clojure -Sthreads 1 -J-Xmx4g -Sdeps '{:paths ["src" "resources" "test"]}' -M -m soranoha.bench.publication --time-bin ${pkgs.time}/bin/time --assets-root ${./soranoha}'';
+            invocation = ''${pkgs.time}/bin/time --format 'replay_elapsed_seconds=%e replay_peak_rss_kib=%M' clojure -Sthreads 1 -J-Xmx4g -J--enable-native-access=ALL-UNNAMED -Sdeps '{:paths ["src" "resources" "test"]}' -M -m soranoha.bench.publication --time-bin ${pkgs.time}/bin/time --assets-root ${./soranoha}'';
           }) "Simulate complete publication with recorded observations and isolated fixture keys";
           soranoha-compare-serving = mkScriptApp (mkSoranohaApp system {
             name = "soranoha-compare-serving";
-            invocation = ''clojure -Sthreads 1 -J-Xmx512m -Sdeps '{:paths ["src" "resources" "test"]}' -M -m soranoha.bench.serving --time-bin ${pkgs.time}/bin/time'';
+            invocation = ''clojure -Sthreads 1 -J-Xmx512m -J--enable-native-access=ALL-UNNAMED -Sdeps '{:paths ["src" "resources" "test"]}' -M -m soranoha.bench.serving --time-bin ${pkgs.time}/bin/time'';
           }) "Compare serving activation time and peak memory in balanced order";
           regenerate-tei-profile = mkScriptApp (pkgs.writeShellScript "regenerate-tei-profile" ''
             set -euo pipefail

@@ -67,6 +67,7 @@
         overlays = [
           clj-nix.overlays.default
           (import rust-overlay)
+          (_final: prev: { jdk = prev.jdk25_headless; })
         ];
         pkgs = import nixpkgs {
           inherit system overlays;
@@ -813,8 +814,8 @@
           pkgs.hyperfine
           pkgs.python3
           pkgs.nodejs_22
-          pkgs.jdk21
-          pkgs.gradle
+          pkgs.jdk
+          (pkgs.gradle_9.override { java = pkgs.jdk; })
         ];
 
         pythonWithAatSchemaDeps = pkgs.python3.withPackages (ps: [

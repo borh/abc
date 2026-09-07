@@ -2,7 +2,7 @@
 
 use std::{num::NonZeroU32, ops::Range};
 
-use ab_aozora_encoding::gaiji::is_page_line_shaped;
+use ab_aozora_encoding::gaiji::{is_page_line_shaped, recognize_gaiji_body};
 
 /// Content addressed by a quoted base-text note.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -24,7 +24,12 @@ pub enum EditionNoteKind {
 
 fn split_attribution(body: &str, edition: EditionNoteKind) -> Option<(&str, &str)> {
     let delimiters: &[&str] = match edition {
-        EditionNoteKind::BaseEdition => &["」は底本では", "」は、底本では", "」底本では"],
+        EditionNoteKind::BaseEdition => &[
+            "」は底本では",
+            "」は、底本では",
+            "」底本では",
+            "」では底本では",
+        ],
         EditionNoteKind::FirstPublication => &["」は初出では", "」は、初出では"],
     };
     if delimiters
@@ -61,7 +66,7 @@ pub struct TextVariant<'s> {
     pub editorial_statement: Option<&'s str>,
 }
 
-/// Recognize an exact quoted base-text note, including its annotation delimiters.
+/// Recognize a quoted current target and its explicitly attributed base-text alternative.
 /// Other editorial prose remains unclassified by this recognizer.
 #[must_use]
 pub fn text_variant(source: &str) -> Option<TextVariant<'_>> {
@@ -193,21 +198,30 @@ fn variant_parts<'s>(
     let editorial_statement =
         (asserted.is_some() || with_statement_tail.is_some()).then_some(statement);
     let witness = asserted.unwrap_or(witness);
-    let base_text = match witness {
-        "欠落" | "なし" | "無し" | "脱落" | "欠如" | "欠" | "脱字" => "",
+    let (base_text, quote_prefix) = match witness {
+        "欠落" | "なし" | "無し" | "脱落" | "欠如" | "欠" | "脱字" => ("", 0),
+        glyph
+            if glyph
+                .strip_prefix("※［＃")
+                .and_then(|text| text.strip_suffix('］'))
+                .and_then(recognize_gaiji_body)
+                .is_some() =>
+        {
+            (glyph, 0)
+        }
         quoted => {
             let text = quoted.strip_prefix('「')?.strip_suffix('」')?;
             if text.is_empty() {
                 return None;
             }
-            text
+            (text, '「'.len_utf8())
         }
     };
     if current.is_empty() || current.contains('\n') || base_text.contains('\n') {
         return None;
     }
     let base_span = (!base_text.is_empty()).then(|| {
-        let start = witness_start + '「'.len_utf8();
+        let start = witness_start + quote_prefix;
         start..start + base_text.len()
     });
     let (target, current, base_text, current_start, base_span) = if target
@@ -422,6 +436,19 @@ mod tests {
                 Some(&source["［＃".len()..source.len() - '］'.len_utf8()])
             );
         }
+    }
+
+    #[test]
+    fn explicit_attribution_accepts_supplied_particles_and_direct_glyph_witnesses() {
+        for source in [
+            "［＃「ひとりっきり」では底本では「ひとりきりっ」］",
+            "［＃「餡」は底本では※［＃「飮のへん＋稻のつくり」、第4水準2-92-68］］",
+        ] {
+            let variant = text_variant(source).unwrap_or_else(|| panic!("{source}"));
+            assert_eq!(&source[variant.current_span], variant.current);
+            assert_eq!(&source[variant.base_span.unwrap()], variant.base_text);
+        }
+        assert!(text_variant("［＃「字」は底本では※［＃未知の指示］］").is_none());
     }
 
     #[test]

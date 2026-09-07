@@ -883,3 +883,25 @@ fn variant_citations_and_assertions_stay_separate_from_the_witness() {
         assert_eq!(ir["interpretation_problems"], json!([]));
     }
 }
+
+#[test]
+fn direct_glyph_witnesses_reuse_native_reference_interpretation() {
+    let marker = "※［＃「飮のへん＋稻のつくり」、第4水準2-92-68］";
+    let ir = convert(&format!("餡［＃「餡」は底本では{marker}］"));
+    let all = nodes(&ir);
+    let app = all
+        .iter()
+        .find(|node| node["type"] == "base-text-variant")
+        .unwrap();
+    assert_eq!(app["text"], "餡");
+    assert_eq!(app["variant"]["base_children"][0]["type"], "gaiji");
+    assert_eq!(ir["interpretation_problems"], json!([]));
+    let ir = convert("牝牛［＃「牝牛」では底本では「牡牛」］");
+    let all = nodes(&ir);
+    let app = all
+        .iter()
+        .find(|node| node["type"] == "base-text-variant")
+        .unwrap();
+    assert_eq!(app["variant"]["base_text"], "牡牛");
+    assert_eq!(ir["interpretation_problems"], json!([]));
+}

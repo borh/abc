@@ -11,7 +11,7 @@ use std::{
 };
 
 use ab_aozora_pipeline::lexer::sanitize::{SanitizeMaps, sanitize_mapped};
-use ab_aozora_pipeline::text_variant::{TextVariantTarget, text_variant};
+use ab_aozora_pipeline::text_variant::{TextVariantTarget, base_edition_note, text_variant};
 use ab_aozora_pipeline::{LexOutput, Pipeline};
 use anyhow::Result;
 use encoding_rs::SHIFT_JIS;
@@ -284,6 +284,10 @@ enum ProjectedKind {
         base_text: String,
         current_span: Range<usize>,
         base_span: Option<Range<usize>>,
+        editorial_statement: Option<String>,
+    },
+    EditorialNote {
+        text: String,
     },
     QuoteOpen,
     QuoteClose,
@@ -302,7 +306,9 @@ impl ProjectedKind {
             Self::Format(_) | Self::FormatMany(_) => "emphasis",
             Self::Directive(DirectiveKind::WarichuOpen) => "warichuOpen",
             Self::Directive(DirectiveKind::WarichuClose) => "warichuClose",
-            Self::Directive(_) | Self::TextVariant { .. } => "directive",
+            Self::Directive(_) | Self::TextVariant { .. } | Self::EditorialNote { .. } => {
+                "directive"
+            }
             Self::QuoteOpen => "angleQuoteOpen",
             Self::QuoteClose => "angleQuoteClose",
             Self::RecoveredSource => "unparsed-source-gap",
@@ -347,8 +353,16 @@ fn project_text_variant(kind: ProjectedKind, source: &str, span: Span) -> Projec
         kind,
         ProjectedKind::Directive(DirectiveKind::BaseTextVariant | DirectiveKind::Unknown)
     ) {
-        text_variant(&source[span.start..span.end]).map_or(kind, |variant| {
-            ProjectedKind::TextVariant {
+        text_variant(&source[span.start..span.end]).map_or_else(
+            || {
+                base_edition_note(&source[span.start..span.end]).map_or(kind, |text| {
+                    ProjectedKind::EditorialNote {
+                        text: text.to_owned(),
+                    }
+                })
+            },
+            |variant| ProjectedKind::TextVariant {
+                editorial_statement: variant.editorial_statement.map(str::to_owned),
                 target: variant.target,
                 current: variant.current.to_owned(),
                 base_text: variant.base_text.to_owned(),
@@ -357,8 +371,8 @@ fn project_text_variant(kind: ProjectedKind, source: &str, span: Span) -> Projec
                 base_span: variant
                     .base_span
                     .map(|range| span.start + range.start..span.start + range.end),
-            }
-        })
+            },
+        )
     } else {
         kind
     }
@@ -879,6 +893,7 @@ enum EstablishedInterpretation {
     Caption,
     TextVariant,
     Layout,
+    EditorialNote,
 }
 
 impl EstablishedInterpretation {
@@ -893,12 +908,13 @@ impl EstablishedInterpretation {
             Self::Caption => "caption",
             Self::TextVariant => "text-variant",
             Self::Layout => "layout",
+            Self::EditorialNote => "editorial-note",
         }
     }
 
     fn aspects(self) -> &'static [&'static str] {
         match self {
-            Self::Ruby | Self::TextVariant => &["content", "structure"],
+            Self::Ruby | Self::TextVariant | Self::EditorialNote => &["content", "structure"],
             Self::Gaiji => &["content"],
             Self::Emphasis | Self::Layout => &["layout"],
             Self::Warichu | Self::Heading | Self::Caption => &["structure", "layout"],
@@ -964,12 +980,13 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
             Some("heading") => Some(EstablishedInterpretation::Heading),
             Some("caption" | "caption_block") => Some(EstablishedInterpretation::Caption),
             Some("text-variant") => Some(EstablishedInterpretation::TextVariant),
+            Some("editorial_note") => Some(EstablishedInterpretation::EditorialNote),
             _ => None,
         };
         if let Some(interpretation) = interpretation {
             let spans = if matches!(
                 node["kind"].as_str(),
-                Some("gaiji" | "kunten" | "text-variant")
+                Some("gaiji" | "kunten" | "text-variant" | "editorial_note")
             ) {
                 node.get("span").into_iter().collect::<Vec<_>>()
             } else {
@@ -1937,9 +1954,9 @@ fn rebase_variant_spans(kind: &mut ProjectedKind, offset: usize) {
 // Quoted witness fragments use the native inline interpreter with the same
 // source mapping as the enclosing document, restricted to their exact extent.
 fn variant_fragment(decoded: &DecodedSource, range: Range<usize>) -> Option<Vec<Value>> {
-    let (mut nodes, diagnostics, mut gaiji, mut ruby, accents) =
+    let (mut nodes, _diagnostics, mut gaiji, mut ruby, accents) =
         projections(decoded.span_text.get(range.clone())?).ok()?;
-    if !diagnostics.is_empty() || !accents.is_empty() {
+    if !accents.is_empty() {
         return None;
     }
     for node in &mut nodes {
@@ -2047,6 +2064,7 @@ fn inline_content_range(
                 "x-break-kind":"line", "x-break-marker":"forced",
                 "span":span_json(&node.span, &decoded.span_ctx)
             })),
+            ProjectedKind::EditorialNote { ref text } => content.push(json!({"kind":"editorial_note", "note_kind":"base-edition", "text":text, "span":span_json(&node.span, &decoded.span_ctx)})),
             ProjectedKind::Kunten { kind, ref text } => {
                 content.push(kunten_node(decoded, &node.span, kind, text));
             }
@@ -2753,6 +2771,7 @@ fn resolve_text_variants_in_blocks(nodes: Vec<Value>, source: &str) -> Vec<Value
                 ) {
                     resolved.push(json!({"kind":"text-variant", "content":children,
                         "base_text":base_text, "base_content":base, "source":node["source"], "span":node["span"]}));
+                    append_variant_statement(&mut resolved, &node);
                     continue;
                 }
             } else if attach_reading_variant(
@@ -2769,6 +2788,12 @@ fn resolve_text_variants_in_blocks(nodes: Vec<Value>, source: &str) -> Vec<Value
         resolved.push(node);
     }
     resolved
+}
+
+fn append_variant_statement(content: &mut Vec<Value>, note: &Value) {
+    if let Some(statement) = note["text_variant"].get("editorial_statement") {
+        content.push(json!({"kind":"editorial_note", "note_kind":"base-edition", "text":statement, "span":note["span"]}));
+    }
 }
 
 fn preceding_reading(nodes: &mut [Value]) -> Option<&mut Value> {
@@ -2836,8 +2861,10 @@ fn attach_reading_variant(
         .expect("ruby object")
         .remove("reading_content")
         .unwrap_or_else(|| json!([{"kind":"text", "value":reading}]));
-    ruby["reading_content"] = json!([{"kind":"text-variant", "content":children,
-        "base_text":base_text, "base_content":base, "source":note["source"], "span":note["span"]}]);
+    let mut reading_content = vec![json!({"kind":"text-variant", "content":children,
+        "base_text":base_text, "base_content":base, "source":note["source"], "span":note["span"]})];
+    append_variant_statement(&mut reading_content, note);
+    ruby["reading_content"] = json!(reading_content);
     true
 }
 
@@ -2849,6 +2876,7 @@ fn target_text(node: &Value) -> Option<Cow<'_, str>> {
         "text" => Some(Cow::Borrowed(node["value"].as_str()?)),
         "ruby" => Some(Cow::Borrowed(node["base"].as_str()?)),
         "gaiji" => Some(Cow::Borrowed(node["resolved"].as_str()?)),
+        "editorial_note" => Some(Cow::Borrowed("")),
         "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi"
         | "yokogumi" | "fraction" | "text-variant" => {
             let mut text = String::new();
@@ -2883,7 +2911,7 @@ fn quoted_structure_matches(quoted: &[Value], actual: &[Value]) -> bool {
             let text = target_text(node)?;
             let end = start + text.len();
             match node["kind"].as_str()? {
-                "text" | "gaiji" | "raw" => {}
+                "text" | "gaiji" | "raw" | "editorial_note" => {}
                 "ruby" => output.push((
                     start,
                     end,
@@ -2935,7 +2963,7 @@ fn take_visible_suffix_matching(
         let kind = node["kind"].as_str()?;
         let text = target_text(node)?;
         if text.is_empty() {
-            if kind == "raw" && node.get("text_variant").is_some() {
+            if kind == "editorial_note" || (kind == "raw" && node.get("text_variant").is_some()) {
                 continue;
             }
             return None;
@@ -3148,12 +3176,16 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
         base_text,
         current_span,
         base_span,
+        editorial_statement,
     } = &node.kind
     {
         value["text_variant"] = json!({
             "target_kind": match target { TextVariantTarget::RubyReading => "ruby-reading", TextVariantTarget::Text => "text" },
             "current": current, "base_text": base_text
         });
+        if let Some(statement) = editorial_statement {
+            value["text_variant"]["editorial_statement"] = json!(statement);
+        }
         if let Some(current_content) = variant_fragment(decoded, current_span.clone()) {
             value["text_variant"]["current_content"] = json!(current_content);
         }

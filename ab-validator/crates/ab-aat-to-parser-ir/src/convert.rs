@@ -963,7 +963,7 @@ fn append_plain_visible_inline_text(node: &Value, out: &mut String) -> Result<()
             append_plain_visible_content_text(node.get("upper"), out)?;
             append_plain_visible_content_text(node.get("lower"), out)?;
         }
-        "raw" | "kunten" => {}
+        "raw" | "kunten" | "editorial_note" => {}
         "figure" => out.push_str(node["alt"].as_str().unwrap_or("")),
         other => bail!("unsupported inline kind in source attribution projection: {other}"),
     }
@@ -1258,6 +1258,10 @@ fn map_inline_to_nodes(
         "figure" => map_figure_to_node(node, nodes, recorder, offset, path),
         "kunten" => {
             nodes.push(json!({"type":"kunten", "kunten_kind":node["kunten_kind"], "text":node["text"], "span":synthetic_span(offset, offset)}));
+            Ok(offset)
+        }
+        "editorial_note" => {
+            nodes.push(json!({"type":"editor-note", "note_kind":node["note_kind"], "text":node["text"], "span":synthetic_span(offset, offset)}));
             Ok(offset)
         }
         "raw" => map_raw_to_nodes(node, nodes, recorder, offset, path),
@@ -1628,6 +1632,10 @@ fn inline_child_node(
         }
         "kunten" => {
             nodes.push(json!({"type":"kunten", "kunten_kind":node["kunten_kind"], "text":node["text"], "span":synthetic_span(offset, offset)}));
+            Ok(offset)
+        }
+        "editorial_note" => {
+            nodes.push(json!({"type":"editor-note", "note_kind":node["note_kind"], "text":node["text"], "span":synthetic_span(offset, offset)}));
             Ok(offset)
         }
         "raw" => map_raw_to_nodes(node, nodes, recorder, offset, path),
@@ -2164,7 +2172,7 @@ fn append_visible_inline_text(
                 out,
             )?;
         }
-        "kunten" => {}
+        "kunten" | "editorial_note" => {}
         "raw" => {
             let raw_pointer = format!("{path}.raw");
             record_measured_loss(

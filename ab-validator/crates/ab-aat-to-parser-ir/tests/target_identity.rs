@@ -226,3 +226,80 @@ fn plain_target_can_have_a_rich_witness_without_changing_principal_text() {
     assert_eq!(app["variant"]["base_children"][0]["ruby"]["reading"], "ゐ");
     assert_eq!(ir["interpretation_problems"], json!([]));
 }
+
+#[test]
+fn literal_quote_targets_and_absence_wording_resolve_without_balancing_text_quotes() {
+    for (body, current, witness) in [
+        ("終り……』［＃「……』」は底本では「……」」］", "……』", "……」"),
+        ("』［＃「』」は、底本では「」」］", "』", "」"),
+        ("「［＃「「」は底本では脱落］", "「", ""),
+    ] {
+        let ir = convert(body);
+        let all = nodes(&ir);
+        let app = all
+            .iter()
+            .find(|node| node["type"] == "base-text-variant")
+            .unwrap_or_else(|| panic!("{body}: {ir}"));
+        assert_eq!(app["text"], current);
+        assert_eq!(app["variant"]["base_text"], witness);
+        assert_eq!(ir["interpretation_problems"], json!([]));
+    }
+}
+
+#[test]
+fn base_edition_statements_are_apparatus_not_principal_layout() {
+    let ir = convert("本文［＃底本では４字下げ］続き。");
+    let all = nodes(&ir);
+    let note = all
+        .iter()
+        .find(|node| node["note_kind"] == "base-edition")
+        .unwrap();
+    assert_eq!(note["type"], "editor-note");
+    assert_eq!(note["text"], "底本では４字下げ");
+    assert_eq!(note["span"]["start"], note["span"]["end"]);
+    assert!(!all.iter().any(|node| node["type"] == "layout-span"));
+    assert_eq!(ir["interpretation_problems"], json!([]));
+    assert!(
+        ir["interpretation_facts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|fact| fact["kind"] == "editorial-note"
+                && fact["source_span"] == note["source_span"])
+    );
+}
+
+#[test]
+fn source_error_assertion_survives_beside_the_structured_alternative() {
+    let ir = convert("あっちイ［＃「あっちイ」は底本では「あつちイ」と誤記］後。");
+    let all = nodes(&ir);
+    let app = all
+        .iter()
+        .find(|node| node["type"] == "base-text-variant")
+        .unwrap();
+    let note = all
+        .iter()
+        .find(|node| node["note_kind"] == "base-edition")
+        .unwrap();
+    assert_eq!(app["text"], "あっちイ");
+    assert_eq!(app["variant"]["base_text"], "あつちイ");
+    assert_eq!(note["text"], "「あっちイ」は底本では「あつちイ」と誤記");
+    assert_eq!(app["source_span"], note["source_span"]);
+    assert_eq!(ir["interpretation_problems"], json!([]));
+}
+
+#[test]
+fn mixed_current_formatting_and_malformed_variants_are_not_discharged_as_prose() {
+    for body in [
+        "１）［＃「１）」は縦中横、行右小書き、「１」が底本では欠落］",
+        "字［＃「字」は底本では「他］",
+    ] {
+        let ir = convert(body);
+        assert!(
+            !nodes(&ir)
+                .iter()
+                .any(|node| node["note_kind"] == "base-edition")
+        );
+        assert!(!ir["interpretation_problems"].as_array().unwrap().is_empty());
+    }
+}

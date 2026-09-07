@@ -270,13 +270,15 @@
          (append-inline (sourced node (cond-> [:g {:ref (str "#" id)}]
                                         (seq (:unicode declaration)) (conj (:unicode declaration)))))))))
 
-(defn- render-editor-note-node
-  ([acc node _depth]
-   (let [note (get node "note")]
-     (append-inline acc
-                    (sourced node [:note (cond-> {:type (get note "category")}
-                                           (get note "resolution") (assoc :subtype (get note "resolution")))
-                                   (get note "raw")])))))
+(defn- render-editor-note-node [acc node _depth]
+  (append-inline acc
+                 (sourced node
+                          (if-let [kind (get node "note_kind")]
+                            [:note {:type kind} (get node "text")]
+                            (let [note (get node "note")]
+                              [:note (cond-> {:type (get note "category")}
+                                       (get note "resolution") (assoc :subtype (get note "resolution")))
+                               (get note "raw")])))))
 
 (defn- render-kunten-node [acc node _depth]
   (let [kind (get node "kunten_kind")]

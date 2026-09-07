@@ -15,7 +15,7 @@
       "type": "object", "additionalProperties": false,
       "required": ["kind", "outcome", "aspects", "source_span"],
       "properties": {
-        "kind": {"enum": ["ruby", "gaiji", "emphasis", "warichu", "kunten", "heading", "caption", "text-variant", "layout"]},
+        "kind": {"enum": ["ruby", "gaiji", "emphasis", "warichu", "kunten", "heading", "caption", "text-variant", "layout", "editorial-note"]},
         "outcome": {"const": "established"},
         "aspects": {"type":"array", "minItems":1, "uniqueItems":true, "items":{"enum":["content","structure","layout"]}},
         "source_span": {"type":"object", "additionalProperties":false, "required":["start","end","coordinate_system"],
@@ -213,6 +213,7 @@
         { "$ref": "#/$defs/figure" },
         { "$ref": "#/$defs/raw" },
         { "$ref": "#/$defs/text_variant" },
+        { "$ref": "#/$defs/editorial_note" },
         { "$ref": "#/$defs/inline_container" },
         { "$ref": "#/$defs/warigaki" },
         { "$ref": "#/$defs/warichu" },
@@ -396,6 +397,7 @@
           "properties": {
             "target_kind": { "enum": ["ruby-reading", "text"] },
             "current": { "type": "string", "minLength": 1 },
+            "editorial_statement": { "type":"string", "minLength":1 },
             "current_content": { "type":"array", "items":{"$ref":"#/$defs/inline"} },
             "base_content": { "type":"array", "items":{"$ref":"#/$defs/inline"} },
             "base_text": { "type": "string", "description": "Explicit witness text; empty means source-stated absence." }
@@ -403,6 +405,11 @@
         },
         "span": { "$ref": "#/$defs/span" }
       }
+    },
+    "editorial_note": {
+      "type":"object", "additionalProperties":false,
+      "required":["kind","note_kind","text","span"],
+      "properties": {"kind":{"const":"editorial_note"}, "note_kind":{"enum":["base-edition"]}, "text":{"type":"string","minLength":1}, "span":{"$ref":"#/$defs/span"}}
     },
     "text_variant": {
       "type": "object",

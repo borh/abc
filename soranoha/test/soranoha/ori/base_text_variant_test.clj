@@ -118,3 +118,20 @@
         (let [validated (validation/tei-validation-result (validation/profile-paths ".") path)]
           (is (= "passed" (get validated "status")) (pr-str (get validated "findings"))))
         (finally (fs/delete-tree dir))))))
+
+(deftest base-edition-prose-is-visible-apparatus-without-changing-principal-text
+  (let [result (render/render-work
+                {:parser-ir {"nodes" [{"type" "text" "text" "本文"}
+                                      {"type" "editor-note" "note_kind" "base-edition" "text" "底本では４字下げ"}
+                                      {"type" "text" "text" "続き。"}]}
+                 :metadata-record {"work" {"title" "試験" "work_id" "1"} "contributors" []}
+                 :persons-by-id {}})
+        reading (view/from-tei (:tei result))
+        ^Document doc (:view/document reading)
+        notes (.getElementsByTagNameNS doc view/tei-namespace "note")
+        ^Element note (first (filter #(= "base-edition" (.getAttribute ^Element % "type"))
+                                     (map #(.item notes %) (range (.getLength notes)))))]
+    (is (= "本文続き。" (:view/text reading)))
+    (is (= "本文続き。" (projection/markdown reading)))
+    (is (= "底本では４字下げ" (.getTextContent note)))
+    (is (= "" (.getAttribute note "subtype")))))

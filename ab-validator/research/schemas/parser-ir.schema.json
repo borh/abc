@@ -47,7 +47,7 @@
       "type": "object", "additionalProperties": false,
       "required": ["kind", "outcome", "aspects", "source_span"],
       "properties": {
-        "kind": {"enum": ["ruby", "gaiji", "emphasis", "warichu", "kunten", "heading", "caption", "text-variant", "layout"]},
+        "kind": {"enum": ["ruby", "gaiji", "emphasis", "warichu", "kunten", "heading", "caption", "text-variant", "layout", "editorial-note"]},
         "outcome": {"const": "established"},
         "aspects": {"type":"array", "minItems":1, "uniqueItems":true, "items":{"enum":["content","structure","layout"]}},
         "source_span": {"type":"object", "additionalProperties":false, "required":["start","end","coordinate_system"],
@@ -623,12 +623,18 @@
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["type", "span", "note"],
+          "required": ["type", "span"],
+          "oneOf": [
+            {"required":["note"], "not":{"anyOf":[{"required":["note_kind"]},{"required":["text"]}]}},
+            {"required":["note_kind","text"], "not":{"required":["note"]}}
+          ],
           "properties": {
             "type": { "const": "editor-note" },
             "span": { "$ref": "#/$defs/span" },
             "source_span": { "$ref": "#/$defs/sourceSpan" },
-            "note": { "$ref": "#/$defs/note" }
+            "note": { "$ref": "#/$defs/note" },
+            "note_kind": {"enum":["base-edition"]},
+            "text": {"type":"string","minLength":1}
           }
         }
       ]

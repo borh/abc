@@ -1,4 +1,4 @@
-//! Supplied omission and incompleteness statements remain source apparatus.
+//! Supplied editorial statements retain their meaning and source position.
 
 use ab_aozora_aat::aat_json_from_bytes;
 use ab_aozora_facade::Document;
@@ -9,6 +9,14 @@ fn source_statements_preserve_assertion_kind_and_exact_marker() {
     for (statement, kind) in [
         ("「註」略", "omission"),
         ("未完", "incompleteness"),
+        (
+            "この作品は表題と副題のみで、本文はありません。",
+            "explanation",
+        ),
+        (
+            "「雲隠れ」の帖は冒頭の晶子詞のみで本文はありません。",
+            "explanation",
+        ),
         ("省略", "omission"),
         ("Ａ、Ｂ、Ｃの図省略", "omission"),
         ("図は省略", "omission"),
@@ -59,6 +67,10 @@ fn source_statements_preserve_assertion_kind_and_exact_marker() {
 fn statement_like_prose_and_unknown_qualifiers_remain_distinct() {
     for source in [
         "未完",
+        "この作品は表題と副題のみで、本文はありません。",
+        "［＃本文はありません］",
+        "［＃この作品は表題と副題のみで、本文はありませんか。］",
+        "［＃「雲隠れ」の帖は冒頭の晶子詞のみで本文はありません。以下太字］",
         "［＃未完のため省略］",
         "［＃「註」一部略］",
         "［＃図を省略しない］",

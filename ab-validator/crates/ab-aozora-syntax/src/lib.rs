@@ -486,6 +486,8 @@ pub enum DirectiveKind {
     OmissionNote,
     /// A source statement that the work is unfinished.
     IncompletenessNote,
+    /// A source-positioned explanation, without inferred target or agency.
+    ExplanationNote,
     /// Ruby-presence editorial note (`［＃「X」にルビ］`) — records that the run
     /// `X` carries a ruby gloss in the source. The gloss text itself is not in
     /// the directive; this is a proofreading marker, not renderable ruby.

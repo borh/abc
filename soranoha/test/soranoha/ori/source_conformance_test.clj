@@ -472,6 +472,25 @@
       (is (empty? (elements result "gap")))
       (is (empty? (get-in result [:ir "interpretation_problems"]))))))
 
+(deftest supplied-body-absence-declarations-remain-explanations
+  (doseq [[body statement expected]
+          [["" "この作品は表題と副題のみで、本文はありません。" ""]
+           ["かきくらす涙か雲かしらねどもひかり\n見せねばかかぬ一章　　　　（晶子）"
+            "「雲隠れ」の帖は冒頭の晶子詞のみで本文はありません。"
+            "かきくらす涙か雲かしらねどもひかり\n見せねばかかぬ一章　　　　（晶子）"]]]
+    (let [marker (str "［＃" statement "］")
+          text (source (str body "\n" marker))
+          result (transcribe text)
+          notes (filter #(= "explanation" (attribute % "type")) (elements result "note"))
+          fact (first (filter #(= "editorial-note" (get % "kind")) (get-in result [:ir "interpretation_facts"])))
+          start (alength (.getBytes (subs text 0 (string/index-of text marker)) "UTF-8"))]
+      (is (= expected (:plaintext result)))
+      (is (= [statement] (mapv #(.getTextContent ^Node %) notes)))
+      (is (= start (get-in fact ["source_span" "start"])))
+      (is (= (+ start (alength (.getBytes marker "UTF-8"))) (get-in fact ["source_span" "end"])))
+      (is (empty? (elements result "gap")))
+      (is (empty? (get-in result [:ir "interpretation_problems"]))))))
+
 (deftest quoted-variants-do-not-create-body-ruby-or-gaiji
   (doseq [[body plain expected-ruby raw]
           [["煖爐《ストーブ》には［＃「煖爐《ストーブ》には」は底本では「煖燼《ストーブ》には」］、後。"

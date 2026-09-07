@@ -2749,6 +2749,7 @@ fn directive_node(decoded: &DecodedSource, node: &AozoraNode, kind: DirectiveKin
         DirectiveKind::TranscriptionNote => "transcription",
         DirectiveKind::OmissionNote => "omission",
         DirectiveKind::IncompletenessNote => "incompleteness",
+        DirectiveKind::ExplanationNote => "explanation",
         _ => return raw_node(decoded, node, node.kind.as_str()),
     };
     let raw = source_slice(&decoded.span_text, &node.span);

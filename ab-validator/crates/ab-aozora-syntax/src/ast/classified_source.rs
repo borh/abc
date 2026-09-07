@@ -92,6 +92,7 @@ pub enum ConstructId {
     TranscriptionNote,
     OmissionNote,
     IncompletenessNote,
+    ExplanationNote,
     RubyAttached,
     RubyRetarget,
     RubyPairOpen,

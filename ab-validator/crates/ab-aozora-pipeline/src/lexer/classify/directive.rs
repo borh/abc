@@ -986,6 +986,12 @@ pub(super) fn editorial_note_kind(body: &str) -> Option<DirectiveKind> {
         Some(DirectiveKind::OmissionNote)
     } else if body == "未完" {
         Some(DirectiveKind::IncompletenessNote)
+    } else if matches!(
+        body,
+        "この作品は表題と副題のみで、本文はありません。"
+            | "「雲隠れ」の帖は冒頭の晶子詞のみで本文はありません。"
+    ) {
+        Some(DirectiveKind::ExplanationNote)
     } else if body == "改行を挿入" {
         Some(DirectiveKind::TranscriptionNote)
     } else if is_ruby_attached_body(body) {

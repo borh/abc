@@ -4,6 +4,73 @@ use ab_aozora_aat::aat_json_from_bytes;
 use serde_json::{Value, json};
 
 #[test]
+fn repeated_column_opener_keeps_indentation_and_hanging_width() {
+    let opener = "［＃ここから一字下げ、折り返して二字下げ、ここから二段組］";
+    let closer = "［＃ここで字下げ終わり、ここで段組終わり］";
+    let source = format!("{opener}\n一、本文。\n二、続き。\n{closer}\n外。\n");
+    let aat: Value =
+        serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
+    let scope = &aat["blocks"][0];
+    assert_eq!(scope["indent"], 1, "{aat}");
+    assert_eq!(scope["continuation_indent"], 2, "{aat}");
+    assert_eq!(scope["column_count"], 2, "{aat}");
+    assert_eq!(
+        scope["span"]["byte_end"],
+        source.find(closer).unwrap() + closer.len(),
+        "{aat}"
+    );
+    assert!(
+        !scope.to_string().contains("interpretation_problem"),
+        "{aat}"
+    );
+    assert!(!scope.to_string().contains("外。"), "{aat}");
+    let document = ab_aozora_facade::Document::new(source.as_str());
+    let serialized = document.parse().to_source();
+    let reparsed: Value =
+        serde_json::from_slice(&aat_json_from_bytes(serialized.as_bytes()).unwrap()).unwrap();
+    let restored = reparsed["blocks"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|block| block["kind"] == "layout_block")
+        .unwrap();
+    assert_eq!(restored["column_count"], 2, "{reparsed}");
+    assert_eq!(restored["continuation_indent"], 2, "{reparsed}");
+    assert!(!serialized.contains("改段"), "{serialized}");
+}
+
+#[test]
+fn conflicting_column_counts_preserve_only_independent_geometry() {
+    for clause in [
+        "ここから二段組、三段組",
+        "三段組、ここから二段組",
+        "ここから０段組",
+    ] {
+        let source = format!(
+            "［＃ここから一字下げ、折り返して二字下げ、{clause}］\n本文。\n［＃ここで字下げ終わり］"
+        );
+        let aat: Value =
+            serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
+        let scope = &aat["blocks"][0];
+        assert_eq!(scope["indent"], 1, "{aat}");
+        assert_eq!(scope["continuation_indent"], 2, "{aat}");
+        assert!(scope.get("column_count").is_none(), "{aat}");
+        assert!(
+            scope.to_string().contains("interpretation_problem"),
+            "{aat}"
+        );
+        assert!(
+            !aat["meta"]["interpretation_facts"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|fact| fact["source_span"]["start"] == 0),
+            "{aat}"
+        );
+    }
+}
+
+#[test]
 fn supplied_geometry_does_not_collapse_independent_axes() {
     for (clauses, fields) in [
         (

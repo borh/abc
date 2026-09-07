@@ -3037,3 +3037,28 @@ fn gothic_end_spacing_retains_both_source_families() {
     assert_eq!(summary.row_counts["decoration.typeface"].occurrences, 1);
     assert!(summary.unknown_examples.is_empty());
 }
+
+#[test]
+fn indented_column_scopes_retain_both_source_families() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    for source in [
+        "［＃ここから一字下げ、折り返して二字下げ、ここから二段組］",
+        "［＃ここから２字下げ、４段組み］",
+        "［＃ここで字下げ終わり、ここで段組終わり］",
+    ] {
+        let summary = inventory_document("fixture", source, &patterns);
+        assert_eq!(summary.markers_total, 1);
+        assert_eq!(
+            summary.row_counts["indentation.jisage_block"].occurrences,
+            1
+        );
+        assert_eq!(summary.row_counts["layout.multicolumn"].occurrences, 1);
+    }
+    let summary = inventory_document(
+        "fixture",
+        "［＃「ここから２字下げ、４段組み」は太字］",
+        &patterns,
+    );
+    assert!(!summary.row_counts.contains_key("layout.multicolumn"));
+}

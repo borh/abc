@@ -1446,6 +1446,19 @@
     (is (not-any? #(string/includes? (attribute % "rend") "bold") (elements result "hi")))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
 
+(deftest co-applied-columns-preserve-hanging-indentation-and-source-lines
+  (let [result (transcribe (source "［＃ここから一字下げ、折り返して二字下げ、ここから二段組］\n一、本文。\n二、続き。\n［＃ここで字下げ終わり、ここで段組終わり］\n外。"))
+        scopes (filterv #(= 2 (get % "column_count")) (get-in result [:ir "layout_blocks"]))
+        columns (filterv #(string/includes? (attribute % "style") "column-count: 2") (elements result "div"))]
+    (is (= "一、本文。\n二、続き。\n外。" (:plaintext result)))
+    (is (= 1 (count scopes)))
+    (is (= 1 (get (first scopes) "indent")))
+    (is (= 2 (get (first scopes) "continuation_indent")))
+    (is (= 1 (count columns)))
+    (is (not (string/includes? (view/visible-text (first columns)) "外。")))
+    (is (empty? (elements result "cb")))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
 (deftest reading-variants-verify-the-shared-principal-continuation
   (let [original (transcribe (source "零《こぼ》す"))
         result (transcribe (source "零《こぼ》す［＃ルビの「こぼ（す）」は底本では「にぼ（す）」］"))]

@@ -2278,7 +2278,8 @@ fn resolve_indent_segment(segment: &str, block: &mut IndentBlock) -> Option<()> 
         block.purpose = Some(ab_aozora_syntax::BlockPurpose::Formula);
         return Some(());
     }
-    if let Some((count, "段組" | "段組み")) = parse_decimal_u8_prefix(segment) {
+    let column_clause = segment.strip_prefix("ここから").unwrap_or(segment);
+    if let Some((count, "段組" | "段組み")) = parse_layout_count_prefix(column_clause) {
         block.column_count = Some(ColumnCount(NonZeroU8::new(count)?));
         return Some(());
     }

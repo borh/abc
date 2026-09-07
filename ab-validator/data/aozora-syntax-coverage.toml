@@ -3041,18 +3041,18 @@ priority = 2
 category = "layout"
 feature_keys = ["multicolumn", "dan-gumi"]
 reference_sources = ["references/aozorabunko/rules/kijyunn.html", "docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
-source_examples = ["［＃ここから２段組み］", "［＃ここで段組み終わり］"]
-source_patterns = ['［＃ここから[０-９0-9]+段組み?］', '［＃ここで([０-９0-9]+段組み?|段組み?)終わり］', '［＃段組み適用外］', '［＃「[^\n]+」と「[^\n]+」は[０-９0-9]+列に並ぶ］', '［＃「[^\n]+」と「[^\n]+」は横並びになっている］', '［＃[０-９0-9]+段目］', '［＃[^］]*１行内で[０-９0-9]+行に分けられている］', '［＃[^］]*[０-９0-9]+行組み[^］]*］', '［＃ここから[０-９0-9]+段組み、段間に罫］', '［＃ここで[０-９0-9]+段組み、罫囲み終わり］', '［＃ここで段組、[^］]+終わり］', '［＃ここから[０-９0-9]+段組、[上下]段］', '［＃ここで[０-９0-9]+段組、[上下]段終わり］']
-ir_nodes = ["Raw"]
-aat_nodes = ["raw"]
-tei_projection = "div rend=columns"
+source_examples = ["［＃ここから一字下げ、折り返して二字下げ、ここから二段組］", "［＃ここから２段組み］", "［＃ここで段組み終わり］"]
+source_patterns = ['［＃ここから(?:[０-９0-9]+|[一二三四五六七八九])字下げ、(?:折り返して(?:[０-９0-9]+|[一二三四五六七八九])字下げ、)?(?:ここから)?(?:[０-９0-9]+|[一二三四五六七八九])段組み?］', '［＃ここで字下げ終わり、ここで段組み?終わり］', '［＃ここから[０-９0-9]+段組み?］', '［＃ここで([０-９0-9]+段組み?|段組み?)終わり］', '［＃段組み適用外］', '［＃「[^\n]+」と「[^\n]+」は[０-９0-9]+列に並ぶ］', '［＃「[^\n]+」と「[^\n]+」は横並びになっている］', '［＃[０-９0-9]+段目］', '［＃[^］]*１行内で[０-９0-9]+行に分けられている］', '［＃[^］]*[０-９0-9]+行組み[^］]*］', '［＃ここから[０-９0-9]+段組み、段間に罫］', '［＃ここで[０-９0-9]+段組み、罫囲み終わり］', '［＃ここで段組、[^］]+終わり］', '［＃ここから[０-９0-9]+段組、[上下]段］', '［＃ここで[０-９0-9]+段組、[上下]段終わり］']
+ir_nodes = ["layout_blocks", "editor-note"]
+aat_nodes = ["layout_block", "raw"]
+tei_projection = "div[@type='layout'] with supplied column count"
 plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = ["block_scope_balance"]
-adapter_expectations = ["preserve raw multi-column marker until typed AAT/parser-IR support lands"]
+adapter_expectations = ["preserve supplied column count, independent geometry and exact source scope without inventing column breaks"]
 oracle_cases = []
-status = "not_modeled"
-status_reason = "Aozora multi-column layout has a TEI P5 projection, but AAT/parser-IR currently only preserve it as source-derived raw marker evidence."
+status = "partial"
+status_reason = "Typed column scopes preserve supplied counts; unsupported arrangements retain source-located uncertainty."
 
 [syntax.parsers.aozora2]
 recognition = "unknown"
@@ -3072,17 +3072,17 @@ notes = "Source inventory observes multi-column markers; parser-specific typed b
 [syntax.adapters.aozora2]
 aat_fidelity = "unknown"
 evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
-notes = "No typed multi-column AAT contract exists; adapter behavior remains to be measured."
+notes = "This adapter has not been measured against the current column-count scope contract."
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
 evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
-notes = "No typed multi-column AAT contract exists; adapter behavior remains to be measured."
+notes = "This adapter has not been measured against the current column-count scope contract."
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "unknown"
 evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
-notes = "No typed multi-column AAT contract exists; adapter behavior remains to be measured."
+notes = "This adapter has not been measured against the current column-count scope contract."
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -3097,7 +3097,7 @@ status = "raw_preserved"
 aat_nodes = ["raw"]
 raw_fallback = true
 evidence = "data/aat-schema.json:277"
-notes = "TEI can represent multi-column layout as a division or block with column rendition metadata, but AAT/parser-IR do not yet have typed multi-column nodes. The reviewed v1 guarantee is source-derived raw marker preservation."
+notes = "Source inventory retains all marker occurrences. Typed column-count scopes and unresolved arrangements require per-occurrence interpretation evidence."
 
 [[syntax]]
 id = "structure.quote_block"

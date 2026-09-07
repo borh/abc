@@ -1,0 +1,216 @@
+(ns soranoha.ori.source-conformance-test
+  (:require [babashka.fs :as fs]
+            [charred.api :as json]
+            [clojure.string :as string]
+            [clojure.test :refer [deftest is testing use-fixtures]]
+            [soranoha.annotations.view :as view]
+            [soranoha.core.hash :as hash]
+            [soranoha.kura.cas :as cas]
+            [soranoha.kura.engine :as engine]
+            [soranoha.ori.projection :as projection]
+            [soranoha.ori.render :as render]
+            [soranoha.ori.stages :as stages])
+  (:import [org.w3c.dom Document Element Node]))
+
+(def ^:dynamic *store* nil)
+(def ^:dynamic *adapter* nil)
+
+(use-fixtures :once
+  (fn [run]
+    (let [dir (fs/create-temp-dir {:prefix "source-conformance"})
+          store (engine/open-store! {:cas-dir (str (fs/path dir "objects"))
+                                     :db-path (str (fs/path dir "trace.sqlite"))})]
+      (try
+        (binding [*store* store *adapter* (stages/resolve-adapter)] (run))
+        (finally (engine/close-store! store) (fs/delete-tree dir))))))
+
+(defn- source [body]
+  (str "題\n作者\n\n--------------------\n【テキスト中に現れる記号について】\n--------------------\n"
+       body "\n\n底本：本\n　　　初刷\n入力：人\n"))
+
+(defn- transcribe
+  ([text] (transcribe text "UTF-8"))
+  ([^String text encoding]
+   (let [bytes (.getBytes text ^String encoding)
+         source-id (cas/put-bytes! (:cas-dir *store*) bytes)
+         parsed (engine/run-stage! *store* (stages/parse-stage *adapter*) {"source" source-id})
+         converted (engine/run-stage! *store* (stages/convert-stage *adapter*)
+                                      {"aat" (get-in parsed [:outputs "aat"])
+                                       "work_content_hash" (hash/format-sha256 source-id)})
+         ir (json/read-json (String. ^bytes (cas/get-bytes (:cas-dir *store*) (get-in converted [:outputs "parser-ir"])) "UTF-8"))
+         tei (:tei (render/render-work {:parser-ir ir
+                                        :metadata-record {"work" {"work_id" "1" "title" "題" "aozora_modified" "2026-09-07"}
+                                                          "contributors" []}
+                                        :persons-by-id {}}))
+         reading (view/from-tei tei)]
+     {:ir ir :tei tei :view reading :plaintext (projection/plaintext reading)})))
+
+(defn- elements [result tag]
+  (let [^Document doc (get-in result [:view :view/document])
+        nodes (.getElementsByTagNameNS doc view/tei-namespace tag)]
+    (mapv #(.item nodes %) (range (.getLength nodes)))))
+
+(defn- attribute [^Element node ^String name] (.getAttribute node name))
+(defn- texts [result tag] (mapv view/visible-text (elements result tag)))
+
+(deftest gaiji-ruby-indentation-and-apparatus-retain-independent-values
+  (doseq [encoding ["UTF-8" "windows-31j"]]
+    (let [result (transcribe (source (str "［＃８字下げ］一［＃「一」は中見出し］\n\n"
+                                          "　池《いけ》の　底に、※［＃「特のへん＋廴＋聿」、第3水準1-87-71］陀多《かんだた》。")) encoding)]
+      (is (= "一\n　池の　底に、犍陀多。" (:plaintext result)))
+      (is (= ["池" "犍陀多"] (texts result "rb")))
+      (is (= ["いけ" "かんだた"] (texts result "rt")))
+      (is (= ["犍"] (texts result "g")))
+      (is (some #{"犍"} (texts result "mapping")))
+      (is (= "2" (attribute (first (elements result "head")) "n")))
+      (is (= "padding-inline-start: 8em" (attribute (first (elements result "head")) "style")))
+      (is (= "text-indent: 1em" (attribute (first (filter #(string/starts-with? (view/visible-text %) "池") (elements result "p"))) "style")))
+      (let [lines (filter #(= "source-line" (attribute % "type")) (elements result "seg"))]
+        (is (= ["底本：本" "初刷" "入力：人"] (mapv #(.getTextContent ^Node %) lines)))
+        (is (= "padding-inline-start: 3em" (attribute (second lines) "style")))))))
+
+(deftest glyph-realizations-cover-both-jis-planes
+  (doseq [[notation expected]
+          [["「てへん＋丑」、第4水準2-12-93" "扭"]
+           ["「にんべん＋參」、第4水準2-1-79" "傪"]
+           ["「口＋「皐」の「白」にかえて「自」、第4水準2-4-33" "嘷"]
+           ["「やまいだれ＋低のつくり」、第4水準2-81-42" "疷"]
+           ["「言＋墟のつくり」、第4水準2-88-74" "譃"]
+           ["二の字点、1-2-22" "〻"]]]
+    (testing notation
+      (let [result (transcribe (source (str "※［＃" notation "］")))]
+        (is (= expected (:plaintext result)))
+        (is (= [expected] (texts result "g")))
+        (is (some #{expected} (texts result "mapping")))))))
+
+(defn- within? [^Node parent ^Node node]
+  (when node
+    (or (identical? parent node) (recur parent (.getParentNode node)))))
+
+(defn- reading-start [result element]
+  (:view/start (first (filter #(within? element (:view/node %)) (get-in result [:view :view/segments])))))
+
+(deftest retrospective-targets-do-not-move-or-duplicate-reading-content
+  (doseq [[body expected emphasized offset]
+          [["しだ、しだ［＃「しだ」に傍点］。" "しだ、しだ。" "しだ" 9]
+           ["池《いけ》［＃「池」に傍点］" "池" "池" 0]
+           ["牛《ベゴ》の舌［＃「牛の舌」に傍点］" "牛の舌" "牛の舌" 0]]]
+    (let [result (transcribe (source body))]
+      (is (= expected (:plaintext result)))
+      (is (= [emphasized] (texts result "hi")))
+      (is (= offset (reading-start result (first (elements result "hi")))))
+      (is (= ["bouten 傍点 right"] (mapv #(attribute % "rend") (elements result "hi")))))))
+
+(deftest source-boundaries-and-accent-punctuation-have-fixed-readings
+  (doseq [[body expected]
+          [["≪外≪内≫後≫。" "《外《内》後》。"]
+           ["≪池《いけ》≫、外。≪未閉。" "《池》、外。≪未閉。"]
+           ["〔C'est me^me〕" "C'est même"]
+           ["〔LE MAC,ON〕" "LE MAÇON"]
+           ["｜字《〔C'est〕》" "字"]]]
+    (is (= expected (:plaintext (transcribe (source body)))) body))
+  (let [result (transcribe "こころ\n今野大力\n\nこころ　こころ\nくるしいこころ\n\n底本：本\n")]
+    (is (= "こころ　こころ\nくるしいこころ" (:plaintext result)))))
+
+(deftest enclosing-layout-and-closing-alignment-are-independent
+  (let [result (transcribe (source "前。\n［＃ここから２字下げ］\n附記。\n［＃地から２字上げ］（大正四年八月）\n［＃ここで字下げ終わり］\n後。"))
+        enclosure (first (filter #(string/includes? (attribute % "style") "padding-inline-start: 2em")
+                                 (elements result "div")))]
+    (is (= "前。\n附記。\n（大正四年八月）\n後。" (:plaintext result)))
+    (is (= "附記。\n（大正四年八月）" (view/visible-text enclosure)))
+    (is (= ["chitsuki align(right) offset-from-end(2)"]
+           (into [] (keep #(let [rend (attribute % "rend")] (when (string/includes? rend "chitsuki") rend)))
+                 (elements result "p"))))))
+
+(deftest supplied-ruby-variant-is-not-an-asserted-source-error
+  (let [result (transcribe (source "私は籠《ざる》［＃ルビの「ざる」は底本では「さる」］をさげ"))]
+    (is (= "私は籠をさげ" (:plaintext result)))
+    (is (= ["ざる"] (texts result "lem")))
+    (is (= ["さる"] (texts result "rdg")))
+    (is (= "rt" (view/local-name (.getParentNode ^Node (first (elements result "app"))))))
+    (is (empty? (elements result "sic")))))
+
+(deftest unknown-notation-retains-evidence-without-certifying-its-neighbours
+  (let [raw "［＃未定義の範囲指定開始］"
+        result (transcribe (source (str "前" raw "後")))
+        problems (get-in result [:view :view/problems])]
+    (is (= "前後" (:plaintext result)))
+    (is (= [] (get-in result [:view :view/eligible-spans])))
+    (is (= [raw] (mapv #(get-in % [:view/evidence "raw"]) problems)))
+    (is (= [{"kind" "document"}] (mapv #(get-in % [:view/evidence "influence"]) problems)))))
+
+(deftest warichu-does-not-invent-upper-and-lower-readings
+  (let [result (transcribe (source "前［＃割り注］上※［＃歌記号、1-3-28］下［＃割り注終わり］後"))
+        wrapper (first (filter #(= "warichu" (attribute % "type")) (elements result "seg")))]
+    (is (= "前上〽下後" (:plaintext result)))
+    (is (= "上〽下" (view/visible-text wrapper)))
+    (is (= "two-line" (attribute wrapper "rend")))
+    (is (empty? (filter #(#{"upper" "lower"} (attribute % "type")) (elements result "seg"))))
+    (is (empty? (get-in result [:view :view/problems])))))
+
+(deftest gaiji-membership-is-defined-by-source-ruby-boundaries
+  (doseq [[marker glyph prefix suffix reading]
+          [["歌記号、1-3-28" "〽" "" "銚子" "ちょうし"]
+           ["全角CC、1-13-53" "㏄" "二〇" "入" "いり"]
+           ["始め二重括弧、1-2-54" "｟" "" "誰" "た"]
+           ["ます記号、1-2-23" "〼" "" "定" "ますさだ"]]]
+    (let [result (transcribe (source (str prefix "※［＃" marker "］" suffix "《" reading "》")))]
+      (is (= [(str prefix glyph suffix)] (texts result "rb")))
+      (is (= [reading] (texts result "rt")))))
+  (doseq [body ["〽銚子《ちょうし》" "※［＃歌記号、1-3-28］｜銚子《ちょうし》"]]
+    (let [result (transcribe (source body))]
+      (is (= "〽銚子" (:plaintext result)))
+      (is (= ["銚子"] (texts result "rb"))))))
+
+(deftest sign-layout-retains-content-and-property-scope
+  (let [result (transcribe (source "［＃ここから４字下げ、横書き、中央揃え、罫囲み］\nRESTAURANT\n西洋料理店\n［＃ここで字下げ終わり］\nといふ札。"))
+        sign (first (elements result "floatingText"))]
+    (is (= "RESTAURANT\n西洋料理店\nといふ札。" (:plaintext result)))
+    (is (= "RESTAURANT\n西洋料理店" (view/visible-text sign)))
+    (is (= "padding-inline-start: 4em; writing-mode: horizontal-tb; text-align: center; border-style: solid"
+           (attribute sign "style")))))
+
+(deftest quoted-variants-do-not-create-body-ruby-or-gaiji
+  (doseq [[body plain expected-ruby raw]
+          [["煖爐《ストーブ》には［＃「煖爐《ストーブ》には」は底本では「煖燼《ストーブ》には」］、後。"
+            "煖爐には、後。" ["煖爐"] "「煖爐《ストーブ》には」は底本では「煖燼《ストーブ》には」"]
+           ["目［＃「※［＃「目＋旬」、第3水準1-88-80］《めくば》せを」は底本では「※［＃「目＋句」、第4水準2-81-91］《めくば》せを」］後。"
+            "目後。" [] "「※［＃「目＋旬」、第3水準1-88-80］《めくば》せを」は底本では「※［＃「目＋句」、第4水準2-81-91］《めくば》せを」"]]]
+    (let [result (transcribe (source body))
+          notes (filter #(#{"variant" "misc"} (attribute % "type")) (elements result "note"))]
+      (is (= plain (:plaintext result)))
+      (is (= expected-ruby (texts result "rb")))
+      (is (empty? (elements result "g")))
+      (is (= [(str "［＃" raw "］")] (mapv #(.getTextContent ^Node %) notes))))))
+
+(deftest shared-left-underline-preserves-ruby-and-decoration
+  (let [result (transcribe (source "青空文庫《あおぞらぶんこ》［＃「青空文庫」の左に傍線］"))
+        emphasis (first (elements result "hi"))]
+    (is (= "青空文庫" (:plaintext result)))
+    (is (= ["青空文庫"] (texts result "rb")))
+    (is (= ["あおぞらぶんこ"] (texts result "rt")))
+    (is (= "bosen 傍線 left" (attribute emphasis "rend")))
+    (is (within? emphasis (first (elements result "ruby"))))))
+
+(deftest unresolved-base-target-retains-exact-note-at-its-source-position
+  (let [result (transcribe (source "甍《いらか》［＃「甍の」は底本では「薨の」］先。明《あ》［＃ルビの「あ」は底本では「あか」］かさう。"))
+        ^Node note (first (filter #(= "variant" (attribute % "type")) (elements result "note")))
+        following (first (filter #(pos? (bit-and Node/DOCUMENT_POSITION_FOLLOWING
+                                                 (.compareDocumentPosition note ^Node (:view/node %))))
+                                 (get-in result [:view :view/segments])))]
+    (is (= "甍先。明かさう。" (:plaintext result)))
+    (is (= "［＃「甍の」は底本では「薨の」］" (.getTextContent note)))
+    (is (= "unresolved" (attribute note "subtype")))
+    (is (= 3 (:view/start following)))
+    (is (= ["あ"] (texts result "lem")))
+    (is (= ["あか"] (texts result "rdg")))))
+
+(deftest colophon-explanations-credits-and-accents-remain-apparatus
+  (let [explanation "※「□」には、底本では「◆」が内接しています。"
+        result (transcribe (str (source "本文。") explanation "\n　　　〔DIE FLU:CHTLINGE〕 〔本全集〕\n"))
+        lines (filter #(= "source-line" (attribute % "type")) (elements result "seg"))
+        accent (first (filter #(= "DIE FLÜCHTLINGE 〔本全集〕" (.getTextContent ^Node %)) lines))]
+    (is (= "本文。" (:plaintext result)))
+    (is (some #{explanation} (map #(.getTextContent ^Node %) lines)))
+    (is (some #{"入力：人"} (map #(.getTextContent ^Node %) lines)))
+    (is (= "padding-inline-start: 3em" (attribute accent "style")))))

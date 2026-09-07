@@ -264,7 +264,8 @@
   ([acc node _depth]
    (let [note (get node "note")]
      (append-inline acc
-                    (sourced node [:note {:type (get note "category")}
+                    (sourced node [:note (cond-> {:type (get note "category")}
+                                           (get note "resolution") (assoc :subtype (get note "resolution")))
                                    (get note "raw")])))))
 
 (defn- render-base-text-variant-node [acc node depth]
@@ -306,7 +307,9 @@
                           (seq (get node "inline_children"))
                           (get node "text")
                           depth
-                          (sourced node [:hi {:rend (get node "style")}]))))
+                          (sourced node [:hi {:rend (string/join " " (remove nil? [(get node "style")
+                                                                                   (get-in node ["decoration" "kind"])
+                                                                                   (get-in node ["decoration" "position"])]))}]))))
 
 (defn- render-layout-span-node
   ([acc node depth]

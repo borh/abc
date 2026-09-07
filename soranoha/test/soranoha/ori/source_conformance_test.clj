@@ -731,3 +731,12 @@
       (is (= expected (set (map (fn [^Node note] [(.getTextContent note) (attribute note "place")]) notes))))
       (is (every? #(string/starts-with? (attribute (.getParentNode ^Node %) "source") "#source-") notes))
       (is (empty? (get-in result [:ir "interpretation_problems"]))))))
+
+(deftest nested-horizontal-scopes-preserve-neighboring-source-layout
+  (let [result (transcribe (source "ラテン語で［＃横組み］“ambitus”［＃横組み終わり］が［＃横組み］［＃横組み］‘ambition’［＃横組み終わり］［＃横組み終わり］を意味せず"))
+        scopes (filterv #(= "yokogumi horizontal" (attribute % "rend")) (elements result "hi"))]
+    (is (= "ラテン語で“ambitus”が‘ambition’を意味せず" (:plaintext result)))
+    (is (= ["“ambitus”" "‘ambition’" "‘ambition’"] (mapv view/visible-text scopes)))
+    (is (identical? (second scopes) (.getParentNode ^Node (nth scopes 2))))
+    (is (= 6 (count (get-in result [:ir "interpretation_facts"]))))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))

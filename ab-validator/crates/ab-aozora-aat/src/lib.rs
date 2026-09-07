@@ -2686,8 +2686,8 @@ fn pair_bare_toggles_in_blocks(nodes: Vec<Value>) -> Vec<Value> {
 /// Fold noncrossing same-line formatting pairs after block classification.
 ///
 /// Pass 1 runs one global nesting stack over each line's markers in array (==
-/// source) order: a same-construct reopen invalidates the construct but still
-/// pushes; an orphan close invalidates; a close matching the stack top pops
+/// source) order: each opener pushes, including nested scopes of the same family;
+/// an orphan close invalidates; a close matching the stack top pops
 /// and records a candidate pair; a mismatched close invalidates BOTH the
 /// closing and the top construct and pops nothing; any open frame left on the
 /// stack at end of line invalidates its construct. Pass 2 adopts a candidate
@@ -2761,13 +2761,6 @@ fn pair_line_markers(line: &[BareToggleMarker], adopted: &mut Vec<(usize, usize,
     let mut invalid = BTreeSet::new();
     for marker in line {
         if marker.is_open {
-            if stack
-                .iter()
-                .any(|(construct, _)| *construct == marker.construct)
-            {
-                // same-construct reopen
-                invalid.insert(marker.construct.clone());
-            }
             stack.push((marker.construct.clone(), marker.index));
         } else {
             match stack.last().cloned() {
@@ -5948,6 +5941,32 @@ mod tests {
     }
 
     #[test]
+    fn bare_toggle_complete_same_family_nesting_preserves_neighbor_scopes() {
+        let source = "ラテン語で［＃横組み］“ambitus”［＃横組み終わり］が［＃横組み］［＃横組み］‘ambition’［＃横組み終わり］［＃横組み終わり］を意味せず\n";
+        let doc = aat_value_for(source);
+        let mut horizontal = Vec::new();
+        collect_nodes(&doc, "yokogumi", &mut horizontal);
+        assert_eq!(horizontal.len(), 3, "all three source scopes are complete");
+        assert!(raw_sources_of(&doc).is_empty());
+        assert_eq!(horizontal[0]["content"][0]["value"], "“ambitus”");
+        assert_eq!(horizontal[1]["content"][0]["kind"], "yokogumi");
+        assert_eq!(horizontal[2]["content"][0]["value"], "‘ambition’");
+        let facts = doc["meta"]["interpretation_facts"].as_array().unwrap();
+        for (start, marker) in source.match_indices("［＃") {
+            let end = start + source[start..].find('］').unwrap() + '］'.len_utf8();
+            assert_eq!(marker, "［＃");
+            assert!(
+                facts.iter().any(|fact| {
+                    fact["kind"] == "layout"
+                        && fact["source_span"]["start"] == start
+                        && fact["source_span"]["end"] == end
+                }),
+                "every delimiter has its own established fact: {start}..{end}"
+            );
+        }
+    }
+
+    #[test]
     fn bare_toggle_same_construct_reopen_declines() {
         let doc = aat_value_for("［＃横組み］a［＃横組み］b［＃横組み終わり］\n");
         assert!(find_node(&doc, "yokogumi").is_none());
@@ -6226,12 +6245,6 @@ mod tests {
         let mut invalid_keigakomi = false;
         for &(construct, is_open) in markers {
             if is_open {
-                if stack.contains(&construct) {
-                    match construct {
-                        "yokogumi" => invalid_yokogumi = true,
-                        _ => invalid_keigakomi = true,
-                    }
-                }
                 stack.push(construct);
             } else {
                 match stack.last().copied() {

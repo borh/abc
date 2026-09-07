@@ -16,8 +16,7 @@ while this instrument derives them from source text. The Rust classifier
 must mirror the model test-for-test.
 
 Pass 1 — one GLOBAL nesting stack over the line's tokens in order:
-  * open K: if a frame of construct K is already on the stack, mark K
-    invalid for this line (same-construct reopen); push regardless.
+  * open K: push, including nested scopes of the same construct.
   * close K with empty stack: mark K invalid (orphan close).
   * close K with top-of-stack K: pop; record a candidate pair.
   * close K with top-of-stack J != K: improper interleaving; mark BOTH
@@ -108,7 +107,6 @@ def classify_tokens(tokens: list[tuple[str, str]]) -> LineOutcome:
     for construct, kind in tokens:
         if kind == "open":
             if construct in stack:
-                outcome.invalid_constructs.add(construct)
                 outcome.reopen[construct] += 1
             stack.append(construct)
         else:  # close

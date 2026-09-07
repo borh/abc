@@ -34,3 +34,13 @@ def test_every_vector_matches_model():
         assert outcome.interleave_events == vec["interleave_events"], name
         assert outcome.proper_nestings == vec["proper_nestings"], name
         assert outcome.rollback_markers == vec["rollback_markers"], name
+
+
+def test_complete_same_family_nesting_retains_neighbor_scopes():
+    outcome = mod.classify_line(
+        "［＃横組み］“ambitus”［＃横組み終わり］"
+        "［＃横組み］［＃横組み］‘ambition’［＃横組み終わり］［＃横組み終わり］"
+    )
+    assert outcome.adopted_pairs["yokogumi"] == 3
+    assert not outcome.invalid_constructs
+    assert outcome.reopen["yokogumi"] == 1

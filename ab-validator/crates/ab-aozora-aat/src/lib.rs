@@ -304,6 +304,7 @@ impl ProjectedKind {
 struct AozoraNode {
     kind: ProjectedKind,
     span: Span,
+    marker_span: Option<Span>,
 }
 
 type AozoraGaiji = encoding::gaiji::GaijiResolution;
@@ -317,6 +318,16 @@ struct AozoraRubyEntry {
 }
 
 fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
+    let pairs: BTreeMap<usize, _> = tree
+        .pairs
+        .iter()
+        .map(|pair| {
+            (
+                usize::try_from(pair.close.end).expect("source offset fits usize"),
+                pair,
+            )
+        })
+        .collect();
     tree.source_nodes
         .iter()
         .map(|source_node| {
@@ -346,7 +357,42 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
             } else {
                 kind
             };
-            AozoraNode { kind, span }
+            // Classifier consume ranges end at their owned delimiter, even when
+            // retrospective formatting also reclaims preceding target text.
+            let marker_kind = match source_node.node {
+                NodeRef::Inline(Node::Format(format))
+                | NodeRef::BlockLeaf(Node::Format(format))
+                    if format.origin != ab_aozora_facade::ForwardOrigin::Detached =>
+                {
+                    Some(ab_aozora_facade::PairKind::Bracket)
+                }
+                NodeRef::Inline(Node::Ruby(_)) | NodeRef::BlockLeaf(Node::Ruby(_)) => {
+                    Some(ab_aozora_facade::PairKind::Ruby)
+                }
+                _ => None,
+            };
+            let mut marker_span = pairs
+                .get(&span.end)
+                .filter(|pair| {
+                    Some(pair.kind) == marker_kind
+                        && usize::try_from(pair.open.start).expect("source offset fits usize")
+                            >= span.start
+                })
+                .map(|pair| Span {
+                    start: usize::try_from(pair.open.start).expect("source offset fits usize"),
+                    end: usize::try_from(pair.close.end).expect("source offset fits usize"),
+                });
+            if marker_kind == Some(ab_aozora_facade::PairKind::Ruby)
+                && tree.sanitized[span.start..span.end].starts_with('｜')
+                && marker_span.is_some()
+            {
+                marker_span = Some(span);
+            }
+            AozoraNode {
+                kind,
+                span,
+                marker_span,
+            }
         })
         .collect()
 }
@@ -526,6 +572,7 @@ fn projections(
         let end = node.span.end - '≫'.len_utf8();
         nodes.push(AozoraNode {
             kind: ProjectedKind::QuoteOpen,
+            marker_span: None,
             span: Span {
                 start: node.span.start,
                 end: start,
@@ -533,6 +580,7 @@ fn projections(
         });
         nodes.push(AozoraNode {
             kind: ProjectedKind::QuoteClose,
+            marker_span: None,
             span: Span {
                 start: end,
                 end: node.span.end,
@@ -546,6 +594,10 @@ fn projections(
         for mut inner in inner_nodes {
             inner.span.start += start;
             inner.span.end += start;
+            if let Some(marker) = &mut inner.marker_span {
+                marker.start += start;
+                marker.end += start;
+            }
             pending.push(inner);
         }
         let inner_ruby = ruby_projection(&inner_tree)?;
@@ -727,14 +779,23 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
             Some("warichu") => Some(EstablishedInterpretation::Warichu),
             _ => None,
         };
-        if let Some(interpretation) = interpretation
-            && let Some(span) = node.get("span")
-            && let (Some(start), Some(end)) =
-                (span["byte_start"].as_u64(), span["byte_end"].as_u64())
-            && start < end
-        {
-            facts.push(json!({"kind":interpretation.kind(), "outcome":"established", "aspects":interpretation.aspects(),
-                    "source_span":{"start":start,"end":end,"line":span["line_start"],"coordinate_system":"decoded_utf8"}}));
+        if let Some(interpretation) = interpretation {
+            let spans = if node["kind"] == "gaiji" {
+                node.get("span").into_iter().collect::<Vec<_>>()
+            } else {
+                node["interpretation_marker_spans"]
+                    .as_array()
+                    .map_or_else(Vec::new, |spans| spans.iter().collect())
+            };
+            for span in spans {
+                if let (Some(start), Some(end)) =
+                    (span["byte_start"].as_u64(), span["byte_end"].as_u64())
+                    && start < end
+                {
+                    facts.push(json!({"kind":interpretation.kind(), "outcome":"established", "aspects":interpretation.aspects(),
+                        "source_span":{"start":start,"end":end,"line":span["line_start"],"coordinate_system":"decoded_utf8"}}));
+                }
+            }
         }
         for key in [
             "children",
@@ -1582,7 +1643,15 @@ fn inline_content(
                 "span": span_json(&node.span, &decoded.span_ctx)
             })),
             ProjectedKind::Node(NodeKind::Ruby) => {
-                content.push(ruby_node(decoded, node, ruby_by_span, gaiji_by_start));
+                let mut ruby = ruby_node(decoded, node, ruby_by_span, gaiji_by_start);
+                ruby["interpretation_marker_spans"] = json!(
+                    node.marker_span
+                        .as_ref()
+                        .map(|span| span_json(span, &decoded.span_ctx))
+                        .into_iter()
+                        .collect::<Vec<_>>()
+                );
+                content.push(ruby);
             }
             ProjectedKind::Node(NodeKind::Gaiji) => {
                 content.push(gaiji_node(decoded, node, gaiji_by_start));
@@ -1677,7 +1746,7 @@ fn pair_warichu(content: Vec<Value>) -> Vec<Value> {
             let mut span = open["span"].clone();
             span["byte_end"] = node["span"]["byte_end"].clone();
             span["line_end"] = node["span"]["line_end"].clone();
-            json!({"kind":"warichu", "content":children, "span":span})
+            json!({"kind":"warichu", "content":children, "span":span, "interpretation_marker_spans":[open["span"], node["span"]]})
         } else {
             node
         };
@@ -1926,6 +1995,7 @@ fn bare_toggle_container(
             "byte_end": close["span"]["byte_end"]
         }
     });
+    value["interpretation_marker_spans"] = json!([open["span"], close["span"]]);
     if let Some(fields) = open["x-formatting"].as_object() {
         value
             .as_object_mut()
@@ -2180,6 +2250,13 @@ fn push_style_node(
         style["span"]["line_start"] = children[0]["span"]["line_start"].clone();
         style["content"] = json!(children);
     }
+    style["interpretation_marker_spans"] = json!(
+        node.marker_span
+            .as_ref()
+            .map(|span| span_json(span, &decoded.span_ctx))
+            .into_iter()
+            .collect::<Vec<_>>()
+    );
     content.push(style);
     if let ProjectedKind::Format(attr) = node.kind
         && !matches!(

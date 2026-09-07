@@ -293,6 +293,7 @@
       "additionalProperties": false,
       "patternProperties": { "^x-": true },
       "properties": {
+        "interpretation_marker_spans": { "type": "array", "items": { "$ref": "#/$defs/span" } },
         "kind": { "const": "ruby" },
         "base": { "type": "string" },
         "reading": { "type": "string" },
@@ -396,6 +397,7 @@
       "additionalProperties": false,
       "patternProperties": { "^x-": true },
       "properties": {
+        "interpretation_marker_spans": { "type": "array", "items": { "$ref": "#/$defs/span" } },
         "kind": { "enum": ["style", "font_size", "small_script", "tcy", "keigakomi", "yokogumi", "caption"] },
         "decoration": {"type":"object", "additionalProperties":false, "required":["kind","position"], "properties":{"kind":{"type":"string"}, "position":{"enum":["right","left","both","unknown"]}}},
         "style_type": { "type": "string" },
@@ -445,7 +447,7 @@
     "warichu": {
       "type": "object", "additionalProperties": false,
       "required": ["kind", "content", "span"],
-      "properties": {"kind": {"const": "warichu"}, "span": {"$ref": "#/$defs/span"},
+      "properties": {"interpretation_marker_spans": {"type":"array", "items":{"$ref":"#/$defs/span"}}, "kind": {"const": "warichu"}, "span": {"$ref": "#/$defs/span"},
         "content": {"type": "array", "items": {"$ref": "#/$defs/inline"}}}
     },
     "warigaki": {

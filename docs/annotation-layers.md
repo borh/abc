@@ -96,6 +96,11 @@ A supplied reading that differs from the base text is represented as `app` with
 does not assert that the base text is erroneous. Body and Markdown views select the
 supplied reading; Markdown reports the alternative as intentionally omitted.
 
+Positive interpretation facts identify the exact source marker the interpreter
+resolved. They do not cover every nested marker in a rendered node's provenance
+range. Paired scopes claim their opener and closer separately when both are known;
+independent lexical occurrences join those facts by exact decoded byte range.
+
 Canonical `interpretation-problem` notes retain the source interpreter's structured
 facts. Content uncertainty excludes the whole body from eligible analysis until
 an influence range in the analysis view is established; a marker's source range

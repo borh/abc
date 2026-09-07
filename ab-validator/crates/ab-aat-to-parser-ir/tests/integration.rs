@@ -2518,10 +2518,13 @@ fn established_source_facts_survive_without_claiming_raw_markers() {
     .unwrap();
     assert_eq!(output.parser_ir["interpretation_facts"], expected);
     let facts = expected.as_array().unwrap();
-    for kind in ["ruby", "gaiji", "emphasis", "warichu"] {
-        assert_eq!(facts.iter().filter(|fact| fact["kind"] == kind).count(), 1);
+    for (kind, count) in [("ruby", 1), ("gaiji", 1), ("emphasis", 1), ("warichu", 2)] {
+        assert_eq!(
+            facts.iter().filter(|fact| fact["kind"] == kind).count(),
+            count
+        );
     }
-    assert_eq!(facts.len(), 4);
+    assert_eq!(facts.len(), 5);
     for fact in facts {
         assert_eq!(fact["outcome"], "established");
         assert_eq!(fact["source_span"]["coordinate_system"], "decoded_utf8");

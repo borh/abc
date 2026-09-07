@@ -309,6 +309,7 @@ struct AozoraNode {
     kind: ProjectedKind,
     span: Span,
     marker_span: Option<Span>,
+    container_close: Option<Span>,
 }
 
 type AozoraGaiji = encoding::gaiji::GaijiResolution;
@@ -322,6 +323,11 @@ struct AozoraRubyEntry {
 }
 
 fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
+    let container_closes: BTreeMap<_, _> = tree
+        .container_pairs
+        .iter()
+        .map(|pair| (pair.source_open.start, pair.source_close))
+        .collect();
     let pairs: BTreeMap<usize, _> = tree
         .pairs
         .iter()
@@ -409,6 +415,10 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                 kind,
                 span,
                 marker_span,
+                container_close: container_closes
+                    .get(&source_node.source_span.start)
+                    .copied()
+                    .map(Into::into),
             }
         })
         .chain(tree.classified_source_facts.iter().filter_map(|fact| {
@@ -419,6 +429,7 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                 kind: ProjectedKind::RecoveredSource,
                 span,
                 marker_span: None,
+                container_close: None,
             })
         }))
         .collect()
@@ -607,6 +618,7 @@ fn projections(
         nodes.push(AozoraNode {
             kind: ProjectedKind::QuoteOpen,
             marker_span: None,
+            container_close: None,
             span: Span {
                 start: node.span.start,
                 end: start,
@@ -615,6 +627,7 @@ fn projections(
         nodes.push(AozoraNode {
             kind: ProjectedKind::QuoteClose,
             marker_span: None,
+            container_close: None,
             span: Span {
                 start: end,
                 end: node.span.end,
@@ -631,6 +644,10 @@ fn projections(
             if let Some(marker) = &mut inner.marker_span {
                 marker.start += start;
                 marker.end += start;
+            }
+            if let Some(close) = &mut inner.container_close {
+                close.start += start;
+                close.end += start;
             }
             pending.push(inner);
         }
@@ -1100,6 +1117,7 @@ fn source_note_block(content: Vec<Value>, region_class: &str) -> Value {
     reason = "classifier precedence determines which block consumes each source marker"
 )]
 fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
+    let native_scopes = native_scope_pairs(&content);
     let mut blocks = Vec::new();
     let mut paragraph = Vec::new();
     let mut strip_next_leading_newline = false;
@@ -1195,8 +1213,7 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
                 continue;
             }
         } else if block_container_open(&node, "［＃ここから罫囲み］") {
-            if let Some(close_index) = find_matching_container_close(&content, index + 1, "罫囲み")
-            {
+            if let Some(close_index) = native_scopes.get(&index).copied() {
                 push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
                 let mut inner = content[index + 1..close_index].to_vec();
                 strip_boundary_newlines(&mut inner);
@@ -1209,7 +1226,7 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
                 continue;
             }
         } else if block_container_open(&node, "［＃ここから横組み］")
-            && let Some(close_index) = find_matching_container_close(&content, index + 1, "横組み")
+            && let Some(close_index) = native_scopes.get(&index).copied()
         {
             push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
             let mut inner = content[index + 1..close_index].to_vec();
@@ -1245,6 +1262,32 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
         blocks.push(json!({"kind": "paragraph", "content": []}));
     }
     blocks
+}
+
+/// Resolve native-established scope extents against this source-node sequence.
+/// Indexing exact spans once avoids rescanning siblings for each opening marker.
+fn native_scope_pairs(content: &[Value]) -> BTreeMap<usize, usize> {
+    if !content
+        .iter()
+        .any(|node| node.get("x-native-close-span").is_some())
+    {
+        return BTreeMap::new();
+    }
+    let span_key = |span: &Value| Some((span["byte_start"].as_u64()?, span["byte_end"].as_u64()?));
+    let positions: BTreeMap<_, _> = content
+        .iter()
+        .enumerate()
+        .filter(|(_, node)| node["x-source-marker-kind"] == "containerClose")
+        .filter_map(|(index, node)| span_key(&node["span"]).map(|key| (key, index)))
+        .collect();
+    content
+        .iter()
+        .enumerate()
+        .filter_map(|(open, node)| {
+            let close = positions.get(&span_key(&node["x-native-close-span"])?)?;
+            (*close > open).then_some((open, *close))
+        })
+        .collect()
 }
 
 /// True when this inline node carries the end of a source line: a gap-derived
@@ -2558,6 +2601,9 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
     }
     match node.kind {
         ProjectedKind::Region(region) => {
+            if let Some(close) = &node.container_close {
+                value["x-native-close-span"] = span_json(close, &decoded.span_ctx);
+            }
             // AAT's paired inline scopes must not terminate enclosing blocks,
             // even when the native renderer uses block presentation for them.
             let formatting = region_formatting(region);
@@ -3435,16 +3481,15 @@ mod tests {
     }
 
     #[test]
-    fn intervening_container_open_aborts_keigakomi_pairing() {
+    fn native_nested_container_pair_preserves_framed_indentation() {
         let src = "［＃ここから罫囲み］\n［＃ここから２字下げ］\nａ\n［＃ここで字下げ終わり］\n［＃ここで罫囲み終わり］\n";
         let doc: Value =
             serde_json::from_slice(&aat_json_from_bytes(src.as_bytes()).unwrap()).unwrap();
         let kinds = block_kinds(&doc);
-        assert!(
-            !kinds.contains(&"keigakomi_block".to_owned()),
-            "pairing must abort: {kinds:?}"
-        );
-        assert!(kinds.contains(&"jisage_block".to_owned()));
+        assert_eq!(kinds, ["keigakomi_block"]);
+        let frame = find_node(&doc, "keigakomi_block").unwrap();
+        let indent = find_node(frame, "jisage_block").unwrap();
+        assert!(serde_json::to_string(indent).unwrap().contains('ａ'));
     }
 
     #[test]

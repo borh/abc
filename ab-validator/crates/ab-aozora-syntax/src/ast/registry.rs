@@ -134,7 +134,7 @@ impl Default for Registry {
     }
 }
 
-/// Resolved container open/close pair in normalized coordinates.
+/// Resolved container pair with normalized positions and original marker spans.
 ///
 /// Lifetime-free `Copy` side-table entry: the pipeline emits one per balanced
 /// `［＃ここから…］` / `［＃ここで…終わり］` pair. Editor surfaces (LSP
@@ -151,15 +151,10 @@ pub struct ContainerPair {
     pub open: NormalizedOffset,
     /// Normalized byte offset of the close sentinel (`U+E004`).
     pub close: NormalizedOffset,
-}
-
-impl ContainerPair {
-    /// Construct a pair. Helper for builder tests; in production the pipeline
-    /// emits these directly.
-    #[must_use]
-    pub const fn new(kind: RegionFormat, open: NormalizedOffset, close: NormalizedOffset) -> Self {
-        Self { kind, open, close }
-    }
+    /// Original opening marker in sanitized-source byte coordinates.
+    pub source_open: crate::Span,
+    /// Original closing marker in sanitized-source byte coordinates.
+    pub source_close: crate::Span,
 }
 
 #[cfg(test)]

@@ -458,12 +458,14 @@ impl<'src> Normalizer<'src> {
                 }
                 self.recorder
                     .record_block_close(pos, span.source_span, *close);
-                if let Some((open_pos, open_kind, _)) = self.open_stack.pop() {
+                if let Some((open_pos, open_kind, source_open)) = self.open_stack.pop() {
                     if self.container_matches(open_kind, *close, span.source_span) {
                         self.container_pairs.push(ContainerPair {
                             kind: open_kind,
                             open: open_pos,
                             close: NormalizedOffset::new(pos),
+                            source_open,
+                            source_close: span.source_span,
                         });
                     }
                 } else {
@@ -487,6 +489,22 @@ impl<'src> Normalizer<'src> {
     /// Establish matching families or report the recovered mismatch.
     fn container_matches(&mut self, open: RegionFormat, close: RegionClose, span: Span) -> bool {
         let expected = RegionClose::of(open);
+        let attributes_match = match (expected, close) {
+            (
+                RegionClose::Heading {
+                    level: expected_level,
+                    style: expected_style,
+                    ..
+                },
+                RegionClose::Heading { level, style, .. },
+            ) => level.is_none() || (level == expected_level && style == expected_style),
+            (RegionClose::Indent { .. }, RegionClose::Indent { kumi_width: None })
+            | (RegionClose::Bold { .. }, RegionClose::Bold { .. })
+            | (RegionClose::Gothic { .. }, RegionClose::Gothic { .. })
+            | (RegionClose::Italic { .. }, RegionClose::Italic { .. })
+            | (RegionClose::Caption { .. }, RegionClose::Caption { .. }) => true,
+            _ => expected == close,
+        };
         if discriminant(&expected) != discriminant(&close) {
             self.diagnostics
                 .push(Diagnostic::mismatched_container_close(
@@ -510,6 +528,14 @@ impl<'src> Normalizer<'src> {
                     span,
                     open_kind.family_str(),
                     close_kind.family_str(),
+                ));
+            false
+        } else if !attributes_match {
+            self.diagnostics
+                .push(Diagnostic::mismatched_container_close(
+                    span,
+                    open.kind_str(),
+                    close.kind_str(),
                 ));
             false
         } else {

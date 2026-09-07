@@ -623,7 +623,7 @@ fn scan_next_marker(txt: &str, offset: usize, line: usize) -> Option<RawMarker<'
     }
     if rest.starts_with("［＃") {
         let content_start = offset + "［＃".len();
-        if let Some(content_end) = command_end_on_same_line(txt, content_start, '］') {
+        if let Some(content_end) = command_end(txt, content_start, '］') {
             let marker_end = content_end + '］'.len_utf8();
             return Some(raw_marker(
                 txt,
@@ -651,7 +651,7 @@ fn scan_next_marker(txt: &str, offset: usize, line: usize) -> Option<RawMarker<'
     }
     if rest.starts_with("[#") {
         let content_start = offset + "[#".len();
-        if let Some(content_end) = command_end_on_same_line(txt, content_start, ']') {
+        if let Some(content_end) = command_end(txt, content_start, ']') {
             let marker_end = content_end + 1;
             return Some(raw_marker(
                 txt,
@@ -1141,10 +1141,36 @@ fn count_newlines(value: &str) -> usize {
     value.bytes().filter(|byte| *byte == b'\n').count()
 }
 
-fn command_end_on_same_line(text: &str, content_start: usize, end_marker: char) -> Option<usize> {
+fn quoted_text_end_on_same_line(text: &str, start: usize) -> Option<usize> {
+    let mut depth = 0_u32;
+    for (offset, ch) in text[start..].char_indices() {
+        match ch {
+            '「' => depth += 1,
+            '」' => {
+                depth -= 1;
+                if depth == 0 {
+                    return Some(start + offset + ch.len_utf8());
+                }
+            }
+            '\r' | '\n' => return None,
+            _ => {}
+        }
+    }
+    None
+}
+
+fn command_end(text: &str, content_start: usize, end_marker: char) -> Option<usize> {
+    let multiline = text[content_start..].starts_with("入力者註：")
+        || text[content_start..].starts_with("入力者注：");
     let mut offset = content_start;
     while offset < text.len() {
         let rest = &text[offset..];
+        if rest.starts_with('「')
+            && let Some(end) = quoted_text_end_on_same_line(text, offset)
+        {
+            offset = end;
+            continue;
+        }
         if rest.starts_with("※［＃") {
             let nested_start = offset + "※［＃".len();
             if let Some(end) = marker_end_on_same_line(text, nested_start, '］') {
@@ -1161,14 +1187,14 @@ fn command_end_on_same_line(text: &str, content_start: usize, end_marker: char) 
         }
         if rest.starts_with("［＃") {
             let nested_start = offset + "［＃".len();
-            if let Some(end) = command_end_on_same_line(text, nested_start, '］') {
+            if let Some(end) = command_end(text, nested_start, '］') {
                 offset = end + '］'.len_utf8();
                 continue;
             }
         }
         if rest.starts_with("[#") {
             let nested_start = offset + "[#".len();
-            if let Some(end) = command_end_on_same_line(text, nested_start, ']') {
+            if let Some(end) = command_end(text, nested_start, ']') {
                 offset = end + 1;
                 continue;
             }
@@ -1193,7 +1219,19 @@ fn command_end_on_same_line(text: &str, content_start: usize, end_marker: char) 
             return Some(offset);
         }
         if matches!(ch, '\r' | '\n') {
-            return None;
+            if !multiline {
+                return None;
+            }
+            let next = rest.strip_prefix("\r\n").unwrap_or(&rest[ch.len_utf8()..]);
+            let next_line = next.split(['\r', '\n']).next()?.trim();
+            if next_line.is_empty()
+                || starts_source_tail(next_line)
+                || next_line.starts_with("［＃")
+            {
+                return None;
+            }
+            offset = text.len() - next.len();
+            continue;
         }
         offset += ch.len_utf8();
     }
@@ -1772,6 +1810,40 @@ mod tests {
             markers[0].body,
             "「［Ａ］のようにも」は底本では「［Ａ］ようにも」"
         );
+    }
+
+    #[test]
+    fn command_quotes_can_supply_unmatched_literal_brackets() {
+        let text = "［＃「［「風邪そのもの」」は底本では「（「風邪そのもの」」］";
+        let markers = source_markers(text);
+        assert_eq!(markers.len(), 1);
+        assert_eq!(markers[0].kind, SourceMarkerKind::CommandFullwidth);
+        assert_eq!(markers[0].raw, text);
+        let nested = "［＃「※［＃濁点付き片仮名ヱ、1-7-84］」に「］」の注記］";
+        assert_eq!(source_markers(nested)[0].raw, nested);
+    }
+
+    #[test]
+    fn multiline_inputter_note_requires_a_contiguous_supplied_close() {
+        let note = "［＃入力者註：以下を修正した。\r\n　全集版：「底本」→「修正」\r\n　5-13「識らず墜《お》ち込んで」→「識らず堕《お》ち込んで」］";
+        let text = format!("{note}\r\n\r\n底本：文庫\r\n");
+        let markers = source_markers(&text);
+        assert_eq!(markers[0].kind, SourceMarkerKind::CommandFullwidth);
+        assert_eq!(markers[0].raw, note);
+        for text in [
+            "［＃入力者註：未完了\n\n本文］",
+            "［＃入力者註：未完了\n底本：文庫］",
+            "［＃入力者註：未完了\n［＃改頁］本文",
+            "［＃ここから割り注\n本文］",
+            "［＃改丁」",
+            "ろっかん［＃「ろっかん」に傍点」山",
+        ] {
+            assert_eq!(
+                source_markers(text)[0].kind,
+                SourceMarkerKind::MalformedCommand,
+                "{text}"
+            );
+        }
     }
 
     #[test]

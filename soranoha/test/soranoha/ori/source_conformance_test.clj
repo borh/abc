@@ -1316,3 +1316,17 @@
     (is (= ["こり〱"] (texts result "rdg")))
     (is (empty? (get-in result [:ir "interpretation_problems"])))
     (is (every? #(not (string/blank? (attribute % "source"))) (elements result "app")))))
+
+(deftest glyph-shape-statements-preserve-source-scalars-without-realizing-the-shape
+  (let [result (transcribe (source "Yule（ユール［＃「ル」は上に「⌒」付き］）♂［＃「♂」は矢印が下向き］例"))
+        notes (filterv #(= "glyph-shape" (attribute % "type")) (elements result "note"))]
+    (is (= "Yule（ユール）♂例" (:plaintext result)))
+    (is (= (:plaintext result) (projection/markdown (:view result))))
+    (is (= ["上に「⌒」付き" "矢印が下向き"] (mapv #(.getTextContent ^Node %) notes)))
+    (is (every? #(string/blank? (attribute % "place")) notes))
+    (is (empty? (elements result "g")))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))
+    (doseq [profile [:projection/plaintext :projection/markdown]]
+      (let [report (projection/report profile (:view result))]
+        (is (= "limited" (get report "status")))
+        (is (some #{{"family" "glyph-shape" "disposition" "unsupported" "count" 2}} (get report "counts")))))))

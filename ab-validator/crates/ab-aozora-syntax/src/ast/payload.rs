@@ -242,10 +242,10 @@ pub struct TranscribedNotes {
     pub apparatus_lines: Vec<crate::Span>,
 }
 
-/// Margin note (注記 / 傍記).
+/// Source-owned note, role label, or glyph-shape assertion on principal content.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MarginNote {
-    /// 注記 vs 傍記.
+    /// Source statement kind, independent of its supplied side.
     pub kind: MarginNoteKind,
     /// Physical side explicitly supplied by the source; bare に supplies none.
     pub position: Option<MarginNotePosition>,
@@ -257,7 +257,7 @@ pub struct MarginNote {
     pub origin: ForwardOrigin,
     /// Preceding run the note attaches to.
     pub base: ContentRange,
-    /// Gloss / redaction text.
+    /// Supplied annotation statement or note text.
     pub note: ContentRange,
 }
 
@@ -427,7 +427,7 @@ pub enum Node {
     Directive(Directive),
     /// Angle quote (`≪…≫` -> `《…》`).
     AngleQuote(AngleQuote),
-    /// Margin note (注記 / 傍記).
+    /// Source-owned note, role label, or glyph-shape assertion on principal content.
     MarginNote(MarginNote),
     /// Associations to note text already present on separate source lines.
     TranscribedNotes(TranscribedNotesId),

@@ -142,6 +142,9 @@
 (defn- node-outcomes [profile ^Element node]
   (let [tag (view/local-name node)]
     (cond-> [[(or tag (.getNodeName node)) (disposition profile node)]]
+      (and (= "note" tag) (= "glyph-shape" (.getAttribute node "type")))
+      (conj ["glyph-shape" :projection/unsupported])
+
       (and (= "ruby" tag) (= :projection/plaintext profile))
       (into (map (fn [_] ["ruby-reading" :projection/omitted])
                  (filter #(= "rt" (view/local-name %)) (view/children node))))

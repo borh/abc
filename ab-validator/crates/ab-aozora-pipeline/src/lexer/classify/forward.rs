@@ -1534,6 +1534,13 @@ fn parenthesized_note_role_target<'s>(
     })
 }
 
+fn glyph_shape_statement<'a>(target: &str, suffix: &'a str) -> Option<&'a str> {
+    let statement = suffix.strip_prefix('は')?;
+    ((target.chars().count() == 1 && statement == "上に「⌒」付き")
+        || (target == "♂" && statement == "矢印が下向き"))
+        .then_some(statement)
+}
+
 /// Classify target-associated notes and source roles while preserving supplied
 /// placement. Bare `に` does not establish a side. Native referent extents let
 /// downstream projections attach interior notes without repeating the target.
@@ -1554,6 +1561,8 @@ impl RecogniseCtx<'_, '_> {
                 (kind, None, word)
             } else if let Some(statement) = edition_verified_gloss(extracted.suffix) {
                 (MarginNoteKind::Gloss, None, statement)
+            } else if let Some(statement) = glyph_shape_statement(target, extracted.suffix) {
+                (MarginNoteKind::GlyphShape, None, statement)
             } else if let Some(location) = page_reference_location(target, extracted.suffix) {
                 (MarginNoteKind::CrossReference, None, location)
             } else {
@@ -1610,7 +1619,9 @@ impl RecogniseCtx<'_, '_> {
         };
         if matches!(
             kind,
-            MarginNoteKind::AnnotationNumber | MarginNoteKind::AuthorNote
+            MarginNoteKind::AnnotationNumber
+                | MarginNoteKind::AuthorNote
+                | MarginNoteKind::GlyphShape
         ) && origin != ForwardOrigin::Reclaimed
         {
             return None;

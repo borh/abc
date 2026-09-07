@@ -148,9 +148,22 @@ fn render_ruby<W: Write>(r: &Ruby, store: &NodeStore, out: &mut W) -> fmt::Resul
     out.write_str("</rt><rp>)</rp></ruby>")
 }
 
-/// Render role labels as operand metadata and glosses as ruby annotations.
+/// Render source-role and glyph-shape statements as operand metadata, and glosses as ruby annotations.
 /// Referenced targets are already present in the body and are not repeated.
 fn render_side_note<W: Write>(s: &MarginNote, store: &NodeStore, out: &mut W) -> fmt::Result {
+    if s.kind == ab_aozora_syntax::MarginNoteKind::GlyphShape {
+        out.write_str("<span class=\"aozora-glyph-shape\" data-shape-assertion=\"")?;
+        let mut statement = String::new();
+        for content in store.resolve_content_range(s.note) {
+            emit_content_as_plain_one(*content, store, &mut statement)?;
+        }
+        escape_text(&statement, out)?;
+        out.write_str("\">")?;
+        if s.origin != ForwardOrigin::Referenced {
+            render_content_range(s.base, store, out)?;
+        }
+        return out.write_str("</span>");
+    }
     if let Some(role) = match s.kind {
         ab_aozora_syntax::MarginNoteKind::AnnotationNumber => Some("annotation-number"),
         ab_aozora_syntax::MarginNoteKind::AuthorNote => Some("author-note"),

@@ -1445,6 +1445,7 @@ enum EstablishedInterpretation {
     Layout,
     EditorialNote,
     ExternalTableReference,
+    GlyphShapeAssertion,
     LineLayout,
     Formula,
     Table,
@@ -1526,6 +1527,9 @@ impl EstablishedInterpretation {
             {
                 Some(Self::EditorialNote)
             }
+            Some("annotated_text") if node["note_kind"] == "glyph-shape" => {
+                Some(Self::GlyphShapeAssertion)
+            }
             Some("annotated_text") => Some(Self::AnnotatedText),
             Some("figure") if node.get("interpretation_problem").is_none() => {
                 Some(Self::Illustration)
@@ -1569,6 +1573,7 @@ impl EstablishedInterpretation {
             Self::Layout => "layout",
             Self::EditorialNote => "editorial-note",
             Self::ExternalTableReference => "external-table-reference",
+            Self::GlyphShapeAssertion => "glyph-shape-assertion",
             Self::LineLayout => "line-layout",
             Self::Formula => "formula",
             Self::Table => "table",
@@ -1579,9 +1584,11 @@ impl EstablishedInterpretation {
     fn aspects(self, node: &Value) -> &'static [&'static str] {
         match self {
             Self::AnnotatedText if node["position"].as_str().is_none() => &["content", "structure"],
-            Self::Exponent | Self::Translation | Self::ExternalTableReference | Self::Formula => {
-                &["structure"]
-            }
+            Self::Exponent
+            | Self::Translation
+            | Self::ExternalTableReference
+            | Self::Formula
+            | Self::GlyphShapeAssertion => &["structure"],
             Self::Ruby | Self::GaijiRuby | Self::TextVariant | Self::EditorialNote => {
                 &["content", "structure"]
             }
@@ -3772,10 +3779,19 @@ fn push_annotated_text(content: &mut Vec<Value>, decoded: &DecodedSource, node: 
         content.push(raw_node(decoded, node, "unresolved-annotation"));
         return;
     };
-    let annotation = note_span.and_then(|span| source_fragment(decoded, span.start..span.end));
+    let annotation = note_span.and_then(|span| {
+        if *kind == MarginNoteKind::GlyphShape {
+            Some(vec![
+                json!({"kind":"text", "value":source_slice(&decoded.span_text, &span),
+                "span":span_json(&span, &decoded.span_ctx)}),
+            ])
+        } else {
+            source_fragment(decoded, span.start..span.end)
+        }
+    });
     let wrapper = |children: &[Value], annotation: &[Value]| {
         let mut value = json!({"kind":"annotated_text", "content":children, "annotation_content":annotation,
-            "note_kind":match kind {MarginNoteKind::Gloss=>"gloss", MarginNoteKind::Marginal=>"marginal", MarginNoteKind::CrossReference=>"cross-reference", MarginNoteKind::AnnotationNumber=>"annotation-number", MarginNoteKind::AuthorNote=>"author-note", _=>unreachable!("known note kind")},
+            "note_kind":match kind {MarginNoteKind::Gloss=>"gloss", MarginNoteKind::Marginal=>"marginal", MarginNoteKind::CrossReference=>"cross-reference", MarginNoteKind::AnnotationNumber=>"annotation-number", MarginNoteKind::AuthorNote=>"author-note", MarginNoteKind::GlyphShape=>"glyph-shape", _=>unreachable!("known note kind")},
             "span":span_json(&marker, &decoded.span_ctx)});
         if let Some(position) = position {
             value["position"] = json!(match position {

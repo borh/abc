@@ -642,6 +642,7 @@ fn emit_side_note<W: Write>(s: &MarginNote, store: &NodeStore, out: &mut W) -> f
         ab_aozora_syntax::MarginNoteKind::CrossReference
             | ab_aozora_syntax::MarginNoteKind::AnnotationNumber
             | ab_aozora_syntax::MarginNoteKind::AuthorNote
+            | ab_aozora_syntax::MarginNoteKind::GlyphShape
     ) {
         out.write_str("」は")?;
         emit_content_range(s.note, store, out)?;

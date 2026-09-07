@@ -147,14 +147,14 @@
           {"tei" (utf8 (:tei rendered))}))})
 
 (defn plaintext-stage [clj-toolchain-id]
-  {:stage-id "plaintext" :stage-version "5" :toolchain-id clj-toolchain-id
+  {:stage-id "plaintext" :stage-version "6" :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob]} inputs]
         (let [reading (view/from-tei (String. ^bytes (blob (get inputs "tei")) "UTF-8"))]
           {"plaintext" (utf8 (projection/plaintext reading))
            "plaintext-projection" (json-bytes (projection/report :projection/plaintext reading))}))})
 
 (defn markdown-stage [clj-toolchain-id]
-  {:stage-id "markdown" :stage-version "6" :toolchain-id clj-toolchain-id
+  {:stage-id "markdown" :stage-version "7" :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob]} inputs]
         (let [reading (view/from-tei (String. ^bytes (blob (get inputs "tei")) "UTF-8"))]
           {"markdown" (utf8 (projection/markdown reading))

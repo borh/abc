@@ -1534,16 +1534,15 @@ fn parenthesized_note_role_target<'s>(
     })
 }
 
-<<<<<<< HEAD
 fn parenthesized_note_payload(suffix: &str) -> Option<&str> {
     let note = suffix.strip_prefix('に')?.strip_suffix("の注記")?;
     let inside = note.strip_prefix('（')?.strip_suffix('）')?;
     (!inside.is_empty() && !inside.contains(['（', '）', '\n', '\r'])).then_some(note)
-=======
+}
+
 fn supplied_right_mark(suffix: &str) -> Option<&str> {
     let mark = suffix.strip_prefix("の右に「")?.strip_suffix('」')?;
     (mark == "）").then_some(mark)
->>>>>>> 3c53f74e (feat(parser): preserve source-positioned supplied marks)
 }
 
 fn glyph_shape_statement<'a>(target: &str, suffix: &'a str) -> Option<&'a str> {

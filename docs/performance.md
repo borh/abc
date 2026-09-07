@@ -24,9 +24,10 @@ then built again unchanged. The command fails if that repeat executes any stage,
 changes an artifact, or if the existing delta oracle finds unexplained execution
 between revisions. Detailed build reports remain under `build/runs/`.
 
-These are **build timings**, using all ordinary build stages, including source
-fidelity evidence. They exclude JVM startup, live assessment, publication
-transactions and serving export. An empty computation cache does not imply empty
+These are **build timings**, using all ordinary build stages, including independent
+source accountability and interpretation-coverage reports. They exclude JVM
+startup, live assessment, publication transactions and serving export. An empty
+computation cache does not imply empty
 OS page caches or an absent Nix closure. Record those conditions and the machine
 alongside results; do not call this an end-to-end publication benchmark.
 

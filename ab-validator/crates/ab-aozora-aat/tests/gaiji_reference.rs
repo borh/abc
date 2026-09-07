@@ -29,8 +29,8 @@ fn explicit_gaiji_identifiers_establish_content_without_rewriting_references() {
         assert_eq!(gaiji["kind"], "gaiji");
         assert_eq!(gaiji["resolved"], expected);
         assert_eq!(gaiji["jis_code"], reference);
-        let start = gaiji["span"]["byte_start"].as_u64().unwrap() as usize;
-        let end = gaiji["span"]["byte_end"].as_u64().unwrap() as usize;
+        let start = usize::try_from(gaiji["span"]["byte_start"].as_u64().unwrap()).unwrap();
+        let end = usize::try_from(gaiji["span"]["byte_end"].as_u64().unwrap()).unwrap();
         assert_eq!(&source[start..end], marker);
         let fact = &document["meta"]["interpretation_facts"][0];
         assert_eq!(fact["kind"], "gaiji");

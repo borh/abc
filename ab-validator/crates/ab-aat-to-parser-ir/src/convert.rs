@@ -927,18 +927,18 @@ fn ruby_reading_children(
     depth: usize,
 ) -> Result<Vec<Value>> {
     let mut children = inline_children_nodes(content, recorder, warnings, 0, path, depth)?;
-    reading_coordinates(&mut children);
+    content_coordinates(&mut children, "reading_utf8");
     Ok(children)
 }
 
-fn reading_coordinates(nodes: &mut [Value]) {
+fn content_coordinates(nodes: &mut [Value], axis: &str) {
     for node in nodes {
         if let Some(span) = node.get_mut("span") {
-            span["coordinate_system"] = json!("reading_utf8");
+            span["coordinate_system"] = json!(axis);
         }
         for key in ["inline_children", "upper_children", "lower_children"] {
             if let Some(children) = node.get_mut(key).and_then(Value::as_array_mut) {
-                reading_coordinates(children);
+                content_coordinates(children, axis);
             }
         }
     }
@@ -1749,9 +1749,19 @@ fn map_text_variant_to_node(
         &format!("{path}.content"),
         depth + 1,
     )?;
+    let base_text = plain_visible_content_text(node.get("base_content"))?;
+    let mut base_children = inline_children_nodes(
+        node.get("base_content"),
+        recorder,
+        synthetic_warnings,
+        0,
+        &format!("{path}.base_content"),
+        depth + 1,
+    )?;
+    content_coordinates(&mut base_children, "witness_utf8");
     nodes.push(
         json!({"type":"base-text-variant", "span":synthetic_span(offset, end),
-        "text":text, "inline_children":children, "variant":{"base_text":node["base_text"]}}),
+        "text":text, "inline_children":children, "variant":{"base_text":base_text, "base_children":base_children}}),
     );
     Ok(end)
 }

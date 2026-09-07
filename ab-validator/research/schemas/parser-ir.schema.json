@@ -47,7 +47,7 @@
       "type": "object", "additionalProperties": false,
       "required": ["kind", "outcome", "aspects", "source_span"],
       "properties": {
-        "kind": {"enum": ["ruby", "gaiji", "emphasis", "warichu", "kunten", "heading", "caption"]},
+        "kind": {"enum": ["ruby", "gaiji", "emphasis", "warichu", "kunten", "heading", "caption", "text-variant"]},
         "outcome": {"const": "established"},
         "aspects": {"type":"array", "minItems":1, "uniqueItems":true, "items":{"enum":["content","structure","layout"]}},
         "source_span": {"type":"object", "additionalProperties":false, "required":["start","end","coordinate_system"],
@@ -113,13 +113,13 @@
     },
     "span": {
       "type": "object",
-      "$comment": "Half-open UTF-8 byte offsets in the converter's parser text projection, before publication whitespace filtering. parser_text_utf8 includes structural and source-note text traversed by the converter. reading_utf8 is local to the containing ruby reading; each nested ruby reading owns a new axis starting at zero. Neither axis is the decoded source or final plaintext. end must be greater than or equal to start.",
+      "$comment": "Half-open UTF-8 byte offsets in the converter's parser text projection, before publication whitespace filtering. parser_text_utf8 includes structural and source-note text traversed by the converter. reading_utf8 is local to the containing ruby reading; each nested ruby reading owns a new axis starting at zero. witness_utf8 is local to the containing base-text alternative, starting at zero independently of the principal text and ruby readings. None of these axes is the decoded source or final plaintext. end must be greater than or equal to start.",
       "required": ["start", "end", "coordinate_system"],
       "additionalProperties": false,
       "properties": {
         "start": { "type": "integer", "minimum": 0 },
         "end": { "type": "integer", "minimum": 0 },
-        "coordinate_system": { "enum": ["parser_text_utf8", "reading_utf8"] }
+        "coordinate_system": { "enum": ["parser_text_utf8", "reading_utf8", "witness_utf8"] }
       }
     },
     "sourceSpan": {
@@ -475,6 +475,12 @@
         { "properties": { "span": { "properties": { "coordinate_system": { "const": "reading_utf8" } } } } }
       ]
     },
+    "witnessNode": {
+      "allOf": [
+        { "$ref": "#/$defs/inlineNode" },
+        { "properties": { "span": { "properties": { "coordinate_system": { "const": "witness_utf8" } } } } }
+      ]
+    },
     "baseTextVariantNode": {
       "type": "object",
       "required": ["type", "span", "text", "inline_children", "variant"],
@@ -486,8 +492,8 @@
         "text": { "type": "string" },
         "inline_children": { "type": "array", "items": { "$ref": "#/$defs/inlineNode" } },
         "variant": {
-          "type": "object", "required": ["base_text"], "additionalProperties": false,
-          "properties": { "base_text": { "type": "string" } }
+          "type": "object", "required": ["base_text", "base_children"], "additionalProperties": false,
+          "properties": { "base_text": { "type": "string" }, "base_children": { "type":"array", "items":{"$ref":"#/$defs/witnessNode"} } }
         }
       }
     },

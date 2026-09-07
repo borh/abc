@@ -282,6 +282,8 @@ enum ProjectedKind {
         target: TextVariantTarget,
         current: String,
         base_text: String,
+        current_span: Range<usize>,
+        base_span: Option<Range<usize>>,
     },
     QuoteOpen,
     QuoteClose,
@@ -340,6 +342,29 @@ enum NestedAnnotation {
     Directive(DirectiveKind),
 }
 
+fn project_text_variant(kind: ProjectedKind, source: &str, span: Span) -> ProjectedKind {
+    if matches!(
+        kind,
+        ProjectedKind::Directive(DirectiveKind::BaseTextVariant | DirectiveKind::Unknown)
+    ) {
+        text_variant(&source[span.start..span.end]).map_or(kind, |variant| {
+            ProjectedKind::TextVariant {
+                target: variant.target,
+                current: variant.current.to_owned(),
+                base_text: variant.base_text.to_owned(),
+                current_span: span.start + variant.current_span.start
+                    ..span.start + variant.current_span.end,
+                base_span: variant
+                    .base_span
+                    .map(|range| span.start + range.start..span.start + range.end),
+            }
+        })
+    } else {
+        kind
+    }
+}
+
+
 #[allow(
     clippy::too_many_lines,
     reason = "source projection keeps node payloads and their owned marker extents together"
@@ -388,20 +413,7 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                 node => ProjectedKind::Node(node.kind()),
             };
             let span: Span = source_node.source_span.into();
-            let kind = if matches!(
-                kind,
-                ProjectedKind::Directive(DirectiveKind::BaseTextVariant | DirectiveKind::Unknown)
-            ) {
-                text_variant(&tree.sanitized[span.start..span.end]).map_or(kind, |variant| {
-                    ProjectedKind::TextVariant {
-                        target: variant.target,
-                        current: variant.current.to_owned(),
-                        base_text: variant.base_text.to_owned(),
-                    }
-                })
-            } else {
-                kind
-            };
+            let kind = project_text_variant(kind, &tree.sanitized, span);
             // Classifier consume ranges end at their owned delimiter, even when
             // retrospective formatting also reclaims preceding target text.
             let marker_kind = match source_node.node {
@@ -725,6 +737,7 @@ fn projections(
                 close.start += start;
                 close.end += start;
             }
+            rebase_variant_spans(&mut inner.kind, start);
             pending.push(inner);
         }
         let inner_ruby = ruby_projection(&inner_tree)?;
@@ -865,6 +878,7 @@ enum EstablishedInterpretation {
     Kunten,
     Heading,
     Caption,
+    TextVariant,
 }
 
 impl EstablishedInterpretation {
@@ -877,12 +891,13 @@ impl EstablishedInterpretation {
             Self::Kunten => "kunten",
             Self::Heading => "heading",
             Self::Caption => "caption",
+            Self::TextVariant => "text-variant",
         }
     }
 
     fn aspects(self) -> &'static [&'static str] {
         match self {
-            Self::Ruby => &["content", "structure"],
+            Self::Ruby | Self::TextVariant => &["content", "structure"],
             Self::Gaiji => &["content"],
             Self::Emphasis => &["layout"],
             Self::Warichu | Self::Heading | Self::Caption => &["structure", "layout"],
@@ -947,10 +962,14 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
             Some("kunten") => Some(EstablishedInterpretation::Kunten),
             Some("heading") => Some(EstablishedInterpretation::Heading),
             Some("caption" | "caption_block") => Some(EstablishedInterpretation::Caption),
+            Some("text-variant") => Some(EstablishedInterpretation::TextVariant),
             _ => None,
         };
         if let Some(interpretation) = interpretation {
-            let spans = if matches!(node["kind"].as_str(), Some("gaiji" | "kunten")) {
+            let spans = if matches!(
+                node["kind"].as_str(),
+                Some("gaiji" | "kunten" | "text-variant")
+            ) {
                 node.get("span").into_iter().collect::<Vec<_>>()
             } else {
                 node["interpretation_marker_spans"]
@@ -1898,17 +1917,89 @@ fn strip_trailing_newline(node: &mut Value) {
     }
 }
 
+fn rebase_variant_spans(kind: &mut ProjectedKind, offset: usize) {
+    if let ProjectedKind::TextVariant {
+        current_span,
+        base_span,
+        ..
+    } = kind
+    {
+        current_span.start += offset;
+        current_span.end += offset;
+        if let Some(span) = base_span {
+            span.start += offset;
+            span.end += offset;
+        }
+    }
+}
+
+// Quoted witness fragments use the native inline interpreter with the same
+// source mapping as the enclosing document, restricted to their exact extent.
+fn variant_fragment(decoded: &DecodedSource, range: Range<usize>) -> Option<Vec<Value>> {
+    let (mut nodes, diagnostics, mut gaiji, mut ruby, accents) =
+        projections(decoded.span_text.get(range.clone())?).ok()?;
+    if !diagnostics.is_empty() || !accents.is_empty() {
+        return None;
+    }
+    for node in &mut nodes {
+        node.span.start += range.start;
+        node.span.end += range.start;
+        if let Some(marker) = &mut node.marker_span {
+            marker.start += range.start;
+            marker.end += range.start;
+        }
+        rebase_variant_spans(&mut node.kind, range.start);
+    }
+    for entry in &mut gaiji {
+        entry.start += range.start;
+        entry.end += range.start;
+    }
+    for entry in &mut ruby {
+        entry.span.start += range.start;
+        entry.span.end += range.start;
+    }
+    let gaiji = gaiji
+        .into_iter()
+        .map(|entry| (entry.start, entry))
+        .collect();
+    let ruby = ruby
+        .into_iter()
+        .map(|entry| ((entry.span.start, entry.span.end), entry))
+        .collect();
+    let content = pair_bare_toggles(inline_content_range(decoded, &nodes, &gaiji, &ruby, range));
+    content
+        .iter()
+        .try_for_each(|node| target_text(node).map(|_| ()))?;
+    Some(content)
+}
+
 fn inline_content(
     decoded: &DecodedSource,
     nodes: &[AozoraNode],
     gaiji_by_start: &BTreeMap<usize, AozoraGaiji>,
     ruby_by_span: &BTreeMap<(usize, usize), AozoraRubyEntry>,
 ) -> Vec<Value> {
+    inline_content_range(
+        decoded,
+        nodes,
+        gaiji_by_start,
+        ruby_by_span,
+        0..decoded.span_text.len(),
+    )
+}
+
+fn inline_content_range(
+    decoded: &DecodedSource,
+    nodes: &[AozoraNode],
+    gaiji_by_start: &BTreeMap<usize, AozoraGaiji>,
+    ruby_by_span: &BTreeMap<(usize, usize), AozoraRubyEntry>,
+    range: Range<usize>,
+) -> Vec<Value> {
     let mut content = Vec::new();
     let mut ordered = nodes.iter().collect::<Vec<_>>();
     ordered.sort_by_key(|node| (node.span.start, node.span.end));
 
-    let mut cursor = 0_usize;
+    let mut cursor = range.start;
     for node in ordered {
         if node.span.start > cursor {
             push_source_gap(&mut content, decoded, cursor, node.span.start);
@@ -1981,10 +2072,10 @@ fn inline_content(
         }
         cursor = cursor.max(node.span.end);
     }
-    if cursor < decoded.span_text.len() {
-        push_source_gap(&mut content, decoded, cursor, decoded.span_text.len());
+    if cursor < range.end {
+        push_source_gap(&mut content, decoded, cursor, range.end);
     }
-    if decoded.span_text.contains("［＃改ページ］")
+    if decoded.span_text[range].contains("［＃改ページ］")
         && !content
             .iter()
             .any(|node| node.get("x-break-kind").and_then(Value::as_str) == Some("page"))
@@ -2645,17 +2736,33 @@ fn resolve_text_variants_in_blocks(nodes: Vec<Value>, source: &str) -> Vec<Value
                 *children = resolve_text_variants_in_blocks(mem::take(children), source);
             }
         }
-        if let Some(variant) = node.get("text_variant") {
+        if let Some(variant) = node.get("text_variant")
+            && let (Some(current), Some(base)) = (
+                variant["current_content"].as_array(),
+                variant["base_content"].as_array(),
+            )
+            && let (Some(current_text), Some(base_text)) =
+                (content_target_text(current), content_target_text(base))
+        {
             if variant["target_kind"] == "text" {
-                if let Some(children) = variant["current"]
-                    .as_str()
-                    .and_then(|current| take_visible_suffix(&mut resolved, current, source))
-                {
+                if let Some(children) = take_visible_suffix_matching(
+                    &mut resolved,
+                    &current_text,
+                    source,
+                    Some(current),
+                ) {
                     resolved.push(json!({"kind":"text-variant", "content":children,
-                        "base_text":variant["base_text"], "source":node["source"], "span":node["span"]}));
+                        "base_text":base_text, "base_content":base, "source":node["source"], "span":node["span"]}));
                     continue;
                 }
-            } else if attach_reading_variant(&mut resolved, &node) {
+            } else if attach_reading_variant(
+                &mut resolved,
+                &node,
+                current,
+                &current_text,
+                base,
+                &base_text,
+            ) {
                 continue;
             }
         }
@@ -2683,8 +2790,14 @@ fn preceding_reading(nodes: &mut [Value]) -> Option<&mut Value> {
     None
 }
 
-fn attach_reading_variant(nodes: &mut [Value], note: &Value) -> bool {
-    let variant = &note["text_variant"];
+fn attach_reading_variant(
+    nodes: &mut [Value],
+    note: &Value,
+    current: &[Value],
+    current_text: &str,
+    base: &[Value],
+    base_text: &str,
+) -> bool {
     let Some(ruby) = preceding_reading(nodes) else {
         return false;
     };
@@ -2708,7 +2821,14 @@ fn attach_reading_variant(nodes: &mut [Value], note: &Value) -> bool {
     } else {
         ruby["reading"].as_str().unwrap_or("").to_owned()
     };
-    if reading.is_empty() || variant["current"] != reading {
+    if reading.is_empty() || current_text != reading {
+        return false;
+    }
+    if let Some(children) = ruby["reading_content"].as_array() {
+        if !quoted_structure_matches(current, children) {
+            return false;
+        }
+    } else if !quoted_structure_matches(current, &[json!({"kind":"text", "value":reading})]) {
         return false;
     }
     let children = ruby
@@ -2717,7 +2837,7 @@ fn attach_reading_variant(nodes: &mut [Value], note: &Value) -> bool {
         .remove("reading_content")
         .unwrap_or_else(|| json!([{"kind":"text", "value":reading}]));
     ruby["reading_content"] = json!([{"kind":"text-variant", "content":children,
-        "base_text":variant["base_text"], "source":note["source"], "span":note["span"]}]);
+        "base_text":base_text, "base_content":base, "source":note["source"], "span":note["span"]}]);
     true
 }
 
@@ -2742,7 +2862,70 @@ fn target_text(node: &Value) -> Option<Cow<'_, str>> {
     }
 }
 
+fn content_target_text(nodes: &[Value]) -> Option<String> {
+    let mut text = String::new();
+    for node in nodes {
+        text.push_str(&target_text(node)?);
+    }
+    Some(text)
+}
+
+// The quotation constrains the structures it names. Unquoted typography in
+// the actual target is retained, but a quoted ruby cannot bind another reading.
+fn quoted_structure_matches(quoted: &[Value], actual: &[Value]) -> bool {
+    fn marks(
+        nodes: &[Value],
+        offset: &mut usize,
+        output: &mut Vec<(usize, usize, Value)>,
+    ) -> Option<()> {
+        for node in nodes {
+            let start = *offset;
+            let text = target_text(node)?;
+            let end = start + text.len();
+            match node["kind"].as_str()? {
+                "text" | "gaiji" | "raw" => {}
+                "ruby" => output.push((
+                    start,
+                    end,
+                    json!({"kind":"ruby", "base":text,
+                    "reading":node["reading"], "direction":node["direction"]}),
+                )),
+                "text-variant" => {
+                    marks(node["content"].as_array()?, offset, output)?;
+                }
+                _ => {
+                    let mut identity = node.as_object()?.clone();
+                    identity.retain(|key, _| {
+                        !matches!(
+                            key.as_str(),
+                            "content" | "span" | "interpretation_marker_spans"
+                        ) && !key.starts_with("x-")
+                    });
+                    output.push((start, end, Value::Object(identity)));
+                    marks(node["content"].as_array()?, offset, output)?;
+                }
+            }
+            *offset = end;
+        }
+        Some(())
+    }
+    let mut quoted_marks = Vec::new();
+    let mut actual_marks = Vec::new();
+    marks(quoted, &mut 0, &mut quoted_marks).is_some()
+        && marks(actual, &mut 0, &mut actual_marks).is_some()
+        && quoted_marks.iter().all(|mark| actual_marks.contains(mark))
+}
+
 fn take_visible_suffix(content: &mut Vec<Value>, target: &str, source: &str) -> Option<Vec<Value>> {
+    take_visible_suffix_matching(content, target, source, None)
+}
+
+fn take_visible_suffix_matching(
+    content: &mut Vec<Value>,
+    target: &str,
+    source: &str,
+    quoted: Option<&[Value]>,
+) -> Option<Vec<Value>> {
     if target.is_empty() || target.contains(['\n', '\r']) {
         return None;
     }
@@ -2760,6 +2943,11 @@ fn take_visible_suffix(content: &mut Vec<Value>, target: &str, source: &str) -> 
         if let Some(prefix) = remaining.strip_suffix(text.as_ref()) {
             remaining = prefix;
             if remaining.is_empty() {
+                if quoted
+                    .is_some_and(|expected| !quoted_structure_matches(expected, &content[index..]))
+                {
+                    return None;
+                }
                 return Some(content.split_off(index));
             }
         } else if kind == "text" && text.ends_with(remaining) {
@@ -2774,6 +2962,13 @@ fn take_visible_suffix(content: &mut Vec<Value>, target: &str, source: &str) -> 
             tail["value"] = json!(remaining);
             tail["span"]["byte_start"] = json!(start);
             tail["span"]["line_start"] = node["span"]["line_end"].clone();
+            if let Some(expected) = quoted {
+                let mut selected = vec![tail.clone()];
+                selected.extend_from_slice(&content[index + 1..]);
+                if !quoted_structure_matches(expected, &selected) {
+                    return None;
+                }
+            }
             content[index]["value"] = json!(&text[..text.len() - remaining.len()]);
             content[index]["span"]["byte_end"] = json!(start);
             let mut children = vec![tail];
@@ -2938,12 +3133,24 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
         target,
         current,
         base_text,
+        current_span,
+        base_span,
     } = &node.kind
     {
         value["text_variant"] = json!({
             "target_kind": match target { TextVariantTarget::RubyReading => "ruby-reading", TextVariantTarget::Text => "text" },
             "current": current, "base_text": base_text
         });
+        if let Some(current_content) = variant_fragment(decoded, current_span.clone()) {
+            value["text_variant"]["current_content"] = json!(current_content);
+        }
+        let base_content = base_span.as_ref().map_or_else(
+            || Some(Vec::new()),
+            |range| variant_fragment(decoded, range.clone()),
+        );
+        if let Some(base_content) = base_content {
+            value["text_variant"]["base_content"] = json!(base_content);
+        }
     }
     match node.kind {
         ProjectedKind::Region(region) => {

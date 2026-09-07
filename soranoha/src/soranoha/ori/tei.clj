@@ -288,14 +288,16 @@
         rendered (if (seq (get node "inline_children"))
                    (render-inline-children (assoc acc :current-paragraph [])
                                            (get node "inline_children") depth)
-                   (assoc acc :current-paragraph [(get node "text")]))]
-    (append-inline (assoc rendered :current-paragraph before)
+                   (assoc acc :current-paragraph [(get node "text")]))
+        witness (render-inline-children (assoc rendered :current-paragraph [])
+                                        (get-in node ["variant" "base_children"]) depth)]
+    (append-inline (assoc witness :current-paragraph before)
                    (sourced node [:app {:type "base-text-variant"}
                                   (into [:lem] (:current-paragraph rendered))
-                                  [:rdg (cond-> {:type "base-text"}
-                                          (= "" (get-in node ["variant" "base_text"]))
-                                          (assoc :subtype "omission"))
-                                   (get-in node ["variant" "base_text"])]]))))
+                                  (into [:rdg (cond-> {:type "base-text"}
+                                                (= "" (get-in node ["variant" "base_text"]))
+                                                (assoc :subtype "omission"))]
+                                        (:current-paragraph witness))]))))
 
 (defn- render-inline-wrapper [acc children text depth wrapper]
   (if (seq children)

@@ -1,5 +1,7 @@
 //! Explicit witness alternatives and absence supplied by Aozora base-text notes.
 
+use std::ops::Range;
+
 /// Content addressed by a quoted base-text note.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TextVariantTarget {
@@ -10,7 +12,7 @@ pub enum TextVariantTarget {
 }
 
 /// A supplied reading or text and its explicitly stated base-text alternative.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TextVariant<'s> {
     /// Which content sequence the note addresses.
     pub target: TextVariantTarget,
@@ -18,6 +20,10 @@ pub struct TextVariant<'s> {
     pub current: &'s str,
     /// The alternative attributed to the base text; empty only for explicit absence.
     pub base_text: &'s str,
+    /// UTF-8 byte range of the quoted current fragment within the annotation.
+    pub current_span: Range<usize>,
+    /// UTF-8 byte range of the witness fragment; absent for stated omission.
+    pub base_span: Option<Range<usize>>,
 }
 
 /// Recognize an exact quoted base-text note, including its annotation delimiters.
@@ -47,10 +53,17 @@ pub fn text_variant(source: &str) -> Option<TextVariant<'_>> {
     {
         return None;
     }
+    let current_start = source.len() - '］'.len_utf8() - body.len();
+    let base_span = (!base_text.is_empty()).then(|| {
+        let start = source.len() - '］'.len_utf8() - witness.len() + '「'.len_utf8();
+        start..start + base_text.len()
+    });
     Some(TextVariant {
         target,
         current,
         base_text,
+        current_span: current_start..current_start + current.len(),
+        base_span,
     })
 }
 

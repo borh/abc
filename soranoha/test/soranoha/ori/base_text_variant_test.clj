@@ -12,7 +12,7 @@
 (deftest supplied-reading-and-base-text-alternative-remain-distinct
   (let [span {"coordinate_system" "decoded_utf8" "start" 21 "end" 75}
         variant {"type" "base-text-variant" "text" "ざる"
-                 "variant" {"base_text" "さる"}
+                 "variant" {"base_text" "さる" "base_children" [{"type" "text" "text" "さる"}]}
                  "inline_children" [{"type" "text" "text" "ざる"}]
                  "source_span" span}
         ir {"nodes" [{"type" "text" "text" "私は"}
@@ -89,3 +89,32 @@
       (is (= "warichu" (.getAttribute wrapper "type")))
       (is (= expected-halves (.getLength (.getElementsByTagNameNS wrapper view/tei-namespace "seg"))))
       (is (some #(= "layout" (get % "family")) (get (projection/report :projection/markdown reading) "counts"))))))
+
+(deftest witness-ruby-is-apparatus-with-its-own-source-reference
+  (let [span {"coordinate_system" "decoded_utf8" "start" 60 "end" 84}
+        result (render/render-work
+                {:parser-ir {"nodes" [{"type" "base-text-variant" "text" "狼狽てて"
+                                       "inline_children" [{"type" "ruby" "ruby" {"base" "狼狽" "reading" "あわ"}}
+                                                          {"type" "text" "text" "てて"}]
+                                       "variant" {"base_text" "狼狙てて"
+                                                  "base_children" [{"type" "ruby" "ruby" {"base" "狼狙" "reading" "あわ"}
+                                                                    "source_span" span}
+                                                                   {"type" "text" "text" "てて"}]}}]}
+                 :metadata-record {"work" {"title" "試験" "work_id" "1" "aozora_modified" "2026-09-07"} "contributors" []}
+                 :persons-by-id {}})
+        reading (view/from-tei (:tei result))
+        ^Document doc (:view/document reading)
+        ^Element rdg (.item (.getElementsByTagNameNS doc view/tei-namespace "rdg") 0)
+        ^Element ruby (.item (.getElementsByTagNameNS rdg view/tei-namespace "ruby") 0)]
+    (is (= "狼狽てて" (:view/text reading)))
+    (is (= "<ruby><rb>狼狽</rb><rt>あわ</rt></ruby>てて" (projection/markdown reading)))
+    (is (= "狼狙" (.getTextContent (.item (.getElementsByTagNameNS ruby view/tei-namespace "rb") 0))))
+    (is (= "あわ" (.getTextContent (.item (.getElementsByTagNameNS ruby view/tei-namespace "rt") 0))))
+    (is (= "#source-60-84" (.getAttribute ruby "source")))
+    (let [dir (fs/create-temp-dir {:prefix "rich-witness"})
+          path (str (fs/path dir "tei.xml"))]
+      (try
+        (spit path (:tei result))
+        (let [validated (validation/tei-validation-result (validation/profile-paths ".") path)]
+          (is (= "passed" (get validated "status")) (pr-str (get validated "findings"))))
+        (finally (fs/delete-tree dir))))))

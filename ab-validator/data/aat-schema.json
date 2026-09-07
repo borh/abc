@@ -442,11 +442,12 @@
     "annotated_text": {
       "type":"object", "additionalProperties":false,
       "required":["kind","content","annotation_content","note_kind","span"],
+      "if":{"properties":{"note_kind":{"enum":["annotation-number","author-note"]}}}, "then":{"not":{"required":["position"]}},
       "properties":{
         "kind":{"const":"annotated_text"},
         "content":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/inline"}},
         "annotation_content":{"type":"array","minItems":1,"items":{"oneOf":[{"$ref":"#/$defs/inline"},{"$ref":"#/$defs/gap"}]}},
-        "note_kind":{"enum":["gloss","marginal","cross-reference","base-edition","source-concealment"]},
+        "note_kind":{"enum":["gloss","marginal","cross-reference","base-edition","source-concealment","annotation-number","author-note"]},
         "position":{"enum":["left","right"]},
         "span":{"$ref":"#/$defs/span"}
       }

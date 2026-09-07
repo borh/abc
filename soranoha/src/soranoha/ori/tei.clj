@@ -332,8 +332,12 @@
                                           (get node "inline_children") depth)
         annotation (render-inline-children (assoc principal :current-paragraph [])
                                            (get node "annotation_children") depth)
-        note (into [:note (cond-> {:type (get node "note_kind")}
-                            (get node "position") (assoc :place (get node "position")))]
+        kind (get node "note_kind")
+        attributes (if (contains? #{"annotation-number" "author-note"} kind)
+                     {:type "source-role" :subtype kind}
+                     (cond-> {:type kind}
+                       (get node "position") (assoc :place (get node "position"))))
+        note (into [:note attributes]
                    (:current-paragraph annotation))]
     (append-inline (assoc annotation :current-paragraph before)
                    (sourced node (conj (into [:seg {:type "annotated-text"}]

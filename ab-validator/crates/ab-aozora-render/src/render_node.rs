@@ -148,10 +148,25 @@ fn render_ruby<W: Write>(r: &Ruby, store: &NodeStore, out: &mut W) -> fmt::Resul
     out.write_str("</rt><rp>)</rp></ruby>")
 }
 
-/// Render a margin note as a `<ruby>` whose `<rt class="aozora-margin-note">`
-/// carries the note text. Referenced targets are already present in the body,
-/// so their note is emitted without repeating the target.
+/// Render role labels as operand metadata and glosses as ruby annotations.
+/// Referenced targets are already present in the body and are not repeated.
 fn render_side_note<W: Write>(s: &MarginNote, store: &NodeStore, out: &mut W) -> fmt::Result {
+    if let Some(role) = match s.kind {
+        ab_aozora_syntax::MarginNoteKind::AnnotationNumber => Some("annotation-number"),
+        ab_aozora_syntax::MarginNoteKind::AuthorNote => Some("author-note"),
+        _ => None,
+    } {
+        if s.origin != ForwardOrigin::Referenced {
+            write!(
+                out,
+                "<span class=\"aozora-source-role\" data-source-role=\"{role}\">"
+            )?;
+            render_content_range(s.base, store, out)?;
+            out.write_str("</span>")?;
+        }
+        return Ok(());
+    }
+
     if s.origin == ForwardOrigin::Referenced {
         out.write_str("<span class=\"aozora-margin-note\">")?;
         render_content_range(s.note, store, out)?;

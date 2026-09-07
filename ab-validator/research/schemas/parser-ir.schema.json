@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
   "title": "ABC Parser IR",
-  "version": "0.44.0",
+  "version": "0.45.0",
   "type": "object",
   "required": ["schema_id", "schema_hash", "source", "nodes", "warnings", "errors", "interpretation_problems", "interpretation_facts"],
   "additionalProperties": false,
@@ -531,9 +531,10 @@
     "annotatedTextNode": {
       "type":"object", "additionalProperties":false,
       "required":["type","span","text","inline_children","annotation_children","note_kind"],
+      "if":{"properties":{"note_kind":{"enum":["annotation-number","author-note"]}}}, "then":{"not":{"required":["position"]}},
       "properties":{
         "type":{"const":"annotated-text"}, "span":{"$ref":"#/$defs/span"}, "source_span":{"$ref":"#/$defs/sourceSpan"},
-        "text":{"type":"string"}, "note_kind":{"enum":["gloss","marginal","cross-reference","base-edition","source-concealment"]}, "position":{"enum":["left","right"]},
+        "text":{"type":"string"}, "note_kind":{"enum":["gloss","marginal","cross-reference","base-edition","source-concealment","annotation-number","author-note"]}, "position":{"enum":["left","right"]},
         "inline_children":{"type":"array","items":{"$ref":"#/$defs/inlineNode"}},
         "annotation_children":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/annotationNode"}}
       }

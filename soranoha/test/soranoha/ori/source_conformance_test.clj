@@ -1187,3 +1187,15 @@
     (is (= ["しょうらい"] (texts result "rt")))
     (is (= "現代語訳「松籟しょうらいを聞かせる。」" (.getTextContent ^Node note)))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest source-note-roles-preserve-operands-without-invented-links
+  (let [result (transcribe (source "前（１）［＃「（１）」は注釈番号］中（一）［＃（一）は自注］後（１）［＃「（１）」は注釈番号］"))
+        notes (filterv #(= "source-role" (attribute % "type")) (elements result "note"))]
+    (is (= "前（１）中（一）後（１）" (:plaintext result)))
+    (is (= (:plaintext result) (projection/markdown (:view result))))
+    (is (= ["annotation-number" "author-note" "annotation-number"] (mapv #(attribute % "subtype") notes)))
+    (is (= ["注釈番号" "自注" "注釈番号"] (mapv #(.getTextContent ^Node %) notes)))
+    (doseq [note notes field ["place" "target" "resp"]]
+      (is (string/blank? (attribute note field))))
+    (is (= 3 (count (distinct (map #(attribute (.getParentNode ^Node %) "source") notes)))))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))

@@ -1510,7 +1510,12 @@ impl EstablishedInterpretation {
             Some("heading") => Some(Self::Heading),
             Some("caption" | "caption_block") => Some(Self::Caption),
             Some("text-variant") => Some(Self::TextVariant),
-            Some("annotated_text") if node["note_kind"] == "base-edition" => {
+            Some("annotated_text")
+                if matches!(
+                    node["note_kind"].as_str(),
+                    Some("base-edition" | "annotation-number" | "author-note")
+                ) =>
+            {
                 Some(Self::EditorialNote)
             }
             Some("annotated_text") => Some(Self::AnnotatedText),
@@ -3727,7 +3732,7 @@ fn push_annotated_text(content: &mut Vec<Value>, decoded: &DecodedSource, node: 
     let annotation = note_span.and_then(|span| source_fragment(decoded, span.start..span.end));
     let wrapper = |children: &[Value], annotation: &[Value]| {
         let mut value = json!({"kind":"annotated_text", "content":children, "annotation_content":annotation,
-            "note_kind":match kind {MarginNoteKind::Gloss=>"gloss", MarginNoteKind::Marginal=>"marginal", MarginNoteKind::CrossReference=>"cross-reference", _=>unreachable!("known note kind")},
+            "note_kind":match kind {MarginNoteKind::Gloss=>"gloss", MarginNoteKind::Marginal=>"marginal", MarginNoteKind::CrossReference=>"cross-reference", MarginNoteKind::AnnotationNumber=>"annotation-number", MarginNoteKind::AuthorNote=>"author-note", _=>unreachable!("known note kind")},
             "span":span_json(&marker, &decoded.span_ctx)});
         if let Some(position) = position {
             value["position"] = json!(match position {

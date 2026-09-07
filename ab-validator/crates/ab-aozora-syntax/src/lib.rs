@@ -292,6 +292,10 @@ pub enum MarginNoteKind {
     Marginal,
     /// A printed page label identified by a supplied section locator.
     CrossReference,
+    /// The source identifies the operand as an annotation number, without a destination.
+    AnnotationNumber,
+    /// The source identifies the operand as an author-note marker, without a person identity.
+    AuthorNote,
 }
 
 impl MarginNoteKind {
@@ -302,6 +306,8 @@ impl MarginNoteKind {
             Self::Gloss => "注記",
             Self::Marginal => "傍記",
             Self::CrossReference => "は",
+            Self::AnnotationNumber => "注釈番号",
+            Self::AuthorNote => "自注",
         }
     }
 }

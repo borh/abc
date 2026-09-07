@@ -84,3 +84,38 @@ fn ambiguous_ruby_base_target_stays_unresolved() {
     assert!(content.iter().any(|node| node["kind"] == "raw"));
     assert!(content.iter().all(|node| node["kind"] != "annotated_text"));
 }
+
+#[test]
+fn supplied_note_roles_keep_each_operand_occurrence_independent() {
+    for (target, marker, role, word) in [
+        (
+            "（１）",
+            "［＃「（１）」は注釈番号］",
+            "annotation-number",
+            "注釈番号",
+        ),
+        ("（一）", "［＃（一）は自注］", "author-note", "自注"),
+        ("（一）", "［＃「（一）」は自注］", "author-note", "自注"),
+    ] {
+        let source = format!("前{target}{marker}中{target}{marker}後");
+        let aat: Value =
+            serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
+        let content = aat["blocks"][0]["content"].as_array().unwrap();
+        let notes = content
+            .iter()
+            .filter(|node| node["kind"] == "annotated_text")
+            .collect::<Vec<_>>();
+        assert_eq!(notes.len(), 2, "{source}");
+        for note in &notes {
+            assert_eq!(note["note_kind"], role);
+            assert_eq!(note["content"][0]["value"], target);
+            assert_eq!(note["annotation_content"][0]["value"], word);
+            assert!(note.get("position").is_none());
+            let span = &note["span"];
+            let start = usize::try_from(span["byte_start"].as_u64().unwrap()).unwrap();
+            let end = usize::try_from(span["byte_end"].as_u64().unwrap()).unwrap();
+            assert_eq!(&source[start..end], marker);
+        }
+        assert_ne!(notes[0]["span"], notes[1]["span"]);
+    }
+}

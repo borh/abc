@@ -1473,8 +1473,46 @@ fn page_reference_location<'a>(target: &str, suffix: &'a str) -> Option<&'a str>
     }
 }
 
-/// Classify target-associated glosses, marginal notes and page references,
-/// preserving an explicitly supplied side. Bare `に` does not establish a side. The native referent extent lets
+fn note_role_suffix(suffix: &str) -> Option<(MarginNoteKind, &str)> {
+    let word = suffix.strip_prefix('は')?;
+    match word {
+        "注釈番号" => Some((MarginNoteKind::AnnotationNumber, word)),
+        "自注" => Some((MarginNoteKind::AuthorNote, word)),
+        _ => None,
+    }
+}
+
+fn parenthesized_note_role_target<'s>(
+    view: BodyView<'_>,
+    source: &'s str,
+    open_idx: usize,
+    close_idx: usize,
+) -> Option<ForwardTargetExtract<'s>> {
+    let PairEvent::PairOpen { span: open, .. } = view.events.get(open_idx)? else {
+        return None;
+    };
+    let PairEvent::PairClose { span: close, .. } = view.events.get(close_idx)? else {
+        return None;
+    };
+    let body = source
+        .get(open.start as usize..close.end as usize)?
+        .strip_prefix("［＃")?
+        .strip_suffix('］')?;
+    let (inside, _) = body.strip_prefix('（')?.split_once('）')?;
+    if inside.is_empty() || inside.contains(['（', '［', '］', '\n']) {
+        return None;
+    }
+    let target_end = '（'.len_utf8() + inside.len() + '）'.len_utf8();
+    let suffix = &body[target_end..];
+    note_role_suffix(suffix)?;
+    Some(ForwardTargetExtract {
+        targets: smallvec::smallvec![&body[..target_end]],
+        suffix,
+    })
+}
+
+/// Classify target-associated notes and source roles while preserving supplied
+/// placement. Bare `に` does not establish a side. Native referent extents let
 /// downstream projections attach interior notes without repeating the target.
 impl RecogniseCtx<'_, '_> {
     fn classify_forward_side_note(
@@ -1483,12 +1521,15 @@ impl RecogniseCtx<'_, '_> {
         open_idx: usize,
         close_idx: usize,
     ) -> Option<(Node, u32)> {
-        let extracted = extract_forward_quote_targets(view, self.source, open_idx, close_idx)?;
+        let extracted = extract_forward_quote_targets(view, self.source, open_idx, close_idx)
+            .or_else(|| parenthesized_note_role_target(view, self.source, open_idx, close_idx))?;
         let [target] = extracted.targets.as_slice() else {
             return None;
         };
         let (kind, position, note_text) =
-            if let Some(location) = page_reference_location(target, extracted.suffix) {
+            if let Some((kind, word)) = note_role_suffix(extracted.suffix) {
+                (kind, None, word)
+            } else if let Some(location) = page_reference_location(target, extracted.suffix) {
                 (MarginNoteKind::CrossReference, None, location)
             } else {
                 let (kind, inner) = if let Some(inner) = extracted
@@ -1542,6 +1583,13 @@ impl RecogniseCtx<'_, '_> {
             ),
             ForwardReferent::Unresolvable => (open_span.start, None, ForwardOrigin::Referenced),
         };
+        if matches!(
+            kind,
+            MarginNoteKind::AnnotationNumber | MarginNoteKind::AuthorNote
+        ) && origin != ForwardOrigin::Reclaimed
+        {
+            return None;
+        }
         let base = self.alloc.content_plain(target);
         let note = self.alloc.content_plain(note_text);
         let note_start = note_text.as_ptr().addr() - self.source.as_ptr().addr();

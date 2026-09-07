@@ -1664,8 +1664,9 @@ fn source_inventory_classifies_source_authority_remaining_command_batch() {
             .row_counts
             .get("source.reviewed_residual_command")
             .map(|count| count.occurrences),
-        Some(37)
+        Some(35)
     );
+    assert_eq!(summary.row_counts["source.note_label"].occurrences, 2);
 }
 
 #[test]
@@ -2926,5 +2927,26 @@ fn literal_household_label_is_distinct_from_compound_residual_notes() {
             summary.row_counts["source.reviewed_residual_command"].occurrences, 1,
             "{source}"
         );
+    }
+}
+
+#[test]
+fn author_note_roles_do_not_classify_words_inside_formatting_operands() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).unwrap();
+    let patterns = patterns_from_rows(matrix.rows());
+    for (source, expected) in [
+        ("［＃（一）は自注］", "source.note_label"),
+        ("［＃「（一）」は自注］", "source.note_label"),
+        ("［＃「（自注１）」は行右小書き］", "decoration.font_size"),
+    ] {
+        let summary = inventory_document("fixture", source, &patterns);
+        assert_eq!(
+            summary.row_counts.len(),
+            1,
+            "{source}: {:?}",
+            summary.row_counts
+        );
+        assert!(summary.row_counts.contains_key(expected), "{source}");
+        assert!(summary.unknown_examples.is_empty());
     }
 }

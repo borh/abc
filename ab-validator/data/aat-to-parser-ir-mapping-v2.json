@@ -1,10 +1,10 @@
 {
   "mapping_id": "https://w3id.org/abc/mappings/aat-v2-to-parser-ir-v1/generated-probe",
-  "mapping_version": "0.38.0",
+  "mapping_version": "0.39.0",
   "mapping_schema_hash": "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2",
   "source_aat_version": 2,
   "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "target_parser_ir_schema_hash": "sha256:9768475d49f84278be4876af9a792b74373051f2eade8adb0d9d2c69af0f327b",
+  "target_parser_ir_schema_hash": "sha256:391d0537458c95fedcd11710379eff6fe4a24a4ee6b3d2b2f282bc8f369a0bec",
   "transform_rule_descriptions": [
     {
       "rule_id": "A-02",

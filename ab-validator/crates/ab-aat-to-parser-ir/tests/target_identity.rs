@@ -1297,3 +1297,55 @@ fn base_edition_concealment_claim_does_not_assert_layout() {
     assert_eq!(fact["aspects"], json!(["content", "structure"]));
     assert_eq!(ir["interpretation_problems"], json!([]));
 }
+
+#[test]
+fn supplied_note_roles_reject_invented_placement_and_missing_targets() {
+    for (body, role) in [
+        ("（１）［＃「（１）」は注釈番号］", "annotation-number"),
+        ("（一）［＃（一）は自注］", "author-note"),
+    ] {
+        let ir = convert(body);
+        let annotation = nodes(&ir)
+            .into_iter()
+            .find(|node| node["type"] == "annotated-text")
+            .unwrap();
+        assert_eq!(annotation["note_kind"], role);
+        assert!(annotation.get("position").is_none());
+        assert_eq!(ir["interpretation_problems"], json!([]));
+        let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let schemas = SchemaSet::for_aat_version(&repo, None, 2).unwrap();
+        let mut invalid = ir.clone();
+        fn inject(value: &mut Value) {
+            match value {
+                Value::Object(map) => {
+                    if map.get("type").and_then(Value::as_str) == Some("annotated-text") {
+                        map.insert("position".into(), json!("left"));
+                    }
+                    for child in map.values_mut() {
+                        inject(child);
+                    }
+                }
+                Value::Array(values) => values.iter_mut().for_each(inject),
+                _ => {}
+            }
+        }
+        inject(&mut invalid);
+        assert!(
+            ab_aat_to_parser_ir::schema::validate_value(&schemas.parser_ir_schema, &invalid, "IR")
+                .is_err()
+        );
+    }
+    for body in [
+        "（二）［＃（一）は自注］",
+        "（一）別［＃（一）は自注］",
+        "（１）別［＃「（１）」は注釈番号］",
+    ] {
+        let ir = convert(body);
+        assert!(
+            !nodes(&ir)
+                .iter()
+                .any(|node| node["type"] == "annotated-text")
+        );
+        assert!(!ir["interpretation_problems"].as_array().unwrap().is_empty());
+    }
+}

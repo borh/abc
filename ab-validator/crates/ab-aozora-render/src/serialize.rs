@@ -637,7 +637,12 @@ fn emit_side_note<W: Write>(s: &MarginNote, store: &NodeStore, out: &mut W) -> f
     }
     out.write_str("［＃「")?;
     emit_content_range(s.base, store, out)?;
-    if s.kind == ab_aozora_syntax::MarginNoteKind::CrossReference {
+    if matches!(
+        s.kind,
+        ab_aozora_syntax::MarginNoteKind::CrossReference
+            | ab_aozora_syntax::MarginNoteKind::AnnotationNumber
+            | ab_aozora_syntax::MarginNoteKind::AuthorNote
+    ) {
         out.write_str("」は")?;
         emit_content_range(s.note, store, out)?;
         return out.write_char('］');

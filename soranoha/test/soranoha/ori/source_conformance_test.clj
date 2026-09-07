@@ -113,6 +113,29 @@
   (let [result (transcribe "こころ\n今野大力\n\nこころ　こころ\nくるしいこころ\n\n底本：本\n")]
     (is (= "こころ　こころ\nくるしいこころ" (:plaintext result)))))
 
+(deftest unfinished-accent-scopes-do-not-change-later-paragraphs
+  (doseq [encoding ["UTF-8" "windows-31j"]]
+    (let [result (transcribe
+                  (source (str "註二　〔Antonelli: Le'on Walras\n"
+                               "一　この書物は、〔Le'on Walras: Ele'ments d'e'conomie politique pure.〕 を訳出した。"))
+                  encoding)]
+      (is (= "註二　〔Antonelli: Le'on Walras\n一　この書物は、Léon Walras: Eléments d'économie politique pure. を訳出した。"
+             (:plaintext result)))
+      (is (some #{"一　この書物は、Léon Walras: Eléments d'économie politique pure. を訳出した。"}
+                (texts result "p"))))))
+
+(deftest malformed-notation-retains-visible-neighbors-and-uncertainty
+  (doseq [[body expected raw]
+          [["前〔cafe'〕［＃tail\r\n" "前café" "［＃tail"]
+           ["前※後" "前後" "※"]
+           ["前［＃未閉\n後" "前\n後" "［＃未閉"]]]
+    (let [result (transcribe (source body))
+          problem (first (filter #(= raw (get-in % [:view/evidence "raw"]))
+                                 (get-in result [:view :view/problems])))]
+      (is (= expected (:plaintext result)))
+      (is (some? problem))
+      (is (= "document" (get-in problem [:view/evidence "influence" "kind"]))))))
+
 (deftest enclosing-layout-and-closing-alignment-are-independent
   (let [result (transcribe (source "前。\n［＃ここから２字下げ］\n附記。\n［＃地から２字上げ］（大正四年八月）\n［＃ここで字下げ終わり］\n後。"))
         enclosure (first (filter #(string/includes? (attribute % "style") "padding-inline-start: 2em")

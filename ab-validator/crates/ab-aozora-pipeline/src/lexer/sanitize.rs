@@ -296,7 +296,7 @@ pub fn sanitize_mapped(source: &str) -> SanitizeMappedOutput<'_> {
     }
 }
 
-/// Rewrite every `〔...〕` span applying accent decomposition to the body.
+/// Rewrite complete, unnested `〔...〕` accent scopes within each source line.
 /// Converted spans lose their accent-scope brackets; literal bracket text is preserved.
 #[doc(hidden)]
 #[must_use]
@@ -351,7 +351,8 @@ pub(super) fn rewrite_accent_spans_collecting_core(
         out.push_str(&input[cursor..open_abs]);
 
         let after_open = open_abs + TORTOISE_OPEN.len_utf8();
-        let Some(close_rel) = input[after_open..].find(TORTOISE_CLOSE) else {
+        let Some(close_rel) = input[after_open..].find(['\r', '\n', TORTOISE_OPEN, TORTOISE_CLOSE])
+        else {
             // Unclosed `〔` — emit the rest verbatim so the author can
             // see the malformed span in the rendered output rather
             // than silently dropping content.
@@ -359,6 +360,12 @@ pub(super) fn rewrite_accent_spans_collecting_core(
             break;
         };
         let close_abs = after_open + close_rel;
+        // Aozora accent scopes close on the same line and cannot nest.
+        if !input[close_abs..].starts_with(TORTOISE_CLOSE) {
+            out.push_str(&input[open_abs..close_abs]);
+            cursor = close_abs;
+            continue;
+        }
 
         let body = &input[after_open..close_abs];
         let sites = decompose_fragment_sites(body);
@@ -788,6 +795,32 @@ mod tests {
     }
 
     #[test]
+    fn accent_scopes_do_not_capture_later_openings_or_source_lines() {
+        for (input, expected) in [
+            ("先〔未閉\n次〔Le'on〕後", "先〔未閉\n次Léon後"),
+            ("〔cafe'\r\n次〔e'〕", "〔cafe'\n次é"),
+            ("\u{feff}〔未閉\r\n次〔Le'on〕", "〔未閉\n次Léon"),
+            ("〔外〔cafe'〕後〕", "〔外café後〕"),
+            ("〔a'〔e'〕o'〕", "〔a'éo'〕"),
+            ("〔本全集〕、〔Le'on Walras〕", "〔本全集〕、Léon Walras"),
+        ] {
+            let out = sanitize_mapped(input);
+            assert_eq!(out.text.as_ref(), expected, "{input:?}");
+            assert_eq!(sanitize(input).text.as_ref(), expected);
+            assert_eq!(out.diagnostics.len(), expected.matches('é').count());
+            for diagnostic in &out.diagnostics {
+                if let Diagnostic::AccentDecompositionApplied { span, .. } = diagnostic {
+                    let start = usize::try_from(span.start).unwrap();
+                    let end = usize::try_from(span.end).unwrap();
+                    let source_start = out.maps.to_source_offset(start);
+                    let source_end = out.maps.to_source_end(end);
+                    assert_eq!(&input[source_start..source_end], "e'");
+                }
+            }
+        }
+    }
+
+    #[test]
     fn unclosed_tortoiseshell_span_passes_through_verbatim() {
         // Graceful degradation — don't panic, emit the rest as-is so a
         // later stage can surface a diagnostic.
@@ -804,27 +837,17 @@ mod tests {
     }
 
     #[test]
-    fn nested_tortoiseshell_honours_outer_then_inner() {
-        // Outer span's body is "outer 〔inner`"; decompose_fragment
-        // leaves `〔` alone (not a table base) and `inner`` similarly
-        // untouched — the exact output shape is documented here so any
-        // drift in the accent table surfaces.
+    fn nested_literal_brackets_without_accent_codes_are_preserved() {
         let input = "〔outer 〔inner`〕〕";
         let out = sanitize(input);
-        assert!(out.text.contains('〔'));
-        assert!(out.text.contains('〕'));
+        assert_eq!(out.text.as_ref(), input);
     }
 
     #[test]
     fn tortoiseshell_plus_crlf_plus_bom_all_applied() {
-        // Exercise all three transformation steps in one shot: leading
-        // BOM, CRLF inside a span, accent digraph. The BOM is stripped
-        // and the CRLF becomes LF before accent decomposition runs —
-        // decomposition then matches `e``on the `e` side of the LF,
-        // producing `è` and leaving the LF as the next char.
-        let input = "\u{FEFF}〔fune`\r\nbre〕end";
+        let input = "\u{FEFF}〔fune`bre〕\r\nend";
         let out = sanitize(input);
-        assert_eq!(out.text.as_ref(), "funè\nbreend");
+        assert_eq!(out.text.as_ref(), "funèbre\nend");
         assert!(!out.text.contains('`'), "grave accent must be consumed");
     }
 

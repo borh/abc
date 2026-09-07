@@ -7,7 +7,7 @@ use std::{
     mem,
     num::NonZeroU32,
     ops::Range,
-    str,
+    slice, str,
     sync::LazyLock,
 };
 
@@ -3011,14 +3011,10 @@ fn push_annotated_text(content: &mut Vec<Value>, decoded: &DecodedSource, node: 
     };
     if let (Some(target_span), Some(annotation)) = (target_span, &annotation)
         && target_span.end < marker.start
-        && let Some((before, selected, after)) =
-            exact_literal_partition(content.last(), *target_span, decoded)
+        && annotate_source_target(content, *target_span, decoded, &|children| {
+            wrapper(children, annotation)
+        })
     {
-        let attached = wrapper(&[selected], annotation);
-        content.pop();
-        content.extend(before);
-        content.push(attached);
-        content.extend(after);
         return;
     }
     let source_owned = target_span.is_some_and(|span| {
@@ -3050,6 +3046,105 @@ fn push_annotated_text(content: &mut Vec<Value>, decoded: &DecodedSource, node: 
     );
     retained["interpretation_problem"] = json!({"kind":"uninterpreted-notation", "code":"uninterpreted-notation", "aspects":["content","structure"], "influence":{"kind":"document"}});
     content.push(retained);
+}
+
+fn annotate_source_target(
+    content: &mut Vec<Value>,
+    target: Span,
+    decoded: &DecodedSource,
+    wrapper: &impl Fn(&[Value]) -> Value,
+) -> bool {
+    let source_span = span_json(&target, &decoded.span_ctx);
+    let (Some(start), Some(end)) = (
+        source_span["byte_start"].as_u64(),
+        source_span["byte_end"].as_u64(),
+    ) else {
+        return false;
+    };
+    for index in 0..content.len() {
+        let node = &content[index];
+        for key in ["base_content", "content"] {
+            let children = node[key].as_array().cloned().or_else(|| {
+                (key == "base_content" && node["kind"] == "ruby")
+                    .then(|| literal_ruby_base(node, &decoded.text))
+                    .flatten()
+            });
+            if let Some(mut children) = children {
+                if node["kind"] == "ruby"
+                    && children
+                        .first()
+                        .and_then(|child| child["span"]["byte_start"].as_u64())
+                        == Some(start)
+                    && children
+                        .last()
+                        .and_then(|child| child["span"]["byte_end"].as_u64())
+                        == Some(end)
+                {
+                    content[index] = wrapper(slice::from_ref(node));
+                    return true;
+                }
+                if annotate_source_target(&mut children, target, decoded, wrapper) {
+                    content[index][key] = json!(children);
+                    return true;
+                }
+            }
+        }
+        let (Some(from), Some(to)) = (
+            node["span"]["byte_start"].as_u64(),
+            node["span"]["byte_end"].as_u64(),
+        ) else {
+            continue;
+        };
+        if from > start || to <= start {
+            continue;
+        }
+        if to >= end
+            && let Some((before, selected, after)) =
+                exact_literal_partition(Some(node), target, decoded)
+        {
+            let mut replacement = Vec::new();
+            replacement.extend(before);
+            replacement.push(wrapper(&[selected]));
+            replacement.extend(after);
+            content.splice(index..=index, replacement);
+            return true;
+        }
+        if from != start {
+            return false;
+        }
+        for last in index..content.len() {
+            let Some(last_end) = content[last]["span"]["byte_end"].as_u64() else {
+                return false;
+            };
+            if last_end == end {
+                let annotation = wrapper(&content[index..=last]);
+                content.splice(index..=last, [annotation]);
+                return true;
+            }
+            if last_end > end {
+                return false;
+            }
+        }
+        return false;
+    }
+    false
+}
+
+fn literal_ruby_base(node: &Value, source: &str) -> Option<Vec<Value>> {
+    let base = node["base"].as_str()?;
+    let mut start = usize::try_from(node["span"]["byte_start"].as_u64()?).ok()?;
+    let end = usize::try_from(node["span"]["byte_end"].as_u64()?).ok()?;
+    if source.get(start..end)?.starts_with('｜') {
+        start += '｜'.len_utf8();
+    }
+    if source.get(start..start + base.len())? != base {
+        return None;
+    }
+    let mut span = node["span"].clone();
+    span["byte_start"] = json!(start);
+    span["byte_end"] = json!(start + base.len());
+    span["line_end"] = span["line_start"].clone();
+    Some(vec![json!({"kind":"text", "value":base, "span":span})])
 }
 
 fn exact_literal_partition(
@@ -5887,5 +5982,32 @@ mod tests {
             let second = pair_bare_toggles(content);
             prop_assert_eq!(first, second);
         }
+    }
+    #[test]
+    fn repeated_source_target_descends_past_marker_provenance() {
+        let decoded = decode_source_bytes("菌毒［＃注記］".as_bytes()).unwrap();
+        let target = Span {
+            start: 0,
+            end: "菌".len(),
+        };
+        let mut content = vec![
+            json!({"kind":"text", "value":"菌毒", "span":{"byte_start":0,"byte_end":6,"line_start":1,"line_end":1}}),
+        ];
+        let wrap = |children: &[Value]| json!({"kind":"annotated_text", "content":children, "span":{"byte_start":6,"byte_end":21,"line_start":1,"line_end":1}});
+        assert!(annotate_source_target(
+            &mut content,
+            target,
+            &decoded,
+            &wrap
+        ));
+        assert!(annotate_source_target(
+            &mut content,
+            target,
+            &decoded,
+            &wrap
+        ));
+        assert_eq!(content[0]["content"][0]["kind"], "annotated_text");
+        assert_eq!(content[0]["content"][0]["content"][0]["value"], "菌");
+        assert_eq!(content[1]["value"], "毒");
     }
 }

@@ -42,14 +42,15 @@
 use crate::lexer::{
     ClassifiedSpan, PairEvent, SpanKind, Token, classify, pair, sanitize, tokenize,
 };
-use ab_aozora_spec::{Diagnostic, PairLink};
+use ab_aozora_spec::{Diagnostic, PairKind, PairLink};
 
 use ab_aozora_syntax::accent::decompose_fragment_sites;
 use ab_aozora_syntax::alloc::Allocator;
 use ab_aozora_syntax::ast::canonicalize_classified_source_facts;
-use ab_aozora_syntax::ast::{LexOutput, Node, NodeStore, Registry};
+use ab_aozora_syntax::ast::{LexOutput, Node, NodeStore, NonEmptySpan, Registry};
 use ab_aozora_syntax::format::ForwardOrigin;
 use ab_aozora_syntax::{ForwardAttr, Span};
+use std::collections::BTreeMap;
 
 use crate::fold::Normalizer;
 
@@ -251,7 +252,7 @@ impl Pipeline<'_, Paired> {
             .links
             .iter()
             .filter_map(|link| {
-                if link.kind != ab_aozora_spec::PairKind::Tortoise {
+                if link.kind != PairKind::Tortoise {
                     return None;
                 }
                 let body =
@@ -298,7 +299,9 @@ impl Pipeline<'_, Paired> {
             let spans: Vec<ClassifiedSpan> = (&mut classify_stream).collect();
             let mut classify_diagnostics: Vec<Diagnostic> = classify_stream.take_diagnostics();
             drop(classify_stream);
-            let (lowered, ruby_base_decorated) = lower_spans(spans, &sanitized_text, &mut alloc);
+            let (mut lowered, ruby_base_decorated) =
+                lower_spans(spans, &sanitized_text, &mut alloc);
+            resolve_adjacent_note_targets(&mut lowered, &sanitized_text, alloc.store(), &links);
             // Ruby-base forward emphasis: a directive the lowering pass
             // decorated onto a preceding ruby base is no longer an unstyled
             // decline, so drop its `forward_referent_not_stylable` warning. Only
@@ -414,6 +417,70 @@ fn lower_spans(
     // it uniquely names.
     let decorated = decorate_ruby_bases(&mut out, source, alloc.store());
     (out, decorated)
+}
+
+/// Resolve source quotations within the immediately preceding typed base.
+fn resolve_adjacent_note_targets(
+    spans: &mut [ClassifiedSpan],
+    source: &str,
+    store: &NodeStore,
+    links: &[PairLink],
+) {
+    if !spans.iter().any(|span| {
+        matches!(span.kind,
+        SpanKind::Aozora(Node::MarginNote(note)) if note.target_span.is_none())
+    }) {
+        return;
+    }
+    let pairs: BTreeMap<_, _> = links.iter().map(|pair| (pair.close.end, pair)).collect();
+    for index in 1..spans.len() {
+        let SpanKind::Aozora(Node::MarginNote(mut note)) = spans[index].kind else {
+            continue;
+        };
+        if note.target_span.is_some() {
+            continue;
+        }
+        let previous = &spans[index - 1];
+        if previous.source_span.end != spans[index].source_span.start {
+            continue;
+        }
+        let expected_pair = match previous.kind {
+            SpanKind::Aozora(Node::Ruby(_)) => PairKind::Ruby,
+            SpanKind::Aozora(Node::Format(_)) => PairKind::Bracket,
+            _ => continue,
+        };
+        let Some(pair) = pairs.get(&previous.source_span.end) else {
+            continue;
+        };
+        if pair.kind != expected_pair {
+            continue;
+        }
+        let mut start = previous.source_span.start as usize;
+        let end = pair.open.start as usize;
+        if source
+            .get(start..end)
+            .is_some_and(|text| text.starts_with('｜'))
+        {
+            start += '｜'.len_utf8();
+        }
+        let (Some(base), Some(target)) = (
+            source.get(start..end),
+            store.content_range_as_plain(note.base),
+        ) else {
+            continue;
+        };
+        let mut occurrences = base.match_indices(target);
+        let Some((offset, _)) = occurrences.next() else {
+            continue;
+        };
+        if target.is_empty() || occurrences.next().is_some() {
+            continue;
+        }
+        let from = u32::try_from(start + offset).expect("source offset fits u32");
+        let to = u32::try_from(start + offset + target.len()).expect("source offset fits u32");
+        note.target_span = NonEmptySpan::new(Span::new(from, to));
+        spans[index].kind = SpanKind::Aozora(Node::MarginNote(note));
+    }
 }
 
 /// Whether a forward attribute decorates a whole run as a single emphasis

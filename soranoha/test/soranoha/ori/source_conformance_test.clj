@@ -682,3 +682,12 @@
       (is (= (str "前、" visible "後") (:plaintext result)))
       (is (empty? (get-in result [:ir "interpretation_problems"])))
       (is (some #(= "マヽ" (.getTextContent ^Node %)) (elements result "note"))))))
+
+(deftest partial-ruby-note-preserves-base-and-reading
+  (let [result (transcribe (source "前、菌毒《きんどく》［＃「菌」の左に「キノコ」の注記］後"))
+        note (first (filter #(= "gloss" (attribute % "type")) (elements result "note")))]
+    (is (= "前、菌毒後" (:plaintext result)))
+    (is (= ["菌毒"] (texts result "rb")))
+    (is (= ["きんどく"] (texts result "rt")))
+    (is (= "キノコ" (.getTextContent ^Node note)))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))

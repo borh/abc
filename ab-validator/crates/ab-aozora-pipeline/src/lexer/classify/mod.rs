@@ -713,7 +713,9 @@ where
 
     fn fold_pending_refmark(&mut self) {
         if let Some(rm) = self.pending_refmark.take() {
+            self.flush_plain_up_to(rm.start);
             self.push_plain(rm, PlainProvenance::RecoveredVerbatim);
+            self.flush_plain_up_to(rm.end);
         }
     }
 
@@ -1020,10 +1022,8 @@ where
     }
 
     /// Replay the events from a frame whose recognition declined.
-    /// Each event is treated as if it had been received at top level
-    /// without a frame ever opening — text/solo/unmatched fold into
-    /// the pending Plain run; newlines flush and fire as Newline
-    /// spans.
+    /// The whole declined construct remains recovered source, including its
+    /// interior text. Newlines retain their independent structural spans.
     ///
     /// `refmark` is `Some(span)` when the frame was opened in
     /// gaiji-mode (Bracket preceded by `※`). The refmark bytes need
@@ -1043,6 +1043,20 @@ where
         let _classify_guard = SubsystemGuard::new(Subsystem::ReplayBody);
         #[cfg(feature = "classify-instrument")]
         record_replay_body_size(body.len() as u64);
+        if let Some(pending) = self.pending_ruby_base.take() {
+            self.emit_pending_gaiji(pending);
+        }
+        let start = refmark.or_else(|| body.first().and_then(PairEvent::span));
+        let end = body
+            .iter()
+            .filter_map(PairEvent::span)
+            .map(|span| span.end)
+            .max();
+        // Preserve the failed construct's boundary even next to another
+        // recovered token, such as a literal closing bracket.
+        if let Some(span) = start {
+            self.flush_plain_up_to(span.start);
+        }
         if let Some(rm) = refmark {
             self.push_plain(rm, PlainProvenance::RecoveredVerbatim);
         }
@@ -1050,7 +1064,19 @@ where
             if matches!(ev, PairEvent::Unclosed { .. }) {
                 continue;
             }
-            self.handle_top_level(ev, /*replay=*/ true);
+            if matches!(ev, PairEvent::Text { .. }) {
+                // Text inside a declined syntax frame is part of that failed
+                // construct, not independently accepted visible prose.
+                self.push_plain(
+                    ev.span().expect("text span"),
+                    PlainProvenance::RecoveredVerbatim,
+                );
+            } else {
+                self.handle_top_level(ev, /*replay=*/ true);
+            }
+        }
+        if let Some(end) = end {
+            self.flush_plain_up_to(end);
         }
     }
 
@@ -1176,8 +1202,7 @@ where
                 }
             )
         {
-            let rm = self.pending_refmark.take().expect("checked Some");
-            self.push_plain(rm, PlainProvenance::RecoveredVerbatim);
+            self.fold_pending_refmark();
         }
     }
 
@@ -1946,8 +1971,7 @@ where
                 }
             )
         {
-            let rm = self.pending_refmark.take().expect("checked Some");
-            self.push_plain(rm, PlainProvenance::RecoveredVerbatim);
+            self.fold_pending_refmark();
         }
 
         self.handle_top_level(event, /*replay=*/ false);

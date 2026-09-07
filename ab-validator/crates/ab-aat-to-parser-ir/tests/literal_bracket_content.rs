@@ -78,11 +78,18 @@ fn literal_brackets_preserve_body_and_nested_notation() {
 #[test]
 fn residual_source_gaps_have_explicit_interpretation_uncertainty() {
     let converter = converter();
-    for (source, complete) in [("前〔cafe'〕［＃tail\r\n", false), ("前※後", true)] {
+    for (source, complete, expected, raw) in [
+        ("前〔cafe'〕［＃tail\r\n", false, "前café\n", "［＃tail"),
+        ("前※後", true, "前後", "※"),
+        ("前］※後", false, "前］後", "※"),
+        ("前］［＃tail", false, "前］", "［＃tail"),
+        ("前［＃未閉\n後", false, "前\n後", "［＃未閉"),
+    ] {
         let aat: Value =
             serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
                 .unwrap();
         assert_eq!(aat["meta"]["parse_complete"], complete);
+        assert_eq!(ab_plaintext::visible_text_projection(&aat), expected);
         let output = converter
             .convert(aat, ConversionOptions::default())
             .unwrap();
@@ -92,7 +99,11 @@ fn residual_source_gaps_have_explicit_interpretation_uncertainty() {
         assert_eq!(problems.len(), 1, "{source}");
         assert_eq!(problems[0]["code"], "unparsed-source-gap");
         assert_eq!(problems[0]["kind"], "uninterpreted-notation");
-        assert_eq!(problems[0]["raw"], source);
+        assert_eq!(problems[0]["raw"], raw);
+        let span = &problems[0]["source_span"];
+        let start = usize::try_from(span["start"].as_u64().unwrap()).unwrap();
+        let end = usize::try_from(span["end"].as_u64().unwrap()).unwrap();
+        assert_eq!(&source[start..end], raw);
         assert_eq!(problems[0]["influence"]["kind"], "document");
     }
 }

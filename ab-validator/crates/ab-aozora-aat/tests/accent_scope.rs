@@ -63,13 +63,16 @@ fn resolved_variant_spelling_preserves_original_accent_notation() {
 }
 
 #[test]
-fn unparsed_source_gaps_preserve_accent_syntax_and_line_endings() {
+fn unparsed_source_gaps_do_not_own_the_visible_accent_prefix() {
     let source = "前〔cafe'〕［＃tail\r\n";
     let aat: Value =
         serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
     let raw = source_notes(&aat);
     assert_eq!(raw.len(), 1);
-    assert_eq!(raw[0]["source"], source);
+    assert_eq!(raw[0]["source"], "［＃tail");
+    let start = usize::try_from(raw[0]["span"]["byte_start"].as_u64().unwrap()).unwrap();
+    let end = usize::try_from(raw[0]["span"]["byte_end"].as_u64().unwrap()).unwrap();
+    assert_eq!(&source[start..end], "［＃tail");
 }
 
 proptest! {

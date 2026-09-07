@@ -86,7 +86,11 @@ fn accepted_plain_recovery_paths_are_distinct_from_text() {
         ("※", vec![(0, 3, R)]),
         ("「literal」", vec![(0, 3, R), (3, 10, T), (10, 13, R)]),
         ("〔literal〕", vec![(0, 3, R), (3, 10, T), (10, 13, R)]),
-        ("［＃tail", vec![(0, 6, R), (6, 10, T)]),
+        ("［＃tail", vec![(0, 10, R)]),
+        // The unclosed frame reaches EOF; later text was not independently
+        // accepted outside that failed frame.
+        ("前［＃tail\n後", vec![(0, 3, T), (3, 13, R), (14, 17, R)]),
+        ("前※後", vec![(0, 3, T), (3, 6, R), (6, 9, T)]),
         ("stray］", vec![(0, 5, T), (5, 8, R)]),
         ("※［＃［＃nested］］", vec![(0, 3, R)]),
     ];

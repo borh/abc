@@ -280,6 +280,7 @@ enum ProjectedKind {
     },
     QuoteOpen,
     QuoteClose,
+    RecoveredSource,
 }
 
 impl ProjectedKind {
@@ -296,6 +297,7 @@ impl ProjectedKind {
             Self::Directive(_) | Self::TextVariant { .. } => "directive",
             Self::QuoteOpen => "angleQuoteOpen",
             Self::QuoteClose => "angleQuoteClose",
+            Self::RecoveredSource => "unparsed-source-gap",
         }
     }
 }
@@ -394,6 +396,16 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                 marker_span,
             }
         })
+        .chain(tree.classified_source_facts.iter().filter_map(|fact| {
+            let span: Span = fact.source_span.into();
+            (fact.construct_id == ab_aozora_pipeline::ConstructId::RecoveredVerbatim
+                && contains_aozora_markup(&tree.sanitized[span.start..span.end]))
+            .then_some(AozoraNode {
+                kind: ProjectedKind::RecoveredSource,
+                span,
+                marker_span: None,
+            })
+        }))
         .collect()
 }
 
@@ -1642,6 +1654,9 @@ fn inline_content(
             push_source_gap(&mut content, decoded, cursor, node.span.start);
         }
         match node.kind {
+            ProjectedKind::RecoveredSource => {
+                push_source_gap(&mut content, decoded, node.span.start, node.span.end);
+            }
             ProjectedKind::QuoteOpen | ProjectedKind::QuoteClose => content.push(json!({
                 "kind": "text",
                 "value": if node.kind == ProjectedKind::QuoteOpen { "《" } else { "》" },

@@ -83,7 +83,7 @@ fn directive_body() -> impl Strategy<Value = String> {
         Just("中央寄せ".to_owned()),
         Just("地付きで".to_owned()),
         Just("ここから最後まで".to_owned()), // Tier2 prefix
-        Just("地付き、地より".to_owned()),   // Tier2 prefix
+        Just("地付き、地より".to_owned()),   // incomplete end-spacing prefix
     ];
     prop_oneof![
         // Forward form: 「X」 + keyword.

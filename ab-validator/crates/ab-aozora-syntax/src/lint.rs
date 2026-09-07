@@ -123,9 +123,7 @@ fn parameterized_region_close(body: &str) -> Option<String> {
     None
 }
 
-/// 字下げ numeric-spelling drift → the recognised indent leaf. (The lossy
-/// 地より…字アキ→地から…字上げ and 行末から…地付き re-derivations moved to
-/// [`crate::degraded`] — they fold measurement vocabularies, not spellings.)
+/// Normalize equivalent wording of quantified indentation.
 fn parameterized_align(body: &str) -> Option<String> {
     // {N}字下げて → {N}字下げ.
     if let Some(n) = body.strip_suffix("字下げて")

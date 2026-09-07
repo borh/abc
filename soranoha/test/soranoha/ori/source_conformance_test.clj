@@ -1339,3 +1339,14 @@
     (is (= ["（死）"] (mapv #(.getTextContent ^Node %) notes)))
     (is (every? #(string/blank? (attribute % "place")) notes))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest repeated-end-offset-assertions-share-one-line-layout
+  (let [result (transcribe (source "前。\n［＃地から８字上げ］美作守内［＃地付き、地より８字アキ］\n後。"))
+        layouts (filter #(string/includes? (attribute % "style") "padding-inline-end: 8em")
+                        (elements result "div"))]
+    (is (= 1 (count layouts)))
+    (is (= "美作守内" (view/visible-text (first layouts))))
+    (is (= "前。\n美作守内\n後。" (:plaintext result)))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))
+    (is (= 2 (count (filter #(= "line-layout" (get % "kind"))
+                            (get-in result [:ir "interpretation_facts"])))))))

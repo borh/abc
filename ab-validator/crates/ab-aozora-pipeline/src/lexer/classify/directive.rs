@@ -151,7 +151,8 @@ enum BodyFamily {
     KaeritenCompound,    // body must equal one of 8 compound marks
 
     // === Prefix-with-parameter (parse body[match_end..]) ===
-    AlignEndParamPrefix,      // 地から → 地から{N}字上げ
+    AlignEndParamPrefix, // 地から → 地から{N}字上げ
+    AlignEndSpacingPrefix,
     SashiePrefix,             // 挿絵（ → 挿絵（X）入る
     IndentBlockParamPrefix,   // ここから → ここから{N}字下げ
     AlignEndBlockParamPrefix, // ここから地から → ここから地から{N}字上げ
@@ -262,6 +263,7 @@ const fn body_family_mode(family: BodyFamily) -> MatchMode {
         | BodyFamily::KaeritenSingle
         | BodyFamily::KaeritenCompound => MatchMode::Exact,
         BodyFamily::AlignEndParamPrefix
+        | BodyFamily::AlignEndSpacingPrefix
         | BodyFamily::SashiePrefix
         | BodyFamily::IndentBlockParamPrefix
         | BodyFamily::AlignEndBlockParamPrefix
@@ -611,6 +613,10 @@ static BODY_PATTERNS: &[BodyPattern] = &[
     BodyPattern {
         needle: "この行は行末より",
         family: BodyFamily::AlignEndParamPrefix,
+    },
+    BodyPattern {
+        needle: "地付き、地より",
+        family: BodyFamily::AlignEndSpacingPrefix,
     },
     BodyPattern {
         needle: "地付き",
@@ -1371,7 +1377,7 @@ pub(super) fn classify_annotation_body(
                 return Some((EmitKind::BlockClose(close), None));
             }
             let rest = &body[match_end..];
-            if let Some((amount, tail)) = parse_indent_count_prefix(rest)
+            if let Some((amount, tail)) = parse_layout_count_prefix(rest)
                 && tail == "字下げ終わり"
             {
                 return Some((
@@ -1433,7 +1439,7 @@ pub(super) fn classify_annotation_body(
             // The verb is the intransitive 字上がり as well as 字上げ, with an
             // optional 揃え suffix (`文末よりN字上げ揃え`).
             let rest = &body[match_end..];
-            let (n, tail) = parse_decimal_u8_prefix(rest)?;
+            let (n, tail) = parse_layout_count_prefix(rest)?;
             (matches!(tail, "字上げ" | "字上がり" | "字上げ揃え" | "字上がり揃え") && n >= 1).then(
                 || {
                     (
@@ -1442,6 +1448,15 @@ pub(super) fn classify_annotation_body(
                     )
                 },
             )
+        }
+        BodyFamily::AlignEndSpacingPrefix => {
+            let (offset, tail) = parse_layout_count_prefix(&body[match_end..])?;
+            (offset > 0 && matches!(tail, "字アキ" | "字あき")).then(|| {
+                (
+                    EmitKind::Aozora(alloc.line(LineFormat::AlignEnd { offset })),
+                    None,
+                )
+            })
         }
         BodyFamily::TopIndentPrefix => {
             // body == 天から/天より{N}字下げ[、地より{M}字…] — single-line indent
@@ -1501,7 +1516,7 @@ pub(super) fn classify_annotation_body(
                 .strip_prefix("天付き、折り返して")
                 .or_else(|| rest.strip_prefix("天付き折り返して"))
             {
-                let (m, tail2) = parse_indent_count_prefix(after)?;
+                let (m, tail2) = parse_layout_count_prefix(after)?;
                 return (tail2 == "字下げ").then_some((
                     EmitKind::BlockOpen(RegionFormat::Indent(IndentBlock {
                         purpose: None,
@@ -1518,7 +1533,7 @@ pub(super) fn classify_annotation_body(
                     None,
                 ));
             }
-            let (n, tail) = parse_indent_count_prefix(rest)?;
+            let (n, tail) = parse_layout_count_prefix(rest)?;
             let tail = tail.trim_start_matches([' ', '　']);
             if tail == "字下げ" {
                 Some((
@@ -2226,7 +2241,7 @@ fn resolve_indent_segment(segment: &str, block: &mut IndentBlock) -> Option<()> 
     }
     // 折り返して{M}字下げ — hanging-indent continuation width.
     if let Some(rest) = segment.strip_prefix("折り返して") {
-        let (m, tail) = parse_indent_count_prefix(rest)?;
+        let (m, tail) = parse_layout_count_prefix(rest)?;
         if tail != "字下げ" || block.wrap.is_some() {
             return None;
         }
@@ -2263,7 +2278,7 @@ fn resolve_indent_segment(segment: &str, block: &mut IndentBlock) -> Option<()> 
         .strip_prefix("地より")
         .or_else(|| segment.strip_prefix("地から"))
     {
-        let (offset, tail) = parse_indent_count_prefix(rest)?;
+        let (offset, tail) = parse_layout_count_prefix(rest)?;
         if tail != "字上げ" {
             return None;
         }
@@ -2521,7 +2536,7 @@ pub(super) fn parse_emphasis_body(body: &str) -> Option<(EmphasisWeight, bool, b
     })
 }
 
-fn parse_indent_count_prefix(source: &str) -> Option<(u8, &str)> {
+fn parse_layout_count_prefix(source: &str) -> Option<(u8, &str)> {
     if let Some(parsed) = parse_decimal_u8_prefix(source) {
         return Some(parsed);
     }

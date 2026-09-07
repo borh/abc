@@ -56,21 +56,6 @@ pub fn degraded_directive(body: &str) -> Option<Cow<'static, str>> {
         return Some(Cow::Owned(format!("ここから{n}字下げ")));
     }
 
-    // D3/D4 — 地付き、地より{N}字アキ / 字あき → 地から{N}字上げ. JUDGMENT: folds
-    // two measurement vocabularies (アキ = blank space from the bottom margin;
-    // 上げ = raised from the bottom) via the typographic identity
-    // "gap-from-edge ≡ raised-from-edge". Also a `、`-joined compound, which
-    // Tier1 otherwise excludes.
-    for tail in ["字アキ", "字あき"] {
-        if let Some(n) = body
-            .strip_prefix("地付き、地より")
-            .and_then(|r| r.strip_suffix(tail))
-            && is_digit_run(n)
-        {
-            return Some(Cow::Owned(format!("地から{n}字上げ")));
-        }
-    }
-
     // D5 — 行末から{N}字上で地付き → 地から{N}字上げ. JUDGMENT: re-projects a
     // line-end + up + geochi description onto the bottom-anchored raise leaf.
     if let Some(n) = body
@@ -82,9 +67,9 @@ pub fn degraded_directive(body: &str) -> Option<Cow<'static, str>> {
     }
 
     // D6 — 下げて[、]地より{N}字あきで / 字アキで → 地から{N}字上げ. JUDGMENT/LOSSY,
-    // sibling of D3/D4. The both-margin parser only anchors when a leading 字下げ
+    // because the both-margin parser only anchors when a leading 字下げ
     // *count* is present, so the count-less 下げて head-indent has no needle and the
-    // whole body falls to Unknown. The trailing 地より{N}字あきで is the D3/D4
+    // whole body falls to Unknown. The trailing 地より{N}字あきで supplies the
     // gap-from-bottom, folded onto the bottom-anchored raise leaf via the same
     // アキ≡上げ identity; the unquantified head-indent is dropped — lossy, hence
     // render-only. Both the comma'd (下げて、地より) and bare (下げて地より) corpus
@@ -111,8 +96,6 @@ pub fn degraded_directive(body: &str) -> Option<Cow<'static, str>> {
 /// node, and `degraded_directive(output)` is `None` (idempotent).
 pub const DEGRADED_SAMPLES: &[&str] = &[
     "ここから最後まで3字下げ",
-    "地付き、地より3字アキ",
-    "地付き、地より3字あき",
     "行末から2字上で地付き",
     "下げて、地より3字あきで",
     "下げて、地より3字アキで",
@@ -128,14 +111,6 @@ mod tests {
         assert_eq!(
             degraded_directive("ここから最後まで3字下げ").as_deref(),
             Some("ここから3字下げ")
-        );
-        assert_eq!(
-            degraded_directive("地付き、地より3字アキ").as_deref(),
-            Some("地から3字上げ")
-        );
-        assert_eq!(
-            degraded_directive("地付き、地より3字あき").as_deref(),
-            Some("地から3字上げ")
         );
         assert_eq!(
             degraded_directive("行末から2字上で地付き").as_deref(),

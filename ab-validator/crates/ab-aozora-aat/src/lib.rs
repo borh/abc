@@ -2215,7 +2215,7 @@ fn blocks_from_inline_content(content: Vec<Value>, decoded: &DecodedSource) -> V
             continue;
         }
 
-        if let Some(layout) = node.get("x-layout") {
+        if let Some(layout) = node.get("x-layout").cloned() {
             let is_region = node["x-source-marker-kind"] == "containerOpen";
             let is_page = layout.get("page_placement").is_some() && !is_region;
             let replacement = node.get("x-native-end-before-span").and_then(|span| {
@@ -2261,7 +2261,19 @@ fn blocks_from_inline_content(content: Vec<Value>, decoded: &DecodedSource) -> V
                     .first()
                     .map_or(&node["span"], |first| &first["span"])
                     .clone();
+                let marker_index = inner.len();
                 inner.extend_from_slice(&content[index + 1..boundary]);
+                let repeated_marker = if !is_region && !is_page {
+                    coalesce_line_end_alignment(&mut inner, &mut node, source)
+                } else {
+                    None
+                };
+                if node.get("x-layout").is_none() {
+                    inner.insert(marker_index, node);
+                    blocks.extend(blocks_from_inline_content(inner, decoded));
+                    index = boundary;
+                    continue;
+                }
                 strip_boundary_newlines(&mut inner, source);
                 let mut block = layout.clone();
                 block["kind"] = json!("layout_block");
@@ -2288,6 +2300,9 @@ fn blocks_from_inline_content(content: Vec<Value>, decoded: &DecodedSource) -> V
                 } else {
                     vec![node["span"].clone()]
                 };
+                if let Some(marker) = repeated_marker {
+                    markers.push(marker);
+                }
                 if explicit_close {
                     markers.push(content[boundary]["span"].clone());
                 }
@@ -2370,6 +2385,48 @@ fn place_normal_headings(nodes: Vec<Value>, source: &str) -> Vec<Value> {
         push_paragraph_if_not_empty(&mut blocks, paragraph);
     }
     blocks
+}
+
+// A line-initial and line-final assertion own the same text only when no
+// intervening native scope boundary gives either marker a different target.
+fn coalesce_line_end_alignment(
+    content: &mut Vec<Value>,
+    marker: &mut Value,
+    source: &str,
+) -> Option<Value> {
+    if marker["x-layout"]
+        .as_object()
+        .is_none_or(|fields| fields.len() != 2)
+        || marker["x-layout"]["align"] != "right"
+        || marker["x-layout"].get("offset_from_end").is_none()
+        || !marker_starts_source_line(marker, source)
+        || content.iter().any(|node| {
+            matches!(
+                node["x-source-marker-kind"].as_str(),
+                Some("containerOpen" | "containerClose")
+            )
+        })
+    {
+        return None;
+    }
+    let matching = content.iter().position(|node| {
+        node["x-layout"]
+            .as_object()
+            .is_some_and(|fields| fields.len() == 2)
+            && node["x-layout"]["align"] == "right"
+            && node["x-layout"].get("offset_from_end").is_some()
+            && node["span"]["line_start"] == marker["span"]["line_start"]
+            && marker_ends_source_line(node, source)
+    })?;
+    if content[matching]["x-layout"] == marker["x-layout"] {
+        return Some(content.remove(matching)["span"].clone());
+    }
+    for node in [marker, &mut content[matching]] {
+        node.as_object_mut()?.remove("x-layout");
+        node["interpretation_problem"] = json!({"kind":"uninterpreted-notation", "code":"uninterpreted-notation",
+            "aspects":["layout"], "influence":{"kind":"document"}});
+    }
+    None
 }
 
 fn marker_starts_source_line(node: &Value, source: &str) -> bool {

@@ -433,7 +433,7 @@ fn map_block_content(
             current = end;
         }
         "typography_block" | "caption_block" | "warichu_block" => {
-            let start = outputs.paragraphs.len();
+            let start = outputs.nodes.len();
             for (index, child) in block["children"]
                 .as_array()
                 .into_iter()
@@ -451,8 +451,8 @@ fn map_block_content(
                     heuristic_enabled,
                 )?;
             }
-            if outputs.paragraphs.len() > start {
-                let mut scope = json!({"paragraph_range":{"start":start,"end":outputs.paragraphs.len()}, "source_pointer":path});
+            if outputs.nodes.len() > start {
+                let mut scope = json!({"node_range":{"start":start,"end":outputs.nodes.len()}, "source_pointer":path});
                 if block["kind"] == "typography_block" {
                     let mut typography = layout_scope(&block["formatting"])?;
                     typography["source"] = json!("aat-block");
@@ -471,77 +471,38 @@ fn map_block_content(
         "jisage_block" => {
             let children: Vec<&Value> =
                 block["children"].as_array().into_iter().flatten().collect();
-            if children
-                .iter()
-                .all(|child| child.get("kind").and_then(Value::as_str) == Some("paragraph"))
-            {
-                let layout = paragraph_layout_from_jisage_block(block);
-                let paragraph_start = outputs.paragraphs.len();
-                let block_style = block.get("block_style");
-                let enclosing_scope = block_style.is_some()
-                    || children
-                        .iter()
-                        .any(|child| paragraph_layout_wrapper(child).is_some());
-                for (index, child) in children.into_iter().enumerate() {
-                    current = map_block(
-                        child,
-                        outputs,
-                        recorder,
-                        current,
-                        &format!("{path}.children[{index}]"),
-                        (!enclosing_scope).then(|| layout.clone()),
-                        false,
-                        heuristic_enabled,
-                    )?;
-                }
-                if enclosing_scope {
-                    let mut scope = json!({
-                        "paragraph_range": {"start": paragraph_start, "end": outputs.paragraphs.len()},
-                        "indent": layout["indent"], "source_pointer": path
-                    });
-                    if let Some(style) = block_style {
-                        for property in ["direction", "align", "border"] {
-                            if let Some(value) = style.get(property) {
-                                scope[property] = value.clone();
-                            }
+            let layout = paragraph_layout_from_jisage_block(block);
+            let node_start = outputs.nodes.len();
+            let block_style = block.get("block_style");
+            let enclosing_scope = block_style.is_some()
+                || children.iter().any(|child| {
+                    child["kind"] != "paragraph" || paragraph_layout_wrapper(child).is_some()
+                });
+            for (index, child) in children.into_iter().enumerate() {
+                current = map_block(
+                    child,
+                    outputs,
+                    recorder,
+                    current,
+                    &format!("{path}.children[{index}]"),
+                    (!enclosing_scope).then(|| layout.clone()),
+                    false,
+                    heuristic_enabled,
+                )?;
+            }
+            if enclosing_scope && outputs.nodes.len() > node_start {
+                let mut scope = json!({
+                    "node_range": {"start": node_start, "end": outputs.nodes.len()},
+                    "indent": layout["indent"], "source_pointer": path
+                });
+                if let Some(style) = block_style {
+                    for property in ["direction", "align", "border"] {
+                        if let Some(value) = style.get(property) {
+                            scope[property] = value.clone();
                         }
                     }
-                    outputs.layout_blocks.push(scope);
                 }
-            } else {
-                recorder.record(
-                    "STRUCTURAL",
-                    Some(structural_pointer.as_str()),
-                    None,
-                    None,
-                    None,
-                )?;
-                recorder.record(
-                    "INVENTION",
-                    Some(structural_pointer.as_str()),
-                    Some("indentation"),
-                    None,
-                    Some(json!(1)),
-                )?;
-                let span = map_node_span(block.get("span"), current, current, recorder, path)?;
-                outputs.nodes.push(json!({
-                    "type": "indentation",
-                    "span": span,
-                    "depth": 1,
-                    "text": null,
-                }));
-                for (index, child) in children.into_iter().enumerate() {
-                    current = map_block(
-                        child,
-                        outputs,
-                        recorder,
-                        current,
-                        &format!("{path}.children[{index}]"),
-                        None,
-                        false,
-                        heuristic_enabled,
-                    )?;
-                }
+                outputs.layout_blocks.push(scope);
             }
         }
         "jizume_block" => {

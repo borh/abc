@@ -11,7 +11,7 @@
    "layout_blocks" blocks})
 
 (defn- block [start end]
-  {"paragraph_range" {"start" start "end" end} "indent" 4
+  {"node_range" {"start" start "end" end} "indent" 4
    "direction" "horizontal" "align" "center" "border" "solid" "source_pointer" "blocks[1]"})
 
 (deftest one-layout-scope-encloses-all-and-only-its-paragraphs
@@ -31,6 +31,19 @@
   (doseq [blocks [[(block 1 4) (block 2 5)] [(block 2 7)] [(block 3 3)]]]
     (is (thrown? clojure.lang.ExceptionInfo (tei/render (document blocks))))))
 
+(deftest coincident-ranges-retain-source-containment-order
+  (let [inner (dissoc (assoc (block 1 5) "indent" 2) "border" "direction" "align")
+        outer (dissoc (assoc (block 1 5) "indent" 4) "border" "direction" "align")
+        body (:body (tei/render (document [inner outer])))]
+    (is (= "padding-inline-start: 4em" (get-in body [1 2 1 :style])))
+    (is (= "padding-inline-start: 2em" (get-in body [1 2 2 1 :style])))))
+
+(deftest layout-scope-cannot-bisect-a-source-paragraph
+  (let [ir (assoc (document [(block 1 3)])
+                  "paragraphs" [{"role" "body" "node_range" {"start" 0 "end" 2}}
+                                {"role" "body" "node_range" {"start" 2 "end" 6}}])]
+    (is (thrown? clojure.lang.ExceptionInfo (tei/render ir)))))
+
 (deftest layout-scopes-allow-surrounding-prose-in-the-publication-profile
   (doseq [scope [(block 1 5) (dissoc (block 1 5) "direction" "align" "border")]
           heading? [false true]
@@ -45,6 +58,10 @@
                                                       (-> paragraph
                                                           (update-in ["node_range" "start"] inc)
                                                           (update-in ["node_range" "end"] inc))) %))
+               heading? (update "layout_blocks" #(mapv (fn [block]
+                                                         (-> block
+                                                             (update-in ["node_range" "start"] inc)
+                                                             (update-in ["node_range" "end"] inc))) %))
                boundary (update "nodes" conj boundary))
           result (render/render-work
                   {:parser-ir ir
@@ -56,14 +73,20 @@
                                                  :xml-path xml-path :label "embedded sign"}))))
         (finally (fs/delete-tree dir))))))
 
-(deftest layout-block-cannot-cross-a-division-changing-gap
+(deftest layout-block-preserves-normal-headings-within-its-source-extent
   (let [ir {"nodes" [{"type" "heading" "text" "A" "level" 2}
                      {"type" "text" "text" "前"} {"type" "text" "text" "札1"}
                      {"type" "heading" "text" "B" "level" 2}
                      {"type" "text" "text" "札2"} {"type" "text" "text" "後"}]
-            "paragraphs" (mapv #(hash-map "role" "body" "node_range" {"start" % "end" (inc %)}) [1 2 4 5])}]
-    (is (thrown? clojure.lang.ExceptionInfo (tei/render (assoc ir "layout_blocks" [(block 1 3)])))))
-  (let [ir (document [(block 1 5)])
+            "paragraphs" (mapv #(hash-map "role" "body" "node_range" {"start" % "end" (inc %)}) [1 2 4 5])}
+        body (:body (tei/render (assoc ir "layout_blocks" [(block 2 5)])))
+        scope (first (filter #(and (vector? %) (= :floatingText (first %)))
+                             (tree-seq vector? seq body)))]
+    (is (some #{[:head {:n "2"} "B"]} (tree-seq vector? seq scope)))
+    (is (not-any? #{[:head {:n "2"} "A"]} (tree-seq vector? seq scope)))
+    (is (some #{[:p "札1"]} (tree-seq vector? seq scope)))
+    (is (some #{[:p "札2"]} (tree-seq vector? seq scope))))
+  (let [ir (document [(block 2 6)])
         nodes (into [{"type" "heading" "text" "章" "level" 2}] (get ir "nodes"))
         paragraphs (mapv #(update % "node_range" (fn [r] (update (update r "start" inc) "end" inc)))
                          (get ir "paragraphs"))
@@ -89,7 +112,7 @@
            (:char_declarations (tei/render {"nodes" [known known]}))))))
 
 (deftest enclosing-indent-and-local-closing-alignment-remain-independent
-  (let [scope {"paragraph_range" {"start" 1 "end" 3} "indent" 2 "source_pointer" "blocks[1]"}
+  (let [scope {"node_range" {"start" 1 "end" 3} "indent" 2 "source_pointer" "blocks[1]"}
         ir (-> (document [scope])
                (assoc-in ["paragraphs" 2 "layout"]
                          {"kind" "chitsuki" "source" "aat-style" "align" "right" "offset_from_end" 2}))

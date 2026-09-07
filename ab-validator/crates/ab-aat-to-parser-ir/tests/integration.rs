@@ -774,7 +774,7 @@ fn mapping_preflight_accepts_checked_in_v1_artifact() {
 
     mapping.preflight(&schemas).unwrap();
 
-    assert_eq!(mapping.mapping_version, "0.14.0");
+    assert_eq!(mapping.mapping_version, "0.15.0");
     assert_eq!(
         mapping.target_parser_ir_schema_hash,
         schema_hash(&schemas.parser_ir_schema).unwrap()
@@ -817,7 +817,7 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
     let mapping =
         MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2.json"))
             .unwrap();
-    assert_eq!(mapping.mapping_version, "0.15.0");
+    assert_eq!(mapping.mapping_version, "0.16.0");
     assert_eq!(mapping.source_aat_version, 2);
     let schemas = SchemaSet::load_for_aat_version(&repo_root, &research_root, 2).unwrap();
     mapping.preflight(&schemas).unwrap();
@@ -3506,8 +3506,8 @@ fn heading_preserves_structured_inline_children() {
 
     let heading = output
         .parser_ir
-        .pointer("/nodes/1")
-        .expect("heading node should follow indentation node");
+        .pointer("/nodes/0")
+        .expect("heading retains its identity within the layout scope");
     assert_eq!(heading["type"], "heading");
     assert_eq!(heading["text"], "FGRS");
     assert_eq!(
@@ -4647,7 +4647,7 @@ fn source_corrections_and_one_compound_sign_survive_validated_conversion() {
     );
     assert_eq!(ir["layout_blocks"].as_array().unwrap().len(), 1);
     let block = &ir["layout_blocks"][0];
-    assert_eq!(block["paragraph_range"], json!({"start": 1, "end": 5}));
+    assert_eq!(block["node_range"], json!({"start": 3, "end": 8}));
     assert_eq!(block["indent"], 4);
     assert_eq!(block["direction"], "horizontal");
     assert_eq!(block["align"], "center");
@@ -4724,7 +4724,7 @@ fn enclosing_indent_survives_line_local_closing_alignment() {
         assert_eq!(
             ir["layout_blocks"],
             json!([{
-                "paragraph_range": {"start": 1, "end": 3}, "indent": 2, "source_pointer": "blocks[1]"
+                "node_range": {"start": 1, "end": 4}, "indent": 2, "source_pointer": "blocks[1]"
             }])
         );
         assert_eq!(ir["paragraphs"][2]["layout"]["kind"], "chitsuki");

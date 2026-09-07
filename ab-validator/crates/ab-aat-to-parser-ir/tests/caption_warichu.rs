@@ -79,8 +79,8 @@ fn multiline_roles_preserve_two_source_paragraphs() {
             .find(|s| s["role"] == role)
             .expect("typed block role");
         assert_eq!(
-            scope["paragraph_range"]["end"].as_u64().unwrap()
-                - scope["paragraph_range"]["start"].as_u64().unwrap(),
+            scope["node_range"]["end"].as_u64().unwrap()
+                - scope["node_range"]["start"].as_u64().unwrap(),
             2
         );
         assert_eq!(ir["interpretation_problems"], serde_json::json!([]));

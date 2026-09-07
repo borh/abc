@@ -1,10 +1,10 @@
 {
   "mapping_id": "https://w3id.org/abc/mappings/aat-v2-to-parser-ir-v1/generated-probe",
-  "mapping_version": "0.15.0",
+  "mapping_version": "0.16.0",
   "mapping_schema_hash": "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2",
   "source_aat_version": 2,
   "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "target_parser_ir_schema_hash": "sha256:0d292a9a55568e37d38ecadd9fef25b2aa6e9b899825ee75bde9720ddd361277",
+  "target_parser_ir_schema_hash": "sha256:51b98a309424fa90c5dd2c5ab0bcd8730999810d6c1cf57c066f173b36f33c39",
   "transform_rule_descriptions": [
     {
       "rule_id": "A-02",
@@ -1175,14 +1175,6 @@
       "description": "Observed 28 occurrences; first_path=blocks[1].children[0].heading.content[1].gaiji.description. AAT has no raw source marker; used description as raw_marker"
     },
     {
-      "rule_id": "I-19",
-      "category": "INVENTION",
-      "aat_pointer": "blocks[].children[].jisage_block",
-      "parser_ir_pointer": "indentation",
-      "action": "invent",
-      "description": "Observed 16 occurrences; first_path=blocks[0].children[0].jisage_block. mapped to indentation node; depth unknown -> defaulted 1"
-    },
-    {
       "rule_id": "I-20",
       "category": "INVENTION",
       "aat_pointer": "blocks[].content[].accent.code",
@@ -1277,14 +1269,6 @@
       "parser_ir_pointer": "gaiji.raw_marker",
       "action": "invent",
       "description": "Observed 249 occurrences; first_path=blocks[515].heading.content[0].gaiji.description. AAT has no raw source marker; used description as raw_marker"
-    },
-    {
-      "rule_id": "I-32",
-      "category": "INVENTION",
-      "aat_pointer": "blocks[].jisage_block",
-      "parser_ir_pointer": "indentation",
-      "action": "invent",
-      "description": "Observed 72115 occurrences; first_path=blocks[16].jisage_block. mapped to indentation node; depth unknown -> defaulted 1"
     },
     {
       "rule_id": "L-01",
@@ -4919,14 +4903,6 @@
       "description": "Observed 71461 occurrences; first_path=blocks[16].children[0].heading. block container of kind 'heading' has no parser-IR node; boundary + span + style lost, only inlines emitted"
     },
     {
-      "rule_id": "S-04",
-      "category": "STRUCTURAL",
-      "aat_pointer": "blocks[].children[].jisage_block",
-      "parser_ir_pointer": null,
-      "action": "flatten",
-      "description": "Observed 16 occurrences; first_path=blocks[0].children[0].jisage_block. block container of kind 'jisage_block' has no parser-IR node; boundary + span + style lost, only inlines emitted"
-    },
-    {
       "rule_id": "S-05",
       "category": "STRUCTURAL",
       "aat_pointer": "blocks[].children[].keigakomi_block",
@@ -4949,14 +4925,6 @@
       "parser_ir_pointer": null,
       "action": "flatten",
       "description": "Observed 87024 occurrences; first_path=blocks[1].heading. block container of kind 'heading' has no parser-IR node; boundary + span + style lost, only inlines emitted"
-    },
-    {
-      "rule_id": "S-08",
-      "category": "STRUCTURAL",
-      "aat_pointer": "blocks[].jisage_block",
-      "parser_ir_pointer": null,
-      "action": "flatten",
-      "description": "Observed 72115 occurrences; first_path=blocks[16].jisage_block. block container of kind 'jisage_block' has no parser-IR node; boundary + span + style lost, only inlines emitted"
     },
     {
       "rule_id": "S-09",

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
   "title": "ABC Parser IR",
-  "version": "0.21.0",
+  "version": "0.22.0",
   "type": "object",
   "required": ["schema_id", "schema_hash", "source", "nodes", "warnings", "errors", "interpretation_problems", "interpretation_facts"],
   "additionalProperties": false,
@@ -69,15 +69,16 @@
     },
     "layout_blocks": {
       "type": "array",
+      "description": "Source scopes in postorder: when ranges coincide, the inner scope precedes its enclosing scope.",
       "items": {
         "type": "object",
-        "required": ["paragraph_range", "source_pointer"],
+        "required": ["node_range", "source_pointer"],
         "anyOf":[{"required":["indent"]},{"required":["typography"]},{"required":["role"]}],
         "additionalProperties": false,
         "properties": {
           "typography": {"$ref":"#/$defs/layoutScope"},
           "role":{"enum":["caption","warichu"]},
-          "paragraph_range": { "$ref": "#/$defs/nodeRange", "description": "Half-open indices into paragraphs, delimiting one enclosing layout block." },
+          "node_range": { "$ref": "#/$defs/nodeRange", "description": "Half-open indices into nodes, delimiting one enclosing source layout scope independently of heading and paragraph roles." },
           "indent": { "type": "integer", "minimum": 0 },
           "direction": { "const": "horizontal" },
           "align": { "const": "center" },

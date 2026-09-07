@@ -53,6 +53,21 @@
 (defn- attribute [^Element node ^String name] (.getAttribute node name))
 (defn- texts [result tag] (mapv view/visible-text (elements result tag)))
 
+(deftest typography-scope-retains-a-normal-heading-between-source-paragraphs
+  (let [result (transcribe (source (str "前\n［＃ここから１段階小さな文字］\n"
+                                        "第一段落\n［＃中見出し］章《しょう》［＃中見出し終わり］\n"
+                                        "第二段落\n［＃ここで小さな文字終わり］\n後")))
+        heading (first (elements result "head"))
+        parent (.getParentNode ^Node heading)
+        scope (.getParentNode ^Node parent)]
+    (is (= "前\n第一段落\n章\n第二段落\n後" (:plaintext result)))
+    (is (= "章" (view/visible-text heading)))
+    (is (= "2" (attribute heading "n")))
+    (is (= "layout" (attribute scope "type")))
+    (is (= "font-size small(1)" (attribute scope "rend")))
+    (is (= ["章"] (texts result "rb")))
+    (is (= ["しょう"] (texts result "rt")))))
+
 (deftest heading-regions-preserve-presentation-and-rich-reading
   (doseq [[prefix style] [["同行" "dogyo"] ["窓" "mado"]]]
     (let [result (transcribe (source (str "前［＃" prefix "中見出し］漢字《かんじ》［＃"

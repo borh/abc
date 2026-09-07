@@ -521,7 +521,7 @@
     (is (= "前隱五年後" (:plaintext result)))
     (is (= "前隱五年後" (projection/markdown (:view result))))
     (is (= 2 (count (filter #(= "warichu" (get % "kind"))
-                           (get-in result [:ir "interpretation_facts"])))))
+                            (get-in result [:ir "interpretation_facts"])))))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
 
 (deftest multiline-caption-and-warichu-preserve-source-paragraphs

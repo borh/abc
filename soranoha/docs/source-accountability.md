@@ -29,8 +29,9 @@ per-edition source/export fidelity certificate.
 interpretation facts. Family counts distinguish `interpreter_claimed` from
 `unaccounted`; a claimed occurrence has at least one explicit compatible aspect,
 not necessarily every aspect. Individual claims list their established aspects
-and native source extent. A compatible ruby fact can contain its lexical reading marker, while an
-enclosing emphasis fact cannot account for that ruby. Source apparatus is kept
+and native source extent. Each claim must match the exact span and a compatible
+family of an independently scanned occurrence or nested component. Nested markers
+retain their own component spans. Source apparatus is kept
 separate. Missing facts and unclassified markers remain visible. Lossy decoding
 prevents positive claim accounting. Reported interpretation problems retain their
 original influence bounds alongside positive claims: a claim is not evidence that

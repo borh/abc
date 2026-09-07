@@ -1,6 +1,7 @@
 (ns soranoha.ori.validate-test
   (:require [babashka.fs :as fs]
             [clojure.test :refer [deftest is testing]]
+            [clojure.string :as string]
             [soranoha.ori.validate :as validate]
             [soranoha.core.hash :as hash]
             [soranoha.core.json :as json]
@@ -52,3 +53,29 @@
   (doseq [status ["passed" :passed :assessment/available :aozora/available]]
     (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Invalid TEI validation status"
                           (#'validate/validation-layer status "fixture" "fixture")))))
+
+(defn source-reference-document [n]
+  (str "<TEI xmlns='http://www.tei-c.org/ns/1.0'><teiHeader><fileDesc><titleStmt><title>試験</title></titleStmt><publicationStmt><p>試験</p></publicationStmt><sourceDesc><p><idno type='aozora-work-id'>1</idno></p></sourceDesc></fileDesc><profileDesc><langUsage><language ident='ja'>Japanese</language></langUsage></profileDesc></teiHeader><text><body><p>"
+       (apply str (map #(str "<seg source='#source-" % "'>本文</seg>") (range n)))
+       "</p></body><back><div>"
+       (apply str (map #(str "<note xml:id='source-" % "' type='source-span'>{}</note>") (range n)))
+       "</div></back></text></TEI>"))
+
+(deftest source-references-resolve-xml-ids-through-the-runtime-validator
+  (let [dir (fs/create-temp-dir {:prefix "source-references"})
+        file (str (fs/path dir "tei.xml"))
+        source (source-reference-document 4096)
+        profile (validate/profile-paths ".")
+        check (fn [text]
+                (spit file text)
+                (validate/tei-validation-result profile file))]
+    (try
+      (is (= "passed" (get (check source) "status")))
+      (is (= "passed" (get (check (string/replace-first source "source='#source-0'"
+                                                        "source='#source-0 #source-4095'")) "status")))
+      (doseq [text [(string/replace source "xml:id='source-4095'" "n='source-4095'")
+                    (string/replace-first source "source='#source-0'" "source='#source-0 #missing'")]]
+        (let [result (check text)]
+          (is (= "failed" (get result "status")))
+          (is (some #(= "abc-source-span-target-exists" (get % "rule_id")) (get result "findings")))))
+      (finally (fs/delete-tree dir)))))

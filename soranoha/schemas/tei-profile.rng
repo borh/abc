@@ -14135,7 +14135,7 @@ Sample values include: 1] homeoteleuton; 2] homeoarchy; 3] paleographicConfusion
                 xmlns:rng="http://relaxng.org/ns/structure/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 context="*[@source]">
-         <sch:assert test="every $s in tokenize(normalize-space(@source), '\s+') satisfies //*[@xml:id = substring-after($s, '#')]">
+         <sch:assert test="every $s in tokenize(normalize-space(@source), '\s+') satisfies exists(id(substring-after($s, '#'))[@xml:id = substring-after($s, '#')])">
                 ABC TEI source span fragments must resolve to an existing @xml:id in this document.
               </sch:assert>
       </sch:rule>

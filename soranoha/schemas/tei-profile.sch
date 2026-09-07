@@ -72,7 +72,7 @@
    </pattern>
    <pattern id="abc-source-span-target-exists">
       <rule context="*[@source]">
-         <assert test="every $s in tokenize(normalize-space(@source), '\s+') satisfies //*[@xml:id = substring-after($s, '#')]"> ABC TEI source span fragments must resolve to an existing @xml:id in this document.</assert>
+         <assert test="every $s in tokenize(normalize-space(@source), '\s+') satisfies exists(id(substring-after($s, '#'))[@xml:id = substring-after($s, '#')])"> ABC TEI source span fragments must resolve to an existing @xml:id in this document.</assert>
       </rule>
    </pattern>
    <pattern id="abc-transcription-vs-annotation">

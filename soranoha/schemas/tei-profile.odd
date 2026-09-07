@@ -321,7 +321,7 @@
           <desc>Require each `@source` fragment id to resolve to an `@xml:id` in this document.</desc>
           <constraint>
             <sch:rule context="*[@source]">
-              <sch:assert test="every $s in tokenize(normalize-space(@source), '\s+') satisfies //*[@xml:id = substring-after($s, '#')]">
+              <sch:assert test="every $s in tokenize(normalize-space(@source), '\s+') satisfies exists(id(substring-after($s, '#'))[@xml:id = substring-after($s, '#')])">
                 ABC TEI source span fragments must resolve to an existing @xml:id in this document.
               </sch:assert>
             </sch:rule>

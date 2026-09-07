@@ -130,6 +130,22 @@
     (is (= "rt" (view/local-name (.getParentNode ^Node (first (elements result "app"))))))
     (is (empty? (elements result "sic")))))
 
+(deftest supplied-principal-variants-retain-the-reading-and-rich-target
+  (doseq [[body plain lemma alternative]
+          [["積る甍の［＃「甍の」は底本では「薨の」］雪。" "積る甍の雪。" "甍の" "薨の"]
+           ["前｜東京《とうきょう》の町［＃「東京の町」は底本では「東亰の町」］後。"
+            "前東京の町後。" "東京の町" "東亰の町"]]]
+    (let [result (transcribe (source body))]
+      (is (= plain (:plaintext result)))
+      (is (= [lemma] (texts result "lem")))
+      (is (= [alternative] (texts result "rdg")))
+      (is (empty? (elements result "sic")))
+      (is (empty? (get-in result [:view :view/problems])))
+      (is (not (string/includes? (projection/markdown (:view result)) alternative)))
+      (when (string/includes? body "《")
+        (is (= ["とうきょう"] (texts result "rt")))
+        (is (within? (first (elements result "lem")) (first (elements result "ruby"))))))))
+
 (deftest unknown-notation-retains-evidence-without-certifying-its-neighbours
   (let [raw "［＃未定義の範囲指定開始］"
         result (transcribe (source (str "前" raw "後")))

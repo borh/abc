@@ -23,14 +23,6 @@ fuzz_target!(|data: &[u8]| {
     let Ok(src) = core::str::from_utf8(data) else {
         return;
     };
-    // As in `serialize_round_trip`: sources smuggling the parser-reserved PUA
-    // sentinel range (U+E001..=U+E004) are not user-meaningful aozora source,
-    // and the lexer is free to consume those markers — so the fixed-point
-    // contract does not hold for them.
-    if src.chars().any(|c| matches!(c, '\u{E001}'..='\u{E004}')) {
-        return;
-    }
-
     let lex0 = lex(src);
 
     // `Off` is byte-identical to the default serialize — the opt-in catalogues

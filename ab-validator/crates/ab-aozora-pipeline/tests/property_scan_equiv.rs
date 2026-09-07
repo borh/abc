@@ -125,13 +125,8 @@ fn paired_container_satisfies_invariants() {
 }
 
 #[test]
-fn pua_neutralization_keeps_invariants() {
-    // Raw reserved sentinels in source — the sanitize stage emits a
-    // SourceContainsPua diagnostic per hit and neutralizes each to
-    // U+FFFD (byte-length-preserving). Neither the sentinel nor U+FFFD
-    // is in the trigger set, so the scan-count inequalities are
-    // unaffected; the security rewrite is invisible to the tokenize-stage
-    // monotonicity duality.
+fn literal_pua_keeps_scan_invariants() {
+    // Private-use characters are not notation triggers.
     assert_scan_invariants("a\u{E001}b\u{E004}c");
 }
 

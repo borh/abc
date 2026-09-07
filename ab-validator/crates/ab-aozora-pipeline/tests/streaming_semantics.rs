@@ -272,18 +272,18 @@ fn pipeline_chain_matches_lex_into_arena_for_corpus_shapes() {
 /// does NOT consume diagnostics.
 #[test]
 fn pipeline_phase0_diagnostic_observed_at_sanitized_also_present_after_build() {
-    let src = "abc\u{E001}def";
+    let src = "abc〔cafe'〕def";
 
     let sanitized = Pipeline::new(src).sanitize();
     let phase0_count_at_sanitized = sanitized
         .diagnostics()
         .iter()
-        .filter(|d| matches!(d, Diagnostic::SourceContainsPua { .. }))
+        .filter(|d| matches!(d, Diagnostic::AccentDecompositionApplied { .. }))
         .count();
     assert_eq!(
         phase0_count_at_sanitized,
         1,
-        "expected one SourceContainsPua at Sanitized state, \
+        "expected one AccentDecompositionApplied at Sanitized state, \
          got: {:?}",
         sanitized.diagnostics()
     );
@@ -293,11 +293,11 @@ fn pipeline_phase0_diagnostic_observed_at_sanitized_also_present_after_build() {
     let phase0_count_at_build = final_out
         .diagnostics
         .iter()
-        .filter(|d| matches!(d, Diagnostic::SourceContainsPua { .. }))
+        .filter(|d| matches!(d, Diagnostic::AccentDecompositionApplied { .. }))
         .count();
     assert_eq!(
         phase0_count_at_build, 1,
-        "expected the same SourceContainsPua to survive build, \
+        "expected the same AccentDecompositionApplied to survive build, \
          got: {:?}",
         final_out.diagnostics
     );

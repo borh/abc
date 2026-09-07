@@ -531,8 +531,8 @@ mod tests {
     }
 
     #[test]
-    fn diagnostics_populated_for_pua_collision() {
-        let d = Document::new("contains \u{E001} sentinel");
+    fn diagnostics_populated_for_unclosed_bracket() {
+        let d = Document::new("contains ［＃unclosed bracket");
         let t = d.parse();
         assert!(!t.diagnostics().is_empty());
     }
@@ -840,17 +840,9 @@ mod tests {
     }
 
     #[test]
-    fn verbatim_basis_is_sanitize_pua_neutralized() {
-        // Raw U+E001..U+E004 are irreversibly rewritten to U+FFFD by the
-        // PUA-neutralize step. Verbatim must show the U+FFFD, and must
-        // NOT equal the raw doc (the rewrite is lossy).
-        let doc = "before\u{E001}mid\u{E004}after";
-        assert_verbatim_equals_sanitize(doc);
-        let recovered = Document::new(doc).parse().to_source_verbatim();
-        assert!(
-            recovered.contains('\u{FFFD}') && !recovered.contains('\u{E001}'),
-            "raw PUA sentinels must come back as U+FFFD"
-        );
-        assert_ne!(recovered, doc, "PUA neutralization is irreversible");
+    fn verbatim_preserves_literal_private_use_characters() {
+        let source = "before\u{E001}mid\u{E004}after";
+        assert_verbatim_equals_sanitize(source);
+        assert_eq!(Document::new(source).parse().to_source_verbatim(), source);
     }
 }

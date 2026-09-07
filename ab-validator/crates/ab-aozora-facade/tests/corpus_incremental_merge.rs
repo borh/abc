@@ -59,7 +59,7 @@ fn reparse_diagnostics_only_equals_full_parse() {
         // raw↔sanitized bridge is a later wiring PR): `cached` must therefore be
         // the parse of already-sanitized text, not the raw corpus bytes. Parsing
         // the raw text would leave sanitize-stage diagnostics
-        // (`AccentDecompositionApplied` / `SourceContainsPua`) in `cached` that a
+        // (`AccentDecompositionApplied`) in `cached` that a
         // re-parse of the sanitized buffer never reproduces — a harness
         // asymmetry, not a splice property. So sanitize once, then take the parse
         // of the sanitized buffer as the cached baseline.

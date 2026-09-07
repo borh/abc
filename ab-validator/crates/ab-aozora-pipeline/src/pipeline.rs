@@ -698,13 +698,13 @@ mod tests {
     }
 
     #[test]
-    fn sanitize_pua_collision_diagnostic_propagates() {
-        let out = Pipeline::run_to_completion("abc\u{E001}def");
+    fn sanitize_accent_diagnostic_propagates() {
+        let out = Pipeline::run_to_completion("abc〔cafe'〕def");
         assert!(
             out.diagnostics
                 .iter()
-                .any(|d| matches!(d, Diagnostic::SourceContainsPua { .. })),
-            "expected SourceContainsPua, got {:?}",
+                .any(|d| matches!(d, Diagnostic::AccentDecompositionApplied { .. })),
+            "expected AccentDecompositionApplied, got {:?}",
             out.diagnostics
         );
     }

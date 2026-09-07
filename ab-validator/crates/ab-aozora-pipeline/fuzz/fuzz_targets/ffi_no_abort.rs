@@ -134,7 +134,7 @@ fuzz_target!(|data: &[u8]| {
     // The source is valid UTF-8 (else we'd have returned above). Decide
     // whether the no-PUA-in-HTML render contract applies: a source that
     // itself carries a reserved sentinel is allowed to pass it through
-    // as plain text (it trips `Diagnostic::SourceContainsPua`), so the
+    // as literal text, so the
     // invariant only targets *renderer*-planted sentinels.
     let src = core::str::from_utf8(data).expect("checked Ok above");
     let src_has_pua = src.chars().any(|c| PUA_SENTINELS.contains(&c));

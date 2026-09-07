@@ -99,7 +99,7 @@ proptest! {
 
     /// Unicode adversarial — combining marks, RTL overrides, PUA
     /// bytes that the lexer reserves for sentinel use. Public parse
-    /// must stay total and emit `SourceContainsPua` diagnostics
+    /// must stay total and preserve literal characters
     /// rather than panicking.
     #[test]
     fn unicode_adversarial_parse_is_total(s in unicode_adversarial()) {

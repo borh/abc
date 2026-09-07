@@ -3,8 +3,7 @@
 //! 1. Two independent runs over the same source produce byte-identical
 //!    normalised text and identical registry shape (positions + node
 //!    kinds + container kinds + diagnostic count).
-//! 2. Every PUA sentinel in the normalised text has a registry entry,
-//!    and every registry entry's position points at a PUA sentinel.
+//! 2. Every registry entry points at its matching placeholder in normalized text.
 //!
 //! Together these gate any future change to `lex` from
 //! introducing nondeterminism (e.g. iteration order over a `HashMap`)
@@ -87,19 +86,8 @@ fn assert_deterministic(source: &str) {
 fn assert_registry_aligned_with_sentinels(source: &str) {
     let out = ab_aozora_pipeline::lex(source);
 
-    // Every registry entry's position must land on the matching
-    // sentinel byte in `normalized`.
-    //
-    // We assert the forward direction only ("every registry entry sits
-    // on its matching sentinel"), not the reverse ("every sentinel byte
-    // has a registry entry"). The sanitize stage now neutralizes raw source
-    // sentinels to U+FFFD, so the historical unsoundness of the reverse
-    // direction (source PUA leaking sentinel-shaped bytes the registry
-    // never registered) no longer applies; the forward direction is
-    // nonetheless the property we want, since it alone catches every
-    // ordering / build-time desync bug between the registry and the
-    // normalized text without coupling the test to the neutralization
-    // policy.
+    // Registry entries point at injected markers. Unregistered private-use
+    // characters remain literal source text and are not entries.
     for (pos, nr) in out.registry.iter_sorted() {
         let bytes = &out.normalized.as_bytes()[pos as usize..];
         let kind = nr.sentinel_kind();

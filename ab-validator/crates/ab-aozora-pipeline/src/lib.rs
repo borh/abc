@@ -126,13 +126,13 @@ mod tests {
     }
 
     #[test]
-    fn lex_emits_diagnostics_for_pua_collision() {
-        let out = lex("abc\u{E001}def");
+    fn lex_emits_diagnostics_for_accent_decomposition() {
+        let out = lex("abc〔cafe'〕def");
         assert!(
             out.diagnostics
                 .iter()
-                .any(|d| matches!(d, Diagnostic::SourceContainsPua { .. })),
-            "expected SourceContainsPua, got {:?}",
+                .any(|d| matches!(d, Diagnostic::AccentDecompositionApplied { .. })),
+            "expected AccentDecompositionApplied, got {:?}",
             out.diagnostics
         );
     }

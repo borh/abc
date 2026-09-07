@@ -32,7 +32,6 @@ pub use sanitize::{SanitizeOutput, sanitize};
 #[doc(hidden)]
 pub use sanitize::{
     has_long_rule_line, isolate_decorative_rules, normalize_line_endings, rewrite_accent_spans,
-    scan_for_sentinel_collisions,
 };
 pub use token::{Token, TriggerKind};
 pub use tokenize::{Tokenizer, tokenize};

@@ -20,13 +20,7 @@ fuzz_target!(|data: &[u8]| {
     let Ok(src) = core::str::from_utf8(data) else {
         return;
     };
-    // Sources that carry the parser-reserved PUA sentinel range
-    // (U+E001..U+E004) trigger `Diagnostic::SourceContainsPua` and the
-    // lexer is free to pass those codepoints through as plain text.
-    // The "no PUA in HTML" invariant is meant to detect *renderer*
-    // bugs that fail to consume an internally-planted sentinel, not
-    // legitimate text that already contained one before lexing
-    // started — gate accordingly.
+    // Literal private-use source characters may appear in rendered text.
     if src.chars().any(|c| PUA_SENTINELS.contains(&c)) {
         return;
     }

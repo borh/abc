@@ -711,12 +711,12 @@ mod tests {
 
     #[test]
     fn diagnostics_carry_through_to_output() {
-        let out = lex("source has \u{E001} reserved sentinel");
+        let out = lex("source has 〔cafe'〕 accent notation");
         assert!(
             out.diagnostics
                 .iter()
-                .any(|d| matches!(d, Diagnostic::SourceContainsPua { .. })),
-            "expected SourceContainsPua, got {:?}",
+                .any(|d| matches!(d, Diagnostic::AccentDecompositionApplied { .. })),
+            "expected AccentDecompositionApplied, got {:?}",
             out.diagnostics
         );
     }

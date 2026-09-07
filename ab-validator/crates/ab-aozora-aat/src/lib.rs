@@ -61,8 +61,8 @@ pub struct DecodedSource {
     pub encoding: &'static str,
     /// Hex-encoded SHA256 hash of the input bytes.
     pub source_hash: String,
-    /// Sanitize-stage diagnostics (PUA collisions, accent notes) — born
-    /// BEFORE the parse; the parse of neutralized text cannot rediscover
+    /// Sanitize-stage diagnostics (accent decomposition notes) — born
+    /// BEFORE the parse; the parse of rewritten text cannot rediscover
     /// them. Spans are full-sanitized-text byte offsets.
     pub sanitize_diagnostics: Vec<AozoraSanitizeDiagnostic>,
     /// The tail of the SANITIZED text from the `底本：` line onward
@@ -597,7 +597,7 @@ fn rebase_spans(
 /// `decode_source_bytes` path as `aat_json_from_bytes`; the parse mirrors
 /// `projections()`. Entry order: sanitize-stage diagnostics, then parser
 /// diagnostics. Duplicates are impossible by construction (the inner
-/// re-sanitize sees already-neutralized, already-rewritten text) — the
+/// re-sanitize sees already-rewritten text) — the
 /// merge-order test pins this.
 ///
 /// # Errors
@@ -2502,37 +2502,14 @@ mod tests {
     }
 
     #[test]
-    fn sanitize_stage_pua_diagnostic_survives_to_the_envelope() {
-        // Raw U+E001 in the source: sanitize neutralizes it to U+FFFD and
-        // emits SourceContainsPua — the parse of the neutralized text can
-        // never rediscover it, so it MUST come from the retained sanitize
-        // diagnostics. あ = bytes 0..3, U+E001 = bytes 3..6.
-        let out = diagnostics_json_from_bytes("あ\u{e001}い\n".as_bytes()).unwrap();
-        let doc: Value = serde_json::from_slice(&out).unwrap();
-        let data = doc["data"].as_array().unwrap();
-        let pua: Vec<&Value> = data
-            .iter()
-            .filter(|e| e["code"] == "source-contains-pua")
-            .collect();
-        assert_eq!(
-            pua.len(),
-            1,
-            "expected exactly one PUA diagnostic: {data:?}"
-        );
-        assert_eq!(pua[0]["severity"], "warning");
-        assert_eq!(pua[0]["span"]["start"], 3);
-        assert_eq!(pua[0]["span"]["end"], 6);
-    }
-
-    #[test]
     #[allow(
         clippy::manual_contains,
         reason = "assertion expression is a pinned test invariant, not touched per fix-wave scope"
     )]
     fn sanitize_and_parser_diagnostics_merge_in_order_without_duplicates() {
-        // PUA (sanitize-stage) + unclosed bracket (parser-stage) in one input:
+        // accent (sanitize-stage) + unclosed bracket (parser-stage) in one input:
         // sanitize entries come first, parser entries after, one of each.
-        let out = diagnostics_json_from_bytes("あ\u{e001}い［＃ここから".as_bytes()).unwrap();
+        let out = diagnostics_json_from_bytes("あ〔cafe'〕い［＃ここから".as_bytes()).unwrap();
         let doc: Value = serde_json::from_slice(&out).unwrap();
         let codes: Vec<&str> = doc["data"]
             .as_array()
@@ -2540,13 +2517,16 @@ mod tests {
             .iter()
             .map(|e| e["code"].as_str().unwrap())
             .collect();
-        let pua_count = codes
+        let accent_count = codes
             .iter()
-            .filter(|c| **c == "source-contains-pua")
+            .filter(|c| **c == "accent-decomposition-applied")
             .count();
-        assert_eq!(pua_count, 1, "duplicate or missing PUA entry: {codes:?}");
+        assert_eq!(
+            accent_count, 1,
+            "duplicate or missing accent entry: {codes:?}"
+        );
         assert!(
-            codes[0] == "source-contains-pua",
+            codes[0] == "accent-decomposition-applied",
             "sanitize entries must come first: {codes:?}"
         );
         assert!(codes.iter().any(|c| *c == "unclosed-bracket"), "{codes:?}");
@@ -2576,34 +2556,19 @@ mod tests {
     }
 
     #[test]
-    fn diagnostics_json_from_bytes_rebases_sanitize_span_through_bom_and_crlf() {
-        // BOM(3) + "あ\r\n" + PUA(U+E001) + "い\n": decoded text (post-
-        // BOM-strip, per decode_source_bytes) is "あ\r\n\u{e001}い\n" —
-        // あ 0..3, \r 3..4, \n 4..5, PUA 5..8, い 8..11, \n 11..12 (12
-        // bytes). Sanitize normalizes \r\n (bytes 3..5) → \n (1 byte),
-        // shifting everything after by one byte, and neutralizes the PUA
-        // byte-length-preserving; the resulting SANITIZED text is
-        // "あ\n\u{fffd}い\n" (あ 0..3, \n 3..4, PUA 4..7, い 7..10, \n
-        // 10..11 — 11 bytes). The PUA sanitize diagnostic's span is born
-        // in that sanitized-text coordinate system: 4..7. Rebasing
-        // through the CRLF map (no body offset — sanitize entries skip
-        // it) must land the span back at the PUA's own decoded-text
-        // offsets: 5..8.
-        let bytes = [b"\xef\xbb\xbf".as_ref(), "あ\r\n\u{e001}い\n".as_bytes()].concat();
-        let out = diagnostics_json_from_bytes(&bytes).unwrap();
-        let doc: Value = serde_json::from_slice(&out).unwrap();
-        let data = doc["data"].as_array().unwrap();
-        let pua: Vec<&Value> = data
-            .iter()
-            .filter(|e| e["code"] == "source-contains-pua")
-            .collect();
-        assert_eq!(
-            pua.len(),
-            1,
-            "expected exactly one PUA diagnostic: {data:?}"
-        );
-        assert_eq!(pua[0]["span"]["start"], 5);
-        assert_eq!(pua[0]["span"]["end"], 8);
+    fn literal_pua_survives_bom_and_crlf_with_decoded_source_extents() {
+        let bytes = [
+            b"\xef\xbb\xbf".as_ref(),
+            "あ\r\n\u{e001}漢《かん》".as_bytes(),
+        ]
+        .concat();
+        let aat: Value = serde_json::from_slice(&aat_json_from_bytes(&bytes).unwrap()).unwrap();
+        let content = aat["blocks"][1]["content"].as_array().unwrap();
+        assert_eq!(content[0]["value"], "\u{e001}");
+        assert_eq!(content[0]["span"]["byte_start"], 5);
+        assert_eq!(content[0]["span"]["byte_end"], 8);
+        assert_eq!(content[1]["kind"], "ruby");
+        assert_eq!(aat["meta"]["warnings"], json!([]));
     }
 
     #[test]

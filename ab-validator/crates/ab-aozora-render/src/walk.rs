@@ -13,9 +13,8 @@
 //! `0xEE 0x80`; the third byte (`0x81..0x84`) names the kind. A single
 //! `memchr` finds candidate lead bytes at memory-bandwidth speed (SIMD
 //! via the `memchr` crate); each candidate is validated with two byte
-//! loads before it is treated as a sentinel, so a PUA collision in the
-//! source (the sanitize stage records a diagnostic but does not delete the bytes)
-//! flows through as plain text via the cursor advance.
+//! loads and a registry lookup before node dispatch. Unregistered source
+//! characters stay in the pending plain-text run.
 //!
 //! # Newlines
 //!
@@ -118,13 +117,14 @@ fn handle_sentinel<S: WalkSink>(
         return Ok(());
     };
 
+    let byte_pos = u32::try_from(cand).expect("normalized fits u32 per sanitize-stage cap");
+    let Some(node) = out.registry.node_at(NormalizedOffset::new(byte_pos)) else {
+        return Ok(());
+    };
     if *cursor < cand {
         sink.on_text(&normalized[*cursor..cand])?;
     }
-    let byte_pos = u32::try_from(cand).expect("normalized fits u32 per sanitize-stage cap");
-    if let Some(node) = out.registry.node_at(NormalizedOffset::new(byte_pos)) {
-        sink.on_node(kind, node)?;
-    }
+    sink.on_node(kind, node)?;
     *cursor = cand + 3;
     Ok(())
 }

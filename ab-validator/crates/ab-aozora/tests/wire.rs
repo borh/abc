@@ -83,14 +83,12 @@ fn mode_diagnostics_emits_schema3_envelope() {
 }
 
 #[test]
-fn production_diagnostics_wire_matches_abc_raw_fixture() {
+fn production_diagnostics_accept_literal_private_use_source() {
     let actual = ab_aozora_aat::diagnostics_json_from_bytes("本文\u{e001}終わり".as_bytes())
         .expect("diagnostics capture");
-    let expected = include_str!(
-        "../../../research/test/fixtures/parser-rq/diagnostic-gap/raw-diagnostics-valid.json"
-    )
-    .trim_end();
-    assert_eq!(str::from_utf8(&actual).unwrap().trim_end(), expected);
+    let diagnostic: serde_json::Value = serde_json::from_slice(&actual).unwrap();
+    assert_eq!(diagnostic["schemaVersion"], 3);
+    assert_eq!(diagnostic["data"], serde_json::json!([]));
 }
 
 #[test]

@@ -134,9 +134,7 @@ fn paired_container_round_trips() {
 
 #[test]
 fn diagnostic_carrying_input_round_trips() {
-    // Source that triggers a SourceContainsPua diagnostic — exercises
-    // the diagnostics envelope on a non-empty data slice.
-    assert_json_round_trip("a\u{E001}b");
+    assert_json_round_trip("a［＃unclosed bracket");
 }
 
 proptest! {

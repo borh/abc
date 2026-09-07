@@ -61,9 +61,6 @@ use crate::Span;
 /// releases; major-release variant additions land new constants here
 /// without touching existing ones.
 pub mod codes {
-    /// Source contains a lexer PUA sentinel codepoint.
-    pub const SOURCE_CONTAINS_PUA: &str = "aozora::lex::source_contains_pua";
-
     /// Open delimiter reached end-of-input with no matching close.
     pub const UNCLOSED_BRACKET: &str = "aozora::lex::unclosed_bracket";
 
@@ -138,8 +135,7 @@ pub mod codes {
     /// normalized text at a position that is not recorded in the
     /// placeholder registry.
     ///
-    /// Source-side PUA collisions emit [`SOURCE_CONTAINS_PUA`]
-    /// upstream; this code is distinct.
+    /// Only registry-owned placeholders have marker identity.
     pub const UNREGISTERED_SENTINEL: &str = "aozora::lex::unregistered_sentinel";
 
     /// Pipeline-internal: a placeholder-registry vector is not
@@ -276,36 +272,6 @@ impl InternalCheckCode {
 #[derive(Debug, Clone, Error, MietteDiagnostic)]
 #[non_exhaustive]
 pub enum Diagnostic {
-    /// Source contains a codepoint that collides with one of the
-    /// lexer's PUA sentinel reservations
-    /// ([`crate::INLINE_SENTINEL`], [`crate::BLOCK_LEAF_SENTINEL`],
-    /// [`crate::BLOCK_OPEN_SENTINEL`], [`crate::BLOCK_CLOSE_SENTINEL`]).
-    /// Downstream stages will emit those same codepoints into normalized
-    /// text, so a collision means the placeholder registry can no longer
-    /// distinguish source-text occurrences from lexer-inserted markers.
-    #[error("source contains lexer PUA sentinel codepoint {codepoint:?}")]
-    #[diagnostic(
-        code("aozora::lex::source_contains_pua"),
-        url("https://p4suta.github.io/aozora/notation/diagnostics.html#source-contains-pua"),
-        severity(Warning),
-        help(
-            "the lexer reserves U+E001..U+E004 as inline/block markers; \
-             a source-side occurrence will confuse the placeholder registry"
-        )
-    )]
-    SourceContainsPua {
-        /// Caret location for miette rendering — the same byte-range as
-        /// the `span` field below, as the `(offset, length)` pair miette
-        /// wants.
-        #[label("here")]
-        at: miette::SourceSpan,
-        /// The offending PUA codepoint found in the source.
-        codepoint: char,
-        /// Byte-range in the sanitized source for programmatic consumers
-        /// that don't need miette's [`miette::SourceSpan`].
-        span: Span,
-    },
-
     /// An open delimiter reached end-of-input with no matching close on
     /// the pairing stack.
     #[error("unclosed Aozora {kind:?} bracket")]
@@ -835,13 +801,7 @@ struct DiagnosticDoc {
 /// order. The single authority for per-code title / reproduction / fixed
 /// prose; a coverage test pins `DOCS.len() == ALL_CODES.len()` and that
 /// every code resolves.
-const DOCS: [DiagnosticDoc; 21] = [
-    DiagnosticDoc {
-        code: codes::SOURCE_CONTAINS_PUA,
-        title: "私用領域文字がソースに紛れ込んでいる",
-        repro: "（不可視の U+E001 などが混入した行）",
-        fixed: "（その 1 文字を削除した行）",
-    },
+const DOCS: [DiagnosticDoc; 20] = [
     DiagnosticDoc {
         code: codes::UNCLOSED_BRACKET,
         title: "閉じられていない開き括弧",
@@ -985,17 +945,6 @@ fn doc_for(code: &str) -> Option<&'static DiagnosticDoc> {
     reason = "intentional: our inherent severity() / code() return strongly-typed (Severity enum, &'static str) values that mirror miette::Diagnostic's loosely-typed defaults — callers prefer the inherent method"
 )]
 impl Diagnostic {
-    /// Constructor for [`Diagnostic::SourceContainsPua`].
-    #[must_use]
-    pub fn source_contains_pua(at: Span, codepoint: char) -> Self {
-        let (offset, length) = span_to_miette_parts(at);
-        Self::SourceContainsPua {
-            at: miette::SourceSpan::new(offset.into(), length),
-            codepoint,
-            span: at,
-        }
-    }
-
     /// Constructor for [`Diagnostic::UnclosedBracket`].
     #[must_use]
     pub fn unclosed_bracket(at: Span, kind: PairKind) -> Self {
@@ -1200,8 +1149,7 @@ impl Diagnostic {
     #[must_use]
     pub fn severity(&self) -> Severity {
         match self {
-            Self::SourceContainsPua { .. }
-            | Self::UnresolvedGaiji { .. }
+            Self::UnresolvedGaiji { .. }
             | Self::UnrecognisedContainerDirective { .. }
             | Self::TcyTargetNotFound { .. }
             | Self::BoutenTargetAmbiguous { .. }
@@ -1239,8 +1187,7 @@ impl Diagnostic {
     #[must_use]
     pub fn source(&self) -> DiagnosticSource {
         match self {
-            Self::SourceContainsPua { .. }
-            | Self::UnclosedBracket { .. }
+            Self::UnclosedBracket { .. }
             | Self::UnmatchedClose { .. }
             | Self::AccentDecompositionApplied { .. }
             | Self::UnresolvedGaiji { .. }
@@ -1264,8 +1211,7 @@ impl Diagnostic {
     #[must_use]
     pub fn span(&self) -> Span {
         match self {
-            Self::SourceContainsPua { span, .. }
-            | Self::UnclosedBracket { span, .. }
+            Self::UnclosedBracket { span, .. }
             | Self::UnmatchedClose { span, .. }
             | Self::AccentDecompositionApplied { span, .. }
             | Self::UnresolvedGaiji { span, .. }
@@ -1303,8 +1249,7 @@ impl Diagnostic {
     #[must_use]
     pub fn shifted(mut self, by: i64) -> Self {
         let (at, span): (&mut miette::SourceSpan, &mut Span) = match &mut self {
-            Self::SourceContainsPua { at, span, .. }
-            | Self::UnclosedBracket { at, span, .. }
+            Self::UnclosedBracket { at, span, .. }
             | Self::UnmatchedClose { at, span, .. }
             | Self::AccentDecompositionApplied { at, span, .. }
             | Self::UnresolvedGaiji { at, span, .. }
@@ -1335,7 +1280,6 @@ impl Diagnostic {
     #[must_use]
     pub fn code(&self) -> &'static str {
         match self {
-            Self::SourceContainsPua { .. } => codes::SOURCE_CONTAINS_PUA,
             Self::UnclosedBracket { .. } => codes::UNCLOSED_BRACKET,
             Self::UnmatchedClose { .. } => codes::UNMATCHED_CLOSE,
             Self::AccentDecompositionApplied { .. } => codes::ACCENT_DECOMPOSITION_APPLIED,
@@ -1388,15 +1332,6 @@ impl Diagnostic {
     )]
     pub fn detail_body(&self) -> String {
         match self {
-            Self::SourceContainsPua { codepoint, .. } => format!(
-                "私用領域文字 `U+{cp:04X}` がソースに紛れ込んでいます。\n\n\
-                 この文字 (`{ch}`) は青空文庫の通常テキストには現れない予約コードポイントで、\
-                 aozora-lex の内部マーカー (U+E001..U+E004) と衝突します。\n\
-                 通常はテキストエディタの非表示文字設定や、コピペ時の不可視文字で混入します。\n\n\
-                 直し方: 該当の 1 文字を削除してください。",
-                cp = *codepoint as u32,
-                ch = codepoint,
-            ),
             Self::UnclosedBracket { kind, .. } => format!(
                 "閉じられていない `{open}` があります。\n\n\
                  どこかに対応する `{close}` を必ず置いてください。aozora 記法では一行内で閉じるのが基本です。\n\n\
@@ -1532,44 +1467,11 @@ impl Diagnostic {
         }
     }
 
-    /// Whether an editor should mark this diagnostic's span as
-    /// *unnecessary* (greyed out, `DiagnosticTag::UNNECESSARY`).
-    ///
-    /// A stable semantic property of the diagnostic — only the source-PUA
-    /// collision, whose fix is to delete the redundant codepoint, is
-    /// unnecessary today. Kept here (not in an LSP adapter) so the
-    /// classification is single-sourced and `#[non_exhaustive]` forces a
-    /// future variant to decide, mirroring [`severity`](Self::severity).
-    #[must_use]
-    pub fn is_unnecessary(&self) -> bool {
-        match self {
-            Self::SourceContainsPua { .. } => true,
-            Self::UnclosedBracket { .. }
-            | Self::UnmatchedClose { .. }
-            | Self::AccentDecompositionApplied { .. }
-            | Self::UnresolvedGaiji { .. }
-            | Self::MismatchedContainerClose { .. }
-            | Self::EmptyRubyReading { .. }
-            | Self::NestedRuby { .. }
-            | Self::UnrecognisedContainerDirective { .. }
-            | Self::TcyTargetNotFound { .. }
-            | Self::BoutenTargetAmbiguous { .. }
-            | Self::ForwardReferentNotStylable { .. }
-            | Self::BreakInSingleLineContainer { .. }
-            | Self::BracketedKaeritenNoPair { .. }
-            | Self::KaeritenOutsideKanbun { .. }
-            | Self::MismatchedBoutenContainer { .. }
-            | Self::NonCanonicalDirective { .. }
-            | Self::Internal { .. } => false,
-        }
-    }
-
     /// Every stable diagnostic code [`Self::code`] can return, in
-    /// catalogue order: the seventeen source-level codes followed by the
+    /// catalogue order: the sixteen source-level codes followed by the
     /// four pipeline-internal check codes. Backs `aozora explain`'s
     /// catalogue and the round-trip coverage test.
-    pub const ALL_CODES: [&'static str; 21] = [
-        codes::SOURCE_CONTAINS_PUA,
+    pub const ALL_CODES: [&'static str; 20] = [
         codes::UNCLOSED_BRACKET,
         codes::UNMATCHED_CLOSE,
         codes::ACCENT_DECOMPOSITION_APPLIED,
@@ -1629,7 +1531,6 @@ impl Diagnostic {
     fn sample_for_code(code: &str) -> Option<Self> {
         let at = Span::new(0, 0);
         Some(match code {
-            codes::SOURCE_CONTAINS_PUA => Self::source_contains_pua(at, '\u{E001}'),
             codes::UNCLOSED_BRACKET => Self::unclosed_bracket(at, PairKind::Bracket),
             codes::UNMATCHED_CLOSE => Self::unmatched_close(at, PairKind::Bracket),
             codes::ACCENT_DECOMPOSITION_APPLIED => Self::accent_decomposition_applied(at),
@@ -1681,26 +1582,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn source_contains_pua_round_trips_span() {
-        let diag = Diagnostic::source_contains_pua(Span::new(5, 8), '\u{E001}');
-        let Diagnostic::SourceContainsPua {
-            codepoint, span, ..
-        } = diag
-        else {
-            panic!("expected SourceContainsPua, got {diag:?}");
-        };
-        assert_eq!(codepoint, '\u{E001}');
-        assert_eq!(span, Span::new(5, 8));
-    }
-
-    #[test]
     fn shifted_rebases_span_and_keeps_at_in_sync() {
-        let diag = Diagnostic::source_contains_pua(Span::new(5, 8), '\u{E001}');
+        let diag = Diagnostic::unclosed_bracket(Span::new(5, 8), PairKind::Bracket);
         let moved = diag.shifted(100);
         assert_eq!(moved.span(), Span::new(105, 108));
         // `at` is derived from `span`; confirm it tracks the shift so a
         // miette render points at the rebased location.
-        let Diagnostic::SourceContainsPua { at, .. } = moved else {
+        let Diagnostic::UnclosedBracket { at, .. } = moved else {
             panic!("variant must survive the shift");
         };
         assert_eq!(at.offset(), 105);
@@ -1713,25 +1601,6 @@ mod tests {
         let there_and_back = diag.clone().shifted(1000).shifted(-1000);
         assert_eq!(there_and_back.span(), diag.span());
         assert_eq!(there_and_back.code(), diag.code());
-    }
-
-    #[test]
-    fn source_contains_pua_is_warning_severity() {
-        let diag = Diagnostic::source_contains_pua(Span::new(0, 3), '\u{E002}');
-        assert_eq!(diag.severity(), Severity::Warning);
-        assert_eq!(diag.source(), DiagnosticSource::Source);
-        assert_eq!(diag.code(), codes::SOURCE_CONTAINS_PUA);
-    }
-
-    #[test]
-    fn source_contains_pua_display_mentions_codepoint() {
-        let diag = Diagnostic::source_contains_pua(Span::new(0, 3), '\u{E002}');
-        let rendered = format!("{diag}");
-        assert!(
-            rendered.contains("E002")
-                || rendered.contains("\\u{e002}")
-                || rendered.contains('\u{E002}')
-        );
     }
 
     #[test]
@@ -1860,10 +1729,6 @@ mod tests {
     /// downstream tooling that grep-matches on the string.
     #[test]
     fn code_constants_are_stable() {
-        assert_eq!(
-            codes::SOURCE_CONTAINS_PUA,
-            "aozora::lex::source_contains_pua"
-        );
         assert_eq!(codes::UNCLOSED_BRACKET, "aozora::lex::unclosed_bracket");
         assert_eq!(codes::UNMATCHED_CLOSE, "aozora::lex::unmatched_close");
         assert_eq!(
@@ -1932,10 +1797,6 @@ mod tests {
     /// has to think about both axes deliberately.
     #[test]
     fn severity_source_cross_product_is_pinned() {
-        let pua = Diagnostic::source_contains_pua(Span::new(0, 3), '\u{E001}');
-        assert_eq!(pua.severity(), Severity::Warning);
-        assert_eq!(pua.source(), DiagnosticSource::Source);
-
         let unclosed = Diagnostic::unclosed_bracket(Span::new(0, 3), PairKind::Bracket);
         assert_eq!(unclosed.severity(), Severity::Error);
         assert_eq!(unclosed.source(), DiagnosticSource::Source);
@@ -2023,7 +1884,7 @@ mod tests {
     fn explain_covers_every_catalogued_code() {
         assert_eq!(
             Diagnostic::ALL_CODES.len(),
-            21,
+            20,
             "ALL_CODES must list every code code() can return"
         );
         for &code in &Diagnostic::ALL_CODES {
@@ -2070,16 +1931,6 @@ mod tests {
         assert!(bracket.contains('］'), "bracket body: {bracket}");
         assert!(ruby.contains('》'), "ruby body: {ruby}");
         assert_ne!(bracket, ruby);
-    }
-
-    #[test]
-    fn only_source_pua_is_unnecessary() {
-        assert!(Diagnostic::source_contains_pua(Span::new(0, 1), '\u{E001}').is_unnecessary());
-        assert!(!Diagnostic::unclosed_bracket(Span::new(0, 1), PairKind::Bracket).is_unnecessary());
-        assert!(
-            !Diagnostic::internal(Span::new(0, 0), InternalCheckCode::ResidualAnnotationMarker)
-                .is_unnecessary()
-        );
     }
 
     #[test]

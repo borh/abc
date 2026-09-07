@@ -1,8 +1,8 @@
 //! Private-use codepoints for classified constructs in normalized text.
 //!
 //! Registry entries associate each placeholder position with its source span
-//! and parsed node. The sanitize stage diagnoses and neutralizes source text
-//! containing these reserved codepoints before inserting placeholders.
+//! and parsed node. Registry membership distinguishes inserted placeholders
+//! from literal source characters using the same codepoints.
 //!
 //! [`Sentinel`] defines the codepoint mapping; the public character constants
 //! and [`ALL_SENTINELS`] are derived from it.

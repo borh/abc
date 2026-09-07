@@ -465,27 +465,10 @@ pub struct Diagnostic {
     severity: &'static str,
     source: &'static str,
     span: Span,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    codepoint: Option<char>,
 }
 
 impl From<&crate::Diagnostic> for Diagnostic {
     fn from(d: &crate::Diagnostic) -> Self {
-        // Pull the codepoint payload off the variants that carry one.
-        // The accessors collapse the Internal/Source distinction for
-        // severity/source/code; the codepoint is the only payload that
-        // survives variant-by-variant.
-        let codepoint = match d {
-            crate::Diagnostic::SourceContainsPua { codepoint, .. } => Some(*codepoint),
-            _ => None,
-        };
-        // Strip the `aozora::lex::` / `aozora::internal` prefix so the
-        // wire `kind` stays terse — this matches the prior wire layout
-        // where the tag was the trailing token (e.g. "source_contains_pua",
-        // "unclosed_bracket"). Internal codes get the same trailing-token
-        // treatment so the wire `kind` is uniform across the user-facing
-        // and internal axes; consumers that need the full namespaced ID
-        // can still rely on `Diagnostic::code()`.
         let kind = d.code().rsplit("::").next().unwrap_or("unknown");
         let code = kind.replace('_', "-");
         Self {
@@ -494,7 +477,6 @@ impl From<&crate::Diagnostic> for Diagnostic {
             severity: severity_str(d.severity()),
             source: source_str(d.source()),
             span: d.span().into(),
-            codepoint,
         }
     }
 }
@@ -703,17 +685,6 @@ mod tests {
         let tree = doc.parse();
         let json = pairs(&tree);
         assert_eq!(json, r#"{"schemaVersion":3,"data":[]}"#);
-    }
-
-    #[test]
-    #[cfg(feature = "json")]
-    fn pua_collision_serialises_as_warning_kind() {
-        let doc = Document::new("abc\u{E001}def");
-        let tree = doc.parse();
-        let json = diagnostics(tree.diagnostics());
-        assert!(json.contains(r#""schemaVersion":3"#));
-        assert!(json.contains(r#""kind":"source_contains_pua""#));
-        assert!(json.contains(r#""codepoint":"""#) || json.contains(r#""codepoint":""#));
     }
 
     #[test]

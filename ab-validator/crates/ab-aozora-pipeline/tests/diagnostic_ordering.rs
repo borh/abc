@@ -31,7 +31,7 @@ fn phase_ordinal(d: &Diagnostic) -> u8 {
         // Source-side diagnostics — match by stable code.
         DiagnosticSource::Source => match d.code() {
             // sanitize stage.
-            codes::SOURCE_CONTAINS_PUA | codes::ACCENT_DECOMPOSITION_APPLIED => 0,
+            codes::ACCENT_DECOMPOSITION_APPLIED => 0,
             // pair stage.
             codes::UNCLOSED_BRACKET | codes::UNMATCHED_CLOSE => 2,
             // classify stage.
@@ -60,12 +60,8 @@ fn phase_ordinal(d: &Diagnostic) -> u8 {
 
 #[test]
 fn phase0_then_phase2_diagnostics_are_emitted_in_pipeline_order() {
-    // PUA collision (sanitize stage) + unclosed bracket (pair stage) — the
-    // canonical multi-stage shape. The PUA collision is byte 0 of the
-    // source so any "sort-by-position" alternative ordering would also
-    // put it first; we keep the pin minimal so that a regression that
-    // re-sorts diagnostics by phase ordinal is what we'd notice.
-    let src = "\u{E001}［＃unclosed";
+    // Accent normalization precedes unmatched-delimiter reporting.
+    let src = "〔cafe'〕［＃unclosed";
     let out = lex(src);
 
     let ordinals: Vec<u8> = out.diagnostics.iter().map(phase_ordinal).collect();
@@ -99,12 +95,12 @@ fn phase0_then_phase2_diagnostics_are_emitted_in_pipeline_order() {
 /// over/under-emission lights up as a snapshot diff.
 ///
 /// The input combines:
-///   * sanitize-stage PUA collision at position 0.
+///   * sanitize-stage accent decomposition at position 0.
 ///   * pair-stage unmatched close (`］` in mid-text without an open).
 ///   * pair-stage unclosed bracket (`［＃...` at end of input).
 #[test]
 fn multi_diagnostic_snapshot_freezes_pipeline_order() {
-    let src = "\u{E001}stray］then［＃tail";
+    let src = "〔cafe'〕stray］then［＃tail";
     let out = lex(src);
     insta::assert_snapshot!(format!("{:#?}", out.diagnostics));
 }

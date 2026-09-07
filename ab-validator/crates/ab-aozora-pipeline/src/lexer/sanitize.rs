@@ -29,6 +29,7 @@
 //! source characters remain text, including codepoints also used by injected markers.
 //! The pass borrows its input when no normalization is needed.
 
+use core::ops::Range;
 use std::borrow::Cow;
 
 use memchr::memmem;
@@ -36,7 +37,9 @@ use memchr::memmem;
 use ab_aozora_syntax::Span;
 use ab_aozora_syntax::accent::decompose_fragment_sites;
 
-use ab_aozora_spec::Diagnostic;
+use ab_aozora_spec::{Diagnostic, PairKind};
+
+use super::{pair::pair, tokenize::tokenize};
 
 /// Tortoiseshell-bracket open character — delimits accent-decomposition
 /// spans.
@@ -338,91 +341,99 @@ pub(super) fn rewrite_accent_spans_collecting_core(
     diagnostics: &mut Vec<Diagnostic>,
     mut edits: Option<&mut Vec<MapEdit>>,
 ) -> String {
+    let mut pairs = pair(tokenize(input));
+    for _ in pairs.by_ref() {}
+    let links = pairs.take_links();
+    let mut annotations: Vec<_> = links
+        .iter()
+        .filter(|link| {
+            link.kind == PairKind::Bracket && input[link.open.start as usize..].starts_with("［＃")
+        })
+        .map(|link| link.open.start as usize..link.close.end as usize)
+        .collect();
+    annotations.sort_unstable_by_key(|range| range.start);
+    let mut scopes: Vec<_> = links
+        .iter()
+        .filter(|link| link.kind == PairKind::Tortoise)
+        .map(|link| link.open.start as usize..link.close.end as usize)
+        .collect();
+    scopes.sort_unstable_by_key(|range| range.start);
+    let mut replacements = Vec::new();
+    for scope in &scopes {
+        let start = scope.start + TORTOISE_OPEN.len_utf8();
+        let end = scope.end - TORTOISE_CLOSE.len_utf8();
+        if input[start..end].contains(['\r', '\n']) {
+            continue;
+        }
+        // Editorial quotations own their delimiters, but unscoped variant
+        // spellings inherit the enclosing accent encoding.
+        if scope_fragments(start, end, &annotations)
+            .iter()
+            .any(|range| input[range.clone()].contains(TORTOISE_OPEN))
+        {
+            continue;
+        }
+        let before = replacements.len();
+        for range in scope_fragments(start, end, &scopes) {
+            replacements.extend(
+                decompose_fragment_sites(&input[range.clone()])
+                    .into_iter()
+                    .map(|(offset, len, replacement)| {
+                        (range.start + offset, len, Some(replacement))
+                    }),
+            );
+        }
+        if replacements.len() > before {
+            replacements.push((scope.start, TORTOISE_OPEN.len_utf8(), None));
+            replacements.push((end, TORTOISE_CLOSE.len_utf8(), None));
+        }
+    }
+    replacements.sort_unstable_by_key(|&(start, _, _)| start);
     let mut out = String::with_capacity(input.len());
     let mut cursor = 0;
-
-    while cursor < input.len() {
-        let Some(open_rel) = input[cursor..].find(TORTOISE_OPEN) else {
-            // No more opens — copy the remainder verbatim and finish.
-            out.push_str(&input[cursor..]);
-            break;
-        };
-        let open_abs = cursor + open_rel;
-        out.push_str(&input[cursor..open_abs]);
-
-        let after_open = open_abs + TORTOISE_OPEN.len_utf8();
-        let Some(close_rel) = input[after_open..].find(['\r', '\n', TORTOISE_OPEN, TORTOISE_CLOSE])
-        else {
-            // Unclosed `〔` — emit the rest verbatim so the author can
-            // see the malformed span in the rendered output rather
-            // than silently dropping content.
-            out.push_str(&input[open_abs..]);
-            break;
-        };
-        let close_abs = after_open + close_rel;
-        // Aozora accent scopes close on the same line and cannot nest.
-        if !input[close_abs..].starts_with(TORTOISE_CLOSE) {
-            out.push_str(&input[open_abs..close_abs]);
-            cursor = close_abs;
-            continue;
-        }
-
-        let body = &input[after_open..close_abs];
-        let sites = decompose_fragment_sites(body);
-        if sites.is_empty() {
-            out.push_str(&input[open_abs..close_abs + TORTOISE_CLOSE.len_utf8()]);
-            cursor = close_abs + TORTOISE_CLOSE.len_utf8();
-            continue;
-        }
-        if let Some(e) = edits.as_deref_mut() {
-            e.push(MapEdit {
-                src_start: open_abs,
-                src_end: after_open,
-                dst_start: out.len(),
-                dst_end: out.len(),
-            });
-        }
-        let mut body_cursor = 0;
-        for (site_off, in_len, replacement) in sites {
-            out.push_str(&body[body_cursor..site_off]);
-            let dst_start = out.len();
+    for (start, len, replacement) in replacements {
+        out.push_str(&input[cursor..start]);
+        let dst_start = out.len();
+        if let Some(replacement) = replacement {
             out.push(replacement);
-            let dst_end = out.len();
-            // `out.len()` fits u32 by the same sanitize-entry length cap
-            // at the sanitize boundary; accent decomposition only ever
-            // adds a bounded handful of combining bytes per digraph.
             #[allow(
                 clippy::cast_possible_truncation,
                 reason = "sanitized text length <= u32::MAX is asserted at sanitize entry"
             )]
             diagnostics.push(Diagnostic::accent_decomposition_applied(Span::new(
                 dst_start as u32,
-                dst_end as u32,
+                out.len() as u32,
             )));
-            if let Some(e) = edits.as_deref_mut() {
-                e.push(MapEdit {
-                    src_start: after_open + site_off,
-                    src_end: after_open + site_off + in_len,
-                    dst_start,
-                    dst_end,
-                });
-            }
-            body_cursor = site_off + in_len;
         }
-        out.push_str(&body[body_cursor..]);
         if let Some(e) = edits.as_deref_mut() {
             e.push(MapEdit {
-                src_start: close_abs,
-                src_end: close_abs + TORTOISE_CLOSE.len_utf8(),
-                dst_start: out.len(),
+                src_start: start,
+                src_end: start + len,
+                dst_start,
                 dst_end: out.len(),
             });
         }
-
-        cursor = close_abs + TORTOISE_CLOSE.len_utf8();
+        cursor = start + len;
     }
-
+    out.push_str(&input[cursor..]);
     out
+}
+
+fn scope_fragments(start: usize, end: usize, children: &[Range<usize>]) -> Vec<Range<usize>> {
+    let mut fragments = Vec::new();
+    let mut cursor = start;
+    let first = children.partition_point(|range| range.start < start);
+    for child in &children[first..] {
+        if child.start >= end {
+            break;
+        }
+        if child.start >= cursor && child.end <= end {
+            fragments.push(cursor..child.start);
+            cursor = child.end;
+        }
+    }
+    fragments.push(cursor..end);
+    fragments
 }
 
 /// Return `true` when at least one line in `input` is a decorative
@@ -792,6 +803,39 @@ mod tests {
         let input = "前〔a`〕中〔e'〕後";
         let out = sanitize(input);
         assert_eq!(out.text.as_ref(), "前à中é後");
+    }
+
+    #[test]
+    fn accent_scopes_respect_editorial_annotation_ownership() {
+        for (input, expected) in [
+            (
+                "〔amicitiae&［＃「〔amicitiae&〕」は底本では「amiticiae」］〕",
+                "amicitiæ［＃「amicitiæ」は底本では「amiticiae」］",
+            ),
+            (
+                "〔schla:gt［＃「〔schla:gt〕」は底本では「〔scha:gt〕」］ noch〕",
+                "schlägt［＃「schlägt」は底本では「schägt」］ noch",
+            ),
+            ("〔cafe'［＃注 i: と〔e'〕］〕", "café［＃注 ï とé］"),
+            ("〔cafe'［＃注［＃内〔e'〕］］〕", "café［＃注［＃内é］］"),
+            ("〔本［＃注〔e'〕］〕", "〔本［＃注é］〕"),
+            ("〔cafe'［＃「未閉〕］後〕", "café［＃「未閉〕］後"),
+            ("〔ae&「x〕", "〔ae&「x〕"),
+            ("\u{feff}〔cafe'［＃注〔e'〕］〕\r\n", "café［＃注é］\n"),
+        ] {
+            let out = sanitize_mapped(input);
+            assert_eq!(out.text.as_ref(), expected, "{input:?}");
+            assert_eq!(sanitize(input).text.as_ref(), expected);
+            for diagnostic in &out.diagnostics {
+                if let Diagnostic::AccentDecompositionApplied { span, .. } = diagnostic {
+                    let start = out
+                        .maps
+                        .to_source_offset(usize::try_from(span.start).unwrap());
+                    let end = out.maps.to_source_end(usize::try_from(span.end).unwrap());
+                    assert!(matches!(&input[start..end], "ae&" | "a:" | "e'" | "i:"));
+                }
+            }
+        }
     }
 
     #[test]

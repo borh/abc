@@ -124,6 +124,32 @@
       (is (some #{"一　この書物は、Léon Walras: Eléments d'économie politique pure. を訳出した。"}
                 (texts result "p"))))))
 
+(deftest editorial-quotations-have-independent-accent-scopes
+  (doseq [encoding ["UTF-8" "windows-31j"]
+          [body expected]
+          [["〔amicitiae&［＃「〔amicitiae&〕」は底本では「amiticiae」］ inimica〕" "amicitiæ inimica"]
+           ["〔schla:gt［＃「〔schla:gt〕」は底本では「〔scha:gt〕」］ noch〕" "schlägt noch"]]]
+    (let [result (transcribe (source body) encoding)]
+      (is (= expected (:plaintext result)))
+      (is (some #{expected} (texts result "p"))))))
+
+(deftest explicit-body-end-keeps-translation-apparatus-outside-reading-text
+  (let [result (transcribe "作品\n作者\n\n本文\n\n［＃本文終わり］\n翻訳の底本：原書\n※利用条件\n翻訳者：訳者\n")]
+    (is (= "本文" (:plaintext result)))
+    (is (= "本文" (projection/markdown (:view result))))
+    (is (= ["本文"] (texts result "p")))
+    (is (= ["［＃本文終わり］" "翻訳の底本：原書" "※利用条件" "翻訳者：訳者"]
+           (mapv view/visible-text
+                 (filter #(= "source-line" (attribute % "type")) (elements result "seg")))))))
+
+(deftest unsupported-multiline-accents-retain-text-and-mark-analysis-uncertain
+  (let [body "〔Pardonnez a` mon bavardage\nJ'en suis a` mon premier voyage.〕"
+        result (transcribe (source body))
+        problems (get-in result [:view :view/problems])]
+    (is (= body (:plaintext result)))
+    (is (some #(= body (get-in % [:view/evidence "raw"])) problems))
+    (is (empty? (get-in result [:view :view/eligible-spans])))))
+
 (deftest malformed-notation-retains-visible-neighbors-and-uncertainty
   (doseq [[body expected raw]
           [["前〔cafe'〕［＃tail\r\n" "前café" "［＃tail"]

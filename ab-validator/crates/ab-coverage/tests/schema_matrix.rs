@@ -2954,3 +2954,29 @@ fn author_note_roles_do_not_classify_words_inside_formatting_operands() {
         assert!(summary.unknown_examples.is_empty());
     }
 }
+
+#[test]
+fn single_glyph_predicates_do_not_classify_quoted_text_or_indentation() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    for (source, glyph) in [
+        ("［＃「?!」は一字］", true),
+        ("［＃底本では「ヱ゛」は一字］", true),
+        ("［＃以下、この段落の数字付き（）は一字扱いである。］", true),
+        ("［＃ここから一字下げ］", false),
+        ("［＃一字下げ忘れか？200-14］", false),
+        ("［＃「一字に千理を含む」は太字］", false),
+        ("［＃「□」に「（一字不明）」の注記］", false),
+        ("［＃「□」に「（一字分空白）」の注記］", false),
+        ("［＃「一宇」は底本では「一字」］", false),
+        ("［＃地から一字上げ］", false),
+    ] {
+        let summary = inventory_document("fixture", source, &patterns);
+        assert_eq!(summary.markers_total, 1, "{source}");
+        assert_eq!(
+            summary.row_counts.contains_key("glyph.variant_note"),
+            glyph,
+            "{source}"
+        );
+    }
+}

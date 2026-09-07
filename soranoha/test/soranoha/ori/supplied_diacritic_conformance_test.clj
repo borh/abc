@@ -26,6 +26,8 @@
       (doseq [[body expected expected-markdown] [["Venus［＃「e」はアクサン（´）付き］" "Vénus"]
                                                  ["〔ru_pam［＃mは上ドット付き］〕" "rūpaṁ"]
                                                  ["〔Mi_hr〕［＃hは下ドット付き］" "Mīḥr"]
+                                                 ["〔samgha_disesa.v〕［＃mは上ドット付き］" "saṁghādisesa.v" "saṁghādisesa\\.v"]
+                                                 ["〔Ritva_disu to dah〕［＃Rは下ドット付き。sは下ドット付き。hは下ドット付き］" "Ṛitvādiṣu to daḥ"]
                                                  ["Samgha《サングハ》［＃mは上ドット付き］" "Saṁgha" "<ruby><rb>Saṁgha</rb><rt>サングハ</rt></ruby>"]
                                                  ["〔rattha-sva_mi_〕［＃tはともに下ドット付き］" "raṭṭha-svāmī" "raṭṭha\\-svāmī"]
                                                  ["Konkana［＃前のnは上ドット付き、後のnは下ドット付き］" "Koṅkaṇa"]]]

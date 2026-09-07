@@ -129,3 +129,58 @@ fn ruby_dot_spans_bind_the_original_decoded_target_and_annotation() {
         }
     }
 }
+
+#[test]
+fn supplied_dot_uses_the_realized_accent_scope_even_with_literal_punctuation() {
+    let source = "題\n作者\n\n〔samgha_disesa.v〕［＃mは上ドット付き］\n";
+    let aat: Value =
+        serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
+    let mut found = Vec::new();
+    accents(&aat["blocks"], &mut found);
+    assert_eq!(found.len(), 1, "{aat}");
+    assert_eq!(found[0]["text"], "saṁghādisesa.v");
+}
+
+#[test]
+fn accent_scope_ownership_does_not_widen_unscoped_or_ambiguous_targets() {
+    for body in [
+        "samghādisesa.v［＃mは上ドット付き］",
+        "〔samgha_disesa.v〕 ［＃mは上ドット付き］",
+        "〔samgha_disesa.v〕\n［＃mは上ドット付き］",
+        "〔ma_.m〕［＃mは上ドット付き］",
+        "〔ma_［＃未対応］.m〕［＃mは上ドット付き］",
+    ] {
+        let source = format!("題\n作者\n\n{body}\n");
+        let aat: Value =
+            serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
+        let mut found = Vec::new();
+        accents(&aat["blocks"], &mut found);
+        assert!(found.is_empty(), "{body}: {aat}");
+        assert!(aat.to_string().contains("unknown-notation"), "{aat}");
+    }
+}
+
+#[test]
+fn realized_accent_scope_survives_quote_rebasing() {
+    for body in [
+        "≪〔samgha_disesa.v〕［＃mは上ドット付き］≫",
+        "〔sa_.m〕［＃mは上ドット付き］",
+    ] {
+        let source = format!("題\r\n作者\r\n\r\n前〔cafe'〕\r\n{body}\r\n");
+        let (encoded, _, errors) = encoding_rs::SHIFT_JIS.encode(&source);
+        assert!(!errors);
+        for bytes in [source.as_bytes(), encoded.as_ref()] {
+            let aat: Value = serde_json::from_slice(&aat_json_from_bytes(bytes).unwrap()).unwrap();
+            let mut found = Vec::new();
+            accents(&aat["blocks"], &mut found);
+            assert!(!found.is_empty(), "{body}: {aat}");
+            for accent in found {
+                let start =
+                    usize::try_from(accent["span"]["byte_start"].as_u64().unwrap()).unwrap();
+                let end = usize::try_from(accent["span"]["byte_end"].as_u64().unwrap()).unwrap();
+                assert_eq!(accent["source"], &source[start..end]);
+                assert!(accent["text"].as_str().unwrap().contains('ṁ'));
+            }
+        }
+    }
+}

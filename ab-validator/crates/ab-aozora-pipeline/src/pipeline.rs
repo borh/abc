@@ -96,6 +96,7 @@ pub struct Paired {
 pub struct Pipeline<'src, S> {
     source: &'src str,
     diagnostics: Vec<Diagnostic>,
+    accent_scopes: Vec<Span>,
     state: S,
 }
 
@@ -111,6 +112,7 @@ impl<'src> Pipeline<'src, Source> {
         Self {
             source,
             diagnostics: Vec::new(),
+            accent_scopes: Vec::new(),
             state: Source,
         }
     }
@@ -137,6 +139,7 @@ impl<'src> Pipeline<'src, Source> {
         Pipeline {
             source: self.source,
             diagnostics: self.diagnostics,
+            accent_scopes: out.accent_scopes,
             state: Sanitized {
                 sanitized_text: out.text.into_owned(),
             },
@@ -151,12 +154,14 @@ impl<'src> Pipeline<'src, Source> {
 impl<'src> Pipeline<'src, Sanitized> {
     /// Parse text whose caller already owns sanitization and its source maps.
     /// Token and source-node spans index these exact bytes. The caller retains
-    /// any diagnostics produced by its sanitization pass.
+    /// any diagnostics produced by its sanitization pass and supplies realized
+    /// accent-scope extents rebased onto these bytes.
     #[must_use]
-    pub fn from_sanitized(source: &'src str) -> Self {
+    pub fn from_sanitized(source: &'src str, accent_scopes: Vec<Span>) -> Self {
         Self {
             source,
             diagnostics: Vec::new(),
+            accent_scopes,
             state: Sanitized {
                 sanitized_text: source.to_owned(),
             },
@@ -182,6 +187,7 @@ impl<'src> Pipeline<'src, Sanitized> {
         Pipeline {
             source: self.source,
             diagnostics: self.diagnostics,
+            accent_scopes: self.accent_scopes,
             state: Tokenized {
                 sanitized_text: self.state.sanitized_text,
                 tokens,
@@ -217,6 +223,7 @@ impl<'src> Pipeline<'src, Tokenized> {
         Pipeline {
             source: self.source,
             diagnostics: self.diagnostics,
+            accent_scopes: self.accent_scopes,
             state: Paired {
                 sanitized_text,
                 events,
@@ -296,9 +303,16 @@ impl Pipeline<'_, Paired> {
             // the NORMALIZE (lowering) pass mints its canonical core nodes.
             let mut events_iter = events.into_iter();
             let mut classify_stream = classify(&mut events_iter, &sanitized_text, &mut alloc);
-            let spans: Vec<ClassifiedSpan> = (&mut classify_stream).collect();
+            let mut spans: Vec<ClassifiedSpan> = (&mut classify_stream).collect();
             let mut classify_diagnostics: Vec<Diagnostic> = classify_stream.take_diagnostics();
             drop(classify_stream);
+            spans = resolve_accent_scope_dots(
+                spans,
+                &sanitized_text,
+                &mut alloc,
+                &links,
+                &self.accent_scopes,
+            );
             let (mut lowered, ruby_base_decorated) =
                 lower_spans(spans, &sanitized_text, &mut alloc);
             resolve_adjacent_note_targets(&mut lowered, &sanitized_text, alloc.store(), &links);
@@ -418,6 +432,75 @@ fn lower_spans(
     // it uniquely names.
     let decorated = decorate_ruby_bases(&mut out, source, alloc.store());
     (out, decorated)
+}
+
+/// Retain normalization-owned targets without treating arbitrary punctuation as a word joiner.
+fn resolve_accent_scope_dots(
+    spans: Vec<ClassifiedSpan>,
+    source: &str,
+    alloc: &mut Allocator,
+    links: &[PairLink],
+    scopes: &[Span],
+) -> Vec<ClassifiedSpan> {
+    if scopes.is_empty() {
+        return spans;
+    }
+    let mut scopes_by_end = BTreeMap::new();
+    for scope in scopes {
+        scopes_by_end.entry(scope.end).or_insert(scope);
+    }
+    let pairs: BTreeMap<_, _> = links.iter().map(|pair| (pair.close.end, pair)).collect();
+    let mut out: Vec<ClassifiedSpan> = Vec::with_capacity(spans.len());
+    for mut span in spans {
+        let dot = matches!(span.kind, SpanKind::Aozora(Node::Format(f)) if f.attrs.single()==Some(ForwardAttr::AccentDot));
+        let unknown = matches!(span.kind, SpanKind::Aozora(Node::Directive(d)) if d.kind==ab_aozora_syntax::DirectiveKind::Unknown);
+        if !(dot || unknown) {
+            out.push(span);
+            continue;
+        }
+        let Some(pair) = pairs
+            .get(&span.source_span.end)
+            .filter(|p| p.kind == PairKind::Bracket)
+        else {
+            out.push(span);
+            continue;
+        };
+        let Some(scope) = scopes_by_end.get(&pair.open.start) else {
+            out.push(span);
+            continue;
+        };
+        let Some(body) =
+            source[pair.open.end as usize..pair.close.start as usize].strip_prefix('＃')
+        else {
+            out.push(span);
+            continue;
+        };
+        let plain_scope = out
+            .iter()
+            .rev()
+            .take_while(|prior| prior.source_span.end > scope.start)
+            .all(|prior| matches!(prior.kind, SpanKind::Plain(_) | SpanKind::Newline));
+        let run = &source[scope.start as usize..scope.end as usize];
+        if plain_scope && compose_accent_dots(run, body).is_some() {
+            let target = alloc.content_plain(run);
+            span.kind = SpanKind::Aozora(alloc.accent_dot(target, body, ForwardOrigin::Reclaimed));
+            span.source_span.start = scope.start;
+        } else if dot {
+            use crate::lexer::classify::{PlainProvenance, PlainSpan};
+            out.push(ClassifiedSpan {
+                source_span: Span::new(span.source_span.start, pair.open.start),
+                kind: SpanKind::Plain(PlainSpan {
+                    provenance: PlainProvenance::Text,
+                }),
+            });
+            span.source_span.start = pair.open.start;
+            span.kind = SpanKind::Aozora(Node::Directive(
+                alloc.make_directive(body, ab_aozora_syntax::DirectiveKind::Unknown),
+            ));
+        }
+        out.push(span);
+    }
+    out
 }
 
 /// Apply supplied dot selectors to an adjacent typed ruby base, never its reading.

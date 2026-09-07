@@ -24,6 +24,7 @@ use crate::spelling::source::{
 };
 use crate::walk::{SentinelKind, WalkSink, walk};
 use ab_aozora_pipeline::{has_long_rule_line, isolate_decorative_rules};
+use ab_aozora_syntax::accent::ACCENT_TABLE;
 use ab_aozora_syntax::ast::{
     AngleQuote, Content, ContentRange, Directive, ForwardFormat, Gaiji, GaijiCanonicalOwned,
     Heading, HeadingHint, Illustration, Kunten, KuntenKind, LexOutput, MarginNote, Node, NodeRef,
@@ -387,7 +388,7 @@ fn ruby_needs_bar(base_run: &[Content], prev: Option<char>, store: &NodeStore) -
 /// `［＃「target」は<keyword>］`.
 fn emit_format<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W) -> fmt::Result {
     if matches!(f.origin, ForwardOrigin::Reclaimed | ForwardOrigin::Detached) {
-        emit_content_as_plain_range(f.target, store, out)?;
+        emit_format_target(f, store, out)?;
     }
     // A `Detached` decoration is the styled-literal half of a
     // non-adjacent forward split: it serializes as the bare literal above,
@@ -459,6 +460,28 @@ fn emit_format<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W) -> f
         out.write_str(attr.keyword())?;
     }
     out.write_char('］')
+}
+
+/// Reconstruct accent encoding when its scope keeps a supplied selector attached.
+fn emit_format_target<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W) -> fmt::Result {
+    if f.attrs.single() == Some(ForwardAttr::AccentDot)
+        && let Some(target) = store.content_range_as_plain(f.target)
+        && !target.contains(['〔', '〕'])
+        && target
+            .chars()
+            .any(|ch| ACCENT_TABLE.iter().any(|(_, glyph)| *glyph == ch))
+    {
+        out.write_char('〔')?;
+        for ch in target.chars() {
+            if let Some((spelling, _)) = ACCENT_TABLE.iter().find(|(_, glyph)| *glyph == ch) {
+                out.write_str(spelling)?;
+            } else {
+                out.write_char(ch)?;
+            }
+        }
+        return out.write_char('〕');
+    }
+    emit_content_as_plain_range(f.target, store, out)
 }
 
 /// The exact `は`-suffix source for a forward accent [`AccentMark`], for a

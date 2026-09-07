@@ -250,6 +250,7 @@ fn scan_accent_edits(rule_isolated: &str) -> Vec<(u32, u32, u32)> {
         rule_isolated,
         &mut Vec::new(),
         Some(&mut edits),
+        &mut Vec::new(),
     );
     edits
         .into_iter()

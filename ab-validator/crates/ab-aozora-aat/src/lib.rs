@@ -59,6 +59,8 @@ static RUBY_RE: LazyLock<Regex> =
 /// Decoded source text and its byte-coordinate basis.
 #[derive(Debug)]
 pub struct DecodedSource {
+    /// Realized accent-scope extents in normalized body coordinates.
+    pub accent_scopes: Vec<ab_aozora_facade::Span>,
     /// Decoded text.
     pub text: String,
     /// Decoded text with sanitization for span alignment.
@@ -898,6 +900,7 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
         return Ok(DecodedSource {
             text,
             span_text: sanitized.body,
+            accent_scopes: sanitized.accent_scopes,
             sanitized_text: sanitized.full,
             encoding: "utf-8-bom",
             source_hash,
@@ -918,6 +921,7 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
         return Ok(DecodedSource {
             text,
             span_text: sanitized.body,
+            accent_scopes: sanitized.accent_scopes,
             sanitized_text: sanitized.full,
             encoding: "utf-8",
             source_hash,
@@ -938,6 +942,7 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
     Ok(DecodedSource {
         text,
         span_text: sanitized.body,
+        accent_scopes: sanitized.accent_scopes,
         sanitized_text: sanitized.full,
         encoding: if had_errors {
             "windows-31j-lossy"
@@ -957,6 +962,7 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
 /// branches read as field access, not positional unpacking (added
 /// the tail fields; a tuple would have grown to six positional slots).
 struct SanitizedForAat {
+    accent_scopes: Vec<ab_aozora_facade::Span>,
     /// The BODY slice (`sanitized[body_range]`), same content
     /// `sanitize_for_aat` always returned as its first element.
     body: String,
@@ -973,6 +979,22 @@ struct SanitizedForAat {
     tail_offset: usize,
 }
 
+fn accent_scopes_in(
+    scopes: &[ab_aozora_facade::Span],
+    range: Range<usize>,
+) -> Vec<ab_aozora_facade::Span> {
+    scopes
+        .iter()
+        .filter(|scope| range.start <= scope.start as usize && scope.end as usize <= range.end)
+        .map(|scope| {
+            ab_aozora_facade::Span::new(
+                scope.start - u32::try_from(range.start).expect("source fits u32"),
+                scope.end - u32::try_from(range.start).expect("source fits u32"),
+            )
+        })
+        .collect()
+}
+
 fn sanitize_for_aat(text: &str) -> SanitizedForAat {
     let mapped = sanitize_mapped(text);
     let sanitize_diagnostics = mapped.diagnostics;
@@ -981,6 +1003,7 @@ fn sanitize_for_aat(text: &str) -> SanitizedForAat {
     let body_text = sanitized[body.clone()].to_owned();
     let tail = sanitized[tail_start..].to_owned();
     SanitizedForAat {
+        accent_scopes: accent_scopes_in(&mapped.accent_scopes, body.clone()),
         body: body_text,
         full: sanitized,
         diagnostics: sanitize_diagnostics,
@@ -997,6 +1020,7 @@ fn sanitize_for_aat(text: &str) -> SanitizedForAat {
 )]
 fn projections(
     span_text: &str,
+    accent_scopes: &[ab_aozora_facade::Span],
 ) -> Result<(
     Vec<AozoraNode>,
     Vec<Diagnostic>,
@@ -1004,7 +1028,9 @@ fn projections(
     Vec<AozoraRubyEntry>,
     Vec<Span>,
 )> {
-    let paired = Pipeline::from_sanitized(span_text).tokenize().pair();
+    let paired = Pipeline::from_sanitized(span_text, accent_scopes.to_vec())
+        .tokenize()
+        .pair();
     let retained_accents = paired
         .retained_multiline_accent_spans()
         .into_iter()
@@ -1050,10 +1076,13 @@ fn projections(
                 end: node.span.end,
             },
         });
-        let inner_tree = Pipeline::from_sanitized(&span_text[start..end])
-            .tokenize()
-            .pair()
-            .build();
+        let inner_tree = Pipeline::from_sanitized(
+            &span_text[start..end],
+            accent_scopes_in(accent_scopes, start..end),
+        )
+        .tokenize()
+        .pair()
+        .build();
         let inner_nodes = node_projection(&inner_tree);
         for mut inner in inner_nodes {
             inner.span.start += start;
@@ -1101,7 +1130,8 @@ fn projections(
 /// Returns an error if source decoding, projection parsing, or JSON serialization fails.
 pub fn aat_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
     let decoded = decode_source_bytes(bytes)?;
-    let (nodes, diagnostics, gaiji, ruby, retained_accents) = projections(&decoded.span_text)?;
+    let (nodes, diagnostics, gaiji, ruby, retained_accents) =
+        projections(&decoded.span_text, &decoded.accent_scopes)?;
     let mut aat = build_aat(&decoded, &nodes, &diagnostics, &gaiji, &ruby);
     if !retained_accents.is_empty() {
         aat["meta"]["interpretation_problems"] = Value::Array(
@@ -1166,7 +1196,7 @@ fn rebase_spans(
 /// serialization fails.
 pub fn diagnostics_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
     let decoded = decode_source_bytes(bytes)?;
-    let tree = Pipeline::from_sanitized(&decoded.span_text)
+    let tree = Pipeline::from_sanitized(&decoded.span_text, decoded.accent_scopes.clone())
         .tokenize()
         .pair()
         .build();
@@ -2373,8 +2403,11 @@ fn source_fragment(decoded: &DecodedSource, range: Range<usize>) -> Option<Vec<V
 }
 
 fn parsed_source_fragment(decoded: &DecodedSource, range: Range<usize>) -> Option<Vec<Value>> {
-    let (mut nodes, _diagnostics, mut gaiji, mut ruby, accents) =
-        projections(decoded.span_text.get(range.clone())?).ok()?;
+    let (mut nodes, _diagnostics, mut gaiji, mut ruby, accents) = projections(
+        decoded.span_text.get(range.clone())?,
+        &accent_scopes_in(&decoded.accent_scopes, range.clone()),
+    )
+    .ok()?;
     if !accents.is_empty() {
         return None;
     }
@@ -5704,7 +5737,9 @@ mod tests {
             "ウサギ［＃横組み］（Hare）［＃横組み終わり］だ\n［＃罫囲み］三［＃罫囲み終わり］\n";
         // Follow `projections` (lib.rs:415) for decode + parse + node_entries.
         let decoded = decode_source_bytes(src.as_bytes()).unwrap();
-        let nodes: Vec<AozoraNode> = projections(&decoded.span_text).unwrap().0;
+        let nodes: Vec<AozoraNode> = projections(&decoded.span_text, &decoded.accent_scopes)
+            .unwrap()
+            .0;
         let expected = [
             ("containerOpen", "［＃横組み］"),
             ("containerClose", "［＃横組み終わり］"),
@@ -5804,7 +5839,8 @@ mod tests {
     fn inline_array_for(line: &str) -> Vec<Value> {
         let src = format!("{line}\n");
         let decoded = decode_source_bytes(src.as_bytes()).unwrap();
-        let (nodes, _diagnostics, gaiji, ruby, _) = projections(&decoded.span_text).unwrap();
+        let (nodes, _diagnostics, gaiji, ruby, _) =
+            projections(&decoded.span_text, &decoded.accent_scopes).unwrap();
         let gaiji_by_start = gaiji
             .iter()
             .map(|entry| (entry.start, entry.clone()))
@@ -6100,7 +6136,8 @@ mod tests {
         assert_eq!(content[0]["value"], "ＡＢ");
 
         let decoded = decode_source_bytes(src.as_bytes()).unwrap();
-        let (nodes, _diagnostics, gaiji, ruby, _) = projections(&decoded.span_text).unwrap();
+        let (nodes, _diagnostics, gaiji, ruby, _) =
+            projections(&decoded.span_text, &decoded.accent_scopes).unwrap();
         let gaiji_by_start = gaiji
             .iter()
             .map(|entry| (entry.start, entry.clone()))

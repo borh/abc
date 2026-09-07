@@ -31,6 +31,7 @@
 
 use core::ops::Range;
 use std::borrow::Cow;
+use std::collections::BTreeMap;
 
 use memchr::memmem;
 
@@ -63,6 +64,8 @@ const DECORATIVE_RULE_MIN_LEN: usize = 10;
 pub struct SanitizeOutput<'s> {
     pub text: Cow<'s, str>,
     pub diagnostics: Vec<Diagnostic>,
+    /// Normalized extents whose supplied accent-scope delimiters were realized.
+    pub accent_scopes: Vec<Span>,
 }
 
 /// One non-identity rewrite: source bytes `src_start..src_end` became
@@ -169,6 +172,8 @@ pub struct SanitizeMappedOutput<'s> {
     pub text: Cow<'s, str>,
     pub diagnostics: Vec<Diagnostic>,
     pub maps: SanitizeMaps,
+    /// Normalized extents whose supplied accent-scope delimiters were realized.
+    pub accent_scopes: Vec<Span>,
 }
 
 /// Apply the four sanitation steps and return the result. See module
@@ -205,12 +210,15 @@ pub fn sanitize(source: &str) -> SanitizeOutput<'_> {
     // the 3-byte needle and zooms through Japanese prose at memory-
     // bandwidth speed.
     let mut accent_diagnostics: Vec<Diagnostic> = Vec::new();
+    let mut accent_scopes = Vec::new();
     let text: Cow<'_, str> =
         if memmem::find(rule_isolated.as_bytes(), TORTOISE_OPEN_BYTES).is_some() {
             let owned = rule_isolated.into_owned();
-            Cow::Owned(rewrite_accent_spans_collecting(
+            Cow::Owned(rewrite_accent_spans_collecting_core(
                 &owned,
                 &mut accent_diagnostics,
+                None,
+                &mut accent_scopes,
             ))
         } else {
             rule_isolated
@@ -219,6 +227,7 @@ pub fn sanitize(source: &str) -> SanitizeOutput<'_> {
     SanitizeOutput {
         text,
         diagnostics: accent_diagnostics,
+        accent_scopes,
     }
 }
 
@@ -278,24 +287,29 @@ pub fn sanitize_mapped(source: &str) -> SanitizeMappedOutput<'_> {
 
     // Step 4: accent decomposition inside tortoiseshell brackets.
     let mut accent_diagnostics: Vec<Diagnostic> = Vec::new();
-    let text: Cow<'_, str> = if memmem::find(rule_isolated.as_bytes(), TORTOISE_OPEN_BYTES)
-        .is_some()
-    {
-        let owned = rule_isolated.into_owned();
-        let mut edits = Vec::new();
-        let out =
-            rewrite_accent_spans_collecting_core(&owned, &mut accent_diagnostics, Some(&mut edits));
-        steps.push(OffsetMap { edits });
-        Cow::Owned(out)
-    } else {
-        steps.push(OffsetMap::default());
-        rule_isolated
-    };
+    let mut accent_scopes = Vec::new();
+    let text: Cow<'_, str> =
+        if memmem::find(rule_isolated.as_bytes(), TORTOISE_OPEN_BYTES).is_some() {
+            let owned = rule_isolated.into_owned();
+            let mut edits = Vec::new();
+            let out = rewrite_accent_spans_collecting_core(
+                &owned,
+                &mut accent_diagnostics,
+                Some(&mut edits),
+                &mut accent_scopes,
+            );
+            steps.push(OffsetMap { edits });
+            Cow::Owned(out)
+        } else {
+            steps.push(OffsetMap::default());
+            rule_isolated
+        };
 
     SanitizeMappedOutput {
         text,
         diagnostics: accent_diagnostics,
         maps: SanitizeMaps { steps },
+        accent_scopes,
     }
 }
 
@@ -323,7 +337,7 @@ pub fn rewrite_accent_spans(input: &str) -> String {
 /// rewritten text, so output coordinates put the caret on the right
 /// character.
 fn rewrite_accent_spans_collecting(input: &str, diagnostics: &mut Vec<Diagnostic>) -> String {
-    rewrite_accent_spans_collecting_core(input, diagnostics, None)
+    rewrite_accent_spans_collecting_core(input, diagnostics, None, &mut Vec::new())
 }
 
 /// Core of [`rewrite_accent_spans_collecting`]; when `edits` is `Some`,
@@ -340,6 +354,7 @@ pub(super) fn rewrite_accent_spans_collecting_core(
     input: &str,
     diagnostics: &mut Vec<Diagnostic>,
     mut edits: Option<&mut Vec<MapEdit>>,
+    accent_scopes: &mut Vec<Span>,
 ) -> String {
     let mut pairs = pair(tokenize(input));
     for _ in pairs.by_ref() {}
@@ -359,6 +374,7 @@ pub(super) fn rewrite_accent_spans_collecting_core(
         .collect();
     scopes.sort_unstable_by_key(|range| range.start);
     let mut replacements = Vec::new();
+    let mut realized = Vec::new();
     for scope in &scopes {
         let start = scope.start + TORTOISE_OPEN.len_utf8();
         let end = scope.end - TORTOISE_CLOSE.len_utf8();
@@ -388,6 +404,7 @@ pub(super) fn rewrite_accent_spans_collecting_core(
             );
         }
         if replacements.len() > before {
+            realized.push((scope.start, end));
             replacements.push((scope.start, TORTOISE_OPEN.len_utf8(), None));
             replacements.push((end, TORTOISE_CLOSE.len_utf8(), None));
         }
@@ -395,9 +412,13 @@ pub(super) fn rewrite_accent_spans_collecting_core(
     replacements.sort_unstable_by_key(|&(start, _, _)| start);
     let mut out = String::with_capacity(input.len());
     let mut cursor = 0;
+    let mut boundaries = BTreeMap::new();
     for (start, len, replacement) in replacements {
         out.push_str(&input[cursor..start]);
         let dst_start = out.len();
+        if replacement.is_none() {
+            boundaries.insert(start, u32::try_from(dst_start).expect("source fits u32"));
+        }
         if let Some(replacement) = replacement {
             out.push(replacement);
             #[allow(
@@ -420,6 +441,11 @@ pub(super) fn rewrite_accent_spans_collecting_core(
         cursor = start + len;
     }
     out.push_str(&input[cursor..]);
+    accent_scopes.extend(
+        realized
+            .into_iter()
+            .map(|(start, end)| Span::new(boundaries[&start], boundaries[&end])),
+    );
     out
 }
 
@@ -1135,9 +1161,30 @@ mod tests {
         ] {
             let plain = sanitize(src);
             let mapped = sanitize_mapped(src);
+            assert_eq!(mapped.accent_scopes, plain.accent_scopes);
             assert_eq!(plain.text, mapped.text, "text drift on {src:?}");
             assert_eq!(plain.diagnostics.len(), mapped.diagnostics.len());
         }
+    }
+
+    #[test]
+    fn realized_scope_extents_share_the_existing_source_offset_map() {
+        let source = "\u{feff}前\r\n----------\r\n〔sa_.m〕〔日本語〕〔cafe'〕";
+        let mapped = sanitize_mapped(source);
+        assert_eq!(mapped.accent_scopes, sanitize(source).accent_scopes);
+        let scopes: Vec<_> = mapped
+            .accent_scopes
+            .iter()
+            .map(|span| {
+                let start = span.start as usize;
+                let end = span.end as usize;
+                (
+                    &mapped.text[start..end],
+                    &source[mapped.maps.to_source_offset(start)..mapped.maps.to_source_end(end)],
+                )
+            })
+            .collect();
+        assert_eq!(scopes, [("sā.m", "sa_.m"), ("café", "cafe'")]);
     }
 
     #[test]

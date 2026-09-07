@@ -115,6 +115,41 @@ pub struct TextVariant<'s> {
     pub editorial_statement: Option<&'s str>,
 }
 
+/// Reading alternatives qualified by the same parenthesized principal continuation.
+/// The consumer must verify that continuation against the addressed ruby's source.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ContextualReading<'s> {
+    /// Supplied reading without the parenthesized continuation.
+    pub current: &'s str,
+    /// Base-edition reading without the same continuation.
+    pub base_text: &'s str,
+    /// Exact principal text required between the ruby and annotation.
+    pub continuation: &'s str,
+}
+
+/// Separate a shared continuation without asserting that a source target exists.
+#[must_use]
+pub fn contextual_reading<'s>(
+    current: &'s str,
+    base_text: &'s str,
+) -> Option<ContextualReading<'s>> {
+    let split = |text: &'s str| {
+        let (reading, continuation) = text.strip_suffix('）')?.rsplit_once('（')?;
+        (!reading.is_empty()
+            && !continuation.is_empty()
+            && !reading.contains(['（', '）', '\n', '\r'])
+            && !continuation.contains(['（', '）', '\n', '\r']))
+        .then_some((reading, continuation))
+    };
+    let (current, continuation) = split(current)?;
+    let (base_text, witness_continuation) = split(base_text)?;
+    (continuation == witness_continuation).then_some(ContextualReading {
+        current,
+        base_text,
+        continuation,
+    })
+}
+
 /// Recognize a quoted current target and its explicitly attributed base-text alternative.
 /// Other editorial prose remains unclassified by this recognizer.
 #[must_use]

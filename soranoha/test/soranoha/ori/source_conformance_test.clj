@@ -1432,3 +1432,13 @@
                        (filter #(= "bold" (attribute % "rend")) (elements result "hi")))))
     (is (every? #(string/blank? (attribute % "style")) scopes))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest reading-variants-verify-the-shared-principal-continuation
+  (let [original (transcribe (source "零《こぼ》す"))
+        result (transcribe (source "零《こぼ》す［＃ルビの「こぼ（す）」は底本では「にぼ（す）」］"))]
+    (is (= "零す" (:plaintext result)))
+    (is (= (:plaintext original) (:plaintext result)))
+    (is (= (projection/markdown (:view original)) (projection/markdown (:view result))))
+    (is (= ["こぼ"] (texts result "lem")))
+    (is (= ["にぼ"] (texts result "rdg")))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))

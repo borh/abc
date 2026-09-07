@@ -1642,3 +1642,58 @@ fn an_edition_target_can_own_the_entire_adjacent_quotation_interior() {
         );
     }
 }
+
+#[test]
+fn a_reading_variant_can_supply_its_shared_principal_continuation() {
+    let body = "零《こぼ》す［＃ルビの「こぼ（す）」は底本では「にぼ（す）」］";
+    let ir = convert(body);
+    let all = nodes(&ir);
+    let app = all
+        .iter()
+        .find(|node| node["type"] == "base-text-variant")
+        .unwrap();
+    assert_eq!(app["text"], "こぼ");
+    assert_eq!(app["variant"]["base_text"], "にぼ");
+    assert_eq!(ir["interpretation_problems"], json!([]));
+    let source = format!("題\n作者\n\n{body}\n\n底本：本\n");
+    for (node, expected) in [
+        (&app["inline_children"][0], "こぼ"),
+        (&app["variant"]["base_children"][0], "にぼ"),
+    ] {
+        let span = &node["source_span"];
+        let start = usize::try_from(span["start"].as_u64().unwrap()).unwrap();
+        let end = usize::try_from(span["end"].as_u64().unwrap()).unwrap();
+        assert_eq!(&source[start..end], expected);
+    }
+    let literal = convert("零《こぼ（す）》［＃ルビの「こぼ（す）」は底本では「にぼ（す）」］");
+    let literal_nodes = nodes(&literal);
+    let literal_app = literal_nodes
+        .iter()
+        .find(|node| node["type"] == "base-text-variant")
+        .unwrap();
+    assert_eq!(literal_app["text"], "こぼ（す）");
+    assert_eq!(literal_app["variant"]["base_text"], "にぼ（す）");
+    for body in [
+        "零《こぼ》［＃ルビの「こぼ（す）」は底本では「にぼ（す）」］",
+        "零《こぼ》した［＃ルビの「こぼ（す）」は底本では「にぼ（す）」］",
+        "零《こぼ》す［＃ルビの「こぼ（す）」は底本では「にぼ（した）」］",
+        "零《こぼ》す［＃ルビの「こぼ（）」は底本では「にぼ（）」］",
+        "零《こぼ》す\n［＃ルビの「こぼ（す）」は底本では「にぼ（す）」］",
+        "零《こぼ》す［＃底本のまま］［＃ルビの「こぼ（す）」は底本では「にぼ（す）」］",
+        "零《こぼ》す別《べつ》す［＃ルビの「こぼ（す）」は底本では「にぼ（す）」］",
+        "零《こぼ》す［＃ルビの「こぽ（す）」は底本では「にぼ（す）」］",
+        "零《こぼ》す［＃「こぼ（す）」は底本では「にぼ（す）」］",
+    ] {
+        let ir = convert(body);
+        assert!(
+            !nodes(&ir)
+                .iter()
+                .any(|node| node["type"] == "base-text-variant"),
+            "{body}"
+        );
+        assert!(
+            !ir["interpretation_problems"].as_array().unwrap().is_empty(),
+            "{body}"
+        );
+    }
+}

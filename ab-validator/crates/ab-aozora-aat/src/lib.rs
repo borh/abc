@@ -15,9 +15,10 @@ use std::{
 use ab_aozora_pipeline::lexer::sanitize::{SanitizeMaps, normalize_line_endings, sanitize_mapped};
 use ab_aozora_pipeline::text_variant::{
     EditionNoteKind, EditionRangeBoundary, EditionRangeLocation, EditionRangeMarker, TextVariant,
-    TextVariantTarget, base_edition_concealed_characters, concealed_placeholder, edition_note,
-    edition_range_marker, edition_statement, formatted_text_variant, formatting_edition_note,
-    gaiji_edition_note, image_edition_note, text_variant,
+    TextVariantTarget, base_edition_concealed_characters, concealed_placeholder,
+    contextual_reading, edition_note, edition_range_marker, edition_statement,
+    formatted_text_variant, formatting_edition_note, gaiji_edition_note, image_edition_note,
+    text_variant,
 };
 use ab_aozora_pipeline::{LexOutput, Pipeline};
 use anyhow::Result;
@@ -4285,7 +4286,7 @@ fn resolve_text_variants_in_blocks(
                     base,
                     &base_text,
                     decoded,
-                )
+                ) || attach_contextual_reading_variant(ruby, &node, current, base, decoded)
             }) {
                 continue;
             }
@@ -4777,6 +4778,108 @@ fn preceding_reading(nodes: &mut [Value]) -> Option<&mut Value> {
         }
     }
     None
+}
+
+fn contextual_literal_prefix(
+    content: &[Value],
+    prefix: &str,
+    decoded: &DecodedSource,
+) -> Option<Vec<Value>> {
+    let [node] = content else {
+        return None;
+    };
+    let span = value_source_span(node)?;
+    if node["kind"] != "text"
+        || node["value"].as_str()? != decoded.text.get(span.start..span.end)?
+        || !node["value"].as_str()?.starts_with(prefix)
+    {
+        return None;
+    }
+    let mut selected = node.clone();
+    selected["value"] = json!(prefix);
+    selected["span"] = decoded_span_json(
+        Span {
+            start: span.start,
+            end: span.start + prefix.len(),
+        },
+        &decoded.span_ctx,
+    );
+    Some(vec![selected])
+}
+
+fn attach_contextual_reading_variant(
+    ruby: &mut Value,
+    note: &Value,
+    current: &[Value],
+    base: &[Value],
+    decoded: &DecodedSource,
+) -> bool {
+    if note["text_variant"]["target_kind"] != "ruby-reading" {
+        return false;
+    }
+    let Some(current_text) = content_structured_text(current) else {
+        return false;
+    };
+    let Some(base_text) = content_structured_text(base) else {
+        return false;
+    };
+    let Some(context) = contextual_reading(&current_text, &base_text) else {
+        return false;
+    };
+    let Some(end) = value_source_span(ruby).map(|span| span.end) else {
+        return false;
+    };
+    let Some(start) = value_source_span(note).map(|span| span.start) else {
+        return false;
+    };
+    if decoded.text.get(end..start) != Some(context.continuation) {
+        return false;
+    }
+    let Some(current) = contextual_literal_prefix(current, context.current, decoded) else {
+        return false;
+    };
+    let Some(base) = contextual_literal_prefix(base, context.base_text, decoded) else {
+        return false;
+    };
+    // Keep the supplied operands intact unless their source context and complete
+    // reading identity both match. Failed contextual interpretation is transactional.
+    let reading = ruby
+        .get("reading_content")
+        .and_then(Value::as_array)
+        .and_then(|children| content_structured_text(children))
+        .or_else(|| ruby["reading"].as_str().map(str::to_owned));
+    if reading.as_deref() != Some(context.current) {
+        return false;
+    }
+    let mut candidate = ruby.clone();
+    if candidate.get("reading_content").is_none() {
+        let Some(reading_end) = end.checked_sub('》'.len_utf8()) else {
+            return false;
+        };
+        let Some(reading_start) = reading_end.checked_sub(context.current.len()) else {
+            return false;
+        };
+        if decoded.text.get(reading_end..end) != Some("》")
+            || decoded.text.get(reading_start..reading_end) != Some(context.current)
+        {
+            return false;
+        }
+        candidate["reading_content"] = json!([{"kind":"text", "value":context.current,
+            "span":decoded_span_json(Span { start: reading_start, end: reading_end }, &decoded.span_ctx)}]);
+    }
+    if !attach_reading_variant(
+        &mut candidate,
+        note,
+        &current,
+        context.current,
+        &base,
+        context.base_text,
+        decoded,
+    ) {
+        return false;
+    }
+    *ruby = candidate;
+    true
 }
 
 fn attach_reading_variant(

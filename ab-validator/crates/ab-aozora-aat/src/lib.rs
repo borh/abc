@@ -2459,10 +2459,13 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
     }
     match node.kind {
         ProjectedKind::Region(region) => {
-            if region.is_inline() {
+            // AAT's paired inline scopes must not terminate enclosing blocks,
+            // even when the native renderer uses block presentation for them.
+            let formatting = region_formatting(region);
+            if formatting.is_some() || region.is_inline() {
                 value["x-source-flow"] = json!("inline");
             }
-            if let Some((key, fields)) = region_formatting(region) {
+            if let Some((key, fields)) = formatting {
                 value["x-format-key"] = json!(key);
                 value["x-format-open"] = json!(true);
                 value["x-formatting"] = fields;
@@ -2471,10 +2474,11 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
                 "aspects":["structure","layout"], "influence":{"kind":"document"}});
         }
         ProjectedKind::RegionClose(close) => {
-            if close.is_inline() {
+            let formatting = region_formatting_close(close);
+            if formatting.is_some() || close.is_inline() {
                 value["x-source-flow"] = json!("inline");
             }
-            if let Some(key) = region_formatting_close(close) {
+            if let Some(key) = formatting {
                 value["x-format-key"] = json!(key);
                 value["x-format-open"] = json!(false);
             }

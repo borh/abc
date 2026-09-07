@@ -247,3 +247,34 @@ fn inline_tcy_does_not_terminate_enclosing_indentation() {
         assert_eq!(ir["interpretation_problems"], json!([]));
     }
 }
+
+#[test]
+fn paired_font_size_preserves_leading_space_and_enclosing_layout() {
+    let ir = convert(
+        "［＃ここから１字下げ、折り返して２字下げ］\n前の行。\n　［＃１段階小さな文字］〔中略〕［＃小さな文字終わり］続き。\n［＃ここで字下げ終わり］",
+    );
+    let nodes = ir["nodes"].as_array().unwrap();
+    let index = nodes
+        .iter()
+        .position(|n| n["layout"]["kind"] == "font-size")
+        .unwrap();
+    let paragraph = ir["paragraphs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|p| {
+            p["node_range"]["start"].as_u64().unwrap() <= index as u64
+                && p["node_range"]["end"].as_u64().unwrap() > index as u64
+        })
+        .unwrap();
+    assert_eq!(paragraph["layout"]["kind"], "burasage");
+    assert_eq!(paragraph["layout"]["first_line_indent"], 1);
+    assert_eq!(paragraph["layout"]["continuation_indent"], 2);
+    let start = usize::try_from(paragraph["node_range"]["start"].as_u64().unwrap()).unwrap();
+    let end = usize::try_from(paragraph["node_range"]["end"].as_u64().unwrap()).unwrap();
+    let text: String = nodes[start..end]
+        .iter()
+        .filter_map(|n| n["text"].as_str())
+        .collect();
+    assert_eq!(text.trim_matches('\n'), "　〔中略〕続き。");
+}

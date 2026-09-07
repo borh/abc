@@ -774,7 +774,7 @@ fn mapping_preflight_accepts_checked_in_v1_artifact() {
 
     mapping.preflight(&schemas).unwrap();
 
-    assert_eq!(mapping.mapping_version, "0.17.0");
+    assert_eq!(mapping.mapping_version, "0.18.0");
     assert_eq!(
         mapping.target_parser_ir_schema_hash,
         schema_hash(&schemas.parser_ir_schema).unwrap()
@@ -817,7 +817,7 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
     let mapping =
         MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2.json"))
             .unwrap();
-    assert_eq!(mapping.mapping_version, "0.18.0");
+    assert_eq!(mapping.mapping_version, "0.19.0");
     assert_eq!(mapping.source_aat_version, 2);
     let schemas = SchemaSet::load_for_aat_version(&repo_root, &research_root, 2).unwrap();
     mapping.preflight(&schemas).unwrap();
@@ -4717,8 +4717,23 @@ fn enclosing_indent_survives_line_local_closing_alignment() {
         .unwrap();
         let ir = &output.parser_ir;
         assert_eq!(ir["paragraphs"].as_array().unwrap().len(), 4);
+        let geometry: Vec<_> = ir["layout_blocks"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|scope| {
+                assert_eq!(scope["source_span"]["coordinate_system"], "decoded_utf8");
+                assert!(
+                    scope["source_span"]["start"].as_u64().unwrap()
+                        < scope["source_span"]["end"].as_u64().unwrap()
+                );
+                let mut geometry = scope.clone();
+                geometry.as_object_mut().unwrap().remove("source_span");
+                geometry
+            })
+            .collect();
         assert_eq!(
-            ir["layout_blocks"],
+            json!(geometry),
             json!([{
                 "node_range": {"start":3,"end":4}, "align":"right", "offset_from_end":date_offset, "source_pointer":"blocks[1].children[1]"
             },{

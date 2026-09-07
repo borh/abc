@@ -80,7 +80,7 @@
                         (str "<" name ">" (inline-children child true) "</" name ">")))
            "</ruby>")
 
-      (#{"lb" "pb"} tag) (if html? "<br>" "  \n")
+      (#{"lb" "pb" "cb"} tag) (if html? "<br>" "  \n")
       (= "g" tag) (if (empty? (.getTextContent node)) "�" (content))
       (= "hi" tag) (let [rend (.getAttribute ^Element node "rend")]
                      (case rend
@@ -133,7 +133,7 @@
                            (rendition-style node))
                      :projection/transformed :projection/unsupported)
       (#{"ruby" "choice" "app" "head" "lb"} tag) :projection/transformed
-      (= "pb" tag) (if (= :projection/plaintext profile) :projection/transformed :projection/omitted)
+      (#{"pb" "cb"} tag) (if (= :projection/plaintext profile) :projection/transformed :projection/omitted)
       (or (= "g" tag) (structural-tags tag)) :projection/represented
       :else :projection/unsupported)))
 

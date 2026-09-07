@@ -523,6 +523,9 @@ impl<'src> Normalizer<'src> {
                 },
                 RegionClose::Heading { level, style, .. },
             ) => level.is_none() || (level == expected_level && style == expected_style),
+            (RegionClose::Columns(expected), RegionClose::Columns(actual)) => {
+                actual.is_none() || expected == actual
+            }
             (RegionClose::Indent { .. }, RegionClose::Indent { kumi_width: None })
             | (RegionClose::Bold { .. }, RegionClose::Bold { .. })
             | (RegionClose::Gothic { .. }, RegionClose::Gothic { .. })

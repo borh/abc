@@ -357,7 +357,13 @@ pub(crate) fn emit_container_close<W: Write>(close: RegionClose, out: &mut W) ->
             heading_style_keyword(style),
             heading_level_word(level),
         ),
-        RegionClose::Columns => out.write_str("［＃ここで段組み終わり］"),
+        RegionClose::Columns(count) => {
+            out.write_str("［＃ここで")?;
+            if let Some(count) = count {
+                write!(out, "{}", count.0.get())?;
+            }
+            out.write_str("段組み終わり］")
+        }
         RegionClose::Table => out.write_str("［＃ここで表終わり］"),
         RegionClose::Horizontal => out.write_str("［＃ここで横組み終わり］"),
         RegionClose::CombineUpright => out.write_str("［＃縦中横終わり］"),

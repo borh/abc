@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
   "title": "ABC Parser IR",
-  "version": "0.24.0",
+  "version": "0.25.0",
   "type": "object",
   "required": ["schema_id", "schema_hash", "source", "nodes", "warnings", "errors", "interpretation_problems", "interpretation_facts"],
   "additionalProperties": false,
@@ -47,7 +47,7 @@
       "type": "object", "additionalProperties": false,
       "required": ["kind", "outcome", "aspects", "source_span"],
       "properties": {
-        "kind": {"enum": ["ruby", "gaiji", "emphasis", "warichu", "kunten", "heading", "caption", "text-variant", "layout", "editorial-note", "line-layout"]},
+        "kind": {"enum": ["ruby", "gaiji", "emphasis", "warichu", "kunten", "heading", "caption", "text-variant", "layout", "editorial-note", "line-layout", "table", "layout-break"]},
         "outcome": {"const": "established"},
         "aspects": {"type":"array", "minItems":1, "uniqueItems":true, "items":{"enum":["content","structure","layout"]}},
         "source_span": {"type":"object", "additionalProperties":false, "required":["start","end","coordinate_system"],
@@ -73,18 +73,19 @@
       "items": {
         "type": "object",
         "required": ["node_range", "source_pointer"],
-        "anyOf":[{"required":["indent"]},{"required":["width"]},{"required":["offset_from_end"]},{"required":["align"]},{"required":["direction"]},{"required":["border"]},{"required":["page_placement"]},{"required":["typography"]},{"required":["role"]}],
+        "anyOf":[{"required":["indent"]},{"required":["width"]},{"required":["offset_from_end"]},{"required":["align"]},{"required":["direction"]},{"required":["border"]},{"required":["page_placement"]},{"required":["typography"]},{"required":["role"]},{"required":["column_count"]}],
         "additionalProperties": false,
         "properties": {
           "source_span": {"$ref":"#/$defs/sourceSpan"},
           "typography": {"$ref":"#/$defs/layoutScope"},
-          "role":{"enum":["caption","warichu"]},
+          "role":{"enum":["caption","warichu","table"]},
           "node_range": { "$ref": "#/$defs/nodeRange", "description": "Half-open indices into nodes, delimiting one enclosing source layout scope independently of heading and paragraph roles." },
           "indent": { "type": "integer", "minimum": 0 },
           "continuation_indent": {"type":"integer","minimum":0},
           "offset_from_end": {"type":"integer","minimum":0},
           "width": {"type":"integer","minimum":1},
           "line_count": {"type":"integer","minimum":1},
+          "column_count":{"type":"integer","minimum":1},
           "page_placement": {"const":"center"},
           "direction": { "const": "horizontal" },
           "align": { "enum": ["center","right"] },
@@ -165,6 +166,7 @@
         { "$ref": "#/$defs/headingNode" },
         { "$ref": "#/$defs/indentationNode" },
         { "$ref": "#/$defs/pageBreakNode" },
+        { "$ref": "#/$defs/columnBreakNode" },
         { "$ref": "#/$defs/lineBreakNode" },
         { "$ref": "#/$defs/imageNode" },
         { "$ref": "#/$defs/captionNode" },
@@ -174,6 +176,7 @@
     },
     "inlineNode": {
       "oneOf": [
+        { "$ref": "#/$defs/pageBreakNode" },
         { "$ref": "#/$defs/headingNode" },
         { "$ref": "#/$defs/captionNode" },
         { "$ref": "#/$defs/textNode" },
@@ -185,6 +188,7 @@
         { "$ref": "#/$defs/warichuNode" },
         { "$ref": "#/$defs/emphasisNode" },
         { "$ref": "#/$defs/layoutSpanNode" },
+        { "$ref": "#/$defs/columnBreakNode" },
         { "$ref": "#/$defs/lineBreakNode" }
       ]
     },
@@ -741,6 +745,23 @@
           "required": ["type", "span", "marker"],
           "properties": {
             "type": { "const": "page-break" },
+            "span": { "$ref": "#/$defs/span" },
+            "source_span": { "$ref": "#/$defs/sourceSpan" },
+            "marker": { "type": "string" },
+            "page_number": { "type": ["integer", "null"], "minimum": 1 }
+          }
+        }
+      ]
+    },
+    "columnBreakNode": {
+      "allOf": [
+        { "$ref": "#/$defs/baseNode" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "span", "marker"],
+          "properties": {
+            "type": { "const": "column-break" },
             "span": { "$ref": "#/$defs/span" },
             "source_span": { "$ref": "#/$defs/sourceSpan" },
             "marker": { "type": "string" },

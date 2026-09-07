@@ -101,7 +101,8 @@ fn page_placement_ends_before_the_real_page_break() {
         let start = usize::try_from(end["span"]["byte_start"].as_u64().unwrap()).unwrap();
         let finish = usize::try_from(end["span"]["byte_end"].as_u64().unwrap()).unwrap();
         assert_eq!(&source[start..finish], "［＃改丁］");
-        assert!(aat["blocks"][1].to_string().contains("［＃改丁］"));
+        assert_eq!(aat["blocks"][1]["content"][0]["kind"], "layout_break");
+        assert_eq!(aat["blocks"][1]["content"][0]["break_kind"], "kaicho");
         assert!(aat["blocks"][2].to_string().contains("次頁"));
     }
 }

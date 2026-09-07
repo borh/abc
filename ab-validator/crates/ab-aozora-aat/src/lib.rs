@@ -25,7 +25,7 @@ use sha2::{Digest, Sha256};
 
 use ab_aozora_facade::{
     self, BoutenKind, BoutenPosition, Diagnostic, DirectiveKind, ForwardAttr, Node, NodeKind,
-    NodeRef, RegionClose, RegionFormat, Severity, encoding, json as aozora_json,
+    NodeRef, RegionClose, RegionFormat, SectionKind, Severity, encoding, json as aozora_json,
 };
 // Body/tail boundary detection is the shared `ab-source-syntax` authority
 // so the checker's comparison source (`ab-check::body_text`) can never
@@ -276,6 +276,7 @@ enum ProjectedKind {
         text: String,
     },
     Node(NodeKind),
+    Section(SectionKind),
     Format(ForwardAttr),
     FormatMany(Vec<ForwardAttr>),
     Region(RegionFormat),
@@ -304,6 +305,7 @@ impl ProjectedKind {
         match self {
             Self::Kunten { .. } => "kunten",
             Self::Node(kind) => kind.as_json_tag(),
+            Self::Section(_) => "sectionBreak",
             Self::Line(line) => Node::Line(*line).kind().as_json_tag(),
             Self::Region(_) => "containerOpen",
             Self::RegionClose(_) => "containerClose",
@@ -427,6 +429,10 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                     },
                     ProjectedKind::Format,
                 ),
+                NodeRef::Inline(Node::SectionBreak(section))
+                | NodeRef::BlockLeaf(Node::SectionBreak(section)) => {
+                    ProjectedKind::Section(section)
+                }
                 NodeRef::BlockOpen(region) => ProjectedKind::Region(region),
                 NodeRef::BlockClose(close) => ProjectedKind::RegionClose(close),
                 NodeRef::Inline(Node::Line(line)) | NodeRef::BlockLeaf(Node::Line(line)) => {
@@ -908,25 +914,11 @@ enum EstablishedInterpretation {
     Layout,
     EditorialNote,
     LineLayout,
+    Table,
+    LayoutBreak,
 }
 
 impl EstablishedInterpretation {
-    fn kind(self) -> &'static str {
-        match self {
-            Self::Ruby => "ruby",
-            Self::Gaiji => "gaiji",
-            Self::Emphasis => "emphasis",
-            Self::Warichu => "warichu",
-            Self::Kunten => "kunten",
-            Self::Heading => "heading",
-            Self::Caption => "caption",
-            Self::TextVariant => "text-variant",
-            Self::Layout => "layout",
-            Self::EditorialNote => "editorial-note",
-            Self::LineLayout => "line-layout",
-        }
-    }
-
     fn for_node(node: &Value) -> Option<Self> {
         let has_content = node["content"]
             .as_array()
@@ -980,8 +972,28 @@ impl EstablishedInterpretation {
             Some("caption" | "caption_block") => Some(Self::Caption),
             Some("text-variant") => Some(Self::TextVariant),
             Some("editorial_note") => Some(Self::EditorialNote),
+            Some("layout_block") if node["role"] == "table" => Some(Self::Table),
+            Some("layout_break") => Some(Self::LayoutBreak),
             Some("layout_block") => Some(Self::LineLayout),
             _ => None,
+        }
+    }
+
+    fn kind(self) -> &'static str {
+        match self {
+            Self::Ruby => "ruby",
+            Self::Gaiji => "gaiji",
+            Self::Emphasis => "emphasis",
+            Self::Warichu => "warichu",
+            Self::Kunten => "kunten",
+            Self::Heading => "heading",
+            Self::Caption => "caption",
+            Self::TextVariant => "text-variant",
+            Self::Layout => "layout",
+            Self::EditorialNote => "editorial-note",
+            Self::LineLayout => "line-layout",
+            Self::Table => "table",
+            Self::LayoutBreak => "layout-break",
         }
     }
 
@@ -990,7 +1002,9 @@ impl EstablishedInterpretation {
             Self::Ruby | Self::TextVariant | Self::EditorialNote => &["content", "structure"],
             Self::Gaiji => &["content"],
             Self::Emphasis | Self::Layout | Self::LineLayout => &["layout"],
-            Self::Warichu | Self::Heading | Self::Caption => &["structure", "layout"],
+            Self::Warichu | Self::Heading | Self::Caption | Self::Table | Self::LayoutBreak => {
+                &["structure", "layout"]
+            }
             Self::Kunten => &["content", "structure", "layout"],
         }
     }
@@ -1000,10 +1014,11 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
     let mut facts = Vec::new();
     let mut pending = blocks.iter().rev().collect::<Vec<_>>();
     while let Some(node) = pending.pop() {
-        if let Some(interpretation) = EstablishedInterpretation::for_node(node) {
+        let interpretation = EstablishedInterpretation::for_node(node);
+        if let Some(interpretation) = interpretation {
             let spans = if matches!(
                 node["kind"].as_str(),
-                Some("gaiji" | "kunten" | "text-variant" | "editorial_note")
+                Some("gaiji" | "kunten" | "text-variant" | "editorial_note" | "layout_break")
             ) {
                 node.get("span").into_iter().collect::<Vec<_>>()
             } else {
@@ -1370,10 +1385,11 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
                 content[index + 1..]
                     .iter()
                     .position(|item| {
-                        matches!(
-                            item["x-source-marker-kind"].as_str(),
-                            Some("pageBreak" | "sectionBreak")
-                        )
+                        item["kind"] == "layout_break" && item["break_kind"] != "column"
+                            || matches!(
+                                item["x-source-marker-kind"].as_str(),
+                                Some("pageBreak" | "sectionBreak")
+                            )
                     })
                     .map(|offset| index + offset + 1)
             } else if is_region {
@@ -1906,15 +1922,12 @@ fn inline_content_range(
             {
                 content.push(raw_node(decoded, node, "kaeriten"));
             }
-            ProjectedKind::Node(NodeKind::PageBreak) => content.push(json!({
-                "kind": "raw",
-                "source": source_slice(&decoded.span_text, &node.span),
-                "x-provenance": "parser-derived",
-                "x-source-marker-kind": "pageBreak",
-                "x-break-kind": "page",
-                "span": span_json(&node.span, &decoded.span_ctx)
+            ProjectedKind::Node(NodeKind::PageBreak) | ProjectedKind::Section(_) if layout_break_kind(&node.kind).is_some() => content.push(json!({
+                "kind":"layout_break", "break_kind":layout_break_kind(&node.kind),
+                "span":span_json(&node.span, &decoded.span_ctx)
             })),
             ProjectedKind::Node(_)
+            | ProjectedKind::Section(_)
             | ProjectedKind::Line(_)
             | ProjectedKind::Region(_)
             | ProjectedKind::RegionClose(_)
@@ -3097,6 +3110,16 @@ fn bouten_key(kind: BoutenKind, position: BoutenPosition) -> String {
     format!("bouten:{}:{}", kind.keyword(), bouten_position(position))
 }
 
+fn layout_break_kind(kind: &ProjectedKind) -> Option<&'static str> {
+    match kind {
+        ProjectedKind::Node(NodeKind::PageBreak) => Some("page"),
+        ProjectedKind::Section(SectionKind::Kaicho) => Some("kaicho"),
+        ProjectedKind::Section(SectionKind::Kaidan) => Some("column"),
+        ProjectedKind::Section(SectionKind::Kaimihiraki) => Some("kaimihiraki"),
+        _ => None,
+    }
+}
+
 fn layout_fields(kind: &ProjectedKind) -> Option<Value> {
     let mut fields = json!({});
     match kind {
@@ -3140,6 +3163,10 @@ fn layout_fields(kind: &ProjectedKind) -> Option<Value> {
                 1 => fields["formatting"] = styles.remove(0),
                 _ => fields["formatting"] = json!({"kind":"compound", "attributes":styles}),
             }
+        }
+        ProjectedKind::Region(RegionFormat::Table) => fields["role"] = json!("table"),
+        ProjectedKind::Region(RegionFormat::Columns(count)) => {
+            fields["column_count"] = json!(count.0.get());
         }
         ProjectedKind::Region(RegionFormat::LineWidth(width)) => {
             fields["width"] = json!(width.0.get());

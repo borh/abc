@@ -522,6 +522,8 @@ fn map_block_content(
                     "offset_from_end",
                     "width",
                     "line_count",
+                    "column_count",
+                    "role",
                     "page_placement",
                     "direction",
                     "align",
@@ -536,6 +538,7 @@ fn map_block_content(
                     typography["source"] = json!("aat-block");
                     scope["typography"] = typography;
                 }
+                attach_source_span(&mut scope, block.get("span"))?;
                 outputs.layout_blocks.push(scope);
             }
         }
@@ -1034,7 +1037,7 @@ fn append_plain_visible_inline_text(node: &Value, out: &mut String) -> Result<()
             append_plain_visible_content_text(node.get("upper"), out)?;
             append_plain_visible_content_text(node.get("lower"), out)?;
         }
-        "raw" | "kunten" | "editorial_note" => {}
+        "raw" | "kunten" | "editorial_note" | "layout_break" => {}
         "figure" => out.push_str(node["alt"].as_str().unwrap_or("")),
         other => bail!("unsupported inline kind in source attribution projection: {other}"),
     }
@@ -1335,6 +1338,7 @@ fn map_inline_to_nodes(
             nodes.push(json!({"type":"editor-note", "note_kind":node["note_kind"], "text":node["text"], "span":synthetic_span(offset, offset)}));
             Ok(offset)
         }
+        "layout_break" => map_layout_break(node, nodes, offset),
         "raw" => map_raw_to_nodes(node, nodes, recorder, offset, path),
         "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi" | "yokogumi"
         | "fraction" => {
@@ -1709,6 +1713,7 @@ fn inline_child_node(
             nodes.push(json!({"type":"editor-note", "note_kind":node["note_kind"], "text":node["text"], "span":synthetic_span(offset, offset)}));
             Ok(offset)
         }
+        "layout_break" => map_layout_break(node, nodes, offset),
         "raw" => map_raw_to_nodes(node, nodes, recorder, offset, path),
         other => bail!("unsupported inline kind in inline_children projection at {path}: {other}"),
     }
@@ -1748,6 +1753,17 @@ fn push_unrecorded_line_break_text(
         current = push_unrecorded_text_node(&pending, nodes, current)?;
     }
     Ok(current)
+}
+
+fn map_layout_break(node: &Value, nodes: &mut Vec<Value>, offset: u64) -> Result<u64> {
+    let marker = node["break_kind"]
+        .as_str()
+        .context("layout break kind required")?;
+    nodes.push(
+        json!({"type":if marker == "column" {"column-break"} else {"page-break"},
+        "marker":marker,"span":synthetic_span(offset,offset),"page_number":null}),
+    );
+    Ok(offset)
 }
 
 fn synthetic_span(start: u64, end: u64) -> Value {
@@ -2243,7 +2259,7 @@ fn append_visible_inline_text(
                 out,
             )?;
         }
-        "kunten" | "editorial_note" => {}
+        "kunten" | "editorial_note" | "layout_break" => {}
         "raw" => {
             let raw_pointer = format!("{path}.raw");
             record_measured_loss(

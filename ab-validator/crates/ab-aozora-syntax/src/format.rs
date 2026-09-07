@@ -986,8 +986,8 @@ pub enum RegionClose {
         /// `true` = `ここで` block close; `false` = paired `…終わり` close.
         padded: bool,
     },
-    /// `段組終わり`.
-    Columns,
+    /// `段組終わり`, optionally restating the supplied column count.
+    Columns(Option<ColumnCount>),
     /// `表終わり`.
     Table,
     /// `横組み終わり`.
@@ -1043,7 +1043,7 @@ impl RegionClose {
                 style,
                 padded,
             },
-            RegionFormat::Columns(_) => Self::Columns,
+            RegionFormat::Columns(count) => Self::Columns(Some(count)),
             RegionFormat::Table => Self::Table,
             RegionFormat::Horizontal => Self::Horizontal,
             RegionFormat::FontSize(shift) => Self::FontSize {
@@ -1071,7 +1071,7 @@ impl RegionClose {
             Self::Gothic { .. } => "gothic",
             Self::Italic { .. } => "italic",
             Self::Heading { .. } => "heading",
-            Self::Columns => "columns",
+            Self::Columns(_) => "columns",
             Self::Table => "table",
             Self::Horizontal => "horizontal",
             Self::FontSize { .. } => "font-size",

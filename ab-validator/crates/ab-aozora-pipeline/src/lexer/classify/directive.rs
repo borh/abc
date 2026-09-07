@@ -1100,15 +1100,13 @@ pub(super) fn classify_annotation_body(
             Some((EmitKind::BlockClose(RegionClose::FontSize { larger }), None))
         }
         BodyFamily::ColumnsBlockEnd => {
-            // ここで[N]段組[み]終わり. An optional leading digit run (full/half-width)
-            // is a redundant restatement of the open-side ColumnCount, which is
-            // authoritative for pairing/render, so it is validated then DISCARDED
-            // (RegionClose::Columns is a unit variant). Requires the exact 段組/段組み
-            // tail; any other remainder (incl. 、-joined compounds) declines → Unknown.
-            let rest = &body[match_end..]; // after ここで
-            let rest = parse_decimal_u8_prefix(rest).map_or(rest, |(_n, tail)| tail);
+            let rest = &body[match_end..];
+            let (count, rest) = match parse_decimal_u8_prefix(rest) {
+                Some((n, tail)) => (Some(ColumnCount(NonZeroU8::new(n)?)), tail),
+                None => (None, rest),
+            };
             (rest == "段組終わり" || rest == "段組み終わり")
-                .then_some((EmitKind::BlockClose(RegionClose::Columns), None))
+                .then_some((EmitKind::BlockClose(RegionClose::Columns(count)), None))
         }
         BodyFamily::WarichuOpen => {
             let p = alloc.make_directive("［＃割り注］", DirectiveKind::WarichuOpen);

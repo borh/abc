@@ -401,10 +401,12 @@
 
 (defn- render-page-break-node
   ([acc node _depth]
-   (append-block acc
-                 (sourced node (cond-> [:pb]
-                                 (some? (get node "page_number"))
-                                 (conj {:n (get node "page_number")}))))))
+   (append-inline acc
+                  (sourced node (cond-> [(if (= "column-break" (get node "type")) :cb :pb) {}]
+                                  (#{"kaicho" "kaimihiraki"} (get node "marker"))
+                                  (assoc-in [1 :rend] (get node "marker"))
+                                  (some? (get node "page_number"))
+                                  (assoc-in [1 :n] (get node "page_number")))))))
 
 (defn- render-line-break-node
   ([acc node _depth]
@@ -456,6 +458,7 @@
    "heading" render-heading-node
    "indentation" render-indentation-node
    "page-break" render-page-break-node
+   "column-break" render-page-break-node
    "line-break" render-line-break-node
    "image" render-image-node
    "caption" render-caption-node
@@ -675,6 +678,7 @@
                  (and (some? indent) (some? continuation)) (conj (str "text-indent: " (- indent continuation) "em"))
                  (contains? block "offset_from_end") (conj (str "padding-inline-end: " (get block "offset_from_end") "em"))
                  (contains? block "width") (conj (str "inline-size: " (get block "width") "em"))
+                 (get block "column_count") (conj (str "column-count: " (get block "column_count")))
                  (get block "direction") (conj "writing-mode: horizontal-tb")
                  (get block "align") (conj (str "text-align: " (get block "align")))
                  (get block "border") (conj "border-style: solid"))

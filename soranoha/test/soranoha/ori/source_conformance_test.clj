@@ -59,6 +59,24 @@
       (recur (.getParentNode node) style))))
 (defn- texts [result tag] (mapv view/visible-text (elements result tag)))
 
+(deftest supplied-table-retains-lines-and-literal-separators
+  (let [result (transcribe (source "［＃ここから表］\n人口の表\n年次／出生／死亡\n一七五七年／八一八七八／六九〇五四\n［＃ここで表終わり］"))
+        table (first (filter #(= "table" (attribute % "type")) (elements result "div")))]
+    (is (some? table))
+    (is (= ["人口の表" "年次／出生／死亡" "一七五七年／八一八七八／六九〇五四"] (texts result "p")))
+    (is (empty? (elements result "cell")))
+    (is (= "人口の表\n年次／出生／死亡\n一七五七年／八一八七八／六九〇五四" (:plaintext result)))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest supplied-columns-retain-only-explicit-column-breaks
+  (doseq [[body count text] [["甲乙" 0 "甲乙"] ["甲［＃改段］乙" 1 "甲\n乙"]]]
+    (let [result (transcribe (source (str "［＃ここから２段組み］\n" body "\n［＃ここで段組み終わり］")))]
+      (is (= count (clojure.core/count (elements result "cb"))))
+      (is (some #(= "column-count: 2" (attribute % "style")) (elements result "div")))
+      (is (= [text] (texts result "p")))
+      (is (= text (:plaintext result)))
+      (is (empty? (get-in result [:ir "interpretation_problems"]))))))
+
 (deftest supplied-inline-layout-retains-visible-target-without-invented-reading
   (doseq [[body text rend] [["花［＃「花」は罫囲み］" "花" "keigakomi border(rule)"]
                             ["обед［＃「обед」は横組み］" "обед" "yokogumi horizontal"]

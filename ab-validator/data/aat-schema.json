@@ -15,7 +15,7 @@
       "type": "object", "additionalProperties": false,
       "required": ["kind", "outcome", "aspects", "source_span"],
       "properties": {
-        "kind": {"enum": ["ruby", "gaiji", "emphasis", "warichu", "kunten", "heading", "caption", "text-variant", "layout", "editorial-note", "line-layout"]},
+        "kind": {"enum": ["ruby", "gaiji", "emphasis", "warichu", "kunten", "heading", "caption", "text-variant", "layout", "editorial-note", "line-layout", "table", "layout-break"]},
         "outcome": {"const": "established"},
         "aspects": {"type":"array", "minItems":1, "uniqueItems":true, "items":{"enum":["content","structure","layout"]}},
         "source_span": {"type":"object", "additionalProperties":false, "required":["start","end","coordinate_system"],
@@ -217,9 +217,12 @@
         { "$ref": "#/$defs/inline_container" },
         { "$ref": "#/$defs/warigaki" },
         { "$ref": "#/$defs/warichu" },
+        { "$ref": "#/$defs/layout_break" },
         { "$ref": "#/$defs/kunten" }
       ]
     },
+    "layout_break":{"type":"object","required":["kind","break_kind","span"],"additionalProperties":false,
+      "properties":{"kind":{"const":"layout_break"},"break_kind":{"enum":["page","kaicho","column","kaimihiraki"]},"span":{"$ref":"#/$defs/span"}}},
     "paragraph": {
       "type": "object",
       "required": ["kind", "content"],
@@ -273,6 +276,8 @@
         "continuation_indent": {"type":"integer","minimum":0},
         "offset_from_end": {"type":"integer","minimum":0},
         "line_count": {"type":"integer","minimum":1},
+        "column_count":{"type":"integer","minimum":1},
+        "role":{"const":"table"},
         "page_placement": {"const":"center"},
         "direction":{"const":"horizontal"},
         "align":{"enum":["center","right"]},
@@ -293,7 +298,7 @@
       },
       "allOf": [
         {"if":{"anyOf":[{"required":["direction"]},{"required":["align"]},{"required":["border"]},{"required":["continuation_indent"]},{"required":["offset_from_end"]},{"required":["line_count"]},{"required":["page_placement"]},{"required":["source_end"]}]},"then":{"properties":{"kind":{"const":"layout_block"}}}},
-        {"if":{"properties":{"kind":{"const":"layout_block"}}},"then":{"required":["span","interpretation_marker_spans"],"anyOf":[{"required":["indent"]},{"required":["width"]},{"required":["offset_from_end"]},{"required":["align"]},{"required":["page_placement"]}]}},
+        {"if":{"properties":{"kind":{"const":"layout_block"}}},"then":{"required":["span","interpretation_marker_spans"],"anyOf":[{"required":["indent"]},{"required":["width"]},{"required":["offset_from_end"]},{"required":["align"]},{"required":["page_placement"]},{"required":["column_count"]},{"required":["role"]}]}},
         {"if":{"properties":{"kind":{"const":"typography_block"}}},"then":{"required":["formatting","span","interpretation_marker_spans"]}},
         {
           "if": { "properties": { "kind": { "const": "jisage_block" } } },

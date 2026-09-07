@@ -90,7 +90,7 @@
           []
           [{:view/kind :view/text :view/text text :view/node node}]))
 
-      (#{"lb" "pb"} tag)
+      (#{"lb" "pb" "cb"} tag)
       [{:view/kind :view/break :view/text "\n" :view/node node}]
 
       (and (= "g" tag) (empty? (.getTextContent node)))

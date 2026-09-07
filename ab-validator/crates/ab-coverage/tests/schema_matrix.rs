@@ -2837,6 +2837,7 @@ fn source_labels_do_not_match_words_inside_other_markup() {
     let patterns = patterns_from_rows(matrix.rows());
     for source in [
         "［＃「母と共に行方を晦ます」は１段階大きな文字］",
+        "［＃「上さま」は「母」と「父」の二行の中央］",
         "［＃「ギリシャの哲学者たち」は同行小見出し］",
         "［＃「所天」は底本では「所夫」］",
         "［＃底本では「お父っあん」となっている］",

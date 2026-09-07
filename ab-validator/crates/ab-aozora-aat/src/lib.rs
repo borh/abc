@@ -6,13 +6,14 @@ use ab_aozora_pipeline::lexer::sanitize::{SanitizeMaps, sanitize_mapped};
 use anyhow::Result;
 use encoding_rs::SHIFT_JIS;
 use regex::Regex;
-use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
 use sha2::{Digest, Sha256};
 
-use ab_aozora_facade::{self, Diagnostic, Document, encoding, json as aozora_json};
+use ab_aozora_facade::{
+    self, Diagnostic, Document, ForwardAttr, Node, NodeKind, NodeRef, Severity, Tree, encoding,
+    json as aozora_json,
+};
 // Body/tail boundary detection is the shared `ab-source-syntax` authority
 // so the checker's comparison source (`ab-check::body_text`) can never
 // drift from the parser's own cut.
@@ -247,53 +248,103 @@ fn paragraph_segments(source: &str) -> Vec<Range<usize>> {
     out
 }
 
-#[derive(Debug, Deserialize, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 struct Span {
     start: usize,
     end: usize,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+impl From<ab_aozora_facade::Span> for Span {
+    fn from(span: ab_aozora_facade::Span) -> Self {
+        Self {
+            start: span.start as usize,
+            end: span.end as usize,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ProjectedKind {
+    Node(NodeKind),
+    Format(ForwardAttr),
+    QuoteOpen,
+    QuoteClose,
+}
+
+impl ProjectedKind {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Node(kind) => kind.as_json_tag(),
+            Self::Format(ForwardAttr::Bouten { .. }) => "bouten",
+            Self::Format(ForwardAttr::CombineUpright) => "combineUpright",
+            Self::Format(_) => "emphasis",
+            Self::QuoteOpen => "angleQuoteOpen",
+            Self::QuoteClose => "angleQuoteClose",
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 struct AozoraNode {
-    kind: String,
+    kind: ProjectedKind,
     span: Span,
 }
 
-#[derive(Debug, Deserialize, Clone)]
-struct AozoraDiagnostic {
-    kind: Option<String>,
-    /// Stable kebab-case diagnostic code from the façade wire entry
-    /// (`ab_aozora_facade::json::Diagnostic::code`, always
-    /// `kind.replace('_', "-")`). `Option` only because this struct is
-    /// deserialized generically from any diagnostic-entries JSON; the
-    /// façade always populates it.
-    #[serde(default)]
-    code: Option<String>,
-    severity: Option<String>,
-    span: Option<Span>,
-}
+type AozoraGaiji = encoding::gaiji::GaijiResolution;
 
-#[derive(Debug, Deserialize, Clone)]
-struct AozoraGaiji {
-    span: Span,
-    description: String,
-    #[serde(default)]
-    mencode: Option<String>,
-    #[serde(default)]
-    codepoint: Option<Value>,
-    #[serde(default)]
-    resolved: Option<String>,
-}
-
-/// The lossy-local counterpart of `ab_aozora_facade::json::RubyEntry` — same
-/// deserialize-the-serialized-entries pattern `AozoraDiagnostic` /
-/// `AozoraGaiji` already use.
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Clone)]
 struct AozoraRubyEntry {
     span: Span,
     base: String,
     reading: String,
-    side: String,
+    side: &'static str,
+}
+
+fn node_projection(tree: &Tree<'_>) -> Vec<AozoraNode> {
+    tree.source_nodes()
+        .iter()
+        .map(|source_node| {
+            let kind = match source_node.node {
+                NodeRef::Inline(Node::Format(format))
+                | NodeRef::BlockLeaf(Node::Format(format)) => ProjectedKind::Format(format.attr),
+                node => ProjectedKind::Node(node.kind()),
+            };
+            AozoraNode {
+                kind,
+                span: source_node.source_span.into(),
+            }
+        })
+        .collect()
+}
+
+fn ruby_projection(tree: &Tree<'_>) -> Result<Vec<AozoraRubyEntry>> {
+    let store = &tree.lex_output().store;
+    let mut entries = Vec::new();
+    for source_node in tree.source_nodes() {
+        let (NodeRef::Inline(Node::Ruby(ruby)) | NodeRef::BlockLeaf(Node::Ruby(ruby))) =
+            source_node.node
+        else {
+            continue;
+        };
+        let (Some(base), Some(reading)) = (
+            store.content_range_as_plain(ruby.base),
+            store.content_range_as_plain(ruby.reading),
+        ) else {
+            continue;
+        };
+        let side = match ruby.side {
+            ab_aozora_facade::RubySide::Left => "left",
+            ab_aozora_facade::RubySide::Right => "right",
+            _ => anyhow::bail!("unhandled ruby side: {:?}", ruby.side),
+        };
+        entries.push(AozoraRubyEntry {
+            span: source_node.source_span.into(),
+            base: base.to_owned(),
+            reading: reading.to_owned(),
+            side,
+        });
+    }
+    Ok(entries)
 }
 
 /// Decode source bytes to a normalized text with encoding detection.
@@ -409,48 +460,43 @@ fn sanitize_for_aat(text: &str) -> SanitizedForAat {
 
 #[allow(
     clippy::type_complexity,
-    reason = "one tuple per projected wire channel; a named struct would only restate the field set"
+    reason = "one tuple per typed projection consumed by build_aat"
 )]
 fn projections(
     span_text: &str,
 ) -> Result<(
     Vec<AozoraNode>,
-    Vec<AozoraDiagnostic>,
+    Vec<Diagnostic>,
     Vec<AozoraGaiji>,
     Vec<AozoraRubyEntry>,
 )> {
-    // Mirrors the upstream binary's own stdin handling: each `aozora
-    // inspect` subprocess ran decode_auto over the bytes the adapter piped
-    // in (already-valid UTF-8 passes through unchanged).
-    let source = encoding::decode_auto(span_text.as_bytes())
-        .map_err(|err| anyhow::anyhow!("decode_auto: {err:?}"))?;
-    let doc = Document::new(source.clone());
+    let doc = Document::new(span_text);
     let tree = doc.parse();
-    let initial_nodes: Vec<AozoraNode> = from_entries(&aozora_json::node_entries(&tree))?;
-    let diagnostics = from_entries(&aozora_json::diagnostic_entries(tree.diagnostics()))?;
-    let gaiji = from_entries(&aozora_json::gaiji_entries(&source))?;
-    let mut ruby: Vec<AozoraRubyEntry> = from_entries(&aozora_json::ruby_entries(&tree))?;
+    let initial_nodes = node_projection(&tree);
+    let diagnostics = tree.diagnostics().to_vec();
+    let gaiji = encoding::gaiji::gaiji_resolutions(span_text);
+    let mut ruby = ruby_projection(&tree)?;
     let mut nodes = Vec::new();
     let mut pending = initial_nodes;
     // The facade exposes only outer nodes. Reparse recognized quote interiors
     // to recover ruby with exact source offsets; the worklist avoids recursive
     // stack growth, and every new interior is strictly smaller than its owner.
     while let Some(node) = pending.pop() {
-        if node.kind != "angleQuote" {
+        if node.kind != ProjectedKind::Node(NodeKind::AngleQuote) {
             nodes.push(node);
             continue;
         }
         let start = node.span.start + '≪'.len_utf8();
         let end = node.span.end - '≫'.len_utf8();
         nodes.push(AozoraNode {
-            kind: "angleQuoteOpen".into(),
+            kind: ProjectedKind::QuoteOpen,
             span: Span {
                 start: node.span.start,
                 end: start,
             },
         });
         nodes.push(AozoraNode {
-            kind: "angleQuoteClose".into(),
+            kind: ProjectedKind::QuoteClose,
             span: Span {
                 start: end,
                 end: node.span.end,
@@ -458,14 +504,13 @@ fn projections(
         });
         let inner_doc = Document::new(&span_text[start..end]);
         let inner_tree = inner_doc.parse();
-        let inner_nodes: Vec<AozoraNode> = from_entries(&aozora_json::node_entries(&inner_tree))?;
+        let inner_nodes = node_projection(&inner_tree);
         for mut inner in inner_nodes {
             inner.span.start += start;
             inner.span.end += start;
             pending.push(inner);
         }
-        let inner_ruby: Vec<AozoraRubyEntry> =
-            from_entries(&aozora_json::ruby_entries(&inner_tree))?;
+        let inner_ruby = ruby_projection(&inner_tree)?;
         for mut entry in inner_ruby {
             entry.span.start += start;
             entry.span.end += start;
@@ -475,35 +520,6 @@ fn projections(
     nodes.sort_by_key(|node| (node.span.start, node.span.end));
     Ok((nodes, diagnostics, gaiji, ruby))
 }
-
-/// Same data path as the deleted wire hop: the facade's Serialize impls
-/// (which produced the inspect JSON) feed the adapter's Deserialize types.
-/// Deserialization is key-order-independent, so no `preserve_order` needed.
-///
-/// Round-trips through a JSON byte buffer (`to_vec` + `from_slice`) rather
-/// than `serde_json::Value` (`to_value` + `from_value`): the `Value` path
-/// builds a full tagged-union tree (a heap-allocated `Map`/`Vec`/`String`
-/// per field) and then tears it back down, whereas the byte path lets
-/// `serde_json`'s writer/reader stream fields directly into the target
-/// type with no intermediate generic tree. Same semantics (still an
-/// order-independent JSON round trip; output bytes unaffected — this
-/// function's result never reaches the wire, only `build_aat`'s own
-/// `to_writer` call does), just without the `Value` tree's allocation
-/// overhead — this scales with the corpus's per-work entry count (e.g.
-/// `ruby_entries`, which can run into the tens of thousands for
-/// heavily-annotated works), where the `Value` overhead was measured to
-/// dominate wall time.
-fn from_entries<S: Serialize, T: DeserializeOwned>(entries: &[S]) -> Result<Vec<T>> {
-    Ok(serde_json::from_slice(&serde_json::to_vec(entries)?)?)
-}
-
-// The wire envelope's schemaVersion check becomes a compile-time pin: the
-// from_entries round-trip is only valid against the wire shape this port
-// was written for.
-const _: () = assert!(
-    aozora_json::SCHEMA_VERSION == 3,
-    "incompatible wire schema version"
-);
 
 /// Transform Aozora source bytes into AAT JSON output.
 ///
@@ -603,13 +619,13 @@ pub fn diagnostics_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
 fn build_aat(
     decoded: &DecodedSource,
     nodes: &[AozoraNode],
-    diagnostics: &[AozoraDiagnostic],
+    diagnostics: &[Diagnostic],
     gaiji: &[AozoraGaiji],
     ruby: &[AozoraRubyEntry],
 ) -> Value {
     let gaiji_by_start = gaiji
         .iter()
-        .map(|entry| (entry.span.start, entry.clone()))
+        .map(|entry| (entry.start, entry.clone()))
         .collect::<BTreeMap<_, _>>();
     let ruby_by_span = ruby
         .iter()
@@ -641,7 +657,7 @@ fn build_aat(
             "source_encoding": decoded.encoding,
             "primary_text_hash": decoded.source_hash.clone(),
             "source_hash": decoded.source_hash,
-            "parse_complete": diagnostics.iter().all(|d| d.severity.as_deref() != Some("error")),
+            "parse_complete": diagnostics.iter().all(|d| matches!(d.severity(), Severity::Warning | Severity::Note)),
             "warnings": warnings
         }
     })
@@ -1412,27 +1428,36 @@ fn inline_content(
         if node.span.start > cursor {
             push_source_gap(&mut content, decoded, cursor, node.span.start);
         }
-        match node.kind.as_str() {
-            "angleQuoteOpen" | "angleQuoteClose" => content.push(json!({
+        match node.kind {
+            ProjectedKind::QuoteOpen | ProjectedKind::QuoteClose => content.push(json!({
                 "kind": "text",
-                "value": if node.kind == "angleQuoteOpen" { "《" } else { "》" },
+                "value": if node.kind == ProjectedKind::QuoteOpen { "《" } else { "》" },
                 "span": span_json(&node.span, &decoded.span_ctx)
             })),
-            "ruby" => content.push(ruby_node(decoded, node, ruby_by_span, gaiji_by_start)),
-            "gaiji" => content.push(gaiji_node(decoded, node, gaiji_by_start)),
-            "bouten" => push_style_node(&mut content, decoded, node, "bouten"),
-            "emphasis" => push_style_node(
-                &mut content,
-                decoded,
-                node,
-                emphasis_style_type(decoded, node),
-            ),
-            "combineUpright" => content.push(tcy_node(decoded, node)),
-            "kaeriten" => content.push(raw_node(decoded, node, "kaeriten")),
-            "directive" if source_slice(&decoded.span_text, &node.span).contains("返り点") => {
+            ProjectedKind::Node(NodeKind::Ruby) => {
+                content.push(ruby_node(decoded, node, ruby_by_span, gaiji_by_start));
+            }
+            ProjectedKind::Node(NodeKind::Gaiji) => {
+                content.push(gaiji_node(decoded, node, gaiji_by_start));
+            }
+            ProjectedKind::Format(ForwardAttr::Bouten { .. }) => {
+                push_style_node(&mut content, decoded, node, "bouten");
+            }
+            ProjectedKind::Format(ForwardAttr::CombineUpright) => {
+                content.push(tcy_node(decoded, node));
+            }
+            ProjectedKind::Format(_) => {
+                push_style_node(&mut content, decoded, node, emphasis_style_type(node));
+            }
+            ProjectedKind::Node(NodeKind::Kaeriten) => {
                 content.push(raw_node(decoded, node, "kaeriten"));
             }
-            "pageBreak" => content.push(json!({
+            ProjectedKind::Node(NodeKind::Directive)
+                if source_slice(&decoded.span_text, &node.span).contains("返り点") =>
+            {
+                content.push(raw_node(decoded, node, "kaeriten"));
+            }
+            ProjectedKind::Node(NodeKind::PageBreak) => content.push(json!({
                 "kind": "raw",
                 "source": source_slice(&decoded.span_text, &node.span),
                 "x-provenance": "parser-derived",
@@ -1440,7 +1465,7 @@ fn inline_content(
                 "x-break-kind": "page",
                 "span": span_json(&node.span, &decoded.span_ctx)
             })),
-            _ => content.push(raw_node(decoded, node, node.kind.as_str())),
+            ProjectedKind::Node(_) => content.push(raw_node(decoded, node, node.kind.as_str())),
         }
         cursor = cursor.max(node.span.end);
     }
@@ -1847,16 +1872,23 @@ fn gaiji_segments(
     let mut cursor = start;
     while cursor < end {
         if let Some(gaiji) = gaiji_by_start.get(&cursor) {
-            if gaiji.span.end <= cursor || gaiji.span.end > end {
+            if gaiji.end <= cursor || gaiji.end > end {
                 return None;
             }
-            content.push(gaiji_json(decoded, &gaiji.span, gaiji));
+            content.push(gaiji_json(
+                decoded,
+                &Span {
+                    start: gaiji.start,
+                    end: gaiji.end,
+                },
+                gaiji,
+            ));
             match (&mut resolved_text, &gaiji.resolved) {
                 (Some(out), Some(glyph)) => out.push_str(glyph),
                 _ => resolved_text = None,
             }
             gaiji_count += 1;
-            cursor = gaiji.span.end;
+            cursor = gaiji.end;
             continue;
         }
         let next_start = gaiji_by_start
@@ -2005,9 +2037,8 @@ fn annotation_content(source: &str) -> Vec<Value> {
     vec![json!({"kind": "text", "value": text})]
 }
 
-fn emphasis_style_type(decoded: &DecodedSource, node: &AozoraNode) -> &'static str {
-    let source = source_slice(&decoded.span_text, &node.span);
-    if source.contains("太字") {
+fn emphasis_style_type(node: &AozoraNode) -> &'static str {
+    if node.kind == ProjectedKind::Format(ForwardAttr::Bold) {
         "bold"
     } else {
         "emphasis"
@@ -2031,32 +2062,16 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
     })
 }
 
-/// Builds a schema-v2 `meta.warnings[]` entry (`{code, severity, message,
-/// span?}`) from a façade-diagnostic-derived `AozoraDiagnostic`. The single
-/// call site (`build_aat`) only ever passes parser diagnostics sourced from
-/// `aozora_json::diagnostic_entries` — every warning is façade-passthrough;
-/// there are no adapter-origin warning sites.
-fn diagnostic_warning(diagnostic: &AozoraDiagnostic, ctx: &SpanContext) -> Value {
-    let message = diagnostic
-        .kind
-        .clone()
-        .unwrap_or_else(|| "aozora diagnostic".to_owned());
-    let code = diagnostic
-        .code
-        .clone()
-        .unwrap_or_else(|| message.replace('_', "-"));
-    // severity_str's non-exhaustive default arm is "error"; mirror that
-    // here so an absent severity surfaces loudly rather than passing as
-    // benign.
-    let severity = diagnostic
-        .severity
-        .clone()
-        .unwrap_or_else(|| "error".to_owned());
-    let mut warning = json!({ "code": code, "severity": severity, "message": message });
-    if let Some(span) = diagnostic.span.as_ref() {
-        warning["span"] = span_json(span, ctx);
-    }
-    warning
+/// Preserve native parser diagnostic identity and decoded-source location.
+fn diagnostic_warning(diagnostic: &Diagnostic, ctx: &SpanContext) -> Value {
+    let kind = diagnostic.code().rsplit("::").next().unwrap_or("unknown");
+    let severity = match diagnostic.severity() {
+        Severity::Warning => "warning",
+        Severity::Note => "note",
+        _ => "error",
+    };
+    json!({ "code": kind.replace('_', "-"), "severity": severity, "message": kind,
+        "span": span_json(&diagnostic.span().into(), ctx) })
 }
 
 fn span_json(span: &Span, ctx: &SpanContext) -> Value {
@@ -3452,7 +3467,12 @@ mod tests {
         ];
         let markers: Vec<&AozoraNode> = nodes
             .iter()
-            .filter(|n| n.kind == "containerOpen" || n.kind == "containerClose")
+            .filter(|n| {
+                matches!(
+                    n.kind,
+                    ProjectedKind::Node(NodeKind::ContainerOpen | NodeKind::ContainerClose)
+                )
+            })
             .collect();
         let marker_shapes: Vec<(&str, &str)> = markers
             .iter()
@@ -3539,7 +3559,7 @@ mod tests {
         let (nodes, _diagnostics, gaiji, ruby) = projections(&decoded.span_text).unwrap();
         let gaiji_by_start = gaiji
             .iter()
-            .map(|entry| (entry.span.start, entry.clone()))
+            .map(|entry| (entry.start, entry.clone()))
             .collect::<BTreeMap<_, _>>();
         let ruby_by_span = ruby
             .iter()
@@ -3851,7 +3871,7 @@ mod tests {
         let (nodes, _diagnostics, gaiji, ruby) = projections(&decoded.span_text).unwrap();
         let gaiji_by_start = gaiji
             .iter()
-            .map(|entry| (entry.span.start, entry.clone()))
+            .map(|entry| (entry.start, entry.clone()))
             .collect::<BTreeMap<_, _>>();
         let ruby_by_span = ruby
             .iter()

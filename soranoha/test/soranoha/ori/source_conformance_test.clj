@@ -1330,3 +1330,12 @@
       (let [report (projection/report profile (:view result))]
         (is (= "limited" (get report "status")))
         (is (some #{{"family" "glyph-shape" "disposition" "unsupported" "count" 2}} (get report "counts")))))))
+
+(deftest parenthesized-source-note-preserves-the-principal-spelling
+  (let [result (transcribe (source "病殺［＃「殺」に（死）の注記］とするも可。"))
+        notes (filterv #(= "gloss" (attribute % "type")) (elements result "note"))]
+    (is (= "病殺とするも可。" (:plaintext result)))
+    (is (= (:plaintext result) (projection/markdown (:view result))))
+    (is (= ["（死）"] (mapv #(.getTextContent ^Node %) notes)))
+    (is (every? #(string/blank? (attribute % "place")) notes))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))

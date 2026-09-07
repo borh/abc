@@ -1534,6 +1534,12 @@ fn parenthesized_note_role_target<'s>(
     })
 }
 
+fn parenthesized_note_payload(suffix: &str) -> Option<&str> {
+    let note = suffix.strip_prefix('に')?.strip_suffix("の注記")?;
+    let inside = note.strip_prefix('（')?.strip_suffix('）')?;
+    (!inside.is_empty() && !inside.contains(['（', '）', '\n', '\r'])).then_some(note)
+}
+
 fn glyph_shape_statement<'a>(target: &str, suffix: &'a str) -> Option<&'a str> {
     let statement = suffix.strip_prefix('は')?;
     ((target.chars().count() == 1 && statement == "上に「⌒」付き")
@@ -1561,6 +1567,8 @@ impl RecogniseCtx<'_, '_> {
                 (kind, None, word)
             } else if let Some(statement) = edition_verified_gloss(extracted.suffix) {
                 (MarginNoteKind::Gloss, None, statement)
+            } else if let Some(note) = parenthesized_note_payload(extracted.suffix) {
+                (MarginNoteKind::Gloss, None, note)
             } else if let Some(statement) = glyph_shape_statement(target, extracted.suffix) {
                 (MarginNoteKind::GlyphShape, None, statement)
             } else if let Some(location) = page_reference_location(target, extracted.suffix) {
@@ -1617,12 +1625,13 @@ impl RecogniseCtx<'_, '_> {
             ),
             ForwardReferent::Unresolvable => (open_span.start, None, ForwardOrigin::Referenced),
         };
-        if matches!(
+        if (matches!(
             kind,
             MarginNoteKind::AnnotationNumber
                 | MarginNoteKind::AuthorNote
                 | MarginNoteKind::GlyphShape
-        ) && origin != ForwardOrigin::Reclaimed
+        ) || parenthesized_note_payload(extracted.suffix).is_some())
+            && origin != ForwardOrigin::Reclaimed
         {
             return None;
         }

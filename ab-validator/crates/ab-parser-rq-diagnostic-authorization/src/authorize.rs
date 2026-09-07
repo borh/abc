@@ -1,6 +1,5 @@
 use std::collections::BTreeSet;
 
-use ab_aozora_spec::Diagnostic;
 use ab_parser_rq_source_accountability::{RecognitionStatus, canonical_json};
 use serde::Deserialize;
 use serde_json::Value;
@@ -106,17 +105,13 @@ pub fn validate_diagnostic_capture(
     validate_capture(bytes).ok_or("raw-diagnostics-invalid")
 }
 
-fn wire_code(code: &str) -> Option<String> {
-    code.rsplit("::").next().map(|s| s.replace('_', "-"))
-}
-
-fn injective_wire_codes<'a>(codes: impl IntoIterator<Item = &'a str>) -> Option<BTreeSet<String>> {
-    let projected = codes
-        .into_iter()
-        .map(wire_code)
-        .collect::<Option<Vec<_>>>()?;
-    let unique = projected.iter().cloned().collect::<BTreeSet<_>>();
-    (unique.len() == projected.len()).then_some(unique)
+fn schema_codes(schema: &Value) -> Option<BTreeSet<&str>> {
+    let values = schema.pointer("/$defs/code/enum")?.as_array()?;
+    let codes = values
+        .iter()
+        .map(Value::as_str)
+        .collect::<Option<BTreeSet<_>>>()?;
+    (!codes.is_empty() && codes.len() == values.len()).then_some(codes)
 }
 
 fn validate_policy(bytes: &[u8]) -> Option<ValidatedGapPolicy> {
@@ -134,13 +129,15 @@ fn validate_policy(bytes: &[u8]) -> Option<ValidatedGapPolicy> {
     if policy.policy_hash != sha256(projection.as_bytes()) {
         return None;
     }
-    let live = injective_wire_codes(Diagnostic::ALL_CODES.iter().copied())?;
+    // Captures bind this schema; unrelated changes to the parser catalog cannot
+    // change the authorization of their authenticated diagnostic bytes.
+    let vocabulary = schema_codes(&raw_schema_value)?;
     let declared = policy
         .rules
         .iter()
-        .map(|r| r.code.clone())
+        .map(|r| r.code.as_str())
         .collect::<BTreeSet<_>>();
-    if live != declared || declared.len() != policy.rules.len() {
+    if vocabulary != declared || declared.len() != policy.rules.len() {
         return None;
     }
     let rules = policy
@@ -383,16 +380,59 @@ pub fn authorize_boundary(input: BoundaryInput<'_>) -> AuthorizationAnalysis {
 
 #[cfg(test)]
 mod tests {
-    use super::injective_wire_codes;
+    use super::{abc_jcs, schema_codes, sha256, validate_policy};
+    use serde_json::{Value, json};
 
     #[test]
-    fn live_wire_projection_rejects_distinct_namespaced_code_collisions() {
-        assert!(injective_wire_codes(["aozora::syntax::same_code", "other::same_code"]).is_none());
+    fn schema_vocabulary_requires_unique_strings() {
+        for values in [
+            json!([]),
+            json!(["one", "one"]),
+            json!(["one", 2]),
+            json!({}),
+        ] {
+            assert!(schema_codes(&json!({"$defs":{"code":{"enum":values}}})).is_none());
+        }
+        assert!(schema_codes(&json!({})).is_none());
         assert_eq!(
-            injective_wire_codes(["aozora::syntax::first_code", "other::second_code"])
+            schema_codes(&json!({"$defs":{"code":{"enum":["one", "two"]}}}))
                 .unwrap()
                 .len(),
             2
         );
+    }
+
+    #[test]
+    fn rehashed_policy_mutations_cannot_change_schema_closure() {
+        let original: Value = serde_json::from_slice(include_bytes!(
+            "../../../research/data/parser-rq-ab-aozora-diagnostic-gap-v1.json"
+        ))
+        .unwrap();
+        for mutation in 0..5 {
+            let mut policy = original.clone();
+            let rules = policy["rules"].as_array_mut().unwrap();
+            match mutation {
+                0 => {
+                    rules.remove(0);
+                }
+                1 => {
+                    let mut extra = rules[0].clone();
+                    extra["code"] = json!("new-code");
+                    rules.push(extra);
+                }
+                2 => rules.push(rules[0].clone()),
+                3 => rules[0]["code"] = json!(42),
+                _ => {
+                    policy["raw_diagnostic_schema_hash"] =
+                        json!(format!("sha256:{}", "0".repeat(64)))
+                }
+            }
+            policy.as_object_mut().unwrap().remove("policy_hash");
+            policy["policy_hash"] = json!(sha256(abc_jcs(&policy).unwrap().as_bytes()));
+            assert!(
+                validate_policy(&serde_json::to_vec(&policy).unwrap()).is_none(),
+                "mutation {mutation}"
+            );
+        }
     }
 }

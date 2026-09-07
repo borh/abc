@@ -9,7 +9,6 @@ publish = false
 anyhow.workspace = true
 ab-diff-utils = { path = "../ab-diff-utils" }
 ab-parser-rq-source-accountability = { path = "../ab-parser-rq-source-accountability" }
-ab-aozora-spec = { path = "../ab-aozora-spec" }
 clap.workspace = true
 jsonschema.workspace = true
 serde.workspace = true

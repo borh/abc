@@ -378,7 +378,6 @@ name = "ab-parser-rq-diagnostic-authorization"
 version = "0.1.0"
 dependencies = [
  "ab-aozora-capture",
- "ab-aozora-spec",
  "ab-diff-utils",
  "ab-parser-rq-source-accountability",
  "anyhow",

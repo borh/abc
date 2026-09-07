@@ -81,6 +81,33 @@ fn run_for_work(
 }
 
 #[test]
+fn policy_accepts_captures_without_retired_diagnostic() {
+    let policy: serde_json::Value = serde_json::from_slice(POLICY).unwrap();
+    let entries: Vec<_> = policy["rules"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|rule| rule["code"] != "source-contains-pua")
+        .map(|rule| {
+            serde_json::json!({
+                "code":rule["code"], "kind":rule["kind"],
+                "severity":rule["severity"], "source":rule["source"],
+                "span":{"start":0,"end":1}
+            })
+        })
+        .collect();
+    assert_eq!(entries.len(), 20);
+    let raw = serde_json::to_vec(&serde_json::json!({"schemaVersion":3,"data":entries})).unwrap();
+    assert!(validate_diagnostic_capture(&raw, &hash(&raw), raw.len() as u64).is_ok());
+    assert!(validate_gap_policy(POLICY, &hash(POLICY)).is_ok());
+    // Internal diagnostics remain refusals even when their capture is valid.
+    assert_eq!(
+        run(raw, b"x".to_vec()).status,
+        AuthorizationStatus::Unavailable
+    );
+}
+
+#[test]
 fn every_closed_policy_row_has_its_declared_effect() {
     let policy: serde_json::Value = serde_json::from_slice(POLICY).unwrap();
     assert_eq!(policy["rules"].as_array().unwrap().len(), 21);

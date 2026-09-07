@@ -119,7 +119,7 @@ fn generate(root: &Path) -> BTreeMap<String, String> {
     fs::create_dir_all(&store).unwrap();
     let cases = [
         ("clean-vacuous", "本文\n"),
-        ("authorized-pua", "\u{e001}"),
+        ("literal-pua", "\u{e001}"),
         ("observe-only", "［＃改ページ"),
         ("opaque-unknown", "本文［＃未知］\n"),
         ("silent-gap", "［＃tail"),
@@ -270,7 +270,7 @@ fn generate(root: &Path) -> BTreeMap<String, String> {
         works: &results,
     });
     assert_eq!(observed["clean-vacuous"], (0, 0, 0, 0, 0, true));
-    assert_eq!(observed["authorized-pua"], (3, 0, 1, 1, 0, false));
+    assert_eq!(observed["literal-pua"], (0, 3, 0, 0, 0, true));
     assert_eq!(observed["observe-only"], (0, 6, 1, 0, 1, false));
     assert_eq!(observed["opaque-unknown"], (0, 15, 0, 0, 0, true));
     assert_eq!(observed["silent-gap"], (0, 6, 1, 0, 1, false));
@@ -334,7 +334,7 @@ fn temp(name: &str) -> PathBuf {
 }
 
 #[test]
-fn production_fixture_is_deterministic_and_binds_each_outcome_to_a_work() {
+fn current_capture_is_deterministic_and_binds_each_outcome_to_a_work() {
     let first = temp("first");
     let second = temp("second");
     let outcomes = generate(&first);
@@ -348,16 +348,78 @@ fn production_fixture_is_deterministic_and_binds_each_outcome_to_a_work() {
             .len(),
         5
     );
-    if std::env::var_os("UPDATE_DIAGNOSTIC_GAP_FIXTURE").is_some() {
-        let _ = fs::remove_dir_all(fixture_root());
-        fs::create_dir_all(fixture_root()).unwrap();
-        for (name, bytes) in file_map(&first) {
-            let p = fixture_root().join(name);
-            fs::create_dir_all(p.parent().unwrap()).unwrap();
-            fs::write(p, bytes).unwrap();
-        }
-    }
-    assert_eq!(file_map(&fixture_root()), file_map(&first));
     let _ = fs::remove_dir_all(first);
     let _ = fs::remove_dir_all(second);
+}
+
+#[test]
+fn retained_capture_replays_against_its_authenticated_evidence() {
+    let root = fixture_root();
+    let manifest: Value =
+        serde_json::from_slice(&fs::read(root.join("manifest.json")).unwrap()).unwrap();
+    let blobs: BTreeMap<String, Vec<u8>> = manifest["blobs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|blob| {
+            let bytes =
+                fs::read(root.join("store").join(blob["locator"].as_str().unwrap())).unwrap();
+            assert_eq!(hash(&bytes), blob["ref"]["sha256"]);
+            assert_eq!(bytes.len() as u64, blob["ref"]["bytes"].as_u64().unwrap());
+            (hash(&bytes), bytes)
+        })
+        .collect();
+    let mut replayed = 0;
+    let mut authorized = 0;
+    for bytes in blobs.values() {
+        let Ok(result) = serde_json::from_slice::<Value>(bytes) else {
+            continue;
+        };
+        if result["schema_version"] != "abc/parser-rq-diagnostic-gap-result/v1" {
+            continue;
+        }
+        let evidence = &result["diagnostic_authorization_evidence"];
+        let get = |field: &str| &blobs[evidence[field].as_str().unwrap()];
+        let source = get("decoded_source_hash");
+        let raw = get("raw_diagnostics_hash");
+        let policy = get("policy_artifact_hash");
+        let recognition_bytes = get("source_recognition_hash");
+        let recognition: RecognitionWorkRecord = serde_json::from_slice(recognition_bytes).unwrap();
+        let auth = authorize_boundary(BoundaryInput {
+            raw_diagnostics: raw,
+            raw_diagnostics_hash: evidence["raw_diagnostics_hash"].as_str().unwrap(),
+            raw_diagnostics_bytes: evidence["raw_diagnostics_bytes"].as_u64().unwrap(),
+            policy_bytes: policy,
+            policy_bytes_hash: evidence["policy_artifact_hash"].as_str().unwrap(),
+            decoded_source: source,
+            decoded_source_hash: evidence["decoded_source_hash"].as_str().unwrap(),
+            work_id: result["work_id"].as_str().unwrap(),
+            capture_generation_ref: result["capture_generation_ref"].as_str().unwrap(),
+            qualification_identity_ref: result["qualification_identity_ref"].as_str().unwrap(),
+            source_recognition_bytes: recognition_bytes,
+            source_recognition_hash: evidence["source_recognition_hash"].as_str().unwrap(),
+            source_recognition: &recognition,
+        });
+        let partition = derive_gap_partition(DiagnosticGapWorkInput {
+            source_recognition: &recognition,
+            source_recognition_bytes: recognition_bytes,
+            source_recognition_artifact_ref: serde_json::from_value(
+                result["source_recognition_evidence"]["artifact_ref"].clone(),
+            )
+            .unwrap(),
+            source_recognition_value_hash: evidence["source_recognition_hash"]
+                .as_str()
+                .unwrap()
+                .to_owned(),
+            authorization: &auth,
+        });
+        assert_eq!(result_json(&partition), result);
+        if partition.authorized_bytes == Some(3) {
+            assert_eq!(source, "\u{e001}".as_bytes());
+            assert_eq!(partition.silent_bytes, Some(0));
+            authorized += 1;
+        }
+        replayed += 1;
+    }
+    assert_eq!((replayed, authorized), (5, 1));
 }

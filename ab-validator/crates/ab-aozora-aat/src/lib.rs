@@ -1,6 +1,13 @@
-//! AAT (Aozora AST Transform) adapter ported from the frozen aozora adapter.
+//! AAT (Aozora AST Transform) projection of native source interpretation.
 
-use std::{collections::BTreeMap, fmt::Write as _, mem, ops::Range, str, sync::LazyLock};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    fmt::Write as _,
+    mem,
+    ops::Range,
+    str,
+    sync::LazyLock,
+};
 
 use ab_aozora_pipeline::lexer::sanitize::{SanitizeMaps, sanitize_mapped};
 use ab_aozora_pipeline::text_variant::{TextVariantTarget, text_variant};
@@ -14,11 +21,12 @@ use sha2::{Digest, Sha256};
 
 use ab_aozora_facade::{
     self, BoutenPosition, Diagnostic, DirectiveKind, ForwardAttr, Node, NodeKind, NodeRef,
-    Severity, encoding, json as aozora_json,
+    RegionClose, RegionFormat, Severity, encoding, json as aozora_json,
 };
 // Body/tail boundary detection is the shared `ab-source-syntax` authority
 // so the checker's comparison source (`ab-check::body_text`) can never
 // drift from the parser's own cut.
+use ab_aozora_facade::syntax::AbsoluteSize;
 use ab_source_syntax::{RegionError, SourceRegions, aozora_body_range};
 
 /// Sanitization and parsing share the native diagnostic type.
@@ -36,7 +44,7 @@ pub type AozoraSanitizeDiagnostic = Diagnostic;
 static RUBY_RE: LazyLock<Regex> =
     LazyLock::new(|| Regex::new(r"^｜?(?P<base>.+?)《(?P<reading>[^》]+)》$").unwrap());
 
-/// Wire-shaped source decoding output ported from the frozen adapter.
+/// Decoded source text and its byte-coordinate basis.
 #[derive(Debug)]
 pub struct DecodedSource {
     /// Decoded text.
@@ -262,6 +270,8 @@ impl From<ab_aozora_facade::Span> for Span {
 enum ProjectedKind {
     Node(NodeKind),
     Format(ForwardAttr),
+    Region(RegionFormat),
+    RegionClose(RegionClose),
     Directive(DirectiveKind),
     TextVariant {
         target: TextVariantTarget,
@@ -276,6 +286,8 @@ impl ProjectedKind {
     fn as_str(&self) -> &'static str {
         match self {
             Self::Node(kind) => kind.as_json_tag(),
+            Self::Region(_) => "containerOpen",
+            Self::RegionClose(_) => "containerClose",
             Self::Format(ForwardAttr::Bouten { .. }) => "bouten",
             Self::Format(ForwardAttr::CombineUpright) => "combineUpright",
             Self::Format(_) => "emphasis",
@@ -311,6 +323,8 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
             let kind = match source_node.node {
                 NodeRef::Inline(Node::Format(format))
                 | NodeRef::BlockLeaf(Node::Format(format)) => ProjectedKind::Format(format.attr),
+                NodeRef::BlockOpen(region) => ProjectedKind::Region(region),
+                NodeRef::BlockClose(close) => ProjectedKind::RegionClose(close),
                 NodeRef::Inline(Node::Directive(directive))
                 | NodeRef::BlockLeaf(Node::Directive(directive)) => {
                     ProjectedKind::Directive(directive.kind)
@@ -587,7 +601,7 @@ fn rebase_spans(
     }
 }
 
-/// One wire diagnostics envelope (`{"data": […], "schemaVersion": 3}`)
+/// One wire diagnostics envelope (`{"data": […], "schemaVersion": 4}`)
 /// per input — the `--mode diagnostics` payload.
 ///
 /// Single owner of the diagnostics path: decoding,
@@ -628,7 +642,7 @@ pub fn diagnostics_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
         items.extend(more.iter().cloned());
     }
     let envelope = json!({
-        "schemaVersion": aozora_json::SCHEMA_VERSION,
+        "schemaVersion": aozora_json::DIAGNOSTICS_SCHEMA_VERSION,
         "data": data,
     });
     let mut out = Vec::new();
@@ -688,8 +702,23 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
             Some("style")
                 if matches!(
                     node["style_type"].as_str(),
-                    Some("bold" | "emphasis" | "bouten" | "bosen")
+                    Some(
+                        "bold"
+                            | "gothic"
+                            | "italic"
+                            | "superscript"
+                            | "subscript"
+                            | "bouten"
+                            | "bosen"
+                    )
                 ) && node["content"]
+                    .as_array()
+                    .is_some_and(|children| !children.is_empty()) =>
+            {
+                Some(EstablishedInterpretation::Emphasis)
+            }
+            Some("font_size" | "small_script")
+                if node["content"]
                     .as_array()
                     .is_some_and(|children| !children.is_empty()) =>
             {
@@ -944,11 +973,11 @@ fn source_note_block(content: Vec<Value>, region_class: &str) -> Value {
 
 #[allow(
     clippy::needless_pass_by_value,
-    reason = "Vec<Value> signature locked by frozen-adapter port discipline"
+    reason = "block assembly may replace or drain the content vector"
 )]
 #[allow(
     clippy::too_many_lines,
-    reason = "single linear classifier pass ported from the frozen adapter; splitting would obscure the branch order contract"
+    reason = "classifier precedence determines which block consumes each source marker"
 )]
 fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
     let mut blocks = Vec::new();
@@ -1120,7 +1149,7 @@ fn ends_source_line(node: &Value) -> bool {
 
 #[allow(
     clippy::needless_pass_by_value,
-    reason = "Vec<Value> signature locked by frozen-adapter port discipline"
+    reason = "block assembly may replace or drain the content vector"
 )]
 fn push_paragraph_if_not_empty(blocks: &mut Vec<Value>, content: Vec<Value>) {
     if content.is_empty() {
@@ -1134,7 +1163,7 @@ fn push_paragraph_if_not_empty(blocks: &mut Vec<Value>, content: Vec<Value>) {
 
 #[allow(
     clippy::needless_pass_by_value,
-    reason = "Vec<Value> signature locked by frozen-adapter port discipline"
+    reason = "block assembly may replace or drain the content vector"
 )]
 fn push_chitsuki_paragraph(blocks: &mut Vec<Value>, offset: u64, content: Vec<Value>) {
     blocks.push(json!({
@@ -1165,7 +1194,7 @@ fn align_end_offset(node: &Value) -> Option<u64> {
 
 #[allow(
     clippy::needless_pass_by_value,
-    reason = "Vec<Value> signature locked by frozen-adapter port discipline"
+    reason = "block assembly may replace or drain the content vector"
 )]
 fn push_burasage_paragraph(blocks: &mut Vec<Value>, first: u64, rest: u64, content: Vec<Value>) {
     blocks.push(json!({
@@ -1188,7 +1217,7 @@ fn push_burasage_paragraph(blocks: &mut Vec<Value>, first: u64, rest: u64, conte
 /// here is untouched; only the destination of the classified output moves.
 #[allow(
     clippy::needless_pass_by_value,
-    reason = "Vec<Value> signature locked by frozen-adapter port discipline"
+    reason = "block assembly may replace or drain the content vector"
 )]
 fn push_burasage_paragraph_maybe_jizume(
     blocks: &mut Vec<Value>,
@@ -1570,7 +1599,7 @@ fn inline_content(
                 content.push(tcy_node(decoded, node));
             }
             ProjectedKind::Format(_) => {
-                push_style_node(&mut content, decoded, node, emphasis_style_type(node));
+                push_style_node(&mut content, decoded, node, "emphasis");
             }
             ProjectedKind::Node(NodeKind::ForcedBreak) => content.push(json!({
                 "kind":"text", "value":"\n", "x-provenance":"source-derived",
@@ -1600,6 +1629,8 @@ fn inline_content(
                 push_text_variant_node(&mut content, decoded, node);
             }
             ProjectedKind::Node(_)
+            | ProjectedKind::Region(_)
+            | ProjectedKind::RegionClose(_)
             | ProjectedKind::Directive(_)
             | ProjectedKind::TextVariant { .. } => {
                 content.push(raw_node(decoded, node, node.kind.as_str()));
@@ -1629,7 +1660,7 @@ fn inline_content(
     // consuming the raw `containerOpen`/`containerClose` marker nodes
     // before `blocks_from_inline_content` scans this stream changes
     // paragraph/jizume segmentation (the markers act as container
-    // boundaries during block classification — corpus work 000026_55738).
+    // boundaries during block classification).
     pair_warichu(content)
 }
 
@@ -1666,9 +1697,7 @@ fn pair_warichu(content: Vec<Value>) -> Vec<Value> {
     output
 }
 
-/// A same-line bare-toggle marker located in the inline array: its `content`
-/// index, `construct` (which doubles as the emitted container `kind`), whether
-/// it is an open token, and its (single) source line.
+/// A same-line marker and the formatting family its close must match.
 struct BareToggleMarker {
     index: usize,
     construct: &'static str,
@@ -1676,17 +1705,26 @@ struct BareToggleMarker {
     line: u64,
 }
 
-/// Classify a node as a bare-toggle marker. Keys SOLELY on `kind == "raw"` and
-/// `source` being EXACTLY one of the four tokens; returns `(construct, is_open)`
-/// where `construct` is the emitted container kind. These markers reach the
-/// adapter as raw nodes the façade tagged `containerOpen` (opens) /
-/// `containerClose` (closes), but the exact-`source` match is what identifies
-/// them here — so the verbose block forms (`［＃ここから横組み］`,
-/// `［＃ここから罫囲み］`, distinct strings handled by
-/// `blocks_from_inline_content`) can never match.
+/// Read typed formatting markers; recognize the exact bare horizontal and box forms.
+/// Block forms remain available to block classification.
 fn bare_toggle_marker(node: &Value) -> Option<(&'static str, bool)> {
     if node.get("kind").and_then(Value::as_str) != Some("raw") {
         return None;
+    }
+    if let Some(key) = node["x-format-key"].as_str() {
+        let key = [
+            "bold",
+            "gothic",
+            "italic",
+            "small-script-right",
+            "small-script-left",
+            "font-large",
+            "font-small",
+            "tcy",
+        ]
+        .into_iter()
+        .find(|candidate| *candidate == key)?;
+        return Some((key, node["x-format-open"].as_bool()?));
     }
     match node.get("source").and_then(Value::as_str)? {
         "［＃横組み］" => Some(("yokogumi", true)),
@@ -1695,11 +1733,6 @@ fn bare_toggle_marker(node: &Value) -> Option<(&'static str, bool)> {
         "［＃罫囲み終わり］" => Some(("keigakomi", false)),
         _ => None,
     }
-}
-
-/// Stable index of a construct into the per-line `invalid` flag pair.
-fn bare_toggle_construct_index(construct: &str) -> usize {
-    usize::from(construct == "keigakomi")
 }
 
 /// Apply `pair_bare_toggles` to every content array of an already-built
@@ -1713,7 +1746,7 @@ fn bare_toggle_construct_index(construct: &str) -> usize {
 /// keeps block segmentation identical to the no-pass baseline: the raw
 /// bare-toggle `containerOpen`/`containerClose` marker nodes act as container
 /// boundaries during block classification, so consuming them earlier changed
-/// paragraph/jizume segmentation (corpus work `000026_55738`; 83-work delta).
+/// paragraph/jizume segmentation.
 fn pair_bare_toggles_in_blocks(nodes: Vec<Value>) -> Vec<Value> {
     let mut nodes = nodes;
     for node in &mut nodes {
@@ -1728,13 +1761,7 @@ fn pair_bare_toggles_in_blocks(nodes: Vec<Value>) -> Vec<Value> {
     pair_bare_toggles(nodes)
 }
 
-/// Fold same-line bare-toggle marker pairs into inline containers, mirroring
-/// `classify_line` in `reports/aat-fidelity/bare-toggle-placement.py` (the
-/// normative two-pass grammar). A pure `Vec<Value> -> Vec<Value>` function
-/// applied to every block/container content array AFTER block classification
-/// (`pair_bare_toggles_in_blocks`, called from `build_aat` — plan
-/// amendment 2; the markers reach it as raw nodes the façade tagged
-/// `containerOpen`/`containerClose`).
+/// Fold noncrossing same-line formatting pairs after block classification.
 ///
 /// Pass 1 runs one global nesting stack over each line's markers in array (==
 /// source) order: a same-construct reopen invalidates the construct but still
@@ -1810,8 +1837,7 @@ pub(crate) fn pair_bare_toggles(content: Vec<Value>) -> Vec<Value> {
 fn pair_line_markers(line: &[BareToggleMarker], adopted: &mut Vec<(usize, usize, &'static str)>) {
     let mut stack: Vec<(&'static str, usize)> = Vec::new();
     let mut candidates: Vec<(usize, usize, &'static str)> = Vec::new();
-    // [yokogumi, keigakomi]
-    let mut invalid = [false; 2];
+    let mut invalid = BTreeSet::new();
     for marker in line {
         if marker.is_open {
             if stack
@@ -1819,32 +1845,34 @@ fn pair_line_markers(line: &[BareToggleMarker], adopted: &mut Vec<(usize, usize,
                 .any(|(construct, _)| *construct == marker.construct)
             {
                 // same-construct reopen
-                invalid[bare_toggle_construct_index(marker.construct)] = true;
+                invalid.insert(marker.construct);
             }
             stack.push((marker.construct, marker.index));
         } else {
             match stack.last().copied() {
                 // orphan close
-                None => invalid[bare_toggle_construct_index(marker.construct)] = true,
+                None => {
+                    invalid.insert(marker.construct);
+                }
                 Some((top, open_index)) if top == marker.construct => {
                     stack.pop();
                     candidates.push((open_index, marker.index, marker.construct));
                 }
                 Some((top, _)) => {
                     // improper interleave: both constructs invalid, pop nothing
-                    invalid[bare_toggle_construct_index(marker.construct)] = true;
-                    invalid[bare_toggle_construct_index(top)] = true;
+                    invalid.insert(marker.construct);
+                    invalid.insert(top);
                 }
             }
         }
     }
     // Leftover open frames are orphan opens: invalidate their construct.
     for (construct, _) in &stack {
-        invalid[bare_toggle_construct_index(construct)] = true;
+        invalid.insert(*construct);
     }
     // Pass 2: adopt candidates whose construct was not invalidated.
     for (open_index, close_index, construct) in candidates {
-        if !invalid[bare_toggle_construct_index(construct)] {
+        if !invalid.contains(construct) {
             adopted.push((open_index, close_index, construct));
         }
     }
@@ -1886,7 +1914,7 @@ fn bare_toggle_container(
     open: &Value,
     close: &Value,
 ) -> Value {
-    json!({
+    let mut value = json!({
         "kind": kind,
         // `Value::Array` moves `content` in (json! would otherwise borrow it,
         // reading as a needless by-value param); the pass has no further use.
@@ -1897,7 +1925,14 @@ fn bare_toggle_container(
             "byte_start": open["span"]["byte_start"],
             "byte_end": close["span"]["byte_end"]
         }
-    })
+    });
+    if let Some(fields) = open["x-formatting"].as_object() {
+        value
+            .as_object_mut()
+            .expect("inline container")
+            .extend(fields.clone());
+    }
+    value
 }
 
 fn push_source_gap(content: &mut Vec<Value>, decoded: &DecodedSource, start: usize, end: usize) {
@@ -1925,6 +1960,11 @@ fn push_source_gap(content: &mut Vec<Value>, decoded: &DecodedSource, start: usi
                 "source": &decoded.text[source_start..source_end],
                 "x-provenance": "source-derived",
                 "x-source-marker-kind": "unparsed-source-gap",
+                "interpretation_problem": {
+                    "kind": "uninterpreted-notation", "code": "unparsed-source-gap",
+                    "aspects": ["content", "structure", "layout"],
+                    "influence": {"kind": "document"}
+                },
                 "span": span_json(&span, &decoded.span_ctx)
             }));
         } else {
@@ -1947,7 +1987,7 @@ fn contains_aozora_markup(source: &str) -> bool {
 
 #[allow(
     clippy::option_if_let_else,
-    reason = "if/else form preserved from frozen adapter; lambda restructure not permitted"
+    reason = "branches construct different source-derived node payloads"
 )]
 fn ruby_node(
     decoded: &DecodedSource,
@@ -2120,6 +2160,13 @@ fn push_style_node(
     style_type: &str,
 ) {
     let mut style = style_node(decoded, node, style_type);
+    if let ProjectedKind::Format(attr) = node.kind
+        && let Some(fields) = formatting_fields(attr)
+    {
+        let object = style.as_object_mut().expect("style object");
+        object.remove("style_type");
+        object.extend(fields.as_object().expect("formatting fields").clone());
+    }
     if let ProjectedKind::Format(ForwardAttr::Bouten { kind, position }) = node.kind {
         style["decoration"] = json!({"kind": kind.keyword(), "position": match position {
             BoutenPosition::Right => "right", BoutenPosition::Left => "left", BoutenPosition::Both => "both", _ => "unknown"
@@ -2134,6 +2181,20 @@ fn push_style_node(
         style["content"] = json!(children);
     }
     content.push(style);
+    if let ProjectedKind::Format(attr) = node.kind
+        && !matches!(
+            attr,
+            ForwardAttr::Bouten { .. } | ForwardAttr::CombineUpright
+        )
+        && formatting_fields(attr).is_none()
+    {
+        let mut retained = raw_node(decoded, node, "uninterpreted-formatting");
+        retained["interpretation_problem"] = json!({"kind":"uninterpreted-notation", "code":"uninterpreted-notation",
+            "aspects":if matches!(attr, ForwardAttr::Accent(_) | ForwardAttr::AccentDot) {
+                vec!["content", "layout"]
+            } else { vec!["structure", "layout"] }, "influence":{"kind":"document"}});
+        content.push(retained);
+    }
 }
 
 fn push_text_variant_node(content: &mut Vec<Value>, decoded: &DecodedSource, node: &AozoraNode) {
@@ -2229,12 +2290,71 @@ fn annotation_content(source: &str) -> Vec<Value> {
     vec![json!({"kind": "text", "value": text})]
 }
 
-fn emphasis_style_type(node: &AozoraNode) -> &'static str {
-    if node.kind == ProjectedKind::Format(ForwardAttr::Bold) {
-        "bold"
-    } else {
-        "emphasis"
-    }
+fn formatting_fields(attr: ForwardAttr) -> Option<Value> {
+    Some(match attr {
+        ForwardAttr::Bold => json!({"kind":"style", "style_type":"bold"}),
+        ForwardAttr::Gothic => json!({"kind":"style", "style_type":"gothic"}),
+        ForwardAttr::Italic => json!({"kind":"style", "style_type":"italic"}),
+        ForwardAttr::SuperScript => json!({"kind":"style", "style_type":"superscript"}),
+        ForwardAttr::SubScript => json!({"kind":"style", "style_type":"subscript"}),
+        ForwardAttr::SmallScript(BoutenPosition::Right) => {
+            json!({"kind":"small_script", "position":"right"})
+        }
+        ForwardAttr::SmallScript(BoutenPosition::Left) => {
+            json!({"kind":"small_script", "position":"left"})
+        }
+        ForwardAttr::FontSize(shift) => {
+            json!({"kind":"font_size", "size_type":if shift.larger() { "large" } else { "small" }, "level":shift.magnitude()})
+        }
+        ForwardAttr::FontSizeAbsolute(size) => {
+            json!({"kind":"font_size", "size_type":"absolute", "size":match size {
+                AbsoluteSize::ExtraLarge => "extra-large", AbsoluteSize::Large => "large",
+                AbsoluteSize::Medium => "medium", AbsoluteSize::Small => "small", _ => return None,
+            }})
+        }
+        _ => return None,
+    })
+}
+
+fn region_formatting(region: RegionFormat) -> Option<(&'static str, Value)> {
+    let (key, attr) = match region {
+        RegionFormat::Bold { padded: false } => ("bold", ForwardAttr::Bold),
+        RegionFormat::Gothic { padded: false } => ("gothic", ForwardAttr::Gothic),
+        RegionFormat::Italic { padded: false } => ("italic", ForwardAttr::Italic),
+        RegionFormat::SmallScript(BoutenPosition::Right) => (
+            "small-script-right",
+            ForwardAttr::SmallScript(BoutenPosition::Right),
+        ),
+        RegionFormat::SmallScript(BoutenPosition::Left) => (
+            "small-script-left",
+            ForwardAttr::SmallScript(BoutenPosition::Left),
+        ),
+        RegionFormat::FontSize(shift) => (
+            if shift.larger() {
+                "font-large"
+            } else {
+                "font-small"
+            },
+            ForwardAttr::FontSize(shift),
+        ),
+        RegionFormat::CombineUpright => return Some(("tcy", json!({"kind":"tcy"}))),
+        _ => return None,
+    };
+    Some((key, formatting_fields(attr)?))
+}
+
+fn region_formatting_close(close: RegionClose) -> Option<&'static str> {
+    Some(match close {
+        RegionClose::Bold { padded: false } => "bold",
+        RegionClose::Gothic { padded: false } => "gothic",
+        RegionClose::Italic { padded: false } => "italic",
+        RegionClose::SmallScript(BoutenPosition::Right) => "small-script-right",
+        RegionClose::SmallScript(BoutenPosition::Left) => "small-script-left",
+        RegionClose::FontSize { larger: true } => "font-large",
+        RegionClose::FontSize { larger: false } => "font-small",
+        RegionClose::CombineUpright => "tcy",
+        _ => return None,
+    })
 }
 
 fn marker_target(source: &str) -> Option<&str> {
@@ -2262,6 +2382,26 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
             "target_kind": match target { TextVariantTarget::RubyReading => "ruby-reading", TextVariantTarget::Text => "text" },
             "current": current, "base_text": base_text
         });
+    }
+    match node.kind {
+        ProjectedKind::Region(region) => {
+            if let Some((key, fields)) = region_formatting(region) {
+                value["x-format-key"] = json!(key);
+                value["x-format-open"] = json!(true);
+                value["x-formatting"] = fields;
+            }
+            value["interpretation_problem"] = json!({"kind":"uninterpreted-notation", "code":"uninterpreted-notation",
+                "aspects":["structure","layout"], "influence":{"kind":"document"}});
+        }
+        ProjectedKind::RegionClose(close) => {
+            if let Some(key) = region_formatting_close(close) {
+                value["x-format-key"] = json!(key);
+                value["x-format-open"] = json!(false);
+            }
+            value["interpretation_problem"] = json!({"kind":"uninterpreted-notation", "code":"uninterpreted-notation",
+                "aspects":["structure","layout"], "influence":{"kind":"document"}});
+        }
+        _ => {}
     }
     if node.kind == ProjectedKind::Directive(DirectiveKind::BaseTextVariant) {
         value["interpretation_problem"] = json!({"kind":"unresolved-variant", "code":"unresolved-variant",
@@ -2323,10 +2463,10 @@ fn source_slice<'a>(source: &'a str, span: &Span) -> &'a str {
 #[must_use]
 pub fn adapter_version() -> String {
     format!(
-        "ab-aozora {} aat-schema 2 facade {} wire-schema {} (git {})",
+        "ab-aozora {} aat-schema 2 facade {} diagnostics-schema {} (git {})",
         env!("CARGO_PKG_VERSION"),
         ab_aozora_facade_version(),
-        aozora_json::SCHEMA_VERSION,
+        aozora_json::DIAGNOSTICS_SCHEMA_VERSION,
         env!("AB_AOZORA_GIT_REV"),
     )
 }
@@ -2477,7 +2617,7 @@ mod tests {
     /// self.rev or "unknown"` and `build.rs`'s doc comment).
     #[test]
     fn aat_json_from_bytes_is_byte_exact_under_default_map_ordering() {
-        let expected = "{\"blocks\":[{\"content\":[{\"kind\":\"text\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1},\"value\":\"あ\\n\"}],\"kind\":\"paragraph\"}],\"meta\":{\"adapter\":\"ab-aozora\",\"adapter_version\":\"ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git unknown)\",\"parse_complete\":true,\"primary_text_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"source_encoding\":\"utf-8\",\"source_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"warnings\":[]},\"version\":2,\"work_id\":\"stdin\"}\n";
+        let expected = "{\"blocks\":[{\"content\":[{\"kind\":\"text\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1},\"value\":\"あ\\n\"}],\"kind\":\"paragraph\"}],\"meta\":{\"adapter\":\"ab-aozora\",\"adapter_version\":\"ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 diagnostics-schema 3 (git unknown)\",\"parse_complete\":true,\"primary_text_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"source_encoding\":\"utf-8\",\"source_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"warnings\":[]},\"version\":2,\"work_id\":\"stdin\"}\n";
         let actual = aat_json_from_bytes("あ\n".as_bytes()).unwrap();
         assert_eq!(actual, expected.as_bytes());
     }
@@ -3321,7 +3461,7 @@ mod tests {
     fn c5_identity_join_key_and_document_version() {
         assert!(
             adapter_version()
-                .starts_with("ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3")
+                .starts_with("ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 diagnostics-schema 3")
         );
         let aat = aat_value_for("あ\n");
         assert_eq!(aat["version"], 2);
@@ -3656,6 +3796,8 @@ mod tests {
                 matches!(
                     n.kind,
                     ProjectedKind::Node(NodeKind::ContainerOpen | NodeKind::ContainerClose)
+                        | ProjectedKind::Region(_)
+                        | ProjectedKind::RegionClose(_)
                 )
             })
             .collect();

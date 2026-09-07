@@ -109,3 +109,9 @@ Warichu uses `seg type="warichu" rend="two-line"`. An undivided source remains o
 content sequence; nested `seg type="upper"` and `seg type="lower"` appear only when
 the input establishes those divisions. Text projections retain their supplied
 reading order and report the omitted two-line layout.
+
+Canonical TEI distinguishes Gothic, italic, superscript and subscript renditions.
+Font size retains either a relative step count or an absolute size category;
+source line-right and line-left small writing remain separate side values. These
+source axes are not inferred to mean horizontal superscript or subscript. The
+Markdown profile reports unimplemented font and script renditions explicitly.

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
   "title": "ABC Parser IR",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "type": "object",
   "required": ["schema_id", "schema_hash", "source", "nodes", "warnings", "errors", "interpretation_problems", "interpretation_facts"],
   "additionalProperties": false,
@@ -60,9 +60,9 @@
         "type": "object", "additionalProperties": false,
         "required": ["kind", "code", "raw", "source_span", "aspects", "influence"],
         "properties": {
-          "kind": {"enum": ["unknown-notation", "unresolved-variant", "uninterpreted-notation"]}, "code": {"enum": ["unknown-notation", "unresolved-variant", "uninterpreted-notation"]},
+          "kind": {"enum": ["unknown-notation", "unresolved-variant", "uninterpreted-notation"]}, "code": {"enum": ["unknown-notation", "unresolved-variant", "uninterpreted-notation", "unparsed-source-gap"]},
           "raw": {"type": "string"}, "source_span": {"$ref": "#/$defs/sourceSpan"},
-          "aspects": {"enum": [["content", "structure", "layout"], ["content", "structure"]]},
+          "aspects": {"enum": [["content", "structure", "layout"], ["content", "structure"], ["content", "layout"], ["structure", "layout"]]},
           "influence": {"const": {"kind": "document"}}
         }
       }
@@ -316,14 +316,28 @@
       "oneOf": [
         {
           "type": "object",
-          "required": ["kind", "source", "size_type", "level"],
+          "required": ["kind", "source", "size_type"],
           "additionalProperties": false,
           "properties": {
             "kind": { "const": "font-size" },
             "source": { "$ref": "#/$defs/layoutScopeSource" },
-            "size_type": { "type": "string" },
-            "level": { "type": "integer", "minimum": 0 },
+            "size_type": { "enum": ["large", "small", "absolute"] },
+            "level": { "type": "integer", "minimum": 1 },
+            "size": { "enum": ["extra-large", "large", "medium", "small"] },
             "marker": { "type": ["string", "null"] }
+          },
+          "oneOf": [
+            { "properties": { "size_type": { "enum": ["large", "small"] } }, "required": ["level"], "not": { "required": ["size"] } },
+            { "properties": { "size_type": { "const": "absolute" } }, "required": ["size"], "not": { "required": ["level"] } }
+          ]
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "source", "position"],
+          "properties": {
+            "kind": { "const": "small-script" },
+            "source": { "$ref": "#/$defs/layoutScopeSource" },
+            "position": { "enum": ["right", "left"] }
           }
         },
         {

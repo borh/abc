@@ -71,10 +71,13 @@
                (str "width=" width))
     "line-jisage" (when-some [indent (get layout "indent")]
                     (str "indent=" indent))
-    "font-size" (let [size-type (get layout "size_type")
-                      level (get layout "level")]
-                  (when (and size-type (some? level))
-                    (str "size-type=" size-type ";level=" level)))
+    "font-size" (if (= "absolute" (get layout "size_type"))
+                  (str "size-type=absolute;size=" (get layout "size"))
+                  (let [size-type (get layout "size_type")
+                        level (get layout "level")]
+                    (when (and size-type (some? level))
+                      (str "size-type=" size-type ";level=" level))))
+    "small-script" (str "position=" (get layout "position"))
     "tcy" (when-let [marker (get layout "marker")]
             (str "marker=" marker))
     "keigakomi" (when-let [border (get layout "border")]
@@ -84,10 +87,13 @@
 
 (defn- inline-layout-rend [layout]
   (case (get layout "kind")
-    "font-size" (let [size-type (get layout "size_type")
-                      level (get layout "level")]
-                  (when (and size-type (some? level))
-                    (str "font-size " size-type "(" level ")")))
+    "font-size" (if (= "absolute" (get layout "size_type"))
+                  (str "font-size absolute(" (get layout "size") ")")
+                  (let [size-type (get layout "size_type")
+                        level (get layout "level")]
+                    (when (and size-type (some? level))
+                      (str "font-size " size-type "(" level ")"))))
+    "small-script" (str "small-script " (get layout "position"))
     "tcy" "text-combine-upright"
     "keigakomi" (if-let [border (get layout "border")]
                   (str "keigakomi border(" border ")")

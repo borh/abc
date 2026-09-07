@@ -307,3 +307,21 @@
       (is (= [{:xml-id "gaiji-1-7-84" :unicode unicode :raw-marker "濁点付き片仮名ヱ"}]
              (:char_declarations result)))
       (is (empty? (:omitted result))))))
+
+(deftest font-size-and-script-layout-retain-distinct-source-axes
+  (doseq [[layout rend params]
+          [[{"kind" "font-size" "size_type" "small" "level" 2}
+            "font-size small(2)" "size-type=small;level=2"]
+           [{"kind" "font-size" "size_type" "absolute" "size" "small"}
+            "font-size absolute(small)" "size-type=absolute;size=small"]
+           [{"kind" "small-script" "position" "right"}
+            "small-script right" "position=right"]
+           [{"kind" "small-script" "position" "left"}
+            "small-script left" "position=left"]]]
+    (let [result (parser-ir-tei/render {"nodes" [{"type" "layout-span" "layout" layout "text" "字"
+                                                  "inline_children" [{"type" "ruby"
+                                                                      "ruby" {"base" "字" "reading" "じ"}}]}]})
+          hi (first (filter #(and (vector? %) (= :hi (first %))) (hiccup-nodes (:body result))))]
+      (is (= rend (get-in hi [1 :rend])))
+      (is (= params (get-in hi [1 :abc/layout-params])))
+      (is (= [:rb "字"] (some #(when (and (vector? %) (= :rb (first %))) %) (hiccup-nodes hi)))))))

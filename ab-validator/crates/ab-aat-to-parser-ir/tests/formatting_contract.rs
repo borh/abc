@@ -1,0 +1,194 @@
+use std::path::Path;
+
+use ab_aat_to_parser_ir::{ConversionOptions, ConversionRequest, MappingDocument, SchemaSet};
+use serde_json::{Value, json};
+
+fn convert(body: &str) -> Value {
+    let source = format!("題\n作者\n\n{body}\n\n底本：本\n");
+    let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let mapping =
+        MappingDocument::from_path(&repo.join("data/aat-to-parser-ir-mapping-v2.json")).unwrap();
+    let schemas = SchemaSet::for_aat_version(&repo, None, 2).unwrap();
+    ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat: serde_json::from_slice(
+            &ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap(),
+        )
+        .unwrap(),
+        mapping,
+        schemas,
+        options: ConversionOptions::default(),
+    })
+    .unwrap()
+    .parser_ir
+}
+
+fn nodes(value: &Value) -> Vec<&Value> {
+    let mut result = Vec::new();
+    let mut pending = vec![value];
+    while let Some(value) = pending.pop() {
+        match value {
+            Value::Object(map) => {
+                result.push(value);
+                pending.extend(map.values());
+            }
+            Value::Array(values) => pending.extend(values),
+            _ => {}
+        }
+    }
+    result
+}
+
+#[test]
+fn native_typeface_and_script_values_are_not_generic_emphasis() {
+    for (source_kind, style) in [
+        ("ゴシック体", "gothic"),
+        ("斜体", "italic"),
+        ("上付き小文字", "superscript"),
+        ("下付き小文字", "subscript"),
+    ] {
+        let ir = convert(&format!("字［＃「字」は{source_kind}］"));
+        assert!(
+            nodes(&ir)
+                .iter()
+                .any(|n| n["type"] == "emphasis" && n["style"] == style && n["text"] == "字"),
+            "{source_kind}: {ir}"
+        );
+        assert_eq!(ir["interpretation_problems"], json!([]));
+    }
+}
+
+#[test]
+fn relative_absolute_font_size_and_source_side_have_exclusive_payloads() {
+    for (source_kind, expected) in [
+        (
+            "２段階小さな文字",
+            json!({"kind":"font-size", "source":"aat-inline", "size_type":"small", "level":2}),
+        ),
+        (
+            "１段階大きな文字",
+            json!({"kind":"font-size", "source":"aat-inline", "size_type":"large", "level":1}),
+        ),
+        (
+            "小文字",
+            json!({"kind":"font-size", "source":"aat-inline", "size_type":"absolute", "size":"small"}),
+        ),
+        (
+            "行右小書き",
+            json!({"kind":"small-script", "source":"aat-inline", "position":"right"}),
+        ),
+        (
+            "行左小書き",
+            json!({"kind":"small-script", "source":"aat-inline", "position":"left"}),
+        ),
+    ] {
+        let ir = convert(&format!("字［＃「字」は{source_kind}］"));
+        assert!(
+            nodes(&ir).iter().any(|n| n["type"] == "layout-span"
+                && n["layout"] == expected
+                && n["text"] == "字"),
+            "{source_kind}: {ir}"
+        );
+        assert_eq!(ir["interpretation_problems"], json!([]));
+    }
+}
+
+#[test]
+fn paired_rich_regions_preserve_children_and_unmatched_scopes_remain_explicit() {
+    for (open, close, kind, field, expected) in [
+        ("斜体", "斜体終わり", "emphasis", "style", json!("italic")),
+        (
+            "行右小書き",
+            "行右小書き終わり",
+            "layout-span",
+            "layout",
+            json!({"kind":"small-script", "source":"aat-inline", "position":"right"}),
+        ),
+        (
+            "縦中横",
+            "縦中横終わり",
+            "layout-span",
+            "layout",
+            json!({"kind":"tcy", "source":"aat-inline", "marker":null}),
+        ),
+    ] {
+        let ir = convert(&format!(
+            "前［＃{open}］｜※［＃歌記号、1-3-28］字《じ》［＃{close}］後"
+        ));
+        let all = nodes(&ir);
+        let wrapper = all
+            .iter()
+            .find(|n| n["type"] == kind && n[field] == expected)
+            .expect("typed rich wrapper");
+        assert_eq!(wrapper["text"], "〽字", "{ir}");
+        assert!(nodes(wrapper).iter().any(|n| n["type"] == "ruby"));
+        assert!(nodes(wrapper).iter().any(|n| n["type"] == "gaiji"));
+        assert_eq!(ir["interpretation_problems"], json!([]), "{ir}");
+        let unclosed = convert(&format!("前［＃{open}］｜※［＃歌記号、1-3-28］字《じ》後"));
+        assert!(
+            !unclosed["interpretation_problems"]
+                .as_array()
+                .unwrap()
+                .is_empty()
+        );
+    }
+}
+
+#[test]
+fn unimplemented_formatting_keeps_source_and_never_gets_an_established_fact() {
+    let ir = convert("図［＃「図」はキャプション］");
+    assert_eq!(
+        ir["interpretation_problems"][0]["raw"],
+        "図［＃「図」はキャプション］"
+    );
+    assert_eq!(
+        ir["interpretation_problems"][0]["aspects"],
+        json!(["structure", "layout"])
+    );
+    assert!(
+        !ir["interpretation_facts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|f| f["kind"] == "emphasis")
+    );
+}
+
+#[test]
+fn font_size_schema_rejects_mixed_absolute_and_relative_payloads() {
+    fn alter(value: &mut Value, field: &str, payload: &Value) {
+        match value {
+            Value::Object(map) => {
+                if map.get("kind").and_then(Value::as_str) == Some("font-size") {
+                    map.insert(field.into(), payload.clone());
+                } else {
+                    for child in map.values_mut() {
+                        alter(child, field, payload);
+                    }
+                }
+            }
+            Value::Array(values) => {
+                for child in values {
+                    alter(child, field, payload);
+                }
+            }
+            _ => {}
+        }
+    }
+    let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let schemas = SchemaSet::for_aat_version(&repo, None, 2).unwrap();
+    for (source, field, value) in [
+        ("字［＃「字」は小文字］", "level", json!(1)),
+        ("字［＃「字」は２段階小さな文字］", "size", json!("small")),
+    ] {
+        let mut ir = convert(source);
+        alter(&mut ir, field, &value);
+        assert!(
+            ab_aat_to_parser_ir::schema::validate_value(
+                &schemas.parser_ir_schema,
+                &ir,
+                "parser-ir"
+            )
+            .is_err()
+        );
+    }
+}

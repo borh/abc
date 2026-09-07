@@ -362,8 +362,8 @@
           "type": "object", "additionalProperties": false,
           "required": ["kind", "code", "aspects", "influence"],
           "properties": {
-            "kind": {"enum": ["unknown-notation", "unresolved-variant", "uninterpreted-notation"]}, "code": {"enum": ["unknown-notation", "unresolved-variant", "uninterpreted-notation"]},
-            "aspects": {"enum": [["content", "structure", "layout"], ["content", "structure"]]},
+            "kind": {"enum": ["unknown-notation", "unresolved-variant", "uninterpreted-notation"]}, "code": {"enum": ["unknown-notation", "unresolved-variant", "uninterpreted-notation", "unparsed-source-gap"]},
+            "aspects": {"enum": [["content", "structure", "layout"], ["content", "structure"], ["content", "layout"], ["structure", "layout"]]},
             "influence": {"const": {"kind": "document"}}
           }
         },
@@ -396,11 +396,13 @@
       "additionalProperties": false,
       "patternProperties": { "^x-": true },
       "properties": {
-        "kind": { "enum": ["style", "font_size", "tcy", "keigakomi", "yokogumi", "caption"] },
+        "kind": { "enum": ["style", "font_size", "small_script", "tcy", "keigakomi", "yokogumi", "caption"] },
         "decoration": {"type":"object", "additionalProperties":false, "required":["kind","position"], "properties":{"kind":{"type":"string"}, "position":{"enum":["right","left","both","unknown"]}}},
         "style_type": { "type": "string" },
-        "size_type": { "type": "string" },
-        "level": { "type": "integer" },
+        "size_type": { "enum": ["large", "small", "absolute"] },
+        "level": { "type": "integer", "minimum": 1 },
+        "size": { "enum": ["extra-large", "large", "medium", "small"] },
+        "position": { "enum": ["right", "left"] },
         "class_name": { "type": "string" },
         "align": { "const": "right" },
         "offset_from_end": { "type": "integer", "minimum": 0 },
@@ -410,6 +412,20 @@
         "content": { "type": "array", "items": { "$ref": "#/$defs/inline" } }
       },
       "allOf": [
+        {
+          "if": { "properties": { "kind": { "const": "small_script" } } },
+          "then": { "required": ["position"] }
+        },
+        {
+          "if": { "properties": { "kind": { "const": "font_size" } } },
+          "then": {
+            "required": ["size_type"],
+            "oneOf": [
+              { "properties": { "size_type": { "enum": ["large", "small"] } }, "required": ["level"], "not": { "required": ["size"] } },
+              { "properties": { "size_type": { "const": "absolute" } }, "required": ["size"], "not": { "required": ["level"] } }
+            ]
+          }
+        },
         {
           "if": {
             "properties": { "kind": { "const": "style" }, "style_type": { "const": "chitsuki" } },

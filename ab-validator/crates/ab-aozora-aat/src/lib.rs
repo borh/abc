@@ -2298,7 +2298,10 @@ fn blocks_from_inline_content(content: Vec<Value>, decoded: &DecodedSource) -> V
                 if is_region
                     || is_page
                     || (layout.get("offset_from_end").is_some()
-                        && !marker_ends_source_line(&node, source))
+                        && !marker_ends_source_line(&node, source)
+                        && inner
+                            .iter()
+                            .any(|node| node["kind"] != "text" || node["value"] != ""))
                 {
                     push_paragraph_if_not_empty(&mut blocks, mem::take(&mut inner));
                 }

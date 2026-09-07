@@ -80,3 +80,32 @@ fn rich_quoted_target_retains_the_supplied_gaiji_node() {
     assert_eq!(aligned["content"][0]["kind"], "gaiji", "{aat}");
     assert_eq!(aligned["content"].as_array().unwrap().len(), 1, "{aat}");
 }
+
+#[test]
+fn region_anchor_before_line_alignment_does_not_create_an_empty_paragraph() {
+    for (opener, closer) in [
+        ("ここから３字下げ", "ここで字下げ終わり"),
+        ("ここから１段階小さな文字", "ここで小さな文字終わり"),
+    ] {
+        let source = format!("［＃{opener}］\n［＃地から３字上げ］宛先\n［＃{closer}］\n");
+        let aat = parse(&source);
+        let children = aat["blocks"][0]["children"].as_array().unwrap();
+        assert_eq!(children.len(), 1, "{aat}");
+        let aligned = &children[0];
+        assert_eq!(aligned["kind"], "layout_block", "{aat}");
+        let paragraph = &aligned["children"][0];
+        let content = paragraph["content"].as_array().unwrap();
+        assert_eq!(content[0]["value"], "", "{aat}");
+        assert_eq!(
+            content[0]["span"]["byte_start"],
+            source.find("［＃地から").unwrap(),
+            "{aat}"
+        );
+        assert_eq!(
+            content[0]["span"]["byte_start"], content[0]["span"]["byte_end"],
+            "{aat}"
+        );
+        assert!(content.iter().any(|node| node["value"] == "宛先"), "{aat}");
+        assert_eq!(aligned["children"].as_array().unwrap().len(), 1, "{aat}");
+    }
+}

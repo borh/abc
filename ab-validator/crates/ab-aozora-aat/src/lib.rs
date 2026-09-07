@@ -642,6 +642,98 @@ pub fn diagnostics_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
     Ok(out)
 }
 
+#[derive(Clone, Copy)]
+enum EstablishedInterpretation {
+    Ruby,
+    Gaiji,
+    Emphasis,
+    Warichu,
+}
+
+impl EstablishedInterpretation {
+    fn kind(self) -> &'static str {
+        match self {
+            Self::Ruby => "ruby",
+            Self::Gaiji => "gaiji",
+            Self::Emphasis => "emphasis",
+            Self::Warichu => "warichu",
+        }
+    }
+
+    fn aspects(self) -> &'static [&'static str] {
+        match self {
+            Self::Ruby => &["content", "structure"],
+            Self::Gaiji => &["content"],
+            Self::Emphasis => &["layout"],
+            Self::Warichu => &["structure", "layout"],
+        }
+    }
+}
+
+fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
+    let mut facts = Vec::new();
+    let mut pending = blocks.iter().rev().collect::<Vec<_>>();
+    while let Some(node) = pending.pop() {
+        let interpretation = match node["kind"].as_str() {
+            Some("ruby")
+                if node["base"].as_str().is_some_and(|text| !text.is_empty())
+                    && node["reading"]
+                        .as_str()
+                        .is_some_and(|text| !text.is_empty()) =>
+            {
+                Some(EstablishedInterpretation::Ruby)
+            }
+            Some("gaiji")
+                if node["resolved"]
+                    .as_str()
+                    .is_some_and(|text| !text.is_empty()) =>
+            {
+                Some(EstablishedInterpretation::Gaiji)
+            }
+            Some("style")
+                if matches!(
+                    node["style_type"].as_str(),
+                    Some("bold" | "emphasis" | "bouten" | "bosen")
+                ) && node["content"]
+                    .as_array()
+                    .is_some_and(|children| !children.is_empty()) =>
+            {
+                Some(EstablishedInterpretation::Emphasis)
+            }
+            Some("warichu") => Some(EstablishedInterpretation::Warichu),
+            _ => None,
+        };
+        if let Some(interpretation) = interpretation
+            && let Some(span) = node.get("span")
+            && let (Some(start), Some(end)) =
+                (span["byte_start"].as_u64(), span["byte_end"].as_u64())
+            && start < end
+        {
+            facts.push(json!({"kind":interpretation.kind(), "outcome":"established", "aspects":interpretation.aspects(),
+                    "source_span":{"start":start,"end":end,"line":span["line_start"],"coordinate_system":"decoded_utf8"}}));
+        }
+        for key in [
+            "children",
+            "content",
+            "upper",
+            "lower",
+            "base_content",
+            "reading_content",
+        ] {
+            if let Some(children) = node.get(key).and_then(Value::as_array) {
+                pending.extend(children.iter().rev());
+            }
+        }
+    }
+    facts.sort_by_key(|fact| {
+        (
+            fact["source_span"]["start"].as_u64(),
+            fact["source_span"]["end"].as_u64(),
+        )
+    });
+    facts
+}
+
 fn build_aat(
     decoded: &DecodedSource,
     nodes: &[AozoraNode],
@@ -657,8 +749,8 @@ fn build_aat(
         .iter()
         .map(|entry| ((entry.span.start, entry.span.end), entry.clone()))
         .collect::<BTreeMap<_, _>>();
-    // Bare-toggle pairing runs AFTER block classification (plan
-    // amendment 2): `blocks_from_inline_content` must see the original node
+    // Bare-toggle pairing runs after block classification:
+    // `blocks_from_inline_content` must see the original node
     // stream — raw toggle markers included — so paragraph/jizume
     // segmentation matches the no-pass baseline; adoption then rewrites
     // only the toggle spans inside the built tree.
@@ -673,7 +765,8 @@ fn build_aat(
     let (source_notes, tail_warnings) = source_notes_from_tail(decoded);
     blocks.extend(source_notes);
     warnings.extend(tail_warnings);
-    json!({
+    let facts = established_interpretations(&blocks);
+    let mut aat = json!({
         "version": 2,
         "work_id": "stdin",
         "blocks": blocks,
@@ -686,7 +779,11 @@ fn build_aat(
             "parse_complete": diagnostics.iter().all(|d| matches!(d.severity(), Severity::Warning | Severity::Note)),
             "warnings": warnings
         }
-    })
+    });
+    if !facts.is_empty() {
+        aat["meta"]["interpretation_facts"] = json!(facts);
+    }
+    aat
 }
 
 /// Tail classification separates source attribution from transcription metadata.
@@ -2141,6 +2238,10 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
             "target_kind": match target { TextVariantTarget::RubyReading => "ruby-reading", TextVariantTarget::Text => "text" },
             "current": current, "base_text": base_text
         });
+    }
+    if node.kind == ProjectedKind::Directive(DirectiveKind::BaseTextVariant) {
+        value["interpretation_problem"] = json!({"kind":"unresolved-variant", "code":"unresolved-variant",
+            "aspects":["content","structure"], "influence":{"kind":"document"}});
     }
     if node.kind == ProjectedKind::Directive(DirectiveKind::Unknown) {
         value["interpretation_problem"] = json!({

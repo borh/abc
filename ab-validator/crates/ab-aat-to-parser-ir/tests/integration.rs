@@ -778,7 +778,7 @@ fn mapping_preflight_accepts_checked_in_v1_artifact() {
 
     mapping.preflight(&schemas).unwrap();
 
-    assert_eq!(mapping.mapping_version, "0.9.0");
+    assert_eq!(mapping.mapping_version, "0.10.0");
     assert_eq!(
         mapping.target_parser_ir_schema_hash,
         schema_hash(&schemas.parser_ir_schema).unwrap()
@@ -824,7 +824,7 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
     let mapping =
         MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2.json"))
             .unwrap();
-    assert_eq!(mapping.mapping_version, "0.10.0");
+    assert_eq!(mapping.mapping_version, "0.11.0");
     assert_eq!(mapping.source_aat_version, 2);
     let schemas = SchemaSet::load_for_aat_version(&repo_root, &research_root, 2).unwrap();
     mapping.preflight(&schemas).unwrap();
@@ -2794,6 +2794,69 @@ fn source_left_underline_preserves_native_mark_and_ruby_target() {
     assert_eq!(node["decoration"], json!({"kind":"傍線","position":"left"}));
     assert_eq!(node["inline_children"][0]["type"], "ruby");
     assert_eq!(node["text"], "東京");
+}
+
+#[test]
+fn established_source_facts_survive_without_claiming_raw_markers() {
+    let source = "東京《とうきょう》［＃「東京」の左に傍線］［＃割り注］※［＃「吉」、U+20BB7］［＃割り注終わり］［＃未知の指定］";
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let aat: Value =
+        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
+            .unwrap();
+    let expected = aat["meta"]["interpretation_facts"].clone();
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas,
+        options: default_test_options(),
+    })
+    .unwrap();
+    assert_eq!(output.parser_ir["interpretation_facts"], expected);
+    let facts = expected.as_array().unwrap();
+    for kind in ["ruby", "gaiji", "emphasis", "warichu"] {
+        assert_eq!(facts.iter().filter(|fact| fact["kind"] == kind).count(), 1);
+    }
+    assert_eq!(facts.len(), 4);
+    for fact in facts {
+        assert_eq!(fact["outcome"], "established");
+        assert_eq!(fact["source_span"]["coordinate_system"], "decoded_utf8");
+        assert!(
+            fact["source_span"]["end"].as_u64().unwrap() <= source.find("［＃未知").unwrap() as u64
+        );
+    }
+    assert_eq!(
+        output.parser_ir["interpretation_problems"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+}
+
+#[test]
+fn nested_base_text_alternative_retains_explicit_unresolved_influence() {
+    let directive = "［＃「※［＃「目＋旬」、第3水準1-88-80］《めくば》せを」は底本では「※［＃「目＋句」、第4水準2-81-91］《めくば》せを」］";
+    let source = format!("目{directive}後。");
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let aat =
+        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
+            .unwrap();
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas,
+        options: default_test_options(),
+    })
+    .unwrap();
+    let problems = output.parser_ir["interpretation_problems"]
+        .as_array()
+        .unwrap();
+    assert_eq!(problems.len(), 1);
+    assert_eq!(problems[0]["kind"], "unresolved-variant");
+    assert_eq!(problems[0]["raw"], directive);
+    assert_eq!(problems[0]["aspects"], json!(["content", "structure"]));
+    assert_eq!(problems[0]["influence"], json!({"kind":"document"}));
+    assert_eq!(output.parser_ir["interpretation_facts"], json!([]));
 }
 
 #[test]

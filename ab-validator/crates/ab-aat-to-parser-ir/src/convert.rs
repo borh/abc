@@ -195,7 +195,8 @@ fn convert_preflighted_for_qualification(
         "schema_hash": mapping.target_parser_ir_schema_hash,
         "derived_from": derived_from(&aat, mapping)?,
         "source": source,
-        "interpretation_problems": interpretation_problems(&aat)?,
+        "interpretation_problems": interpretation_problems(&aat, &nodes)?,
+        "interpretation_facts": aat.pointer("/meta/interpretation_facts").cloned().unwrap_or_else(|| json!([])),
         "nodes": nodes,
         "paragraphs": paragraphs,
         "layout_blocks": layout_blocks,
@@ -903,7 +904,7 @@ fn gaiji_payload(node: &Value) -> Value {
     })
 }
 
-fn interpretation_problems(aat: &Value) -> Result<Vec<Value>> {
+fn interpretation_problems(aat: &Value, nodes: &[Value]) -> Result<Vec<Value>> {
     let mut problems = Vec::new();
     let mut pending = vec![aat];
     while let Some(node) = pending.pop() {
@@ -925,6 +926,29 @@ fn interpretation_problems(aat: &Value) -> Result<Vec<Value>> {
         ] {
             if let Some(children) = node.get(key).and_then(Value::as_array) {
                 pending.extend(children.iter().rev());
+            }
+        }
+    }
+    let mut pending = nodes.iter().collect::<Vec<_>>();
+    while let Some(node) = pending.pop() {
+        if node["type"] == "editor-note"
+            && node["note"]["category"] == "variant"
+            && node["note"]["resolution"] == "unresolved"
+        {
+            problems.push(
+                json!({"kind":"unresolved-variant", "code":"unresolved-variant",
+                    "raw":node["note"]["raw"], "source_span":node["source_span"],
+                    "aspects":["content","structure"], "influence":{"kind":"document"}}),
+            );
+        }
+        for key in [
+            "inline_children",
+            "reading_children",
+            "upper_children",
+            "lower_children",
+        ] {
+            if let Some(children) = node.get(key).and_then(Value::as_array) {
+                pending.extend(children);
             }
         }
     }

@@ -1,7 +1,16 @@
 (ns soranoha.ori.plaintext-contract-test
-  (:require [soranoha.ori.plaintext :as plaintext]
+  (:require [soranoha.annotations.view :as view]
+            [soranoha.ori.projection :as projection]
+            [soranoha.ori.tei :as tei]
+            [soranoha.ori.tei-header :as header]
             [clojure.string :as string]
             [clojure.test :refer [deftest is testing]]))
+
+(defn render [parser-ir]
+  {:text (projection/plaintext
+          (view/from-tei
+           (header/hiccup->pretty-xml-string [:TEI {:xmlns/abc "https://w3id.org/abc/ns/tei"}
+                                              (:body (tei/render parser-ir))])))})
 
 (deftest
   plaintext-is-visible-body-text-only-test
@@ -26,7 +35,7 @@
                        "placement" "back",
                        "classification" "direct",
                        "source_pointer" "blocks[9]"}]}
-          text (:text (plaintext/render parser-ir))]
+          text (:text (render parser-ir))]
       (is (= "猫本文" text))
       (doseq [excluded ["ねこ" "［＃注］" "cards/work.txt" "Shift_JIS" "tcy" "縦中横" "底本注" "blocks[9]"]]
         (is (not (string/includes? text excluded)) excluded)))))
@@ -37,13 +46,8 @@
    "front/back/body source notes are metadata and do not enter plaintext"
     (is
      (=
-      {:text "Body",
-       :node_counts {"text" 1, "source-note" 3},
-       :omitted
-       [{:type "source-note", :policy "omitted"}
-        {:type "source-note", :policy "omitted"}
-        {:type "source-note", :policy "omitted"}]}
-      (plaintext/render
+      {:text "Body"}
+      (render
        {"nodes"
         [{"type" "text", "span" {"start" 0, "end" 4}, "text" "Body"}
          {"type" "source-note",
@@ -76,7 +80,7 @@
      (=
       "台詞"
       (:text
-       (plaintext/render
+       (render
         {"nodes" [{"type" "text", "span" {"start" 0, "end" 6}, "text" "台詞"}],
          "paragraphs"
          [{"id" "p000000",
@@ -99,7 +103,7 @@
      (=
       "序\n本文"
       (:text
-       (plaintext/render
+       (render
         {"nodes"
          [{"type" "text",
            "span" {"start" 0, "end" 20, "coordinate_system" "parser_text_utf8"},
@@ -113,7 +117,7 @@
      (=
       "東京X内"
       (:text
-       (plaintext/render
+       (render
         {"nodes"
          [{"type" "emphasis",
            "span" {"start" 0, "end" 2, "coordinate_system" "parser_text_utf8"},
@@ -135,14 +139,14 @@
              "text" "内"}]}]}))))))
 
 (deftest
-  emphasis-inline-children-gaiji-falls-back-to-visible-text-test
+  unresolved-gaiji-does-not-guess-from-enclosing-text-test
   (testing
-   "plaintext does not surface raw gaiji markers when emphasis carries visible text"
+   "an unresolved TEI glyph keeps an explicit placeholder"
     (is
      (=
-      "G"
+      "\uFFFC"
       (:text
-       (plaintext/render
+       (render
         {"nodes"
          [{"type" "emphasis",
            "span" {"start" 0, "end" 1, "coordinate_system" "parser_text_utf8"},
@@ -161,7 +165,7 @@
      (=
       "12大"
       (:text
-       (plaintext/render
+       (render
         {"nodes"
          [{"type" "layout-span",
            "span" {"start" 0, "end" 2, "coordinate_system" "parser_text_utf8"},
@@ -180,9 +184,9 @@
   remaining-visible-node-payloads-and-missing-payloads
   (is
    (=
-    "D\n\nALTCAPQ"
+    "D\n\nALT\nCAP\nQ"
     (:text
-     (plaintext/render
+     (render
       {"nodes"
        [{"type" "indentation", "depth" 2, "text" "D"}
         {"type" "page-break", "marker" "［＃改ページ］"}
@@ -194,9 +198,8 @@
    (=
     ""
     (:text
-     (plaintext/render
+     (render
       {"nodes"
        [{"type" "indentation", "depth" 2, "text" ""}
         {"type" "image", "src" "fig.png"}
         {"type" "quote", "marker_type" "inline", "text" ""}]})))))
-

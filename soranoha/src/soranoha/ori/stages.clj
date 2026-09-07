@@ -10,6 +10,8 @@
             [babashka.process :as process]
             [charred.api :as json]
             [soranoha.core.hash :as core-hash]
+            [soranoha.annotations.view :as view]
+            [soranoha.ori.projection :as projection]
             [soranoha.ori.render :as render]
             [soranoha.ori.fidelity :as fidelity]
             [soranoha.ori.validate :as validate]
@@ -130,10 +132,10 @@
                "divergence" (fs/read-all-bytes divergence-file)}))))})
 
 (defn render-stage
-  "parser-IR + metadata record + persons -> TEI XML + plaintext bytes."
+  "parser-IR + metadata record + persons -> TEI XML bytes."
   [clj-toolchain-id]
   {:stage-id "render"
-   :stage-version "9"
+   :stage-version "11"
    :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob]} inputs]
         (let [read-json (fn [name]
@@ -143,8 +145,21 @@
                         {:parser-ir (read-json "parser-ir")
                          :metadata-record (read-json "metadata-record")
                          :persons-by-id (read-json "persons")})]
-          {"tei" (utf8 (:tei rendered))
-           "plaintext" (utf8 (:plaintext rendered))}))})
+          {"tei" (utf8 (:tei rendered))}))})
+
+(defn plaintext-stage [clj-toolchain-id]
+  {:stage-id "plaintext" :stage-version "2" :toolchain-id clj-toolchain-id
+   :f (fn [{:keys [blob]} inputs]
+        (let [reading (view/from-tei (String. ^bytes (blob (get inputs "tei")) "UTF-8"))]
+          {"plaintext" (utf8 (projection/plaintext reading))
+           "plaintext-projection" (json-bytes (projection/report :projection/plaintext reading))}))})
+
+(defn markdown-stage [clj-toolchain-id]
+  {:stage-id "markdown" :stage-version "2" :toolchain-id clj-toolchain-id
+   :f (fn [{:keys [blob]} inputs]
+        (let [reading (view/from-tei (String. ^bytes (blob (get inputs "tei")) "UTF-8"))]
+          {"markdown" (utf8 (projection/markdown reading))
+           "markdown-projection" (json-bytes (projection/report :projection/markdown reading))}))})
 
 (defn validate-tei-stage
   "TEI bytes -> validation record. Include-and-flag: a failed

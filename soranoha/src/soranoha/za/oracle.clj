@@ -48,7 +48,12 @@
                               (get m "works")))]
     (entry-delta (by-slug manifest-a) (by-slug manifest-b))))
 
-(def ^:private artifact-fields ["parser-ir" "plaintext" "tei" "tei-validation" "source-fidelity"])
+(def ^:private projection-fields
+  {"markdown" :markdown "markdown-projection" :markdown "plaintext-projection" :plaintext})
+
+(def ^:private artifact-fields
+  (into ["parser-ir" "plaintext" "tei" "tei-validation" "source-fidelity"]
+        (sort (keys projection-fields))))
 
 (defn report-artifact-delta
   "(c) per-slug artifact-byte delta between two decoded run reports:
@@ -199,8 +204,10 @@
                                      (map (fn [field]
                                             [field (hex64! [slug field]
                                                            (get work field))]))
-                                     (remove #(and (= "source-fidelity" %)
-                                                   (not (contains? work %)))
+                                     (remove #(or (and (= "source-fidelity" %)
+                                                       (not (contains? work %)))
+                                                  (when-let [stage (get projection-fields %)]
+                                                    (not (contains? coordinates stage))))
                                              artifact-fields))]))
                   works)
      :results (into {}

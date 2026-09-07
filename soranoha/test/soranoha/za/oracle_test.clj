@@ -49,6 +49,17 @@
       (is (= [{:slug "w_1" :stage :parse :trace-key hex-b}]
              (oracle/unexplained-executions run run))))))
 
+(deftest markdown-stage-requires-its-artifacts-and-exposes-their-changes
+  (let [base (str/replace (String. ^bytes (report-json) "UTF-8") "\"parse\"" "\"markdown\"")
+        decode #(oracle/decode-run (.getBytes ^String % "UTF-8"))
+        with-artifacts (fn [hash]
+                         (str/replace base "\"parser-ir\":"
+                                      (str "\"markdown\":\"" hash "\",\"markdown-projection\":\"" hex-a "\",\"parser-ir\":")))]
+    (is (thrown? clojure.lang.ExceptionInfo (decode base)))
+    (is (= #{"w_1"}
+           (:changed (oracle/report-artifact-delta (decode (with-artifacts hex-a))
+                                                   (decode (with-artifacts hex-b))))))))
+
 (deftest report-decode-rejects-noncontractual-evidence
   (testing "duplicate keys die at parse"
     (is (= :parse-invalid

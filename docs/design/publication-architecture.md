@@ -1,8 +1,11 @@
 # Publication architecture
 
-Soranoha produces TEI and visible-body plaintext from Aozora Bunko source markup.
+Soranoha produces TEI, visible-body plaintext and Markdown from Aozora Bunko source markup.
 The Rust parser and converter produce supporting structured representations;
 Clojure owns publication rendering, assessment, validation and the signed chain.
+TEI is the stored transcription; separate stages derive plaintext and Markdown
+from its established reading. [Research annotation layers](../annotation-layers.md)
+target an identified text view and enrich TEI without replacing that transcription.
 Nix pins toolchains and exposes reproducible commands. The
 [snh specification](snh-protocol-v1.md) defines the publication wire contract.
 
@@ -13,6 +16,8 @@ in SQLite. A trace key contains the stage, its version, toolchain identity and
 named input hashes. Work-local catalog rows and source archives feed separate
 stages so an unrelated work's metadata does not become a dependency of its text.
 Output hashes allow unchanged intermediate results to be reused downstream.
+The text projections consume full TEI bytes: a header edit reruns those projections,
+but unchanged reading-view identities remain reusable by analysis producers.
 Stage authors must include every semantic input in that identity; a cache cannot
 infer a dependency omitted by its caller.
 

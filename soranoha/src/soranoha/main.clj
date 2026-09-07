@@ -20,6 +20,8 @@
             [babashka.process :as process]
             [charred.api :as json]
             [clojure.string :as string]
+            [soranoha.annotations.main :as annotations]
+            [soranoha.links.main :as links]
             [soranoha.assessment.aozora :as aozora]
             [soranoha.assessment.evaluate :as assessment-evaluator]
             [soranoha.assessment.records :as assessment-records]
@@ -79,6 +81,8 @@
      :parse (stages/parse-stage adapter)
      :convert (stages/convert-stage adapter)
      :render (stages/render-stage clj-toolchain-id)
+     :plaintext (stages/plaintext-stage clj-toolchain-id)
+     :markdown (stages/markdown-stage clj-toolchain-id)
      :validate (stages/validate-tei-stage clj-toolchain-id profile)
      :fidelity (stages/source-fidelity-stage clj-toolchain-id)}))
 
@@ -90,7 +94,7 @@
   Returns {:slug :zip-hex :source-facts
   :outputs {stage-key {name hex}} :cached {stage-key bool}
   :trace-keys {stage-key derivation-key-hex}}."
-  [store {:keys [extract metadata parse convert render validate fidelity]}
+  [store {:keys [extract metadata parse convert render plaintext markdown validate fidelity]}
    {:keys [slug row file]} catalog-rows]
   (let [zip-hex (cas/put-file! (:cas-dir store) file)
         extract-r (engine/run-stage! store extract {"zip" zip-hex})
@@ -113,15 +117,20 @@
                                                             "metadata-record")
                                      "persons" (get (:outputs metadata-r)
                                                     "persons")})
+        plaintext-r (engine/run-stage! store plaintext
+                                       {"tei" (get (:outputs render-r) "tei")})
+        markdown-r (engine/run-stage! store markdown
+                                      {"tei" (get (:outputs render-r) "tei")})
         validate-r (engine/run-stage! store validate
                                       {"tei" (get (:outputs render-r) "tei")})
         fidelity-r (when fidelity
                      (engine/run-stage! store fidelity
                                         {"source" (get (:outputs extract-r) "primary-text")
                                          "tei" (get (:outputs render-r) "tei")
-                                         "plaintext" (get (:outputs render-r) "plaintext")}))
+                                         "plaintext" (get (:outputs plaintext-r) "plaintext")}))
         results (cond-> {:extract extract-r :metadata metadata-r :parse parse-r
-                         :convert convert-r :render render-r :validate validate-r}
+                         :convert convert-r :render render-r :plaintext plaintext-r
+                         :markdown markdown-r :validate validate-r}
                   fidelity-r (assoc :fidelity fidelity-r))
         project (fn [field] (into {} (map (fn [[stage result]] [stage (get result field)])) results))]
     {:slug slug :zip-hex zip-hex :source-facts facts
@@ -139,6 +148,9 @@
       (let [dir (fs/path out slug)]
         (fs/create-dir dir)
         (doseq [[kind filename] [["tei" "tei.xml"] ["plaintext" "plain.txt"]
+                                 ["markdown" "text.md"]
+                                 ["plaintext-projection" "plaintext-projection.json"]
+                                 ["markdown-projection" "markdown-projection.json"]
                                  ["tei-validation" "tei-validation.json"]
                                  ["source-fidelity" "source-fidelity.json"]]
                 :when (contains? work kind)]
@@ -224,7 +236,10 @@
                                                     source-facts trace-keys]}]
                                          [slug (cond-> {"tei" (get-in outputs [:render "tei"])
                                                         "plaintext" (get-in outputs
-                                                                            [:render "plaintext"])
+                                                                            [:plaintext "plaintext"])
+                                                        "markdown" (get-in outputs [:markdown "markdown"])
+                                                        "plaintext-projection" (get-in outputs [:plaintext "plaintext-projection"])
+                                                        "markdown-projection" (get-in outputs [:markdown "markdown-projection"])
                                                         "tei-validation"
                                                         (get-in outputs
                                                                 [:validate "tei-validation"])
@@ -816,6 +831,9 @@
    :as-of {:coerce :string}
    :rdf-out {:coerce :string}
    :rdf-base {:coerce :string}
+   :tei {:coerce :string}
+   :layers {:coerce []}
+   :links {:coerce []}
    :policy {:coerce :string}
    :release-pub {:coerce :string}
    :governance-pub {:coerce :string}
@@ -841,6 +859,14 @@
       (let [opts (merge {:branch "main"} (deployment-options parsed))]
         (case command
           "build" (build! opts)
+          "text-view" (println (record-json/write-deterministic-json-str
+                                (annotations/export-view! (:tei opts) (:out opts))))
+          "annotation-validate" (println (record-json/write-deterministic-json-str
+                                          (annotations/validate-files (:tei opts) (:layers opts))))
+          "tei-enrich" (println (record-json/write-deterministic-json-str
+                                 (annotations/enrich-files! (:tei opts) (:layers opts) (:out opts))))
+          "links-export" (println (record-json/write-deterministic-json-str
+                                   (links/export-files! (:links opts) (:rdf-base opts) (:out opts))))
           "delta" (when-not (get (delta! opts) "ok")
                     (System/exit 1))
         ;; scheduled-runner exit contract: success covers the no-op; a
@@ -862,7 +888,7 @@
           "verify" (when-not (:ok? (verify! opts))
                      (System/exit 1))
           (do (binding [*out* *err*]
-                (println "usage: build|delta|release|governance|serving-tree|serving-activate|publication-init|assessment-evaluate|aozora-reliance-prepare|archive-verify|verify [--root R --aozora-root A --assets-root S ...]"))
+                (println "usage: build|text-view|annotation-validate|tei-enrich|links-export|delta|release|governance|serving-tree|serving-activate|publication-init|assessment-evaluate|aozora-reliance-prepare|archive-verify|verify [--root R --aozora-root A --assets-root S ...]"))
               (System/exit 2))))
       (System/exit 0)
       (catch clojure.lang.ExceptionInfo e

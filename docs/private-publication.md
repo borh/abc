@@ -42,8 +42,10 @@ assertions refresh the draft; previous exception records remain unchanged.
 Acquisition failures do not erase previous records, and evaluation must still
 establish their current applicability. Preparation does not publish anything.
 The build log names the generated JSON report under `production/root/runs`.
-The new export directory contains each work's TEI, plaintext, validation and
-fidelity reports, including works whose assessment does not permit publication.
+The new export directory contains each work's TEI, plaintext, Markdown, validation,
+projection and fidelity reports, including works whose assessment does not permit publication.
+Markdown and its projection report are experimental review artifacts; the signed
+publication protocol continues to identify TEI and plaintext.
 Use a new export directory for subsequent iterations; the build cache is reused.
 Review the resulting admission partition and export measurements, then commit
 the accepted source and snapshot together at their repository paths.

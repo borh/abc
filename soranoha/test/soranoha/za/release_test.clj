@@ -69,7 +69,7 @@
                   (dissoc (:stage-coordinates run) :fidelity))
    "works" (into {}
                  (map (fn [[slug {:keys [outputs]}]]
-                        [slug {"plaintext" (get-in outputs [:render "plaintext"])
+                        [slug {"plaintext" (get-in outputs [:plaintext "plaintext"])
                                "tei" (get-in outputs [:render "tei"])
                                "tei-validation"
                                (get-in outputs [:validate "tei-validation"])

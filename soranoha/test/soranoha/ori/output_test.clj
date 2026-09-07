@@ -8,10 +8,38 @@
             [soranoha.ori.render :as render]
             [soranoha.ori.stages :as stages]
             [soranoha.ori.tei-header :as header]
-            [soranoha.ori.plaintext :as plaintext]
+            [soranoha.annotations.view :as text-view]
+            [soranoha.ori.projection :as projection]
+            [soranoha.ori.validate :as validation]
             [soranoha.ori.sentence-policy :as sentence-policy])
   (:import [java.io ByteArrayInputStream]
            [javax.xml.parsers DocumentBuilderFactory]))
+
+(deftest canonical-tei-retains-source-identity-and-parser-outcomes
+  (let [dir (fs/create-temp-dir {:prefix "tei-outcomes"})
+        path (str (fs/path dir "tei.xml"))
+        source-id (str "sha256:" (apply str (repeat 64 "a")))
+        diagnostic {"code" "unclosed_inline" "severity" "error" "message" "閉じられていない"
+                    "span" {"start" 3 "end" 9 "coordinate_system" "decoded_utf8"}}
+        result (render/render-work
+                {:parser-ir {"source" {"work_content_hash" source-id "primary_text_hash" source-id}
+                             "derived_from" {"parse_complete" false}
+                             "sentence_segmentation" {"coordinate_system" "parser_text_utf8"}
+                             "nodes" [{"type" "text" "text" "本文"}]
+                             "errors" [diagnostic]}
+                 :metadata-record {"work" {"work_id" "1" "title" "試験" "aozora_modified" "2026-09-07"}
+                                   "contributors" []}
+                 :persons-by-id {}})]
+    (try
+      (spit path (:tei result))
+      (is (= "本文" (projection/plaintext (text-view/from-tei (:tei result)))))
+      (is (re-find #"source-content-hash" (:tei result)))
+      (is (re-find #"unclosed_inline" (:tei result)))
+      (is (re-find #"decoded_utf8" (:tei result)))
+      (is (re-find #"parser-completion" (:tei result)))
+      (let [report (validation/tei-validation-result (validation/profile-paths ".") (fs/file path))]
+        (is (= "passed" (get report "status")) (pr-str report)))
+      (finally (fs/delete-tree dir)))))
 
 (deftest publication-serialization-does-not-invent-mixed-content-whitespace
   (let [result (render/render-work
@@ -74,15 +102,6 @@
         (is (= fixture/tei (slurp (str (fs/path out "work" "tei.xml")))))
         (is (fs/exists? (fs/path out "work" "source-fidelity.json"))))
       (finally (engine/close-store! store) (fs/delete-tree dir)))))
-
-(deftest annotation-source-extents-never-borrow-parser-text-offsets
-  (let [ruby {"type" "ruby" "span" {"start" 0 "end" 3 "coordinate_system" "parser_text_utf8"}
-              "source_span" {"start" 24 "end" 39 "coordinate_system" "decoded_utf8"}
-              "ruby" {"base" "下" "reading" "した"}}
-        render #(plaintext/render-with-annotations {"nodes" [%]})]
-    (is (= {"start" 24 "end" 39} (get-in (render ruby) [:annotations 0 "source_span"])))
-    (is (= {"start" 0 "end" 1} (get-in (render ruby) [:annotations 0 "span"])))
-    (is (not (contains? (first (:annotations (render (dissoc ruby "source_span")))) "source_span")))))
 
 (deftest publication-refuses-source-axis-sentence-or-orthography-evidence
   (let [check sentence-policy/publication-sentence-evidence-errors

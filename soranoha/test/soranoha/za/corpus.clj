@@ -167,12 +167,11 @@
         (let [ir (blob-json blob (get inputs "parser-ir"))
               record (blob-json blob (get inputs "metadata-record"))
               text (get ir "text")]
-          {"tei" (.getBytes (str "<TEI><teiHeader><title>"
+          {"tei" (.getBytes (str "<TEI xmlns=\"http://www.tei-c.org/ns/1.0\"><teiHeader><title>"
                                  (get record "title")
-                                 "</title></teiHeader><text>" text
-                                 "</text></TEI>")
-                            "UTF-8")
-           "plaintext" (.getBytes ^String text "UTF-8")}))})
+                                 "</title></teiHeader><text><body><p>" text
+                                 "</p></body></text></TEI>")
+                            "UTF-8")}))})
 
 (def ^:private validate-stage
   ;; include-and-flag: the record shape matches the kernel's real
@@ -199,6 +198,8 @@
    :parse parse-stage
    :convert convert-stage
    :render render-stage
+   :plaintext (stages/plaintext-stage fixture-toolchain)
+   :markdown (stages/markdown-stage fixture-toolchain)
    :validate validate-stage
    :fidelity (stages/source-fidelity-stage fixture-toolchain)})
 
@@ -249,7 +250,7 @@
   [run]
   (into {}
         (map (fn [[slug {:keys [outputs]}]]
-               [slug {:plaintext (get-in outputs [:render "plaintext"])
+               [slug {:plaintext (get-in outputs [:plaintext "plaintext"])
                       :tei (get-in outputs [:render "tei"])
                       :tei-validation (get-in outputs [:validate
                                                        "tei-validation"])

@@ -137,7 +137,7 @@
               outputs (get-in run [:results (slug-of merosu) :outputs])]
           (is (= (str "snh:1:tei:" (get-in outputs [:render "tei"]))
                  (get-in entry ["artifacts" 1 "id"])))
-          (is (= (str "snh:1:plaintext:" (get-in outputs [:render "plaintext"]))
+          (is (= (str "snh:1:plaintext:" (get-in outputs [:plaintext "plaintext"]))
                  (get-in entry ["artifacts" 0 "id"])))
           (is (= (str "snh:1:tei-validation:"
                       (get-in outputs [:validate "tei-validation"]))
@@ -193,10 +193,10 @@
 
       (testing "(b) stages invalidated and executed"
         (let [executed (oracle/executed-stages run-b)]
-          (is (= #{:extract :metadata :parse :convert :render :validate :fidelity}
+          (is (= #{:extract :metadata :parse :convert :render :plaintext :markdown :validate :fidelity}
                  (executed (slug-of added-work)))
               "a new work executes the full chain")
-          (is (= #{:extract :parse :convert :render :validate :fidelity}
+          (is (= #{:extract :parse :convert :render :plaintext :markdown :validate :fidelity}
                  (executed (slug-of merosu)))
               "a content edit leaves unchanged metadata cached")
           (is (= #{:extract}

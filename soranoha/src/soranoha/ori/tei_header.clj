@@ -108,19 +108,21 @@
       (conj [:title (get work "title")])
       true
       (conj [:idno {:type "aozora-card-url"} card-url]))
-    [:p "Aozora Bunko source edition metadata is not available."]))
+    [:bibl [:note "Aozora Bunko source edition metadata is not available."]]))
 
-(defn- source-desc [work]
+(defn- source-desc [work source-content-hash primary-text-hash]
   (let [editions (get work "source_editions")]
-    (if (seq editions)
-      (into [:sourceDesc] (mapv bibl-edition editions))
-      [:sourceDesc (fallback-source-bibl work)])))
+    (cond-> (if (seq editions)
+              (into [:sourceDesc] (mapv bibl-edition editions))
+              [:sourceDesc (fallback-source-bibl work)])
+      source-content-hash (conj [:bibl [:idno {:type "source-content-hash"} source-content-hash]])
+      primary-text-hash (conj [:bibl [:idno {:type "primary-text-hash"} primary-text-hash]]))))
 
-(defn- file-desc [work contributors]
+(defn- file-desc [work contributors source-content-hash primary-text-hash]
   [:fileDesc
    (title-stmt work contributors)
    (publication-stmt work)
-   (source-desc work)])
+   (source-desc work source-content-hash primary-text-hash)])
 
 (defn- declaration->char [declaration]
   (cond-> [:char {:xml/id (:xml-id declaration)}]
@@ -185,10 +187,10 @@
 
   Role and person are kept separate at every level inside this builder;
   the relation_to_work value never enters the person body."
-  [{:keys [work contributors char-declarations
+  [{:keys [work contributors char-declarations source-content-hash primary-text-hash
            orthographic-sentence-normalization?]}]
   [:teiHeader
-   (file-desc work contributors)
+   (file-desc work contributors source-content-hash primary-text-hash)
    (encoding-desc char-declarations orthographic-sentence-normalization?)
    (profile-desc work)])
 

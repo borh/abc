@@ -23,7 +23,7 @@
       "allOf":[{"if":{"properties":{"anchor_kind":{"const":"text"}}},"then":{"required":["offset_chars"]},"else":{"not":{"required":["offset_chars"]}}}]
     },
 
-    "interpretationFact": {"type":"object","additionalProperties":false,"required":["kind","outcome","aspects","source_span"],"properties":{"kind":{"enum":["ruby","gaiji","gaiji-ruby","iteration-mark","supplied-diacritic","illustration","baseline-position","exponent","emphasis","warichu","kunten","heading","caption","translation","text-variant","annotated-text","layout","editorial-note","line-layout","formula","table","layout-break","external-table-reference","glyph-shape-assertion"]},"outcome":{"const":"established"},"aspects":{"type":"array","minItems":1,"uniqueItems":true,"items":{"enum":["content","structure","layout"]}},"source_span":{"$ref":"#/$defs/sourceSpan"}}},
+    "interpretationFact": {"type":"object","additionalProperties":false,"required":["kind","outcome","aspects","source_span"],"properties":{"kind":{"enum":["ruby","gaiji","gaiji-ruby","iteration-mark","supplied-diacritic","illustration","baseline-position","exponent","emphasis","warichu","kunten","heading","caption","translation","text-variant","annotated-text","layout","editorial-note","line-layout","formula","table","layout-break","external-table-reference","glyph-shape-assertion","supplied-mark"]},"outcome":{"const":"established"},"aspects":{"type":"array","minItems":1,"uniqueItems":true,"items":{"enum":["content","structure","layout"]}},"source_span":{"$ref":"#/$defs/sourceSpan"}}},
     "span": {
       "type": "object",
       "required": ["line_start", "line_end", "byte_start", "byte_end"],
@@ -408,11 +408,12 @@
       "type":"object", "additionalProperties":false,
       "required":["kind","content","annotation_content","note_kind","span"],
       "if":{"properties":{"note_kind":{"enum":["annotation-number","author-note","glyph-shape"]}}}, "then":{"not":{"required":["position"]}},
+      "allOf":[{"if":{"properties":{"note_kind":{"const":"supplied-mark"}}},"then":{"required":["position"]}}],
       "properties":{
         "kind":{"const":"annotated_text"},
         "content":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/inline"}},
         "annotation_content":{"type":"array","minItems":1,"items":{"oneOf":[{"$ref":"#/$defs/inline"},{"$ref":"#/$defs/gap"}]}},
-        "note_kind":{"enum":["gloss","marginal","cross-reference","base-edition","source-concealment","annotation-number","author-note","glyph-shape"]},
+        "note_kind":{"enum":["gloss","marginal","cross-reference","base-edition","source-concealment","annotation-number","author-note","glyph-shape","supplied-mark"]},
         "position":{"enum":["left","right"]},
         "span":{"$ref":"#/$defs/span"}
       }

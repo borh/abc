@@ -78,6 +78,8 @@
                    :families #{"annotation.chuuki"} :aspects #{"content" "structure"}}
    "glyph-shape-assertion" {:markers #{"CommandFullwidth" "CommandAscii"}
                             :families #{"glyph.variant_note"} :aspects #{"structure"}}
+   "supplied-mark" {:markers #{"CommandFullwidth" "CommandAscii"}
+                    :families #{"glyph.variant_note"} :aspects #{"structure" "layout"}}
    "annotated-text" {:markers #{"CommandFullwidth" "CommandAscii"}
                      :families #{"annotation.chuuki" "annotation.bouki" "reference.frontref" "source.page_reference"} :aspects #{"content" "structure" "layout"}}
    "external-table-reference" {:markers #{"CommandFullwidth" "CommandAscii"}
@@ -219,7 +221,7 @@
 (defn coverage-stage
   "Independent lexical oracle + parser IR -> explicit claim accounting."
   [clj-toolchain-id]
-  {:stage-id "interpretation-coverage" :stage-version "18" :toolchain-id clj-toolchain-id
+  {:stage-id "interpretation-coverage" :stage-version "19" :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob]} inputs]
         (let [input-bytes (into {} (map (fn [name] [name (blob (get inputs name))]))
                                 ["source-accountability" "parser-ir"])

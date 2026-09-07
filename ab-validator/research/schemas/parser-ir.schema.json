@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
   "title": "ABC Parser IR",
-  "version": "0.51.0",
+  "version": "0.52.0",
   "type": "object",
   "required": ["schema_id", "schema_hash", "source", "nodes", "warnings", "errors", "interpretation_problems", "interpretation_facts"],
   "additionalProperties": false,
@@ -43,7 +43,7 @@
         "normalization": { "type": "string", "enum": ["source", "NFC", "NFKC"] }
       }
     },
-    "interpretation_facts": {"type":"array","items":{"type":"object","additionalProperties":false,"required":["kind","outcome","aspects","source_span"],"properties":{"kind":{"enum":["ruby","gaiji","gaiji-ruby","iteration-mark","supplied-diacritic","illustration","baseline-position","exponent","emphasis","warichu","kunten","heading","caption","translation","text-variant","annotated-text","layout","editorial-note","line-layout","formula","table","layout-break","external-table-reference","glyph-shape-assertion"]},"outcome":{"const":"established"},"aspects":{"type":"array","minItems":1,"uniqueItems":true,"items":{"enum":["content","structure","layout"]}},"source_span":{"type":"object","additionalProperties":false,"required":["start","end","coordinate_system"],"properties":{"start":{"type":"integer","minimum":0},"end":{"type":"integer","minimum":0},"line":{"type":"integer","minimum":1},"coordinate_system":{"const":"decoded_utf8"}}}}}},
+    "interpretation_facts": {"type":"array","items":{"type":"object","additionalProperties":false,"required":["kind","outcome","aspects","source_span"],"properties":{"kind":{"enum":["ruby","gaiji","gaiji-ruby","iteration-mark","supplied-diacritic","illustration","baseline-position","exponent","emphasis","warichu","kunten","heading","caption","translation","text-variant","annotated-text","layout","editorial-note","line-layout","formula","table","layout-break","external-table-reference","glyph-shape-assertion","supplied-mark"]},"outcome":{"const":"established"},"aspects":{"type":"array","minItems":1,"uniqueItems":true,"items":{"enum":["content","structure","layout"]}},"source_span":{"type":"object","additionalProperties":false,"required":["start","end","coordinate_system"],"properties":{"start":{"type":"integer","minimum":0},"end":{"type":"integer","minimum":0},"line":{"type":"integer","minimum":1},"coordinate_system":{"const":"decoded_utf8"}}}}}},
     "interpretation_problems": {"type":"array","items":{"type":"object","additionalProperties":false,"required":["kind","code","raw","source_span","aspects","influence"],"properties":{"kind":{"enum":["unknown-notation","unresolved-variant","uninterpreted-notation","content-outside-primary-input"]},"code":{"enum":["unknown-notation","unresolved-variant","uninterpreted-notation","unparsed-source-gap","content-outside-primary-input"]},"raw":{"type":"string"},"source_span":{"$ref":"#/$defs/sourceSpan"},"aspects":{"enum":[["layout"],["structure"],["content","structure","layout"],["content","structure"],["content","layout"],["structure","layout"],["content"]]},"influence":{"enum":[{"kind":"document"},{"kind":"source-location"}]}},"allOf":[{"if":{"properties":{"kind":{"const":"content-outside-primary-input"}}},"then":{"properties":{"code":{"const":"content-outside-primary-input"},"aspects":{"const":["content"]},"influence":{"const":{"kind":"source-location"}}}},"else":{"properties":{"code":{"not":{"const":"content-outside-primary-input"}},"influence":{"const":{"kind":"document"}}}}}]}},
     "layout_blocks": {
       "type": "array",
@@ -513,9 +513,10 @@
       "type":"object", "additionalProperties":false,
       "required":["type","span","text","inline_children","annotation_children","note_kind"],
       "if":{"properties":{"note_kind":{"enum":["annotation-number","author-note","glyph-shape"]}}}, "then":{"not":{"required":["position"]}},
+      "allOf":[{"if":{"properties":{"note_kind":{"const":"supplied-mark"}}},"then":{"required":["position"]}}],
       "properties":{
         "type":{"const":"annotated-text"}, "span":{"$ref":"#/$defs/span"}, "source_span":{"$ref":"#/$defs/sourceSpan"},
-        "text":{"type":"string"}, "note_kind":{"enum":["gloss","marginal","cross-reference","base-edition","source-concealment","annotation-number","author-note","glyph-shape"]}, "position":{"enum":["left","right"]},
+        "text":{"type":"string"}, "note_kind":{"enum":["gloss","marginal","cross-reference","base-edition","source-concealment","annotation-number","author-note","glyph-shape","supplied-mark"]}, "position":{"enum":["left","right"]},
         "inline_children":{"type":"array","items":{"$ref":"#/$defs/inlineNode"}},
         "annotation_children":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/annotationNode"}}
       }

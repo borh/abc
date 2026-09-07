@@ -299,6 +299,8 @@ pub enum MarginNoteKind {
     AuthorNote,
     /// A supplied glyph-shape assertion on an existing scalar, without glyph realization.
     GlyphShape,
+    /// A literal source-positioned mark whose function is not specified.
+    SuppliedMark,
 }
 
 impl MarginNoteKind {
@@ -308,6 +310,7 @@ impl MarginNoteKind {
         match self {
             Self::Gloss => "注記",
             Self::Marginal => "傍記",
+            Self::SuppliedMark => "",
             Self::CrossReference | Self::GlyphShape => "は",
             Self::AnnotationNumber => "注釈番号",
             Self::AuthorNote => "自注",

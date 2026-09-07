@@ -1350,3 +1350,15 @@
     (is (empty? (get-in result [:ir "interpretation_problems"])))
     (is (= 2 (count (filter #(= "line-layout" (get % "kind"))
                             (get-in result [:ir "interpretation_facts"])))))))
+
+(deftest supplied-right-mark-keeps-its-source-position-and-apparatus-policy
+  (let [result (transcribe (source "おろちへ［＃「ちへ」の右に「）」］"))
+        notes (filterv #(= "supplied-mark" (attribute % "type")) (elements result "note"))]
+    (is (= "おろちへ" (:plaintext result)))
+    (is (= (:plaintext result) (projection/markdown (:view result))))
+    (is (= ["）"] (mapv #(.getTextContent ^Node %) notes)))
+    (is (= ["right"] (mapv #(attribute % "place") notes)))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))
+    (doseq [profile [:projection/plaintext :projection/markdown]]
+      (is (some #{{"family" "note" "disposition" "omitted" "count" 1}}
+                (get (projection/report profile (:view result)) "counts"))))))

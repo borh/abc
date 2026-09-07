@@ -148,16 +148,30 @@ fn render_ruby<W: Write>(r: &Ruby, store: &NodeStore, out: &mut W) -> fmt::Resul
     out.write_str("</rt><rp>)</rp></ruby>")
 }
 
-/// Render source-role and glyph-shape statements as operand metadata, and glosses as ruby annotations.
+/// Render source-role, shape and supplied-mark statements as operand metadata, and glosses as ruby annotations.
 /// Referenced targets are already present in the body and are not repeated.
 fn render_side_note<W: Write>(s: &MarginNote, store: &NodeStore, out: &mut W) -> fmt::Result {
-    if s.kind == ab_aozora_syntax::MarginNoteKind::GlyphShape {
-        out.write_str("<span class=\"aozora-glyph-shape\" data-shape-assertion=\"")?;
+    if let Some((class, attribute)) = match s.kind {
+        ab_aozora_syntax::MarginNoteKind::GlyphShape => {
+            Some(("aozora-glyph-shape", "data-shape-assertion"))
+        }
+        ab_aozora_syntax::MarginNoteKind::SuppliedMark => {
+            Some(("aozora-supplied-mark", "data-supplied-mark"))
+        }
+        _ => None,
+    } {
+        write!(out, "<span class=\"{class}\" {attribute}=\"")?;
         let mut statement = String::new();
         for content in store.resolve_content_range(s.note) {
             emit_content_as_plain_one(*content, store, &mut statement)?;
         }
         escape_text(&statement, out)?;
+        if let Some(position) = s.position {
+            out.write_str(match position {
+                ab_aozora_syntax::MarginNotePosition::Left => "\" data-place=\"left",
+                ab_aozora_syntax::MarginNotePosition::Right => "\" data-place=\"right",
+            })?;
+        }
         out.write_str("\">")?;
         if s.origin != ForwardOrigin::Referenced {
             render_content_range(s.base, store, out)?;

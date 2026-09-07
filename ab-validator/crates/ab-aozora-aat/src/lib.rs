@@ -1446,6 +1446,7 @@ enum EstablishedInterpretation {
     EditorialNote,
     ExternalTableReference,
     GlyphShapeAssertion,
+    SuppliedMark,
     LineLayout,
     Formula,
     Table,
@@ -1527,6 +1528,9 @@ impl EstablishedInterpretation {
             {
                 Some(Self::EditorialNote)
             }
+            Some("annotated_text") if node["note_kind"] == "supplied-mark" => {
+                Some(Self::SuppliedMark)
+            }
             Some("annotated_text") if node["note_kind"] == "glyph-shape" => {
                 Some(Self::GlyphShapeAssertion)
             }
@@ -1574,6 +1578,7 @@ impl EstablishedInterpretation {
             Self::EditorialNote => "editorial-note",
             Self::ExternalTableReference => "external-table-reference",
             Self::GlyphShapeAssertion => "glyph-shape-assertion",
+            Self::SuppliedMark => "supplied-mark",
             Self::LineLayout => "line-layout",
             Self::Formula => "formula",
             Self::Table => "table",
@@ -1596,9 +1601,12 @@ impl EstablishedInterpretation {
             Self::BaselinePosition | Self::Emphasis | Self::Layout | Self::LineLayout => {
                 &["layout"]
             }
-            Self::Warichu | Self::Heading | Self::Caption | Self::Table | Self::LayoutBreak => {
-                &["structure", "layout"]
-            }
+            Self::Warichu
+            | Self::Heading
+            | Self::Caption
+            | Self::Table
+            | Self::LayoutBreak
+            | Self::SuppliedMark => &["structure", "layout"],
             Self::Kunten | Self::AnnotatedText | Self::Illustration => {
                 &["content", "structure", "layout"]
             }
@@ -3848,7 +3856,7 @@ fn push_annotated_text(content: &mut Vec<Value>, decoded: &DecodedSource, node: 
     });
     let wrapper = |children: &[Value], annotation: &[Value]| {
         let mut value = json!({"kind":"annotated_text", "content":children, "annotation_content":annotation,
-            "note_kind":match kind {MarginNoteKind::Gloss=>"gloss", MarginNoteKind::Marginal=>"marginal", MarginNoteKind::CrossReference=>"cross-reference", MarginNoteKind::AnnotationNumber=>"annotation-number", MarginNoteKind::AuthorNote=>"author-note", MarginNoteKind::GlyphShape=>"glyph-shape", _=>unreachable!("known note kind")},
+            "note_kind":match kind {MarginNoteKind::Gloss=>"gloss", MarginNoteKind::Marginal=>"marginal", MarginNoteKind::CrossReference=>"cross-reference", MarginNoteKind::AnnotationNumber=>"annotation-number", MarginNoteKind::AuthorNote=>"author-note", MarginNoteKind::GlyphShape=>"glyph-shape", MarginNoteKind::SuppliedMark=>"supplied-mark", _=>unreachable!("known note kind")},
             "span":span_json(&marker, &decoded.span_ctx)});
         if let Some(position) = position {
             value["position"] = json!(match position {

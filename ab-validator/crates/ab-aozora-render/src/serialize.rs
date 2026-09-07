@@ -654,8 +654,11 @@ fn emit_side_note<W: Write>(s: &MarginNote, store: &NodeStore, out: &mut W) -> f
         None => "」に「",
     })?;
     emit_content_range(s.note, store, out)?;
-    out.write_str("」の")?;
-    out.write_str(s.kind.keyword())?;
+    out.write_char('」')?;
+    if s.kind != ab_aozora_syntax::MarginNoteKind::SuppliedMark {
+        out.write_char('の')?;
+        out.write_str(s.kind.keyword())?;
+    }
     out.write_char('］')
 }
 

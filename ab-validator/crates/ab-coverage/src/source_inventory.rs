@@ -233,7 +233,7 @@ fn append_matching_rows(
     }
 }
 
-fn append_composite_matching_rows(
+pub(crate) fn append_composite_matching_rows(
     rows: &mut Vec<String>,
     raw: &str,
     left_raw: &str,

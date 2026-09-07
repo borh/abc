@@ -5,8 +5,8 @@ use ab_source_syntax::{SourceMarker, SourceMarkerKind, aozora_body_range, source
 use serde_json::{Value, json};
 
 use crate::source_inventory::{
-    CompiledSourceInventoryPattern, SourceInventoryPattern, SourceMarkerRegion, compile_patterns,
-    inventory_document_observed, matching_rows,
+    CompiledSourceInventoryPattern, SourceInventoryPattern, SourceMarkerRegion,
+    append_composite_matching_rows, compile_patterns, inventory_document_observed, matching_rows,
 };
 
 /// Record lexical evidence without treating recognition as semantic support.
@@ -56,6 +56,7 @@ pub fn source_accountability(
                     | "glyph.variant_note"
                     | "annotation.chuuki"
                     | "iteration.kunoji"
+                    | "gaiji_ruby.inline_base"
                     | "gaiji.marker"
                     | "gaiji.jis_code"
                     | "gaiji.unicode_codepoint"
@@ -124,7 +125,8 @@ fn nested_components(
                 && child.kind == SourceMarkerKind::RubyImplicit
                 && child.span.end == parent.span.end;
             let eligible_families: &[&str] = match child.kind {
-                SourceMarkerKind::RubyExplicit | SourceMarkerKind::RubyImplicit => &["ruby.basic"],
+                SourceMarkerKind::RubyExplicit => &["ruby.basic", "gaiji_ruby.inline_base"],
+                SourceMarkerKind::RubyImplicit => &["ruby.basic"],
                 SourceMarkerKind::IterationNotation => &["iteration.kunoji"],
                 SourceMarkerKind::CommandFullwidth | SourceMarkerKind::CommandAscii => &[
                     "kunten.kaeriten",
@@ -154,12 +156,146 @@ fn nested_components(
         }
     }
     components.sort_by_key(|component| component["source_span"]["start"].as_u64());
+    // Composite identity follows source adjacency, independently of quotation nesting.
+    for index in 0..components.len().saturating_sub(1) {
+        let left = &components[index];
+        let right = &components[index + 1];
+        if left["kind"] != "GaijiFullwidth" && left["kind"] != "GaijiAscii" {
+            continue;
+        }
+        if right["kind"] != "RubyImplicit"
+            || left["source_span"]["end"] != right["source_span"]["start"]
+        {
+            continue;
+        }
+        let start = usize::try_from(
+            left["source_span"]["start"]
+                .as_u64()
+                .expect("component start"),
+        )
+        .expect("source index");
+        let end = usize::try_from(right["source_span"]["end"].as_u64().expect("component end"))
+            .expect("source index");
+        let mut families = Vec::new();
+        append_composite_matching_rows(
+            &mut families,
+            &marker.raw[start - marker.span.start..end - marker.span.start],
+            left["raw"].as_str().expect("component spelling"),
+            right["raw"].as_str().expect("component spelling"),
+            patterns,
+        );
+        if families
+            .iter()
+            .any(|family| family == "gaiji_ruby.inline_base")
+        {
+            let families = components[index]["families"]
+                .as_array_mut()
+                .expect("component families");
+            families.push(json!("gaiji_ruby.inline_base"));
+            families.sort_by(|a, b| a.as_str().cmp(&b.as_str()));
+        }
+    }
     components
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn nested_gaiji_ruby_uses_the_same_adjacent_marker_identity_as_top_level() {
+        let patterns = vec![
+            SourceInventoryPattern {
+                row_id: "gaiji.marker".into(),
+                source_patterns: vec![r"※［＃[^］]+］".into()],
+            },
+            SourceInventoryPattern {
+                row_id: "ruby.basic".into(),
+                source_patterns: vec![r"《[^》]+》".into()],
+            },
+            SourceInventoryPattern {
+                row_id: "gaiji_ruby.inline_base".into(),
+                source_patterns: vec![r"※［＃[^］]+］《[^》]+》".into()],
+            },
+        ];
+        for (fragment, associated) in [
+            ("※［＃字］《じ》", true),
+            ("※［＃字］別《べつ》", false),
+            ("※［＃字］ 《じ》", false),
+            ("※［＃字］《じ", false),
+        ] {
+            let source = format!("［＃「{fragment}」は底本では「別」］");
+            let report = source_accountability(source.as_bytes(), b"matrix", &patterns);
+            let components = report["occurrences"][0]["components"].as_array().unwrap();
+            let gaiji = components
+                .iter()
+                .find(|item| item["kind"] == "GaijiFullwidth")
+                .unwrap();
+            assert_eq!(
+                gaiji["families"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .any(|family| family == "gaiji_ruby.inline_base"),
+                associated
+            );
+            assert_eq!(gaiji["raw"], "※［＃字］");
+            let start = usize::try_from(gaiji["source_span"]["start"].as_u64().unwrap()).unwrap();
+            let end = usize::try_from(gaiji["source_span"]["end"].as_u64().unwrap()).unwrap();
+            assert_eq!(&source[start..end], "※［＃字］");
+            assert!(
+                components
+                    .iter()
+                    .filter(|item| item["kind"] == "RubyImplicit")
+                    .all(|item| item["families"] == json!(["ruby.basic"]))
+            );
+        }
+        let source = "［＃「※［＃字］《じ》」は底本では「※［＃字］《じ》」］";
+        let report = source_accountability(source.as_bytes(), b"matrix", &patterns);
+        let gaiji = report["occurrences"][0]["components"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|component| component["kind"] == "GaijiFullwidth")
+            .collect::<Vec<_>>();
+        assert_eq!(gaiji.len(), 2);
+        assert!(gaiji.iter().all(|component| {
+            component["families"]
+                .as_array()
+                .unwrap()
+                .contains(&json!("gaiji_ruby.inline_base"))
+        }));
+    }
+
+    #[test]
+    fn nested_explicit_ruby_keeps_its_whole_association_extent() {
+        let patterns = vec![
+            SourceInventoryPattern {
+                row_id: "gaiji.marker".into(),
+                source_patterns: vec![r"※［＃[^］]+］".into()],
+            },
+            SourceInventoryPattern {
+                row_id: "ruby.basic".into(),
+                source_patterns: vec![r"《[^》]+》".into()],
+            },
+            SourceInventoryPattern {
+                row_id: "gaiji_ruby.inline_base".into(),
+                source_patterns: vec![r"※［＃[^］]+］《[^》]+》".into()],
+            },
+        ];
+        let source = "［＃「｜前※［＃字］《ぜんじ》」は底本では「別」］";
+        let report = source_accountability(source.as_bytes(), b"matrix", &patterns);
+        let components = report["occurrences"][0]["components"].as_array().unwrap();
+        assert_eq!(components.len(), 2);
+        assert_eq!(components[0]["kind"], "RubyExplicit");
+        assert_eq!(components[0]["raw"], "｜前※［＃字］《ぜんじ》");
+        assert_eq!(
+            components[0]["families"],
+            json!(["gaiji_ruby.inline_base", "ruby.basic"])
+        );
+        assert_eq!(components[1]["kind"], "GaijiFullwidth");
+        assert_eq!(components[1]["families"], json!(["gaiji.marker"]));
+    }
 
     #[test]
     fn edition_notes_inside_brackets_keep_their_own_source_extent() {

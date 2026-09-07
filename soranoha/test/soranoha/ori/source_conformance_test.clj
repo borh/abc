@@ -934,3 +934,19 @@
     (is (= ["］"] (texts result "rdg")))
     (is (= 1 (count (get-in result [:ir "interpretation_facts"]))))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest horizontal-presentation-ends-before-enclosing-indentation
+  (let [result (transcribe (source "［＃ここから２字下げ、横組み右揃えで］\n横向き\n［＃ここで横組み終わり］\n字下げだけ\n［＃ここで字下げ終わり］\n外側"))
+        scopes (elements result "div")
+        indent (first (filter #(string/includes? (attribute % "style") "padding-inline-start: 2em") scopes))
+        horizontal (first (filter #(string/includes? (attribute % "style") "writing-mode: horizontal-tb") scopes))]
+    (is (= "横向き\n字下げだけ\n外側" (:plaintext result)))
+    (is (= "横向き\n\n字下げだけ\n\n外側" (projection/markdown (:view result))))
+    (is (= ["横向き" "字下げだけ" "外側"] (texts result "p")))
+    (is (= "横向き" (view/visible-text horizontal)))
+    (is (string/includes? (view/visible-text indent) "字下げだけ"))
+    (is (not (string/includes? (view/visible-text indent) "外側")))
+    (is (identical? indent (.getParentNode ^Node horizontal)))
+    (is (string/includes? (attribute horizontal "style") "text-align: right"))
+    (is (not (string/includes? (attribute indent "style") "text-align")))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))

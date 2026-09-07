@@ -62,8 +62,17 @@ fn render_block_style_classes<W: Write>(styles: BlockStyles, writer: &mut W) -> 
     if gothic {
         writer.write_str(" aozora-container-goshikku")?;
     }
-    if horizontal {
+    if let Some(presentation) = horizontal {
         writer.write_str(" aozora-container-yokogumi")?;
+        match presentation.align {
+            Some(ab_aozora_syntax::LineAlignment::Right) => {
+                writer.write_str(" aozora-container-align-end")?;
+            }
+            Some(ab_aozora_syntax::LineAlignment::Center) => {
+                writer.write_str(" aozora-container-center")?;
+            }
+            None => {}
+        }
     }
     if let Some(frame) = frame {
         writer.write_str(" aozora-container-keigakomi")?;
@@ -502,8 +511,16 @@ fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::R
         RegionFormat::Table => {
             writer.write_str(r#"<div class="aozora-container aozora-container-table">"#)
         }
-        RegionFormat::Horizontal => {
-            writer.write_str(r#"<div class="aozora-container aozora-container-yokogumi">"#)
+        RegionFormat::Horizontal(presentation) => {
+            writer.write_str(r#"<div class="aozora-container"#)?;
+            render_block_style_classes(
+                BlockStyles {
+                    horizontal: Some(presentation),
+                    ..BlockStyles::EMPTY
+                },
+                writer,
+            )?;
+            writer.write_str("\">")
         }
         RegionFormat::FontSize(shift) => {
             let class = if shift.larger() {

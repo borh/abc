@@ -95,6 +95,9 @@ Page placement ends before the next supplied page break, which remains in TEI.
 Frame styles and co-applied typography share the same formatting vocabulary on
 TEI `div` and `hi` scopes. Supplied solid and dashed rules retain their border
 style; framing alone does not establish an independent embedded text.
+Presentation supplied on an indentation opener can end before the indentation.
+Alignment supplied within a horizontal-writing clause ends with that clause;
+an unclosed indentation remains explicit uncertainty.
 
 Validation provenance binds the ODD, RNG and Schematron hashes through
 `schemas/tei-profile-generation.json`. See [TEI validation](tei-validation.md).

@@ -559,7 +559,7 @@ mod tests {
                 layout: IndentLayout::None,
                 styles: BlockStyles {
                     gothic: true,
-                    horizontal: true,
+                    horizontal: Some(ab_aozora_syntax::HorizontalPresentation { align: None }),
                     frame: Some(EnclosureKind::DashedRule),
                     font: Some(FontShift(NonZeroI8::new(-1).unwrap())),
                 },
@@ -582,7 +582,7 @@ mod tests {
                 partial: None,
             }),
             RegionFormat::Table,
-            RegionFormat::Horizontal,
+            RegionFormat::Horizontal(ab_aozora_syntax::HorizontalPresentation { align: None }),
             RegionFormat::FontSize(fs(2)),
             RegionFormat::FontSize(fs(-2)),
             RegionFormat::SmallScript(BoutenPosition::Right),

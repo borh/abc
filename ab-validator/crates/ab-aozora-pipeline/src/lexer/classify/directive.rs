@@ -22,8 +22,9 @@ use ab_aozora_syntax::alloc::Allocator;
 use ab_aozora_syntax::ast::Directive;
 use ab_aozora_syntax::{
     AbsoluteSize, BOUTEN_KINDS, BlockStyles, BoutenKind, BoutenPosition, ColumnBlock, ColumnCount,
-    DirectiveKind, EnclosureKind, FontShift, HeadingKind, HeadingStyle, IndentBlock, IndentLayout,
-    Kumi, LineFormat, LineWidth, RegionClose, RegionFormat, SectionKind, Span,
+    DirectiveKind, EnclosureKind, FontShift, HeadingKind, HeadingStyle, HorizontalPresentation,
+    IndentBlock, IndentLayout, Kumi, LineFormat, LineWidth, RegionClose, RegionFormat, SectionKind,
+    Span,
 };
 
 use super::super::pair::PairEvent;
@@ -348,6 +349,14 @@ static BODY_PATTERNS: &[BodyPattern] = &[
     },
     BodyPattern {
         needle: "ここから横組み",
+        family: BodyFamily::HorizontalBlockOpen,
+    },
+    BodyPattern {
+        needle: "ここから横組み右揃えで",
+        family: BodyFamily::HorizontalBlockOpen,
+    },
+    BodyPattern {
+        needle: "ここから横組み中央揃えで",
         family: BodyFamily::HorizontalBlockOpen,
     },
     BodyPattern {
@@ -1210,9 +1219,18 @@ pub(super) fn classify_annotation_body(
         }
         BodyFamily::TableBlockOpen => Some((EmitKind::BlockOpen(RegionFormat::Table), None)),
         BodyFamily::TableBlockEnd => Some((EmitKind::BlockClose(RegionClose::Table), None)),
-        BodyFamily::HorizontalBlockOpen => {
-            Some((EmitKind::BlockOpen(RegionFormat::Horizontal), None))
-        }
+        BodyFamily::HorizontalBlockOpen => Some((
+            EmitKind::BlockOpen(RegionFormat::Horizontal(HorizontalPresentation {
+                align: if body.ends_with("右揃えで") {
+                    Some(ab_aozora_syntax::LineAlignment::Right)
+                } else if body.ends_with("中央揃えで") {
+                    Some(ab_aozora_syntax::LineAlignment::Center)
+                } else {
+                    None
+                },
+            })),
+            None,
+        )),
         BodyFamily::HorizontalBlockEnd => {
             Some((EmitKind::BlockClose(RegionClose::Horizontal), None))
         }
@@ -1894,6 +1912,7 @@ fn parse_indent_compound(
     };
     let mut wrap = ClauseAxis::Absent;
     let mut align = ClauseAxis::Absent;
+    let mut horizontal_align = ClauseAxis::Absent;
     let mut end_offset = ClauseAxis::Absent;
     let mut layout = ClauseAxis::Absent;
     let mut font = ClauseAxis::Absent;
@@ -1924,6 +1943,11 @@ fn parse_indent_compound(
                 candidate.wrap.and_then(|value| wrap.observe(value, span)),
                 candidate.align.and_then(|value| align.observe(value, span)),
                 candidate
+                    .styles
+                    .horizontal
+                    .and_then(|value| value.align)
+                    .and_then(|value| horizontal_align.observe(value, span)),
+                candidate
                     .end_offset
                     .and_then(|value| end_offset.observe(value, span)),
                 (!matches!(candidate.layout, IndentLayout::None))
@@ -1951,7 +1975,8 @@ fn parse_indent_compound(
             }
             block.styles.gothic |= candidate.styles.gothic;
             block.page_horizontal_center |= candidate.page_horizontal_center;
-            block.styles.horizontal |= candidate.styles.horizontal;
+            block.styles.horizontal =
+                merge_horizontal(block.styles.horizontal, candidate.styles.horizontal);
             problem
         };
         if let Some(problem) = problem {
@@ -1960,6 +1985,9 @@ fn parse_indent_compound(
     }
     block.wrap = wrap.value();
     block.align = align.value();
+    if let Some(horizontal) = &mut block.styles.horizontal {
+        horizontal.align = horizontal_align.value();
+    }
     block.end_offset = end_offset.value();
     block.layout = layout.value().unwrap_or(IndentLayout::None);
     block.styles.font = font.value();
@@ -2000,7 +2028,8 @@ fn parse_column_compound(
             clauses.push(span);
         } else {
             block.styles.gothic |= candidate.gothic;
-            block.styles.horizontal |= candidate.horizontal;
+            block.styles.horizontal =
+                merge_horizontal(block.styles.horizontal, candidate.horizontal);
             if let Some(conflict) = candidate.frame.and_then(|value| frame.observe(value, span)) {
                 clauses.push(conflict);
             }
@@ -2040,13 +2069,22 @@ fn resolve_indent_segment(segment: &str, block: &mut IndentBlock) -> Option<()> 
         block.page_horizontal_center = true;
         return Some(());
     }
-    if matches!(segment, "中央揃え" | "右揃え" | "横組み右揃えで") {
+    if matches!(segment, "横組み右揃えで" | "横組み中央揃えで") {
+        block.styles.horizontal = Some(HorizontalPresentation {
+            align: Some(if segment == "横組み右揃えで" {
+                ab_aozora_syntax::LineAlignment::Right
+            } else {
+                ab_aozora_syntax::LineAlignment::Center
+            }),
+        });
+        return Some(());
+    }
+    if matches!(segment, "中央揃え" | "右揃え") {
         block.align = Some(if segment == "中央揃え" {
             ab_aozora_syntax::LineAlignment::Center
         } else {
             ab_aozora_syntax::LineAlignment::Right
         });
-        block.styles.horizontal = segment == "横組み右揃えで";
         return Some(());
     }
     if let Some(rest) = segment
@@ -2071,13 +2109,27 @@ fn resolve_indent_segment(segment: &str, block: &mut IndentBlock) -> Option<()> 
     resolve_block_style(segment, &mut block.styles)
 }
 
+fn merge_horizontal(
+    existing: Option<HorizontalPresentation>,
+    supplied: Option<HorizontalPresentation>,
+) -> Option<HorizontalPresentation> {
+    supplied
+        .map(|presentation| HorizontalPresentation {
+            align: presentation
+                .align
+                .or_else(|| existing.and_then(|value| value.align)),
+        })
+        .or(existing)
+}
+
 fn resolve_block_style(segment: &str, styles: &mut BlockStyles) -> Option<()> {
     match segment {
         "ゴシック体" if !styles.gothic => styles.gothic = true,
-        "横書き" | "横組み" | "横組みで" | "文章は横組み" if !styles.horizontal => {
-            styles.horizontal = true;
+        "横書き" | "横組み" | "横組みで" | "文章は横組み" if styles.horizontal.is_none() =>
+        {
+            styles.horizontal = Some(HorizontalPresentation { align: None });
         }
-        "罫囲み" if styles.frame.is_none() => {
+        "罫囲み" | "罫囲みで" if styles.frame.is_none() => {
             styles.frame = Some(EnclosureKind::Rule);
         }
         "枠囲み" if styles.frame.is_none() => {

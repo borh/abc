@@ -179,7 +179,7 @@ pub struct BlockStyles {
     /// `ゴシック体` — co-applied gothic typeface (`Format::Gothic`).
     pub gothic: bool,
     /// `横書き` / `横組み` — horizontal writing (`Format::Horizontal`).
-    pub horizontal: bool,
+    pub horizontal: Option<HorizontalPresentation>,
     /// The supplied enclosing shape and rule style (`Format::Framed`).
     pub frame: Option<EnclosureKind>,
     /// Relative font shift (`Format::FontSize`).
@@ -190,7 +190,7 @@ impl BlockStyles {
     /// No co-applied presentation attributes.
     pub const EMPTY: Self = Self {
         gothic: false,
-        horizontal: false,
+        horizontal: None,
         frame: None,
         font: None,
     };
@@ -211,7 +211,7 @@ impl BlockStyles {
         } = self;
         [
             gothic.then_some(Format::Gothic),
-            horizontal.then_some(Format::Horizontal),
+            horizontal.map(Format::Horizontal),
             frame.map(Format::Framed),
             font.map(Format::FontSize),
         ]
@@ -228,6 +228,14 @@ pub enum LineAlignment {
     Center,
     /// Align horizontal text with the right edge of its line.
     Right,
+}
+
+/// Horizontal writing and alignment supplied as part of that presentation clause.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct HorizontalPresentation {
+    /// Absent when the source specifies direction without alignment.
+    pub align: Option<LineAlignment>,
 }
 
 /// Clauses not interpreted as layout, retained individually for apparatus interpretation.
@@ -309,8 +317,8 @@ pub enum Format {
     /// 罫囲み (ruled box) / 「□」囲み (box glyph) — an enclosure of some
     /// [`EnclosureKind`].
     Framed(EnclosureKind),
-    /// 横組み (horizontal writing).
-    Horizontal,
+    /// Horizontal writing with its supplied line alignment.
+    Horizontal(HorizontalPresentation),
     /// N段階大きな / 小さな文字 (relative font size).
     FontSize(FontShift),
     /// 特大 / 大 / 中 / 小文字 (absolute font size).
@@ -367,7 +375,7 @@ impl Format {
             Self::Italic => "italic",
             Self::Bouten(_) => "bouten",
             Self::Framed(_) => "framed",
-            Self::Horizontal => "horizontal",
+            Self::Horizontal(_) => "horizontal",
             Self::FontSize(_) => "fontSize",
             Self::FontSizeAbsolute(_) => "fontSizeAbsolute",
             Self::Caption => "caption",
@@ -559,7 +567,7 @@ impl ForwardAttr {
             Self::SubScript => Format::SubScript,
             Self::SmallScript(p) => Format::SmallScript(p),
             Self::Framed(k) => Format::Framed(k),
-            Self::Horizontal => Format::Horizontal,
+            Self::Horizontal => Format::Horizontal(HorizontalPresentation { align: None }),
             Self::Caption => Format::Caption,
             Self::FontSize(f) => Format::FontSize(f),
             Self::FontSizeAbsolute(s) => Format::FontSizeAbsolute(s),
@@ -747,7 +755,7 @@ pub enum RegionFormat {
     /// 段組 block.
     Columns(ColumnBlock),
     /// 横組み block.
-    Horizontal,
+    Horizontal(HorizontalPresentation),
     /// N段階大きな / 小さな文字 block.
     FontSize(FontShift),
     /// 罫囲み block / range ([`EnclosureKind`]).
@@ -774,7 +782,7 @@ impl RegionFormat {
             Self::LineWidth(_) => Format::LineWidth,
             Self::Table => Format::Table,
             Self::Columns(block) => Format::Columns(block.count),
-            Self::Horizontal => Format::Horizontal,
+            Self::Horizontal(presentation) => Format::Horizontal(presentation),
             Self::FontSize(f) => Format::FontSize(f),
             Self::Framed(k) => Format::Framed(k),
             Self::Warichu => Format::Warichu,
@@ -801,7 +809,7 @@ impl RegionFormat {
             Self::Heading { .. } => "heading",
             Self::Columns(_) => "columns",
             Self::Table => "table",
-            Self::Horizontal => "horizontal",
+            Self::Horizontal(_) => "horizontal",
             Self::FontSize(_) => "fontSize",
             Self::SmallScript(_) => "smallScript",
             Self::CombineUpright => "combineUprightRange",
@@ -826,7 +834,7 @@ impl RegionFormat {
             Self::Heading { .. } => "heading",
             Self::Columns(_) => "columns",
             Self::Table => "table",
-            Self::Horizontal => "horizontal",
+            Self::Horizontal(_) => "horizontal",
             Self::FontSize(_) => "font-size",
             Self::SmallScript(_) => "small-script",
             Self::CombineUpright => "combine-upright",
@@ -903,7 +911,7 @@ impl RegionFormat {
             partial: None,
         }),
         Self::Table,
-        Self::Horizontal,
+        Self::Horizontal(HorizontalPresentation { align: None }),
         Self::FontSize(FontShift(NonZeroI8::MIN)),
         Self::SmallScript(BoutenPosition::Right),
         Self::CombineUpright,
@@ -1048,7 +1056,7 @@ impl RegionClose {
             },
             RegionFormat::Columns(block) => Self::Columns(Some(block.count)),
             RegionFormat::Table => Self::Table,
-            RegionFormat::Horizontal => Self::Horizontal,
+            RegionFormat::Horizontal(_) => Self::Horizontal,
             RegionFormat::FontSize(shift) => Self::FontSize {
                 larger: shift.larger(),
                 magnitude: NonZeroU8::new(shift.magnitude()),

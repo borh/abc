@@ -290,7 +290,7 @@
       "allOf": [
         {"if":{"required":["column_rule"]},"then":{"required":["column_count"],"properties":{"kind":{"const":"layout_block"}}}},
         {"if":{"anyOf":[{"required":["direction"]},{"required":["align"]},{"required":["continuation_indent"]},{"required":["offset_from_end"]},{"required":["line_count"]},{"required":["page_placement"]},{"required":["source_end"]}]},"then":{"properties":{"kind":{"const":"layout_block"}}}},
-        {"if":{"properties":{"kind":{"const":"layout_block"}}},"then":{"required":["span","interpretation_marker_spans"],"anyOf":[{"required":["indent"]},{"required":["width"]},{"required":["offset_from_end"]},{"required":["align"]},{"required":["page_placement"]},{"required":["column_count"]},{"required":["role"]}]}},
+        {"if":{"properties":{"kind":{"const":"layout_block"}}},"then":{"required":["span","interpretation_marker_spans"],"anyOf":[{"required":["indent"]},{"required":["width"]},{"required":["offset_from_end"]},{"required":["align"]},{"required":["page_placement"]},{"required":["column_count"]},{"required":["role"]},{"required":["direction"]},{"required":["formatting"]}]}},
         {"if":{"properties":{"kind":{"const":"typography_block"}}},"then":{"required":["formatting","span","interpretation_marker_spans"]}},
         {
           "if": { "properties": { "kind": { "const": "jisage_block" } } },

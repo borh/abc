@@ -178,7 +178,15 @@ pub(crate) fn emit_container_open<W: Write>(
             out.write_str("］")
         }
         RegionFormat::Table => out.write_str("［＃ここから表］"),
-        RegionFormat::Horizontal => out.write_str("［＃ここから横組み］"),
+        RegionFormat::Horizontal(presentation) => match presentation.align {
+            None => out.write_str("［＃ここから横組み］"),
+            Some(ab_aozora_syntax::LineAlignment::Right) => {
+                out.write_str("［＃ここから横組み右揃えで］")
+            }
+            Some(ab_aozora_syntax::LineAlignment::Center) => {
+                out.write_str("［＃ここから横組み中央揃えで］")
+            }
+        },
         RegionFormat::CombineUpright => out.write_str("［＃縦中横］"),
         RegionFormat::FontSize(shift) => {
             let word = if shift.larger() {
@@ -244,7 +252,7 @@ fn emit_indent_open<W: Write>(block: IndentBlock, store: &NodeStore, out: &mut W
         && end_offset.is_none()
         && matches!(layout, IndentLayout::None)
         && !gothic
-        && !horizontal
+        && horizontal.is_none()
         && frame.is_none()
         && font.is_none();
     if amount == 1 && bare {
@@ -288,8 +296,12 @@ fn emit_block_styles<W: Write>(styles: BlockStyles, out: &mut W) -> fmt::Result 
     if gothic {
         out.write_str("、ゴシック体")?;
     }
-    if horizontal {
-        out.write_str("、横書き")?;
+    if let Some(presentation) = horizontal {
+        match presentation.align {
+            None => out.write_str("、横書き")?,
+            Some(ab_aozora_syntax::LineAlignment::Right) => out.write_str("、横組み右揃えで")?,
+            Some(ab_aozora_syntax::LineAlignment::Center) => out.write_str("、横組み中央揃えで")?,
+        }
     }
     if let Some(frame) = frame {
         write!(out, "、{}", ForwardAttr::Framed(frame).keyword())?;

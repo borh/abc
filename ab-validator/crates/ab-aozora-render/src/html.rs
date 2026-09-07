@@ -12,10 +12,12 @@
 //! AST-reading per-node emitters live in the private `render_node`
 //! module.
 
-use core::fmt;
+use ab_aozora_spec::NormalizedOffset;
+use core::{cmp::Reverse, fmt, mem::discriminant};
+use std::collections::BTreeMap;
 
-use ab_aozora_syntax::DirectiveKind;
-use ab_aozora_syntax::ast::{LexOutput, Node, NodeRef, NodeStore};
+use ab_aozora_syntax::ast::{ContainerPair, LexOutput, Node, NodeRef, NodeStore};
+use ab_aozora_syntax::{DirectiveKind, RegionClose, RegionFormat};
 
 use crate::render_node::render;
 use crate::serialize::{DirectiveNormalization, SerializeOptions, serialize_with};
@@ -88,7 +90,10 @@ pub fn render_html(out: &LexOutput) -> String {
 /// Panics if the normalized text exceeds `u32::MAX` bytes — inherited from the
 /// lexer's `Span` width contract; in practice unreachable.
 pub fn render_html_into<W: fmt::Write>(out: &LexOutput, writer: &mut W) -> fmt::Result {
+    let (scope_opens, scope_closes) = independent_scope_events(out);
     let mut sink = HtmlSink {
+        scope_opens,
+        scope_closes,
         store: &out.store,
         out: writer,
         state: RenderState::default(),
@@ -96,11 +101,80 @@ pub fn render_html_into<W: fmt::Write>(out: &LexOutput, writer: &mut W) -> fmt::
     walk(out, &mut sink)
 }
 
+fn independent_scope_events(
+    out: &LexOutput,
+) -> (
+    BTreeMap<NormalizedOffset, Vec<RegionFormat>>,
+    BTreeMap<NormalizedOffset, Vec<RegionClose>>,
+) {
+    let mut groups = BTreeMap::<NormalizedOffset, Vec<&ContainerPair>>::new();
+    for pair in &out.container_pairs {
+        if matches!(
+            pair.kind,
+            RegionFormat::Horizontal(_) | RegionFormat::Framed(_)
+        ) && matches!(
+            out.registry.node_at(pair.open),
+            Some(NodeRef::BlockOpen(
+                RegionFormat::Indent(_) | RegionFormat::Columns(_)
+            ))
+        ) {
+            groups.entry(pair.open).or_default();
+        }
+    }
+    for pair in &out.container_pairs {
+        if let Some(group) = groups.get_mut(&pair.open) {
+            group.push(pair);
+        }
+    }
+    let mut opens = BTreeMap::new();
+    let mut closes = BTreeMap::<NormalizedOffset, Vec<RegionClose>>::new();
+    for (position, mut pairs) in groups {
+        let Some(NodeRef::BlockOpen(original)) = out.registry.node_at(position) else {
+            continue;
+        };
+        if pairs.iter().all(|pair| pair.kind == original) {
+            continue;
+        }
+        let mut remainder = original;
+        let styles = match &mut remainder {
+            RegionFormat::Indent(block) => &mut block.styles,
+            RegionFormat::Columns(block) => &mut block.styles,
+            _ => continue,
+        };
+        for pair in &pairs {
+            match pair.kind {
+                RegionFormat::Horizontal(_) => styles.horizontal = None,
+                RegionFormat::Framed(_) => styles.frame = None,
+                _ => {}
+            }
+        }
+        let complete = pairs
+            .iter()
+            .any(|pair| discriminant(&pair.kind) == discriminant(&original));
+        pairs.sort_by_key(|pair| Reverse(pair.close));
+        let mut regions = Vec::with_capacity(pairs.len() + usize::from(!complete));
+        if !complete {
+            regions.push(remainder);
+        }
+        for pair in pairs {
+            regions.push(pair.kind);
+            closes
+                .entry(pair.close)
+                .or_default()
+                .push(RegionClose::of(pair.kind));
+        }
+        opens.insert(position, regions);
+    }
+    (opens, closes)
+}
+
 /// [`WalkSink`] that emits semantic HTML5 from the AST, threading the
 /// [`NodeStore`] (the resolve authority) into every AST emitter and reusing
 /// `crate::spelling::html`'s [`RenderState`] for all block / paragraph / container
 /// structure.
 struct HtmlSink<'a, W: fmt::Write> {
+    scope_opens: BTreeMap<NormalizedOffset, Vec<RegionFormat>>,
+    scope_closes: BTreeMap<NormalizedOffset, Vec<RegionClose>>,
     store: &'a NodeStore,
     out: &'a mut W,
     state: RenderState,
@@ -109,6 +183,27 @@ struct HtmlSink<'a, W: fmt::Write> {
 impl<W: fmt::Write> WalkSink for HtmlSink<'_, W> {
     // HTML output treats `\n` as structural (paragraph / line break).
     const WANTS_NEWLINES: bool = true;
+
+    fn on_node_at(
+        &mut self,
+        position: NormalizedOffset,
+        kind: SentinelKind,
+        node: NodeRef,
+    ) -> fmt::Result {
+        if let Some(regions) = self.scope_opens.get(&position) {
+            for region in regions {
+                self.state.open_container(*region, self.out)?;
+            }
+            return Ok(());
+        }
+        if let Some(regions) = self.scope_closes.get(&position) {
+            for region in regions.iter().rev() {
+                self.state.close_container(region.is_inline(), self.out)?;
+            }
+            return Ok(());
+        }
+        self.on_node(kind, node)
+    }
 
     fn on_text(&mut self, text: &str) -> fmt::Result {
         self.state.ensure_in_paragraph(self.out)?;

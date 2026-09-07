@@ -40,8 +40,8 @@ pub mod node_kind;
 
 pub use format::{
     AbsoluteSize, AccentMark, BlockStyles, ColumnBlock, ColumnCount, EnclosureKind, FontShift,
-    Format, ForwardAttr, ForwardOrigin, IndentBlock, IndentLayout, Kumi, LineAlignment, LineFormat,
-    LineWidth, PartialLayout, RegionClose, RegionFormat,
+    Format, ForwardAttr, ForwardOrigin, HorizontalPresentation, IndentBlock, IndentLayout, Kumi,
+    LineAlignment, LineFormat, LineWidth, PartialLayout, RegionClose, RegionFormat,
 };
 pub use node_kind::NodeKind;
 

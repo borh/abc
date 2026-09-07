@@ -2,9 +2,10 @@
 
 use std::borrow::Cow;
 use std::{
+    cmp::Reverse,
     collections::{BTreeMap, BTreeSet},
     fmt::Write as _,
-    mem,
+    iter, mem,
     num::NonZeroU32,
     ops::Range,
     slice, str,
@@ -37,7 +38,7 @@ use ab_aozora_facade::syntax::{
     AbsoluteSize, BlockStyles, EnclosureKind, HeadingStyle, IndentLayout, LineAlignment,
     LineFormat, MarginNoteKind, MarginNotePosition,
     accent::{compose_accent, compose_accent_dots},
-    ast::{ContainerEnd, Content, IterationMark, KuntenKind, Ruby, Segment},
+    ast::{ContainerEnd, ContainerPair, Content, IterationMark, KuntenKind, Ruby, Segment},
 };
 use ab_source_syntax::{RegionError, SourceRegions, aozora_body_range};
 
@@ -393,8 +394,15 @@ struct AozoraNode {
     span: Span,
     marker_span: Option<Span>,
     target_quote: Option<Span>,
-    container_end: Option<ContainerEnd>,
+    container_scope: Option<NativeScope>,
     layout_clauses: Vec<Span>,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct NativeScope {
+    kind: RegionFormat,
+    end: ContainerEnd,
+    marker_complete: bool,
 }
 
 type AozoraGaiji = encoding::gaiji::GaijiResolution;
@@ -523,11 +531,13 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
             .then_some((format.target.start, format.target.len))
         })
         .collect();
-    let container_ends: BTreeMap<_, _> = tree
-        .container_pairs
-        .iter()
-        .map(|pair| (pair.source_open.start, pair.source_end))
-        .collect();
+    let mut container_scopes = BTreeMap::<u32, Vec<&ContainerPair>>::new();
+    for pair in &tree.container_pairs {
+        container_scopes
+            .entry(pair.source_open.start)
+            .or_default()
+            .push(pair);
+    }
     let pairs: BTreeMap<usize, _> = tree
         .pairs
         .iter()
@@ -764,10 +774,11 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                 span,
                 marker_span,
                 target_quote,
-                container_end: container_ends.get(&source_node.source_span.start).copied(),
+                container_scope: None,
                 layout_clauses,
             }
         })
+        .flat_map(|node| expand_native_scopes(node, &container_scopes))
         .chain(tree.classified_source_facts.iter().filter_map(|fact| {
             let span: Span = fact.source_span.into();
             (fact.construct_id == ab_aozora_pipeline::ConstructId::RecoveredVerbatim
@@ -777,7 +788,7 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                 span,
                 marker_span: None,
                 target_quote: None,
-                container_end: None,
+                container_scope: None,
                 layout_clauses: Vec::new(),
             })
         }))
@@ -796,13 +807,68 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                             },
                             marker_span: None,
                             target_quote: None,
-                            container_end: None,
+                            container_scope: None,
                             layout_clauses: Vec::new(),
                         },
                     )
                 }),
         )
         .collect()
+}
+
+fn expand_native_scopes(
+    node: AozoraNode,
+    scopes: &BTreeMap<u32, Vec<&ContainerPair>>,
+) -> impl Iterator<Item = AozoraNode> {
+    let ProjectedKind::Region(original) = node.kind else {
+        return iter::once(node).chain(Vec::new());
+    };
+    let Some(pairs) =
+        scopes.get(&u32::try_from(node.span.start).expect("native source offset fits u32"))
+    else {
+        return iter::once(node).chain(Vec::new());
+    };
+    if pairs.len() == 1 && pairs[0].kind == original {
+        let mut node = node;
+        node.container_scope = Some(NativeScope {
+            kind: original,
+            end: pairs[0].source_end,
+            marker_complete: true,
+        });
+        return iter::once(node).chain(Vec::new());
+    }
+    let complete = pairs
+        .iter()
+        .any(|pair| mem::discriminant(&pair.kind) == mem::discriminant(&original));
+    let mut ordered = pairs.clone();
+    ordered.sort_by_key(|pair| pair.close);
+    let mut result = Vec::with_capacity(ordered.len() + usize::from(!complete));
+    for pair in ordered {
+        let mut projected = node.clone();
+        projected.container_scope = Some(NativeScope {
+            kind: pair.kind,
+            end: pair.source_end,
+            marker_complete: complete,
+        });
+        if mem::discriminant(&pair.kind) != mem::discriminant(&original) {
+            projected.layout_clauses.clear();
+        }
+        result.push(projected);
+    }
+    if !complete {
+        result.push(node);
+    }
+    let first = result.remove(0);
+    iter::once(first).chain(result)
+}
+
+fn source_scope_order(node: &AozoraNode) -> (usize, usize, Reverse<u32>) {
+    let end = node
+        .container_scope
+        .map_or(u32::MAX, |scope| match scope.end {
+            ContainerEnd::ClosingMarker(span) | ContainerEnd::IndentReplacement(span) => span.end,
+        });
+    (node.span.start, node.span.end, Reverse(end))
 }
 
 fn referenced_dot_markers(tree: &LexOutput) -> BTreeMap<(u32, u32), Span> {
@@ -1124,7 +1190,7 @@ fn projections(
             kind: ProjectedKind::QuoteOpen,
             marker_span: None,
             target_quote: None,
-            container_end: None,
+            container_scope: None,
             layout_clauses: Vec::new(),
             span: Span {
                 start: node.span.start,
@@ -1135,7 +1201,7 @@ fn projections(
             kind: ProjectedKind::QuoteClose,
             marker_span: None,
             target_quote: None,
-            container_end: None,
+            container_scope: None,
             layout_clauses: Vec::new(),
             span: Span {
                 start: end,
@@ -1158,7 +1224,7 @@ fn projections(
                 marker.end += start;
             }
             if let Some(ContainerEnd::ClosingMarker(span) | ContainerEnd::IndentReplacement(span)) =
-                &mut inner.container_end
+                inner.container_scope.as_mut().map(|scope| &mut scope.end)
             {
                 let offset = u32::try_from(start).expect("source offset fits u32");
                 span.start += offset;
@@ -1189,7 +1255,7 @@ fn projections(
             ruby.push(entry);
         }
     }
-    nodes.sort_by_key(|node| (node.span.start, node.span.end));
+    nodes.sort_by_key(source_scope_order);
     Ok((nodes, diagnostics, gaiji, ruby, retained_accents))
 }
 
@@ -1929,7 +1995,10 @@ fn blocks_from_inline_content(content: Vec<Value>, decoded: &DecodedSource) -> V
                 index,
             ))
         })
-        .collect();
+        .fold(BTreeMap::new(), |mut positions, (span, index)| {
+            positions.entry(span).or_insert(index);
+            positions
+        });
     let mut blocks = Vec::new();
     let mut paragraph = Vec::new();
     let mut strip_next_leading_newline = false;
@@ -2088,7 +2157,7 @@ fn blocks_from_inline_content(content: Vec<Value>, decoded: &DecodedSource) -> V
                     children.insert(0, json!({"kind":"paragraph", "content":annotations}));
                 }
                 block["children"] = json!(children);
-                let mut markers = if unresolved {
+                let mut markers = if unresolved || node["x-native-marker-partial"] == true {
                     Vec::new()
                 } else {
                     vec![node["span"].clone()]
@@ -2536,8 +2605,9 @@ fn parsed_source_fragment(decoded: &DecodedSource, range: Range<usize>) -> Optio
             marker.start += range.start;
             marker.end += range.start;
         }
-        if let Some(end) = &mut node.container_end {
-            let (ContainerEnd::ClosingMarker(span) | ContainerEnd::IndentReplacement(span)) = end;
+        if let Some(end) = &mut node.container_scope {
+            let (ContainerEnd::ClosingMarker(span) | ContainerEnd::IndentReplacement(span)) =
+                &mut end.end;
             let offset = u32::try_from(range.start).ok()?;
             span.start = span.start.checked_add(offset)?;
             span.end = span.end.checked_add(offset)?;
@@ -2621,7 +2691,7 @@ fn inline_content_range(
 ) -> Vec<Value> {
     let mut content = Vec::new();
     let mut ordered = nodes.iter().collect::<Vec<_>>();
-    ordered.sort_by_key(|node| (node.span.start, node.span.end));
+    ordered.sort_by_key(|node| source_scope_order(node));
 
     let mut cursor = range.start;
     for node in ordered {
@@ -3244,7 +3314,7 @@ fn push_nested_format(
         span: mark.span,
         marker_span: *marker,
         target_quote: None,
-        container_end: None,
+        container_scope: None,
         layout_clauses: Vec::new(),
     };
     push_style_node(content, decoded, &node, "emphasis");
@@ -3761,7 +3831,7 @@ fn push_style_node(
             span: marker,
             marker_span: Some(marker),
             target_quote: None,
-            container_end: None,
+            container_scope: None,
             layout_clauses: Vec::new(),
         };
         let assertion = raw_node(decoded, &variant_node, "base-text-variant");
@@ -4527,8 +4597,14 @@ fn rebase_partial_layout(spans: &mut [Span], offset: usize) {
 
 fn apply_block_styles(fields: &mut Value, block: BlockStyles) -> Option<()> {
     let mut styles = Vec::new();
-    if block.horizontal {
+    if let Some(presentation) = block.horizontal {
         fields["direction"] = json!("horizontal");
+        if let Some(align) = presentation.align {
+            fields["align"] = json!(match align {
+                LineAlignment::Right => "right",
+                LineAlignment::Center => "center",
+            });
+        }
     }
     if let Some(frame) = block.frame {
         styles.push(formatting_fields(ForwardAttr::Framed(frame))?);
@@ -4579,6 +4655,15 @@ fn layout_fields(kind: &ProjectedKind) -> Option<Value> {
             }
             apply_block_styles(&mut fields, block.styles)?;
         }
+        ProjectedKind::Region(RegionFormat::Horizontal(presentation))
+            if presentation.align.is_some() =>
+        {
+            fields["direction"] = json!("horizontal");
+            fields["align"] = json!(match presentation.align.expect("alignment present") {
+                LineAlignment::Right => "right",
+                LineAlignment::Center => "center",
+            });
+        }
         ProjectedKind::Region(RegionFormat::Table) => fields["role"] = json!("table"),
         ProjectedKind::Region(RegionFormat::Columns(block)) => {
             fields["column_count"] = json!(block.count.0.get());
@@ -4610,6 +4695,25 @@ fn layout_fields(kind: &ProjectedKind) -> Option<Value> {
     Some(fields)
 }
 
+fn independent_scope_fields(region: RegionFormat) -> Option<Value> {
+    match region {
+        RegionFormat::Horizontal(presentation) => {
+            let mut fields = json!({"direction":"horizontal"});
+            if let Some(align) = presentation.align {
+                fields["align"] = json!(match align {
+                    LineAlignment::Right => "right",
+                    LineAlignment::Center => "center",
+                });
+            }
+            Some(fields)
+        }
+        RegionFormat::Framed(kind) => {
+            Some(json!({"formatting":formatting_fields(ForwardAttr::Framed(kind))?}))
+        }
+        other => layout_fields(&ProjectedKind::Region(other)),
+    }
+}
+
 fn region_formatting(region: RegionFormat) -> Option<(String, Value)> {
     let (key, attr) = match region {
         RegionFormat::Framed(kind) => {
@@ -4618,7 +4722,7 @@ fn region_formatting(region: RegionFormat) -> Option<(String, Value)> {
                 formatting_fields(ForwardAttr::Framed(kind))?,
             ));
         }
-        RegionFormat::Horizontal => ("yokogumi", ForwardAttr::Horizontal),
+        RegionFormat::Horizontal(_) => ("yokogumi", ForwardAttr::Horizontal),
         RegionFormat::Warichu => return Some(("warichu".to_owned(), json!({"kind":"warichu"}))),
         RegionFormat::Caption { .. } => {
             return Some(("caption".to_owned(), json!({"kind":"caption"})));
@@ -4735,6 +4839,68 @@ fn layout_annotations(decoded: &DecodedSource, spans: &[Span]) -> Value {
         .collect()
 }
 
+fn attach_native_scope(
+    value: &mut Value,
+    decoded: &DecodedSource,
+    scope: Option<NativeScope>,
+    original: RegionFormat,
+) {
+    let Some(scope) = scope else { return };
+    let (key, span) = match scope.end {
+        ContainerEnd::ClosingMarker(span) => ("x-native-close-span", span),
+        ContainerEnd::IndentReplacement(span) => ("x-native-end-before-span", span),
+    };
+    value[key] = span_json(&span.into(), &decoded.span_ctx);
+    if scope.kind != original {
+        value["x-layout"] = independent_scope_fields(scope.kind)
+            .expect("native compound presentation has layout fields");
+    }
+    if !scope.marker_complete {
+        value["x-native-marker-partial"] = json!(true);
+    }
+}
+
+fn region_raw_fields(
+    value: &mut Value,
+    decoded: &DecodedSource,
+    node: &AozoraNode,
+    region: RegionFormat,
+) {
+    attach_native_scope(value, decoded, node.container_scope, region);
+    if let RegionFormat::Heading { level, style, .. } = region {
+        let style = match style {
+            HeadingStyle::Standard => Some("normal"),
+            HeadingStyle::SameLine => Some("dogyo"),
+            HeadingStyle::Window => Some("mado"),
+            _ => None,
+        };
+        if let Some(style) = style {
+            value["x-heading"] = json!({"level":level.outline_level(), "style":style});
+        }
+    }
+    // AAT's paired inline scopes must not terminate enclosing blocks,
+    // even when the native renderer uses block presentation for them.
+    let formatting = if node
+        .container_scope
+        .is_some_and(|scope| scope.kind != region)
+        || matches!(region, RegionFormat::Horizontal(presentation) if presentation.align.is_some())
+    {
+        None
+    } else {
+        region_formatting(region)
+    };
+    if formatting.is_some() || region.is_inline() {
+        value["x-source-flow"] = json!("inline");
+    }
+    if let Some((key, fields)) = formatting {
+        value["x-format-key"] = json!(key);
+        value["x-format-open"] = json!(true);
+        value["x-formatting"] = fields;
+    }
+    value["interpretation_problem"] = json!({"kind":"uninterpreted-notation", "code":"uninterpreted-notation",
+        "aspects":["structure","layout"], "influence":{"kind":"document"}});
+}
+
 fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Value {
     let source_start = decoded.span_ctx.to_decoded(node.span.start);
     let source_end = decoded.span_ctx.to_decoded_end(node.span.end);
@@ -4777,39 +4943,7 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
         }
     }
     match node.kind {
-        ProjectedKind::Region(region) => {
-            if let Some(end) = node.container_end {
-                let (key, span) = match end {
-                    ContainerEnd::ClosingMarker(span) => ("x-native-close-span", span),
-                    ContainerEnd::IndentReplacement(span) => ("x-native-end-before-span", span),
-                };
-                value[key] = span_json(&span.into(), &decoded.span_ctx);
-            }
-            if let RegionFormat::Heading { level, style, .. } = region {
-                let style = match style {
-                    HeadingStyle::Standard => Some("normal"),
-                    HeadingStyle::SameLine => Some("dogyo"),
-                    HeadingStyle::Window => Some("mado"),
-                    _ => None,
-                };
-                if let Some(style) = style {
-                    value["x-heading"] = json!({"level":level.outline_level(), "style":style});
-                }
-            }
-            // AAT's paired inline scopes must not terminate enclosing blocks,
-            // even when the native renderer uses block presentation for them.
-            let formatting = region_formatting(region);
-            if formatting.is_some() || region.is_inline() {
-                value["x-source-flow"] = json!("inline");
-            }
-            if let Some((key, fields)) = formatting {
-                value["x-format-key"] = json!(key);
-                value["x-format-open"] = json!(true);
-                value["x-formatting"] = fields;
-            }
-            value["interpretation_problem"] = json!({"kind":"uninterpreted-notation", "code":"uninterpreted-notation",
-                "aspects":["structure","layout"], "influence":{"kind":"document"}});
-        }
+        ProjectedKind::Region(region) => region_raw_fields(&mut value, decoded, node, region),
         ProjectedKind::RegionClose(close) => {
             let formatting = region_formatting_close(close);
             if formatting.is_some() || close.is_inline() {

@@ -484,35 +484,48 @@ impl<'src> Normalizer<'src> {
                     .push((NormalizedOffset::new(pos), *container, span.source_span));
             }
             SpanKind::BlockCloses { .. } => unreachable!("shared source boundary handled above"),
-            SpanKind::BlockClose(close) => {
-                let inline = close.is_inline();
-                if !inline {
-                    self.out.push_str("\n\n");
-                }
-                let pos = self.current_pos();
-                self.out.push(BLOCK_CLOSE_SENTINEL);
-                if !inline {
-                    self.out.push_str("\n\n");
-                }
-                self.recorder
-                    .record_block_close(pos, span.source_span, *close);
-                if let Some((open_pos, open_kind, source_open)) = self.open_stack.pop() {
-                    if self.container_matches(open_kind, *close, span.source_span) {
-                        self.container_pairs.push(ContainerPair {
-                            kind: open_kind,
-                            open: open_pos,
-                            close: NormalizedOffset::new(pos),
-                            source_open,
-                            source_end: ContainerEnd::ClosingMarker(span.source_span),
-                        });
-                    }
-                } else {
-                    self.diagnostics.push(Diagnostic::unmatched_container_close(
-                        span.source_span,
-                        close.kind_str(),
-                    ));
-                }
+            SpanKind::BlockClose(close) => self.emit_block_close(span.source_span, *close),
+        }
+    }
+
+    fn emit_block_close(&mut self, span: Span, close: RegionClose) {
+        let inline = close.is_inline();
+        if !inline {
+            self.out.push_str("\n\n");
+        }
+        let pos = self.current_pos();
+        self.out.push(BLOCK_CLOSE_SENTINEL);
+        if !inline {
+            self.out.push_str("\n\n");
+        }
+        self.recorder.record_block_close(pos, span, close);
+        if let Some((open, kind, source_open)) = self.open_stack.last_mut()
+            && let Some(presentation) = take_compound_presentation(kind, close)
+        {
+            self.container_pairs.push(ContainerPair {
+                kind: presentation,
+                open: *open,
+                close: NormalizedOffset::new(pos),
+                source_open: *source_open,
+                source_end: ContainerEnd::ClosingMarker(span),
+            });
+            return;
+        }
+        if let Some((open_pos, open_kind, source_open)) = self.open_stack.pop() {
+            if self.container_matches(open_kind, close, span) {
+                self.container_pairs.push(ContainerPair {
+                    kind: open_kind,
+                    open: open_pos,
+                    close: NormalizedOffset::new(pos),
+                    source_open,
+                    source_end: ContainerEnd::ClosingMarker(span),
+                });
             }
+        } else {
+            self.diagnostics.push(Diagnostic::unmatched_container_close(
+                span,
+                close.kind_str(),
+            ));
         }
     }
 
@@ -649,6 +662,26 @@ impl<'src> Normalizer<'src> {
     }
 }
 
+fn take_compound_presentation(open: &mut RegionFormat, close: RegionClose) -> Option<RegionFormat> {
+    let styles = match open {
+        RegionFormat::Indent(block) => &mut block.styles,
+        RegionFormat::Columns(block) => &mut block.styles,
+        _ => return None,
+    };
+    match close {
+        RegionClose::Horizontal => styles.horizontal.take().map(RegionFormat::Horizontal),
+        RegionClose::Framed(_) => {
+            let frame = styles.frame?;
+            if !scope_closer_matches(RegionFormat::Framed(frame), close) {
+                return None;
+            }
+            styles.frame = None;
+            Some(RegionFormat::Framed(frame))
+        }
+        _ => None,
+    }
+}
+
 /// Match supplied closing attributes, including source-defined omitted payloads.
 pub(crate) fn scope_closer_matches(open: RegionFormat, close: RegionClose) -> bool {
     let expected = RegionClose::of(open);
@@ -666,7 +699,9 @@ pub(crate) fn scope_closer_matches(open: RegionFormat, close: RegionClose) -> bo
                             Format::Framed(EnclosureKind::Unspecified),
                             Format::Framed(_)
                         )
-                    ) || supplied == established
+                    ) || matches!((supplied, established),
+                        (Format::Horizontal(requested), Format::Horizontal(_)) if requested.align.is_none())
+                        || supplied == established
                 })
             });
     }

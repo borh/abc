@@ -850,3 +850,36 @@ fn explicit_reading_subrange_keeps_the_complete_ruby_association() {
     assert_eq!(&source[start..end], "かきざき");
     assert_eq!(ir["interpretation_problems"], json!([]));
 }
+
+#[test]
+fn variant_citations_and_assertions_stay_separate_from_the_witness() {
+    for (current, witness, tail) in [
+        ("藤井", "蔵井", "、412-13"),
+        ("山", "出", "と誤植、25-上-1"),
+        ("平和", "価格", "、正誤表による訂正"),
+        ("如何《どう》", "如何《どう》う", "と「う」が重複"),
+    ] {
+        let statement = format!("「{current}」は底本では「{witness}」{tail}");
+        let ir = convert(&format!("{current}［＃{statement}］"));
+        let all = nodes(&ir);
+        let app = all
+            .iter()
+            .find(|node| node["type"] == "base-text-variant")
+            .unwrap();
+        assert_eq!(
+            app["variant"]["base_text"],
+            if witness == "如何《どう》う" {
+                "如何う"
+            } else {
+                witness
+            }
+        );
+        let note = all
+            .iter()
+            .find(|node| node["type"] == "editor-note")
+            .unwrap();
+        assert_eq!(note["note_kind"], "base-edition");
+        assert_eq!(note["text"], statement);
+        assert_eq!(ir["interpretation_problems"], json!([]));
+    }
+}

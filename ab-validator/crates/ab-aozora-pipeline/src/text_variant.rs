@@ -2,6 +2,8 @@
 
 use std::{num::NonZeroU32, ops::Range};
 
+use ab_aozora_encoding::gaiji::is_page_line_shaped;
+
 /// Content addressed by a quoted base-text note.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TextVariantTarget {
@@ -149,6 +151,22 @@ pub fn formatting_edition_note(source: &str) -> Option<(&str, &str)> {
     Some((formatting, statement))
 }
 
+fn witness_statement_tail(witness: &str) -> Option<&str> {
+    if let Some((quoted, reference)) = witness.rsplit_once('、')
+        && (is_page_line_shaped(reference) || reference == "正誤表による訂正")
+    {
+        return Some(quoted);
+    }
+    if let Some((quoted, repeated)) = witness.rsplit_once("」と「")
+        && let Some(repeated) = repeated.strip_suffix("」が重複")
+        && !repeated.is_empty()
+        && !repeated.contains(['「', '」', '［', '］', '\n'])
+    {
+        return Some(&witness[..quoted.len() + '」'.len_utf8()]);
+    }
+    None
+}
+
 fn variant_parts<'s>(
     statement: &'s str,
     target: TextVariantTarget,
@@ -157,6 +175,8 @@ fn variant_parts<'s>(
     witness: &'s str,
     witness_start: usize,
 ) -> Option<TextVariant<'s>> {
+    let with_statement_tail = witness_statement_tail(witness);
+    let witness = with_statement_tail.unwrap_or(witness);
     let asserted = [
         "と誤記",
         "と誤植",
@@ -170,7 +190,8 @@ fn variant_parts<'s>(
             .strip_suffix(suffix)
             .filter(|quoted| quoted.ends_with('」'))
     });
-    let editorial_statement = asserted.map(|_| statement);
+    let editorial_statement =
+        (asserted.is_some() || with_statement_tail.is_some()).then_some(statement);
     let witness = asserted.unwrap_or(witness);
     let base_text = match witness {
         "欠落" | "なし" | "無し" | "脱落" | "欠如" | "欠" | "脱字" => "",
@@ -379,6 +400,27 @@ mod tests {
                 variant.base_text
             );
             assert!(variant.base_text.ends_with('」'));
+        }
+    }
+
+    #[test]
+    fn variant_assertions_and_source_locators_preserve_whole_statements() {
+        for (source, expected) in [
+            ("［＃「藤井」は底本では「蔵井」、412-13］", "蔵井"),
+            ("［＃「山」は底本では「出」と誤植、25-上-1］", "出"),
+            ("［＃「平和」は底本では「価格」、正誤表による訂正］", "価格"),
+            (
+                "［＃「如何《どう》」は底本では「如何《どう》う」と「う」が重複］",
+                "如何《どう》う",
+            ),
+        ] {
+            let variant = text_variant(source).unwrap_or_else(|| panic!("{source}"));
+            assert_eq!(variant.base_text, expected);
+            assert_eq!(&source[variant.base_span.unwrap()], expected);
+            assert_eq!(
+                variant.editorial_statement,
+                Some(&source["［＃".len()..source.len() - '］'.len_utf8()])
+            );
         }
     }
 

@@ -956,7 +956,7 @@ fn append_plain_visible_inline_text(node: &Value, out: &mut String) -> Result<()
         ),
         "accent" => out.push_str(node["resolved"].as_str().unwrap_or("")),
         "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi" | "caption"
-        | "yokogumi" | "warichu" | "text-variant" | "heading" => {
+        | "yokogumi" | "fraction" | "warichu" | "text-variant" | "heading" => {
             append_plain_visible_content_text(node.get("content"), out)?;
         }
         "warigaki" => {
@@ -1261,7 +1261,8 @@ fn map_inline_to_nodes(
             Ok(offset)
         }
         "raw" => map_raw_to_nodes(node, nodes, recorder, offset, path),
-        "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi" | "yokogumi" => {
+        "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi" | "yokogumi"
+        | "fraction" => {
             map_layout_span_to_node(node, nodes, recorder, synthetic_warnings, offset, path, 0)
         }
         "caption" => {
@@ -1340,6 +1341,7 @@ fn layout_scope(node: &Value) -> Result<Value> {
             "direction": "horizontal",
             "marker": node.get("marker").and_then(Value::as_str),
         })),
+        "fraction" => Ok(json!({"kind":"fraction", "source":"aat-inline"})),
         other => bail!("unsupported layout-span kind: {other}"),
     }
 }
@@ -1571,7 +1573,8 @@ fn inline_child_node(
             }));
             Ok(end)
         }
-        "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi" | "yokogumi" => {
+        "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi" | "yokogumi"
+        | "fraction" => {
             let text = plain_visible_content_text(node.get("content"))?;
             let end = offset + utf8_len(&text);
             let inline_children = inline_children_nodes(
@@ -2138,7 +2141,7 @@ fn append_visible_inline_text(
             )?;
         }
         "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi" | "yokogumi"
-        | "warichu" | "heading" => append_visible_content_text(
+        | "fraction" | "warichu" | "heading" => append_visible_content_text(
             node.get("content"),
             recorder,
             &format!("{path}.content"),

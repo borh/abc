@@ -53,6 +53,16 @@
 (defn- attribute [^Element node ^String name] (.getAttribute node name))
 (defn- texts [result tag] (mapv view/visible-text (elements result tag)))
 
+(deftest supplied-inline-layout-retains-visible-target-without-invented-reading
+  (doseq [[body text rend] [["花［＃「花」は罫囲み］" "花" "keigakomi border(rule)"]
+                            ["обед［＃「обед」は横組み］" "обед" "yokogumi horizontal"]
+                            ["1/4πDt［＃「1/4πDt」は分数］" "1/4πDt" "fraction"]]]
+    (let [result (transcribe (source body))]
+      (is (= text (:plaintext result)))
+      (is (some #(= rend (attribute % "rend")) (elements result "hi")))
+      (is (empty? (get-in result [:ir "interpretation_problems"])))
+      (is (= ["layout"] (mapv #(get % "kind") (get-in result [:ir "interpretation_facts"])))))))
+
 (deftest typography-scope-retains-a-normal-heading-between-source-paragraphs
   (let [result (transcribe (source (str "前\n［＃ここから１段階小さな文字］\n"
                                         "第一段落\n［＃中見出し］章《しょう》［＃中見出し終わり］\n"

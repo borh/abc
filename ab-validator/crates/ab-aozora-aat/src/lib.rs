@@ -28,7 +28,7 @@ use ab_aozora_facade::{
 // so the checker's comparison source (`ab-check::body_text`) can never
 // drift from the parser's own cut.
 use ab_aozora_facade::syntax::{
-    AbsoluteSize, HeadingStyle,
+    AbsoluteSize, EnclosureKind, HeadingStyle,
     ast::{Content, KuntenKind, Segment},
 };
 use ab_source_syntax::{RegionError, SourceRegions, aozora_body_range};
@@ -363,7 +363,6 @@ fn project_text_variant(kind: ProjectedKind, source: &str, span: Span) -> Projec
         kind
     }
 }
-
 
 #[allow(
     clippy::too_many_lines,
@@ -879,6 +878,7 @@ enum EstablishedInterpretation {
     Heading,
     Caption,
     TextVariant,
+    Layout,
 }
 
 impl EstablishedInterpretation {
@@ -892,6 +892,7 @@ impl EstablishedInterpretation {
             Self::Heading => "heading",
             Self::Caption => "caption",
             Self::TextVariant => "text-variant",
+            Self::Layout => "layout",
         }
     }
 
@@ -899,7 +900,7 @@ impl EstablishedInterpretation {
         match self {
             Self::Ruby | Self::TextVariant => &["content", "structure"],
             Self::Gaiji => &["content"],
-            Self::Emphasis => &["layout"],
+            Self::Emphasis | Self::Layout => &["layout"],
             Self::Warichu | Self::Heading | Self::Caption => &["structure", "layout"],
             Self::Kunten => &["content", "structure", "layout"],
         }
@@ -910,7 +911,13 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
     let mut facts = Vec::new();
     let mut pending = blocks.iter().rev().collect::<Vec<_>>();
     while let Some(node) = pending.pop() {
+        let has_content = node["content"]
+            .as_array()
+            .is_some_and(|children| !children.is_empty());
         let interpretation = match node["kind"].as_str() {
+            Some("keigakomi" | "yokogumi" | "fraction") if has_content => {
+                Some(EstablishedInterpretation::Layout)
+            }
             Some("ruby")
                 if node["base"].as_str().is_some_and(|text| !text.is_empty())
                     && node["reading"]
@@ -938,9 +945,7 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
                             | "bouten"
                             | "bosen"
                     )
-                ) && node["content"]
-                    .as_array()
-                    .is_some_and(|children| !children.is_empty()) =>
+                ) && has_content =>
             {
                 Some(EstablishedInterpretation::Emphasis)
             }
@@ -951,11 +956,7 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
             {
                 Some(EstablishedInterpretation::Emphasis)
             }
-            Some("formatting" | "font_size" | "small_script")
-                if node["content"]
-                    .as_array()
-                    .is_some_and(|children| !children.is_empty()) =>
-            {
+            Some("formatting" | "font_size" | "small_script") if has_content => {
                 Some(EstablishedInterpretation::Emphasis)
             }
             Some("warichu" | "warichu_block") => Some(EstablishedInterpretation::Warichu),
@@ -2684,10 +2685,9 @@ fn push_style_node(
         style["span"]["line_start"] = children[0]["span"]["line_start"].clone();
         style["content"] = json!(children);
     }
-    if matches!(
-        node.kind,
-        ProjectedKind::FormatMany(_) | ProjectedKind::Format(ForwardAttr::Caption)
-    ) && style["content"].as_array().is_some_and(Vec::is_empty)
+    if (matches!(node.kind, ProjectedKind::FormatMany(_))
+        || matches!(node.kind, ProjectedKind::Format(attr) if formatting_fields(attr).is_some()))
+        && style["content"].as_array().is_some_and(Vec::is_empty)
     {
         let mut retained = raw_node(decoded, node, "unresolved-formatting-target");
         retained["interpretation_problem"] = json!({"kind":"uninterpreted-notation", "code":"uninterpreted-notation",
@@ -2781,7 +2781,7 @@ fn preceding_reading(nodes: &mut [Value]) -> Option<&mut Value> {
             }
             "ruby" => return Some(node),
             "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi"
-            | "yokogumi" | "text-variant" => {
+            | "yokogumi" | "fraction" | "text-variant" => {
                 return preceding_reading(node["content"].as_array_mut()?);
             }
             _ => return None,
@@ -2850,7 +2850,7 @@ fn target_text(node: &Value) -> Option<Cow<'_, str>> {
         "ruby" => Some(Cow::Borrowed(node["base"].as_str()?)),
         "gaiji" => Some(Cow::Borrowed(node["resolved"].as_str()?)),
         "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi"
-        | "yokogumi" | "text-variant" => {
+        | "yokogumi" | "fraction" | "text-variant" => {
             let mut text = String::new();
             for child in node["content"].as_array()? {
                 text.push_str(&target_text(child)?);
@@ -3016,6 +3016,9 @@ fn annotation_content(source: &str) -> Vec<Value> {
 
 fn formatting_fields(attr: ForwardAttr) -> Option<Value> {
     Some(match attr {
+        ForwardAttr::Framed(kind) => json!({"kind":"keigakomi", "border":enclosure_kind(kind)}),
+        ForwardAttr::Horizontal => json!({"kind":"yokogumi"}),
+        ForwardAttr::Fraction => json!({"kind":"fraction"}),
         ForwardAttr::Bouten { kind, position } => json!({"kind":"style",
             "style_type": if kind.is_line() { "bosen" } else { "bouten" },
             "decoration":{"kind":kind.keyword(), "position":bouten_position(position)}}),
@@ -3042,6 +3045,16 @@ fn formatting_fields(attr: ForwardAttr) -> Option<Value> {
         }
         _ => return None,
     })
+}
+
+const fn enclosure_kind(kind: EnclosureKind) -> &'static str {
+    match kind {
+        EnclosureKind::Rule => "rule",
+        EnclosureKind::Box => "box",
+        EnclosureKind::Circle => "circle",
+        EnclosureKind::CircleDotted => "dotted-circle",
+        EnclosureKind::DoubleRule => "double-rule",
+    }
 }
 
 const fn bouten_position(position: BoutenPosition) -> &'static str {

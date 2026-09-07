@@ -102,6 +102,7 @@
                   (str "keigakomi border(" border ")")
                   "keigakomi")
     "yokogumi" "yokogumi horizontal"
+    "fraction" "fraction"
     nil))
 
 (defn- paragraph-attrs [paragraph]

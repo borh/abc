@@ -432,7 +432,7 @@ fn map_block_content(
             outputs.nodes.push(heading);
             current = end;
         }
-        "typography_block" => {
+        "typography_block" | "caption_block" | "warichu_block" => {
             let start = outputs.paragraphs.len();
             for (index, child) in block["children"]
                 .as_array()
@@ -452,14 +452,22 @@ fn map_block_content(
                 )?;
             }
             if outputs.paragraphs.len() > start {
-                let mut typography = layout_scope(&block["formatting"])?;
-                typography["source"] = json!("aat-block");
-                outputs.layout_blocks.push(
-                    json!({"paragraph_range":{"start":start,"end":outputs.paragraphs.len()},
-                    "typography":typography,"source_pointer":path}),
-                );
+                let mut scope = json!({"paragraph_range":{"start":start,"end":outputs.paragraphs.len()}, "source_pointer":path});
+                if block["kind"] == "typography_block" {
+                    let mut typography = layout_scope(&block["formatting"])?;
+                    typography["source"] = json!("aat-block");
+                    scope["typography"] = typography;
+                } else {
+                    scope["role"] = json!(if block["kind"] == "caption_block" {
+                        "caption"
+                    } else {
+                        "warichu"
+                    });
+                }
+                outputs.layout_blocks.push(scope);
             }
         }
+
         "jisage_block" => {
             let children: Vec<&Value> =
                 block["children"].as_array().into_iter().flatten().collect();
@@ -691,7 +699,7 @@ fn map_block_content(
                 )?;
             }
         }
-        "quote_block" | "caption_block" => {
+        "quote_block" => {
             recorder.record_if_measured(
                 "STRUCTURAL",
                 Some(structural_pointer.as_str()),
@@ -1296,20 +1304,11 @@ fn map_inline_to_nodes(
             map_layout_span_to_node(node, nodes, recorder, synthetic_warnings, offset, path, 0)
         }
         "caption" => {
-            let kind = node["kind"].as_str().unwrap_or("");
-            let pointer = format!("{path}.{kind}");
-            recorder.record(
-                "UNSUPPORTED",
-                Some(pointer.as_str()),
-                Some("emphasis(?)"),
-                None,
-                None,
-            )?;
             let text = visible_content_text(
                 node.get("content"),
                 recorder,
                 &format!("{path}.content"),
-                Some("(emphasis.text)"),
+                Some("(caption.text)"),
             )?;
             let end = offset + utf8_len(&text);
             let span = map_node_span(node.get("span"), offset, end, recorder, path)?;
@@ -1322,11 +1321,10 @@ fn map_inline_to_nodes(
                 0,
             )?;
             nodes.push(json!({
-                "type": "emphasis",
+                "type": "caption",
                 "span": span,
                 "text": text,
                 "inline_children": inline_children,
-                "style": kind,
             }));
             Ok(end)
         }
@@ -1633,7 +1631,6 @@ fn inline_child_node(
             Ok(end)
         }
         "caption" => {
-            let kind = node["kind"].as_str().unwrap_or("");
             let text = plain_visible_content_text(node.get("content"))?;
             let end = offset + utf8_len(&text);
             let inline_children = inline_children_nodes(
@@ -1645,11 +1642,10 @@ fn inline_child_node(
                 depth + 1,
             )?;
             nodes.push(json!({
-                "type": "emphasis",
+                "type": "caption",
                 "span": synthetic_span(offset, end),
                 "text": text,
                 "inline_children": inline_children,
-                "style": kind,
             }));
             Ok(end)
         }

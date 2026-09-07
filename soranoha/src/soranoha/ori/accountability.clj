@@ -56,6 +56,8 @@
    "emphasis" {:markers #{"CommandFullwidth" "CommandAscii"}
                :families #{"emphasis.basic" "decoration.boten" "decoration.bousen"
                            "decoration.bold_italic" "decoration.typeface" "decoration.font_size" "layout.tcy"} :aspects #{"layout"}}
+   "caption" {:markers #{"CommandFullwidth" "CommandAscii"}
+              :families #{"figure.image_caption" "caption.block"} :aspects #{"structure" "layout"}}
    "warichu" {:markers #{"CommandFullwidth" "CommandAscii"}
               :families #{"warichu.basic"} :aspects #{"structure" "layout"}}})
 

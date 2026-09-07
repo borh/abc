@@ -410,3 +410,24 @@
     (is (= ["第一。" "第二。"] (mapv #(.getTextContent ^Node %) paragraphs)))
     (is (= 2 (count (filter #(= "emphasis" (get % "kind")) (get-in result [:ir "interpretation_facts"])))))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest captions-and-generic-warichu-retain-inline-content-and-role
+  (doseq [[open close role]
+          [["［＃キャプション］" "［＃キャプション終わり］" "caption"]
+           ["［＃ここから割り注］" "［＃ここで割り注終わり］" "warichu"]]]
+    (let [result (transcribe (source (str "前" open "漢字《かんじ》" close "後。")))
+          wrapper (first (filter #(= role (attribute % "type")) (elements result "seg")))]
+      (is (= "前漢字後。" (:plaintext result)))
+      (is (= "漢字" (view/visible-text wrapper)))
+      (is (within? wrapper (first (elements result "ruby"))))
+      (is (empty? (elements result "figure")))
+      (is (empty? (get-in result [:ir "interpretation_problems"]))))))
+
+(deftest multiline-caption-and-warichu-preserve-source-paragraphs
+  (doseq [[name role] [["キャプション" "caption"] ["割り注" "warichu"]]]
+    (let [result (transcribe (source (str "前。\n［＃ここから" name "］\n第一。\n第二。\n［＃ここで" name "終わり］\n後。")))
+          wrapper (first (filter #(= role (attribute % "type")) (elements result "div")))]
+      (is (= "前。\n第一。\n第二。\n後。" (:plaintext result)))
+      (is (= ["第一。" "第二。"]
+             (mapv #(.getTextContent ^Node %) (filter #(within? wrapper %) (elements result "p")))))
+      (is (empty? (get-in result [:ir "interpretation_problems"]))))))

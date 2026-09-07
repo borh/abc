@@ -15,7 +15,7 @@
       "type": "object", "additionalProperties": false,
       "required": ["kind", "outcome", "aspects", "source_span"],
       "properties": {
-        "kind": {"enum": ["ruby", "gaiji", "emphasis", "warichu", "kunten", "heading"]},
+        "kind": {"enum": ["ruby", "gaiji", "emphasis", "warichu", "kunten", "heading", "caption"]},
         "outcome": {"const": "established"},
         "aspects": {"type":"array", "minItems":1, "uniqueItems":true, "items":{"enum":["content","structure","layout"]}},
         "source_span": {"type":"object", "additionalProperties":false, "required":["start","end","coordinate_system"],
@@ -258,6 +258,7 @@
             "keigakomi_block",
             "yokogumi_block",
             "caption_block",
+            "warichu_block",
             "jizume_block",
             "typography_block"
           ]
@@ -415,6 +416,7 @@
     },
     "formatting_attribute": {
       "oneOf": [
+        {"type":"object","additionalProperties":false,"required":["kind"],"properties":{"kind":{"enum":["caption","warichu"]}}},
         {"type":"object","additionalProperties":false,"required":["kind","style_type"],"properties":{"kind":{"const":"style"},"style_type":{"enum":["bold","italic","gothic","bouten","bosen"]},"decoration":{"type":"object","additionalProperties":false,"required":["kind","position"],"properties":{"kind":{"type":"string"},"position":{"enum":["right","left","both","unknown"]}}}}},
         {"type":"object","additionalProperties":false,"required":["kind","size_type","level"],"properties":{"kind":{"const":"font_size"},"size_type":{"enum":["large","small"]},"level":{"type":"integer","minimum":1}}},
         { "type":"object", "additionalProperties":false, "required":["kind"], "properties":{"kind":{"const":"tcy"}} },

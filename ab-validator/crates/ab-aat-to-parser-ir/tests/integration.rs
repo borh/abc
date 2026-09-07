@@ -3614,7 +3614,7 @@ fn converts_inline_layout_scopes_to_layout_span() {
 }
 
 #[test]
-fn recovers_caption_and_quote_block_children_without_fatal_divergence() {
+fn caption_block_preserves_role_while_quote_children_remain_visible() {
     let (schemas, mapping) = schemas_and_mapping();
     let aat = json!({
         "version": 1,
@@ -3658,7 +3658,8 @@ fn recovers_caption_and_quote_block_children_without_fatal_divergence() {
         .filter_map(|node| node["text"].as_str())
         .collect();
     assert_eq!(text_nodes, vec!["Caption text", "Quote text"]);
-    assert!(has_divergence_record(
+    assert_eq!(output.parser_ir["layout_blocks"][0]["role"], "caption");
+    assert!(!has_divergence_record(
         &output,
         "STRUCTURAL",
         "blocks[].caption_block",

@@ -134,11 +134,11 @@ fn paired_rich_regions_preserve_children_and_unmatched_scopes_remain_explicit() 
 }
 
 #[test]
-fn unimplemented_formatting_keeps_source_and_never_gets_an_established_fact() {
-    let ir = convert("図［＃「図」はキャプション］");
+fn unmatched_caption_target_keeps_source_and_never_gets_an_established_fact() {
+    let ir = convert("図［＃「別」はキャプション］");
     assert_eq!(
         ir["interpretation_problems"][0]["raw"],
-        "図［＃「図」はキャプション］"
+        "［＃「別」はキャプション］"
     );
     assert_eq!(
         ir["interpretation_problems"][0]["aspects"],
@@ -149,7 +149,7 @@ fn unimplemented_formatting_keeps_source_and_never_gets_an_established_fact() {
             .as_array()
             .unwrap()
             .iter()
-            .any(|f| f["kind"] == "emphasis")
+            .any(|f| f["kind"] == "caption")
     );
 }
 

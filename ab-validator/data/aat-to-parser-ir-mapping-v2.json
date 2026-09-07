@@ -4,16 +4,8 @@
   "mapping_schema_hash": "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2",
   "source_aat_version": 2,
   "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "target_parser_ir_schema_hash": "sha256:7e51c606da51b01ac25cbfef13cb6fa20cd201428457df6a41ba304809e3fe0a",
+  "target_parser_ir_schema_hash": "sha256:0d292a9a55568e37d38ecadd9fef25b2aa6e9b899825ee75bde9720ddd361277",
   "transform_rule_descriptions": [
-    {
-      "rule_id": "A-01",
-      "category": "AMBIGUITY",
-      "aat_pointer": "blocks[].caption_block",
-      "parser_ir_pointer": "caption",
-      "action": "project",
-      "description": "Observed 288 occurrences; first_path=blocks[1].caption_block. caption_block vs caption node (text+target); target linkage lost"
-    },
     {
       "rule_id": "A-02",
       "category": "AMBIGUITY",
@@ -4911,14 +4903,6 @@
       "description": "Observed 32710 occurrences; first_path=meta.semantic_summary. semantic_summary provenance dropped; adapter-fidelity concern not representable"
     },
     {
-      "rule_id": "S-01",
-      "category": "STRUCTURAL",
-      "aat_pointer": "blocks[].caption_block",
-      "parser_ir_pointer": null,
-      "action": "flatten",
-      "description": "Observed 288 occurrences; first_path=blocks[1].caption_block. block container of kind 'caption_block' has no parser-IR node; boundary + span + style lost, only inlines emitted"
-    },
-    {
       "rule_id": "S-02",
       "category": "STRUCTURAL",
       "aat_pointer": "blocks[].children[].children[].heading",
@@ -4999,14 +4983,6 @@
       "description": "Observed 22 occurrences; first_path=blocks[3].children[0].children[0].content[3].raw. parser-IR has no raw node; faithful escape hatch dropped"
     },
     {
-      "rule_id": "U-03",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].children[].content[].caption",
-      "parser_ir_pointer": "emphasis(?)",
-      "action": "drop",
-      "description": "Observed 3 occurrences; first_path=blocks[215].children[2].content[1].caption. inline_container kind 'caption' has no first-class parser-IR node; only emphasis.text/style exist"
-    },
-    {
       "rule_id": "U-06",
       "category": "UNSUPPORTED",
       "aat_pointer": "blocks[].children[].content[].content[].raw",
@@ -5045,14 +5021,6 @@
       "parser_ir_pointer": null,
       "action": "drop",
       "description": "Observed 52 occurrences; first_path=blocks[19].children[0].yokogumi_block. block_container kind 'yokogumi_block' has no parser-IR equivalent"
-    },
-    {
-      "rule_id": "U-15",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].content[].caption",
-      "parser_ir_pointer": "emphasis(?)",
-      "action": "drop",
-      "description": "Observed 61 occurrences; first_path=blocks[61].content[1].caption. inline_container kind 'caption' has no first-class parser-IR node; only emphasis.text/style exist"
     },
     {
       "rule_id": "U-24",

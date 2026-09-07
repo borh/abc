@@ -863,6 +863,7 @@ enum EstablishedInterpretation {
     Warichu,
     Kunten,
     Heading,
+    Caption,
 }
 
 impl EstablishedInterpretation {
@@ -874,6 +875,7 @@ impl EstablishedInterpretation {
             Self::Warichu => "warichu",
             Self::Kunten => "kunten",
             Self::Heading => "heading",
+            Self::Caption => "caption",
         }
     }
 
@@ -882,7 +884,7 @@ impl EstablishedInterpretation {
             Self::Ruby => &["content", "structure"],
             Self::Gaiji => &["content"],
             Self::Emphasis => &["layout"],
-            Self::Warichu | Self::Heading => &["structure", "layout"],
+            Self::Warichu | Self::Heading | Self::Caption => &["structure", "layout"],
             Self::Kunten => &["content", "structure", "layout"],
         }
     }
@@ -940,9 +942,10 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
             {
                 Some(EstablishedInterpretation::Emphasis)
             }
-            Some("warichu") => Some(EstablishedInterpretation::Warichu),
+            Some("warichu" | "warichu_block") => Some(EstablishedInterpretation::Warichu),
             Some("kunten") => Some(EstablishedInterpretation::Kunten),
             Some("heading") => Some(EstablishedInterpretation::Heading),
+            Some("caption" | "caption_block") => Some(EstablishedInterpretation::Caption),
             _ => None,
         };
         if let Some(interpretation) = interpretation {
@@ -1261,8 +1264,10 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
             }
         }
 
-        if node.get("x-formatting").is_some()
-            && let Some(close_index) = native_scopes.get(&index).copied()
+        if matches!(
+            node["x-formatting"]["kind"].as_str(),
+            Some("style" | "font_size" | "small_script" | "tcy" | "caption" | "warichu")
+        ) && let Some(close_index) = native_scopes.get(&index).copied()
             && node["span"]["line_start"] != content[close_index]["span"]["line_start"]
             && marker_occupies_source_line(&node, source)
             && marker_occupies_source_line(&content[close_index], source)
@@ -1271,7 +1276,7 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
             let mut inner = content[index + 1..close_index].to_vec();
             strip_boundary_newlines(&mut inner);
             let container = json!({
-                "kind":"typography_block", "formatting":node["x-formatting"],
+                "kind":match node["x-formatting"]["kind"].as_str() { Some("caption") => "caption_block", Some("warichu") => "warichu_block", _ => "typography_block" }, "formatting":node["x-formatting"],
                 "span":{"byte_start":node["span"]["byte_start"], "byte_end":content[close_index]["span"]["byte_end"],
                     "line_start":node["span"]["line_start"], "line_end":content[close_index]["span"]["line_end"]},
                 "interpretation_marker_spans":[node["span"],content[close_index]["span"]],
@@ -2596,8 +2601,10 @@ fn push_style_node(
         style["span"]["line_start"] = children[0]["span"]["line_start"].clone();
         style["content"] = json!(children);
     }
-    if matches!(node.kind, ProjectedKind::FormatMany(_))
-        && style["content"].as_array().is_some_and(Vec::is_empty)
+    if matches!(
+        node.kind,
+        ProjectedKind::FormatMany(_) | ProjectedKind::Format(ForwardAttr::Caption)
+    ) && style["content"].as_array().is_some_and(Vec::is_empty)
     {
         let mut retained = raw_node(decoded, node, "unresolved-formatting-target");
         retained["interpretation_problem"] = json!({"kind":"uninterpreted-notation", "code":"uninterpreted-notation",
@@ -2727,6 +2734,7 @@ fn formatting_fields(attr: ForwardAttr) -> Option<Value> {
         ForwardAttr::Bouten { kind, position } => json!({"kind":"style",
             "style_type": if kind.is_line() { "bosen" } else { "bouten" },
             "decoration":{"kind":kind.keyword(), "position":bouten_position(position)}}),
+        ForwardAttr::Caption => json!({"kind":"caption"}),
         ForwardAttr::Bold => json!({"kind":"style", "style_type":"bold"}),
         ForwardAttr::Gothic => json!({"kind":"style", "style_type":"gothic"}),
         ForwardAttr::Italic => json!({"kind":"style", "style_type":"italic"}),
@@ -2766,6 +2774,10 @@ fn bouten_key(kind: BoutenKind, position: BoutenPosition) -> String {
 
 fn region_formatting(region: RegionFormat) -> Option<(String, Value)> {
     let (key, attr) = match region {
+        RegionFormat::Warichu => return Some(("warichu".to_owned(), json!({"kind":"warichu"}))),
+        RegionFormat::Caption { .. } => {
+            return Some(("caption".to_owned(), json!({"kind":"caption"})));
+        }
         RegionFormat::Bouten { kind, position } => {
             return Some((
                 bouten_key(kind, position),
@@ -2800,6 +2812,8 @@ fn region_formatting(region: RegionFormat) -> Option<(String, Value)> {
 fn region_formatting_close(close: RegionClose) -> Option<String> {
     Some(
         match close {
+            RegionClose::Warichu => "warichu",
+            RegionClose::Caption { .. } => "caption",
             RegionClose::Bouten { kind, position } => return Some(bouten_key(kind, position)),
             RegionClose::Bold { padded: false } => "bold",
             RegionClose::Gothic { padded: false } => "gothic",

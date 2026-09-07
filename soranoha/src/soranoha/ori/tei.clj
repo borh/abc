@@ -411,8 +411,9 @@
                                  (conj [:figDesc (get node "alt")]))))))
 
 (defn- render-caption-node
-  ([acc node _depth]
-   (append-block acc (sourced node [:figDesc (get node "text")]))))
+  ([acc node depth]
+   (render-inline-wrapper acc (get node "inline_children") (get node "text") depth
+                          (sourced node [:seg {:type "caption"}]))))
 
 (defn- render-quote-node
   ([acc node _depth]
@@ -585,7 +586,7 @@
 (defn- paragraph-inline-node? [node]
   (case (get node "type")
     ("text" "ruby" "gaiji" "editor-note" "emphasis" "layout-span"
-            "indentation" "line-break" "quote" "warichu" "kunten" "base-text-variant") true
+            "indentation" "line-break" "quote" "warichu" "kunten" "caption" "base-text-variant") true
     "source-note" (= "body" (get node "placement"))
     false))
 
@@ -612,9 +613,10 @@
                  (get block "align") (conj "text-align: center")
                  (get block "border") (conj "border-style: solid"))
         typography (get block "typography")]
-    (cond-> {:type "layout"}
+    (cond-> {:type (get block "role" "layout")}
       (seq styles) (assoc :style (string/join "; " styles))
-      typography (assoc :rend (inline-layout-rend typography)))))
+      typography (assoc :rend (inline-layout-rend typography))
+      (= "warichu" (get block "role")) (assoc :rend "two-line"))))
 
 (defn- close-layout-blocks [acc frames paragraph-end]
   (loop [acc acc frames frames]

@@ -106,7 +106,9 @@
                ["［＃太字］字［＃「字」は斜体］［＃太字終わり］" nil 3]
                ["｜漢字《かんじ》、漢字《かんじ》。" nil 2]
                ["２）［＃「２）」は縦中横、行右小書き］" nil 1]
-               ["漢［＃レ］字［＃（ノ）］。" nil 2]]]
+               ["漢［＃レ］字［＃（ノ）］。" nil 2]
+               ["［＃キャプション］字［＃キャプション終わり］" nil 2]
+               ["［＃ここから割り注］字［＃ここで割り注終わり］" nil 2]]]
         (testing body
           (let [bytes (.getBytes (str "題\n作者\n\n" body "\n\n底本：本\n") "UTF-8")
                 source-id (cas/put-bytes! (:cas-dir store) bytes)

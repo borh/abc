@@ -161,6 +161,7 @@
                 "［＃「甲［＃「甲」はママ］」は底本では「乙」］" 1]
                ["〔Hu:lshoff［＃「Hu:lshoff」は底本では「Hu:lshoffs」］〕" nil 1]
                ["〔schla:gt［＃「〔schla:gt〕」は底本では「〔scha:gt〕」］〕" nil 1]
+               ["〔Der Mu:s&iggang wird〕［＃「〔Mu:s&iggang〕」は底本では「〔Mu:s&igang〕」］" "〔Der Mu:s&iggang wird〕" 1]
                ["字［＃底本では傍点］" nil 1]
                ["キタ［＃お手伝いさん］" nil 1]
                ["ワフタンゴフ［＃劇場名］" nil 1]

@@ -1450,3 +1450,62 @@ fn a_reading_variant_selects_only_its_exact_structured_suffix() {
         assert!(!ir["interpretation_problems"].as_array().unwrap().is_empty());
     }
 }
+
+#[test]
+fn edition_targets_retain_the_immediately_preceding_accent_scope() {
+    for (body, current, witness, spelling) in [
+        (
+            "９．〔Der Mu:s&iggang wird von unserem Lehrer verdammt.〕［＃「〔Mu:s&iggang〕」は底本では「〔Mu:s&igang〕」］",
+            "Müßiggang",
+            "Müßigang",
+            "Mu:s&iggang",
+        ),
+        (
+            "ROLLER:［＃「ROLLER:」は太字］ 〔Wis&t ihr auch, das& man uns auskundschaftet?〕［＃「auch」は底本では「acuh」］",
+            "auch",
+            "acuh",
+            "auch",
+        ),
+        (
+            "〔a: auch danach〕［＃「auch」は底本では「｜別《べつ》」］",
+            "auch",
+            "別",
+            "auch",
+        ),
+    ] {
+        let ir = convert(body);
+        let all = nodes(&ir);
+        let app = all
+            .iter()
+            .find(|node| node["type"] == "base-text-variant")
+            .unwrap();
+        assert_eq!(app["text"], current);
+        assert_eq!(app["variant"]["base_text"], witness);
+        let span = &app["inline_children"][0]["source_span"];
+        let source = format!("題\n作者\n\n{body}\n\n底本：本\n");
+        let start = usize::try_from(span["start"].as_u64().unwrap()).unwrap();
+        let end = usize::try_from(span["end"].as_u64().unwrap()).unwrap();
+        assert_eq!(&source[start..end], spelling);
+        assert_eq!(ir["interpretation_problems"], json!([]));
+    }
+    for body in [
+        "〔auch auch danach〕［＃「auch」は底本では「acuh」］",
+        "auch danach［＃「auch」は底本では「acuh」］",
+        "〔auch danach〕別［＃「auch」は底本では「acuh」］",
+        "〔auch danach〕\n［＃「auch」は底本では「acuh」］",
+        "〔auch danach〕〔anders〕［＃「auch」は底本では「acuh」］",
+        "〔Der Mu:s&iggang wird〕［＃「Musiggang」は底本では「Musigang」］",
+    ] {
+        let ir = convert(body);
+        assert!(
+            !nodes(&ir)
+                .iter()
+                .any(|node| node["type"] == "base-text-variant"),
+            "{body}"
+        );
+        assert!(
+            !ir["interpretation_problems"].as_array().unwrap().is_empty(),
+            "{body}"
+        );
+    }
+}

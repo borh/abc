@@ -4202,6 +4202,15 @@ fn resolve_text_variants_in_blocks(nodes: Vec<Value>, decoded: &DecodedSource) -
                     append_variant_statement(&mut resolved, &node);
                     continue;
                 }
+                if attach_accent_scope_variant(
+                    &mut resolved,
+                    &node,
+                    current,
+                    &current_text,
+                    decoded,
+                ) {
+                    continue;
+                }
                 if attach_principal_subrange(&mut resolved, &node, current, &current_text, decoded)
                 {
                     continue;
@@ -4229,6 +4238,75 @@ fn resolve_text_variants_in_blocks(nodes: Vec<Value>, decoded: &DecodedSource) -
         resolved.push(node);
     }
     resolved
+}
+
+fn attach_accent_scope_variant(
+    nodes: &mut Vec<Value>,
+    annotation: &Value,
+    current: &[Value],
+    target: &str,
+    decoded: &DecodedSource,
+) -> bool {
+    let Some(content) = accent_scope_variant_content(nodes, annotation, current, target, decoded)
+    else {
+        return false;
+    };
+    *nodes = content;
+    true
+}
+
+fn accent_scope_variant_content(
+    nodes: &[Value],
+    annotation: &Value,
+    current: &[Value],
+    target: &str,
+    decoded: &DecodedSource,
+) -> Option<Vec<Value>> {
+    if target.is_empty() {
+        return None;
+    }
+    let marker = value_source_span(annotation)?;
+    let scope = decoded.accent_scopes.iter().find(|scope| {
+        let end = decoded.span_ctx.to_decoded_end(scope.end as usize);
+        decoded.text.get(end..marker.start) == Some("〕")
+    })?;
+    let source = decoded
+        .span_text
+        .get(scope.start as usize..scope.end as usize)?;
+    if source.contains(['\n', '\r']) {
+        return None;
+    }
+    let mut matches = source.match_indices(target);
+    let (offset, _) = matches.next()?;
+    if matches.next().is_some() {
+        return None;
+    }
+    let start = scope.start as usize + offset;
+    let end = start + target.len();
+    let suffix = decoded.span_text.get(end..scope.end as usize)?;
+    // Both cuts reuse the transactional source-mapped suffix selector. Scope
+    // ownership bounds the search; unscoped prose keeps its adjacency rule.
+    let mut content = nodes.to_vec();
+    let trailing = if suffix.is_empty() {
+        Vec::new()
+    } else {
+        take_visible_suffix_matching(&mut content, suffix, decoded, None)?
+    };
+    let selected = take_visible_suffix_matching(&mut content, target, decoded, Some(current))?;
+    if value_source_span(selected.first()?)?.start != decoded.span_ctx.to_decoded(start)
+        || value_source_span(selected.last()?)?.end != decoded.span_ctx.to_decoded_end(end)
+    {
+        return None;
+    }
+    let base = annotation["text_variant"]["base_content"].as_array()?;
+    let base_text = content_structured_text(base)?;
+    content.push(json!({"kind":"text-variant", "content":selected,
+        "current_interpretation_facts":established_interpretations(current),
+        "base_text":base_text, "base_content":base,
+        "source":annotation["source"], "span":annotation["span"]}));
+    append_variant_statement(&mut content, annotation);
+    content.extend(trailing);
+    Some(content)
 }
 
 fn physical_break_variant(

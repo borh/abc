@@ -1362,3 +1362,17 @@
     (doseq [profile [:projection/plaintext :projection/markdown]]
       (is (some #{{"family" "note" "disposition" "omitted" "count" 1}}
                 (get (projection/report profile (:view result)) "counts"))))))
+
+(deftest edition-targets-stay-inside-the-supplied-accent-scope
+  (doseq [[body expected markdown current witness]
+          [["９．〔Der Mu:s&iggang wird von unserem Lehrer verdammt.〕［＃「〔Mu:s&iggang〕」は底本では「〔Mu:s&igang〕」］"
+            "９．Der Müßiggang wird von unserem Lehrer verdammt." "９．Der Müßiggang wird von unserem Lehrer verdammt\\." "Müßiggang" "Müßigang"]
+           ["〔Wis&t ihr auch, das& man uns auskundschaftet?〕［＃「auch」は底本では「acuh」］"
+            "Wißt ihr auch, daß man uns auskundschaftet?" "Wißt ihr auch, daß man uns auskundschaftet?" "auch" "acuh"]]]
+    (let [result (transcribe (source body))]
+      (is (= expected (:plaintext result)))
+      (is (= markdown (projection/markdown (:view result))))
+      (is (= [current] (texts result "lem")))
+      (is (= [witness] (texts result "rdg")))
+      (is (empty? (get-in result [:ir "interpretation_problems"])))
+      (is (every? #(not (string/blank? (attribute % "source"))) (elements result "app"))))))

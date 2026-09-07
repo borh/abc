@@ -76,6 +76,7 @@
            ["「口＋「皐」の「白」にかえて「自」、第4水準2-4-33" "嘷"]
            ["「やまいだれ＋低のつくり」、第4水準2-81-42" "疷"]
            ["「言＋墟のつくり」、第4水準2-88-74" "譃"]
+           ["「鹵」、1-83-35" "鹵"]
            ["二の字点、1-2-22" "〻"]]]
     (testing notation
       (let [result (transcribe (source (str "※［＃" notation "］")))]
@@ -154,6 +155,38 @@
     (is (= [] (get-in result [:view :view/eligible-spans])))
     (is (= [raw] (mapv #(get-in % [:view/evidence "raw"]) problems)))
     (is (= [{"kind" "document"}] (mapv #(get-in % [:view/evidence "influence"]) problems)))))
+
+(deftest literal-brackets-preserve-body-and-nested-notation
+  (let [result (transcribe (source "前［※［＃下側の右ダブル引用符、U+201E］思想。］後。"))]
+    (is (= "前［„思想。］後。" (:plaintext result)))
+    (is (= ["„"] (texts result "g")))
+    (is (empty? (get-in result [:view :view/problems]))))
+  (let [marker "［＃未定義の指定］"
+        result (transcribe (source (str "前［中" marker "後］末。")))]
+    (is (= "前［中後］末。" (:plaintext result)))
+    (is (= [marker] (mapv #(get-in % [:view/evidence "raw"])
+                          (get-in result [:view :view/problems]))))))
+
+(deftest scoped-upright-text-retains-rich-content
+  (let [result (transcribe (source "前［＃縦中横］（※［＃ローマ数字1、1-13-21］）［＃縦中横終わり］後。"))
+        upright (first (filter #(= "text-combine-upright" (attribute % "rend")) (elements result "hi")))]
+    (is (= "前（Ⅰ）後。" (:plaintext result)))
+    (is (= "（Ⅰ）" (some-> upright view/visible-text)))
+    (is (within? upright (first (elements result "g"))))
+    (is (empty? (get-in result [:view :view/problems])))))
+
+(deftest source-font-and-script-distinctions-survive-transcription
+  (doseq [[notation rendition]
+          [["ゴシック体" "gothic"] ["斜体" "italic"]
+           ["上付き小文字" "superscript"] ["下付き小文字" "subscript"]
+           ["２段階小さな文字" "font-size small(2)"] ["小文字" "font-size absolute(small)"]
+           ["行右小書き" "small-script right"] ["行左小書き" "small-script left"]]]
+    (testing notation
+      (let [result (transcribe (source (str "前字［＃「字」は" notation "］後。")))]
+        (is (= "前字後。" (:plaintext result)))
+        (is (= ["字"] (texts result "hi")))
+        (is (= [rendition] (mapv #(attribute % "rend") (elements result "hi"))))
+        (is (empty? (get-in result [:view :view/problems])))))))
 
 (deftest warichu-does-not-invent-upper-and-lower-readings
   (let [result (transcribe (source "［＃ここから２字下げ］\n前［＃割り注］上。※［＃歌記号、1-3-28］下。［＃割り注終わり］後\n［＃ここで字下げ終わり］"))

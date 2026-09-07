@@ -137,9 +137,12 @@ fn bare_cr_normalization_has_exact_reversible_evidence() {
 }
 
 #[test]
-fn capture_distinguishes_semantic_opaque_recovery_and_destructive_pua() {
+fn capture_distinguishes_semantic_opaque_and_unparsed_source() {
     let source = "本文｜青梅《おうめ》［＃未知］［＃tail\u{e001}";
-    let ledger = json(&classified_source_ledger_from_bytes(source.as_bytes()).unwrap());
+    let generation = capture_generation_from_bytes(source.as_bytes()).unwrap();
+    verify_capture_generation(&generation).unwrap();
+    assert_eq!(generation.decoded_source, source.as_bytes());
+    let ledger = json(&generation.classified_source_ledger);
     let entries = ledger["entries"].as_array().unwrap();
 
     assert!(entries.iter().any(|entry| entry["construct_id"] == "ruby"));
@@ -149,15 +152,27 @@ fn capture_distinguishes_semantic_opaque_recovery_and_destructive_pua() {
             .any(|entry| entry["construct_id"] == "unknown_directive"
                 && entry["disposition"] == "preserved_opaque")
     );
+    let tail_start = source.find("［＃tail").unwrap() as u64;
     assert!(
         entries
             .iter()
-            .any(|entry| entry["construct_id"] == "recovered_verbatim")
+            .all(|entry| entry["end"].as_u64().unwrap() <= tail_start)
     );
-    let pua_start = source.find('\u{e001}').unwrap() as u64;
-    assert!(!entries.iter().any(|entry| {
-        entry["start"].as_u64().unwrap() <= pua_start && pua_start < entry["end"].as_u64().unwrap()
-    }));
+    let parser = json(&generation.parser_output);
+    let tail = parser["blocks"][0]["content"]
+        .as_array()
+        .unwrap()
+        .last()
+        .unwrap();
+    assert_eq!(tail["kind"], "raw");
+    assert_eq!(tail["source"], "［＃tail\u{e001}");
+    assert_eq!(tail["span"]["byte_start"], tail_start);
+    assert_eq!(tail["span"]["byte_end"], source.len());
+    assert_eq!(
+        tail["interpretation_problem"]["code"],
+        "unparsed-source-gap"
+    );
+    assert_eq!(parser["meta"]["parse_complete"], false);
 }
 
 #[test]
@@ -321,11 +336,7 @@ fn production_fixture_regenerates_byte_identically() {
         ("ledger.json", first.classified_source_ledger.as_slice()),
         ("generation.json", first.manifest.as_slice()),
     ];
-    // The committed witnesses move whenever the policy identity moves, which
-    // is a deliberate and reviewable event rather than an accident. Every
-    // other capture fixture in this workspace has a regeneration flag; this
-    // one did not, and its absence meant a policy rotation had to be
-    // hand-applied to bytes nobody can read.
+    // Regeneration updates the authenticated fixture as one complete generation.
     if env::var_os("UPDATE_CLASSIFIED_SOURCE_FIXTURE").is_some() {
         for (name, actual) in members {
             fs::write(format!("{ROOT}/{name}"), actual).unwrap();

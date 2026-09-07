@@ -225,17 +225,12 @@ fn forward_form(body: &str) -> Option<String> {
     }
 
     // Sic-marker annotation notes → the recognised `に「Y」の注記` marginNote
-    // form. Bare `ママ` is quoted (scoped to that literal token); a `と注記` or
-    // missing-`の` tail gains the `の`. All preserve the `「X」`/`「Y」` targets.
+    // form. Bare `ママ` is quoted (scoped to that literal token); a `と注記`
+    // tail gains the `の`. Both preserve the `「X」`/`「Y」` targets.
     if let Some(head) = body.strip_suffix("にママの注記") {
         return Some(format!("{head}に「ママ」の注記"));
     }
     if let Some(head) = body.strip_suffix("と注記")
-        && head.ends_with('」')
-    {
-        return Some(format!("{head}の注記"));
-    }
-    if let Some(head) = body.strip_suffix("注記")
         && head.ends_with('」')
     {
         return Some(format!("{head}の注記"));
@@ -314,7 +309,6 @@ pub const CATALOGUE_SAMPLES: &[&str] = &[
     "「意志」に傍点（白丸）",
     "「意志」に傍点◎",
     // Sic-marker annotation notes.
-    "「甫」に「ママ」注記",
     "「甫」にママの注記",
     "「甫」に「ママ」と注記",
     // Bare parenthesised 縦中横 target.
@@ -464,11 +458,7 @@ mod tests {
 
     #[test]
     fn sic_annotation_notes_normalise() {
-        for v in [
-            "「甫」に「ママ」注記",
-            "「甫」にママの注記",
-            "「甫」に「ママ」と注記",
-        ] {
+        for v in ["「甫」にママの注記", "「甫」に「ママ」と注記"] {
             assert_eq!(
                 canonical_directive(v).as_deref(),
                 Some("「甫」に「ママ」の注記"),
@@ -476,6 +466,7 @@ mod tests {
             );
         }
         assert_eq!(canonical_directive("「甫」に「ママ」の注記"), None);
+        assert_eq!(canonical_directive("「甫」に「ママ」注記"), None);
     }
 
     #[test]

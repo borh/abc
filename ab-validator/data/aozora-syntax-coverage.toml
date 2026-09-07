@@ -1615,28 +1615,28 @@ sample_works = []
 id = "iteration.kunoji"
 priority = 2
 category = "glyph"
-feature_keys = ["gaiji"]
-reference_sources = ["references/parsers/aozora2html/lib/aozora2html.rb"]
+feature_keys = ["iteration-mark"]
+reference_sources = ["https://www.aozora.gr.jp/KOSAKU1/txt_chu_kigo.html", "https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-6/"]
 source_examples = ["／＼", "／″＼"]
 source_patterns = ['／＼', '／″＼']
-ir_nodes = []
-aat_nodes = ["gaiji"]
-tei_projection = "g"
-plaintext_projection = "drop"
-comparison_projection = "drop"
-validation_properties = []
+ir_nodes = ["iteration-mark"]
+aat_nodes = ["iteration-mark"]
+tei_projection = "choice/orig/reg"
+plaintext_projection = "visible iteration mark"
+comparison_projection = "visible iteration mark"
+validation_properties = ["exact source spelling", "whole vertical kana repeat mark"]
 adapter_expectations = ["preserve iteration mark"]
 oracle_cases = ["iteration.kunoji.basic"]
-status = "needs_research"
-status_reason = "kunoji iteration mark; aozora2html flags via @chuuki_table without inline transform"
+status = "covered"
+status_reason = "Complete supplied notation retains its spelling and realizes U+3031 or U+3032 without expanding the repeated reading."
 
 [syntax.representability]
 source_inventory_row = "iteration.kunoji"
 status = "typed"
-aat_nodes = ["gaiji"]
-raw_fallback = true
-evidence = "data/aat-oracle-cases.toml:558; docs/aat-contract.md:120"
-notes = "Reviewed oracle evidence represents kunoji as a typed gaiji resolved to the Unicode vertical kana repeat mark; raw fallback covers parsers/adapters that still treat the slash glyphs as text."
+aat_nodes = ["iteration-mark"]
+raw_fallback = false
+evidence = "crates/ab-aozora-facade/tests/iteration_marks.rs; data/aat-oracle-cases.toml"
+notes = "Native marks remain distinct from gaiji. Malformed notation and already encoded Unicode marks remain literal source text."
 
 [syntax.parsers.aozora2]
 recognition = "unrecognised"

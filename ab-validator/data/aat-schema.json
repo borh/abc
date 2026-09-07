@@ -15,7 +15,7 @@
       "type": "object", "additionalProperties": false,
       "required": ["kind", "outcome", "aspects", "source_span"],
       "properties": {
-        "kind": {"enum": ["ruby", "gaiji", "gaiji-ruby", "emphasis", "warichu", "kunten", "heading", "caption", "text-variant", "annotated-text", "layout", "editorial-note", "line-layout", "table", "layout-break"]},
+        "kind": {"enum": ["ruby", "gaiji", "gaiji-ruby", "iteration-mark", "emphasis", "warichu", "kunten", "heading", "caption", "text-variant", "annotated-text", "layout", "editorial-note", "line-layout", "table", "layout-break"]},
         "outcome": {"const": "established"},
         "aspects": {"type":"array", "minItems":1, "uniqueItems":true, "items":{"enum":["content","structure","layout"]}},
         "source_span": {"type":"object", "additionalProperties":false, "required":["start","end","coordinate_system"],
@@ -219,7 +219,8 @@
         { "$ref": "#/$defs/warigaki" },
         { "$ref": "#/$defs/warichu" },
         { "$ref": "#/$defs/layout_break" },
-        { "$ref": "#/$defs/kunten" }
+        { "$ref": "#/$defs/kunten" },
+        { "$ref": "#/$defs/iterationMark" }
       ]
     },
     "layout_break":{"type":"object","required":["kind","break_kind","span"],"additionalProperties":false,
@@ -530,6 +531,14 @@
           "then": { "required": ["indent_first", "indent_rest"] }
         }
       ]
+    },
+    "iterationMark": {
+      "type":"object", "additionalProperties":false,
+      "required":["kind","text","source","span"],
+      "properties":{"kind":{"const":"iteration-mark"}, "text":{"enum":["〱","〲"]},
+        "source":{"enum":["／＼","／″＼"]}, "span":{"$ref":"#/$defs/span"}},
+      "oneOf":[{"properties":{"text":{"const":"〱"},"source":{"const":"／＼"}}},
+               {"properties":{"text":{"const":"〲"},"source":{"const":"／″＼"}}}]
     },
     "kunten": {
       "type":"object", "additionalProperties":false,

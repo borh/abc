@@ -51,6 +51,7 @@ pub fn source_accountability(
                 pattern.row_id.as_str(),
                 "kunten.kaeriten"
                     | "kunten.okurigana"
+                    | "iteration.kunoji"
                     | "gaiji.marker"
                     | "gaiji.jis_code"
                     | "gaiji.unicode_codepoint"
@@ -114,6 +115,7 @@ fn nested_components(
             if matches!(
                 child.kind,
                 SourceMarkerKind::CommandFullwidth
+                    | SourceMarkerKind::IterationNotation
                     | SourceMarkerKind::CommandAscii
                     | SourceMarkerKind::GaijiFullwidth
                     | SourceMarkerKind::GaijiAscii
@@ -124,6 +126,7 @@ fn nested_components(
                         family.as_str(),
                         "kunten.kaeriten"
                             | "kunten.okurigana"
+                            | "iteration.kunoji"
                             | "gaiji.marker"
                             | "gaiji.jis_code"
                             | "gaiji.unicode_codepoint"
@@ -149,6 +152,28 @@ fn nested_components(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn iteration_components_keep_original_coordinates_without_expansion() {
+        let source = "題\n作者\n\nフゴ／＼。｜時／″＼《とき／＼》。／゛＼〳〵\n";
+        let patterns = vec![SourceInventoryPattern {
+            row_id: "iteration.kunoji".into(),
+            source_patterns: vec!["／＼".into(), "／″＼".into()],
+        }];
+        let report = source_accountability(source.as_bytes(), b"matrix", &patterns);
+        let occurrences = report["occurrences"].as_array().unwrap();
+        assert_eq!(occurrences.len(), 2);
+        assert_eq!(occurrences[0]["kind"], "IterationNotation");
+        let components = occurrences[1]["components"].as_array().unwrap();
+        assert_eq!(components.len(), 2);
+        for event in std::iter::once(&occurrences[0]).chain(components) {
+            let span = &event["source_span"];
+            let start = span["start"].as_u64().unwrap() as usize;
+            let end = span["end"].as_u64().unwrap() as usize;
+            assert_eq!(&source[start..end], event["raw"].as_str().unwrap());
+            assert_eq!(event["families"], json!(["iteration.kunoji"]));
+        }
+    }
 
     #[test]
     fn evidence_has_exact_decoded_spans_and_no_semantic_claim() {

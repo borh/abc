@@ -37,6 +37,7 @@ pub enum SourceEventKind<'a> {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum SourceMarkerKind {
+    IterationNotation,
     RubyExplicit,
     RubyImplicit,
     GaijiFullwidth,
@@ -499,6 +500,23 @@ fn scan_markers(txt: &str) -> Vec<RawMarker<'_>> {
 
 fn scan_next_marker(txt: &str, offset: usize, line: usize) -> Option<RawMarker<'_>> {
     let rest = &txt[offset..];
+
+    if let Some(notation) = ["／＼", "／″＼"]
+        .into_iter()
+        .find(|notation| rest.starts_with(notation))
+    {
+        let end = offset + notation.len();
+        return Some(raw_marker(
+            txt,
+            offset,
+            end,
+            line,
+            SourceMarkerKind::IterationNotation,
+            offset,
+            end,
+            RawMarkerEvent::PreserveText,
+        ));
+    }
 
     if let Some(note_end) = bottom_text_correction_note_end(txt, offset) {
         return Some(raw_marker(

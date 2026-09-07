@@ -299,6 +299,11 @@
                    (sourced node (conj (into [:seg {:type "annotated-text"}]
                                              (:current-paragraph principal)) note)))))
 
+(defn- render-iteration-mark-node [acc node _depth]
+  (append-inline acc (sourced node [:choice {}
+                                    [:orig (get node "source")]
+                                    [:reg (get node "text")]])))
+
 (defn- render-base-text-variant-node [acc node depth]
   (let [before (:current-paragraph acc)
         rendered (if (seq (get node "inline_children"))
@@ -479,6 +484,7 @@
    "quote" render-quote-node
    "source-note" render-source-note-node
    "kunten" render-kunten-node
+   "iteration-mark" render-iteration-mark-node
    "warichu" render-warichu-node})
 
 (defn- render-node

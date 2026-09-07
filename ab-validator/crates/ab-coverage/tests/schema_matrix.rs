@@ -901,7 +901,6 @@ fn source_inventory_classifies_shorthand_directional_ruby() {
 fn kanbun_and_reference_rows_have_typed_representability() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     for (row_id, expected_node, expected_projection) in [
-        ("iteration.kunoji", "gaiji", "g"),
         ("kunten.kaeriten", "style", "kaeriten"),
         ("kunten.okurigana", "ruby", "okurigana"),
         ("reference.frontref", "style", "ref"),

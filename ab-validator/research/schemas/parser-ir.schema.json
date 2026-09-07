@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
   "title": "ABC Parser IR",
-  "version": "0.27.0",
+  "version": "0.28.0",
   "type": "object",
   "required": ["schema_id", "schema_hash", "source", "nodes", "warnings", "errors", "interpretation_problems", "interpretation_facts"],
   "additionalProperties": false,
@@ -47,7 +47,7 @@
       "type": "object", "additionalProperties": false,
       "required": ["kind", "outcome", "aspects", "source_span"],
       "properties": {
-        "kind": {"enum": ["ruby", "gaiji", "gaiji-ruby", "emphasis", "warichu", "kunten", "heading", "caption", "text-variant", "annotated-text", "layout", "editorial-note", "line-layout", "table", "layout-break"]},
+        "kind": {"enum": ["ruby", "gaiji", "gaiji-ruby", "iteration-mark", "emphasis", "warichu", "kunten", "heading", "caption", "text-variant", "annotated-text", "layout", "editorial-note", "line-layout", "table", "layout-break"]},
         "outcome": {"const": "established"},
         "aspects": {"type":"array", "minItems":1, "uniqueItems":true, "items":{"enum":["content","structure","layout"]}},
         "source_span": {"type":"object", "additionalProperties":false, "required":["start","end","coordinate_system"],
@@ -159,6 +159,7 @@
         { "$ref": "#/$defs/gaijiNode" },
         { "$ref": "#/$defs/editorNoteNode" },
         { "$ref": "#/$defs/kuntenNode" },
+        { "$ref": "#/$defs/iterationMarkNode" },
         { "$ref": "#/$defs/baseTextVariantNode" },
         { "$ref": "#/$defs/annotatedTextNode" },
         { "$ref": "#/$defs/warichuNode" },
@@ -185,6 +186,7 @@
         { "$ref": "#/$defs/gaijiNode" },
         { "$ref": "#/$defs/editorNoteNode" },
         { "$ref": "#/$defs/kuntenNode" },
+        { "$ref": "#/$defs/iterationMarkNode" },
         { "$ref": "#/$defs/baseTextVariantNode" },
         { "$ref": "#/$defs/annotatedTextNode" },
         { "$ref": "#/$defs/warichuNode" },
@@ -633,6 +635,16 @@
           }
         }
       ]
+    },
+    "iterationMarkNode": {
+      "allOf":[{"$ref":"#/$defs/baseNode"}, {
+        "type":"object", "additionalProperties":false, "required":["type","span","text","source"],
+        "properties":{"type":{"const":"iteration-mark"}, "span":{"$ref":"#/$defs/span"},
+          "source_span":{"$ref":"#/$defs/sourceSpan"}, "text":{"enum":["〱","〲"]},
+          "source":{"enum":["／＼","／″＼"]}},
+        "oneOf":[{"properties":{"text":{"const":"〱"},"source":{"const":"／＼"}}},
+                 {"properties":{"text":{"const":"〲"},"source":{"const":"／″＼"}}}]
+      }]
     },
     "kuntenNode": {
       "allOf":[{"$ref":"#/$defs/baseNode"}, {

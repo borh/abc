@@ -41,7 +41,8 @@ pub use intern::{InternStats, StrId, StrInterner};
 pub use output::{LexOutput, SourceNode};
 pub use payload::{
     AngleQuote, Content, Directive, ForwardFormat, Gaiji, GaijiCanonicalOwned, Heading,
-    HeadingHint, Illustration, IterationMark, Kunten, KuntenKind, MarginNote, Node, Ruby, Segment, Warichu,
+    HeadingHint, Illustration, IterationMark, Kunten, KuntenKind, MarginNote, Node, Ruby, Segment,
+    Warichu,
 };
 pub use registry::{ContainerEnd, ContainerPair, NodeRef, Registry};
 pub use store::{

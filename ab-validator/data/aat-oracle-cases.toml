@@ -135,20 +135,21 @@ supports = "Description-only gaiji markers are preserved as non-embedded gaiji n
 independent = true
 
 [[evidence]]
-id = "aozora-reference-kunoji-basic"
+id = "aozora-rule-kunoji"
 kind = "aozora_rule"
-citation = "AozoraEpub3 kunoji conversion"
-locator = "references/parsers/AozoraEpub3-JDK21/src/com/github/hmdev/converter/AozoraEpub3Converter.java:1445"
-supports = "The converter maps source ／＼ kunoji notation to the Unicode vertical kana repeat mark upper and lower halves."
+citation = "Aozora Bunko text annotation symbols, kunoji"
+locator = "くの字点"
+url = "https://www.aozora.gr.jp/KOSAKU1/txt_chu_kigo.html"
+supports = "Source ／＼ denotes the double-height kana repeat mark; ／″＼ supplies its voiced form."
 independent = true
 
 [[evidence]]
-id = "unicode-u3033-u3035"
+id = "unicode-whole-kana-repeat-mark"
 kind = "unicode"
-citation = "Unicode CJK Symbols and Punctuation chart, U+3033 and U+3035"
-locator = "U+3033, U+3035"
-url = "https://unicode.org/charts/PDF/U3000.pdf"
-supports = "U+3033 is 〳 and U+3035 is 〵, the vertical kana repeat mark upper and lower halves."
+citation = "Unicode 17, section 6.2.12"
+locator = "U+3031, U+3032"
+url = "https://www.unicode.org/versions/Unicode17.0.0/core-spec/chapter-6/"
+supports = "U+3031 and U+3032 encode whole unvoiced and voiced vertical kana repeat marks; separately encoded upper and lower halves are distinct characters."
 independent = true
 
 [[evidence]]
@@ -557,31 +558,23 @@ source = "description-only gaiji"
 [[case]]
 id = "iteration.kunoji.basic"
 syntax_row_ids = ["iteration.kunoji"]
-category = "gaiji"
+category = "glyph"
 source_utf8 = "／＼"
-evidence_ids = ["aozora-reference-kunoji-basic", "unicode-u3033-u3035"]
-notes = "Kunoji iteration notation should preserve the semantic vertical kana repeat mark, not only the source slash glyphs."
+evidence_ids = ["aozora-rule-kunoji", "unicode-whole-kana-repeat-mark"]
+notes = "The complete supplied notation realizes one whole vertical kana repeat mark without expanding the repeated reading."
 
 [[case.review]]
 status = "reviewed"
-reviewer = "oracle-source-audit"
-reviewed_at = "2026-05-03"
-notes = "Verified the source mapping against AozoraEpub3 conversion and the target glyphs against the Unicode chart."
+reviewer = "source-authority-review"
+reviewed_at = "2026-09-07"
+notes = "Aozora specifies the notation; Unicode 17 section 6.2.12 distinguishes whole marks from encoded halves."
 
 [case.oracle]
-visible_text = "〳〵"
+visible_text = "〱"
 
 [[case.oracle.sequence]]
 selector = "blocks.*.content"
-kinds = ["gaiji"]
-
-[[case.oracle.gaiji]]
-selector = "blocks.*.content.*"
-description = "くの字点"
-resolved = "〳〵"
-jis_code = ""
-unresolved_reason = ""
-source = "kunoji iteration mark"
+kinds = ["iteration-mark"]
 
 [[case]]
 id = "accent.diacritic.e_acute"

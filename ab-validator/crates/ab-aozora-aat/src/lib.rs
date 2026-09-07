@@ -950,6 +950,7 @@ enum EstablishedInterpretation {
     Ruby,
     Gaiji,
     GaijiRuby,
+    IterationMark,
     Emphasis,
     Warichu,
     Kunten,
@@ -1023,6 +1024,7 @@ impl EstablishedInterpretation {
             }
             Some("warichu" | "warichu_block") => Some(Self::Warichu),
             Some("kunten") => Some(Self::Kunten),
+            Some("iteration-mark") => Some(Self::IterationMark),
             Some("heading") => Some(Self::Heading),
             Some("caption" | "caption_block") => Some(Self::Caption),
             Some("text-variant") => Some(Self::TextVariant),
@@ -1050,6 +1052,7 @@ impl EstablishedInterpretation {
             Self::Emphasis => "emphasis",
             Self::Warichu => "warichu",
             Self::Kunten => "kunten",
+            Self::IterationMark => "iteration-mark",
             Self::Heading => "heading",
             Self::Caption => "caption",
             Self::TextVariant => "text-variant",
@@ -1067,7 +1070,7 @@ impl EstablishedInterpretation {
             Self::Ruby | Self::GaijiRuby | Self::TextVariant | Self::EditorialNote => {
                 &["content", "structure"]
             }
-            Self::Gaiji => &["content"],
+            Self::Gaiji | Self::IterationMark => &["content"],
             Self::Emphasis | Self::Layout | Self::LineLayout => &["layout"],
             Self::Warichu | Self::Heading | Self::Caption | Self::Table | Self::LayoutBreak => {
                 &["structure", "layout"]
@@ -1128,7 +1131,7 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
                 || matches!(
                     node["kind"].as_str(),
                     Some(
-                        "gaiji"
+                        "gaiji" | "iteration-mark"
                             | "kunten"
                             | "text-variant"
                             | "annotated_text"
@@ -3165,6 +3168,7 @@ fn target_text(node: &Value) -> Option<Cow<'_, str>> {
         "text" => Some(Cow::Borrowed(node["value"].as_str()?)),
         "ruby" => Some(Cow::Borrowed(node["base"].as_str()?)),
         "gaiji" => Some(Cow::Borrowed(node["resolved"].as_str()?)),
+        "iteration-mark" => Some(Cow::Borrowed(node["text"].as_str()?)),
         "editorial_note" | "kunten" => Some(Cow::Borrowed("")),
         "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi"
         | "yokogumi" | "fraction" | "text-variant" | "annotated_text" => {

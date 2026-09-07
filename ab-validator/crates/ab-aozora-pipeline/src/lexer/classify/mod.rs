@@ -739,9 +739,13 @@ where
     fn emit_plain_run(&mut self, span: Span, provenance: PlainProvenance) {
         let mut start = span.start;
         if provenance == PlainProvenance::Text {
-            for (offset, _) in self.source[span.start as usize..span.end as usize].match_indices('／') {
+            for (offset, _) in
+                self.source[span.start as usize..span.end as usize].match_indices('／')
+            {
                 let position = span.start + u32::try_from(offset).expect("source fits native span");
-                let Some(mark) = IterationMark::at_start(&self.source[position as usize..span.end as usize]) else {
+                let Some(mark) =
+                    IterationMark::at_start(&self.source[position as usize..span.end as usize])
+                else {
                     continue;
                 };
                 if start < position {
@@ -750,7 +754,8 @@ where
                         source_span: Span::new(start, position),
                     });
                 }
-                start = position + u32::try_from(mark.source().len()).expect("notation fits native span");
+                start = position
+                    + u32::try_from(mark.source().len()).expect("notation fits native span");
                 self.push_output(ClassifiedSpan {
                     kind: SpanKind::Aozora(Node::IterationMark(mark)),
                     source_span: Span::new(position, start),
@@ -1407,31 +1412,30 @@ where
             reading
         };
         let base_start = pending.start();
-        let mut segs: smallvec::SmallVec<[Segment; 2]> = smallvec::SmallVec::new();
+        let mut segs = Vec::new();
+        if let Some(prefix) = pending.prefix {
+            push_text_segment(&mut segs, self.source, prefix.start..prefix.end, self.alloc);
+        }
         let mut previous_end = None;
         for gaiji in &pending.segs {
             if let Some(start) = previous_end.filter(|start| *start < gaiji.span.source_span.start)
             {
-                segs.push(
-                    self.alloc.seg_text(
-                        &self.source[start as usize..gaiji.span.source_span.start as usize],
-                    ),
+                push_text_segment(
+                    &mut segs,
+                    self.source,
+                    start..gaiji.span.source_span.start,
+                    self.alloc,
                 );
             }
             segs.push(gaiji.payload);
             previous_end = Some(gaiji.span.source_span.end);
         }
-        if let Some(prefix) = pending.prefix {
-            segs.insert(
-                0,
-                self.alloc
-                    .seg_text(&self.source[prefix.start as usize..prefix.end as usize]),
-            );
-        }
         if pending.end() < open_span.start {
-            segs.push(
-                self.alloc
-                    .seg_text(&self.source[pending.end() as usize..open_span.start as usize]),
+            push_text_segment(
+                &mut segs,
+                self.source,
+                pending.end()..open_span.start,
+                self.alloc,
             );
             self.pending_plain.clear();
         }
@@ -1536,9 +1540,15 @@ where
         // Truncate any in-progress plain run to end exactly where the ruby
         // takes over.
         self.flush_plain_up_to(m.consume_start);
-        let base_start = open_span.start - u32::try_from(m.base.len()).expect("base fits native span");
+        let base_start =
+            open_span.start - u32::try_from(m.base.len()).expect("base fits native span");
         let mut base_segments = Vec::new();
-        push_text_segment(&mut base_segments, self.source, base_start..open_span.start, self.alloc);
+        push_text_segment(
+            &mut base_segments,
+            self.source,
+            base_start..open_span.start,
+            self.alloc,
+        );
         let base_content = self.alloc.content_segments(&base_segments);
         let node = self.alloc.ruby(base_content, m.reading);
         self.pending_plain.clear();
@@ -2533,14 +2543,18 @@ fn push_text_segment(
     let mut start = bytes.start;
     for (offset, _) in source[bytes.start as usize..bytes.end as usize].match_indices('／') {
         let position = bytes.start + u32::try_from(offset).expect("source fits native span");
-        let Some(value) = IterationMark::at_start(&source[position as usize..bytes.end as usize]) else {
+        let Some(value) = IterationMark::at_start(&source[position as usize..bytes.end as usize])
+        else {
             continue;
         };
         if start < position {
             segments.push(alloc.seg_text(&source[start as usize..position as usize]));
         }
         start = position + u32::try_from(value.source().len()).expect("notation fits native span");
-        segments.push(Segment::IterationMark { value, source_span: Span::new(position, start) });
+        segments.push(Segment::IterationMark {
+            value,
+            source_span: Span::new(position, start),
+        });
     }
     if start < bytes.end {
         segments.push(alloc.seg_text(&source[start as usize..bytes.end as usize]));

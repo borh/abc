@@ -16,3 +16,13 @@ fn iteration_marks_preserve_spelling_and_visible_character() {
         assert_eq!(tree.to_source(), source);
     }
 }
+
+#[test]
+fn malformed_notation_and_encoded_halves_are_literal() {
+    for source in ["／", "＼", "／″", "／゛＼", "〳〵", "〴〵", "〱〲"] {
+        let document = Document::new(source);
+        let tree = document.parse();
+        assert!(tree.to_html().contains(source));
+        assert_eq!(tree.to_source(), source);
+    }
+}

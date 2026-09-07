@@ -69,6 +69,13 @@ Paragraph-leading indentation is encoded as CSS `text-indent`; heading and
 source-note continuation indentation uses `padding-inline-start`. Structural XML
 is indented for inspection while mixed content retains its lexical whitespace.
 
+Complete iteration notation `／＼` and `／″＼` retains its source spelling in
+`choice/orig`; `choice/reg` contains the whole Unicode mark `〱` or `〲`.
+The body view, plaintext and Markdown select that realization without expanding
+the repeated reading. A mark inside ruby reading remains part of the ruby
+annotation. Malformed notation and literal Unicode upper/lower halves remain
+literal text; iteration marks are distinct from gaiji.
+
 Supplied block geometry retains indentation, continuation indentation, line width,
 and distance from the line end independently. Hanging indentation uses the
 continuation padding and the difference between first and continuation indents.

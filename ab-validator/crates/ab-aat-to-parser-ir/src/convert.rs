@@ -988,6 +988,7 @@ fn content_coordinates(nodes: &mut [Value], axis: &str) {
 fn append_plain_visible_inline_text(node: &Value, out: &mut String) -> Result<()> {
     match node["kind"].as_str().unwrap_or("") {
         "text" => out.push_str(node["value"].as_str().unwrap_or("")),
+        "iteration-mark" => out.push_str(node["text"].as_str().unwrap_or("")),
         "ruby" => out.push_str(&ruby_component_text(node, "base", "base_content")?),
         "gaiji" => out.push_str(
             node["resolved"]
@@ -1304,6 +1305,7 @@ fn map_inline_to_nodes(
             nodes.push(json!({"type":"kunten", "kunten_kind":node["kunten_kind"], "text":node["text"], "span":synthetic_span(offset, offset)}));
             Ok(offset)
         }
+        "iteration-mark" => map_iteration_mark(node, nodes, offset),
         "editorial_note" => {
             nodes.push(json!({"type":"editor-note", "note_kind":node["note_kind"], "text":node["text"], "span":synthetic_span(offset, offset)}));
             Ok(offset)
@@ -1688,6 +1690,7 @@ fn inline_child_node(
             nodes.push(json!({"type":"kunten", "kunten_kind":node["kunten_kind"], "text":node["text"], "span":synthetic_span(offset, offset)}));
             Ok(offset)
         }
+        "iteration-mark" => map_iteration_mark(node, nodes, offset),
         "editorial_note" => {
             nodes.push(json!({"type":"editor-note", "note_kind":node["note_kind"], "text":node["text"], "span":synthetic_span(offset, offset)}));
             Ok(offset)
@@ -1696,6 +1699,18 @@ fn inline_child_node(
         "raw" => map_raw_to_nodes(node, nodes, recorder, offset, path),
         other => bail!("unsupported inline kind in inline_children projection at {path}: {other}"),
     }
+}
+
+fn map_iteration_mark(node: &Value, nodes: &mut Vec<Value>, offset: u64) -> Result<u64> {
+    let text = node["text"]
+        .as_str()
+        .context("iteration mark text is required")?;
+    let end = offset + utf8_len(text);
+    nodes.push(
+        json!({"type":"iteration-mark", "text":text, "source":node["source"],
+        "span":synthetic_span(offset,end)}),
+    );
+    Ok(end)
 }
 
 fn push_unrecorded_text_node(text: &str, nodes: &mut Vec<Value>, offset: u64) -> Result<u64> {
@@ -2182,6 +2197,7 @@ fn append_visible_inline_text(
             append_plain_visible_content_text(node.get("content"), out)?
         }
         "text" => out.push_str(node["value"].as_str().unwrap_or("")),
+        "iteration-mark" => out.push_str(node["text"].as_str().unwrap_or("")),
         "ruby" => {
             let container_pointer = format!("{path}.ruby");
             record_measured_loss(

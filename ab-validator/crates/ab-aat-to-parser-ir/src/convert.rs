@@ -1,6 +1,6 @@
 use std::{collections::BTreeSet, sync::Arc};
 
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 use serde_json::{Value, json};
 
 use crate::{
@@ -195,6 +195,7 @@ fn convert_preflighted_for_qualification(
         "schema_hash": mapping.target_parser_ir_schema_hash,
         "derived_from": derived_from(&aat, mapping)?,
         "source": source,
+        "interpretation_problems": interpretation_problems(&aat)?,
         "nodes": nodes,
         "paragraphs": paragraphs,
         "layout_blocks": layout_blocks,
@@ -902,63 +903,59 @@ fn gaiji_payload(node: &Value) -> Value {
     })
 }
 
-fn ruby_reading_children(content: Option<&Value>) -> Result<Vec<Value>> {
-    let mut children = Vec::new();
-    let mut pending: Vec<&Value> = content
-        .and_then(Value::as_array)
-        .into_iter()
-        .flatten()
-        .rev()
-        .collect();
+fn interpretation_problems(aat: &Value) -> Result<Vec<Value>> {
+    let mut problems = Vec::new();
+    let mut pending = vec![aat];
     while let Some(node) = pending.pop() {
-        match node["kind"].as_str().unwrap_or("") {
-            "style" | "font_size" | "tcy" | "keigakomi" | "caption" | "yokogumi" => {
-                pending.extend(
-                    node.get("content")
-                        .and_then(Value::as_array)
-                        .into_iter()
-                        .flatten()
-                        .rev(),
-                );
-            }
-            "warigaki" => {
-                pending.extend(
-                    node.get("lower")
-                        .and_then(Value::as_array)
-                        .into_iter()
-                        .flatten()
-                        .rev(),
-                );
-                pending.extend(
-                    node.get("upper")
-                        .and_then(Value::as_array)
-                        .into_iter()
-                        .flatten()
-                        .rev(),
-                );
-            }
-            "ruby" if node.get("base_content").is_some() => {
-                pending.extend(
-                    node.get("base_content")
-                        .and_then(Value::as_array)
-                        .into_iter()
-                        .flatten()
-                        .rev(),
-                );
-            }
-            "raw" => {}
-            kind => {
-                let mut child = if kind == "gaiji" {
-                    json!({"type": "gaiji", "gaiji": gaiji_payload(node)})
-                } else {
-                    json!({"type": "text", "text": plain_visible_inline_text(node)?})
-                };
-                attach_source_span(&mut child, node.get("span"))?;
-                children.push(child);
+        if let Some(problem) = node.get("interpretation_problem") {
+            let mut problem = problem.clone();
+            problem["raw"] = node["source"].clone();
+            problem["source_span"] = source_span(node.get("span"))?
+                .context("source interpretation problem requires its exact source span")?;
+            problems.push(problem);
+        }
+        for key in [
+            "blocks",
+            "children",
+            "content",
+            "upper",
+            "lower",
+            "base_content",
+            "reading_content",
+        ] {
+            if let Some(children) = node.get(key).and_then(Value::as_array) {
+                pending.extend(children.iter().rev());
             }
         }
     }
+    problems.sort_by_key(|problem| problem["source_span"]["start"].as_u64());
+    Ok(problems)
+}
+
+fn ruby_reading_children(
+    content: Option<&Value>,
+    recorder: &mut DivergenceRecorder,
+    warnings: &mut Vec<Value>,
+    path: &str,
+    depth: usize,
+) -> Result<Vec<Value>> {
+    let mut children = inline_children_nodes(content, recorder, warnings, 0, path, depth)?;
+    reading_coordinates(&mut children);
     Ok(children)
+}
+
+fn reading_coordinates(nodes: &mut [Value]) {
+    for node in nodes {
+        if let Some(span) = node.get_mut("span") {
+            span["coordinate_system"] = json!("reading_utf8");
+        }
+        if let Some(children) = node
+            .get_mut("inline_children")
+            .and_then(Value::as_array_mut)
+        {
+            reading_coordinates(children);
+        }
+    }
 }
 
 fn append_plain_visible_inline_text(node: &Value, out: &mut String) -> Result<()> {
@@ -1154,7 +1151,13 @@ fn map_inline_to_nodes(
                 )?);
             }
             if let Some(content) = node.get("reading_content") {
-                let reading = ruby_reading_children(Some(content))?;
+                let reading = ruby_reading_children(
+                    Some(content),
+                    recorder,
+                    synthetic_warnings,
+                    &format!("{path}.ruby.reading_content"),
+                    1,
+                )?;
                 if !reading.is_empty() {
                     ruby_node["reading_children"] = json!(reading);
                 }
@@ -1451,7 +1454,13 @@ fn inline_child_node(
                 )?);
             }
             if let Some(content) = node.get("reading_content") {
-                let reading = ruby_reading_children(Some(content))?;
+                let reading = ruby_reading_children(
+                    Some(content),
+                    recorder,
+                    synthetic_warnings,
+                    &format!("{path}.ruby.reading_content"),
+                    depth + 1,
+                )?;
                 if !reading.is_empty() {
                     ruby_node["reading_children"] = json!(reading);
                 }
@@ -1581,7 +1590,7 @@ fn inline_child_node(
             let alt = node["alt"].as_str().unwrap_or("");
             push_unrecorded_text_node(alt, nodes, offset)
         }
-        "raw" => Ok(offset),
+        "raw" => map_raw_to_nodes(node, nodes, recorder, offset, path),
         other => bail!("unsupported inline kind in inline_children projection at {path}: {other}"),
     }
 }
@@ -1684,6 +1693,42 @@ fn accent_style(node: &Value) -> String {
     node["code"].as_str().unwrap_or("accent").to_owned()
 }
 
+fn attach_ruby_variant(source_node: &Value, variant: &Value, nodes: &mut [Value]) -> Result<bool> {
+    if variant["target_kind"] != "ruby-reading" {
+        return Ok(false);
+    }
+    let Some(ruby) = nodes.last_mut() else {
+        return Ok(false);
+    };
+    if ruby["type"] != "ruby"
+        || ruby["ruby"]["reading"] != variant["current"]
+        || ruby["source_span"]["end"].as_u64().is_none()
+        || ruby["source_span"]["end"].as_u64() != source_node["span"]["byte_start"].as_u64()
+    {
+        return Ok(false);
+    }
+    let Some(current) = variant["current"].as_str() else {
+        return Ok(false);
+    };
+    let children = ruby.get_mut("reading_children").map(Value::take).unwrap_or_else(|| json!([
+        {"type": "text", "text": current, "span": {"start": 0, "end": utf8_len(current), "coordinate_system": "reading_utf8"}}
+    ]));
+    if children.as_array().is_some_and(|children| {
+        children
+            .iter()
+            .any(|child| child["type"] == "base-text-variant")
+    }) {
+        ruby["reading_children"] = children;
+        return Ok(false);
+    }
+    let mut annotation = json!({"type": "base-text-variant", "text": current,
+        "variant": {"base_text": variant["base_text"]}, "inline_children": children,
+        "span": {"start": 0, "end": utf8_len(current), "coordinate_system": "reading_utf8"}});
+    attach_source_span(&mut annotation, source_node.get("span"))?;
+    ruby["reading_children"] = json!([annotation]);
+    Ok(true)
+}
+
 fn map_raw_to_nodes(
     node: &Value,
     nodes: &mut Vec<Value>,
@@ -1691,17 +1736,14 @@ fn map_raw_to_nodes(
     offset: u64,
     path: &str,
 ) -> Result<u64> {
-    let source = node.get("source").and_then(Value::as_str).unwrap_or("");
-    if let Some(annotation) = source
-        .strip_prefix("［＃")
-        .and_then(|s| s.strip_suffix('］'))
-        && (annotation.starts_with('「') || annotation.starts_with("ルビの「"))
-        && annotation.contains("」は底本では「")
-        && annotation.ends_with('」')
-    {
-        let span = map_node_span(node.get("span"), offset, offset, recorder, path)?;
-        nodes.push(json!({"type": "editor-note", "span": span,
-                          "note": {"raw": annotation, "category": "correction"}}));
+    if let Some(variant) = node.get("text_variant") {
+        if attach_ruby_variant(node, variant, nodes)? {
+            return Ok(offset);
+        }
+        nodes.push(
+            json!({"type": "editor-note", "span": synthetic_span(offset, offset),
+            "note": {"raw": node["source"], "category": "variant", "resolution": "unresolved"}}),
+        );
         return Ok(offset);
     }
     let raw_pointer = format!("{path}.raw");
@@ -1728,14 +1770,11 @@ fn map_raw_to_nodes(
         }
         RawRecoveryClass::SourceNote => {
             let span = map_node_span(node.get("span"), offset, offset, recorder, path)?;
-            nodes.push(json!({
-                "type": "editor-note",
-                "span": span,
-                "note": {
-                    "raw": source,
-                    "category": "misc",
-                },
-            }));
+            let mut note = json!({"raw": source, "category": "misc"});
+            if node.get("x-source-marker-kind").is_some() {
+                note["resolution"] = json!("unresolved");
+            }
+            nodes.push(json!({"type": "editor-note", "span": span, "note": note}));
         }
         RawRecoveryClass::ParserResidue => {}
     }
@@ -1750,6 +1789,12 @@ enum RawRecoveryClass {
 }
 
 fn raw_recovery_class(node: &Value, source: &str) -> RawRecoveryClass {
+    if node["x-source-marker-kind"] == "pageBreak" {
+        return RawRecoveryClass::PageBreak;
+    }
+    if node.get("x-source-marker-kind").is_some() {
+        return RawRecoveryClass::SourceNote;
+    }
     let provenance = node.get("x-provenance").and_then(Value::as_str);
     let trimmed = source.trim();
     if provenance == Some("parser-derived") || is_parser_raw_residue(trimmed) {
@@ -2245,22 +2290,14 @@ fn map_source(
     if !is_sha256_hash(work_content_hash) {
         bail!("invalid work_content_hash; expected sha256 followed by 64 lowercase hex digits");
     }
-    let source_encoding = meta["source_encoding"].as_str().unwrap_or("utf-8");
+    let Some(source_encoding) = meta["source_encoding"].as_str() else {
+        bail!("AAT meta.source_encoding is required for parser-IR decode_outcome");
+    };
     let encoding = match source_encoding {
         "utf-8" | "utf-8-bom" => "UTF-8",
         "windows-31j" | "windows-31j-lossy" => "Shift_JIS",
         _ => "unknown",
     };
-    if source_encoding == "windows-31j-lossy" {
-        let encoding_pointer = format!("meta.source_encoding={source_encoding}");
-        recorder.record(
-            "AMBIGUITY",
-            Some(encoding_pointer.as_str()),
-            Some("source.encoding"),
-            Some(json!(source_encoding)),
-            Some(json!(encoding)),
-        )?;
-    }
     let primary_text_pointer = if meta.get("primary_text_hash").is_some() {
         "meta.primary_text_hash"
     } else {
@@ -2299,6 +2336,7 @@ fn map_source(
         "primary_text_hash": primary_text_hash,
         "source_path": null,
         "encoding": encoding,
+        "decode_outcome": source_encoding,
         "normalization": "source",
     }))
 }

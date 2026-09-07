@@ -1,10 +1,10 @@
 {
   "mapping_id": "https://w3id.org/abc/mappings/aat-v2-to-parser-ir-v1/generated-probe",
-  "mapping_version": "0.7.0",
+  "mapping_version": "0.8.0",
   "mapping_schema_hash": "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2",
   "source_aat_version": 2,
   "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "target_parser_ir_schema_hash": "sha256:7420573406b124eb3e1ca137712d0b14eddf02848ad70c497ede54a9cef19f62",
+  "target_parser_ir_schema_hash": "sha256:f4b0d8a7c243a05b5a8aafdefb7ade272f0f819e9a666afe661f4135c552c76f",
   "transform_rule_descriptions": [
     {
       "rule_id": "A-01",
@@ -1029,14 +1029,6 @@
       "parser_ir_pointer": "span",
       "action": "project",
       "description": "Observed 159139 occurrences; first_path=blocks[1].span. AAT node has no serialized source extent; parser_text_utf8 coordinates are derived from the parser text projection, and exact source provenance remains unavailable"
-    },
-    {
-      "rule_id": "A-129",
-      "category": "AMBIGUITY",
-      "aat_pointer": "meta.source_encoding",
-      "parser_ir_pointer": "source.encoding",
-      "action": "project",
-      "description": "Observed 7 occurrences; first_path=meta.source_encoding=windows-31j-lossy. source decoding was lossy; parser-IR records only the Shift_JIS source family"
     },
     {
       "rule_id": "A-130",

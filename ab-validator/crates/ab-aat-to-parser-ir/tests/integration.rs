@@ -778,7 +778,7 @@ fn mapping_preflight_accepts_checked_in_v1_artifact() {
 
     let index = mapping.preflight(&schemas).unwrap();
 
-    assert_eq!(mapping.mapping_version, "0.6.0");
+    assert_eq!(mapping.mapping_version, "0.7.0");
     assert_eq!(
         mapping.target_parser_ir_schema_hash,
         schema_hash(&schemas.parser_ir_schema).unwrap()
@@ -831,7 +831,7 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
     let mapping =
         MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2.json"))
             .unwrap();
-    assert_eq!(mapping.mapping_version, "0.7.0");
+    assert_eq!(mapping.mapping_version, "0.8.0");
     assert_eq!(mapping.source_aat_version, 2);
     let schemas = SchemaSet::load_for_aat_version(&repo_root, &research_root, 2).unwrap();
     mapping.preflight(&schemas).unwrap();
@@ -2560,6 +2560,157 @@ fn malformed_source_retains_parser_error_through_conversion() {
 }
 
 #[test]
+fn ruby_reading_preserves_nested_inline_semantics_and_local_coordinates() {
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat: json!({
+            "version": 2, "work_id": "rich-reading", "meta": v2_test_meta(),
+            "blocks": [{"kind": "paragraph", "content": [{
+                "kind": "ruby", "base": "漢", "reading": "かな𠮷",
+                "reading_content": [{"kind": "style", "style_type": "bold", "content": [
+                    {"kind": "text", "value": "かな"},
+                    {"kind": "gaiji", "description": "𠮷", "resolved": "𠮷", "unresolved_reason": null}
+                ]}]
+            }]}]
+        }), mapping, schemas, options: default_test_options(),
+    }).unwrap();
+    let ruby = &output.parser_ir["nodes"][0];
+    let reading = &ruby["reading_children"][0];
+    assert_eq!(reading["type"], "emphasis");
+    assert_eq!(reading["style"], "bold");
+    assert_eq!(
+        reading["span"],
+        json!({"start":0,"end":10,"coordinate_system":"reading_utf8"})
+    );
+    assert_eq!(reading["inline_children"][1]["type"], "gaiji");
+    assert_eq!(
+        reading["inline_children"][1]["span"]["coordinate_system"],
+        "reading_utf8"
+    );
+    assert_eq!(
+        ruby["span"],
+        json!({"start":0,"end":3,"coordinate_system":"parser_text_utf8"})
+    );
+}
+
+#[test]
+fn source_decoding_outcome_survives_normalized_encoding_label() {
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let aat =
+        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(&[0x81]).unwrap()).unwrap();
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas,
+        options: default_test_options(),
+    })
+    .unwrap();
+    assert_eq!(output.parser_ir["source"]["encoding"], "Shift_JIS");
+    assert_eq!(
+        output.parser_ir["source"]["decode_outcome"],
+        "windows-31j-lossy"
+    );
+}
+
+#[test]
+fn quoted_base_text_variant_targets_supplied_ruby_reading() {
+    let source = "私は籠《ざる》［＃ルビの「ざる」は底本では「さる」］をさげ";
+    let aat =
+        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
+            .unwrap();
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas,
+        options: default_test_options(),
+    })
+    .unwrap();
+    let ruby = output.parser_ir["nodes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|node| node["type"] == "ruby")
+        .unwrap();
+    let variant = &ruby["reading_children"][0];
+    assert_eq!(variant["type"], "base-text-variant");
+    assert_eq!(variant["text"], "ざる");
+    assert_eq!(variant["variant"]["base_text"], "さる");
+    assert_eq!(variant["span"]["coordinate_system"], "reading_utf8");
+    assert_eq!(variant["source_span"]["start"], source.find('［').unwrap());
+}
+
+#[test]
+fn nonadjacent_or_mismatched_reading_variants_remain_unresolved() {
+    for source in [
+        "籠《ざる》と［＃ルビの「ざる」は底本では「さる」］",
+        "籠《ざる》［＃ルビの「さる」は底本では「ざる」］",
+    ] {
+        let (schemas, mapping) = v2_schemas_and_mapping();
+        let aat =
+            serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
+                .unwrap();
+        let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+            aat,
+            mapping,
+            schemas,
+            options: default_test_options(),
+        })
+        .unwrap();
+        let nodes = output.parser_ir["nodes"].as_array().unwrap();
+        let note = nodes
+            .iter()
+            .find(|node| node["type"] == "editor-note")
+            .unwrap();
+        assert_eq!(note["note"]["resolution"], "unresolved");
+        assert_eq!(note["source_span"]["start"], source.find('［').unwrap());
+        assert!(
+            nodes
+                .iter()
+                .filter(|node| node["type"] == "ruby")
+                .all(|node| node.get("reading_children").is_none())
+        );
+    }
+}
+
+#[test]
+fn unknown_source_directive_survives_parser_derived_provenance() {
+    let source = "前［＃未定義の範囲指定開始］後";
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let aat =
+        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
+            .unwrap();
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas,
+        options: default_test_options(),
+    })
+    .unwrap();
+    let note = output.parser_ir["nodes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|node| node["type"] == "editor-note")
+        .unwrap();
+    assert_eq!(note["note"]["raw"], "［＃未定義の範囲指定開始］");
+    assert_eq!(note["note"]["resolution"], "unresolved");
+    assert_eq!(note["source_span"]["start"], "前".len());
+    assert_eq!(note["source_span"]["end"], source.len() - "後".len());
+    let problems = output.parser_ir["interpretation_problems"]
+        .as_array()
+        .unwrap();
+    assert_eq!(problems.len(), 1);
+    assert_eq!(problems[0]["source_span"], note["source_span"]);
+    assert_eq!(problems[0]["kind"], "unknown-notation");
+    assert_eq!(
+        problems[0]["aspects"],
+        json!(["content", "structure", "layout"])
+    );
+    assert_eq!(problems[0]["influence"], json!({"kind": "document"}));
+}
+
+#[test]
 fn projects_measured_figure_inline_to_image_node() {
     let (schemas, mapping) = schemas_and_mapping();
     let aat = json!({
@@ -2706,12 +2857,10 @@ fn measured_policy_projects_style_heading_warning_and_warigaki() {
         "blocks[].children[].heading.content[].warigaki",
         None
     ));
-    assert!(has_divergence_record(
-        &output,
-        "AMBIGUITY",
-        "meta.source_encoding",
-        Some("source.encoding")
-    ));
+    assert_eq!(
+        output.parser_ir["source"]["decode_outcome"],
+        "windows-31j-lossy"
+    );
     assert!(
         !output
             .divergence_bundle
@@ -4761,7 +4910,7 @@ fn source_corrections_and_one_compound_sign_survive_validated_conversion() {
     assert_eq!(notes.len(), 1);
     assert_eq!(
         notes[0]["note"],
-        json!({"raw": "「甍の」は底本では「薨の」", "category": "correction"})
+        json!({"raw": "［＃「甍の」は底本では「薨の」］", "category": "variant", "resolution": "unresolved"})
     );
     assert_eq!(ir["layout_blocks"].as_array().unwrap().len(), 1);
     let block = &ir["layout_blocks"][0];
@@ -4903,7 +5052,7 @@ fn structured_ruby_reading_preserves_resolved_gaiji_in_body_and_heading() {
             reading[0]["source_span"],
             json!({"start": 9, "end": 54, "coordinate_system": "decoded_utf8", "line": 1})
         );
-        assert!(reading[0].get("span").is_none());
+        assert_eq!(reading[0]["span"]["coordinate_system"], "reading_utf8");
         assert!(reading[1].get("source_span").is_none());
         assert_eq!(reading[1]["text"], "エル");
         let mut invalid = output.parser_ir.clone();

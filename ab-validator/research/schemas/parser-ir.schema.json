@@ -2,9 +2,9 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
   "title": "ABC Parser IR",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "type": "object",
-  "required": ["schema_id", "schema_hash", "source", "nodes", "warnings", "errors"],
+  "required": ["schema_id", "schema_hash", "source", "nodes", "warnings", "errors", "interpretation_problems"],
   "additionalProperties": false,
   "properties": {
     "schema_id": { "type": "string" },
@@ -32,14 +32,27 @@
     },
     "source": {
       "type": "object",
-      "required": ["work_content_hash", "encoding", "normalization"],
+      "required": ["work_content_hash", "encoding", "decode_outcome", "normalization"],
       "additionalProperties": false,
       "properties": {
         "work_content_hash": { "$ref": "#/$defs/hash" },
         "primary_text_hash": { "$ref": "#/$defs/hash" },
         "source_path": { "type": ["string", "null"] },
         "encoding": { "type": "string", "enum": ["Shift_JIS", "UTF-8", "EUC-JP", "unknown"] },
+        "decode_outcome": { "enum": ["utf-8", "utf-8-bom", "windows-31j", "windows-31j-lossy"] },
         "normalization": { "type": "string", "enum": ["source", "NFC", "NFKC"] }
+      }
+    },
+    "interpretation_problems": {
+      "type": "array", "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["kind", "code", "raw", "source_span", "aspects", "influence"],
+        "properties": {
+          "kind": {"const": "unknown-notation"}, "code": {"const": "unknown-notation"},
+          "raw": {"type": "string"}, "source_span": {"$ref": "#/$defs/sourceSpan"},
+          "aspects": {"const": ["content", "structure", "layout"]},
+          "influence": {"const": {"kind": "document"}}
+        }
       }
     },
     "layout_blocks": {
@@ -90,13 +103,13 @@
     },
     "span": {
       "type": "object",
-      "$comment": "Half-open UTF-8 byte offsets in the converter's parser text projection, before publication whitespace filtering. This axis includes structural and source-note text traversed by the converter; it is not the decoded source or final plaintext. end must be greater than or equal to start.",
+      "$comment": "Half-open UTF-8 byte offsets in the converter's parser text projection, before publication whitespace filtering. parser_text_utf8 includes structural and source-note text traversed by the converter. reading_utf8 is local to the containing ruby reading; each nested ruby reading owns a new axis starting at zero. Neither axis is the decoded source or final plaintext. end must be greater than or equal to start.",
       "required": ["start", "end", "coordinate_system"],
       "additionalProperties": false,
       "properties": {
         "start": { "type": "integer", "minimum": 0 },
         "end": { "type": "integer", "minimum": 0 },
-        "coordinate_system": { "const": "parser_text_utf8" }
+        "coordinate_system": { "enum": ["parser_text_utf8", "reading_utf8"] }
       }
     },
     "sourceSpan": {
@@ -128,6 +141,7 @@
         { "$ref": "#/$defs/rubyNode" },
         { "$ref": "#/$defs/gaijiNode" },
         { "$ref": "#/$defs/editorNoteNode" },
+        { "$ref": "#/$defs/baseTextVariantNode" },
         { "$ref": "#/$defs/emphasisNode" },
         { "$ref": "#/$defs/layoutSpanNode" },
         { "$ref": "#/$defs/headingNode" },
@@ -146,6 +160,7 @@
         { "$ref": "#/$defs/rubyNode" },
         { "$ref": "#/$defs/gaijiNode" },
         { "$ref": "#/$defs/editorNoteNode" },
+        { "$ref": "#/$defs/baseTextVariantNode" },
         { "$ref": "#/$defs/emphasisNode" },
         { "$ref": "#/$defs/layoutSpanNode" },
         { "$ref": "#/$defs/lineBreakNode" }
@@ -469,46 +484,26 @@
       }
     },
     "rubyReadingNode": {
-      "oneOf": [
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "type",
-            "text"
-          ],
-          "properties": {
-            "type": {
-              "const": "text"
-            },
-            "text": {
-              "type": "string"
-            },
-            "source_span": {
-              "$ref": "#/$defs/sourceSpan"
-            }
-          }
-        },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "type",
-            "gaiji"
-          ],
-          "properties": {
-            "type": {
-              "const": "gaiji"
-            },
-            "gaiji": {
-              "$ref": "#/$defs/gaiji"
-            },
-            "source_span": {
-              "$ref": "#/$defs/sourceSpan"
-            }
-          }
-        }
+      "allOf": [
+        { "$ref": "#/$defs/inlineNode" },
+        { "properties": { "span": { "properties": { "coordinate_system": { "const": "reading_utf8" } } } } }
       ]
+    },
+    "baseTextVariantNode": {
+      "type": "object",
+      "required": ["type", "span", "text", "inline_children", "variant"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "const": "base-text-variant" },
+        "span": { "$ref": "#/$defs/span" },
+        "source_span": { "$ref": "#/$defs/sourceSpan" },
+        "text": { "type": "string" },
+        "inline_children": { "type": "array", "items": { "$ref": "#/$defs/inlineNode" } },
+        "variant": {
+          "type": "object", "required": ["base_text"], "additionalProperties": false,
+          "properties": { "base_text": { "type": "string" } }
+        }
+      }
     },
     "rubyNode": {
       "allOf": [
@@ -584,7 +579,7 @@
               "items": {
                 "$ref": "#/$defs/rubyReadingNode"
               },
-              "description": "Ruby reading fragments; excluded from body text coordinates. Only source_span may locate them in decoded source."
+              "description": "Structured ruby reading content. Reading spans use reading_utf8 relative to this ruby reading, not the body axis. source_span locates exact decoded source extents when known."
             }
           }
         }
@@ -832,10 +827,11 @@
       "additionalProperties": false,
       "required": ["raw", "category"],
       "properties": {
+        "resolution": { "const": "unresolved" },
         "raw": { "type": "string" },
         "category": {
           "type": "string",
-          "enum": ["emphasis", "heading", "indentation", "page-break", "image", "caption", "external-character", "accent-mark", "ruby", "correction", "misc"]
+          "enum": ["emphasis", "heading", "indentation", "page-break", "image", "caption", "external-character", "accent-mark", "ruby", "correction", "variant", "misc"]
         }
       }
     },

@@ -343,6 +343,23 @@
           "enum": ["parser-derived", "source-derived", "adapter-derived"]
         },
         "x-source-marker-kind": { "type": "string" },
+        "interpretation_problem": {
+          "type": "object", "additionalProperties": false,
+          "required": ["kind", "code", "aspects", "influence"],
+          "properties": {
+            "kind": {"const": "unknown-notation"}, "code": {"const": "unknown-notation"},
+            "aspects": {"const": ["content", "structure", "layout"]},
+            "influence": {"const": {"kind": "document"}}
+          }
+        },
+        "text_variant": {
+          "type": "object", "required": ["target_kind", "current", "base_text"], "additionalProperties": false,
+          "properties": {
+            "target_kind": { "enum": ["ruby-reading", "text"] },
+            "current": { "type": "string", "minLength": 1 },
+            "base_text": { "type": "string", "minLength": 1 }
+          }
+        },
         "span": { "$ref": "#/$defs/span" }
       }
     },

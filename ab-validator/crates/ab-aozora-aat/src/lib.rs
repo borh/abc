@@ -3,6 +3,7 @@
 use std::{collections::BTreeMap, fmt::Write as _, mem, ops::Range, str, sync::LazyLock};
 
 use ab_aozora_pipeline::lexer::sanitize::{SanitizeMaps, sanitize_mapped};
+use ab_aozora_pipeline::text_variant::{TextVariantTarget, text_variant};
 use anyhow::Result;
 use encoding_rs::SHIFT_JIS;
 use regex::Regex;
@@ -263,21 +264,27 @@ impl From<ab_aozora_facade::Span> for Span {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 enum ProjectedKind {
     Node(NodeKind),
     Format(ForwardAttr),
+    TextVariant {
+        target: TextVariantTarget,
+        current: String,
+        base_text: String,
+    },
     QuoteOpen,
     QuoteClose,
 }
 
 impl ProjectedKind {
-    fn as_str(self) -> &'static str {
+    fn as_str(&self) -> &'static str {
         match self {
             Self::Node(kind) => kind.as_json_tag(),
             Self::Format(ForwardAttr::Bouten { .. }) => "bouten",
             Self::Format(ForwardAttr::CombineUpright) => "combineUpright",
             Self::Format(_) => "emphasis",
+            Self::TextVariant { .. } => "directive",
             Self::QuoteOpen => "angleQuoteOpen",
             Self::QuoteClose => "angleQuoteClose",
         }
@@ -309,10 +316,19 @@ fn node_projection(tree: &Tree<'_>) -> Vec<AozoraNode> {
                 | NodeRef::BlockLeaf(Node::Format(format)) => ProjectedKind::Format(format.attr),
                 node => ProjectedKind::Node(node.kind()),
             };
-            AozoraNode {
-                kind,
-                span: source_node.source_span.into(),
-            }
+            let span: Span = source_node.source_span.into();
+            let kind = if kind == ProjectedKind::Node(NodeKind::Directive) {
+                text_variant(&tree.sanitized()[span.start..span.end]).map_or(kind, |variant| {
+                    ProjectedKind::TextVariant {
+                        target: variant.target,
+                        current: variant.current.to_owned(),
+                        base_text: variant.base_text.to_owned(),
+                    }
+                })
+            } else {
+                kind
+            };
+            AozoraNode { kind, span }
         })
         .collect()
 }
@@ -1465,7 +1481,9 @@ fn inline_content(
                 "x-break-kind": "page",
                 "span": span_json(&node.span, &decoded.span_ctx)
             })),
-            ProjectedKind::Node(_) => content.push(raw_node(decoded, node, node.kind.as_str())),
+            ProjectedKind::Node(_) | ProjectedKind::TextVariant { .. } => {
+                content.push(raw_node(decoded, node, node.kind.as_str()));
+            }
         }
         cursor = cursor.max(node.span.end);
     }
@@ -2053,13 +2071,29 @@ fn marker_target(source: &str) -> Option<&str> {
 }
 
 fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Value {
-    json!({
-        "kind": "raw",
-        "source": source_slice(&decoded.span_text, &node.span),
-        "x-provenance": "parser-derived",
-        "x-source-marker-kind": marker_kind,
+    let mut value = json!({
+        "kind": "raw", "source": source_slice(&decoded.span_text, &node.span),
+        "x-provenance": "parser-derived", "x-source-marker-kind": marker_kind,
         "span": span_json(&node.span, &decoded.span_ctx)
-    })
+    });
+    if let ProjectedKind::TextVariant {
+        target,
+        current,
+        base_text,
+    } = &node.kind
+    {
+        value["text_variant"] = json!({
+            "target_kind": match target { TextVariantTarget::RubyReading => "ruby-reading", TextVariantTarget::Text => "text" },
+            "current": current, "base_text": base_text
+        });
+    }
+    if node.kind == ProjectedKind::Node(NodeKind::Directive) {
+        value["interpretation_problem"] = json!({
+            "kind": "unknown-notation", "code": "unknown-notation",
+            "aspects": ["content", "structure", "layout"], "influence": {"kind": "document"}
+        });
+    }
+    value
 }
 
 /// Preserve native parser diagnostic identity and decoded-source location.

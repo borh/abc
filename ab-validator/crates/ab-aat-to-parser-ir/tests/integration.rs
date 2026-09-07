@@ -4923,3 +4923,95 @@ fn native_forced_break_and_uninterpreted_kaeriten_survive_nested_warichu() {
     assert_eq!(problem["source_span"], note["source_span"]);
     assert_eq!(problem["influence"], json!({"kind":"document"}));
 }
+
+#[test]
+fn principal_text_alternatives_preserve_supplied_text_and_rich_targets() {
+    for (body, current, base_text, has_ruby) in [
+        (
+            "積る甍の［＃「甍の」は底本では「薨の」］雪。",
+            "甍の",
+            "薨の",
+            false,
+        ),
+        (
+            "前｜東京《とうきょう》の町［＃「東京の町」は底本では「東亰の町」］後。",
+            "東京の町",
+            "東亰の町",
+            true,
+        ),
+        ("字字［＃「字」は底本では「別」］。", "字", "別", false),
+    ] {
+        let source = format!("題\n作者\n\n{body}\n\n底本：本\n");
+        let (schemas, mapping) = v2_schemas_and_mapping();
+        let aat =
+            serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
+                .unwrap();
+        let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+            aat,
+            mapping,
+            schemas,
+            options: default_test_options(),
+        })
+        .unwrap();
+        let variant = output.parser_ir["nodes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|node| node["type"] == "base-text-variant")
+            .expect(body);
+        assert_eq!(variant["text"], current);
+        assert_eq!(variant["variant"]["base_text"], base_text);
+        assert_eq!(variant["inline_children"][0]["type"] == "ruby", has_ruby);
+        if has_ruby {
+            assert_eq!(
+                variant["inline_children"][0]["ruby"]["reading"],
+                "とうきょう"
+            );
+        }
+        let start = variant["source_span"]["start"].as_u64().unwrap() as usize;
+        let end = variant["source_span"]["end"].as_u64().unwrap() as usize;
+        assert_eq!(
+            &source[start..end],
+            format!("［＃「{current}」は底本では「{base_text}」］")
+        );
+        assert!(
+            output.parser_ir["interpretation_problems"]
+                .as_array()
+                .unwrap()
+                .is_empty()
+        );
+    }
+}
+
+#[test]
+fn principal_text_alternatives_do_not_search_past_mismatches_or_split_ruby() {
+    for body in [
+        "前の字。別の字［＃「前の字」は底本では「旧字」］。",
+        "｜東京《とうきょう》［＃「京」は底本では「亰」］。",
+        "先の字。\n［＃「字」は底本では「別」］",
+    ] {
+        let source = format!("題\n作者\n\n{body}\n\n底本：本\n");
+        let (schemas, mapping) = v2_schemas_and_mapping();
+        let aat =
+            serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
+                .unwrap();
+        let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+            aat,
+            mapping,
+            schemas,
+            options: default_test_options(),
+        })
+        .unwrap();
+        assert_eq!(
+            output.parser_ir["interpretation_problems"][0]["kind"], "unresolved-variant",
+            "{body}"
+        );
+        assert!(
+            !output.parser_ir["nodes"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|node| node["type"] == "base-text-variant")
+        );
+    }
+}

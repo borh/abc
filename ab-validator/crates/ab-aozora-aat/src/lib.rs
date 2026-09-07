@@ -1593,6 +1593,12 @@ fn inline_content(
                 "x-break-kind": "page",
                 "span": span_json(&node.span, &decoded.span_ctx)
             })),
+            ProjectedKind::TextVariant {
+                target: TextVariantTarget::Text,
+                ..
+            } => {
+                push_text_variant_node(&mut content, decoded, node);
+            }
             ProjectedKind::Node(_)
             | ProjectedKind::Directive(_)
             | ProjectedKind::TextVariant { .. } => {
@@ -2128,6 +2134,20 @@ fn push_style_node(
         style["content"] = json!(children);
     }
     content.push(style);
+}
+
+fn push_text_variant_node(content: &mut Vec<Value>, decoded: &DecodedSource, node: &AozoraNode) {
+    let raw = raw_node(decoded, node, "directive");
+    if let ProjectedKind::TextVariant {
+        current, base_text, ..
+    } = &node.kind
+        && let Some(children) = take_visible_suffix(content, current, &decoded.text)
+    {
+        content.push(json!({"kind":"text-variant", "content":children,
+            "base_text":base_text, "source":raw["source"], "span":raw["span"]}));
+    } else {
+        content.push(raw);
+    }
 }
 
 fn take_visible_suffix(content: &mut Vec<Value>, target: &str, source: &str) -> Option<Vec<Value>> {

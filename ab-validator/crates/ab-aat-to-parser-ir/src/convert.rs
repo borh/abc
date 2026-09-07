@@ -962,7 +962,8 @@ fn append_plain_visible_inline_text(node: &Value, out: &mut String) -> Result<()
                 .unwrap_or(""),
         ),
         "accent" => out.push_str(node["resolved"].as_str().unwrap_or("")),
-        "style" | "font_size" | "tcy" | "keigakomi" | "caption" | "yokogumi" | "warichu" => {
+        "style" | "font_size" | "tcy" | "keigakomi" | "caption" | "yokogumi" | "warichu"
+        | "text-variant" => {
             append_plain_visible_content_text(node.get("content"), out)?;
         }
         "warigaki" => {
@@ -1109,6 +1110,9 @@ fn map_inline_to_nodes(
     path: &str,
 ) -> Result<u64> {
     match node["kind"].as_str().unwrap_or("") {
+        "text-variant" => {
+            map_text_variant_to_node(node, nodes, recorder, synthetic_warnings, offset, path, 0)
+        }
         "text" => {
             map_text_node_with_quotes(node, nodes, recorder, synthetic_warnings, offset, path)
         }
@@ -1420,6 +1424,15 @@ fn inline_child_node(
     }
 
     match node["kind"].as_str().unwrap_or("") {
+        "text-variant" => map_text_variant_to_node(
+            node,
+            nodes,
+            recorder,
+            synthetic_warnings,
+            offset,
+            path,
+            depth,
+        ),
         "text" => {
             if is_source_derived_line_break_text(node) {
                 return push_unrecorded_line_break_text(node, nodes, offset);
@@ -1666,6 +1679,32 @@ fn accent_text(node: &Value) -> String {
 
 fn accent_style(node: &Value) -> String {
     node["code"].as_str().unwrap_or("accent").to_owned()
+}
+
+fn map_text_variant_to_node(
+    node: &Value,
+    nodes: &mut Vec<Value>,
+    recorder: &mut DivergenceRecorder,
+    synthetic_warnings: &mut Vec<Value>,
+    offset: u64,
+    path: &str,
+    depth: usize,
+) -> Result<u64> {
+    let text = plain_visible_content_text(node.get("content"))?;
+    let end = offset + utf8_len(&text);
+    let children = inline_children_nodes(
+        node.get("content"),
+        recorder,
+        synthetic_warnings,
+        offset,
+        &format!("{path}.content"),
+        depth + 1,
+    )?;
+    nodes.push(
+        json!({"type":"base-text-variant", "span":synthetic_span(offset, end),
+        "text":text, "inline_children":children, "variant":{"base_text":node["base_text"]}}),
+    );
+    Ok(end)
 }
 
 fn attach_ruby_variant(source_node: &Value, variant: &Value, nodes: &mut [Value]) -> Result<bool> {
@@ -2005,6 +2044,7 @@ fn append_visible_inline_text(
     out: &mut String,
 ) -> Result<()> {
     match node["kind"].as_str().unwrap_or("") {
+        "text-variant" => append_plain_visible_content_text(node.get("content"), out)?,
         "text" => out.push_str(node["value"].as_str().unwrap_or("")),
         "ruby" => {
             let container_pointer = format!("{path}.ruby");

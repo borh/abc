@@ -4,13 +4,13 @@ use ab_aozora_aat::aat_json_from_bytes;
 use proptest::prelude::*;
 use serde_json::Value;
 
-fn raw_nodes(value: &Value) -> Vec<&Value> {
+fn source_notes(value: &Value) -> Vec<&Value> {
     let mut pending = vec![value];
     let mut raw = Vec::new();
     while let Some(value) = pending.pop() {
         match value {
             Value::Object(fields) => {
-                if value["kind"] == "raw" {
+                if value.get("source").is_some() {
                     raw.push(value);
                 }
                 pending.extend(fields.values());
@@ -31,7 +31,7 @@ fn nested_accent_scopes_do_not_shift_later_source_notes() {
     ] {
         let aat: Value =
             serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
-        let raw = raw_nodes(&aat);
+        let raw = source_notes(&aat);
         assert!(raw.iter().any(|node| node["source"] == note), "{aat}");
         for node in raw {
             let start = usize::try_from(node["span"]["byte_start"].as_u64().unwrap()).unwrap();
@@ -42,17 +42,17 @@ fn nested_accent_scopes_do_not_shift_later_source_notes() {
 }
 
 #[test]
-fn raw_variant_spelling_preserves_original_accent_notation() {
+fn resolved_variant_spelling_preserves_original_accent_notation() {
     let source = "〔sorgfa:ltig［＃「sorgfa:ltig」は底本では「sorgfa:tig」］〕";
     let aat: Value =
         serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
-    let raw = raw_nodes(&aat);
+    let raw = source_notes(&aat);
     let note = raw
         .iter()
-        .find(|node| node.get("text_variant").is_some())
+        .find(|node| node["kind"] == "text-variant")
         .unwrap();
-    assert_eq!(note["text_variant"]["current"], "sorgfältig");
-    assert_eq!(note["text_variant"]["base_text"], "sorgfätig");
+    assert_eq!(note["content"][0]["value"], "sorgfältig");
+    assert_eq!(note["base_text"], "sorgfätig");
     assert_eq!(
         note["source"],
         "［＃「sorgfa:ltig」は底本では「sorgfa:tig」］"
@@ -67,7 +67,7 @@ fn unparsed_source_gaps_preserve_accent_syntax_and_line_endings() {
     let source = "前〔cafe'〕［＃tail\r\n";
     let aat: Value =
         serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
-    let raw = raw_nodes(&aat);
+    let raw = source_notes(&aat);
     assert_eq!(raw.len(), 1);
     assert_eq!(raw[0]["source"], source);
 }
@@ -84,7 +84,7 @@ proptest! {
         let body = format!("{prefix}{}{}平和{note}", accents.join(""), if crlf { "\r\n" } else { "\n" });
         let source = if quote { format!("≪{body}≫") } else { body };
         let aat: Value = serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
-        let raw = raw_nodes(&aat);
+        let raw = source_notes(&aat);
         prop_assert!(raw.iter().any(|node| node["source"] == note));
         for node in raw {
             let start = usize::try_from(node["span"]["byte_start"].as_u64().unwrap()).unwrap();

@@ -196,6 +196,7 @@
         { "$ref": "#/$defs/accent" },
         { "$ref": "#/$defs/figure" },
         { "$ref": "#/$defs/raw" },
+        { "$ref": "#/$defs/text_variant" },
         { "$ref": "#/$defs/inline_container" },
         { "$ref": "#/$defs/warigaki" },
         { "$ref": "#/$defs/warichu" }
@@ -374,6 +375,18 @@
             "base_text": { "type": "string", "minLength": 1 }
           }
         },
+        "span": { "$ref": "#/$defs/span" }
+      }
+    },
+    "text_variant": {
+      "type": "object",
+      "required": ["kind", "content", "base_text", "source", "span"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "const": "text-variant" },
+        "content": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/inline" } },
+        "base_text": { "type": "string", "minLength": 1 },
+        "source": { "type": "string", "minLength": 1 },
         "span": { "$ref": "#/$defs/span" }
       }
     },

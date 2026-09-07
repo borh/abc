@@ -312,6 +312,11 @@ enum ProjectedKind {
     },
     AccentReference,
     FormattingReference,
+    InlineHeading {
+        level: u64,
+        style: HeadingStyle,
+        target: String,
+    },
     Kunten {
         kind: KuntenKind,
         text: String,
@@ -356,6 +361,7 @@ impl ProjectedKind {
             Self::Accent { .. } => "supplied-diacritic",
             Self::AccentReference => "accent-annotation",
             Self::FormattingReference => "formatting-annotation",
+            Self::InlineHeading { .. } => "headingHint",
             Self::Kunten { .. } => "kunten",
             Self::MarginNote { .. } | Self::TranscribedNotes { .. } => "sideNote",
             Self::Node(kind) => kind.as_json_tag(),
@@ -386,6 +392,7 @@ struct AozoraNode {
     kind: ProjectedKind,
     span: Span,
     marker_span: Option<Span>,
+    target_quote: Option<Span>,
     container_end: Option<ContainerEnd>,
     layout_clauses: Vec<Span>,
 }
@@ -589,6 +596,15 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                     target_span: note.target_span.map(|span| span.span().into()),
                 },
                 NodeRef::Inline(Node::IterationMark(mark)) => ProjectedKind::IterationMark(mark),
+                NodeRef::Inline(Node::HeadingHint(hint))
+                    if matches!(hint.style, HeadingStyle::SameLine | HeadingStyle::Window) =>
+                {
+                    ProjectedKind::InlineHeading {
+                        level: u64::from(hint.level.outline_level()),
+                        style: hint.style,
+                        target: tree.store.resolve_str(hint.target).to_owned(),
+                    }
+                }
                 NodeRef::Inline(Node::Kunten(k)) | NodeRef::BlockLeaf(Node::Kunten(k)) => {
                     ProjectedKind::Kunten {
                         kind: k.kind,
@@ -727,10 +743,27 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                         .collect()
                 })
                 .unwrap_or_default();
+            let target_quote = matches!(
+                kind,
+                ProjectedKind::Format(_) | ProjectedKind::FormatMany(_)
+            )
+            .then(|| {
+                let marker = marker_span?;
+                pairs.range(marker.start..marker.end).find_map(|(_, pair)| {
+                    (pair.kind == ab_aozora_facade::PairKind::Quote
+                        && pair.open.start as usize == marker.start + "［＃".len())
+                    .then_some(Span {
+                        start: pair.open.end as usize,
+                        end: pair.close.start as usize,
+                    })
+                })
+            })
+            .flatten();
             AozoraNode {
                 kind,
                 span,
                 marker_span,
+                target_quote,
                 container_end: container_ends.get(&source_node.source_span.start).copied(),
                 layout_clauses,
             }
@@ -743,6 +776,7 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                 kind: ProjectedKind::RecoveredSource,
                 span,
                 marker_span: None,
+                target_quote: None,
                 container_end: None,
                 layout_clauses: Vec::new(),
             })
@@ -761,6 +795,7 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                                 end: span.start + offset + '※'.len_utf8(),
                             },
                             marker_span: None,
+                            target_quote: None,
                             container_end: None,
                             layout_clauses: Vec::new(),
                         },
@@ -1088,6 +1123,7 @@ fn projections(
         nodes.push(AozoraNode {
             kind: ProjectedKind::QuoteOpen,
             marker_span: None,
+            target_quote: None,
             container_end: None,
             layout_clauses: Vec::new(),
             span: Span {
@@ -1098,6 +1134,7 @@ fn projections(
         nodes.push(AozoraNode {
             kind: ProjectedKind::QuoteClose,
             marker_span: None,
+            target_quote: None,
             container_end: None,
             layout_clauses: Vec::new(),
             span: Span {
@@ -1126,6 +1163,10 @@ fn projections(
                 let offset = u32::try_from(start).expect("source offset fits u32");
                 span.start += offset;
                 span.end += offset;
+            }
+            if let Some(span) = &mut inner.target_quote {
+                span.start += start;
+                span.end += start;
             }
             rebase_variant_spans(&mut inner.kind, start);
             rebase_partial_layout(&mut inner.layout_clauses, start);
@@ -2282,24 +2323,33 @@ fn heading_block_from_hint(
     if indent.is_some() {
         paragraph.pop();
     }
-    let mut heading = json!({
+    let mut heading = heading_from_content(heading_content, &node["span"], level, style);
+    if let Some(indent) = indent {
+        heading["indent"] = json!(indent);
+    }
+    Some(heading)
+}
+
+fn heading_from_content(
+    heading_content: Vec<Value>,
+    marker: &Value,
+    level: u64,
+    style: &str,
+) -> Value {
+    json!({
         "kind": "heading",
         "level": level,
         "style": style,
         "span": {
             "byte_start": heading_content[0]["span"]["byte_start"],
-            "byte_end": node["span"]["byte_end"],
+            "byte_end": marker["byte_end"],
             "line_start": heading_content[0]["span"]["line_start"],
-            "line_end": node["span"]["line_end"]
+            "line_end": marker["line_end"]
         },
-        "content": heading_content,
-        "interpretation_marker_spans": [node["span"]],
+        "content": Value::Array(heading_content),
+        "interpretation_marker_spans": [marker],
         "x-provenance": "source-derived",
-    });
-    if let Some(indent) = indent {
-        heading["indent"] = json!(indent);
-    }
-    Some(heading)
+    })
 }
 
 fn heading_indent_marker(node: &Value) -> Option<u64> {
@@ -2467,6 +2517,10 @@ fn parsed_source_fragment(decoded: &DecodedSource, range: Range<usize>) -> Optio
             span.start = span.start.checked_add(offset)?;
             span.end = span.end.checked_add(offset)?;
         }
+        if let Some(span) = &mut node.target_quote {
+            span.start += range.start;
+            span.end += range.start;
+        }
         rebase_variant_spans(&mut node.kind, range.start);
         if let ProjectedKind::Accent { marker, .. } = &mut node.kind {
             marker.start += range.start;
@@ -2602,6 +2656,7 @@ fn inline_content_range(
             }
             ProjectedKind::AccentReference => content.push(raw_node(decoded, node, "accent-annotation")),
             ProjectedKind::FormattingReference => {}
+            ProjectedKind::InlineHeading { .. } => push_inline_heading(&mut content, decoded, node),
             ProjectedKind::Node(NodeKind::Directive)
                 if source_slice(&decoded.span_text, &node.span).contains("返り点") =>
             {
@@ -2623,12 +2678,35 @@ fn inline_content_range(
         }
         cursor = cursor.max(node.span.end);
     }
-    if cursor < range.end {
-        push_source_gap(&mut content, decoded, cursor, range.end);
-    }
+    push_source_gap(&mut content, decoded, cursor, range.end);
     // Assemble source paragraphs and enclosing block layouts before consuming
     // same-line formatting markers in pair_bare_toggles_in_blocks.
     pair_warichu(content)
+}
+
+fn push_inline_heading(content: &mut Vec<Value>, decoded: &DecodedSource, node: &AozoraNode) {
+    let ProjectedKind::InlineHeading {
+        level,
+        style,
+        target,
+    } = &node.kind
+    else {
+        return;
+    };
+    if let Some(children) = take_visible_suffix(content, target, &decoded.text) {
+        content.push(heading_from_content(
+            children,
+            &span_json(&node.span, &decoded.span_ctx),
+            *level,
+            if *style == HeadingStyle::SameLine {
+                "dogyo"
+            } else {
+                "mado"
+            },
+        ));
+    } else {
+        content.push(raw_node(decoded, node, "headingHint"));
+    }
 }
 
 fn pair_warichu(content: Vec<Value>) -> Vec<Value> {
@@ -3125,6 +3203,7 @@ fn push_nested_format(
         kind,
         span: mark.span,
         marker_span: *marker,
+        target_quote: None,
         container_end: None,
         layout_clauses: Vec::new(),
     };
@@ -3607,8 +3686,11 @@ fn push_style_node(
         object.extend(fields.as_object().expect("formatting fields").clone());
     }
     if style["content"].as_array().is_some_and(Vec::is_empty)
-        && let Some(target) = marker_target(source_slice(&decoded.span_text, &node.span))
-        && let Some(children) = take_visible_suffix(content, target, &decoded.text)
+        && let Some(target) = node.target_quote
+        && let Some(quoted) = source_fragment(decoded, target.start..target.end)
+        && let Some(text) = content_target_text(&quoted)
+        && let Some(children) =
+            take_visible_suffix_matching(content, &text, &decoded.text, Some(&quoted))
     {
         style["span"]["byte_start"] = children[0]["span"]["byte_start"].clone();
         style["span"]["line_start"] = children[0]["span"]["line_start"].clone();
@@ -3639,6 +3721,7 @@ fn push_style_node(
             kind: projected_variant(variant, marker.start),
             span: marker,
             marker_span: Some(marker),
+            target_quote: None,
             container_end: None,
             layout_clauses: Vec::new(),
         };
@@ -3983,7 +4066,7 @@ fn target_text(node: &Value) -> Option<Cow<'_, str>> {
         "iteration-mark" | "supplied-diacritic" => Some(Cow::Borrowed(node["text"].as_str()?)),
         "editorial_note" | "kunten" | "figure" => Some(Cow::Borrowed("")),
         "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi"
-        | "yokogumi" | "fraction" | "text-variant" | "annotated_text" => {
+        | "yokogumi" | "fraction" | "text-variant" | "annotated_text" | "heading" => {
             let mut text = String::new();
             for child in node["content"].as_array()? {
                 text.push_str(&target_text(child)?);
@@ -4406,13 +4489,6 @@ fn region_formatting_close(close: RegionClose) -> Option<(String, Option<Value>)
         .to_owned(),
         attributes,
     ))
-}
-
-fn marker_target(source: &str) -> Option<&str> {
-    let start = source.find("［＃「")? + "［＃「".len();
-    let rest = &source[start..];
-    let end = rest.find('」')?;
-    Some(&rest[..end])
 }
 
 fn layout_clause(decoded: &DecodedSource, span: Span) -> Value {

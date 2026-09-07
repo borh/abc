@@ -133,3 +133,57 @@ fn later_equal_spelling_reference_keeps_its_own_source_outcome() {
         assert_eq!(first["source_span"]["end"], start);
     }
 }
+
+#[test]
+fn retrospective_enclosure_preserves_ruby_and_supplied_kunten() {
+    let ir = convert("高天《タカマ》［＃（个）］原《ハラ》［＃「高天［＃（个）］原」は罫囲み］");
+    assert!(ir["interpretation_problems"].as_array().unwrap().is_empty());
+    let enclosure = &ir["nodes"][0];
+    assert_eq!(enclosure["type"], "layout-span");
+    assert_eq!(enclosure["text"], "高天原");
+    let children = enclosure["inline_children"].as_array().unwrap();
+    assert_eq!(
+        children
+            .iter()
+            .filter(|node| node["type"] == "ruby")
+            .count(),
+        2
+    );
+    assert!(children.iter().any(|node| node["type"] == "kunten"));
+}
+
+#[test]
+fn retrospective_layout_rejects_a_different_supplied_kunten() {
+    let ir = convert("高天《タカマ》［＃（个）］原《ハラ》［＃「高天［＃（ノ）］原」は罫囲み］");
+    assert!(!ir["interpretation_problems"].as_array().unwrap().is_empty());
+    assert!(
+        !ir["interpretation_facts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|fact| fact["kind"] == "layout")
+    );
+    assert!(
+        !ir["nodes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|node| node["type"] == "layout-span")
+    );
+}
+
+#[test]
+fn retrospective_layout_can_target_an_inline_heading_and_its_suffix() {
+    let ir = convert(
+        "［＃１字下げ］二月二十五日［＃「二月二十五日」は同行大見出し］（水）［＃「二月二十五日（水）」は罫囲み］",
+    );
+    assert!(ir["interpretation_problems"].as_array().unwrap().is_empty());
+    let enclosure = &ir["nodes"][0];
+    assert_eq!(enclosure["type"], "layout-span");
+    assert_eq!(enclosure["text"], "二月二十五日（水）");
+    let heading = &enclosure["inline_children"][0];
+    assert_eq!(heading["type"], "heading");
+    assert_eq!(heading["style"], "dogyo");
+    assert_eq!(heading["level"], 1);
+    assert_eq!(ir["layout_blocks"][0]["indent"], 1);
+}

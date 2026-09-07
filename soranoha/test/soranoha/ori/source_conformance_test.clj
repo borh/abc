@@ -773,3 +773,23 @@
     (is (= ["1/n"] (mapv view/visible-text scopes)))
     (is (= 1 (count (get-in result [:ir "interpretation_facts"]))))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest retrospective-frame-preserves-rich-source-targets
+  (let [result (transcribe (source "高天《タカマ》［＃（个）］原《ハラ》［＃「高天［＃（个）］原」は罫囲み］"))
+        frame (first (filter #(= "keigakomi border(rule)" (attribute % "rend")) (elements result "hi")))]
+    (is (= "高天原" (:plaintext result)))
+    (is (some? frame))
+    (is (= ["タカマ" "ハラ"] (texts result "rt")))
+    (is (some #(and (= "kunten" (attribute % "type")) (= "个" (.getTextContent ^Node %))) (elements result "note")))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest retrospective-frame-preserves-inline-heading-and-enclosing-indent
+  (let [result (transcribe (source "［＃１字下げ］二月二十五日［＃「二月二十五日」は同行大見出し］（水）［＃「二月二十五日（水）」は罫囲み］"))
+        frame (first (filter #(= "keigakomi border(rule)" (attribute % "rend")) (elements result "hi")))
+        heading (first (filter #(= "heading" (attribute % "type")) (elements result "seg")))]
+    (is (= "二月二十五日（水）" (:plaintext result)))
+    (is (= "二月二十五日（水）" (view/visible-text frame)))
+    (is (= "二月二十五日" (view/visible-text heading)))
+    (is (= "dogyo" (attribute heading "rend")))
+    (is (= 1 (get-in result [:ir "layout_blocks" 0 "indent"])))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))

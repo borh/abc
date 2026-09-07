@@ -693,18 +693,43 @@ fn component_substitution_glyphs_remain_structured_witnesses() {
 
 #[test]
 fn unknown_witness_directives_and_unknown_target_glyphs_are_not_inferred() {
-    for body in [
-        "字［＃「字」は底本では「字［＃未知の意味］」］",
-        "※［＃「弋＋頁」、74-10］［＃「※［＃「木＋貝」、74-10］」は底本では「字」］",
-    ] {
-        let ir = convert(body);
-        assert!(
-            !nodes(&ir)
-                .iter()
-                .any(|node| node["type"] == "base-text-variant")
-        );
-        assert!(!ir["interpretation_problems"].as_array().unwrap().is_empty());
-    }
+    let partial = convert("字［＃「字」は底本では「字［＃未知の意味］」］");
+    assert!(
+        nodes(&partial)
+            .iter()
+            .any(|node| node["type"] == "base-text-variant")
+    );
+    assert!(
+        nodes(&partial)
+            .iter()
+            .any(|node| node["note"]["raw"] == "［＃未知の意味］")
+    );
+    assert!(
+        !partial["interpretation_facts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|fact| fact["kind"] == "text-variant")
+    );
+    assert!(
+        !partial["interpretation_problems"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+    let mismatch =
+        convert("※［＃「弋＋頁」、74-10］［＃「※［＃「木＋貝」、74-10］」は底本では「字」］");
+    assert!(
+        !nodes(&mismatch)
+            .iter()
+            .any(|node| node["type"] == "base-text-variant")
+    );
+    assert!(
+        !mismatch["interpretation_problems"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
 }
 
 #[test]
@@ -1696,4 +1721,70 @@ fn a_reading_variant_can_supply_its_shared_principal_continuation() {
             "{body}"
         );
     }
+}
+
+#[test]
+fn exact_targets_retain_uncertain_witness_components_without_claiming_them_complete() {
+    for body in [
+        "萬一《まんいち》［＃「萬一《まんいち》」は底本では「萬　《まん　　》」］",
+        "。棚《たな》に［＃「。棚《たな》に」は底本では「。《たな》棚に」］",
+    ] {
+        let ir = convert(body);
+        let all = nodes(&ir);
+        let app = all
+            .iter()
+            .find(|node| node["type"] == "base-text-variant")
+            .unwrap();
+        let witness = app["variant"]["base_children"].as_array().unwrap();
+        assert!(witness.iter().any(
+            |node| node["type"] == "editor-note" && node["note"]["resolution"] == "unresolved"
+        ));
+        let source = format!("題\n作者\n\n{body}\n\n底本：本\n");
+        for note in witness.iter().filter(|node| node["type"] == "editor-note") {
+            let span = &note["source_span"];
+            let start = usize::try_from(span["start"].as_u64().unwrap()).unwrap();
+            let end = usize::try_from(span["end"].as_u64().unwrap()).unwrap();
+            assert_eq!(&source[start..end], note["note"]["raw"].as_str().unwrap());
+            assert_eq!(note["span"]["coordinate_system"], "witness_utf8");
+            assert!(
+                ir["interpretation_problems"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .any(|problem| problem["source_span"] == *span)
+            );
+        }
+        assert!(!witness.iter().any(|node| node["type"] == "ruby"));
+        assert!(
+            !ir["interpretation_facts"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|fact| fact["kind"] == "text-variant")
+        );
+        assert!(
+            ir["interpretation_problems"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|problem| problem["code"] == "unparsed-source-gap")
+        );
+    }
+    let mismatch =
+        convert("萬二《まんに》［＃「萬一《まんいち》」は底本では「萬　《まん　　》」］");
+    assert!(
+        !nodes(&mismatch)
+            .iter()
+            .any(|node| node["type"] == "base-text-variant")
+    );
+    let complete =
+        convert("萬一《まんいち》［＃「萬一《まんいち》」は底本では「萬二《まんに》」］");
+    assert!(
+        complete["interpretation_facts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|fact| fact["kind"] == "text-variant")
+    );
+    assert_eq!(complete["interpretation_problems"], json!([]));
 }

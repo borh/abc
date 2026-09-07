@@ -1516,7 +1516,9 @@ impl EstablishedInterpretation {
             Some("heading") => Some(Self::Heading),
             Some("caption" | "caption_block") => Some(Self::Caption),
             Some("translation_block") => Some(Self::Translation),
-            Some("text-variant") => Some(Self::TextVariant),
+            Some("text-variant") if !fragment_has_uncertainty(&node["base_content"]) => {
+                Some(Self::TextVariant)
+            }
             Some("annotated_text")
                 if matches!(
                     node["note_kind"].as_str(),
@@ -2816,6 +2818,29 @@ fn rebase_projected_spans(kind: &mut ProjectedKind, offset: usize) {
 fn source_fragment(decoded: &DecodedSource, range: Range<usize>) -> Option<Vec<Value>> {
     let content = parsed_source_fragment(decoded, range)?;
     content_structured_text(&content)?;
+    Some(content)
+}
+
+fn witness_fragment(decoded: &DecodedSource, range: Range<usize>) -> Option<Vec<Value>> {
+    let content = parsed_source_fragment(decoded, range)?;
+    content_witness_text(&content)?;
+    let mut pending = content.iter().collect::<Vec<_>>();
+    while let Some(node) = pending.pop() {
+        if node["kind"] == "raw" {
+            let span = value_source_span(node)?;
+            if node["source"].as_str()? != decoded.text.get(span.start..span.end)? {
+                return None;
+            }
+        }
+        for key in [
+            "content",
+            "base_content",
+            "reading_content",
+            "annotation_content",
+        ] {
+            pending.extend(node[key].as_array().into_iter().flatten());
+        }
+    }
     Some(content)
 }
 
@@ -4223,10 +4248,8 @@ fn resolve_text_variants_in_blocks(
                 variant["current_content"].as_array(),
                 variant["base_content"].as_array(),
             )
-            && let (Some(current_text), Some(base_text)) = (
-                content_structured_text(current),
-                content_structured_text(base),
-            )
+            && let (Some(current_text), Some(base_text)) =
+                (content_structured_text(current), content_witness_text(base))
         {
             if variant["target_kind"] == "text" {
                 if let Some(annotation) =
@@ -4330,7 +4353,7 @@ fn quoted_interior_variant_content(
     }
     content.push(json!({"kind":"text-variant", "content":selected,
         "current_interpretation_facts":established_interpretations(current),
-        "base_text":content_structured_text(annotation["text_variant"]["base_content"].as_array()?)?,
+        "base_text":content_witness_text(annotation["text_variant"]["base_content"].as_array()?)?,
         "base_content":annotation["text_variant"]["base_content"],
         "source":annotation["source"], "span":annotation["span"]}));
     content.extend(closing);
@@ -4469,7 +4492,7 @@ fn accent_scope_variant_content(
         return None;
     }
     let base = annotation["text_variant"]["base_content"].as_array()?;
-    let base_text = content_structured_text(base)?;
+    let base_text = content_witness_text(base)?;
     content.push(json!({"kind":"text-variant", "content":selected,
         "current_interpretation_facts":established_interpretations(current),
         "base_text":base_text, "base_content":base,
@@ -4531,7 +4554,7 @@ fn physical_break_variant(
     targets.push(break_span);
     let apparatus = json!({"kind":"text-variant", "content":current,
         "current_interpretation_facts":established_interpretations(current),
-        "base_content":variant["base_content"], "base_text":content_structured_text(variant["base_content"].as_array()?)?,
+        "base_content":variant["base_content"], "base_text":content_witness_text(variant["base_content"].as_array()?)?,
         "source":marker["source"], "span":marker["span"]});
     Some(json!({"kind":"editorial_note", "note_kind":"base-edition",
         "annotation_content":[apparatus], "span":marker["span"],
@@ -4558,7 +4581,7 @@ fn attach_formatting_variant(style: &mut Value, note: &Value, source: &str) -> b
     let Some(base) = note["text_variant"]["base_content"].as_array() else {
         return false;
     };
-    let Some(base_text) = content_structured_text(base) else {
+    let Some(base_text) = content_witness_text(base) else {
         return false;
     };
     let Some(children) = style["content"].as_array() else {
@@ -4641,12 +4664,12 @@ fn attach_principal_subrange(
             if let Some(selected) =
                 take_visible_suffix_matching(children, target, decoded, Some(current))
             {
-                let base_text = content_structured_text(
+                let base_text = content_witness_text(
                     annotation["text_variant"]["base_content"]
                         .as_array()
                         .expect("parsed witness content"),
                 )
-                .expect("interpreted witness content");
+                .expect("known witness contribution");
                 children.push(json!({"kind":"text-variant", "content":selected,
                     "current_interpretation_facts":established_interpretations(current),
                     "base_text":base_text, "base_content":annotation["text_variant"]["base_content"],
@@ -4726,7 +4749,7 @@ fn literal_variant_content(
     }
     content.push(json!({"kind":"text-variant", "content":[text_node(index, end)],
         "current_interpretation_facts":established_interpretations(current),
-        "base_text":content_structured_text(note["text_variant"]["base_content"].as_array()?)?,
+        "base_text":content_witness_text(note["text_variant"]["base_content"].as_array()?)?,
         "base_content":note["text_variant"]["base_content"], "source":note["source"], "span":note["span"]}));
     append_variant_statement(&mut content, note);
     if end < base.len() {
@@ -4823,7 +4846,7 @@ fn attach_contextual_reading_variant(
     let Some(current_text) = content_structured_text(current) else {
         return false;
     };
-    let Some(base_text) = content_structured_text(base) else {
+    let Some(base_text) = content_witness_text(base) else {
         return false;
     };
     let Some(context) = contextual_reading(&current_text, &base_text) else {
@@ -4999,27 +5022,28 @@ fn attach_reading_variant(
 // An explicitly typed witness note contributes no principal characters even
 // when its own quoted target remains unresolved.
 fn target_text(node: &Value) -> Option<Cow<'_, str>> {
-    fragment_text(node, GlyphRealization::Required)
+    fragment_text(node, FragmentTextPolicy::Target)
 }
 
 #[derive(Clone, Copy)]
-enum GlyphRealization {
-    Required,
-    Placeholder,
+enum FragmentTextPolicy {
+    Target,
+    Interpreted,
+    Witness,
 }
 
-fn fragment_text(node: &Value, glyph: GlyphRealization) -> Option<Cow<'_, str>> {
+fn fragment_text(node: &Value, policy: FragmentTextPolicy) -> Option<Cow<'_, str>> {
     match node["kind"].as_str()? {
         "text" => Some(Cow::Borrowed(node["value"].as_str()?)),
         "ruby" => match node["base_content"].as_array() {
-            Some(children) => content_fragment_text(children, glyph).map(Cow::Owned),
+            Some(children) => content_fragment_text(children, policy).map(Cow::Owned),
             None => Some(Cow::Borrowed(node["base"].as_str()?)),
         },
         "gaiji" => Some(Cow::Borrowed(match node["resolved"].as_str() {
             Some(text) => text,
-            None => match glyph {
-                GlyphRealization::Required => return None,
-                GlyphRealization::Placeholder => "\u{fffc}",
+            None => match policy {
+                FragmentTextPolicy::Target => return None,
+                FragmentTextPolicy::Interpreted | FragmentTextPolicy::Witness => "\u{fffc}",
             },
         })),
         "iteration-mark" | "supplied-diacritic" => Some(Cow::Borrowed(node["text"].as_str()?)),
@@ -5029,9 +5053,19 @@ fn fragment_text(node: &Value, glyph: GlyphRealization) -> Option<Cow<'_, str>> 
         | "text-variant" | "annotated_text" | "heading" => {
             let mut text = String::new();
             for child in node["content"].as_array()? {
-                text.push_str(&fragment_text(child, glyph)?);
+                text.push_str(&fragment_text(child, policy)?);
             }
             Some(Cow::Owned(text))
+        }
+        "raw"
+            if matches!(policy, FragmentTextPolicy::Witness)
+                && node.get("interpretation_problem").is_some()
+                && value_source_span(node).is_some_and(|span| span.start < span.end)
+                && node["source"]
+                    .as_str()
+                    .is_some_and(|source| !source.is_empty()) =>
+        {
+            Some(Cow::Borrowed(""))
         }
         "raw" if node.get("text_variant").is_some() => Some(Cow::Borrowed("")),
         _ => None,
@@ -5039,17 +5073,35 @@ fn fragment_text(node: &Value, glyph: GlyphRealization) -> Option<Cow<'_, str>> 
 }
 
 fn content_target_text(nodes: &[Value]) -> Option<String> {
-    content_fragment_text(nodes, GlyphRealization::Required)
+    content_fragment_text(nodes, FragmentTextPolicy::Target)
 }
 
 fn content_structured_text(nodes: &[Value]) -> Option<String> {
-    content_fragment_text(nodes, GlyphRealization::Placeholder)
+    content_fragment_text(nodes, FragmentTextPolicy::Interpreted)
 }
 
-fn content_fragment_text(nodes: &[Value], glyph: GlyphRealization) -> Option<String> {
+// This is the known textual contribution, not a complete realization: retained
+// uncertain witness components remain separate source notes and problems.
+fn content_witness_text(nodes: &[Value]) -> Option<String> {
+    content_fragment_text(nodes, FragmentTextPolicy::Witness)
+}
+
+fn fragment_has_uncertainty(value: &Value) -> bool {
+    match value {
+        Value::Object(object) => {
+            object.contains_key("interpretation_problem")
+                || (value["kind"] == "raw" && object.contains_key("text_variant"))
+                || object.values().any(fragment_has_uncertainty)
+        }
+        Value::Array(values) => values.iter().any(fragment_has_uncertainty),
+        _ => false,
+    }
+}
+
+fn content_fragment_text(nodes: &[Value], policy: FragmentTextPolicy) -> Option<String> {
     let mut text = String::new();
     for node in nodes {
-        text.push_str(&fragment_text(node, glyph)?);
+        text.push_str(&fragment_text(node, policy)?);
     }
     Some(text)
 }
@@ -5066,7 +5118,7 @@ fn quoted_structure_matches(quoted: &[Value], actual: &[Value]) -> bool {
     ) -> Option<()> {
         for node in nodes {
             let start = *offset;
-            let text = fragment_text(node, GlyphRealization::Placeholder)?;
+            let text = fragment_text(node, FragmentTextPolicy::Interpreted)?;
             let end = start + text.len();
             match node["kind"].as_str()? {
                 "gaiji" if node["resolved"].is_null() => output.push((
@@ -5228,9 +5280,9 @@ fn take_visible_suffix_matching(
         let text = fragment_text(
             node,
             if quoted.is_some() {
-                GlyphRealization::Placeholder
+                FragmentTextPolicy::Interpreted
             } else {
-                GlyphRealization::Required
+                FragmentTextPolicy::Target
             },
         )?;
         if text.is_empty() {
@@ -5778,7 +5830,7 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
         }
         let base_content = base_span.as_ref().map_or_else(
             || Some(Vec::new()),
-            |range| source_fragment(decoded, range.clone()),
+            |range| witness_fragment(decoded, range.clone()),
         );
         if let Some(base_content) = base_content {
             value["text_variant"]["base_content"] = json!(base_content);
@@ -7748,6 +7800,21 @@ mod tests {
         ] {
             let figure = json!({"kind":"figure", "filename":"figure.png", "interpretation_problem":{"aspects":aspects}});
             assert!(EstablishedInterpretation::for_node(&figure).is_none());
+        }
+    }
+    #[test]
+    fn partial_witness_text_requires_located_explicit_uncertainty() {
+        let raw = json!({"kind":"raw", "source":"《よみ》", "span":{"byte_start":3,"byte_end":15,"line_start":1,"line_end":1},
+            "interpretation_problem":{"kind":"uninterpreted-notation"}});
+        assert_eq!(
+            content_witness_text(slice::from_ref(&raw)),
+            Some(String::new())
+        );
+        assert!(content_structured_text(slice::from_ref(&raw)).is_none());
+        for missing in ["span", "interpretation_problem"] {
+            let mut incomplete = raw.clone();
+            incomplete.as_object_mut().unwrap().remove(missing);
+            assert!(content_witness_text(&[incomplete]).is_none());
         }
     }
 }

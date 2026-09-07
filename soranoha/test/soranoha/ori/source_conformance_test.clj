@@ -1442,3 +1442,18 @@
     (is (= ["こぼ"] (texts result "lem")))
     (is (= ["にぼ"] (texts result "rdg")))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest uncertain-witness-components-remain-located-source-apparatus
+  (doseq [[body original plain raw]
+          [["萬一《まんいち》［＃「萬一《まんいち》」は底本では「萬　《まん　　》」］" "萬一《まんいち》" "萬一" "《まん　　》"]
+           ["。棚《たな》に［＃「。棚《たな》に」は底本では「。《たな》棚に」］" "。棚《たな》に" "。棚に" "《たな》"]]]
+    (let [result (transcribe (source body))
+          before (transcribe (source original))]
+      (is (= plain (:plaintext result)))
+      (is (= (:plaintext before) (:plaintext result)))
+      (is (= (projection/markdown (:view before)) (projection/markdown (:view result))))
+      (is (= [plain] (texts result "lem")))
+      (is (some #(and (= raw (.getTextContent ^Node %))
+                      (not (string/blank? (attribute % "source")))) (elements result "note")))
+      (is (seq (get-in result [:ir "interpretation_problems"])))
+      (is (not-any? #(= "text-variant" (get % "kind")) (get-in result [:ir "interpretation_facts"]))))))

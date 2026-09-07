@@ -120,7 +120,7 @@
                       (json/read-json
                        (String. ^bytes (cas/get-bytes (:cas-dir store) (get-in result [:outputs name])) "UTF-8")))]
     (try
-      (doseq [[body unknown expected-claimed]
+      (doseq [[body unknown expected-claimed expected-component-claims]
               [["［＃斜体］字［＃「字」に白四角傍点］［＃斜体終わり］" "［＃「字」に白四角傍点］" 2]
                ["［＃斜体］字［＃「字」の部分はイタリック体］［＃斜体終わり］" "［＃「字」の部分はイタリック体］" 2]
                ["［＃太字］字［＃「字」は斜体］［＃太字終わり］" nil 3]
@@ -162,6 +162,10 @@
                ["〔Hu:lshoff［＃「Hu:lshoff」は底本では「Hu:lshoffs」］〕" nil 1]
                ["〔schla:gt［＃「〔schla:gt〕」は底本では「〔scha:gt〕」］〕" nil 1]
                ["〔Der Mu:s&iggang wird〕［＃「〔Mu:s&iggang〕」は底本では「〔Mu:s&igang〕」］" "〔Der Mu:s&iggang wird〕" 1]
+               ["萬一《まんいち》［＃「萬一《まんいち》」は底本では「萬　《まん　　》」］"
+                "［＃「萬一《まんいち》」は底本では「萬　《まん　　》」］" 1 1]
+               ["萬二《まんに》［＃「萬一《まんいち》」は底本では「萬　《まん　　》」］"
+                "［＃「萬一《まんいち》」は底本では「萬　《まん　　》」］" 1 0]
                ["零《こぼ》す［＃ルビの「こぼ（す）」は底本では「にぼ（す）」］" nil 2]
                ["「露西亞車」［＃「露西亞車」は底本では「靈西亞車」］" nil 1]
                ["〔Ha:tte.“〕［＃「Ha:tte.“」は底本では「Ha:tte“.」］" "〔Ha:tte.“〕" 1]
@@ -190,6 +194,9 @@
                 occurrences (filterv #(= "body" (get % "region")) (get report "occurrences"))
                 claimed (filterv #(seq (get % "claims")) occurrences)]
             (is (= expected-claimed (count claimed)))
+            (when (some? expected-component-claims)
+              (is (= expected-component-claims
+                     (count (mapcat #(get % "claims") (mapcat #(get % "components") occurrences))))))
             (is (= (if unknown [unknown] [])
                    (mapv #(get % "raw") (filter #(seq (get % "unaccounted_families")) occurrences))))
             (doseq [occurrence claimed claim (get occurrence "claims")]

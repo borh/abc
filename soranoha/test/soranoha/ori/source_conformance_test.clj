@@ -1199,3 +1199,13 @@
       (is (string/blank? (attribute note field))))
     (is (= 3 (count (distinct (map #(attribute (.getParentNode ^Node %) "source") notes)))))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
+(deftest figure-explanations-preserve-below-placement-without-figure-binding
+  (let [result (transcribe (source "前。\n［＃ここから図表下部解説文］\n説明一。\n説明二。\n［＃ここで図表下部解説文終わり］\n後。"))
+        wrapper (first (filter #(= "figure-explanation" (attribute % "type")) (elements result "div")))]
+    (is (some? wrapper))
+    (is (= "below" (attribute wrapper "rend")))
+    (is (= "" (attribute wrapper "corresp")))
+    (is (= ["説明一。" "説明二。"] (mapv view/visible-text (filter #(= "p" (view/local-name %)) (view/children wrapper)))))
+    (is (= "前。\n説明一。\n説明二。\n後。" (:plaintext result)))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))
+    (is (= 2 (count (filter #(= "caption" (get % "kind")) (get-in result [:ir "interpretation_facts"])))))))

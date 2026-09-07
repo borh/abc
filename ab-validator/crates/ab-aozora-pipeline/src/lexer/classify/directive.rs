@@ -21,10 +21,10 @@ use core::num::{NonZeroI8, NonZeroU8};
 use ab_aozora_syntax::alloc::Allocator;
 use ab_aozora_syntax::ast::Directive;
 use ab_aozora_syntax::{
-    AbsoluteSize, BOUTEN_KINDS, BlockStyles, BoutenKind, BoutenPosition, ColumnBlock, ColumnCount,
-    DirectiveKind, EnclosureKind, FontShift, HeadingKind, HeadingStyle, HorizontalPresentation,
-    IndentBlock, IndentLayout, Kumi, LineFormat, LineWidth, QualitativeFontSize, RegionClose,
-    RegionFormat, SectionKind, Span,
+    AbsoluteSize, BOUTEN_KINDS, BlockStyles, BoutenKind, BoutenPosition, CaptionScope, ColumnBlock,
+    ColumnCount, DirectiveKind, EnclosureKind, FontShift, HeadingKind, HeadingStyle,
+    HorizontalPresentation, IndentBlock, IndentLayout, Kumi, LineFormat, LineWidth,
+    QualitativeFontSize, RegionClose, RegionFormat, SectionKind, Span,
 };
 
 use super::super::pair::PairEvent;
@@ -445,6 +445,14 @@ static BODY_PATTERNS: &[BodyPattern] = &[
     },
     BodyPattern {
         needle: "ここでキャプション終わり",
+        family: BodyFamily::CaptionRange,
+    },
+    BodyPattern {
+        needle: "ここから図表下部解説文",
+        family: BodyFamily::CaptionRange,
+    },
+    BodyPattern {
+        needle: "ここで図表下部解説文終わり",
         family: BodyFamily::CaptionRange,
     },
     // 縦中横 has no paired-range form (spec §6.3 defines only the forward-
@@ -1590,11 +1598,8 @@ pub(super) fn classify_annotation_body(
         BodyFamily::CaptionRange => {
             // `キャプション` (inline) / `ここからキャプション` (block) with an
             // optional `終わり` close; re-parse the full body.
-            let (padded, is_close) = parse_caption_body(body)?;
-            Some((
-                open_or_close(RegionFormat::Caption { padded }, is_close),
-                None,
-            ))
+            let (scope, is_close) = parse_caption_body(body)?;
+            Some((open_or_close(RegionFormat::Caption(scope), is_close), None))
         }
     }
 }
@@ -2359,19 +2364,15 @@ fn parse_small_script_range_body(body: &str) -> Option<(BoutenPosition, bool)> {
     Some((side, is_close))
 }
 
-/// Parse a 太字 / 斜体 range / block body into `(kind, block, is_close)`.
-/// `block` is `true` for the `ここから…` / `ここで…終わり` block form,
-/// `false` for the bare inline range `［＃太字］…［＃太字終わり］`. Returns
-/// `None` (→ `Directive{Unknown}`) for any non-emphasis body.
-/// Parse a キャプション range / block body into `(block, is_close)`.
-/// `block` is `true` for `ここから…` / `ここで…終わり`, `false` for the bare
-/// inline range `［＃キャプション］…［＃キャプション終わり］`.
-fn parse_caption_body(body: &str) -> Option<(bool, bool)> {
+/// Parse complete caption and below-figure explanation boundary spellings.
+fn parse_caption_body(body: &str) -> Option<(CaptionScope, bool)> {
     Some(match body {
-        "キャプション" => (false, false),
-        "キャプション終わり" => (false, true),
-        "ここからキャプション" => (true, false),
-        "ここでキャプション終わり" => (true, true),
+        "キャプション" => (CaptionScope::Inline, false),
+        "キャプション終わり" => (CaptionScope::Inline, true),
+        "ここからキャプション" => (CaptionScope::Block, false),
+        "ここでキャプション終わり" => (CaptionScope::Block, true),
+        "ここから図表下部解説文" => (CaptionScope::FigureExplanationBelow, false),
+        "ここで図表下部解説文終わり" => (CaptionScope::FigureExplanationBelow, true),
         _ => return None,
     })
 }

@@ -730,6 +730,18 @@ impl LineFormat {
 // Region scope — paired range / block containers
 // ----------------------------------------------------------------------
 
+/// Supplied caption scope forms; figure explanations retain their below-figure placement.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum CaptionScope {
+    /// Bare caption delimiters within a source line.
+    Inline,
+    /// Explicit caption block delimiters.
+    Block,
+    /// A block explicitly described as explanation below a figure or table.
+    FigureExplanationBelow,
+}
+
 /// The attributes legal at the paired range / block scope.
 ///
 /// The open marker of a `［＃ここから…］ … ［＃ここで…終わり］` (or bare
@@ -756,11 +768,8 @@ pub enum RegionFormat {
         /// `true` = `ここから` block; `false` = inline bare range.
         padded: bool,
     },
-    /// キャプション range / block.
-    Caption {
-        /// `true` = `ここから` block; `false` = inline bare range.
-        padded: bool,
-    },
+    /// Caption or figure-explanation source scope.
+    Caption(CaptionScope),
     /// 見出し (delimited heading) range / block.
     Heading {
         /// The 大 / 中 / 小 outline level.
@@ -814,7 +823,7 @@ impl RegionFormat {
             Self::Bold { .. } => Format::Bold,
             Self::Gothic { .. } => Format::Gothic,
             Self::Italic { .. } => Format::Italic,
-            Self::Caption { .. } => Format::Caption,
+            Self::Caption(_) => Format::Caption,
             Self::Heading { level, style, .. } => Format::Heading { level, style },
             Self::Bouten { kind, .. } => Format::Bouten(kind),
             Self::SmallScript(p) => Format::SmallScript(p),
@@ -857,7 +866,7 @@ impl RegionFormat {
             Self::FontSize(_) => "fontSize",
             Self::SmallScript(_) => "smallScript",
             Self::CombineUpright => "combineUprightRange",
-            Self::Caption { .. } => "caption",
+            Self::Caption(_) => "caption",
         }
     }
 
@@ -883,7 +892,7 @@ impl RegionFormat {
             Self::FontSize(_) => "font-size",
             Self::SmallScript(_) => "small-script",
             Self::CombineUpright => "combine-upright",
-            Self::Caption { .. } => "caption",
+            Self::Caption(_) => "caption",
         }
     }
 
@@ -903,7 +912,7 @@ impl RegionFormat {
                 | Self::Italic { padded: false }
                 | Self::SmallScript(_)
                 | Self::CombineUpright
-                | Self::Caption { padded: false }
+                | Self::Caption(CaptionScope::Inline)
         )
     }
 
@@ -961,7 +970,7 @@ impl RegionFormat {
         Self::FontSize(FontShift(NonZeroI8::MIN)),
         Self::SmallScript(BoutenPosition::Right),
         Self::CombineUpright,
-        Self::Caption { padded: false },
+        Self::Caption(CaptionScope::Inline),
     ];
 }
 
@@ -1057,11 +1066,8 @@ pub enum RegionClose {
     SmallScript(BoutenPosition),
     /// `縦中横終わり`.
     CombineUpright,
-    /// `キャプション終わり` (`!padded`) / `ここでキャプション終わり` (`padded`).
-    Caption {
-        /// `true` = `ここで` block close; `false` = inline bare-range close.
-        padded: bool,
-    },
+    /// Closing marker for the supplied caption scope form.
+    Caption(CaptionScope),
 }
 
 impl RegionClose {
@@ -1109,7 +1115,7 @@ impl RegionClose {
             },
             RegionFormat::SmallScript(side) => Self::SmallScript(side),
             RegionFormat::CombineUpright => Self::CombineUpright,
-            RegionFormat::Caption { padded } => Self::Caption { padded },
+            RegionFormat::Caption(scope) => Self::Caption(scope),
         }
     }
 
@@ -1135,7 +1141,7 @@ impl RegionClose {
             Self::FontSize { .. } => "font-size",
             Self::SmallScript(_) => "small-script",
             Self::CombineUpright => "combine-upright",
-            Self::Caption { .. } => "caption",
+            Self::Caption(_) => "caption",
         }
     }
 
@@ -1151,7 +1157,7 @@ impl RegionClose {
                 | Self::Italic { padded: false }
                 | Self::SmallScript(_)
                 | Self::CombineUpright
-                | Self::Caption { padded: false }
+                | Self::Caption(CaptionScope::Inline)
         )
     }
 

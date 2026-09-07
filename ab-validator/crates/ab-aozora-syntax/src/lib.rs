@@ -39,10 +39,10 @@ pub mod lint;
 pub mod node_kind;
 
 pub use format::{
-    AbsoluteSize, AccentMark, BlockStyles, ColumnBlock, ColumnCount, EnclosureKind, FontShift,
-    Format, ForwardAttr, ForwardOrigin, HorizontalPresentation, IndentBlock, IndentLayout, Kumi,
-    LineAlignment, LineFormat, LineWidth, PartialLayout, QualitativeFontSize, RegionClose,
-    RegionFormat, RelativePlacement,
+    AbsoluteSize, AccentMark, BlockStyles, CaptionScope, ColumnBlock, ColumnCount, EnclosureKind,
+    FontShift, Format, ForwardAttr, ForwardOrigin, HorizontalPresentation, IndentBlock,
+    IndentLayout, Kumi, LineAlignment, LineFormat, LineWidth, PartialLayout, QualitativeFontSize,
+    RegionClose, RegionFormat, RelativePlacement,
 };
 pub use node_kind::NodeKind;
 

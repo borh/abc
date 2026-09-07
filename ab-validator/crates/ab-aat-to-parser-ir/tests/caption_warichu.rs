@@ -119,3 +119,41 @@ fn caption_markers_at_line_edges_preserve_content_and_indentation() {
         4
     );
 }
+
+#[test]
+fn figure_explanation_preserves_role_placement_and_source_paragraphs() {
+    let ir = convert(
+        "前。\n［＃ここから図表下部解説文］\n説明一。\n説明二。\n［＃ここで図表下部解説文終わり］\n後。",
+    );
+    let scope = &ir["layout_blocks"][0];
+    assert_eq!(scope["role"], "figure-explanation");
+    assert_eq!(scope["placement"], "below");
+    assert!(scope.get("relative_placement").is_none());
+    assert_eq!(
+        scope["node_range"]["start"],
+        ir["paragraphs"][1]["node_range"]["start"]
+    );
+    assert_eq!(
+        scope["node_range"]["end"],
+        ir["paragraphs"][2]["node_range"]["end"]
+    );
+    assert_eq!(ir["interpretation_problems"], serde_json::json!([]));
+    assert_eq!(
+        ir["interpretation_facts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|fact| fact["kind"] == "caption")
+            .count(),
+        2
+    );
+}
+
+#[test]
+fn figure_explanation_scope_does_not_require_invented_paragraph_boundaries() {
+    let ir = convert("前［＃ここから図表下部解説文］説明［＃ここで図表下部解説文終わり］後。");
+    assert_eq!(ir["layout_blocks"][0]["role"], "figure-explanation");
+    assert_eq!(ir["layout_blocks"][0]["placement"], "below");
+    assert_eq!(ir["paragraphs"].as_array().unwrap().len(), 2);
+    assert_eq!(ir["interpretation_problems"], serde_json::json!([]));
+}

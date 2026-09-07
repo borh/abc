@@ -680,6 +680,7 @@
                  (get block "align") (conj (str "text-align: " (get block "align")))
                  frame-style (conj frame-style))
         rend (cond-> []
+               (get block "placement") (conj (get block "placement"))
                placement (conj "placement-below" (str "anchor-kind(" (get placement "anchor_kind") ")"))
                (contains? placement "offset_chars") (conj (str "anchor-offset-chars(" (get placement "offset_chars") ")"))
                (get block "column_rule") (conj "column-rule")

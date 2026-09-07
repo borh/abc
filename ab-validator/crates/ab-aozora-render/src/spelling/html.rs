@@ -12,8 +12,8 @@ use core::fmt::{self, Write};
 
 use crate::render_node::framed_span_class;
 use ab_aozora_syntax::{
-    BlockStyles, Container, HeadingKind, HeadingStyle, IndentBlock, IndentLayout, LineFormat,
-    RegionFormat,
+    BlockStyles, CaptionScope, Container, HeadingKind, HeadingStyle, IndentBlock, IndentLayout,
+    LineFormat, RegionFormat,
 };
 use memchr::{memchr_iter, memchr3_iter};
 
@@ -568,10 +568,13 @@ fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::R
             writer.write_str(r#"<span class="aozora-combine-upright">"#)
         }
         // Caption: inline `<span>` for the bare range, block `<div>` for ここから.
-        RegionFormat::Caption { padded: false } => {
+        RegionFormat::Caption(CaptionScope::Inline) => {
             writer.write_str(r#"<span class="aozora-caption">"#)
         }
-        RegionFormat::Caption { padded: true } => {
+        RegionFormat::Caption(CaptionScope::FigureExplanationBelow) => {
+            writer.write_str(r#"<div class="aozora-container aozora-caption" data-purpose="figure-explanation" data-placement="below">"#)
+        }
+        RegionFormat::Caption(CaptionScope::Block) => {
             writer.write_str(r#"<div class="aozora-container aozora-caption">"#)
         }
         _ => writer.write_str(r#"<div class="aozora-container">"#),
@@ -589,7 +592,7 @@ fn render_container_close<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::
             RegionFormat::Italic { padded: false } => "</i>",
             RegionFormat::SmallScript(_)
             | RegionFormat::CombineUpright
-            | RegionFormat::Caption { padded: false } => "</span>",
+            | RegionFormat::Caption(CaptionScope::Inline) => "</span>",
             _ => "</div>",
         }),
     }

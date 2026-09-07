@@ -471,6 +471,7 @@
         {"type":"object","additionalProperties":false,"required":["kind"],"properties":{"kind":{"enum":["yokogumi","fraction","exponent"]}}},
         {"type":"object","additionalProperties":false,"required":["kind","border"],"properties":{"kind":{"const":"keigakomi"},"border":{"enum":["rule","unspecified","dashed-rule","box","circle","dotted-circle","double-rule"]}}},
         {"type":"object","additionalProperties":false,"required":["kind"],"properties":{"kind":{"enum":["caption","warichu"]}}},
+        {"type":"object","additionalProperties":false,"required":["kind","purpose","placement"],"properties":{"kind":{"const":"caption"},"purpose":{"const":"figure-explanation"},"placement":{"const":"below"}}},
         {"type":"object","additionalProperties":false,"required":["kind","style_type"],"properties":{"kind":{"const":"style"},"style_type":{"enum":["bold","italic","gothic","bouten","bosen"]},"decoration":{"type":"object","additionalProperties":false,"required":["kind","position"],"properties":{"kind":{"type":"string"},"position":{"enum":["right","left","both","unknown"]}}}}},
         {"type":"object","additionalProperties":false,"required":["kind","size_type","level"],"properties":{"kind":{"const":"font_size"},"size_type":{"enum":["large","small"]},"level":{"type":"integer","minimum":1}}},
         {"type":"object","additionalProperties":false,"required":["kind","size_type","direction"],"properties":{"kind":{"const":"font_size"},"size_type":{"const":"qualitative"},"direction":{"enum":["larger","smaller"]},"qualifier":{"enum":["やや","ひとまわり"]}}},

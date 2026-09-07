@@ -561,8 +561,9 @@ mod tests {
             RegionFormat::FontSize(fs(-2)),
             RegionFormat::SmallScript(BoutenPosition::Right),
             RegionFormat::SmallScript(BoutenPosition::Left),
-            RegionFormat::Caption { padded: false },
-            RegionFormat::Caption { padded: true },
+            RegionFormat::Caption(ab_aozora_syntax::CaptionScope::Inline),
+            RegionFormat::Caption(ab_aozora_syntax::CaptionScope::Block),
+            RegionFormat::Caption(ab_aozora_syntax::CaptionScope::FigureExplanationBelow),
         ];
         for &kind in BOUTEN_KINDS {
             for position in [

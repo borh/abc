@@ -6,8 +6,8 @@ use ab_aozora_syntax::ast::NodeStore;
 use core::fmt::{self, Write};
 
 use ab_aozora_syntax::{
-    BlockStyles, BoutenPosition, ForwardAttr, HeadingKind, HeadingStyle, IndentBlock, IndentLayout,
-    LineFormat, RegionClose, RegionFormat, SectionKind,
+    BlockStyles, BoutenPosition, CaptionScope, ForwardAttr, HeadingKind, HeadingStyle, IndentBlock,
+    IndentLayout, LineFormat, RegionClose, RegionFormat, SectionKind,
 };
 
 /// The source text of the container **open** marker for `open`.
@@ -213,8 +213,11 @@ pub(crate) fn emit_container_open<W: Write>(
         RegionFormat::SmallScript(side) => {
             write!(out, "［＃行{}小書き］", small_script_side_word(side))
         }
-        RegionFormat::Caption { padded: true } => out.write_str("［＃ここからキャプション］"),
-        RegionFormat::Caption { padded: false } => out.write_str("［＃キャプション］"),
+        RegionFormat::Caption(CaptionScope::FigureExplanationBelow) => {
+            out.write_str("［＃ここから図表下部解説文］")
+        }
+        RegionFormat::Caption(CaptionScope::Block) => out.write_str("［＃ここからキャプション］"),
+        RegionFormat::Caption(CaptionScope::Inline) => out.write_str("［＃キャプション］"),
         // `Warichu` is the block 割り注 region (the inline ［＃割り注］ is an
         // `Directive{WarichuOpen}`), so it serializes to the ここから form.
         RegionFormat::Warichu => out.write_str("［＃ここから割り注］"),
@@ -420,8 +423,13 @@ pub(crate) fn emit_container_close<W: Write>(close: RegionClose, out: &mut W) ->
         RegionClose::SmallScript(side) => {
             write!(out, "［＃行{}小書き終わり］", small_script_side_word(side))
         }
-        RegionClose::Caption { padded: true } => out.write_str("［＃ここでキャプション終わり］"),
-        RegionClose::Caption { padded: false } => out.write_str("［＃キャプション終わり］"),
+        RegionClose::Caption(CaptionScope::FigureExplanationBelow) => {
+            out.write_str("［＃ここで図表下部解説文終わり］")
+        }
+        RegionClose::Caption(CaptionScope::Block) => {
+            out.write_str("［＃ここでキャプション終わり］")
+        }
+        RegionClose::Caption(CaptionScope::Inline) => out.write_str("［＃キャプション終わり］"),
         RegionClose::Warichu => out.write_str("［＃ここで割り注終わり］"),
         RegionClose::Framed(_) => out.write_str("［＃罫囲み終わり］"),
         RegionClose::AlignEnd => out.write_str("［＃ここで地付き終わり］"),

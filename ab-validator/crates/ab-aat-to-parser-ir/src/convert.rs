@@ -484,6 +484,11 @@ fn map_block_content(
                     let mut typography = layout_scope(&block["formatting"])?;
                     typography["source"] = json!("aat-block");
                     scope["typography"] = typography;
+                } else if block["kind"] == "caption_block"
+                    && block["formatting"]["purpose"] == "figure-explanation"
+                {
+                    scope["role"] = json!("figure-explanation");
+                    scope["placement"] = block["formatting"]["placement"].clone();
                 } else {
                     scope["role"] = json!(if block["kind"] == "caption_block" {
                         "caption"

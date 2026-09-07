@@ -36,8 +36,8 @@ use ab_aozora_facade::{
 // so the checker's comparison source (`ab-check::body_text`) can never
 // drift from the parser's own cut.
 use ab_aozora_facade::syntax::{
-    AbsoluteSize, BlockStyles, EnclosureKind, HeadingStyle, IndentLayout, LineAlignment,
-    LineFormat, MarginNoteKind, MarginNotePosition, RelativePlacement,
+    AbsoluteSize, BlockStyles, CaptionScope, EnclosureKind, HeadingStyle, IndentLayout,
+    LineAlignment, LineFormat, MarginNoteKind, MarginNotePosition, RelativePlacement,
     accent::{compose_accent, compose_accent_dots},
     ast::{ContainerEnd, ContainerPair, Content, IterationMark, KuntenKind, Ruby, Segment},
 };
@@ -2160,7 +2160,8 @@ fn blocks_from_inline_content(content: Vec<Value>, decoded: &DecodedSource) -> V
             .as_str()
             .is_some_and(|source| source.starts_with("［＃ここから")))
             && let Some(close_index) = native_scopes.get(&index).copied()
-            && node["span"]["line_start"] != content[close_index]["span"]["line_start"]
+            && (node["span"]["line_start"] != content[close_index]["span"]["line_start"]
+                || node["x-formatting"]["purpose"] == "figure-explanation")
         {
             push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
             let mut inner = content[index + 1..close_index].to_vec();
@@ -5002,7 +5003,13 @@ fn region_formatting(region: RegionFormat) -> Option<(String, Value)> {
         }
         RegionFormat::Horizontal(_) => ("yokogumi", ForwardAttr::Horizontal),
         RegionFormat::Warichu => return Some(("warichu".to_owned(), json!({"kind":"warichu"}))),
-        RegionFormat::Caption { .. } => {
+        RegionFormat::Caption(CaptionScope::FigureExplanationBelow) => {
+            return Some((
+                "figure-explanation".to_owned(),
+                json!({"kind":"caption", "purpose":"figure-explanation", "placement":"below"}),
+            ));
+        }
+        RegionFormat::Caption(_) => {
             return Some(("caption".to_owned(), json!({"kind":"caption"})));
         }
         RegionFormat::Bouten { kind, position } => {
@@ -5060,7 +5067,8 @@ fn region_formatting_close(close: RegionClose) -> Option<(String, Option<Value>)
             }
             RegionClose::Horizontal => "yokogumi",
             RegionClose::Warichu => "warichu",
-            RegionClose::Caption { .. } => "caption",
+            RegionClose::Caption(CaptionScope::FigureExplanationBelow) => "figure-explanation",
+            RegionClose::Caption(_) => "caption",
             RegionClose::Bouten { kind, position } => {
                 return Some((bouten_key(kind, position), attributes));
             }

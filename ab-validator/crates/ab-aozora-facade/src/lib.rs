@@ -71,7 +71,7 @@ pub use ab_aozora_spec::{
 /// consumers don't have to depend on `aozora-syntax` directly — `aozora` is the
 /// single editor-facing front door.
 pub use ab_aozora_syntax::{
-    BlockStyles, BoutenKind, BoutenPosition, ColumnBlock, ColumnCount, DirectiveKind,
+    BlockStyles, BoutenKind, BoutenPosition, CaptionScope, ColumnBlock, ColumnCount, DirectiveKind,
     EnclosureKind, FontShift, Format, ForwardAttr, ForwardOrigin, HeadingKind, HeadingStyle,
     IndentBlock, IndentLayout, Kumi, LineFormat, LineWidth, NodeKind, RegionClose, RegionFormat,
     RubySide, SectionKind,

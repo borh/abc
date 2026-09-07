@@ -830,8 +830,11 @@ pub(crate) fn scope_closer_matches(open: RegionFormat, close: RegionClose) -> bo
         }
         (RegionClose::Bold { .. }, RegionClose::Bold { .. })
         | (RegionClose::Gothic { .. }, RegionClose::Gothic { .. })
-        | (RegionClose::Italic { .. }, RegionClose::Italic { .. })
-        | (RegionClose::Caption { .. }, RegionClose::Caption { .. }) => true,
+        | (RegionClose::Italic { .. }, RegionClose::Italic { .. }) => true,
+        (RegionClose::Caption(expected), RegionClose::Caption(actual)) => {
+            use ab_aozora_syntax::CaptionScope::{Block, Inline};
+            expected == actual || matches!((expected, actual), (Inline, Block) | (Block, Inline))
+        }
         _ => expected == close,
     }
 }

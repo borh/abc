@@ -47,7 +47,7 @@
                                                           (update-in ["node_range" "end"] inc))) %))
                boundary (update "nodes" conj boundary))
           result (render/render-work
-                  {:parser-ir (assoc ir "sentence_segmentation" {"coordinate_system" "parser_text_utf8"})
+                  {:parser-ir ir
                    :metadata-record {"work" {"title" "試験" "aozora_modified" "2026-09-06"} "contributors" []}
                    :persons-by-id {}})]
       (try

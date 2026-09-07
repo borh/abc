@@ -28,14 +28,12 @@
                             {"type" "source-note" "placement" "back"
                              "note_type" "source-attribution"
                              "text" "底本：書名　巻数\n　　　刊行日\n"}]
-                   "paragraphs" [{"id" "p1" "role" "body" "node_range" {"start" 0 "end" 2}}]
-                   "sentences" [{"id" "s1" "paragraph_id" "p1" "node_range" {"start" 0 "end" 1}}
-                                {"id" "s2" "paragraph_id" "p1" "node_range" {"start" 1 "end" 2}}]})
+                   "paragraphs" [{"id" "p1" "role" "body" "node_range" {"start" 0 "end" 2}}]})
         body (:body rendered)
         paragraph (first (elements body :p))
         note (first (elements body :note))]
     (is (= "text-indent: 1em" (:style (second paragraph))))
-    (is (= ["最初。" "　続く　本文。"] (map last (elements paragraph :s))))
+    (is (= ["最初。" "　続く　本文。"] (drop 2 paragraph)))
     (is (= [[:seg {:type "source-line"} "底本：書名　巻数"]
             [:seg {:type "source-line" :style "padding-inline-start: 3em"} "刊行日"]]
            (vec (elements note :seg))))
@@ -89,8 +87,7 @@
   (let [dir (fs/create-temp-dir {:prefix "tei-layout-profile"})
         xml-path (str (fs/path dir "tei.xml"))
         result (render/render-work
-                {:parser-ir {"sentence_segmentation" {"coordinate_system" "parser_text_utf8"}
-                             "nodes" [{"type" "heading" "level" 2 "indent" 8 "text" "一"}
+                {:parser-ir {"nodes" [{"type" "heading" "level" 2 "indent" 8 "text" "一"}
                                       {"type" "text" "text" "　本文。"}
                                       {"type" "source-note" "placement" "back"
                                        "note_type" "source-attribution" "text" "底本：書名\n　　　刊行日\n"}]

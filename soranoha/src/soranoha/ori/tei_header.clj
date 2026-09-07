@@ -145,24 +145,9 @@
     (into [:charDecl]
           (map declaration->char declarations))))
 
-(defn- orthographic-normalization-decl []
-  [:editorialDecl
-   [:normalization {:method "markup"}
-    [:p
-     (str "Parser-IR sentence elements with "
-          "type=\"orthographic-katakana\" mark spans where the "
-          "ab-validator orthographic detector identified katakana-dominant "
-          "prose for tokenizer-facing normalization. The source text is "
-          "preserved in the TEI body.")]]])
-
-(defn- encoding-desc [declarations orthographic-sentence-normalization?]
-  (let [children (keep identity
-                       [[:styleDefDecl {:scheme "css"}]
-                        (char-decl declarations)
-                        (when orthographic-sentence-normalization?
-                          (orthographic-normalization-decl))])]
-    (when (seq children)
-      (into [:encodingDesc] children))))
+(defn- encoding-desc [declarations]
+  (cond-> [:encodingDesc [:styleDefDecl {:scheme "css"}]]
+    (seq declarations) (conj (char-decl declarations))))
 
 (defn- text-class [work]
   (when-let [ndc (get work "ndc")]
@@ -187,11 +172,10 @@
 
   Role and person are kept separate at every level inside this builder;
   the relation_to_work value never enters the person body."
-  [{:keys [work contributors char-declarations source-content-hash primary-text-hash
-           orthographic-sentence-normalization?]}]
+  [{:keys [work contributors char-declarations source-content-hash primary-text-hash]}]
   [:teiHeader
    (file-desc work contributors source-content-hash primary-text-hash)
-   (encoding-desc char-declarations orthographic-sentence-normalization?)
+   (encoding-desc char-declarations)
    (profile-desc work)])
 
 ;; Hiccup → clojure.data.xml adapter

@@ -1,5 +1,9 @@
 # Research annotation layers
 
+Base transcription preserves source paragraphs and rich inline nodes. Sentence
+segmentation belongs to independently selected analysis layers; it neither splits
+source nodes nor adds sentence wrappers to base TEI.
+
 Analysis consumes an identified text view of TEI rather than an export's presentation
 whitespace. The `body-v1` view selects ruby bases and corrected or regularized readings,
 omits notes and running matter, and retains semantic line/page breaks and block

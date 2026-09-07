@@ -1,6 +1,5 @@
 (ns soranoha.ori.render
-  (:require [soranoha.ori.sentence-policy :as sentence-policy]
-            [soranoha.core.json :as record-json]
+  (:require [soranoha.core.json :as record-json]
             [soranoha.ori.tei :as parser-ir-tei]
             [soranoha.ori.tei-header :as tei-header]))
 
@@ -21,13 +20,6 @@
          :abc/vocab-version "0"}
    header
    body])
-
-(defn- orthographic-sentence-normalization? [parser-ir]
-  (boolean
-   (some (fn [sentence]
-           (some #{"orthographic-katakana"}
-                 (get sentence "tags" [])))
-         (get parser-ir "sentences" []))))
 
 (defn- interpretation-notes [parser-ir]
   (let [complete (get-in parser-ir ["derived_from" "parse_complete"])
@@ -65,15 +57,11 @@
 (defn render-work
   "Render one work's canonical TEI transcription."
   [{:keys [parser-ir metadata-record persons-by-id]}]
-  (let [parser-ir (sentence-policy/ensure-publication-sentence-evidence!
-                   parser-ir)
-        tei-result (parser-ir-tei/render parser-ir)
+  (let [tei-result (parser-ir-tei/render parser-ir)
         header (tei-header/build
                 (assoc (header-input metadata-record persons-by-id)
                        :char-declarations (:char_declarations tei-result)
                        :source-content-hash (get-in parser-ir ["source" "work_content_hash"])
-                       :primary-text-hash (get-in parser-ir ["source" "primary_text_hash"])
-                       :orthographic-sentence-normalization?
-                       (orthographic-sentence-normalization? parser-ir)))]
+                       :primary-text-hash (get-in parser-ir ["source" "primary_text_hash"])))]
     {:tei (tei-header/hiccup->pretty-xml-string
            (tei-document header (with-interpretation (:body tei-result) parser-ir)))}))

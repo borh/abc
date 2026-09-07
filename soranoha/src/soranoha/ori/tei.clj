@@ -549,66 +549,12 @@
           (render-node-seq node-slice)
           flush-paragraph))))
 
-(defn- sentence-attrs [sentence]
-  (let [tags (get sentence "tags" [])
-        base-attrs (cond-> {:xml:id (get sentence "id")}
-                     (some #{"orthographic-katakana"} tags)
-                     (assoc :type "orthographic-katakana"))
-        part (get sentence "part")
-        next-id (get sentence "next_id")
-        prev-id (get sentence "prev_id")]
-    (cond-> base-attrs
-      part
-      (assoc :part part)
-
-      next-id
-      (assoc :next (str "#" next-id))
-
-      prev-id
-      (assoc :prev (str "#" prev-id)))))
-
-(defn- sentence-node [sentence fragment]
-  (into [:s (sentence-attrs sentence)] fragment))
-
-(defn- render-sentence-row [nodes acc sentence]
-  (let [{start "start" end "end"} (get sentence "node_range")
-        before-count (count (:current-paragraph acc))
-        rendered (render-node-seq acc (subvec nodes start end))
-        rendered-paragraph (vec (:current-paragraph rendered))
-        prefix (subvec rendered-paragraph 0 before-count)
-        fragment (subvec rendered-paragraph before-count)]
-    (assoc rendered
-           :current-paragraph
-           (conj prefix (sentence-node sentence fragment)))))
-
-(defn- sentences-by-paragraph [sentences]
-  (group-by #(get % "paragraph_id") sentences))
-
-(defn- sentence-inline-node? [node]
+(defn- paragraph-inline-node? [node]
   (case (get node "type")
     ("text" "ruby" "gaiji" "editor-note" "emphasis" "layout-span"
-            "indentation" "line-break" "quote") true
+            "indentation" "line-break" "quote" "warichu" "base-text-variant") true
     "source-note" (= "body" (get node "placement"))
     false))
-
-(defn- sentence-wrappable-paragraph? [node-slice paragraph]
-  (and (= "body" (get paragraph "role"))
-       (every? sentence-inline-node? node-slice)))
-
-(defn- render-paragraph-row-with-sentences [nodes sentences-by-pid acc paragraph]
-  (let [{start "start" end "end"} (paragraph-range paragraph)
-        node-slice (subvec nodes start end)
-        paragraph-sentences (get sentences-by-pid (get paragraph "id"))]
-    (if (and (seq paragraph-sentences)
-             (sentence-wrappable-paragraph? node-slice paragraph))
-      (let [[nodes attrs] (paragraph-render-inputs nodes paragraph)]
-        (-> (assoc acc :current-paragraph-attrs attrs)
-            (as-> state
-                  (reduce (partial render-sentence-row nodes)
-                          state
-                          paragraph-sentences))
-            flush-paragraph))
-      (render-paragraph-row nodes acc paragraph))))
 
 (defn- validate-layout-blocks! [nodes paragraphs blocks]
   (doseq [block blocks]
@@ -616,7 +562,7 @@
       (when-not (and (integer? start) (integer? end) (<= 0 start) (< start end)
                      (<= end (count paragraphs))
                      (every? #(= "body" (get % "role")) (subvec paragraphs start end))
-                     (every? sentence-inline-node?
+                     (every? paragraph-inline-node?
                              (subvec nodes (get-in paragraphs [start "node_range" "start"])
                                      (get-in paragraphs [(dec end) "node_range" "end"]))))
         (throw (ex-info "Invalid layout block paragraph range" {:block block})))))
@@ -647,11 +593,10 @@
         [acc frames])
       [acc frames])))
 
-(defn- render-with-paragraphs [nodes paragraphs sentences layout-blocks primary-text-hash]
+(defn- render-with-paragraphs [nodes paragraphs layout-blocks primary-text-hash]
   (validate-paragraph-ranges! nodes paragraphs)
   (validate-layout-blocks! nodes paragraphs layout-blocks)
-  (let [sentences-by-pid (sentences-by-paragraph sentences)
-        starts (group-by #(get-in % ["paragraph_range" "start"]) layout-blocks)
+  (let [starts (group-by #(get-in % ["paragraph_range" "start"]) layout-blocks)
         [result end _] (reduce
                         (fn [[acc prior-end frames] [index paragraph]]
                           (let [{start "start" end "end"} (paragraph-range paragraph)
@@ -659,7 +604,7 @@
                                 target (if (seq (:current-division acc)) :current-division :body-children)
                                 frames (into frames (map (fn [block] {:block block :target target :start (count (get acc target))})
                                                          (sort-by #(get-in % ["paragraph_range" "end"]) > (get starts index))))
-                                rendered (render-paragraph-row-with-sentences nodes sentences-by-pid acc paragraph)
+                                rendered (render-paragraph-row nodes acc paragraph)
                                 [closed frames] (close-layout-blocks rendered frames (inc index))]
                             [closed end frames]))
                         [(initial-acc primary-text-hash) 0 []]
@@ -674,11 +619,10 @@
 
 (defn render [parser-ir]
   (let [nodes (vec (get parser-ir "nodes"))
-        paragraphs (seq (get parser-ir "paragraphs"))
-        sentences (vec (get parser-ir "sentences" []))]
+        paragraphs (seq (get parser-ir "paragraphs"))]
     (when (and (seq (get parser-ir "layout_blocks")) (not paragraphs))
       (throw (ex-info "Layout blocks require paragraph ranges" {})))
     (if paragraphs
-      (render-with-paragraphs nodes (vec paragraphs) sentences (get parser-ir "layout_blocks" [])
+      (render-with-paragraphs nodes (vec paragraphs) (get parser-ir "layout_blocks" [])
                               (get-in parser-ir ["source" "primary_text_hash"]))
       (render-flat nodes (get-in parser-ir ["source" "primary_text_hash"])))))

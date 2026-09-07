@@ -160,8 +160,7 @@
         store (engine/open-store! {:cas-dir (str (fs/path dir "objects")) :db-path (str (fs/path dir "traces.sqlite"))})
         put-text #(cas/put-bytes! (:cas-dir store) (.getBytes ^String % "UTF-8"))
         put-json #(put-text (json/write-json-str %))
-        inputs {"parser-ir" (put-json {"nodes" [{"type" "text" "text" "本文"}]
-                                       "sentence_segmentation" {"coordinate_system" "parser_text_utf8"}})
+        inputs {"parser-ir" (put-json {"nodes" [{"type" "text" "text" "本文"}]})
                 "metadata-record" (put-json {"work" {"title" "試験" "work_id" "1" "aozora_modified" "2026-09-07"} "contributors" []})
                 "persons" (put-json {})}
         render-stage (publication-stages/render-stage "test-runtime")

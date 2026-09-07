@@ -140,11 +140,13 @@
     (is (= [{"kind" "document"}] (mapv #(get-in % [:view/evidence "influence"]) problems)))))
 
 (deftest warichu-does-not-invent-upper-and-lower-readings
-  (let [result (transcribe (source "前［＃割り注］上※［＃歌記号、1-3-28］下［＃割り注終わり］後"))
+  (let [result (transcribe (source "［＃ここから２字下げ］\n前［＃割り注］上。※［＃歌記号、1-3-28］下。［＃割り注終わり］後\n［＃ここで字下げ終わり］"))
         wrapper (first (filter #(= "warichu" (attribute % "type")) (elements result "seg")))]
-    (is (= "前上〽下後" (:plaintext result)))
-    (is (= "上〽下" (view/visible-text wrapper)))
+    (is (= "前上。〽下。後" (:plaintext result)))
+    (is (= "上。〽下。" (view/visible-text wrapper)))
     (is (= "two-line" (attribute wrapper "rend")))
+    (is (empty? (elements result "s")))
+    (is (some #(= "jisage indent(2)" (attribute % "rend")) (elements result "p")))
     (is (empty? (filter #(#{"upper" "lower"} (attribute % "type")) (elements result "seg"))))
     (is (empty? (get-in result [:view :view/problems])))))
 

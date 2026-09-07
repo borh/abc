@@ -18,8 +18,7 @@
         ir {"nodes" [{"type" "text" "text" "私は"}
                      {"type" "ruby" "ruby" {"base" "籠" "reading" "ざる"}
                       "reading_children" [variant]}
-                     {"type" "text" "text" "をさげ"}]
-            "sentence_segmentation" {"coordinate_system" "parser_text_utf8"}}
+                     {"type" "text" "text" "をさげ"}]}
         result (render/render-work {:parser-ir ir
                                     :metadata-record {"work" {"title" "試験" "work_id" "1" "aozora_modified" "2026-09-07"} "contributors" []}
                                     :persons-by-id {}})
@@ -50,8 +49,7 @@
         supplied {"type" "text" "text" "本文" "source_span" source-span}
         ir {"source" {"primary_text_hash" source-hash}
             "nodes" [supplied (assoc supplied "text" "続き")
-                     {"type" "text" "text" "未知" "span" {"coordinate_system" "parser_text_utf8" "start" 12 "end" 18}}]
-            "sentence_segmentation" {"coordinate_system" "parser_text_utf8"}}
+                     {"type" "text" "text" "未知" "span" {"coordinate_system" "parser_text_utf8" "start" 12 "end" 18}}]}
         render-ir #(render/render-work {:parser-ir %
                                         :metadata-record {"work" {"title" "試験" "work_id" "1"} "contributors" []}
                                         :persons-by-id {}})
@@ -80,8 +78,7 @@
                                      [{"upper_children" [{"type" "text" "text" "上"}]
                                        "lower_children" [{"type" "text" "text" "下"}]} 2]]]
     (let [result (render/render-work
-                  {:parser-ir {"nodes" [(merge {"type" "warichu" "text" "上下"} content)]
-                               "sentence_segmentation" {"coordinate_system" "parser_text_utf8"}}
+                  {:parser-ir {"nodes" [(merge {"type" "warichu" "text" "上下"} content)]}
                    :metadata-record {"work" {"title" "試験" "work_id" "1"} "contributors" []}
                    :persons-by-id {}})
           reading (view/from-tei (:tei result))

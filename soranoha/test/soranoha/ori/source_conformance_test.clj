@@ -549,6 +549,26 @@
       (is (= ["subscript" "superscript" "superscript" "subscript"] (mapv #(attribute % "rend") notes)))
       (is (empty? (get-in result [:ir "interpretation_problems"]))))))
 
+(deftest retrospective-return-marks-retain-apparatus-without-duplicating-targets
+  (doseq [encoding ["UTF-8" "windows-31j"]]
+    (let [result (transcribe (source "飾レ［＃「レ」は返り点］中舍レ［＃「レ」は返り点］執二［＃「二」は返り点］其禮事一［＃「一」は返り点］。") encoding)
+          notes (filterv #(= "kunten" (attribute % "type")) (elements result "note"))
+          facts (filter #(= "kunten" (get % "kind")) (get-in result [:ir "interpretation_facts"]))]
+      (is (= "飾中舍執其禮事。" (:plaintext result)))
+      (is (= ["レ" "レ" "二" "一"] (mapv #(.getTextContent ^Node %) notes)))
+      (is (every? #(= "return-mark" (attribute % "subtype")) notes))
+      (is (= 4 (count facts)))
+      (is (empty? (get-in result [:ir "interpretation_problems"])))))
+  (let [result (transcribe (source "｜漢レ［＃「レ」は返り点］字《かんじ》。"))]
+    (is (= "漢字。" (:plaintext result)))
+    (is (= ["かんじ"] (texts result "rt")))
+    (is (= ["レ"] (mapv #(.getTextContent ^Node %)
+                       (filter #(= "kunten" (attribute % "type")) (elements result "note"))))))
+  (doseq [body ["漢［＃「レ」は返り点］" "漢レ別［＃「レ」は返り点］" "漢レ［＃「一」は返り点］"]]
+    (let [result (transcribe (source body))]
+      (is (empty? (filter #(= "kunten" (attribute % "type")) (elements result "note"))))
+      (is (seq (get-in result [:ir "interpretation_problems"]))))))
+
 (deftest paired-inline-scopes-retain-text-and-both-source-markers
   (let [result (transcribe (source "前［＃斜体］本文［＃斜体終わり］後"))
         facts (filter #(= "emphasis" (get % "kind")) (get-in result [:ir "interpretation_facts"]))]

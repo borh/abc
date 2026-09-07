@@ -20,7 +20,7 @@ use core::num::NonZeroI8;
 use ab_aozora_spec::Diagnostic;
 use ab_aozora_syntax::accent::{compose_accent, compose_accent_dots};
 use ab_aozora_syntax::alloc::Allocator;
-use ab_aozora_syntax::ast::{Content, Node, NonEmptySpan, Segment};
+use ab_aozora_syntax::ast::{Content, KuntenKind, Node, NonEmptySpan, Segment};
 use ab_aozora_syntax::format::ForwardOrigin;
 use ab_aozora_syntax::lint::canonical_directive;
 use ab_aozora_syntax::{
@@ -35,7 +35,7 @@ use super::super::pair::{PairEvent, PairKind};
 use super::super::token::TriggerKind;
 use super::directive::{
     AnnotationBody, bouten_kind_from_suffix, classify_annotation_body, classify_general_image_body,
-    editorial_note_kind, parse_decimal_u8_prefix, parse_heading_keyword,
+    editorial_note_kind, is_return_mark, parse_decimal_u8_prefix, parse_heading_keyword,
 };
 use super::{AnnotationMatch, BodyView, EmitKind, RecogniseCtx};
 
@@ -399,6 +399,9 @@ impl RecogniseCtx<'_, '_> {
                 consume_end: close_span.end,
                 pending_diagnostic: None,
             });
+        }
+        if let Some(mark) = self.recognize_return_mark(view, open_idx, close_idx) {
+            return Some(mark);
         }
         // 縦中横 is 3-state: a shape-matched directive whose target has no
         // referent (`ShapedNoTarget`) carries a warning down the
@@ -885,18 +888,48 @@ enum ForwardTcy {
     NotTcy,
 }
 
-/// Classify a `［＃「target」は縦中横］` forward-reference
-/// tate-chu-yoko (horizontal-in-vertical) annotation.
-///
-/// Same event-layout expectations as forward bouten, except the
-/// suffix uses the particle `は` and the keyword `縦中横`. Paired
-/// form (`［＃縦中横］…［＃縦中横終わり］`) is handled by the
-/// paired-container classifier and not matched here.
-///
-/// The compound form adds right-side small script to the same target. An
-/// edition assertion is retained with that formatting; unrecognized clauses
-/// and multiple formatting targets remain raw directives.
 impl RecogniseCtx<'_, '_> {
+    fn recognize_return_mark(
+        &mut self,
+        view: BodyView<'_>,
+        open_idx: usize,
+        close_idx: usize,
+    ) -> Option<AnnotationMatch> {
+        let extracted = extract_forward_quote_targets(view, self.source, open_idx, close_idx)?;
+        let [target] = extracted.targets.as_slice() else {
+            return None;
+        };
+        if extracted.suffix != "は返り点" || !is_return_mark(target) {
+            return None;
+        }
+        let start =
+            find_immediate_predecessor_target_position(view.events, self.source, open_idx, target)?;
+        if start < self.pending_plain_start? {
+            return None;
+        }
+        let PairEvent::PairClose { span, .. } = view.events[close_idx] else {
+            return None;
+        };
+        Some(AnnotationMatch {
+            emit: EmitKind::Aozora(self.alloc.kunten(KuntenKind::ReturnMark, target)),
+            annotation_payload: None,
+            consume_start: start,
+            consume_end: span.end,
+            pending_diagnostic: None,
+        })
+    }
+
+    /// Classify a `［＃「target」は縦中横］` forward-reference
+    /// tate-chu-yoko (horizontal-in-vertical) annotation.
+    ///
+    /// Same event-layout expectations as forward bouten, except the
+    /// suffix uses the particle `は` and the keyword `縦中横`. Paired
+    /// form (`［＃縦中横］…［＃縦中横終わり］`) is handled by the
+    /// paired-container classifier and not matched here.
+    ///
+    /// The compound form adds right-side small script to the same target. An
+    /// edition assertion is retained with that formatting; unrecognized clauses
+    /// and multiple formatting targets remain raw directives.
     fn classify_forward_tcy(
         &mut self,
         view: BodyView<'_>,
@@ -1076,9 +1109,7 @@ fn forward_heading_target_is_preceded_ruby_stripped(
 /// - the event at `open_idx` is not a `PairOpen` (defensive),
 /// - the bracket sits at byte offset < `target.len()` (no room),
 /// - or the bytes immediately before the bracket differ from
-///   `target` (the target lives mid-sentence or is not preceded at
-///   all — leave the legacy duplicating behaviour in place rather
-///   than splicing a hole into the middle of the plain run).
+///   `target` (the target is not the immediately preceding source text).
 fn find_immediate_predecessor_target_position(
     events: &[PairEvent],
     source: &str,

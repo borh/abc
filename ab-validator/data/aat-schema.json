@@ -554,7 +554,8 @@
       "type":"object", "additionalProperties":false,
       "required":["kind","kunten_kind","text","span"],
       "properties":{"kind":{"const":"kunten"}, "kunten_kind":{"enum":["return-mark","okurigana"]},
-        "text":{"type":"string","minLength":1}, "span":{"$ref":"#/$defs/span"}}
+        "text":{"type":"string","minLength":1}, "span":{"$ref":"#/$defs/span"},
+        "interpretation_marker_spans":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/span"}}}
     },
     "warichu": {
       "type": "object", "additionalProperties": false,

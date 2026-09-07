@@ -1076,6 +1076,18 @@ fn is_editor_note_body(body: &str) -> bool {
     !digits.is_empty() && digits.bytes().all(|b| b.is_ascii_digit())
 }
 
+pub(super) fn is_return_mark(body: &str) -> bool {
+    body_dispatcher()
+        .find(Input::new(body).anchored(Anchored::Yes))
+        .is_some_and(|matched| {
+            matched.end() == body.len()
+                && matches!(
+                    BODY_PATTERNS[matched.pattern().as_usize()].family,
+                    BodyFamily::KaeritenSingle | BodyFamily::KaeritenCompound
+                )
+        })
+}
+
 /// Single-pass classification of `body` (the trimmed bytes between
 /// `［＃` and `］`) into an `EmitKind` for body-only annotation
 /// families. Returns `None` if the body matches no body-only family;

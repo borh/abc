@@ -442,6 +442,7 @@ enum NestedAnnotation {
     Kunten {
         kind: KuntenKind,
         text: String,
+        marker: Option<Span>,
     },
     Directive(DirectiveKind),
     Format {
@@ -710,10 +711,10 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                 {
                     Some(ab_aozora_facade::PairKind::Bracket)
                 }
-                NodeRef::Inline(Node::MarginNote(_) | Node::HeadingHint(_))
-                | NodeRef::BlockLeaf(Node::MarginNote(_) | Node::HeadingHint(_)) => {
-                    Some(ab_aozora_facade::PairKind::Bracket)
-                }
+                NodeRef::Inline(Node::MarginNote(_) | Node::HeadingHint(_) | Node::Kunten(_))
+                | NodeRef::BlockLeaf(
+                    Node::MarginNote(_) | Node::HeadingHint(_) | Node::Kunten(_),
+                ) => Some(ab_aozora_facade::PairKind::Bracket),
                 NodeRef::Inline(Node::Ruby(_)) | NodeRef::BlockLeaf(Node::Ruby(_)) => {
                     Some(ab_aozora_facade::PairKind::Ruby)
                 }
@@ -923,6 +924,16 @@ fn ruby_annotations(
                 payload: NestedAnnotation::Kunten {
                     kind: value.kind,
                     text: store.resolve_str(value.text).to_owned(),
+                    marker: pairs
+                        .get(&source_span.end)
+                        .filter(|pair| {
+                            pair.kind == ab_aozora_facade::PairKind::Bracket
+                                && pair.open.start >= source_span.start
+                        })
+                        .map(|pair| Span {
+                            start: pair.open.start as usize,
+                            end: pair.close.end as usize,
+                        }),
                 },
             }),
             Segment::Format { value, source_span }
@@ -1605,7 +1616,11 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
             facts.extend(gaiji_ruby_facts(node));
         }
         if let Some(interpretation) = interpretation {
-            let mut spans = if matches!(interpretation, EstablishedInterpretation::LayoutBreak)
+            let mut spans = if node["kind"] == "kunten"
+                && let Some(markers) = node["interpretation_marker_spans"].as_array()
+            {
+                markers.iter().collect::<Vec<_>>()
+            } else if matches!(interpretation, EstablishedInterpretation::LayoutBreak)
                 || matches!(
                     node["kind"].as_str(),
                     Some(
@@ -1618,7 +1633,8 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
                             | "editorial_note"
                             | "layout_break"
                     )
-                ) {
+                )
+            {
                 node.get("span").into_iter().collect::<Vec<_>>()
             } else {
                 node["interpretation_marker_spans"]
@@ -2819,7 +2835,7 @@ fn inline_content_range(
             ProjectedKind::EditorialNote { kind, ref text } => content.push(json!({"kind":"editorial_note", "note_kind":match kind {EditionNoteKind::BaseEdition=>"base-edition", EditionNoteKind::FirstPublication=>"first-publication"}, "text":text, "span":span_json(&node.span, &decoded.span_ctx)})),
             ProjectedKind::Directive(kind) => content.push(directive_node(decoded, node, kind)),
             ProjectedKind::Kunten { kind, ref text } => {
-                content.push(kunten_node(decoded, &node.span, kind, text));
+                content.push(kunten_node(decoded, &node.span, kind, text, node.marker_span.as_ref()));
             }
             ProjectedKind::IterationMark(mark) => {
                 content.push(iteration_node(decoded, &node.span, mark));
@@ -3241,11 +3257,21 @@ fn iteration_node(decoded: &DecodedSource, span: &Span, mark: IterationMark) -> 
         "source":&decoded.text[start..end], "span":span_json(span, &decoded.span_ctx)})
 }
 
-fn kunten_node(decoded: &DecodedSource, span: &Span, kind: KuntenKind, text: &str) -> Value {
-    json!({"kind":"kunten", "kunten_kind":match kind {
+fn kunten_node(
+    decoded: &DecodedSource,
+    span: &Span,
+    kind: KuntenKind,
+    text: &str,
+    marker: Option<&Span>,
+) -> Value {
+    let mut node = json!({"kind":"kunten", "kunten_kind":match kind {
         KuntenKind::ReturnMark => "return-mark",
         KuntenKind::Okurigana => "okurigana",
-    }, "text":text, "span":span_json(span, &decoded.span_ctx)})
+    }, "text":text, "span":span_json(span, &decoded.span_ctx)});
+    if let Some(marker) = marker.filter(|marker| marker.start != span.start) {
+        node["interpretation_marker_spans"] = json!([span_json(marker, &decoded.span_ctx)]);
+    }
+    node
 }
 
 #[allow(
@@ -3446,7 +3472,7 @@ fn source_segments(
                     }
                     iteration_node(decoded, &mark.span, *value)
                 }
-                NestedAnnotation::Kunten { kind, text } => kunten_node(decoded, &mark.span, *kind, text),
+                NestedAnnotation::Kunten { kind, text, marker } => kunten_node(decoded, &mark.span, *kind, text, marker.as_ref()),
                 NestedAnnotation::Directive(kind) => {
                     let start = decoded.span_ctx.to_decoded(mark.span.start);
                     let end = decoded.span_ctx.to_decoded_end(mark.span.end);

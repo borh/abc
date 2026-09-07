@@ -1299,10 +1299,7 @@ fn map_inline_to_nodes(
             Ok(offset)
         }
         "iteration-mark" | "supplied-diacritic" => map_source_realization(node, nodes, offset),
-        "editorial_note" => {
-            nodes.push(json!({"type":"editor-note", "note_kind":node["note_kind"], "text":node["text"], "span":synthetic_span(offset, offset)}));
-            Ok(offset)
-        }
+        "editorial_note" => map_editorial_note(node, nodes, offset),
         "layout_break" => map_layout_break(node, nodes, offset),
         "raw" => map_raw_to_nodes(node, nodes, recorder, offset, path),
         "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi" | "yokogumi"
@@ -1704,14 +1701,35 @@ fn inline_child_node(
             Ok(offset)
         }
         "iteration-mark" | "supplied-diacritic" => map_source_realization(node, nodes, offset),
-        "editorial_note" => {
-            nodes.push(json!({"type":"editor-note", "note_kind":node["note_kind"], "text":node["text"], "span":synthetic_span(offset, offset)}));
-            Ok(offset)
-        }
+        "editorial_note" => map_editorial_note(node, nodes, offset),
         "layout_break" => map_layout_break(node, nodes, offset),
         "raw" => map_raw_to_nodes(node, nodes, recorder, offset, path),
         other => bail!("unsupported inline kind in inline_children projection at {path}: {other}"),
     }
+}
+
+fn map_editorial_note(node: &Value, nodes: &mut Vec<Value>, offset: u64) -> Result<u64> {
+    let mut note = json!({"type":"editor-note", "note_kind":node["note_kind"], "text":node["text"], "span":synthetic_span(offset, offset)});
+    if let Some(targets) = node.get("target_source_spans").and_then(Value::as_array) {
+        let mut end = 0;
+        let mut spans = Vec::with_capacity(targets.len());
+        for target in targets {
+            let span =
+                source_span(Some(target))?.context("editorial target source span is required")?;
+            if span["start"].as_u64().expect("validated source start") < end {
+                bail!("editorial target source spans overlap or are out of order");
+            }
+            end = span["end"].as_u64().expect("validated source end");
+            spans.push(span);
+        }
+        note["target_source_spans"] = json!(spans);
+    }
+    if let Some(closing) = node.get("closing_source_span") {
+        note["closing_source_span"] = source_span(Some(closing))?
+            .context("editorial closing marker source span is required")?;
+    }
+    nodes.push(note);
+    Ok(offset)
 }
 
 fn map_source_realization(node: &Value, nodes: &mut Vec<Value>, offset: u64) -> Result<u64> {

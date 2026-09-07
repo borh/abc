@@ -1044,3 +1044,25 @@
     (is (= "2000K\n500km\n逆カモメ型Ｗ\n外側" (:plaintext result)))
     (is (= "2000K\n\n500km\n\n逆カモメ型Ｗ\n\n外側" (projection/markdown (:view result))))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest edition-layout-ranges-reference-source-without-applying-layout
+  (let [result (transcribe (source "［＃ここから２字下げ］\n［＃ここから底本では上段］\n北海道の羆《ひぐま》。\n［＃ここまで底本では上段］\n［＃ここから底本では下段］\n下の文。\n［＃ここまで底本では下段］\n［＃ここで字下げ終わり］"))
+        notes (filterv #(and (= "base-edition" (attribute % "type"))
+                             (not (string/blank? (attribute % "target"))))
+                       (elements result "note"))
+        records (into {} (map #(vector (str "#" (attribute % "xml:id")) %))
+                      (filter #(= "source-span" (attribute % "type")) (elements result "note")))]
+    (is (= ["底本では上段" "底本では下段"] (mapv #(.getTextContent ^Node %) notes)))
+    (is (= ["ひぐま"] (texts result "rt")))
+    (is (= 1 (count (get-in result [:ir "layout_blocks"]))))
+    (is (= 2 (get-in result [:ir "layout_blocks" 0 "indent"])))
+    (doseq [note notes]
+      (is (contains? records (attribute note "target")))
+      (let [sources (string/split (attribute note "source") #" ")]
+        (is (= 2 (count sources)))
+        (is (every? records sources))))
+    (is (empty? (get-in result [:ir "interpretation_problems"]))))
+  (let [result (transcribe (source "［＃ここから底本では上段］本文［＃ここまで底本では下段］"))]
+    (is (= "本文" (:plaintext result)))
+    (is (not-any? #(not (string/blank? (attribute % "target"))) (elements result "note")))
+    (is (= 2 (count (get-in result [:ir "interpretation_problems"]))))))

@@ -1110,3 +1110,92 @@ fn rich_heading_quotes_constrain_only_the_ruby_they_supply() {
         );
     }
 }
+
+#[test]
+fn edition_ranges_preserve_documentary_targets_without_changing_body_layout() {
+    let ir = convert(
+        "［＃ここから２字下げ］\n［＃ここから底本では上段］\n北海道の羆《ひぐま》。\n［＃ここまで底本では上段］\n［＃ここから底本では下段］\n下の文。\n［＃ここまで底本では下段］\n［＃ここで字下げ終わり］",
+    );
+    let all = nodes(&ir);
+    let notes: Vec<_> = all
+        .iter()
+        .filter(|node| node["type"] == "editor-note" && node.get("target_source_spans").is_some())
+        .collect();
+    assert_eq!(notes.len(), 2);
+    for note in notes {
+        assert_eq!(note["note_kind"], "base-edition");
+        let target = &note["target_source_spans"][0];
+        assert_eq!(target["start"], note["source_span"]["end"]);
+        assert_eq!(target["end"], note["closing_source_span"]["start"]);
+        assert_eq!(target["coordinate_system"], "decoded_utf8");
+    }
+    assert_eq!(all.iter().filter(|node| node["type"] == "ruby").count(), 1);
+    assert_eq!(ir["layout_blocks"][0]["indent"], 2);
+    assert_eq!(
+        ir["interpretation_facts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|fact| fact["kind"] == "editorial-note")
+            .count(),
+        4
+    );
+    assert_eq!(ir["interpretation_problems"], json!([]));
+    for body in [
+        "［＃ここから底本では上段］本文［＃ここまで底本では下段］",
+        "［＃ここから底本では上段］本文",
+        "本文［＃ここまで底本では上段］",
+        "［＃ここから底本では上段］甲［＃ここから底本では下段］乙［＃ここまで底本では上段］丙［＃ここまで底本では下段］",
+        "［＃ここから底本では上段］甲［＃ここから底本では下段］乙［＃ここまで底本では上段］丙［＃ここまで底本では上段］",
+    ] {
+        let ir = convert(body);
+        assert!(
+            !nodes(&ir)
+                .iter()
+                .any(|node| node.get("target_source_spans").is_some())
+        );
+        assert!(!ir["interpretation_problems"].as_array().unwrap().is_empty());
+        assert!(
+            ir["interpretation_facts"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .all(|fact| fact["kind"] != "editorial-note")
+        );
+    }
+}
+
+#[test]
+fn editorial_source_targets_reject_overlapping_or_reversed_segments() {
+    let source =
+        "題\n作者\n\n［＃ここから底本では上段］本文［＃ここまで底本では上段］\n\n底本：本\n";
+    let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    for spans in [[(10, 20), (19, 30)], [(20, 30), (10, 20)]] {
+        let mut aat: Value =
+            serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
+                .unwrap();
+        let note = &mut aat["blocks"][0]["content"][0];
+        assert_eq!(note["kind"], "editorial_note");
+        let original = note["target_source_spans"][0].clone();
+        note["target_source_spans"] = json!(spans.map(|(start, end)| {
+            let mut span = original.clone();
+            span["byte_start"] = json!(start);
+            span["byte_end"] = json!(end);
+            span
+        }));
+        let error = ab_aat_to_parser_ir::convert(ConversionRequest {
+            aat,
+            mapping: MappingDocument::from_path(
+                &repo.join("data/aat-to-parser-ir-mapping-v2.json"),
+            )
+            .unwrap(),
+            schemas: SchemaSet::for_aat_version(&repo, None, 2).unwrap(),
+            options: ConversionOptions::default(),
+        })
+        .unwrap_err();
+        assert!(
+            format!("{error:#}").contains("overlap or are out of order"),
+            "{error:#}"
+        );
+    }
+}

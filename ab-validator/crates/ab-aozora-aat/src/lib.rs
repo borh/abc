@@ -14,9 +14,10 @@ use std::{
 
 use ab_aozora_pipeline::lexer::sanitize::{SanitizeMaps, normalize_line_endings, sanitize_mapped};
 use ab_aozora_pipeline::text_variant::{
-    EditionNoteKind, TextVariant, TextVariantTarget, base_edition_concealed_characters,
-    concealed_placeholder, edition_note, edition_statement, formatted_text_variant,
-    formatting_edition_note, image_edition_note, text_variant,
+    EditionNoteKind, EditionRangeBoundary, EditionRangeLocation, EditionRangeMarker, TextVariant,
+    TextVariantTarget, base_edition_concealed_characters, concealed_placeholder, edition_note,
+    edition_range_marker, edition_statement, formatted_text_variant, formatting_edition_note,
+    image_edition_note, text_variant,
 };
 use ab_aozora_pipeline::{LexOutput, Pipeline};
 use anyhow::Result;
@@ -347,6 +348,12 @@ enum ProjectedKind {
         kind: EditionNoteKind,
         text: String,
     },
+    EditorialRangeMarker(EditionRangeMarker),
+    EditorialRange {
+        location: EditionRangeLocation,
+        closing: Span,
+    },
+    EditorialRangeClose,
     QuoteOpen,
     QuoteClose,
     LiteralReferenceSign,
@@ -377,6 +384,9 @@ impl ProjectedKind {
             Self::Directive(_)
             | Self::TextVariant { .. }
             | Self::EditorialNote { .. }
+            | Self::EditorialRangeMarker(_)
+            | Self::EditorialRange { .. }
+            | Self::EditorialRangeClose
             | Self::BaseEditionConcealment { .. }
             | Self::ConcealedPlaceholder { .. } => "directive",
             Self::QuoteOpen => "angleQuoteOpen",
@@ -445,6 +455,9 @@ fn project_text_variant(kind: ProjectedKind, source: &str, span: Span) -> Projec
         kind,
         ProjectedKind::Directive(DirectiveKind::BaseTextVariant | DirectiveKind::Unknown)
     ) {
+        if let Some(marker) = edition_range_marker(&source[span.start..span.end]) {
+            return ProjectedKind::EditorialRangeMarker(marker);
+        }
         if let Some(quantity) = base_edition_concealed_characters(&source[span.start..span.end]) {
             return ProjectedKind::BaseEditionConcealment { quantity };
         }
@@ -1256,7 +1269,35 @@ fn projections(
         }
     }
     nodes.sort_by_key(source_scope_order);
+    pair_editorial_ranges(&mut nodes);
     Ok((nodes, diagnostics, gaiji, ruby, retained_accents))
+}
+
+fn pair_editorial_ranges(nodes: &mut [AozoraNode]) {
+    let mut openers: Vec<(usize, EditionRangeLocation)> = Vec::new();
+    for index in 0..nodes.len() {
+        let ProjectedKind::EditorialRangeMarker(marker) = nodes[index].kind else {
+            continue;
+        };
+        match marker.boundary {
+            EditionRangeBoundary::Start => openers.push((index, marker.location)),
+            EditionRangeBoundary::End => {
+                if let Some((open, location)) = openers.pop() {
+                    if marker.location == location {
+                        nodes[open].kind = ProjectedKind::EditorialRange {
+                            location,
+                            closing: nodes[index].span,
+                        };
+                        nodes[index].kind = ProjectedKind::EditorialRangeClose;
+                    } else {
+                        // A crossed boundary cannot leave an outer opener available
+                        // for reassignment to a later closing marker.
+                        openers.clear();
+                    }
+                }
+            }
+        }
+    }
 }
 
 /// Transform Aozora source bytes into AAT JSON output.
@@ -2527,6 +2568,11 @@ fn rebase_projected_spans(kind: &mut ProjectedKind, offset: usize) {
     if let ProjectedKind::Region(region) = kind {
         rebase_region_anchor(region, offset);
     }
+    if let ProjectedKind::EditorialRange { closing, .. } = kind {
+        closing.start += offset;
+        closing.end += offset;
+    }
+
     if let ProjectedKind::Illustration {
         caption_span,
         description_span,
@@ -2687,6 +2733,10 @@ fn directive_node(decoded: &DecodedSource, node: &AozoraNode, kind: DirectiveKin
         "span":span_json(&node.span, &decoded.span_ctx)})
 }
 
+#[allow(
+    clippy::too_many_lines,
+    reason = "one dispatch covers the typed source-node vocabulary"
+)]
 fn inline_content_range(
     decoded: &DecodedSource,
     nodes: &[AozoraNode],
@@ -2754,6 +2804,10 @@ fn inline_content_range(
                 "x-break-kind":"line", "x-break-marker":"forced",
                 "span":span_json(&node.span, &decoded.span_ctx)
             })),
+            ProjectedKind::EditorialRange { location, closing } => {
+                content.push(editorial_range_note(decoded, node, location, closing));
+            }
+            ProjectedKind::EditorialRangeMarker(_) => content.push(raw_node(decoded,node,"directive")),
             ProjectedKind::EditorialNote { kind, ref text } => content.push(json!({"kind":"editorial_note", "note_kind":match kind {EditionNoteKind::BaseEdition=>"base-edition", EditionNoteKind::FirstPublication=>"first-publication"}, "text":text, "span":span_json(&node.span, &decoded.span_ctx)})),
             ProjectedKind::Directive(kind) => content.push(directive_node(decoded, node, kind)),
             ProjectedKind::Kunten { kind, ref text } => {
@@ -2770,7 +2824,7 @@ fn inline_content_range(
                 content.push(accent);
             }
             ProjectedKind::AccentReference => content.push(raw_node(decoded, node, "accent-annotation")),
-            ProjectedKind::FormattingReference => {}
+            ProjectedKind::FormattingReference | ProjectedKind::EditorialRangeClose => {}
             ProjectedKind::Heading { .. } => push_heading(&mut content, decoded, node),
             ProjectedKind::Node(NodeKind::Directive)
                 if source_slice(&decoded.span_text, &node.span).contains("返り点") =>
@@ -2796,6 +2850,23 @@ fn inline_content_range(
     // Assemble source paragraphs and enclosing block layouts before consuming
     // same-line formatting markers in pair_bare_toggles_in_blocks.
     pair_warichu(content)
+}
+
+fn editorial_range_note(
+    decoded: &DecodedSource,
+    node: &AozoraNode,
+    location: EditionRangeLocation,
+    closing: Span,
+) -> Value {
+    let target = Span {
+        start: node.span.end,
+        end: closing.start,
+    };
+    json!({"kind":"editorial_note", "note_kind":"base-edition",
+        "text":match location { EditionRangeLocation::Upper=>"底本では上段", EditionRangeLocation::Lower=>"底本では下段" },
+        "span":span_json(&node.span,&decoded.span_ctx),
+        "target_source_spans":[span_json(&target,&decoded.span_ctx)], "closing_source_span":span_json(&closing,&decoded.span_ctx),
+        "interpretation_marker_spans":[span_json(&closing,&decoded.span_ctx)]})
 }
 
 fn push_heading(content: &mut Vec<Value>, decoded: &DecodedSource, node: &AozoraNode) {
@@ -5032,7 +5103,11 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
         }
         _ => {}
     }
-    if node.kind == ProjectedKind::Directive(DirectiveKind::BaseTextVariant) {
+    if matches!(
+        node.kind,
+        ProjectedKind::Directive(DirectiveKind::BaseTextVariant)
+            | ProjectedKind::EditorialRangeMarker(_)
+    ) {
         value["interpretation_problem"] = json!({"kind":"unresolved-variant", "code":"unresolved-variant",
             "aspects":["content","structure"], "influence":{"kind":"document"}});
     }

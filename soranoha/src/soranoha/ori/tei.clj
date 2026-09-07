@@ -281,14 +281,24 @@
                                         (seq (:unicode declaration)) (conj (:unicode declaration)))))))))
 
 (defn- render-editor-note-node [acc node _depth]
-  (append-inline acc
-                 (sourced node
-                          (if-let [kind (get node "note_kind")]
-                            [:note {:type kind} (get node "text")]
-                            (let [note (get node "note")]
-                              [:note (cond-> {:type (get note "category")}
-                                       (get note "resolution") (assoc :subtype (get note "resolution")))
-                               (get note "raw")])))))
+  (let [element (sourced node
+                         (if-let [kind (get node "note_kind")]
+                           [:note {:type kind} (get node "text")]
+                           (let [note (get node "note")]
+                             [:note (cond-> {:type (get note "category")}
+                                      (get note "resolution") (assoc :subtype (get note "resolution")))
+                              (get note "raw")])))]
+    (if-let [targets (get node "target_source_spans")]
+      (let [[acc references] (reduce (fn [[acc references] span]
+                                       (let [[acc target] (register-source acc {"source_span" span})]
+                                         [acc (conj references (str "#" (::source-reference target)))]))
+                                     [acc []] targets)
+            element (assoc-in element [1 :target] (string/join " " references))]
+        (if-let [closing-span (get node "closing_source_span")]
+          (let [[acc closing] (register-source acc {"source_span" closing-span})]
+            (append-inline acc (update-in element [1 :source] str " #" (::source-reference closing))))
+          (append-inline acc element)))
+      (append-inline acc element))))
 
 (defn- render-kunten-node [acc node _depth]
   (let [kind (get node "kunten_kind")]

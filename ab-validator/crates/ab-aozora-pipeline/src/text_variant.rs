@@ -22,6 +22,53 @@ pub enum EditionNoteKind {
     FirstPublication,
 }
 
+/// Boundary of a source-stated range in the base edition, not a presentation command.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EditionRangeBoundary {
+    /// The range begins after this marker.
+    Start,
+    /// The range ends before this marker.
+    End,
+}
+
+/// Location asserted for the bounded source content in the base edition.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EditionRangeLocation {
+    /// The upper part identified by the source as 上段.
+    Upper,
+    /// The lower part identified by the source as 下段.
+    Lower,
+}
+
+/// One explicitly supplied boundary marker of an edition-only annotation range.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct EditionRangeMarker {
+    /// Which endpoint the supplied marker identifies.
+    pub boundary: EditionRangeBoundary,
+    /// The stated base-edition location, used to match the other endpoint.
+    pub location: EditionRangeLocation,
+}
+
+/// Interpret source-stated upper/lower edition-range markers.
+#[must_use]
+pub fn edition_range_marker(source: &str) -> Option<EditionRangeMarker> {
+    let body = source.strip_prefix("［＃")?.strip_suffix('］')?;
+    let (boundary, statement) = if let Some(tail) = body.strip_prefix("ここから底本では") {
+        (EditionRangeBoundary::Start, tail)
+    } else {
+        (
+            EditionRangeBoundary::End,
+            body.strip_prefix("ここまで底本では")?,
+        )
+    };
+    let location = match statement {
+        "上段" => EditionRangeLocation::Upper,
+        "下段" => EditionRangeLocation::Lower,
+        _ => return None,
+    };
+    Some(EditionRangeMarker { boundary, location })
+}
+
 fn split_attribution(body: &str, edition: EditionNoteKind) -> Option<(&str, &str)> {
     let delimiters: &[&str] = match edition {
         EditionNoteKind::BaseEdition => &[

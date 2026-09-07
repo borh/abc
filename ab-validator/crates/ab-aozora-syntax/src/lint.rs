@@ -177,7 +177,6 @@ fn forward_form(body: &str) -> Option<String> {
         ("は中中見出し", "は中見出し"),
         ("の部分はイタリック体", "は斜体"),
         ("の縦中横", "は縦中横"),
-        ("は下付き", "は下付き小文字"),
         ("は上付き", "は上付き小文字"),
         ("はすべて下付き小文字", "は下付き小文字"),
         ("は地付け", "は地付き"),
@@ -253,7 +252,6 @@ pub const CATALOGUE_SAMPLES: &[&str] = &[
     // Forward keyword / particle drift.
     "「文」の部分はイタリック体",
     "「12」の縦中横",
-    "「2」は下付き",
     "「2」は上付き",
     "「abc」はすべて下付き小文字",
     "「幕。」は地付け",
@@ -363,6 +361,11 @@ mod tests {
     }
 
     #[test]
+    fn lowered_position_does_not_add_a_small_type_assertion() {
+        assert_eq!(canonical_directive("「2」は下付き"), None);
+    }
+
+    #[test]
     fn parameterized_preserves_n() {
         assert_eq!(
             canonical_directive("３回り大きな文字").as_deref(),
@@ -400,7 +403,6 @@ mod tests {
         for (v, c) in [
             ("「文」の部分はイタリック体", "「文」は斜体"),
             ("「12」の縦中横", "「12」は縦中横"),
-            ("「2」は下付き", "「2」は下付き小文字"),
             ("「2」は上付き", "「2」は上付き小文字"),
             ("「abc」はすべて下付き小文字", "「abc」は下付き小文字"),
             ("「幕。」は地付け", "「幕。」は地付き"),

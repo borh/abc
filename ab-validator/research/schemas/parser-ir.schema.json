@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
   "title": "ABC Parser IR",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "type": "object",
   "required": ["schema_id", "schema_hash", "source", "nodes", "warnings", "errors", "interpretation_problems"],
   "additionalProperties": false,
@@ -665,6 +665,7 @@
               "type": "array",
               "items": { "$ref": "#/$defs/inlineNode" }
             },
+            "decoration": {"type":"object", "additionalProperties":false, "required":["kind","position"], "properties":{"kind":{"type":"string"}, "position":{"enum":["right","left","both","unknown"]}}},
             "style": { "type": "string" }
           }
         }

@@ -778,7 +778,7 @@ fn mapping_preflight_accepts_checked_in_v1_artifact() {
 
     mapping.preflight(&schemas).unwrap();
 
-    assert_eq!(mapping.mapping_version, "0.8.0");
+    assert_eq!(mapping.mapping_version, "0.9.0");
     assert_eq!(
         mapping.target_parser_ir_schema_hash,
         schema_hash(&schemas.parser_ir_schema).unwrap()
@@ -824,7 +824,7 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
     let mapping =
         MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2.json"))
             .unwrap();
-    assert_eq!(mapping.mapping_version, "0.9.0");
+    assert_eq!(mapping.mapping_version, "0.10.0");
     assert_eq!(mapping.source_aat_version, 2);
     let schemas = SchemaSet::load_for_aat_version(&repo_root, &research_root, 2).unwrap();
     mapping.preflight(&schemas).unwrap();
@@ -2772,6 +2772,28 @@ fn source_warichu_preserves_unsplit_layout_without_invented_halves() {
     assert_eq!(node["source_span"]["start"], "前".len());
     assert_eq!(node["source_span"]["end"], source.len() - "後".len());
     assert_eq!(output.parser_ir["interpretation_problems"], json!([]));
+}
+
+#[test]
+fn source_left_underline_preserves_native_mark_and_ruby_target() {
+    let source = "東京《とうきょう》［＃「東京」の左に傍線］";
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let aat =
+        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
+            .unwrap();
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas,
+        options: default_test_options(),
+    })
+    .unwrap();
+    let node = &output.parser_ir["nodes"][0];
+    assert_eq!(node["type"], "emphasis");
+    assert_eq!(node["style"], "bosen");
+    assert_eq!(node["decoration"], json!({"kind":"傍線","position":"left"}));
+    assert_eq!(node["inline_children"][0]["type"], "ruby");
+    assert_eq!(node["text"], "東京");
 }
 
 #[test]

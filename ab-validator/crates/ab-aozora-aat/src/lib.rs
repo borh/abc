@@ -12,8 +12,8 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
 use ab_aozora_facade::{
-    self, Diagnostic, DirectiveKind, Document, ForwardAttr, Node, NodeKind, NodeRef, Severity,
-    Tree, encoding, json as aozora_json,
+    self, BoutenPosition, Diagnostic, DirectiveKind, Document, ForwardAttr, Node, NodeKind,
+    NodeRef, Severity, Tree, encoding, json as aozora_json,
 };
 // Body/tail boundary detection is the shared `ab-source-syntax` authority
 // so the checker's comparison source (`ab-check::body_text`) can never
@@ -1466,8 +1466,13 @@ fn inline_content(
             ProjectedKind::Node(NodeKind::Gaiji) => {
                 content.push(gaiji_node(decoded, node, gaiji_by_start));
             }
-            ProjectedKind::Format(ForwardAttr::Bouten { .. }) => {
-                push_style_node(&mut content, decoded, node, "bouten");
+            ProjectedKind::Format(ForwardAttr::Bouten { kind, .. }) => {
+                push_style_node(
+                    &mut content,
+                    decoded,
+                    node,
+                    if kind.is_line() { "bosen" } else { "bouten" },
+                );
             }
             ProjectedKind::Format(ForwardAttr::CombineUpright) => {
                 content.push(tcy_node(decoded, node));
@@ -2010,6 +2015,11 @@ fn push_style_node(
     style_type: &str,
 ) {
     let mut style = style_node(decoded, node, style_type);
+    if let ProjectedKind::Format(ForwardAttr::Bouten { kind, position }) = node.kind {
+        style["decoration"] = json!({"kind": kind.keyword(), "position": match position {
+            BoutenPosition::Right => "right", BoutenPosition::Left => "left", BoutenPosition::Both => "both", _ => "unknown"
+        }});
+    }
     if style["content"].as_array().is_some_and(Vec::is_empty)
         && let Some(target) = marker_target(source_slice(&decoded.span_text, &node.span))
         && let Some(children) = take_visible_suffix(content, target, &decoded.text)

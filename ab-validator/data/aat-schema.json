@@ -371,6 +371,7 @@
       "patternProperties": { "^x-": true },
       "properties": {
         "kind": { "enum": ["style", "font_size", "tcy", "keigakomi", "yokogumi", "caption"] },
+        "decoration": {"type":"object", "additionalProperties":false, "required":["kind","position"], "properties":{"kind":{"type":"string"}, "position":{"enum":["right","left","both","unknown"]}}},
         "style_type": { "type": "string" },
         "size_type": { "type": "string" },
         "level": { "type": "integer" },

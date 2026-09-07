@@ -1254,6 +1254,9 @@ fn map_inline_to_nodes(
                 "inline_children": inline_children,
                 "style": node.get("style_type").and_then(Value::as_str).unwrap_or("style"),
             }));
+            if let Some(decoration) = node.get("decoration") {
+                nodes.last_mut().expect("emphasis node emitted")["decoration"] = decoration.clone();
+            }
             Ok(end)
         }
         "accent" => map_accent_to_node(node, nodes, recorder, offset, path),
@@ -1498,6 +1501,9 @@ fn inline_child_node(
                 "inline_children": inline_children,
                 "style": node.get("style_type").and_then(Value::as_str).unwrap_or("style"),
             }));
+            if let Some(decoration) = node.get("decoration") {
+                nodes.last_mut().expect("emphasis node emitted")["decoration"] = decoration.clone();
+            }
             Ok(end)
         }
         "accent" => {

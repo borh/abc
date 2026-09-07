@@ -431,7 +431,49 @@ fn lower_spans(
     // Apply a declined forward emphasis onto a preceding ruby base
     // it uniquely names.
     let decorated = decorate_ruby_bases(&mut out, source, alloc.store());
+    resolve_warichu_closer_aliases(&mut out);
     (out, decorated)
+}
+
+/// A bare closer can end the nearest generic warichu scope. Bare pairs retain
+/// their inline representation; intervening scopes cannot be crossed.
+fn resolve_warichu_closer_aliases(spans: &mut [ClassifiedSpan]) {
+    use ab_aozora_syntax::{DirectiveKind, RegionClose, RegionFormat};
+
+    // None denotes a bare inline opener; Some retains a generic scope's kind.
+    let mut openers = Vec::new();
+    for span in spans {
+        match span.kind {
+            SpanKind::BlockOpen(kind) => openers.push(Some(kind)),
+            SpanKind::BlockClose(close) => {
+                if openers
+                    .last()
+                    .is_some_and(|open| open.is_some_and(|kind| RegionClose::of(kind) == close))
+                {
+                    openers.pop();
+                } else {
+                    openers.clear();
+                }
+            }
+            SpanKind::Aozora(Node::Directive(directive)) => match directive.kind {
+                DirectiveKind::WarichuOpen => openers.push(None),
+                DirectiveKind::WarichuClose => match openers.last() {
+                    Some(Some(RegionFormat::Warichu)) => {
+                        span.kind = SpanKind::BlockClose(RegionClose::Warichu);
+                        openers.pop();
+                    }
+                    Some(None) => {
+                        openers.pop();
+                    }
+                    _ => {
+                        openers.clear();
+                    }
+                },
+                _ => {}
+            },
+            _ => {}
+        }
+    }
 }
 
 /// Retain normalization-owned targets without treating arbitrary punctuation as a word joiner.

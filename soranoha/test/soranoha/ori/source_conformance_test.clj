@@ -968,3 +968,24 @@
     (is (string/includes? (attribute horizontal "style") "text-align: right"))
     (is (not (string/includes? (attribute indent "style") "text-align")))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest heading-edition-apparatus-preserves-heading-placement
+  (let [result (transcribe (source "［＃１字下げ］欧洲婦人の髪（晶子）［＃「欧洲婦人の髪（晶子）」は大見出し］［＃「欧洲婦人の髪（晶子）」は底本では「欧洲婦人の髪」］\n本文"))
+        heading (first (elements result "head"))]
+    (is (= "欧洲婦人の髪（晶子）\n本文" (:plaintext result)))
+    (is (= ["欧洲婦人の髪（晶子）"] (texts result "lem")))
+    (is (= ["欧洲婦人の髪"] (texts result "rdg")))
+    (is (= "欧洲婦人の髪（晶子）" (view/visible-text heading)))
+    (is (empty? (get-in result [:ir "interpretation_problems"]))))
+  (let [result (transcribe (source "ロダン翁《をう》［＃「ロダン翁」は大見出し］［＃ルビの「をう」は底本では「おう」］\n本文"))]
+    (is (= "ロダン翁\n本文" (:plaintext result)))
+    (is (= ["をう"] (texts result "lem")))
+    (is (= ["おう"] (texts result "rdg")))
+    (is (= ["ロダン翁"] (texts result "head"))))
+  (let [result (transcribe (source "前［＃「不在」は大見出し］後"))]
+    (is (= "前後" (:plaintext result)))
+    (is (empty? (elements result "head"))))
+  (doseq [separator ["\n" "［＃未知の意味］"]]
+    (let [result (transcribe (source (str "見出し［＃「見出し」は大見出し］" separator "［＃「見出し」は底本では「別題」］")))]
+      (is (empty? (elements result "app")))
+      (is (seq (get-in result [:ir "interpretation_problems"]))))))

@@ -967,3 +967,40 @@ fn editorial_explanations_keep_variants_and_standalone_source_statements() {
         assert_eq!(ir["interpretation_problems"], json!([]));
     }
 }
+
+#[test]
+fn edition_targets_remain_inside_their_normal_heading() {
+    let ir = convert(
+        "［＃１字下げ］欧洲婦人の髪（晶子）［＃「欧洲婦人の髪（晶子）」は大見出し］［＃「欧洲婦人の髪（晶子）」は底本では「欧洲婦人の髪」］\n本文",
+    );
+    let all = nodes(&ir);
+    let heading = all.iter().find(|node| node["type"] == "heading").unwrap();
+    assert_eq!(heading["style"], "normal");
+    assert_eq!(heading["level"], 1);
+    assert_eq!(heading["text"], "欧洲婦人の髪（晶子）");
+    let app = &heading["inline_children"][0];
+    assert_eq!(app["type"], "base-text-variant", "{ir}");
+    assert_eq!(app["variant"]["base_text"], "欧洲婦人の髪");
+    assert_eq!(ir["interpretation_problems"], json!([]));
+
+    let ir = convert(
+        "［＃１字下げ］ロダン翁《をう》［＃「ロダン翁」は大見出し］［＃ルビの「をう」は底本では「おう」］\n本文",
+    );
+    let all = nodes(&ir);
+    let heading = all.iter().find(|node| node["type"] == "heading").unwrap();
+    assert_eq!(heading["text"], "ロダン翁");
+    let ruby = all.iter().find(|node| node["type"] == "ruby").unwrap();
+    assert_eq!(ruby["reading_children"][0]["type"], "base-text-variant");
+    assert_eq!(ir["interpretation_problems"], json!([]));
+    for middle in ["［＃未知の意味］", "\n", "\n別の本文"] {
+        let ir = convert(&format!(
+            "見出し［＃「見出し」は大見出し］{middle}［＃「見出し」は底本では「別題」］"
+        ));
+        assert!(
+            !nodes(&ir)
+                .iter()
+                .any(|node| node["type"] == "base-text-variant")
+        );
+        assert!(!ir["interpretation_problems"].as_array().unwrap().is_empty());
+    }
+}

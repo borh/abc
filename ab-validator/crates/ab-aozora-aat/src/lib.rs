@@ -313,7 +313,7 @@ enum ProjectedKind {
     },
     AccentReference,
     FormattingReference,
-    InlineHeading {
+    Heading {
         level: u64,
         style: HeadingStyle,
         target: String,
@@ -362,7 +362,7 @@ impl ProjectedKind {
             Self::Accent { .. } => "supplied-diacritic",
             Self::AccentReference => "accent-annotation",
             Self::FormattingReference => "formatting-annotation",
-            Self::InlineHeading { .. } => "headingHint",
+            Self::Heading { .. } => "headingHint",
             Self::Kunten { .. } => "kunten",
             Self::MarginNote { .. } | Self::TranscribedNotes { .. } => "sideNote",
             Self::Node(kind) => kind.as_json_tag(),
@@ -606,15 +606,11 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                     target_span: note.target_span.map(|span| span.span().into()),
                 },
                 NodeRef::Inline(Node::IterationMark(mark)) => ProjectedKind::IterationMark(mark),
-                NodeRef::Inline(Node::HeadingHint(hint))
-                    if matches!(hint.style, HeadingStyle::SameLine | HeadingStyle::Window) =>
-                {
-                    ProjectedKind::InlineHeading {
-                        level: u64::from(hint.level.outline_level()),
-                        style: hint.style,
-                        target: tree.store.resolve_str(hint.target).to_owned(),
-                    }
-                }
+                NodeRef::Inline(Node::HeadingHint(hint)) => ProjectedKind::Heading {
+                    level: u64::from(hint.level.outline_level()),
+                    style: hint.style,
+                    target: tree.store.resolve_str(hint.target).to_owned(),
+                },
                 NodeRef::Inline(Node::Kunten(k)) | NodeRef::BlockLeaf(Node::Kunten(k)) => {
                     ProjectedKind::Kunten {
                         kind: k.kind,
@@ -1777,7 +1773,10 @@ fn build_aat(
         ),
         decoded,
     ));
-    blocks = resolve_text_variants_in_blocks(blocks, decoded);
+    blocks = place_normal_headings(
+        resolve_text_variants_in_blocks(blocks, decoded),
+        &decoded.text,
+    );
     let mut warnings = diagnostics
         .iter()
         .map(|diagnostic| diagnostic_warning(diagnostic, &decoded.span_ctx))
@@ -2025,13 +2024,7 @@ fn blocks_from_inline_content(content: Vec<Value>, decoded: &DecodedSource) -> V
                 paragraph.pop();
                 heading["indent"] = json!(indent);
             }
-            if attributes["style"] == "normal" {
-                push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
-                blocks.push(heading);
-                strip_next_leading_newline = true;
-            } else {
-                paragraph.push(heading);
-            }
+            paragraph.push(heading);
             index = close_index + 1;
             continue;
         }
@@ -2186,19 +2179,6 @@ fn blocks_from_inline_content(content: Vec<Value>, decoded: &DecodedSource) -> V
             }
         }
 
-        if is_heading_hint_raw(&node)
-            && let Some(heading) = heading_block_from_hint(&mut paragraph, &node, decoded)
-        {
-            if heading["style"] == "normal" {
-                push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
-                blocks.push(heading);
-                strip_next_leading_newline = true;
-            } else {
-                paragraph.push(heading);
-            }
-            index += 1;
-            continue;
-        }
         let ends_line = ends_source_line(&node, source);
         paragraph.push(node);
         if ends_line {
@@ -2210,6 +2190,51 @@ fn blocks_from_inline_content(content: Vec<Value>, decoded: &DecodedSource) -> V
     push_paragraph_if_not_empty(&mut blocks, paragraph);
     if blocks.is_empty() {
         blocks.push(json!({"kind": "paragraph", "content": []}));
+    }
+    blocks
+}
+
+// Resolve source-adjacent annotations before placing normal headings outside
+// paragraphs. Physical line boundaries must still constrain target resolution.
+fn place_normal_headings(nodes: Vec<Value>, source: &str) -> Vec<Value> {
+    let mut blocks = Vec::with_capacity(nodes.len());
+    for mut node in nodes {
+        if let Some(children) = node.get_mut("children").and_then(Value::as_array_mut) {
+            *children = place_normal_headings(mem::take(children), source);
+        }
+        if node["kind"] != "paragraph"
+            || !node["content"].as_array().is_some_and(|content| {
+                content
+                    .iter()
+                    .any(|child| child["kind"] == "heading" && child["style"] == "normal")
+            })
+        {
+            blocks.push(node);
+            continue;
+        }
+        let mut paragraph = Vec::new();
+        let mut follows_heading = false;
+        for mut child in node["content"]
+            .as_array_mut()
+            .map(mem::take)
+            .unwrap_or_default()
+        {
+            if child["kind"] == "heading" && child["style"] == "normal" {
+                push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
+                blocks.push(child);
+                follows_heading = true;
+            } else {
+                if follows_heading {
+                    strip_leading_newline(&mut child, source);
+                    follows_heading = false;
+                    if child["kind"] == "text" && child["value"] == "" {
+                        continue;
+                    }
+                }
+                paragraph.push(child);
+            }
+        }
+        push_paragraph_if_not_empty(&mut blocks, paragraph);
     }
     blocks
 }
@@ -2392,32 +2417,6 @@ fn strip_boundary_newlines(nodes: &mut [Value], source: &str) {
     }
 }
 
-fn is_heading_hint_raw(node: &Value) -> bool {
-    node.get("kind").and_then(Value::as_str) == Some("raw")
-        && node.get("x-source-marker-kind").and_then(Value::as_str) == Some("headingHint")
-}
-
-fn heading_block_from_hint(
-    paragraph: &mut Vec<Value>,
-    node: &Value,
-    decoded: &DecodedSource,
-) -> Option<Value> {
-    let source = node.get("source").and_then(Value::as_str)?;
-    let (target, directive) = source.strip_prefix("［＃「")?.rsplit_once("」は")?;
-    let level = heading_level(directive);
-    let style = heading_style(directive);
-    let heading_content = take_visible_suffix(paragraph, target, decoded)?;
-    let indent = paragraph.last().and_then(heading_indent_marker);
-    if indent.is_some() {
-        paragraph.pop();
-    }
-    let mut heading = heading_from_content(heading_content, &node["span"], level, style);
-    if let Some(indent) = indent {
-        heading["indent"] = json!(indent);
-    }
-    Some(heading)
-}
-
 fn heading_from_content(
     heading_content: Vec<Value>,
     marker: &Value,
@@ -2451,26 +2450,6 @@ fn heading_indent_marker(node: &Value) -> Option<u64> {
         return None;
     }
     parse_aozora_number_before(source, "字下げ")
-}
-
-fn heading_level(source: &str) -> u64 {
-    if source.contains('大') {
-        1
-    } else if source.contains('中') {
-        2
-    } else {
-        3
-    }
-}
-
-fn heading_style(source: &str) -> &'static str {
-    if source.contains("同行") {
-        "dogyo"
-    } else if source.contains('窓') {
-        "mado"
-    } else {
-        "normal"
-    }
 }
 
 fn strip_leading_newline(node: &mut Value, source: &str) {
@@ -2772,7 +2751,7 @@ fn inline_content_range(
             }
             ProjectedKind::AccentReference => content.push(raw_node(decoded, node, "accent-annotation")),
             ProjectedKind::FormattingReference => {}
-            ProjectedKind::InlineHeading { .. } => push_inline_heading(&mut content, decoded, node),
+            ProjectedKind::Heading { .. } => push_heading(&mut content, decoded, node),
             ProjectedKind::Node(NodeKind::Directive)
                 if source_slice(&decoded.span_text, &node.span).contains("返り点") =>
             {
@@ -2799,8 +2778,8 @@ fn inline_content_range(
     pair_warichu(content)
 }
 
-fn push_inline_heading(content: &mut Vec<Value>, decoded: &DecodedSource, node: &AozoraNode) {
-    let ProjectedKind::InlineHeading {
+fn push_heading(content: &mut Vec<Value>, decoded: &DecodedSource, node: &AozoraNode) {
+    let ProjectedKind::Heading {
         level,
         style,
         target,
@@ -2808,16 +2787,21 @@ fn push_inline_heading(content: &mut Vec<Value>, decoded: &DecodedSource, node: 
     else {
         return;
     };
+    let style = match style {
+        HeadingStyle::Standard => "normal",
+        HeadingStyle::SameLine => "dogyo",
+        HeadingStyle::Window => "mado",
+        _ => {
+            content.push(raw_node(decoded, node, "headingHint"));
+            return;
+        }
+    };
     if let Some(children) = take_visible_suffix(content, target, decoded) {
         content.push(heading_from_content(
             children,
             &span_json(&node.span, &decoded.span_ctx),
             *level,
-            if *style == HeadingStyle::SameLine {
-                "dogyo"
-            } else {
-                "mado"
-            },
+            style,
         ));
     } else {
         content.push(raw_node(decoded, node, "headingHint"));
@@ -3945,7 +3929,7 @@ fn adjacent_principal_ruby(nodes: &mut [Value]) -> Option<&mut Value> {
             "raw" if node.get("text_variant").is_some() => {}
             "ruby" => return Some(node),
             "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi"
-            | "yokogumi" => {
+            | "yokogumi" | "heading" => {
                 return adjacent_principal_ruby(node["content"].as_array_mut()?);
             }
             _ => return None,
@@ -4170,7 +4154,7 @@ fn preceding_reading(nodes: &mut [Value]) -> Option<&mut Value> {
             }
             "ruby" => return Some(node),
             "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi"
-            | "yokogumi" | "fraction" | "text-variant" | "annotated_text" => {
+            | "yokogumi" | "fraction" | "text-variant" | "annotated_text" | "heading" => {
                 return preceding_reading(node["content"].as_array_mut()?);
             }
             _ => return None,
@@ -4461,6 +4445,9 @@ fn take_visible_suffix_matching(
     for index in (0..content.len()).rev() {
         let node = &content[index];
         let kind = node["kind"].as_str()?;
+        if kind == "heading" && node["style"] == "normal" {
+            return None;
+        }
         let text = target_text(node)?;
         if text.is_empty() {
             if matches!(kind, "editorial_note" | "kunten")

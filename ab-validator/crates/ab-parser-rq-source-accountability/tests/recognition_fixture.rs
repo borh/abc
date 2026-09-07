@@ -60,7 +60,7 @@ fn publish_fixture(root: &Path) -> (Value, Value, Vec<u8>) {
     let cases = [
         ("clean", "本文\n"),
         ("opaque-unknown", "本文［＃未知］\n"),
-        ("recovered-malformed", "［＃tail"),
+        ("unparsed-source-gap", "［＃tail"),
         // A work with a real colophon, so the fixture exercises a non-empty
         // metadata population: the 底本： field attributes, the bare メモ line
         // opens no construct and stays unattributed content.
@@ -230,7 +230,7 @@ fn manifest_blob(locator: &str, bytes: &[u8]) -> Value {
 }
 
 #[test]
-fn production_fixture_covers_clean_opaque_and_recovered_semantics() {
+fn production_fixture_covers_clean_opaque_and_unparsed_source() {
     let root = tempfile_root("semantics");
     let (index, aggregate, _) = publish_fixture(&root);
     assert_eq!(index["record_count"], 4);
@@ -283,8 +283,8 @@ fn production_fixture_covers_clean_opaque_and_recovered_semantics() {
     );
     assert_eq!(
         projections[&hash("［＃tail".as_bytes())],
-        (10, 4, 10),
-        "recovered malformed input must retain its recovered semantic gap"
+        (10, 0, 10),
+        "the whole malformed annotation must be accounted without claiming recognition"
     );
     assert_eq!(
         projections[&hash("本文です。\n\n底本：「青空文庫テスト」試験社\nメモ\n".as_bytes())],
@@ -301,16 +301,37 @@ fn committed_fixture_is_a_byte_identical_production_regeneration() {
     let generated_first = publish_fixture(&first);
     let generated_second = publish_fixture(&second);
     assert_eq!(generated_first, generated_second);
-    assert_eq!(file_map(&first), file_map(&second));
+    assert_same_files(&first, &second);
     if std::env::var_os("UPDATE_RECOGNITION_FIXTURE").is_some() {
         if fixture_root().exists() {
             fs::remove_dir_all(fixture_root()).unwrap();
         }
         copy_tree(&first, &fixture_root());
     }
-    assert_eq!(file_map(&fixture_root()), file_map(&first));
+    assert_same_files(&fixture_root(), &first);
     fs::remove_dir_all(first).unwrap();
     fs::remove_dir_all(second).unwrap();
+}
+
+fn assert_same_files(expected: &Path, actual: &Path) {
+    let expected_files = file_map(expected);
+    let actual_files = file_map(actual);
+    assert_eq!(
+        expected_files.keys().collect::<Vec<_>>(),
+        actual_files.keys().collect::<Vec<_>>(),
+        "fixture file membership differs"
+    );
+    for (path, expected_bytes) in expected_files {
+        let actual_bytes = &actual_files[&path];
+        assert!(
+            expected_bytes == *actual_bytes,
+            "fixture file {path} differs: expected {} ({} bytes), actual {} ({} bytes)",
+            hash(&expected_bytes),
+            expected_bytes.len(),
+            hash(actual_bytes),
+            actual_bytes.len()
+        );
+    }
 }
 
 fn file_map(root: &Path) -> std::collections::BTreeMap<String, Vec<u8>> {

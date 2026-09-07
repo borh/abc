@@ -1531,7 +1531,10 @@ impl EstablishedInterpretation {
                 Some(Self::GlyphShapeAssertion)
             }
             Some("annotated_text") => Some(Self::AnnotatedText),
-            Some("figure") if node.get("interpretation_problem").is_none() => {
+            Some("figure")
+                if node.get("interpretation_problem").is_none()
+                    || Self::only_layout_unresolved(node) =>
+            {
                 Some(Self::Illustration)
             }
             Some("editorial_note") if node["note_kind"] == "external-table-reference" => {
@@ -1550,6 +1553,12 @@ impl EstablishedInterpretation {
             Some("layout_block") => Some(Self::LineLayout),
             _ => None,
         }
+    }
+
+    fn only_layout_unresolved(node: &Value) -> bool {
+        node["interpretation_problem"]["aspects"]
+            .as_array()
+            .is_some_and(|aspects| aspects.len() == 1 && aspects[0] == "layout")
     }
 
     fn is_emphasis_style(node: &Value) -> bool {
@@ -1600,6 +1609,7 @@ impl EstablishedInterpretation {
 
     fn aspects(self, node: &Value) -> &'static [&'static str] {
         match self {
+            Self::Illustration if Self::only_layout_unresolved(node) => &["content", "structure"],
             Self::AnnotatedText if node["position"].as_str().is_none() => &["content", "structure"],
             Self::Exponent
             | Self::Translation
@@ -7622,5 +7632,16 @@ mod tests {
         assert_eq!(content[0]["content"][0]["kind"], "annotated_text");
         assert_eq!(content[0]["content"][0]["content"][0]["value"], "菌");
         assert_eq!(content[1]["value"], "毒");
+    }
+    #[test]
+    fn unresolved_figure_structure_does_not_gain_illustration_facts() {
+        for aspects in [
+            json!(["structure"]),
+            json!(["structure", "layout"]),
+            json!(["content"]),
+        ] {
+            let figure = json!({"kind":"figure", "filename":"figure.png", "interpretation_problem":{"aspects":aspects}});
+            assert!(EstablishedInterpretation::for_node(&figure).is_none());
+        }
     }
 }

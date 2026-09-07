@@ -4422,7 +4422,7 @@ mod tests {
                 }
                 stack.push(construct);
             } else {
-                match stack.last().cloned() {
+                match stack.last().copied() {
                     None => match construct {
                         "yokogumi" => invalid_yokogumi = true,
                         _ => invalid_keigakomi = true,

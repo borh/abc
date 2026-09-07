@@ -493,6 +493,16 @@
     (is (= ["１）"] (texts result "hi")))
     (is (= "text-combine-upright small-script right" (attribute (first spans) "rend")))))
 
+(deftest indentation-closer-aliases-preserve-the-following-paragraph
+  (doseq [close ["［＃字下げ終わり］" "［＃ここで字下げおわり］"]]
+    (let [result (transcribe (source (str "［＃ここから３字下げ］\n本文\n" close "\n後")))
+          scope (first (filter #(= "padding-inline-start: 3em" (attribute % "style"))
+                               (elements result "div")))]
+      (is (some? scope))
+      (is (= ["本文"] (mapv view/visible-text (filter #(within? scope %) (elements result "p")))))
+      (is (= "本文\n後" (:plaintext result)))
+      (is (empty? (get-in result [:ir "interpretation_problems"]))))))
+
 (deftest multiline-typography-preserves-source-paragraph-boundaries
   (let [result (transcribe (source "前。\n［＃ここから１段階小さな文字］\n第一。\n第二。\n［＃ここで小さな文字終わり］\n後。"))
         wrapper (first (filter #(= "font-size small(1)" (attribute % "rend")) (elements result "div")))

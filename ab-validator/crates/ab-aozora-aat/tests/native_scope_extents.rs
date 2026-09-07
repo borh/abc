@@ -41,24 +41,27 @@ fn native_scope_matching_checks_explicit_heading_and_font_attributes() {
 }
 
 #[test]
-fn aat_native_close_metadata_uses_original_decoded_coordinates() {
+fn aat_established_scope_markers_use_original_decoded_coordinates() {
     let source = "\u{feff}題\r\n作者\r\n\r\n〔ae&〕［＃ここから１段階小さな文字］\r\n本文\r\n［＃ここで小さな文字終わり］\r\n\r\n底本：本\r\n";
     let decoded = source.strip_prefix('\u{feff}').unwrap();
     let aat: Value =
         serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
-    let mut pending = vec![&aat];
-    let mut closes = Vec::new();
-    while let Some(node) = pending.pop() {
-        if let Some(span) = node.get("x-native-close-span") {
-            let start = usize::try_from(span["byte_start"].as_u64().unwrap()).unwrap();
-            let end = usize::try_from(span["byte_end"].as_u64().unwrap()).unwrap();
-            closes.push(&decoded[start..end]);
-        }
-        match node {
-            Value::Object(map) => pending.extend(map.values()),
-            Value::Array(array) => pending.extend(array),
-            _ => {}
-        }
-    }
-    assert_eq!(closes, ["［＃ここで小さな文字終わり］"]);
+    let markers: Vec<_> = aat["meta"]["interpretation_facts"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|fact| {
+            let span = &fact["source_span"];
+            let start = usize::try_from(span["start"].as_u64().unwrap()).unwrap();
+            let end = usize::try_from(span["end"].as_u64().unwrap()).unwrap();
+            &decoded[start..end]
+        })
+        .collect();
+    assert_eq!(
+        markers,
+        [
+            "［＃ここから１段階小さな文字］",
+            "［＃ここで小さな文字終わり］"
+        ]
+    );
 }

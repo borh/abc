@@ -573,14 +573,38 @@
      (cond-> (paragraph-attrs paragraph)
        (pos? indent) (assoc :style (str "text-indent: " indent "em")))]))
 
-(defn- render-paragraph-row [nodes acc paragraph]
+(defn- wrap-scope-intersections [content scopes]
+  (reduce (fn [children scope]
+            [(into [(if (get scope "typography") :hi :seg)
+                    (cond-> {:source (str "#" (source-reference scope))}
+                      (get scope "typography") (assoc :rend (inline-layout-rend (get scope "typography")))
+                      (get scope "role") (assoc :type (get scope "role"))
+                      (= "warichu" (get scope "role")) (assoc :rend "two-line"))]
+                   children)])
+          content (reverse scopes)))
+
+(defn- render-paragraph-intersections [acc nodes start end scopes]
+  (let [boundaries (into (sorted-set start end)
+                         (mapcat (fn [scope]
+                                   [(max start (get-in scope ["node_range" "start"]))
+                                    (min end (get-in scope ["node_range" "end"]))])) scopes)]
+    (reduce (fn [acc [from to]]
+              (let [active (filterv #(<= (get-in % ["node_range" "start"]) from
+                                         (dec to) (dec (get-in % ["node_range" "end"]))) scopes)
+                    prefix (:current-paragraph acc)
+                    rendered (render-node-seq (assoc acc :current-paragraph []) (subvec nodes from to))]
+                (assoc rendered :current-paragraph
+                       (into prefix (wrap-scope-intersections (:current-paragraph rendered) active)))))
+            acc (partition 2 1 boundaries))))
+
+(defn- render-paragraph-row [nodes acc paragraph scopes]
   (let [[nodes attrs] (paragraph-render-inputs nodes paragraph)
         {start "start" end "end"} (paragraph-range paragraph)
         node-slice (subvec nodes start end)]
     (case (get paragraph "role")
       "body" (-> acc
                  (assoc :current-paragraph-attrs attrs)
-                 (render-node-seq node-slice)
+                 (render-paragraph-intersections nodes start end scopes)
                  flush-paragraph)
       "source-note" (-> acc
                         flush-paragraph
@@ -591,24 +615,27 @@
           (render-node-seq node-slice)
           flush-paragraph))))
 
+(defn- paragraph-boundary-predicate [paragraphs]
+  (let [ends (into (sorted-map)
+                   (map (fn [p] [(get-in p ["node_range" "start"]) (get-in p ["node_range" "end"])]))
+                   paragraphs)]
+    (fn [index]
+      (let [[start end] (first (rsubseq ends <= index))]
+        (not (and start (< start index end)))))))
+
 (defn- validate-layout-blocks! [nodes paragraphs blocks]
-  (let [paragraph-ends (into (sorted-map)
-                             (map (fn [paragraph]
-                                    [(get-in paragraph ["node_range" "start"])
-                                     (get-in paragraph ["node_range" "end"])]))
-                             paragraphs)
-        boundary? (fn [index]
-                    (let [[start end] (first (rsubseq paragraph-ends <= index))]
-                      (not (and start (< start index end)))))
+  (let [boundary? (paragraph-boundary-predicate paragraphs)
         external-notes (into (sorted-set)
                              (keep-indexed (fn [index node]
                                              (when (and (= "source-note" (get node "type"))
-                                                        (not= "body" (get node "placement")))
-                                               index))) nodes)]
+                                                        (not= "body" (get node "placement"))) index))) nodes)]
     (doseq [block blocks]
       (let [{start "start" end "end"} (get block "node_range")]
         (when-not (and (integer? start) (integer? end) (<= 0 start) (< start end)
-                       (<= end (count nodes)) (boundary? start) (boundary? end)
+                       (<= end (count nodes))
+                       (or (and (boundary? start) (boundary? end))
+                           (and (or (get block "typography") (get block "role"))
+                                (source-reference block)))
                        (empty? (subseq external-notes >= start < end)))
           (throw (ex-info "Invalid layout block node range" {:block block}))))))
   (reduce (fn [stack block]
@@ -621,6 +648,18 @@
               (conj stack block)))
           [] (sort-by (juxt #(get-in % ["node_range" "start"])
                             #(- (get-in % ["node_range" "end"]))) blocks)))
+
+(defn- scope-intersections [nodes paragraphs scopes]
+  (let [runs (into (sorted-map)
+                   (concat (map (fn [p] [(get-in p ["node_range" "start"]) (get-in p ["node_range" "end"])]) paragraphs)
+                           (keep-indexed (fn [index node] (when (and (= "heading" (get node "type")) (= "normal" (get node "style"))) [index (inc index)])) nodes)))]
+    (reduce (fn [result scope]
+              (let [{start "start" end "end"} (get scope "node_range")
+                    first-start (or (ffirst (rsubseq runs <= start)) start)]
+                (reduce (fn [result [from to]]
+                          (if (> to start) (update result from (fnil conj []) scope) result))
+                        result (take-while (fn [[from _]] (< from end)) (subseq runs >= first-start)))))
+            {} (sort-by (juxt #(get-in % ["node_range" "start"]) #(- (get-in % ["node_range" "end"]))) scopes))))
 
 (defn- layout-block-attrs [block]
   (let [indent (get block "indent")
@@ -639,6 +678,7 @@
                (get block "page_placement") (conj "page-center")
                (get block "line_count") (conj (str "line-count(" (get block "line_count") ")")))]
     (cond-> {:type (get block "role" "layout")}
+      (source-reference block) (assoc :source (str "#" (source-reference block)))
       (seq styles) (assoc :style (string/join "; " styles))
       (seq rend) (assoc :rend (string/join " " rend))
       (= "warichu" (get block "role")) (assoc :rend "two-line"))))
@@ -659,11 +699,19 @@
 (defn- render-with-paragraphs [nodes paragraphs layout-blocks primary-text-hash]
   (validate-paragraph-ranges! nodes paragraphs)
   (validate-layout-blocks! nodes paragraphs layout-blocks)
-  (let [starts (group-by #(get-in % ["node_range" "start"]) (reverse layout-blocks))
+  (let [boundary? (paragraph-boundary-predicate paragraphs)
+        grouped (group-by #(and (boundary? (get-in % ["node_range" "start"]))
+                                (boundary? (get-in % ["node_range" "end"]))) layout-blocks)
+        intersections (scope-intersections nodes paragraphs (get grouped false))
+        starts (group-by #(get-in % ["node_range" "start"]) (reverse (get grouped true)))
         paragraph-starts (into {} (keep (fn [paragraph]
                                           (let [{start "start" end "end"} (paragraph-range paragraph)]
                                             (when (< start end) [start paragraph])))) paragraphs)]
-    (loop [acc (initial-acc primary-text-hash) index (Long/valueOf 0) frames []]
+    (loop [acc (reduce (fn [acc block]
+                         (if-let [reference (source-reference block)]
+                           (assoc-in acc [:source-spans reference] (get block "source_span")) acc))
+                       (initial-acc primary-text-hash) layout-blocks)
+           index (Long/valueOf 0) frames []]
       (let [[acc frames] (close-layout-blocks acc frames index)]
         (if (= index (count nodes))
           (finalize-result (cond-> (-> acc flush-paragraph flush-division)
@@ -678,9 +726,15 @@
                               (sort-by #(get-in % ["node_range" "end"]) > (get starts index)))
                 paragraph (get paragraph-starts index)]
             (if paragraph
-              (recur (render-paragraph-row nodes (flush-paragraph acc) paragraph)
+              (recur (render-paragraph-row nodes (flush-paragraph acc) paragraph (get intersections index))
                      (get-in paragraph ["node_range" "end"]) frames)
-              (recur (render-node-seq acc [(nth nodes index)]) (inc index) frames))))))))
+              (let [rendered (render-node-seq acc [(nth nodes index)])
+                    scopes (get intersections index)
+                    rendered (if (and (seq scopes) (= "heading" (get (nth nodes index) "type")))
+                               (update-in rendered [:current-division 0]
+                                          (fn [head] (into (subvec head 0 2) (wrap-scope-intersections (subvec head 2) scopes))))
+                               rendered)]
+                (recur rendered (inc index) frames)))))))))
 
 (defn- render-flat [nodes primary-text-hash]
   (finalize-result

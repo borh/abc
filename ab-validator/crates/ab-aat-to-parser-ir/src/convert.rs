@@ -176,6 +176,7 @@ fn convert_preflighted_for_qualification(
         orthographic_annotations.validate_against_aat(&aat)?;
     }
 
+    consolidate_source_paragraphs(&mut paragraphs);
     let mut parser_ir = json!({
         "schema_id": mapping.target_parser_ir_schema_id,
         "schema_hash": mapping.target_parser_ir_schema_hash,
@@ -239,6 +240,31 @@ struct BlockOutputs<'a> {
     paragraphs: &'a mut Vec<Value>,
     layout_blocks: &'a mut Vec<Value>,
     synthetic_warnings: &'a mut Vec<Value>,
+}
+
+/// Scope fragments retain the source paragraph when no structural node intervenes.
+fn consolidate_source_paragraphs(paragraphs: &mut Vec<Value>) {
+    let mut combined: Vec<Value> = Vec::with_capacity(paragraphs.len());
+    for paragraph in paragraphs.drain(..) {
+        if let Some(previous) = combined.last_mut()
+            && previous["role"] == "body"
+            && paragraph["role"] == "body"
+            && previous["layout"] == paragraph["layout"]
+            && previous["node_range"]["end"] == paragraph["node_range"]["start"]
+            && paragraph["source_span"]["line"].is_u64()
+            && previous["source_span"]["line"] == paragraph["source_span"]["line"]
+        {
+            previous["node_range"]["end"] = paragraph["node_range"]["end"].clone();
+            previous["span"]["end"] = paragraph["span"]["end"].clone();
+            previous["source_span"]["end"] = paragraph["source_span"]["end"].clone();
+        } else {
+            combined.push(paragraph);
+        }
+    }
+    for (index, paragraph) in combined.iter_mut().enumerate() {
+        paragraph["id"] = json!(format!("p{index:06}"));
+    }
+    *paragraphs = combined;
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -464,6 +490,7 @@ fn map_block_content(
                         "warichu"
                     });
                 }
+                attach_source_span(&mut scope, block.get("span"))?;
                 outputs.layout_blocks.push(scope);
             }
         }

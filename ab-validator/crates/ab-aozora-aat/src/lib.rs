@@ -1329,12 +1329,12 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
             Some("style" | "font_size" | "small_script" | "tcy" | "caption" | "warichu")
         ) && let Some(close_index) = native_scopes.get(&index).copied()
             && node["span"]["line_start"] != content[close_index]["span"]["line_start"]
-            && marker_starts_source_line(&node, source)
-            && marker_ends_source_line(&content[close_index], source)
         {
-            let mut inner = mem::take(&mut paragraph);
-            inner.extend_from_slice(&content[index + 1..close_index]);
-            strip_boundary_newlines(&mut inner);
+            push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
+            let mut inner = content[index + 1..close_index].to_vec();
+            if marker_starts_source_line(&node, source) {
+                strip_boundary_newlines(&mut inner);
+            }
             let container = json!({
                 "kind":match node["x-formatting"]["kind"].as_str() { Some("caption") => "caption_block", Some("warichu") => "warichu_block", _ => "typography_block" }, "formatting":node["x-formatting"],
                 "span":{"byte_start":node["span"]["byte_start"], "byte_end":content[close_index]["span"]["byte_end"],
@@ -1343,7 +1343,7 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
                 "children":blocks_from_inline_content(inner, source)
             });
             blocks.push(container);
-            strip_next_leading_newline = true;
+            strip_next_leading_newline = marker_ends_source_line(&content[close_index], source);
             index = close_index + 1;
             continue;
         }
@@ -1549,10 +1549,19 @@ fn push_paragraph_if_not_empty(blocks: &mut Vec<Value>, content: Vec<Value>) {
     if content.is_empty() {
         return;
     }
-    blocks.push(json!({
-        "kind": "paragraph",
-        "content": content
-    }));
+    let mut paragraph = json!({"kind":"paragraph", "content":content});
+    let mut spans = paragraph["content"]
+        .as_array()
+        .expect("content array")
+        .iter()
+        .filter(|node| node["kind"] != "text" || node["value"] != "")
+        .filter_map(|node| node.get("span"));
+    if let Some(first) = spans.next() {
+        let last = spans.next_back().unwrap_or(first);
+        paragraph["span"] = json!({"byte_start":first["byte_start"], "byte_end":last["byte_end"],
+            "line_start":first["line_start"], "line_end":last["line_end"]});
+    }
+    blocks.push(paragraph);
 }
 
 fn block_container_open(node: &Value, marker: &str) -> bool {
@@ -3063,9 +3072,18 @@ fn region_formatting(region: RegionFormat) -> Option<(String, Value)> {
                 formatting_fields(ForwardAttr::Bouten { kind, position })?,
             ));
         }
-        RegionFormat::Bold { padded: false } => ("bold", ForwardAttr::Bold),
-        RegionFormat::Gothic { padded: false } => ("gothic", ForwardAttr::Gothic),
-        RegionFormat::Italic { padded: false } => ("italic", ForwardAttr::Italic),
+        RegionFormat::Bold { padded } => (
+            if padded { "bold-block" } else { "bold" },
+            ForwardAttr::Bold,
+        ),
+        RegionFormat::Gothic { padded } => (
+            if padded { "gothic-block" } else { "gothic" },
+            ForwardAttr::Gothic,
+        ),
+        RegionFormat::Italic { padded } => (
+            if padded { "italic-block" } else { "italic" },
+            ForwardAttr::Italic,
+        ),
         RegionFormat::SmallScript(BoutenPosition::Right) => (
             "small-script-right",
             ForwardAttr::SmallScript(BoutenPosition::Right),
@@ -3094,9 +3112,27 @@ fn region_formatting_close(close: RegionClose) -> Option<String> {
             RegionClose::Warichu => "warichu",
             RegionClose::Caption { .. } => "caption",
             RegionClose::Bouten { kind, position } => return Some(bouten_key(kind, position)),
-            RegionClose::Bold { padded: false } => "bold",
-            RegionClose::Gothic { padded: false } => "gothic",
-            RegionClose::Italic { padded: false } => "italic",
+            RegionClose::Bold { padded } => {
+                if padded {
+                    "bold-block"
+                } else {
+                    "bold"
+                }
+            }
+            RegionClose::Gothic { padded } => {
+                if padded {
+                    "gothic-block"
+                } else {
+                    "gothic"
+                }
+            }
+            RegionClose::Italic { padded } => {
+                if padded {
+                    "italic-block"
+                } else {
+                    "italic"
+                }
+            }
             RegionClose::SmallScript(BoutenPosition::Right) => "small-script-right",
             RegionClose::SmallScript(BoutenPosition::Left) => "small-script-left",
             RegionClose::FontSize { larger: true } => "font-large",
@@ -3409,7 +3445,7 @@ mod tests {
     /// self.rev or "unknown"` and `build.rs`'s doc comment).
     #[test]
     fn aat_json_from_bytes_is_byte_exact_under_default_map_ordering() {
-        let expected = "{\"blocks\":[{\"content\":[{\"kind\":\"text\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1},\"value\":\"あ\\n\"}],\"kind\":\"paragraph\"}],\"meta\":{\"adapter\":\"ab-aozora\",\"adapter_version\":\"ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 diagnostics-schema 3 (git unknown)\",\"parse_complete\":true,\"primary_text_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"source_encoding\":\"utf-8\",\"source_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"warnings\":[]},\"version\":2,\"work_id\":\"stdin\"}\n";
+        let expected = "{\"blocks\":[{\"content\":[{\"kind\":\"text\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1},\"value\":\"あ\\n\"}],\"kind\":\"paragraph\",\"span\":{\"byte_end\":4,\"byte_start\":0,\"line_end\":1,\"line_start\":1}}],\"meta\":{\"adapter\":\"ab-aozora\",\"adapter_version\":\"ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 diagnostics-schema 3 (git unknown)\",\"parse_complete\":true,\"primary_text_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"source_encoding\":\"utf-8\",\"source_hash\":\"sha256:872f53a70d5e2b801dcad8ade42fa36f20a64f64e6c3af6b7de01ca026405843\",\"warnings\":[]},\"version\":2,\"work_id\":\"stdin\"}\n";
         let actual = aat_json_from_bytes("あ\n".as_bytes()).unwrap();
         assert_eq!(actual, expected.as_bytes());
     }
@@ -3564,7 +3600,7 @@ mod tests {
         // by exactly one decoded byte, landing at 5..26 — real line 2.
         let page_break = spans
             .iter()
-            .find(|s| s["byte_start"] == 5)
+            .find(|s| s["byte_start"] == 5 && s["byte_end"] == 26)
             .unwrap_or_else(|| panic!("no span at decoded byte_start 5: {spans:?}"));
         assert_eq!(page_break["byte_end"], 26);
         assert_eq!(page_break["line_start"], 2);
@@ -3623,7 +3659,7 @@ mod tests {
         // The page-break directive: decoded bytes 4..25, real line 2.
         let page_break = spans
             .iter()
-            .find(|s| s["byte_start"] == 4)
+            .find(|s| s["byte_start"] == 4 && s["byte_end"] == 25)
             .unwrap_or_else(|| panic!("no span at decoded byte_start 4: {spans:?}"));
         assert_eq!(page_break["byte_end"], 25);
         assert_eq!(page_break["line_start"], 2);

@@ -63,6 +63,26 @@
       (is (empty? (get-in result [:ir "interpretation_problems"])))
       (is (= ["layout"] (mapv #(get % "kind") (get-in result [:ir "interpretation_facts"])))))))
 
+(deftest partial-paragraph-typography-retains-source-paragraphs
+  (let [result (transcribe (source "　［＃ここから斜体］First speech.\n\n　Second speech.［＃ここで斜体終わり］＊"))
+        scopes (filterv #(= "italic" (attribute % "rend")) (elements result "hi"))]
+    (is (= "　First speech.\n　Second speech.＊" (:plaintext result)))
+    (is (= ["First speech." "Second speech.＊"] (texts result "p")))
+    (is (= ["First speech." "Second speech."] (mapv view/visible-text scopes)))
+    (is (= 1 (count (set (map #(attribute % "source") scopes)))))
+    (is (= 1 (count (get-in result [:ir "layout_blocks"]))))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest partial-typography-retains-a-normal-heading
+  (let [result (transcribe (source "前［＃ここから斜体］甲\n［＃中見出し］章［＃中見出し終わり］後\n乙［＃ここで斜体終わり］外"))
+        heading (first (elements result "head"))]
+    (is (= ["章"] (texts result "head")))
+    (is (= "2" (attribute heading "n")))
+    (is (= ["前甲" "後" "乙外"] (texts result "p")))
+    (is (= ["甲" "章" "後" "乙"]
+           (mapv view/visible-text (filter #(= "italic" (attribute % "rend")) (elements result "hi")))))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
 (deftest typography-scope-retains-a-normal-heading-between-source-paragraphs
   (let [result (transcribe (source (str "前\n［＃ここから１段階小さな文字］\n"
                                         "第一段落\n［＃中見出し］章《しょう》［＃中見出し終わり］\n"
@@ -346,15 +366,23 @@
 (deftest quoted-variants-do-not-create-body-ruby-or-gaiji
   (doseq [[body plain expected-ruby raw]
           [["煖爐《ストーブ》には［＃「煖爐《ストーブ》には」は底本では「煖燼《ストーブ》には」］、後。"
-            "煖爐には、後。" ["煖爐"] "「煖爐《ストーブ》には」は底本では「煖燼《ストーブ》には」"]
+            "煖爐には、後。" ["煖爐"] nil]
            ["目［＃「※［＃「目＋旬」、第3水準1-88-80］《めくば》せを」は底本では「※［＃「目＋句」、第4水準2-81-91］《めくば》せを」］後。"
             "目後。" [] "「※［＃「目＋旬」、第3水準1-88-80］《めくば》せを」は底本では「※［＃「目＋句」、第4水準2-81-91］《めくば》せを」"]]]
     (let [result (transcribe (source body))
           notes (filter #(#{"variant" "misc"} (attribute % "type")) (elements result "note"))]
       (is (= plain (:plaintext result)))
-      (is (= expected-ruby (texts result "rb")))
+      (is (= expected-ruby
+             (mapv view/visible-text
+                   (remove (fn [node]
+                             (loop [parent (.getParentNode ^Node node)]
+                               (cond (nil? parent) false
+                                     (= "rdg" (.getLocalName ^Node parent)) true
+                                     :else (recur (.getParentNode ^Node parent)))))
+                           (elements result "rb")))))
       (is (empty? (elements result "g")))
-      (is (= [(str "［＃" raw "］")] (mapv #(.getTextContent ^Node %) notes))))))
+      (is (= (if raw [(str "［＃" raw "］")] []) (mapv #(.getTextContent ^Node %) notes)))
+      (is (= (if raw [] ["煖燼には"]) (texts result "rdg"))))))
 
 (deftest shared-left-underline-preserves-ruby-and-decoration
   (let [result (transcribe (source "青空文庫《あおぞらぶんこ》［＃「青空文庫」の左に傍線］"))

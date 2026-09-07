@@ -76,6 +76,7 @@
         "anyOf":[{"required":["indent"]},{"required":["width"]},{"required":["offset_from_end"]},{"required":["align"]},{"required":["direction"]},{"required":["border"]},{"required":["page_placement"]},{"required":["typography"]},{"required":["role"]}],
         "additionalProperties": false,
         "properties": {
+          "source_span": {"$ref":"#/$defs/sourceSpan"},
           "typography": {"$ref":"#/$defs/layoutScope"},
           "role":{"enum":["caption","warichu"]},
           "node_range": { "$ref": "#/$defs/nodeRange", "description": "Half-open indices into nodes, delimiting one enclosing source layout scope independently of heading and paragraph roles." },

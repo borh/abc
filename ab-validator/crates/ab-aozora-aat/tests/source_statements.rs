@@ -6,7 +6,28 @@ use serde_json::Value;
 
 #[test]
 fn source_statements_preserve_assertion_kind_and_exact_marker() {
-    for (statement, kind) in [("「註」略", "omission"), ("未完", "incompleteness")] {
+    for (statement, kind) in [
+        ("「註」略", "omission"),
+        ("未完", "incompleteness"),
+        ("省略", "omission"),
+        ("Ａ、Ｂ、Ｃの図省略", "omission"),
+        ("図は省略", "omission"),
+        ("紙片の図、図省略", "omission"),
+        ("図省略", "omission"),
+        ("「年表」省略", "omission"),
+        ("「Ｂ圖」省略", "omission"),
+        ("王家の紙幣の図、図省略", "omission"),
+        ("図が入るが省略。底本43ページ", "omission"),
+        ("図が入るが省略。底本44ページ", "omission"),
+        (
+            "この後、改ページに続いて「VI.　文例」の章があるが、著作権の状態が不明なため、省略する。",
+            "omission",
+        ),
+        (
+            "目次のページ数および「解題（大内兵衛）」「追記」は省略しました",
+            "omission",
+        ),
+    ] {
         let marker = format!("［＃{statement}］");
         let source = format!("前{marker}後");
         assert_eq!(Document::new(source.as_str()).parse().to_source(), source);
@@ -36,7 +57,16 @@ fn source_statements_preserve_assertion_kind_and_exact_marker() {
 
 #[test]
 fn statement_like_prose_and_unknown_qualifiers_remain_distinct() {
-    for source in ["未完", "［＃未完のため省略］", "［＃「註」一部略］"] {
+    for source in [
+        "未完",
+        "［＃未完のため省略］",
+        "［＃「註」一部略］",
+        "［＃図を省略しない］",
+        "［＃図を省略する場合］",
+        "［＃「省略」とある］",
+        "［＃図省略か］",
+        "［＃図が入るが省略。底本不明ページ］",
+    ] {
         let aat: Value =
             serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
         assert!(

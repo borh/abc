@@ -982,7 +982,7 @@ pub(super) fn editorial_note_kind(body: &str) -> Option<DirectiveKind> {
         Some(DirectiveKind::BaseTextVariant)
     } else if is_editor_note_body(body) {
         Some(DirectiveKind::EditorNote)
-    } else if body == "「註」略" {
+    } else if is_omission_note_body(body) {
         Some(DirectiveKind::OmissionNote)
     } else if body == "未完" {
         Some(DirectiveKind::IncompletenessNote)
@@ -1003,6 +1003,28 @@ pub(super) fn editorial_note_kind(body: &str) -> Option<DirectiveKind> {
     } else {
         None
     }
+}
+
+fn is_omission_note_body(body: &str) -> bool {
+    matches!(
+        body,
+        "「註」略"
+            | "省略"
+            | "図省略"
+            | "図は省略"
+            | "Ａ、Ｂ、Ｃの図省略"
+            | "紙片の図、図省略"
+            | "王家の紙幣の図、図省略"
+            | "この後、改ページに続いて「VI.　文例」の章があるが、著作権の状態が不明なため、省略する。"
+            | "目次のページ数および「解題（大内兵衛）」「追記」は省略しました"
+    ) || body
+        .strip_prefix('「')
+        .and_then(|body| body.strip_suffix("」省略"))
+        .is_some_and(|label| !label.is_empty() && !label.contains(['「', '」']))
+        || body
+            .strip_prefix("図が入るが省略。底本")
+            .and_then(|body| body.strip_suffix("ページ"))
+            .is_some_and(|page| !page.is_empty() && page.bytes().all(|b| b.is_ascii_digit()))
 }
 
 /// Whether `body` is exactly a ruby-presence note `「X」にルビ` (whole body, `X`

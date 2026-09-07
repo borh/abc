@@ -664,6 +664,34 @@ fn a_witness_can_retain_an_unmapped_glyph_without_inventing_its_character() {
 }
 
 #[test]
+fn component_substitution_glyphs_remain_structured_witnesses() {
+    for description in [
+        "「闃」の「目」に代えて「自」",
+        "「贏」の「貝」に代えて「果」、（二）-27-3",
+    ] {
+        let marker = format!("※［＃{description}］");
+        let body = format!("字［＃「字」は底本では「{marker}」］");
+        let ir = convert(&body);
+        let all = nodes(&ir);
+        let app = all
+            .iter()
+            .find(|node| node["type"] == "base-text-variant")
+            .unwrap();
+        assert_eq!(app["text"], "字");
+        assert_eq!(app["variant"]["base_text"], "\u{fffc}");
+        let glyph = &app["variant"]["base_children"][0];
+        assert_eq!(glyph["type"], "gaiji");
+        assert!(glyph["gaiji"]["unicode"].is_null());
+        assert_eq!(glyph["span"]["coordinate_system"], "witness_utf8");
+        let source = format!("題\n作者\n\n{body}\n\n底本：本\n");
+        let start = usize::try_from(glyph["source_span"]["start"].as_u64().unwrap()).unwrap();
+        let end = usize::try_from(glyph["source_span"]["end"].as_u64().unwrap()).unwrap();
+        assert_eq!(&source[start..end], marker);
+        assert_eq!(ir["interpretation_problems"], json!([]));
+    }
+}
+
+#[test]
 fn unknown_witness_directives_and_unknown_target_glyphs_are_not_inferred() {
     for body in [
         "字［＃「字」は底本では「字［＃未知の意味］」］",

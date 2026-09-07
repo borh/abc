@@ -124,3 +124,14 @@ proptest! {
         );
     }
 }
+
+#[test]
+fn supplied_component_substitutions_keep_their_source_spelling() {
+    for source in [
+        "※［＃「闃」の「目」に代えて「自」］",
+        "※［＃「贏」の「貝」に代えて「果」、（二）-27-3］",
+    ] {
+        assert_eq!(round_trip(source), source);
+        assert!(fixed_point(source));
+    }
+}

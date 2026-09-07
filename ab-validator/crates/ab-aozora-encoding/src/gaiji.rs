@@ -479,6 +479,21 @@ pub fn parse_gaiji_body(body: &str) -> GaijiBody<'_> {
     }
 }
 
+/// A complete source-stated component substitution describes a glyph even
+/// when the source supplies no character code or page reference.
+fn is_substitution_description(description: &str) -> bool {
+    fn quoted(input: &str) -> Option<&str> {
+        let (content, rest) = input.strip_prefix('「')?.split_once('」')?;
+        (!content.is_empty() && !content.contains(['「', '［', '］'])).then_some(rest)
+    }
+    quoted(description)
+        .and_then(|rest| rest.strip_prefix("の"))
+        .and_then(quoted)
+        .and_then(|rest| rest.strip_prefix("に代えて"))
+        .and_then(quoted)
+        .is_some_and(str::is_empty)
+}
+
 /// Whether a gaiji `description` can be kept (it both serializes and
 /// round-trips); otherwise the bracket falls through to a plain directive.
 ///
@@ -487,8 +502,8 @@ pub fn parse_gaiji_body(body: &str) -> GaijiBody<'_> {
 ///     bare `［＃` outside the directive wrapper, violating the Tier A canary),
 ///     and
 ///   - a description carrying structural `「…」` quotes without a trailing
-///     `、mencode` anchor (the anchor is what marks the body as a glyph
-///     reference rather than a directive quoting text). Anchored forms are
+///     `、mencode` anchor or a complete component-substitution statement
+///     (these distinguish glyph descriptions from text quotations). Anchored forms are
 ///     kept VERBATIM — including editor quote typos with an orphan 「 or 」
 ///     (`くさかんむり／（月＋曷）」、第3水準…`) — so serialization reproduces
 ///     the source bytes and the reference stays resolvable.
@@ -498,7 +513,7 @@ pub fn gaiji_description_serializable(description: &str, has_mencode: bool) -> b
         return false;
     }
     if description.contains(['「', '」']) {
-        return has_mencode;
+        return has_mencode || is_substitution_description(description);
     }
     true
 }
@@ -512,23 +527,20 @@ pub fn gaiji_description_serializable(description: &str, has_mencode: bool) -> b
 /// Returns the parsed [`GaijiBody`] iff the body is a gaiji; `None` for a
 /// plain directive (e.g. `改ページ`). A gaiji needs a non-empty description and
 /// either the simple `「…」`-quoted form, a trailing mencode anchor, *or* a bare
-/// description that is itself a known dictionary entry (the corpus form
-/// `※［＃二重かっこ開く］`); the description must round-trip
+/// description that is a complete component substitution or known dictionary
+/// entry (for example `※［＃二重かっこ開く］`); the description must round-trip
 /// ([`gaiji_description_serializable`]).
 #[must_use]
 pub fn recognize_gaiji_body(body: &str) -> Option<GaijiBody<'_>> {
     let parsed = parse_gaiji_body(body);
-    // A bare body (no `「」` quotes, no mencode anchor) is normally an ordinary
-    // directive — `改ページ`, `ここから2字下げ` — not a glyph reference, so it is
-    // gated out. The exception is a description that is *itself* a known
-    // dictionary entry (e.g. the corpus form `※［＃二重かっこ開く］`): an
-    // unanchored but unambiguous glyph reference that resolves directly. Gating
-    // on dictionary membership keeps real directives out while admitting these.
+    // Unanchored descriptions need an explicit glyph construction or a known
+    // glyph name; arbitrary quoted directives remain outside this contract.
     let bare_unanchored = !parsed.quoted && parsed.mencode.is_none();
-    let bare_resolvable = DESCRIPTION_TO_CHAR.contains_key(parsed.description)
-        || roman_numeral_glyph(parsed.description).is_some();
+    let bare_glyph_description = DESCRIPTION_TO_CHAR.contains_key(parsed.description)
+        || roman_numeral_glyph(parsed.description).is_some()
+        || is_substitution_description(parsed.description);
     if parsed.description.is_empty()
-        || (bare_unanchored && !bare_resolvable)
+        || (bare_unanchored && !bare_glyph_description)
         || !gaiji_description_serializable(parsed.description, parsed.mencode.is_some())
     {
         return None;
@@ -707,7 +719,7 @@ pub fn is_mencode_shaped(s: &str) -> bool {
 
 /// Whether `s` is a canonical 底本ページ-行 reference — `-`-joined parts, each
 /// a digit run, a 上 / 中 / 下 column marker, or a volume marker
-/// (`144-上-9`, `372-10`, `7巻-42-下-10`).
+/// (`144-上-9`, `372-10`, `7巻-42-下-10`, `（二）-27-3`).
 ///
 /// This is the strict form the description-anchored gaiji rely on (a
 /// `小書き片仮名ン、500-下-19` glyph carries only this provenance tail with no
@@ -720,6 +732,15 @@ pub fn is_page_line_shaped(s: &str) -> bool {
 
 /// One `-`-separated component of a canonical 底本ページ-行 reference.
 fn is_page_line_part(p: &str) -> bool {
+    if let Some(volume) = p.strip_prefix('（').and_then(|s| s.strip_suffix('）')) {
+        return !volume.is_empty()
+            && volume.chars().all(|c| {
+                matches!(
+                    c,
+                    '一' | '二' | '三' | '四' | '五' | '六' | '七' | '八' | '九' | '十'
+                )
+            });
+    }
     if let Some(volume) = p.strip_suffix('巻') {
         return matches!(volume, "上" | "中" | "下" | "前" | "後") || is_digit_run(volume);
     }
@@ -742,7 +763,8 @@ const COLUMN_MARKERS: [&str; 6] = ["上段", "中段", "下段", "上", "中", "
 /// deliberately *not* accepted — it is a 段組 directive operand, not a
 /// page-line part.
 fn is_near_miss_page_line_shaped(s: &str) -> bool {
-    !s.is_empty() && s.split(['-', '－']).all(is_near_miss_page_line_part)
+    is_page_line_shaped(s)
+        || (!s.is_empty() && s.split(['-', '－']).all(is_near_miss_page_line_part))
 }
 
 /// One separator-separated component of a near-miss 底本ページ-行 reference.
@@ -1230,6 +1252,30 @@ mod tests {
             &src[res[1].start..res[1].end],
             "［＃「木＋吶のつくり」、第3水準1-85-54］"
         );
+    }
+
+    #[test]
+    fn substitution_descriptions_keep_unknown_glyph_identity() {
+        for body in [
+            "「闃」の「目」に代えて「自」",
+            "「贏」の「貝」に代えて「果」、（二）-27-3",
+            "「壼」の「亞」に代えて「亜」、53-下-13",
+        ] {
+            let parsed = recognize_gaiji_body(body)
+                .unwrap_or_else(|| panic!("explicit glyph substitution: {body}"));
+            assert!(gaiji_description_serializable(
+                parsed.description,
+                parsed.mencode.is_some()
+            ));
+        }
+        for body in [
+            "「闃」の「目」に代えて「自」らしい",
+            "「闃」の「」に代えて「自」",
+            "「闃」の「目」に代えて自",
+            "「本文」は底本では「別文」",
+        ] {
+            assert!(recognize_gaiji_body(body).is_none(), "{body}");
+        }
     }
 
     #[test]

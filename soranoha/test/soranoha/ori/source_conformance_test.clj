@@ -68,6 +68,21 @@
     (is (= "人口の表\n年次／出生／死亡\n一七五七年／八一八七八／六九〇五四" (:plaintext result)))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
 
+(deftest table-scope-alias-preserves-literal-lines
+  (let [result (transcribe (source "［＃ここから表組］\nbeat\tbutu\nlaugh\twalahu\n［＃ここで表組終わり］"))
+        table (first (filter #(= "table" (attribute % "type")) (elements result "div")))]
+    (is (some? table))
+    (is (= ["beat\tbutu" "laugh\twalahu"] (texts result "p")))
+    (is (= "beat\tbutu\nlaugh\twalahu" (:plaintext result)))
+    (is (= "beat\tbutu\n\nlaugh\twalahu" (projection/markdown (:view result))))
+    (is (empty? (elements result "cell")))
+    (is (empty? (get-in result [:ir "interpretation_problems"]))))
+  (doseq [body ["［＃ここから表組］\n甲"
+                "［＃ここから表組、不明］\n甲\n［＃ここで表組終わり］"]]
+    (let [result (transcribe (source body))]
+      (is (not-any? #(= "table" (attribute % "type")) (elements result "div")))
+      (is (seq (get-in result [:ir "interpretation_problems"]))))))
+
 (deftest supplied-columns-retain-only-explicit-column-breaks
   (doseq [[body count text] [["甲乙" 0 "甲乙"] ["甲［＃改段］乙" 1 "甲\n乙"]]]
     (let [result (transcribe (source (str "［＃ここから２段組み］\n" body "\n［＃ここで段組み終わり］")))]

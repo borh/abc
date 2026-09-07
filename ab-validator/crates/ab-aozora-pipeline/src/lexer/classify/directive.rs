@@ -327,7 +327,15 @@ static BODY_PATTERNS: &[BodyPattern] = &[
         family: BodyFamily::TableBlockOpen,
     },
     BodyPattern {
+        needle: "ここから表組",
+        family: BodyFamily::TableBlockOpen,
+    },
+    BodyPattern {
         needle: "ここで表終わり",
+        family: BodyFamily::TableBlockEnd,
+    },
+    BodyPattern {
+        needle: "ここで表組終わり",
         family: BodyFamily::TableBlockEnd,
     },
     BodyPattern {

@@ -225,14 +225,13 @@ impl SourceRegions {
 /// (テキスト中に現れる記号について / 《》：ルビ / ［＃］：入力者注). Dash-runs used as scene or
 /// poem dividers carry no legend and leave the body uncut. With no separators,
 /// a two-line title/author header followed by a blank line is recognized only
-/// when a bibliographic tail is present.
+/// when a source tail boundary is present.
 ///
-/// Tail: the terminal-provenance trailer is the line whose
-/// (indent-trimmed) start is `底本：`; trailing blank lines before it are
-/// trimmed off the body end, and the tail start is the `底本：` line
-/// itself. A mid-line occurrence (翻訳の底本：) is body text. When no
-/// `底本：` line exists, both the body end and the tail start are
-/// `source.len()`.
+/// Tail starts at an indent-trimmed `底本：` line or a standalone
+/// `［＃本文終わり］` marker, allowing surrounding whitespace. The boundary
+/// line remains in the tail; preceding line endings are trimmed from the body.
+/// Prose mentions and `翻訳の底本：` alone do not establish a boundary.
+/// Without a boundary, both body end and tail start are `source.len()`.
 #[must_use]
 pub fn aozora_body_range(source: &str) -> (core::ops::Range<usize>, usize) {
     let mut separators = Vec::new();
@@ -268,7 +267,7 @@ pub fn aozora_body_range(source: &str) -> (core::ops::Range<usize>, usize) {
     let mut tail_start = source.len();
     let mut cursor = body_start;
     for line in source[body_start..].split_inclusive('\n') {
-        if line.trim_start().starts_with("底本：") {
+        if starts_source_tail(line) {
             body_end = source[..cursor].trim_end_matches(['\n', '\r']).len();
             tail_start = cursor;
             break;
@@ -279,8 +278,12 @@ pub fn aozora_body_range(source: &str) -> (core::ops::Range<usize>, usize) {
     (body_start..body_end, tail_start)
 }
 
+fn starts_source_tail(line: &str) -> bool {
+    line.trim_start().starts_with("底本：") || line.trim() == "［＃本文終わり］"
+}
+
 /// A separator-free Aozora header has exactly two nonempty title/author
-/// lines followed by a blank line. Require a bibliographic tail so isolated
+/// lines followed by a blank line. Require a source tail boundary so isolated
 /// body snippets retain their first lines.
 fn plain_title_author_header_end(source: &str) -> usize {
     let mut lines = source.split_inclusive('\n');
@@ -292,7 +295,7 @@ fn plain_title_author_header_end(source: &str) -> usize {
         || !blank.trim().is_empty()
         || title.contains(['［', '］'])
         || author.contains(['［', '］'])
-        || !source.lines().any(|line| line.starts_with("底本："))
+        || !source.lines().any(starts_source_tail)
     {
         return 0;
     }

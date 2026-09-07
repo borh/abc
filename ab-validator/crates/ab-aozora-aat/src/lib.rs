@@ -67,14 +67,10 @@ pub struct DecodedSource {
     /// BEFORE the parse; the parse of rewritten text cannot rediscover
     /// them. Spans are full-sanitized-text byte offsets.
     pub sanitize_diagnostics: Vec<AozoraSanitizeDiagnostic>,
-    /// The tail of the SANITIZED text from the `底本：` line onward
-    /// (`aozora_body_range`'s tail-start line, NOT its trailing-blank-
-    /// trimmed `body_end` — blank lines between the last body content and
-    /// the `底本：` line belong to neither the body nor a real tail line,
-    /// so anchoring on the line itself is the only choice that doesn't
-    /// silently drop or duplicate those blanks). Empty when the work has
-    /// no `底本：` line at all (`aozora_body_range` returns
-    /// `source.len()` as the tail start in that case).
+    /// Sanitized source apparatus from `aozora_body_range`'s tail-start line,
+    /// including an explicit body-end marker when present. Starts at the
+    /// boundary line rather than the preceding blank lines trimmed from the
+    /// body. Empty when no source tail boundary is recognized.
     pub sanitized_tail: String,
     /// Byte offset of `sanitized_tail`'s start within the full SANITIZED
     /// text (same coordinate system `sanitize_diagnostics` spans use —
@@ -898,7 +894,7 @@ enum TailState {
     Colophon,
 }
 
-const PROVENANCE_HEADS: [&str; 2] = ["底本：", "底本の親本："];
+const PROVENANCE_HEADS: [&str; 3] = ["底本：", "底本の親本：", "翻訳の底本："];
 
 const COLOPHON_HEADS: [&str; 4] = ["入力：", "校正：", "青空文庫作成ファイル：", "※"];
 
@@ -914,6 +910,11 @@ fn classify_tail(lines: &[&str]) -> (Vec<TailLineClass>, Vec<usize>) {
         let stripped = line.trim();
         if stripped.is_empty() {
             classes.push(TailLineClass::Blank);
+            continue;
+        }
+        if stripped == "［＃本文終わり］" {
+            state = Some(TailState::Colophon);
+            classes.push(TailLineClass::Colophon);
             continue;
         }
         if PROVENANCE_HEADS

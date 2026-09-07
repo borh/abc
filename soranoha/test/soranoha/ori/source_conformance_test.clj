@@ -1294,3 +1294,15 @@
     (is (= [[0 12]] (:view/eligible-spans (:view result))))
     (doseq [profile [:projection/plaintext :projection/markdown]]
       (is (= "limited" (get (projection/report profile (:view result)) "status"))))))
+
+(deftest supplied-formula-purpose-preserves-indentation-and-physical-lines
+  (let [result (transcribe (source "前。\n［＃ここから５字下げ、ここから数式］\nW(r,t) = x2［＃「2」は上付き小文字］\ny = 1\n［＃ここで字下げ終わり、ここで数式終わり］\n後。"))
+        formula (first (filter #(= "formula" (attribute % "type")) (elements result "div")))
+        indentation (first (filter #(= "div" (view/local-name %)) (view/children formula)))
+        paragraphs (filter #(= "p" (view/local-name %)) (view/children indentation))]
+    (is (some? formula))
+    (is (= "padding-inline-start: 5em" (attribute indentation "style")))
+    (is (= ["W(r,t) = x2" "y = 1"] (mapv view/visible-text paragraphs)))
+    (is (= "前。\nW(r,t) = x2\ny = 1\n後。" (:plaintext result)))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))
+    (is (= 2 (count (filter #(= "formula" (get % "kind")) (get-in result [:ir "interpretation_facts"])))))))

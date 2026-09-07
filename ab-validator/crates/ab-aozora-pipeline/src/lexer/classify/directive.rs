@@ -137,6 +137,8 @@ enum BodyFamily {
     IndentBlockEnd,      // ここで字下げ終わり
     AlignEndBlockEnd,    // ここで地付き終わり
     LineWidthBlockEnd,   // ここで字詰め終わり
+    FormulaBlockOpen,
+    FormulaBlockEnd,
     TableBlockOpen,      // ここから表
     TableBlockEnd,       // ここで表終わり
     HorizontalBlockOpen, // ここから横組み
@@ -245,6 +247,8 @@ const fn body_family_mode(family: BodyFamily) -> MatchMode {
         | BodyFamily::AlignEndBlock0
         | BodyFamily::AlignEndBlockEnd
         | BodyFamily::LineWidthBlockEnd
+        | BodyFamily::FormulaBlockOpen
+        | BodyFamily::FormulaBlockEnd
         | BodyFamily::TableBlockOpen
         | BodyFamily::TableBlockEnd
         | BodyFamily::HorizontalBlockOpen
@@ -349,6 +353,14 @@ static BODY_PATTERNS: &[BodyPattern] = &[
     BodyPattern {
         needle: "ここで字詰め終わり",
         family: BodyFamily::LineWidthBlockEnd,
+    },
+    BodyPattern {
+        needle: "ここから数式",
+        family: BodyFamily::FormulaBlockOpen,
+    },
+    BodyPattern {
+        needle: "ここで数式終わり",
+        family: BodyFamily::FormulaBlockEnd,
     },
     BodyPattern {
         needle: "ここから表",
@@ -1249,6 +1261,7 @@ pub(super) fn classify_annotation_body(
         BodyFamily::WarichuBlockEnd => Some((EmitKind::BlockClose(RegionClose::Warichu), None)),
         BodyFamily::IndentBlock1 => Some((
             EmitKind::BlockOpen(RegionFormat::Indent(IndentBlock {
+                purpose: None,
                 partial: None,
                 column_count: None,
                 amount: 1,
@@ -1271,15 +1284,13 @@ pub(super) fn classify_annotation_body(
             None,
         )),
         BodyFamily::IndentBlockEnd => {
-            // ここで字下げ終わり, optionally with a redundant compound tail
-            // `、{style}も終わり` (e.g. `…終わり、小さい活字も終わり`). The
-            // open payload is authoritative and the generic 字下げ終わり closes
-            // the whole stack, so any `、…も終わり` tail maps to the same generic
-            // close (it re-serializes to the canonical `ここで字下げ終わり`). A
-            // non-`、` tail is not this family → decline to Unknown.
+            // Formula has an independent endpoint, beyond matching the indentation family.
             let tail = &body[match_end..];
+            let purpose =
+                (tail == "、ここで数式終わり").then_some(ab_aozora_syntax::BlockPurpose::Formula);
             (tail.is_empty() || (tail.starts_with('、') && tail.ends_with("終わり"))).then_some((
                 EmitKind::BlockClose(RegionClose::Indent {
+                    purpose,
                     amount: None,
                     kumi_width: None,
                     styles: BlockStyles::EMPTY,
@@ -1303,6 +1314,7 @@ pub(super) fn classify_annotation_body(
             }) {
                 return Some((
                     EmitKind::BlockClose(RegionClose::Indent {
+                        purpose: None,
                         amount: None,
                         kumi_width: None,
                         styles,
@@ -1323,6 +1335,7 @@ pub(super) fn classify_annotation_body(
                 .map(|w| {
                     (
                         EmitKind::BlockClose(RegionClose::Indent {
+                            purpose: None,
                             amount: None,
                             kumi_width: Some(LineWidth(w)),
                             styles: BlockStyles::EMPTY,
@@ -1331,6 +1344,8 @@ pub(super) fn classify_annotation_body(
                     )
                 })
         }
+        BodyFamily::FormulaBlockOpen => Some((EmitKind::BlockOpen(RegionFormat::Formula), None)),
+        BodyFamily::FormulaBlockEnd => Some((EmitKind::BlockClose(RegionClose::Formula), None)),
         BodyFamily::TableBlockOpen => Some((EmitKind::BlockOpen(RegionFormat::Table), None)),
         BodyFamily::TableBlockEnd => Some((EmitKind::BlockClose(RegionClose::Table), None)),
         BodyFamily::HorizontalBlockOpen => Some((
@@ -1361,6 +1376,7 @@ pub(super) fn classify_annotation_body(
             {
                 return Some((
                     EmitKind::BlockClose(RegionClose::Indent {
+                        purpose: None,
                         amount: Some(amount),
                         kumi_width: None,
                         styles: BlockStyles::EMPTY,
@@ -1455,6 +1471,7 @@ pub(super) fn classify_annotation_body(
             let (m, tail) = parse_decimal_u8_prefix(after)?;
             (tail == "字下げ").then_some((
                 EmitKind::BlockOpen(RegionFormat::Indent(IndentBlock {
+                    purpose: None,
                     partial: None,
                     column_count: None,
                     amount: 0,
@@ -1487,6 +1504,7 @@ pub(super) fn classify_annotation_body(
                 let (m, tail2) = parse_indent_count_prefix(after)?;
                 return (tail2 == "字下げ").then_some((
                     EmitKind::BlockOpen(RegionFormat::Indent(IndentBlock {
+                        purpose: None,
                         partial: None,
                         column_count: None,
                         amount: 0,
@@ -1505,6 +1523,7 @@ pub(super) fn classify_annotation_body(
             if tail == "字下げ" {
                 Some((
                     EmitKind::BlockOpen(RegionFormat::Indent(IndentBlock {
+                        purpose: None,
                         partial: None,
                         column_count: None,
                         amount: n,
@@ -2049,7 +2068,8 @@ fn parse_indent_compound(
     source: &AnnotationBody<'_>,
     alloc: &mut Allocator,
 ) -> Option<IndentBlock> {
-    let mut block = IndentBlock {
+    let initial = IndentBlock {
+        purpose: None,
         partial: None,
         column_count: None,
         amount,
@@ -2060,6 +2080,7 @@ fn parse_indent_compound(
         layout: IndentLayout::None,
         styles: BlockStyles::EMPTY,
     };
+    let mut block = initial;
     let mut wrap = ClauseAxis::Absent;
     let mut align = ClauseAxis::Absent;
     let mut horizontal_align = ClauseAxis::Absent;
@@ -2068,19 +2089,10 @@ fn parse_indent_compound(
     let mut font = ClauseAxis::Absent;
     let mut frame = ClauseAxis::Absent;
     let mut columns = ClauseAxis::Absent;
+    let mut purpose = ClauseAxis::Absent;
     let mut clauses = Vec::new();
     for (segment, span) in source.clauses(after) {
-        let mut candidate = IndentBlock {
-            partial: None,
-            column_count: None,
-            amount,
-            wrap: None,
-            page_horizontal_center: false,
-            align: None,
-            end_offset: None,
-            layout: IndentLayout::None,
-            styles: BlockStyles::EMPTY,
-        };
+        let mut candidate = initial;
         let problem = if resolve_indent_segment(segment, &mut candidate).is_none() {
             // A second primary indentation value makes the container's own scope uncertain.
             if parse_decimal_u8_prefix(segment).is_some_and(|(_, tail)| tail == "字下げ") {
@@ -2090,6 +2102,9 @@ fn parse_indent_compound(
         } else {
             let mut problem = None;
             let conflicts = [
+                candidate
+                    .purpose
+                    .and_then(|value| purpose.observe(value, span)),
                 candidate.wrap.and_then(|value| wrap.observe(value, span)),
                 candidate.align.and_then(|value| align.observe(value, span)),
                 candidate
@@ -2144,6 +2159,7 @@ fn parse_indent_compound(
     block.styles.font = font.value();
     block.styles.frame = frame.value();
     block.column_count = columns.value();
+    block.purpose = purpose.value();
     if !clauses.is_empty() {
         block.partial = Some(alloc.partial_layout(source.text, clauses));
     }
@@ -2200,6 +2216,10 @@ fn parse_column_compound(
 
 /// Interpret one independent `字下げ、` clause into a fresh candidate payload.
 fn resolve_indent_segment(segment: &str, block: &mut IndentBlock) -> Option<()> {
+    if segment == "ここから数式" {
+        block.purpose = Some(ab_aozora_syntax::BlockPurpose::Formula);
+        return Some(());
+    }
     if let Some((count, "段組" | "段組み")) = parse_decimal_u8_prefix(segment) {
         block.column_count = Some(ColumnCount(NonZeroU8::new(count)?));
         return Some(());

@@ -88,6 +88,8 @@
                   :families #{"indentation.basic" "indentation.jisage_block" "indentation.jisage_oneline"
                               "indentation.chitsuki" "indentation.jizume" "indentation.burasage" "layout.center_page" "layout.multicolumn"}
                   :aspects #{"layout"}}
+   "formula" {:markers #{"CommandFullwidth" "CommandAscii"}
+              :families #{"structure.formula"} :aspects #{"structure"}}
    "table" {:markers #{"CommandFullwidth" "CommandAscii"}
             :families #{"structure.table"} :aspects #{"structure" "layout"}}
    "layout-break" {:markers #{"CommandFullwidth" "CommandAscii"}
@@ -215,7 +217,7 @@
 (defn coverage-stage
   "Independent lexical oracle + parser IR -> explicit claim accounting."
   [clj-toolchain-id]
-  {:stage-id "interpretation-coverage" :stage-version "16" :toolchain-id clj-toolchain-id
+  {:stage-id "interpretation-coverage" :stage-version "17" :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob]} inputs]
         (let [input-bytes (into {} (map (fn [name] [name (blob (get inputs name))]))
                                 ["source-accountability" "parser-ir"])

@@ -851,7 +851,9 @@ fn expand_native_scopes(
     }
     let complete = pairs
         .iter()
-        .any(|pair| mem::discriminant(&pair.kind) == mem::discriminant(&original));
+        .any(|pair| mem::discriminant(&pair.kind) == mem::discriminant(&original))
+        && (!matches!(original, RegionFormat::Indent(block) if block.purpose.is_some())
+            || pairs.iter().any(|pair| pair.kind == RegionFormat::Formula));
     let mut ordered = pairs.clone();
     ordered.sort_by_key(|pair| pair.close);
     let mut result = Vec::with_capacity(ordered.len() + usize::from(!complete));
@@ -860,7 +862,8 @@ fn expand_native_scopes(
         projected.container_scope = Some(NativeScope {
             kind: pair.kind,
             end: pair.source_end,
-            marker_complete: complete,
+            marker_complete: complete
+                && (pair.kind != RegionFormat::Formula || node.layout_clauses.is_empty()),
         });
         if mem::discriminant(&pair.kind) != mem::discriminant(&original) {
             projected.layout_clauses.clear();
@@ -1443,6 +1446,7 @@ enum EstablishedInterpretation {
     EditorialNote,
     ExternalTableReference,
     LineLayout,
+    Formula,
     Table,
     LayoutBreak,
 }
@@ -1566,6 +1570,7 @@ impl EstablishedInterpretation {
             Self::EditorialNote => "editorial-note",
             Self::ExternalTableReference => "external-table-reference",
             Self::LineLayout => "line-layout",
+            Self::Formula => "formula",
             Self::Table => "table",
             Self::LayoutBreak => "layout-break",
         }
@@ -1574,7 +1579,9 @@ impl EstablishedInterpretation {
     fn aspects(self, node: &Value) -> &'static [&'static str] {
         match self {
             Self::AnnotatedText if node["position"].as_str().is_none() => &["content", "structure"],
-            Self::Exponent | Self::Translation | Self::ExternalTableReference => &["structure"],
+            Self::Exponent | Self::Translation | Self::ExternalTableReference | Self::Formula => {
+                &["structure"]
+            }
             Self::Ruby | Self::GaijiRuby | Self::TextVariant | Self::EditorialNote => {
                 &["content", "structure"]
             }
@@ -1656,6 +1663,13 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
             facts.extend(gaiji_ruby_facts(node));
         }
         if let Some(interpretation) = interpretation {
+            let interpretations = [
+                Some(interpretation),
+                font_formatting.then_some(EstablishedInterpretation::Emphasis),
+                layout_formatting.then_some(EstablishedInterpretation::Layout),
+                (node["kind"] == "layout_block" && node["role"] == "formula")
+                    .then_some(EstablishedInterpretation::Formula),
+            ];
             let mut spans = if node["kind"] == "kunten"
                 && let Some(markers) = node["interpretation_marker_spans"].as_array()
             {
@@ -1694,14 +1708,8 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
                     (span["byte_start"].as_u64(), span["byte_end"].as_u64())
                     && start < end
                 {
-                    facts.push(json!({"kind":interpretation.kind(), "outcome":"established", "aspects":interpretation.aspects(node),
-                        "source_span":{"start":start,"end":end,"line":span["line_start"],"coordinate_system":"decoded_utf8"}}));
-                    if font_formatting {
-                        facts.push(json!({"kind":"emphasis", "outcome":"established", "aspects":["layout"],
-                            "source_span":{"start":start,"end":end,"line":span["line_start"],"coordinate_system":"decoded_utf8"}}));
-                    }
-                    if layout_formatting {
-                        facts.push(json!({"kind":"layout", "outcome":"established", "aspects":["layout"],
+                    for interpretation in interpretations.into_iter().flatten() {
+                        facts.push(json!({"kind":interpretation.kind(), "outcome":"established", "aspects":interpretation.aspects(node),
                             "source_span":{"start":start,"end":end,"line":span["line_start"],"coordinate_system":"decoded_utf8"}}));
                     }
                 }
@@ -4961,6 +4969,9 @@ fn layout_fields(kind: &ProjectedKind) -> Option<Value> {
     let mut fields = json!({});
     match kind {
         ProjectedKind::Region(RegionFormat::Indent(block)) => {
+            if block.purpose.is_some() {
+                fields["role"] = json!("formula");
+            }
             if let Some(columns) = block.column_count {
                 fields["column_count"] = json!(columns.0.get());
             }
@@ -4999,6 +5010,7 @@ fn layout_fields(kind: &ProjectedKind) -> Option<Value> {
             });
         }
         ProjectedKind::Region(RegionFormat::Table) => fields["role"] = json!("table"),
+        ProjectedKind::Region(RegionFormat::Formula) => fields["role"] = json!("formula"),
         ProjectedKind::Region(RegionFormat::Columns(block)) => {
             fields["column_count"] = json!(block.count.0.get());
             if block.column_rule {
@@ -5129,6 +5141,7 @@ fn region_formatting_close(close: RegionClose) -> Option<(String, Option<Value>)
             RegionClose::Horizontal => "yokogumi",
             RegionClose::Warichu => "warichu",
             RegionClose::BanknoteTranslation => "banknote-translation",
+            RegionClose::Formula => "formula",
             RegionClose::Caption(CaptionScope::FigureExplanationBelow) => "figure-explanation",
             RegionClose::Caption(_) => "caption",
             RegionClose::Bouten { kind, position } => {

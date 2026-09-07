@@ -23,7 +23,7 @@
       "allOf":[{"if":{"properties":{"anchor_kind":{"const":"text"}}},"then":{"required":["offset_chars"]},"else":{"not":{"required":["offset_chars"]}}}]
     },
 
-    "interpretationFact": {"type":"object","additionalProperties":false,"required":["kind","outcome","aspects","source_span"],"properties":{"kind":{"enum":["ruby","gaiji","gaiji-ruby","iteration-mark","supplied-diacritic","illustration","baseline-position","exponent","emphasis","warichu","kunten","heading","caption","translation","text-variant","annotated-text","layout","editorial-note","line-layout","table","layout-break","external-table-reference"]},"outcome":{"const":"established"},"aspects":{"type":"array","minItems":1,"uniqueItems":true,"items":{"enum":["content","structure","layout"]}},"source_span":{"$ref":"#/$defs/sourceSpan"}}},
+    "interpretationFact": {"type":"object","additionalProperties":false,"required":["kind","outcome","aspects","source_span"],"properties":{"kind":{"enum":["ruby","gaiji","gaiji-ruby","iteration-mark","supplied-diacritic","illustration","baseline-position","exponent","emphasis","warichu","kunten","heading","caption","translation","text-variant","annotated-text","layout","editorial-note","line-layout","formula","table","layout-break","external-table-reference"]},"outcome":{"const":"established"},"aspects":{"type":"array","minItems":1,"uniqueItems":true,"items":{"enum":["content","structure","layout"]}},"source_span":{"$ref":"#/$defs/sourceSpan"}}},
     "span": {
       "type": "object",
       "required": ["line_start", "line_end", "byte_start", "byte_end"],
@@ -267,7 +267,7 @@
         "line_count": {"type":"integer","minimum":1},
         "column_count":{"type":"integer","minimum":1},
         "column_rule":{"const":true},
-        "role":{"const":"table"},
+        "role":{"enum":["table","formula"]},
         "page_placement": {"const":"horizontal-center"},
         "direction":{"enum":["horizontal","vertical"]},
         "relative_placement":{"$ref":"#/$defs/relativePlacement"},

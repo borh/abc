@@ -191,6 +191,7 @@ pub(crate) fn emit_container_open<W: Write>(
                 out.write_str("［＃横組みの下に、左右中央縦組みで］")
             }
         },
+        RegionFormat::Formula => out.write_str("［＃ここから数式］"),
         RegionFormat::BanknoteTranslation => out.write_str("［＃ここから紙幣の文字の訳文］"),
         RegionFormat::Table => out.write_str("［＃ここから表］"),
         RegionFormat::Horizontal(presentation) => match presentation.align {
@@ -240,6 +241,7 @@ pub(crate) fn emit_container_open<W: Write>(
 /// (the §7.6 param-drop bug class).
 fn emit_indent_open<W: Write>(block: IndentBlock, store: &NodeStore, out: &mut W) -> fmt::Result {
     let IndentBlock {
+        purpose,
         partial,
         column_count,
         amount,
@@ -264,7 +266,8 @@ fn emit_indent_open<W: Write>(block: IndentBlock, store: &NodeStore, out: &mut W
 
     // The idiomatic no-number `［＃ここから字下げ］` form is reserved for a bare
     // single-char indent with no clauses; anything else takes the numbered form.
-    let bare = column_count.is_none()
+    let bare = purpose.is_none()
+        && column_count.is_none()
         && wrap.is_none()
         && !page_horizontal_center
         && align.is_none()
@@ -301,6 +304,9 @@ fn emit_indent_open<W: Write>(block: IndentBlock, store: &NodeStore, out: &mut W
     }
     if let Some(columns) = column_count {
         write!(out, "、{}段組み", columns.0)?;
+    }
+    if purpose.is_some() {
+        out.write_str("、ここから数式")?;
     }
     emit_block_styles(styles, out)?;
     out.write_str("］")
@@ -370,6 +376,7 @@ pub(crate) fn emit_container_close<W: Write>(close: RegionClose, out: &mut W) ->
         RegionClose::Italic { padded: false } => out.write_str("［＃斜体終わり］"),
         RegionClose::Italic { padded: true } => out.write_str("［＃ここで斜体終わり］"),
         RegionClose::Indent {
+            purpose,
             amount,
             kumi_width,
             styles,
@@ -383,7 +390,11 @@ pub(crate) fn emit_container_close<W: Write>(close: RegionClose, out: &mut W) ->
                 write!(out, "、{}字組み", width.0)?;
             }
             emit_block_styles(styles, out)?;
-            out.write_str("終わり］")
+            out.write_str("終わり")?;
+            if purpose.is_some() {
+                out.write_str("、ここで数式終わり")?;
+            }
+            out.write_str("］")
         }
         RegionClose::LineWidth => out.write_str("［＃ここで字詰め終わり］"),
         // Level-less bare close (`ここで見出し終わり` / `見出し終わり`): the open
@@ -415,6 +426,7 @@ pub(crate) fn emit_container_close<W: Write>(close: RegionClose, out: &mut W) ->
             }
             out.write_str("段組み終わり］")
         }
+        RegionClose::Formula => out.write_str("［＃ここで数式終わり］"),
         RegionClose::BanknoteTranslation => out.write_str("［＃ここで訳文終わり］"),
         RegionClose::Table => out.write_str("［＃ここで表終わり］"),
         RegionClose::Horizontal => out.write_str("［＃ここで横組み終わり］"),

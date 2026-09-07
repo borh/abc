@@ -109,7 +109,7 @@ fn partial_clause_spans_remain_on_original_decoded_source() {
 
 #[test]
 fn supplied_unknown_clauses_do_not_erase_indentation() {
-    for (amount, clause) in [(3, "「甲」は返り点"), (5, "ここから数式")] {
+    for (amount, clause) in [(3, "「甲」は返り点"), (5, "ここから未対応の指定")] {
         let source =
             format!("［＃ここから{amount}字下げ、{clause}］\n本文\n［＃ここで字下げ終わり］");
         let aat: Value =

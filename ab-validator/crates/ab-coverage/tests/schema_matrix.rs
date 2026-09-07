@@ -2998,3 +2998,31 @@ fn single_glyph_predicates_do_not_classify_quoted_text_or_indentation() {
         );
     }
 }
+
+#[test]
+fn formula_scope_markers_are_distinct_from_illustration_descriptions() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    for source in [
+        "［＃ここから５字下げ、ここから数式］",
+        "［＃ここで字下げ終わり、ここで数式終わり］",
+    ] {
+        let summary = inventory_document("fixture", source, &patterns);
+        assert_eq!(summary.markers_total, 1);
+        assert_eq!(summary.row_counts["structure.formula"].occurrences, 1);
+        assert_eq!(
+            summary.row_counts["indentation.jisage_block"].occurrences,
+            1
+        );
+    }
+    for source in [
+        "［＃数式１（fig50328_02.png、横163×縦91）入る］",
+        "［＃「ここから数式」は太字］",
+    ] {
+        let summary = inventory_document("fixture", source, &patterns);
+        assert!(
+            !summary.row_counts.contains_key("structure.formula"),
+            "{source}"
+        );
+    }
+}

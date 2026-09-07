@@ -485,48 +485,64 @@ impl<'src> Normalizer<'src> {
                 }
             }
             SpanKind::BlockOpen(container) => {
-                if matches!(container, RegionFormat::Indent(_))
-                    && matches!(
-                        self.open_stack.last(),
-                        Some((_, RegionFormat::Indent(_), _))
-                    )
+                if let RegionFormat::Indent(mut indent) = *container
+                    && indent.purpose.take().is_some()
                 {
-                    let (open, kind, source_open) =
-                        self.open_stack.pop().expect("indent region is active");
-                    self.out.push_str("\n\n");
-                    let close = self.current_pos();
-                    self.out.push(BLOCK_CLOSE_SENTINEL);
-                    self.out.push_str("\n\n");
-                    // The normalized tree needs a close; source ownership belongs
-                    // only to the following opener, so no source node is invented.
-                    self.recorder
-                        .entries
-                        .push((close, NodeRef::BlockClose(RegionClose::of(kind))));
-                    self.container_pairs.push(ContainerPair {
-                        kind,
-                        open,
-                        close: NormalizedOffset::new(close),
-                        source_open,
-                        source_end: ContainerEnd::SourceReplacement(span.source_span),
+                    let source_nodes = self.recorder.source_nodes.len();
+                    self.emit_block_open(span.source_span, RegionFormat::Formula);
+                    self.emit_block_open(span.source_span, RegionFormat::Indent(indent));
+                    // One source marker owns both logical scopes; normalized entries remain separate.
+                    self.recorder.source_nodes.truncate(source_nodes);
+                    self.recorder.source_nodes.push(SourceNode {
+                        source_span: span.source_span,
+                        node: NodeRef::BlockOpen(*container),
                     });
+                } else {
+                    self.emit_block_open(span.source_span, *container);
                 }
-                let inline = container.is_inline();
-                if !inline {
-                    self.out.push_str("\n\n");
-                }
-                let pos = self.current_pos();
-                self.out.push(BLOCK_OPEN_SENTINEL);
-                if !inline {
-                    self.out.push_str("\n\n");
-                }
-                self.recorder
-                    .record_block_open(pos, span.source_span, *container);
-                self.open_stack
-                    .push((NormalizedOffset::new(pos), *container, span.source_span));
             }
             SpanKind::BlockCloses { .. } => unreachable!("shared source boundary handled above"),
             SpanKind::BlockClose(close) => self.emit_block_close(span.source_span, *close),
         }
+    }
+
+    fn emit_block_open(&mut self, source_span: Span, container: RegionFormat) {
+        if matches!(container, RegionFormat::Indent(_))
+            && matches!(
+                self.open_stack.last(),
+                Some((_, RegionFormat::Indent(_), _))
+            )
+        {
+            let (open, kind, source_open) = self.open_stack.pop().expect("indent region is active");
+            self.out.push_str("\n\n");
+            let close = self.current_pos();
+            self.out.push(BLOCK_CLOSE_SENTINEL);
+            self.out.push_str("\n\n");
+            // The normalized tree needs a close; source ownership belongs
+            // only to the following opener, so no source node is invented.
+            self.recorder
+                .entries
+                .push((close, NodeRef::BlockClose(RegionClose::of(kind))));
+            self.container_pairs.push(ContainerPair {
+                kind,
+                open,
+                close: NormalizedOffset::new(close),
+                source_open,
+                source_end: ContainerEnd::SourceReplacement(source_span),
+            });
+        }
+        let inline = container.is_inline();
+        if !inline {
+            self.out.push_str("\n\n");
+        }
+        let pos = self.current_pos();
+        self.out.push(BLOCK_OPEN_SENTINEL);
+        if !inline {
+            self.out.push_str("\n\n");
+        }
+        self.recorder.record_block_open(pos, source_span, container);
+        self.open_stack
+            .push((NormalizedOffset::new(pos), container, source_span));
     }
 
     fn replace_horizontal_for_label(&mut self, marker: Span) -> Option<Span> {
@@ -573,6 +589,33 @@ impl<'src> Normalizer<'src> {
 
     fn emit_block_close(&mut self, span: Span, close: RegionClose) {
         if let RegionClose::Indent {
+            purpose: Some(_),
+            amount,
+            kumi_width,
+            styles,
+        } = close
+        {
+            let indent = RegionClose::Indent {
+                purpose: None,
+                amount,
+                kumi_width,
+                styles,
+            };
+            let targets = [indent, RegionClose::Formula];
+            if self.open_stack.len() >= targets.len()
+                && self
+                    .open_stack
+                    .iter()
+                    .rev()
+                    .zip(targets)
+                    .all(|((_, open, _), end)| scope_closer_matches(*open, end))
+            {
+                self.emit_verified_closes(span, targets);
+                return;
+            }
+        }
+        if let RegionClose::Indent {
+            purpose,
             amount,
             kumi_width,
             mut styles,
@@ -591,6 +634,7 @@ impl<'src> Normalizer<'src> {
             && self.open_stack.len() >= 2
         {
             let indent = RegionClose::Indent {
+                purpose,
                 amount,
                 kumi_width,
                 styles,
@@ -803,6 +847,7 @@ pub(crate) fn scope_closer_matches(open: RegionFormat, close: RegionClose) -> bo
     if let (
         RegionFormat::Indent(block),
         RegionClose::Indent {
+            purpose,
             amount,
             kumi_width,
             styles,
@@ -812,7 +857,8 @@ pub(crate) fn scope_closer_matches(open: RegionFormat, close: RegionClose) -> bo
         let width_matches = kumi_width.is_none()
             || matches!(expected,
             RegionClose::Indent { kumi_width: expected_width, .. } if kumi_width == expected_width);
-        return amount.is_none_or(|supplied| supplied == block.amount)
+        return purpose.is_none_or(|supplied| Some(supplied) == block.purpose)
+            && amount.is_none_or(|supplied| supplied == block.amount)
             && width_matches
             && styles.iter_formats().all(|supplied| {
                 block.styles.iter_formats().any(|established| {

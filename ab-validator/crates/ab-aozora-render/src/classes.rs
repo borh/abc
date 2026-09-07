@@ -473,6 +473,7 @@ mod tests {
         // --- containers (open + close) ---
         let mut containers = vec![
             RegionFormat::Indent(IndentBlock {
+                purpose: None,
                 partial: None,
                 column_count: None,
                 amount: 2,
@@ -484,6 +485,7 @@ mod tests {
                 styles: BlockStyles::EMPTY,
             }),
             RegionFormat::Indent(IndentBlock {
+                purpose: None,
                 partial: None,
                 column_count: None,
                 amount: 2,
@@ -497,6 +499,7 @@ mod tests {
             // line-layout compounds — exercise the new line-kumi class
             // (字詰め reuses the standalone line-width class).
             RegionFormat::Indent(IndentBlock {
+                purpose: None,
                 partial: None,
                 column_count: None,
                 amount: 3,
@@ -508,6 +511,7 @@ mod tests {
                 styles: BlockStyles::EMPTY,
             }),
             RegionFormat::Indent(IndentBlock {
+                purpose: None,
                 partial: None,
                 column_count: None,
                 amount: 8,
@@ -522,6 +526,7 @@ mod tests {
             // classes (futoji / yokogumi / keigakomi / font-smaller) on one
             // indent `<div>`.
             RegionFormat::Indent(IndentBlock {
+                purpose: None,
                 partial: None,
                 column_count: None,
                 amount: 4,

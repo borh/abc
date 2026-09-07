@@ -365,6 +365,7 @@ pub(crate) fn render_container<W: Write>(
 fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::Result {
     match kind {
         RegionFormat::Indent(IndentBlock {
+            purpose,
             partial,
             column_count,
             amount,
@@ -380,6 +381,9 @@ fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::R
                 writer,
                 r#"<div class="aozora-container aozora-container-indent aozora-container-indent-{amount}"#,
             )?;
+            if purpose.is_some() {
+                writer.write_str(" aozora-formula")?;
+            }
             if wrap.is_some() {
                 writer.write_str(" aozora-container-wrap-indent")?;
             }
@@ -529,6 +533,7 @@ fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::R
                 r#"<div class="aozora-container" data-placement="below" style="writing-mode:{direction};text-align:{align}">"#
             )
         }
+        RegionFormat::Formula => writer.write_str(r#"<div class="aozora-container" data-purpose="formula">"#),
         RegionFormat::BanknoteTranslation => writer.write_str(r#"<div class="aozora-container" data-purpose="translation" data-source-kind="banknote-text">"#),
         RegionFormat::Table => {
             writer.write_str(r#"<div class="aozora-container aozora-container-table">"#)

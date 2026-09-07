@@ -22,7 +22,7 @@ fn empty_parse_serialises_to_canonical_envelope() {
 /// Scoped TCY changes container pairs without changing diagnostics or ruby pairs.
 #[test]
 fn envelope_versions_change_independently() {
-    assert_eq!(json::CONTAINER_PAIRS_SCHEMA_VERSION, 5);
+    assert_eq!(json::CONTAINER_PAIRS_SCHEMA_VERSION, 6);
     assert_eq!(json::DIAGNOSTICS_SCHEMA_VERSION, 3);
     assert_eq!(json::NODES_SCHEMA_VERSION, 3);
     assert_eq!(json::PAIRS_SCHEMA_VERSION, 3);

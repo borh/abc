@@ -201,6 +201,14 @@ pub enum IndentLayout {
     Kumi(Kumi),
 }
 
+/// Semantic purpose explicitly supplied for an indented source scope.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum BlockPurpose {
+    /// The source designates the enclosed text as a formula.
+    Formula,
+}
+
 /// Independent presentation attributes supplied on a block-layout opener.
 /// Fields remain `Copy` and project through the shared formatting identities.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -324,6 +332,8 @@ pub struct ColumnBlock {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct IndentBlock {
+    /// Supplied semantic purpose, independent of indentation and typography.
+    pub purpose: Option<BlockPurpose>,
     /// Original source and clauses interpreted separately from geometry.
     pub partial: Option<PartialLayoutId>,
     /// Supplied column count, independent of character indentation.
@@ -416,6 +426,8 @@ pub enum Format {
     Table,
     /// A supplied translation of banknote lettering.
     BanknoteTranslation,
+    /// Text explicitly designated as a formula.
+    Formula,
     /// 段組 (multi-column).
     Columns(ColumnCount),
     /// 割り注 (split annotation).
@@ -461,6 +473,7 @@ impl Format {
             Self::LineWidth => "lineWidth",
             Self::Table => "table",
             Self::BanknoteTranslation => "banknote-translation",
+            Self::Formula => "formula",
             Self::Columns(_) => "columns",
             Self::Warichu => "warichu",
             Self::Heading { .. } => "heading",
@@ -806,6 +819,8 @@ pub enum RegionFormat {
     Table,
     /// A supplied translation of banknote lettering.
     BanknoteTranslation,
+    /// Text explicitly designated as a formula.
+    Formula,
     /// 段組 block.
     Columns(ColumnBlock),
     /// 横組み block.
@@ -838,6 +853,7 @@ impl RegionFormat {
             Self::LineWidth(_) => Format::LineWidth,
             Self::Table => Format::Table,
             Self::BanknoteTranslation => Format::BanknoteTranslation,
+            Self::Formula => Format::Formula,
             Self::Columns(block) => Format::Columns(block.count),
             Self::Horizontal(presentation) => Format::Horizontal(presentation),
             Self::RelativePlacement(placement) => Format::RelativePlacement(placement),
@@ -868,6 +884,7 @@ impl RegionFormat {
             Self::Columns(_) => "columns",
             Self::Table => "table",
             Self::BanknoteTranslation => "banknote-translation",
+            Self::Formula => "formula",
             Self::Horizontal(_) => "horizontal",
             Self::RelativePlacement(_) => "relative-placement",
             Self::FontSize(_) => "fontSize",
@@ -895,6 +912,7 @@ impl RegionFormat {
             Self::Columns(_) => "columns",
             Self::Table => "table",
             Self::BanknoteTranslation => "banknote-translation",
+            Self::Formula => "formula",
             Self::Horizontal(_) => "horizontal",
             Self::RelativePlacement(_) => "relative-placement",
             Self::FontSize(_) => "font-size",
@@ -938,8 +956,9 @@ impl RegionFormat {
     /// the payload is irrelevant to the discriminant-only tag projections. Lets
     /// the wire-tag exhaustiveness test and the codegen enumerate the family
     /// list without a hand-maintained parallel.
-    pub const ALL: [Self; 19] = [
+    pub const ALL: [Self; 20] = [
         Self::Indent(IndentBlock {
+            purpose: None,
             partial: None,
             column_count: None,
             amount: 0,
@@ -974,6 +993,7 @@ impl RegionFormat {
         }),
         Self::Table,
         Self::BanknoteTranslation,
+        Self::Formula,
         Self::Horizontal(HorizontalPresentation { align: None }),
         Self::RelativePlacement(RelativePlacement::BelowHorizontal { anchor: None }),
         Self::FontSize(FontShift(NonZeroI8::MIN)),
@@ -1007,6 +1027,8 @@ pub enum RegionClose {
     /// `字下げ終わり`, or the `字下げ、{W}字組み終わり` compound (the close
     /// carries `W`, so the marker round-trips byte-exact).
     Indent {
+        /// Semantic purpose explicitly named by the closing marker.
+        purpose: Option<BlockPurpose>,
         /// Explicit indentation magnitude on the closing marker.
         amount: Option<u8>,
         /// The `W` of a `字組み終わり` compound; `None` for the generic
@@ -1066,6 +1088,8 @@ pub enum RegionClose {
     Table,
     /// A supplied translation of banknote lettering.
     BanknoteTranslation,
+    /// Text explicitly designated as a formula.
+    Formula,
     /// `横組み終わり`.
     Horizontal,
     /// `大きな文字終わり` (`larger`) / `小さな文字終わり`.
@@ -1092,6 +1116,7 @@ impl RegionClose {
     pub const fn of(region: RegionFormat) -> Self {
         match region {
             RegionFormat::Indent(block) => Self::Indent {
+                purpose: block.purpose,
                 amount: None,
                 styles: BlockStyles::EMPTY,
                 kumi_width: match block.layout {
@@ -1121,6 +1146,7 @@ impl RegionClose {
             RegionFormat::Columns(block) => Self::Columns(Some(block.count)),
             RegionFormat::Table => Self::Table,
             RegionFormat::BanknoteTranslation => Self::BanknoteTranslation,
+            RegionFormat::Formula => Self::Formula,
             RegionFormat::Horizontal(_) | RegionFormat::RelativePlacement(_) => Self::Horizontal,
             RegionFormat::FontSize(shift) => Self::FontSize {
                 larger: shift.larger(),
@@ -1151,6 +1177,7 @@ impl RegionClose {
             Self::Columns(_) => "columns",
             Self::Table => "table",
             Self::BanknoteTranslation => "banknote-translation",
+            Self::Formula => "formula",
             Self::Horizontal => "horizontal",
             Self::FontSize { .. } => "font-size",
             Self::SmallScript(_) => "small-script",
@@ -1266,6 +1293,7 @@ mod tests {
     #[test]
     fn region_close_indent_keeps_kumi_width() {
         let kumi = RegionFormat::Indent(IndentBlock {
+            purpose: None,
             partial: None,
             column_count: None,
             amount: 2,
@@ -1282,12 +1310,14 @@ mod tests {
         assert_eq!(
             RegionClose::of(kumi),
             RegionClose::Indent {
+                purpose: None,
                 amount: None,
                 kumi_width: Some(LineWidth(NonZeroU8::new(20).unwrap())),
                 styles: BlockStyles::EMPTY,
             }
         );
         let plain = RegionFormat::Indent(IndentBlock {
+            purpose: None,
             partial: None,
             column_count: None,
             amount: 2,
@@ -1301,6 +1331,7 @@ mod tests {
         assert_eq!(
             RegionClose::of(plain),
             RegionClose::Indent {
+                purpose: None,
                 amount: None,
                 kumi_width: None,
                 styles: BlockStyles::EMPTY

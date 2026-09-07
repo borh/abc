@@ -3709,3 +3709,46 @@ total_occurrences = 0
 detector_id = "source_translation_scope"
 coverage_basis = "not_run"
 sample_works = []
+
+[[syntax]]
+id = "structure.formula"
+priority = 2
+category = "structure"
+feature_keys = ["formula"]
+reference_sources = []
+source_examples = ["［＃ここから５字下げ、ここから数式］", "［＃ここで字下げ終わり、ここで数式終わり］"]
+source_patterns = ['［＃(?:[^］]*、)?ここから数式］', '［＃(?:[^］]*、)?ここで数式終わり］']
+ir_nodes = ["layout_blocks"]
+aat_nodes = ["layout_block"]
+tei_projection = "div[@type='formula']"
+plaintext_projection = "supplied text in source order"
+comparison_projection = "supplied text in source order"
+validation_properties = ["exact_scope", "paragraph_preservation"]
+adapter_expectations = ["retain supplied formula purpose without deriving a mathematical expression tree"]
+status = "partial"
+status_reason = "Source-owned compound formula and indentation scopes preserve supplied content; recognition of markers alone does not establish a complete scope."
+
+[syntax.parsers.aozora2]
+recognition = "unknown"
+
+[syntax.parsers.aozora-rs]
+recognition = "unknown"
+
+[syntax.parsers.aozora2html]
+recognition = "unknown"
+
+[syntax.adapters.aozora2]
+aat_fidelity = "unknown"
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "unknown"
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "unknown"
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "structure_formula"
+coverage_basis = "not_run"
+sample_works = []

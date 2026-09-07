@@ -514,6 +514,16 @@
       (is (empty? (elements result "figure")))
       (is (empty? (get-in result [:ir "interpretation_problems"]))))))
 
+(deftest generic-warichu-accepts-the-bare-closing-marker
+  (let [result (transcribe (source "前［＃ここから割り注］隱五年［＃割り注終わり］後"))
+        wrapper (first (filter #(= "warichu" (attribute % "type")) (elements result "seg")))]
+    (is (= "隱五年" (some-> wrapper view/visible-text)))
+    (is (= "前隱五年後" (:plaintext result)))
+    (is (= "前隱五年後" (projection/markdown (:view result))))
+    (is (= 2 (count (filter #(= "warichu" (get % "kind"))
+                           (get-in result [:ir "interpretation_facts"])))))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
 (deftest multiline-caption-and-warichu-preserve-source-paragraphs
   (doseq [[name role] [["キャプション" "caption"] ["割り注" "warichu"]]]
     (let [result (transcribe (source (str "前。\n［＃ここから" name "］\n第一。\n第二。\n［＃ここで" name "終わり］\n後。")))

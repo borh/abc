@@ -59,7 +59,7 @@
       (recur (.getParentNode node) style))))
 (defn- texts [result tag] (mapv view/visible-text (elements result tag)))
 
-(deftest unencoded-witness-glyph-remains-apparatus
+(deftest unmapped-witness-glyph-remains-apparatus
   (let [result (transcribe (source "貳朱《にしゅ》を［＃「貳朱を」は底本では「※［＃「弋＋頁」、74-10］朱を」］"))
         witness (first (elements result "rdg"))
         glyph (first (elements result "g"))]
@@ -83,6 +83,20 @@
       (is (= [supplied] (texts result "lem")))
       (is (= [witness] (texts result "rdg")))
       (is (empty? (get-in result [:ir "interpretation_problems"]))))))
+
+(deftest variant-subranges-preserve-enclosing-ruby-and-emphasis
+  (let [result (transcribe (source "蠣崎波響《かきざきはきやう》［＃ルビの「かきざき」は底本では「かきさき」］"))]
+    (is (= "蠣崎波響" (:plaintext result)))
+    (is (= ["蠣崎波響"] (texts result "rb")))
+    (is (= ["かきざきはきやう"] (texts result "rt")))
+    (is (= ["かきざき"] (texts result "lem")))
+    (is (= ["かきさき"] (texts result "rdg"))))
+  (let [result (transcribe (source "非買同盟は不可能である［＃「非買同盟は不可能である」に傍点］［＃「非買同盟は」は底本では「非賣同盟は」］"))
+        emphasis (first (elements result "hi"))]
+    (is (= "非買同盟は不可能である" (:plaintext result)))
+    (is (= ["非買同盟は"] (texts result "lem")))
+    (is (= "非買同盟は不可能である" (view/visible-text emphasis)))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))
 
 (deftest supplied-table-retains-lines-and-literal-separators
   (let [result (transcribe (source "［＃ここから表］\n人口の表\n年次／出生／死亡\n一七五七年／八一八七八／六九〇五四\n［＃ここで表終わり］"))

@@ -89,10 +89,10 @@ fn typed_witness_apparatus_does_not_hide_an_independent_target() {
 }
 
 #[test]
-fn unknown_apparatus_and_partial_rich_targets_remain_unresolved() {
+fn unknown_apparatus_and_ambiguous_rich_targets_remain_unresolved() {
     for body in [
         "字［＃「字」は未知の状態］［＃「字」は底本では「別」］",
-        "AB［＃「AB」は上付き小文字］［＃「B」は底本では「C」］",
+        "ABAB［＃「ABAB」は上付き小文字］［＃「B」は底本では「C」］",
     ] {
         let ir = convert(body);
         assert!(
@@ -126,11 +126,11 @@ fn ruby_variant_uses_the_nearest_reading_axis_without_consuming_okurigana() {
 }
 
 #[test]
-fn reading_target_does_not_cross_a_mismatch_line_or_rich_boundary() {
+fn reading_target_does_not_cross_a_mismatch_line_or_ambiguous_reading() {
     for body in [
         "過《あや》字《じ》［＃ルビの「あや」は底本では「なや」］",
         "過《あや》\nめ［＃ルビの「あや」は底本では「なや」］",
-        "弾正《だんじょうだいひつ》［＃ルビの「だんじょう」は底本では「だんじゅう」］",
+        "弾正《だんじょうだんじょう》［＃ルビの「だんじょう」は底本では「だんじゅう」］",
     ] {
         let ir = convert(body);
         assert!(
@@ -640,7 +640,7 @@ fn attributed_variants_preserve_qualified_editorial_wording() {
 }
 
 #[test]
-fn a_witness_can_retain_an_unencoded_glyph_without_inventing_its_character() {
+fn a_witness_can_retain_an_unmapped_glyph_without_inventing_its_character() {
     let body = "貳朱《にしゅ》を［＃「貳朱を」は底本では「※［＃「弋＋頁」、74-10］朱を」］";
     let ir = convert(body);
     let all = nodes(&ir);
@@ -749,4 +749,76 @@ fn unresolved_principal_glyph_occupies_one_placeholder_and_retains_its_descripti
         .find(|node| node["type"] == "text" && node["text"] == "後")
         .unwrap();
     assert_eq!(after["span"]["start"], 6);
+}
+
+#[test]
+fn unique_variant_subranges_preserve_their_immediate_container() {
+    for (body, current, base) in [
+        (
+            "非買同盟は不可能である［＃「非買同盟は不可能である」に傍点］［＃「非買同盟は」は底本では「非賣同盟は」］",
+            "非買同盟は",
+            "非賣同盟は",
+        ),
+        (
+            "AB［＃「AB」は上付き小文字］［＃「B」は底本では「C」］",
+            "B",
+            "C",
+        ),
+    ] {
+        let ir = convert(body);
+        let all = nodes(&ir);
+        let app = all
+            .iter()
+            .find(|node| node["type"] == "base-text-variant")
+            .unwrap();
+        assert_eq!(app["text"], current);
+        assert_eq!(app["variant"]["base_text"], base);
+        assert_eq!(ir["interpretation_problems"], json!([]));
+        if body.contains("傍点") || body.contains("上付き") {
+            let style = all.iter().find(|node| node["type"] == "emphasis").unwrap();
+            assert!(
+                nodes(style)
+                    .iter()
+                    .any(|node| node["type"] == "base-text-variant")
+            );
+        }
+    }
+    for body in [
+        "名刺と名刺を［＃「名刺」は底本では「名剌」］",
+        "名刺\n紙入を［＃「名刺」は底本では「名剌」］",
+        "名刺［＃未知の対象］紙入を［＃「名刺」は底本では「名剌」］",
+    ] {
+        let ir = convert(body);
+        assert!(
+            !nodes(&ir)
+                .iter()
+                .any(|node| node["type"] == "base-text-variant")
+        );
+        assert!(!ir["interpretation_problems"].as_array().unwrap().is_empty());
+    }
+}
+
+#[test]
+fn explicit_reading_subrange_keeps_the_complete_ruby_association() {
+    let body = "蠣崎波響《かきざきはきやう》［＃ルビの「かきざき」は底本では「かきさき」］";
+    let ir = convert(body);
+    let all = nodes(&ir);
+    let ruby = all.iter().find(|node| node["type"] == "ruby").unwrap();
+    assert_eq!(ruby["ruby"]["base"], "蠣崎波響");
+    assert_eq!(ruby["ruby"]["reading"], "かきざきはきやう");
+    let reading = nodes(&ruby["reading_children"]);
+    let app = reading
+        .iter()
+        .find(|node| node["type"] == "base-text-variant")
+        .unwrap();
+    assert_eq!(app["text"], "かきざき");
+    assert_eq!(app["variant"]["base_text"], "かきさき");
+    assert_eq!(app["span"]["coordinate_system"], "reading_utf8");
+    assert_eq!(app["span"]["end"], "かきざき".len());
+    let current = &app["inline_children"][0];
+    let start = usize::try_from(current["source_span"]["start"].as_u64().unwrap()).unwrap();
+    let end = usize::try_from(current["source_span"]["end"].as_u64().unwrap()).unwrap();
+    let source = format!("題\n作者\n\n{body}\n\n底本：本\n");
+    assert_eq!(&source[start..end], "かきざき");
+    assert_eq!(ir["interpretation_problems"], json!([]));
 }

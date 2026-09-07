@@ -3819,13 +3819,8 @@ fn resolve_text_variants_in_blocks(nodes: Vec<Value>, decoded: &DecodedSource) -
                     append_variant_statement(&mut resolved, &node);
                     continue;
                 }
-                if attach_principal_ruby_variant(
-                    &mut resolved,
-                    &node,
-                    current,
-                    &current_text,
-                    source,
-                ) {
+                if attach_principal_subrange(&mut resolved, &node, current, &current_text, decoded)
+                {
                     continue;
                 }
             }
@@ -3835,7 +3830,15 @@ fn resolve_text_variants_in_blocks(nodes: Vec<Value>, decoded: &DecodedSource) -
                 preceding_reading(&mut resolved)
             };
             if ruby.is_some_and(|ruby| {
-                attach_reading_variant(ruby, &node, current, &current_text, base, &base_text)
+                attach_reading_variant(
+                    ruby,
+                    &node,
+                    current,
+                    &current_text,
+                    base,
+                    &base_text,
+                    source,
+                )
             }) {
                 continue;
             }
@@ -3896,47 +3899,80 @@ fn attach_formatting_variant(style: &mut Value, note: &Value, source: &str) -> b
     let [text_node] = children.as_slice() else {
         return false;
     };
-    if text_node["kind"] != "text" {
-        return false;
-    }
-    let Some(start) = text_node["span"]["byte_start"]
-        .as_u64()
-        .and_then(|n| usize::try_from(n).ok())
+    let Some(content) = literal_node_variant_content(text_node, note, current, &target, source)
     else {
-        return false;
-    };
-    let Some(content) = literal_variant_content(
-        &text_node["span"],
-        &text,
-        start,
-        note,
-        current,
-        &target,
-        source,
-    ) else {
         return false;
     };
     style["content"] = json!(content);
     true
 }
 
-// A unique principal-letter range can carry an alternative inside one rb;
-// the associated ruby reading remains whole and owns its existing reading axis.
-fn attach_principal_ruby_variant(
+// Resolve only within the immediately preceding source container. Ruby-base
+// subranges preserve the associated complete reading on its independent axis.
+// Unscoped prose still requires an adjacent suffix, not a search through text.
+fn attach_principal_subrange(
     nodes: &mut [Value],
-    note: &Value,
+    annotation: &Value,
     current: &[Value],
     target: &str,
-    source: &str,
+    decoded: &DecodedSource,
 ) -> bool {
-    let Some(ruby) = adjacent_principal_ruby(nodes) else {
+    let Some(index) = nodes.iter().rposition(|node| {
+        node["kind"] != "editorial_note"
+            && !(node["kind"] == "raw" && node.get("text_variant").is_some())
+    }) else {
         return false;
     };
-    let Some(content) = principal_ruby_variant_content(ruby, note, current, target, source) else {
-        return false;
-    };
-    ruby["base_content"] = json!(content);
-    true
+    let node = &mut nodes[index];
+    match node["kind"].as_str() {
+        Some("ruby") => {
+            let Some(content) =
+                principal_ruby_variant_content(node, annotation, current, target, &decoded.text)
+            else {
+                return false;
+            };
+            node["base_content"] = json!(content);
+            true
+        }
+        Some(
+            "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi"
+            | "yokogumi" | "heading",
+        ) => {
+            let Some(children) = node["content"].as_array_mut() else {
+                return false;
+            };
+            let Some(text) = content_target_text(children) else {
+                return false;
+            };
+            if text.match_indices(target).count() != 1 {
+                return false;
+            }
+            if let Some(selected) =
+                take_visible_suffix_matching(children, target, decoded, Some(current))
+            {
+                let base_text = content_witness_text(
+                    annotation["text_variant"]["base_content"]
+                        .as_array()
+                        .expect("parsed witness content"),
+                )
+                .expect("interpreted witness content");
+                children.push(json!({"kind":"text-variant", "content":selected,
+                    "base_text":base_text, "base_content":annotation["text_variant"]["base_content"],
+                    "source":annotation["source"], "span":annotation["span"]}));
+                append_variant_statement(children, annotation);
+                return true;
+            }
+            if let Some(content) = children.last().and_then(|node| {
+                literal_node_variant_content(node, annotation, current, target, &decoded.text)
+            }) {
+                children.pop();
+                children.extend(content);
+                return true;
+            }
+            attach_principal_subrange(children, annotation, current, target, decoded)
+        }
+        _ => false,
+    }
 }
 
 fn principal_ruby_variant_content(
@@ -3993,6 +4029,9 @@ fn literal_variant_content(
         content.push(text_node(0, index));
     }
     let end = index + target.len();
+    if base[end..].contains(['\n', '\r']) {
+        return None;
+    }
     content.push(json!({"kind":"text-variant", "content":[text_node(index, end)],
         "base_text":content_witness_text(note["text_variant"]["base_content"].as_array()?)?,
         "base_content":note["text_variant"]["base_content"], "source":note["source"], "span":note["span"]}));
@@ -4001,6 +4040,28 @@ fn literal_variant_content(
         content.push(text_node(end, base.len()));
     }
     Some(content)
+}
+
+fn literal_node_variant_content(
+    node: &Value,
+    annotation: &Value,
+    current: &[Value],
+    target: &str,
+    source: &str,
+) -> Option<Vec<Value>> {
+    if node["kind"] != "text" {
+        return None;
+    }
+    let start = usize::try_from(node["span"]["byte_start"].as_u64()?).ok()?;
+    literal_variant_content(
+        &node["span"],
+        node["value"].as_str()?,
+        start,
+        annotation,
+        current,
+        target,
+        source,
+    )
 }
 
 fn append_variant_statement(content: &mut Vec<Value>, note: &Value) {
@@ -4035,6 +4096,7 @@ fn attach_reading_variant(
     current_text: &str,
     base: &[Value],
     base_text: &str,
+    source: &str,
 ) -> bool {
     if ruby["span"]["line_end"].as_u64().is_none()
         || ruby["span"]["line_end"] != note["span"]["line_start"]
@@ -4056,8 +4118,52 @@ fn attach_reading_variant(
     } else {
         ruby["reading"].as_str().unwrap_or("").to_owned()
     };
-    if reading.is_empty() || current_text != reading {
+    if reading.is_empty() {
         return false;
+    }
+    if current_text != reading {
+        if note["text_variant"]["target_kind"] != "ruby-reading"
+            || ruby.get("reading_content").is_some()
+        {
+            return false;
+        }
+        let Some(end) = ruby["span"]["byte_end"]
+            .as_u64()
+            .and_then(|n| usize::try_from(n).ok())
+        else {
+            return false;
+        };
+        let Some(reading_end) = end.checked_sub('》'.len_utf8()) else {
+            return false;
+        };
+        if source.get(reading_end..end) != Some("》") {
+            return false;
+        }
+        let Some(start) = reading_end.checked_sub(reading.len()) else {
+            return false;
+        };
+        let Some(ruby_start) = ruby["span"]["byte_start"]
+            .as_u64()
+            .and_then(|n| usize::try_from(n).ok())
+        else {
+            return false;
+        };
+        if start < ruby_start {
+            return false;
+        }
+        let Some(content) = literal_variant_content(
+            &ruby["span"],
+            &reading,
+            start,
+            note,
+            current,
+            current_text,
+            source,
+        ) else {
+            return false;
+        };
+        ruby["reading_content"] = json!(content);
+        return true;
     }
     if let Some(children) = ruby["reading_content"].as_array() {
         if !quoted_structure_matches(current, children) {

@@ -7,7 +7,7 @@ use std::{num::NonZeroU32, ops::Range};
 pub enum TextVariantTarget {
     /// The reading attached to a base character sequence.
     RubyReading,
-    /// Principal text.
+    /// An unqualified quotation, matched against principal text first.
     Text,
 }
 
@@ -45,7 +45,7 @@ fn split_attribution(body: &str, edition: EditionNoteKind) -> Option<(&str, &str
 /// A supplied reading or text and its explicitly stated base-text alternative.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TextVariant<'s> {
-    /// Which content sequence the note addresses.
+    /// Whether the source explicitly names the reading or leaves the target unqualified.
     pub target: TextVariantTarget,
     /// The spelling supplied in the Aozora text.
     pub current: &'s str,

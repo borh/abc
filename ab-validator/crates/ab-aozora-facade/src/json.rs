@@ -153,10 +153,9 @@ pub fn container_pair_entries(tree: &Tree<'_>) -> Vec<ContainerPair> {
 /// Each entry has the shape `{ canonical, family, accepts_param, doc,
 /// partner }`: `family` is the camelCase form of the
 /// [`crate::SlugFamily`] variant, `partner` is `null` for non-paired
-/// families. A static catalogue, independent of any parse — it powers
-/// editor completion menus for `［＃…］` annotations without
-/// re-implementing the table per driver (`aozora-wasm` / `aozora-py`
-/// both call this).
+/// families. The catalogue is independent of any parse. Consumers can
+/// use it to complete annotations without duplicating the parser's
+/// canonical spelling and pairing tables.
 #[cfg(feature = "json")]
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]

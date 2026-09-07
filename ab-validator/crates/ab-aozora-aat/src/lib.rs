@@ -601,7 +601,7 @@ fn rebase_spans(
     }
 }
 
-/// One wire diagnostics envelope (`{"data": […], "schemaVersion": 4}`)
+/// One wire diagnostics envelope (`{"data": […], "schemaVersion": 3}`)
 /// per input — the `--mode diagnostics` payload.
 ///
 /// Single owner of the diagnostics path: decoding,

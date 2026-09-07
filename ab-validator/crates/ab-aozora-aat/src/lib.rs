@@ -1466,10 +1466,10 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
                 content[index + 1..]
                     .iter()
                     .position(|item| {
-                        item["kind"] == "layout_break" && item["break_kind"] != "column"
-                            || matches!(
-                                item["x-source-marker-kind"].as_str(),
-                                Some("pageBreak" | "sectionBreak")
+                        item["kind"] == "layout_break"
+                            && matches!(
+                                item["break_kind"].as_str(),
+                                Some("page" | "kaicho" | "kaimihiraki")
                             )
                     })
                     .map(|offset| index + offset + 1)
@@ -1990,19 +1990,6 @@ fn inline_content_range(
     }
     if cursor < range.end {
         push_source_gap(&mut content, decoded, cursor, range.end);
-    }
-    if decoded.span_text[range].contains("［＃改ページ］")
-        && !content
-            .iter()
-            .any(|node| node.get("x-break-kind").and_then(Value::as_str) == Some("page"))
-    {
-        content.push(json!({
-            "kind": "raw",
-            "source": "［＃改ページ］",
-            "x-provenance": "source-derived",
-            "x-source-marker-kind": "pageBreak",
-            "x-break-kind": "page"
-        }));
     }
     // Assemble source paragraphs and enclosing block layouts before consuming
     // same-line formatting markers in pair_bare_toggles_in_blocks.

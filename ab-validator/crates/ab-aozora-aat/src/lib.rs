@@ -1769,8 +1769,9 @@ fn source_fragment(decoded: &DecodedSource, range: Range<usize>) -> Option<Vec<V
         }
         if let Some(end) = &mut node.container_end {
             let (ContainerEnd::ClosingMarker(span) | ContainerEnd::IndentReplacement(span)) = end;
-            span.start += range.start;
-            span.end += range.start;
+            let offset = u32::try_from(range.start).ok()?;
+            span.start = span.start.checked_add(offset)?;
+            span.end = span.end.checked_add(offset)?;
         }
         rebase_variant_spans(&mut node.kind, range.start);
     }

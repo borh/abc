@@ -31,7 +31,6 @@ const EXACT: &[(&str, &str)] = &[
     // Marker / synonym drift.
     ("黒丸傍点", "丸傍点"),
     ("中央寄せ", "中央揃え"),
-    ("改行を挿入", "改行"),
     ("斜体字", "斜体"),
     ("中中見出し", "中見出し"),
     // ゴチック → ゴシック体 (the parser recognises ゴシック体 as a first-class
@@ -242,7 +241,6 @@ pub const CATALOGUE_SAMPLES: &[&str] = &[
     "二字下げ終わり",
     "黒丸傍点",
     "中央寄せ",
-    "改行を挿入",
     "斜体字",
     "中中見出し",
     "３回り大きな文字",
@@ -346,10 +344,14 @@ mod tests {
     use super::*;
 
     #[test]
+    fn transcription_statement_is_not_rewritten_as_an_extra_break() {
+        assert_eq!(canonical_directive("改行を挿入"), None);
+    }
+
+    #[test]
     fn exact_maps_resolve() {
         assert_eq!(canonical_directive("斜体字").as_deref(), Some("斜体"));
         assert_eq!(canonical_directive("中央寄せ").as_deref(), Some("中央揃え"));
-        assert_eq!(canonical_directive("改行を挿入").as_deref(), Some("改行"));
         assert_eq!(
             canonical_directive("字下げおわり").as_deref(),
             Some("ここで字下げ終わり")

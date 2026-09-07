@@ -26,18 +26,21 @@ const SOURCE_REGION_SCHEMA_VERSION: &str = "aozora-source-region-coverage-v1";
 struct Cli {
     #[arg(long, default_value = "data/aozora-syntax-coverage.toml")]
     matrix: PathBuf,
-    #[arg(long)]
-    index: PathBuf,
-    #[arg(long)]
-    corpus: PathBuf,
+    /// Emit independent lexical accountability for one extracted source file.
+    #[arg(long, conflicts_with_all = ["index", "corpus", "report_md", "work_ids", "allowlist", "unknown_workset", "edition_results", "fail_on_unknown", "strict_representability", "jobs"])]
+    source: Option<PathBuf>,
+    #[arg(long, required_unless_present = "source")]
+    index: Option<PathBuf>,
+    #[arg(long, required_unless_present = "source")]
+    corpus: Option<PathBuf>,
     #[arg(long)]
     work_ids: Option<PathBuf>,
     #[arg(long)]
     allowlist: Option<PathBuf>,
     #[arg(long)]
     output_json: PathBuf,
-    #[arg(long)]
-    report_md: PathBuf,
+    #[arg(long, required_unless_present = "source")]
+    report_md: Option<PathBuf>,
     #[arg(long)]
     unknown_workset: Option<PathBuf>,
     #[arg(long)]
@@ -183,15 +186,38 @@ fn main() -> Result<()> {
             .build_global()
             .context("rayon thread pool")?;
     }
-    let matrix = CoverageMatrix::from_toml(&cli.matrix)
+    let matrix_bytes =
+        fs::read(&cli.matrix).with_context(|| format!("read matrix {}", cli.matrix.display()))?;
+    let matrix = CoverageMatrix::parse(std::str::from_utf8(&matrix_bytes)?)
         .with_context(|| format!("load matrix {}", cli.matrix.display()))?;
     let patterns = patterns_from_rows(matrix.rows());
+    if let Some(source) = &cli.source {
+        let report = ab_coverage::source_accountability::source_accountability(
+            &fs::read(source).with_context(|| format!("read source {}", source.display()))?,
+            &matrix_bytes,
+            &patterns,
+        );
+        fs::write(&cli.output_json, serde_json::to_vec_pretty(&report)?)?;
+        return Ok(());
+    }
+    let index = cli
+        .index
+        .as_ref()
+        .context("corpus inventory requires --index")?;
+    let corpus = cli
+        .corpus
+        .as_ref()
+        .context("corpus inventory requires --corpus")?;
+    let report_md = cli
+        .report_md
+        .as_ref()
+        .context("corpus inventory requires --report-md")?;
     let rows_by_id = matrix
         .rows()
         .iter()
         .map(|row| (row.id.as_str(), row))
         .collect::<BTreeMap<_, _>>();
-    let index_entries = load_index_entries(&cli.index)?;
+    let index_entries = load_index_entries(index)?;
     let allowlist = load_allowlist(cli.allowlist.as_deref())?;
     let work_entries = load_work_entries(cli.work_ids.as_deref(), &index_entries)?;
 
@@ -199,8 +225,8 @@ fn main() -> Result<()> {
         schema_version: SOURCE_REGION_SCHEMA_VERSION.to_owned(),
         inputs: Inputs {
             matrix: cli.matrix.display().to_string(),
-            index: cli.index.display().to_string(),
-            corpus: cli.corpus.display().to_string(),
+            index: index.display().to_string(),
+            corpus: corpus.display().to_string(),
             allowlist: cli
                 .allowlist
                 .as_ref()
@@ -215,7 +241,7 @@ fn main() -> Result<()> {
 
     let work_results = work_entries
         .par_iter()
-        .map(|entry| scan_work(entry, &cli.corpus, &patterns))
+        .map(|entry| scan_work(entry, corpus, &patterns))
         .collect::<Vec<_>>();
 
     let mut edition_results = cli
@@ -325,7 +351,7 @@ fn main() -> Result<()> {
     output.gate_status = source_authority_gate_status(&output).to_owned();
 
     write_json(&cli.output_json, &output)?;
-    write_report(&cli.report_md, &output)?;
+    write_report(report_md, &output)?;
     if let Some(path) = &cli.unknown_workset {
         let ids = unknown_work_ids.into_iter().collect::<Vec<_>>();
         write_json(path, &ids)?;

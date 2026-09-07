@@ -2747,6 +2747,44 @@ mod edition_results {
     use std::{fs, process::Command};
 
     #[test]
+    fn single_source_accountability_is_independent_of_corpus_and_parser_inputs() {
+        let root =
+            std::env::temp_dir().join(format!("source-accountability-{}", std::process::id()));
+        fs::create_dir_all(&root).unwrap();
+        let source = root.join("source.txt");
+        let output = root.join("oracle.json");
+        fs::write(&source, "漢字《かんじ》［＃］").unwrap();
+        let mut command = Command::new(env!("CARGO_BIN_EXE_ab-source-inventory"));
+        command
+            .arg("--source")
+            .arg(&source)
+            .arg("--matrix")
+            .arg(super::matrix_path())
+            .arg("--output-json")
+            .arg(&output);
+        assert!(command.status().unwrap().success());
+        let report: serde_json::Value =
+            serde_json::from_slice(&fs::read(&output).unwrap()).unwrap();
+        assert_eq!(report["schema"], "aozora-source-accountability/1");
+        assert_eq!(report["occurrences"].as_array().unwrap().len(), 2);
+        assert_eq!(
+            report["occurrences"][0]["families"],
+            serde_json::json!(["ruby.basic"])
+        );
+        assert_eq!(report["occurrences"][1]["families"], serde_json::json!([]));
+        assert!(
+            !command
+                .arg("--index")
+                .arg("unused.json")
+                .output()
+                .unwrap()
+                .status
+                .success()
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn edition_results_preserve_unknown_occurrences_beyond_report_sample_limit() {
         let root = std::env::temp_dir().join(format!("edition-results-{}", std::process::id()));
         fs::create_dir_all(&root).unwrap();

@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use ab_source_syntax::{SourceMarkerKind, aozora_body_range, source_markers};
+use ab_source_syntax::{SourceMarker, SourceMarkerKind, aozora_body_range, source_markers};
 use regex::Regex;
 use serde::Serialize;
 
@@ -75,6 +75,15 @@ pub fn inventory_document(
     text: &str,
     patterns: &[SourceInventoryPattern],
 ) -> SourceInventorySummary {
+    inventory_document_observed(work_id, text, patterns, |_, _, _| {})
+}
+
+pub(crate) fn inventory_document_observed(
+    work_id: &str,
+    text: &str,
+    patterns: &[SourceInventoryPattern],
+    mut observe: impl FnMut(&SourceMarker<'_>, Option<&SourceMarkerRegion>, &[String]),
+) -> SourceInventorySummary {
     let compiled_patterns = compile_patterns(patterns);
     let markers = source_markers(text);
     let (body, _) = aozora_body_range(text);
@@ -112,6 +121,7 @@ pub fn inventory_document(
             None
         };
         if let Some(region) = region {
+            observe(marker, Some(&region), &[]);
             summary
                 .classified_region_markers
                 .push(ClassifiedRegionMarker {
@@ -153,6 +163,7 @@ pub fn inventory_document(
             }
         }
 
+        observe(marker, None, &matched);
         if matched.is_empty() {
             summary.unknown_examples.push(SourceMarkerOccurrence {
                 work_id: work_id.to_owned(),

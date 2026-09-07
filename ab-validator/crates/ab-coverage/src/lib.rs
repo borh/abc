@@ -7,6 +7,7 @@ pub mod detectors;
 pub mod matrix;
 pub mod merge;
 pub mod schema;
+pub mod source_accountability;
 pub mod source_corpus;
 pub mod source_inventory;
 

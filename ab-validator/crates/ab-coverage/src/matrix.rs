@@ -18,8 +18,17 @@ impl CoverageMatrix {
     pub fn from_toml(path: &Path) -> Result<Self> {
         let raw = fs::read_to_string(path)
             .with_context(|| format!("failed to read coverage matrix {}", path.display()))?;
-        let parsed: MatrixFile = toml::from_str(&raw)
-            .with_context(|| format!("failed to parse coverage matrix {}", path.display()))?;
+        Self::parse(&raw)
+            .with_context(|| format!("failed to parse coverage matrix {}", path.display()))
+    }
+
+    /// Parse the same matrix bytes retained as source-authority evidence.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the TOML does not decode as a coverage matrix.
+    pub fn parse(raw: &str) -> Result<Self> {
+        let parsed: MatrixFile = toml::from_str(raw)?;
         Ok(Self {
             rows: parsed.syntax,
         })

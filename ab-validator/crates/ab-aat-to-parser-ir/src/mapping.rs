@@ -256,10 +256,17 @@ pub fn fold_aat_pointer(pointer: &str) -> String {
     static INDEX_RE: OnceLock<Regex> = OnceLock::new();
     let index_re = INDEX_RE.get_or_init(|| Regex::new(r"\[[0-9]+\]").expect("valid index regex"));
     let folded = index_re.replace_all(trimmed, "[]").to_string();
-    folded
+    let path = folded
         .split_once('=')
-        .map(|(path, _)| path.to_owned())
-        .unwrap_or(folded)
+        .map_or(folded.as_str(), |(path, _)| path);
+    // Recursive block containment changes location, not the mapped node field.
+    let mut segments = Vec::new();
+    for segment in path.split('.') {
+        if segment != "children[]" || segments.last() != Some(&segment) {
+            segments.push(segment);
+        }
+    }
+    segments.join(".")
 }
 
 fn aat_pointer_exists(schema: &Value, pointer: &str) -> bool {

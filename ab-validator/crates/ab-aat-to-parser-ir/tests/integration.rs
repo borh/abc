@@ -774,7 +774,7 @@ fn mapping_preflight_accepts_checked_in_v1_artifact() {
 
     mapping.preflight(&schemas).unwrap();
 
-    assert_eq!(mapping.mapping_version, "0.19.0");
+    assert_eq!(mapping.mapping_version, "0.20.0");
     assert_eq!(
         mapping.target_parser_ir_schema_hash,
         schema_hash(&schemas.parser_ir_schema).unwrap()
@@ -817,7 +817,7 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
     let mapping =
         MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2.json"))
             .unwrap();
-    assert_eq!(mapping.mapping_version, "0.20.0");
+    assert_eq!(mapping.mapping_version, "0.21.0");
     assert_eq!(mapping.source_aat_version, 2);
     let schemas = SchemaSet::load_for_aat_version(&repo_root, &research_root, 2).unwrap();
     mapping.preflight(&schemas).unwrap();
@@ -4982,4 +4982,53 @@ fn principal_text_alternatives_do_not_search_past_mismatches_or_source_lines() {
                 .any(|node| node["type"] == "base-text-variant")
         );
     }
+}
+
+#[test]
+fn measured_node_fields_do_not_depend_on_recursive_block_depth() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let index = mapping.preflight(&schemas).unwrap();
+    for depth in [1, 2, 4, 8, 16] {
+        let path = format!(
+            "blocks[0].{}content[1].gaiji.description",
+            "children[0].".repeat(depth)
+        );
+        assert!(
+            index.has_rule("INVENTION", Some(&path), Some("gaiji.raw_marker")),
+            "{path}"
+        );
+        assert!(!index.has_rule("LOSS", Some(&path), Some("gaiji.raw_marker")));
+        assert!(!index.has_rule(
+            "INVENTION",
+            Some(&format!("{path}.unknown")),
+            Some("gaiji.raw_marker")
+        ));
+    }
+}
+
+#[test]
+fn recursive_depth_cannot_hide_a_conflicting_mapping_rule() {
+    let (schemas, mut mapping) = schemas_and_mapping();
+    let mut duplicate = mapping
+        .transform_rule_descriptions
+        .iter()
+        .find(|rule| {
+            rule.aat_pointer.as_deref() == Some("blocks[].children[].content[].gaiji.description")
+                && rule.category == "INVENTION"
+        })
+        .unwrap()
+        .clone();
+    duplicate.rule_id = "conflicting-recursive-rule".into();
+    duplicate.aat_pointer = duplicate
+        .aat_pointer
+        .map(|path| path.replace("children[].", "children[].children[]."));
+    duplicate.action = "drop".into();
+    mapping.transform_rule_descriptions.push(duplicate);
+    assert!(
+        mapping
+            .preflight(&schemas)
+            .unwrap_err()
+            .to_string()
+            .contains("duplicate folded mapping rule")
+    );
 }

@@ -641,3 +641,14 @@
       (is (empty? (get-in result [:ir "interpretation_problems"])))
       (is (some #(= "ruby" (get % "kind"))
                 (get-in result [:ir "interpretation_facts"]))))))
+
+(deftest supplied-gaiji-code-is-independent-of-source-locator-spelling
+  (doseq [[marker glyph]
+          [["※［＃「衙」の「吾」に代えて「干」、U+884E、225-図のキャプション］" "衎"]
+           ["※［＃「喪」の「畏－田」に代えて「冖／貝」、U+8CF7、16-本文-7］" "賷"]]]
+    (let [result (transcribe (source (str "前" marker "《よみ》後")))]
+      (is (= (str "前" glyph "後") (:plaintext result)))
+      (is (= [glyph] (texts result "g")))
+      (is (empty? (get-in result [:ir "interpretation_problems"])))
+      (is (some #(= "gaiji-ruby" (get % "kind"))
+                (get-in result [:ir "interpretation_facts"]))))))

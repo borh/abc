@@ -429,6 +429,20 @@ pub fn parse_gaiji_body(body: &str) -> GaijiBody<'_> {
             };
         }
     }
+    // A whole-glyph code establishes the reference independently of locator wording.
+    // Quote-aware clauses exclude codes that describe only a glyph component.
+    if let Some(reference) = reference_clauses(body).find(|clause| is_mencode_shaped(clause.trim()))
+    {
+        let start = reference.as_ptr().addr() - body.as_ptr().addr();
+        let description = body[..start].trim_end_matches(['、', ' ']).trim();
+        if !description.is_empty() {
+            return GaijiBody {
+                description,
+                mencode: Some(body[start..].trim()),
+                quoted: false,
+            };
+        }
+    }
     // Composed / bare form: right-to-left mencode scan. The run admits both
     // the canonical page-line forms and the near-miss ones (fused 上/中/下,
     // full-width minus, poetry locators).
@@ -917,6 +931,14 @@ mod tests {
                 '\u{303b}',
             ),
             ("※［＃「滷－さんずい」、第3水準1-83-35］", '\u{9e75}'),
+            (
+                "※［＃「衙」の「吾」に代えて「干」、U+884E、225-図のキャプション］",
+                '\u{884e}',
+            ),
+            (
+                "※［＃「喪」の「畏－田」に代えて「冖／貝」、U+8CF7、16-本文-7］",
+                '\u{8cf7}',
+            ),
         ] {
             let body =
                 parse_gaiji_body(&source[GAIJI_OPEN.len()..source.len() - GAIJI_CLOSE.len()]);
@@ -943,6 +965,8 @@ mod tests {
             "「成分、第3水準1-84-32、を含む形」、9-1",
             "「不明」、U+5F89、第3水準1-84-31",
             "「不明、第3水準1-84-31」、U+5F89",
+            "「字」の「形」に代えて「成分、U+884E」、225-図のキャプション",
+            "「字」の「形」に代えて「干」、U+884E、225-図のキャプション、U+8CF7",
         ] {
             let source = format!("※［＃{body}］");
             let result = resolve_at(&source, 0, source.len()).expect("gaiji occurrence");

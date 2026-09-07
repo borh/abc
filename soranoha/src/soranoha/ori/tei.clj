@@ -161,9 +161,6 @@
         (assoc :current-division []))
     acc))
 
-(defn- append-block [acc node]
-  (append-structural-child (flush-paragraph acc) node))
-
 (defn- count-node [acc node-type]
   (update acc :node_counts update node-type (fnil inc 0)))
 

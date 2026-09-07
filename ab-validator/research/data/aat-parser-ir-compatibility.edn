@@ -27,11 +27,11 @@
   :aat_adapter "ab-aozora"
   :aat_adapter_version "ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git unknown)"
   :mapping_id "https://w3id.org/abc/mappings/aat-v2-to-parser-ir-v1/generated-probe"
-  :mapping_version "0.12.0"
-  :mapping_hash "sha256:bcc35714dc2382d8305abeda149b03c9f8ff2eb62bfa73d316011d6733ccd785"
+  :mapping_version "0.13.0"
+  :mapping_hash "sha256:88ff6ff81130faf00992c6c52807c4ac93d726b38ed2da11174d4842377f6089"
   :mapping_schema_hash "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2"
   :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
-  :parser_ir_schema_hash "sha256:78b1197172b474b43f9e85c64deed7c60210b1f7ede0f2171242f09e82eceee4"
+  :parser_ir_schema_hash "sha256:80fb874fd08ea9fba31f150ffe10814e2183e7898ea6ce1d36e9e69fbdde020c"
   :evidence_scope {:evidence_type :conversion-audit
                    :adapter "ab-aozora"
                    :adapter_version "ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git unknown)"
@@ -42,8 +42,8 @@
                    :parser_ir_nodes 19
                    :divergence_records 43
                    :divergence_occurrences 49
-                   :rules_total 647
+                   :rules_total 648
                    :rules_emitted 15
-                   :rules_missing 632
+                   :rules_missing 633
                    :unsupported_occurrences 1}
   :compatibility "lossy"}]}

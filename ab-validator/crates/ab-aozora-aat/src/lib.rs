@@ -17,7 +17,7 @@ use ab_aozora_pipeline::text_variant::{
     EditionNoteKind, EditionRangeBoundary, EditionRangeLocation, EditionRangeMarker, TextVariant,
     TextVariantTarget, base_edition_concealed_characters, concealed_placeholder, edition_note,
     edition_range_marker, edition_statement, formatted_text_variant, formatting_edition_note,
-    image_edition_note, text_variant,
+    gaiji_edition_note, image_edition_note, text_variant,
 };
 use ab_aozora_pipeline::{LexOutput, Pipeline};
 use anyhow::Result;
@@ -1506,6 +1506,9 @@ impl EstablishedInterpretation {
             Some("heading") => Some(Self::Heading),
             Some("caption" | "caption_block") => Some(Self::Caption),
             Some("text-variant") => Some(Self::TextVariant),
+            Some("annotated_text") if node["note_kind"] == "base-edition" => {
+                Some(Self::EditorialNote)
+            }
             Some("annotated_text") => Some(Self::AnnotatedText),
             Some("figure") if node.get("interpretation_problem").is_none() => {
                 Some(Self::Illustration)
@@ -3557,7 +3560,7 @@ fn gaiji_node(
 }
 
 fn gaiji_json(decoded: &DecodedSource, span: &Span, gaiji: &AozoraGaiji) -> Value {
-    json!({
+    let glyph = json!({
         "kind": "gaiji",
         "description": gaiji.description,
         "resolved": gaiji.resolved,
@@ -3565,7 +3568,20 @@ fn gaiji_json(decoded: &DecodedSource, span: &Span, gaiji: &AozoraGaiji) -> Valu
         "unresolved_reason": if gaiji.resolved.is_some() { None::<String> } else { Some("unresolved".to_owned()) },
         "x-codepoint": gaiji.codepoint,
         "span": span_json(span, &decoded.span_ctx)
-    })
+    });
+    let source = source_slice(&decoded.span_text, span);
+    if let Some(statement) = gaiji_edition_note(source) {
+        let start = span.start + statement.as_ptr().addr() - source.as_ptr().addr();
+        let annotation_span = Span {
+            start,
+            end: start + statement.len(),
+        };
+        json!({"kind":"annotated_text", "content":[glyph], "note_kind":"base-edition",
+            "annotation_content":[{"kind":"text", "value":statement, "span":span_json(&annotation_span, &decoded.span_ctx)}],
+            "span":span_json(span, &decoded.span_ctx)})
+    } else {
+        glyph
+    }
 }
 
 fn push_concealment(content: &mut Vec<Value>, decoded: &DecodedSource, node: &AozoraNode) {

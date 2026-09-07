@@ -1243,3 +1243,57 @@ fn physical_break_variant_preserves_discontiguous_source_targets() {
         );
     }
 }
+
+#[test]
+fn gaiji_keeps_its_separate_edition_assertion() {
+    let statement = "底本はこの字を「さんずい＋「仰」のつくり」と作字上の誤り";
+    let body =
+        format!("田口※［＃「※」は「さんずい＋卯」、第4水準2-78-35、17-上-9、{statement}］三郎");
+    let ir = convert(&body);
+    let all = nodes(&ir);
+    let annotated = all
+        .iter()
+        .find(|node| node["type"] == "annotated-text")
+        .unwrap();
+    assert_eq!(annotated["text"], "泖");
+    assert_eq!(annotated["note_kind"], "base-edition");
+    let fact = ir["interpretation_facts"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|fact| {
+            fact["kind"] == "editorial-note" && fact["source_span"] == annotated["source_span"]
+        })
+        .unwrap();
+    assert_eq!(fact["aspects"], json!(["content", "structure"]));
+    assert_eq!(annotated["inline_children"][0]["gaiji"]["unicode"], "泖");
+    assert_eq!(annotated["annotation_children"][0]["text"], statement);
+    assert_eq!(
+        annotated["annotation_children"][0]["span"]["coordinate_system"],
+        "annotation_utf8"
+    );
+    assert_eq!(ir["interpretation_problems"], json!([]));
+}
+
+#[test]
+fn base_edition_concealment_claim_does_not_assert_layout() {
+    let ir = convert("□□［＃底本２字伏字］");
+    let all = nodes(&ir);
+    let annotated = all
+        .iter()
+        .find(|node| node["type"] == "annotated-text")
+        .unwrap();
+    assert_eq!(annotated["text"], "□□");
+    assert_eq!(annotated["annotation_children"][0]["type"], "gap");
+    assert_eq!(annotated["annotation_children"][0]["quantity"], 2);
+    let fact = ir["interpretation_facts"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|fact| {
+            fact["kind"] == "editorial-note" && fact["source_span"] == annotated["source_span"]
+        })
+        .unwrap();
+    assert_eq!(fact["aspects"], json!(["content", "structure"]));
+    assert_eq!(ir["interpretation_problems"], json!([]));
+}

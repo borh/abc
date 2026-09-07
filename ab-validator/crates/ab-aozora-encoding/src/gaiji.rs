@@ -176,8 +176,9 @@ pub fn lookup(
     None
 }
 
-// Codes embedded in quoted component descriptions do not identify the whole glyph.
-fn reference_clauses(text: &str) -> impl Iterator<Item = &str> {
+/// Split gaiji reference clauses without splitting commas inside quoted descriptions.
+/// Glyph resolution and embedded documentary annotations share these boundaries.
+pub fn reference_clauses(text: &str) -> impl Iterator<Item = &str> {
     let mut depth = 0_u32;
     text.split(move |ch| match ch {
         '「' => {

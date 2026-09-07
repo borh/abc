@@ -2,7 +2,9 @@
 
 use std::{num::NonZeroU32, ops::Range};
 
-use ab_aozora_encoding::gaiji::{is_page_line_shaped, recognize_gaiji_body};
+use ab_aozora_encoding::gaiji::{
+    is_mencode_shaped, is_page_line_shaped, recognize_gaiji_body, reference_clauses,
+};
 
 /// Content addressed by a quoted base-text note.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -169,6 +171,30 @@ pub fn formatted_text_variant(source: &str) -> Option<(&str, TextVariant<'_>)> {
             witness_start,
         )?,
     ))
+}
+
+/// Locate a source assertion about an incorrectly printed base-edition glyph.
+/// The assertion remains documentary text; it does not supply another Unicode value.
+#[must_use]
+pub fn gaiji_edition_note(source: &str) -> Option<&str> {
+    let body = source.strip_prefix("※［＃")?.strip_suffix('］')?;
+    let parsed = recognize_gaiji_body(body)?;
+    let mut clauses = reference_clauses(parsed.mencode?).peekable();
+    while let Some(clause) = clauses.next() {
+        let statement = clause.trim();
+        if clauses.peek().is_some() {
+            if !is_mencode_shaped(statement) && !is_page_line_shaped(statement) {
+                return None;
+            }
+            continue;
+        }
+        let description = statement
+            .strip_prefix("底本はこの字を「")?
+            .strip_suffix("」と作字上の誤り")?;
+        return (!description.is_empty() && !description.contains(['\n', '［', '］']))
+            .then_some(statement);
+    }
+    None
 }
 
 /// Preserve an edition statement about lettering inside an explicitly inserted image.
@@ -467,6 +493,22 @@ pub fn edition_statement(body: &str) -> Option<(EditionNoteKind, &str)> {
 #[cfg(test)]
 mod tests {
     use super::{TextVariantTarget, base_edition_concealed_characters, text_variant};
+
+    #[test]
+    fn embedded_glyph_statement_owns_only_a_complete_reference_tail() {
+        let statement = "底本はこの字を「さんずい＋「仰」のつくり」と作字上の誤り";
+        let source =
+            format!("※［＃「※」は「さんずい＋卯」、第4水準2-78-35、17-上-9、{statement}］");
+        assert_eq!(super::gaiji_edition_note(&source), Some(statement));
+        for source in [
+            format!("※［＃「字」、U+6CD6、{statement}、未知］"),
+            format!("※［＃「字」、U+6CD6、未知、{statement}］"),
+            format!("※［＃「{statement}」、U+6CD6］"),
+            "※［＃「字」、U+6CD6、底本はこの字を「」と作字上の誤り］".to_owned(),
+        ] {
+            assert!(super::gaiji_edition_note(&source).is_none(), "{source}");
+        }
+    }
 
     #[test]
     fn concealment_quantity_retains_only_explicit_base_edition_character_counts() {

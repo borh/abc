@@ -1137,3 +1137,14 @@
     (is (= "白よ、\n\n" (view/visible-text lemma)))
     (is (= "白よ、\n" (view/visible-text witness)))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest embedded-gaiji-edition-assertion-stays-apparatus
+  (let [statement "底本はこの字を「さんずい＋「仰」のつくり」と作字上の誤り"
+        result (transcribe (source (str "田口※［＃「※」は「さんずい＋卯」、第4水準2-78-35、17-上-9、" statement "］三郎")))
+        note (first (filter #(= "base-edition" (attribute % "type")) (elements result "note")))
+        annotated (first (filter #(= "annotated-text" (attribute % "type")) (elements result "seg")))]
+    (is (= "田口泖三郎" (:plaintext result)))
+    (is (= statement (.getTextContent ^Node note)))
+    (is (= ["泖"] (texts result "g")))
+    (is (not (string/blank? (attribute annotated "source"))))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))

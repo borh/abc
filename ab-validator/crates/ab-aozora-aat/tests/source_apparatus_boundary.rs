@@ -1,3 +1,5 @@
+//! Explicit body boundaries retain source apparatus outside the reading text.
+
 use ab_aozora_aat::aat_json_from_bytes;
 use serde_json::Value;
 

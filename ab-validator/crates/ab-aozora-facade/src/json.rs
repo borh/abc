@@ -19,7 +19,7 @@ pub const NODES_SCHEMA_VERSION: u32 = 4;
 /// Ruby pair entries and their envelope.
 pub const PAIRS_SCHEMA_VERSION: u32 = 3;
 /// Container pairs, including supplied formula and banknote translation scopes.
-pub const CONTAINER_PAIRS_SCHEMA_VERSION: u32 = 6;
+pub const CONTAINER_PAIRS_SCHEMA_VERSION: u32 = 7;
 /// Canonical annotation slug entries and their envelope.
 pub const SLUGS_SCHEMA_VERSION: u32 = 3;
 /// Gaiji resolution entries and their envelope.
@@ -641,7 +641,7 @@ mod tests {
 
     #[test]
     fn projection_versions_follow_individual_contracts() {
-        assert_eq!(CONTAINER_PAIRS_SCHEMA_VERSION, 6);
+        assert_eq!(CONTAINER_PAIRS_SCHEMA_VERSION, 7);
         assert_eq!(DIAGNOSTICS_SCHEMA_VERSION, 3);
         assert_eq!(NODES_SCHEMA_VERSION, 4);
         assert_eq!(PAIRS_SCHEMA_VERSION, 3);

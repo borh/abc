@@ -496,6 +496,7 @@ fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::R
         RegionFormat::Bold { padded: true } => {
             writer.write_str(r#"<div class="aozora-container aozora-container-futoji">"#)
         }
+        RegionFormat::Textbook => writer.write_str(r#"<div class="aozora-container" data-typeface="教科書体">"#),
         RegionFormat::Gothic { padded: true } => {
             writer.write_str(r#"<div class="aozora-container aozora-container-goshikku">"#)
         }

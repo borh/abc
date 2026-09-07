@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
   "title": "ABC Parser IR",
-  "version": "0.53.0",
+  "version": "0.54.0",
   "type": "object",
   "required": ["schema_id", "schema_hash", "source", "nodes", "warnings", "errors", "interpretation_problems", "interpretation_facts"],
   "additionalProperties": false,
@@ -339,7 +339,7 @@
         {"type":"object","additionalProperties":false,"required":["kind","source"],"properties":{"kind":{"const":"exponent"},"source":{"$ref":"#/$defs/layoutScopeSource"}}},
         {"type":"object","additionalProperties":false,"required":["kind","source","style"],
          "properties":{"kind":{"const":"emphasis"},"source":{"$ref":"#/$defs/layoutScopeSource"},
-           "style":{"enum":["bold","italic","gothic","bouten","bosen"]},"decoration":{"type":"object","additionalProperties":false,"required":["kind","position"],"properties":{"kind":{"type":"string"},"position":{"enum":["right","left","both","unknown"]}}}}},
+           "style":{"enum":["bold","italic","gothic","textbook","bouten","bosen"]},"decoration":{"type":"object","additionalProperties":false,"required":["kind","position"],"properties":{"kind":{"type":"string"},"position":{"enum":["right","left","both","unknown"]}}}}},
         {
           "type": "object",
           "required": ["kind", "source", "size_type"],

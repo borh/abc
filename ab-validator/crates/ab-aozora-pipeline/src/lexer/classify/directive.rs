@@ -804,6 +804,14 @@ static BODY_PATTERNS: &[BodyPattern] = &[
         needle: "ここでゴシック体終わり",
         family: BodyFamily::Emphasis,
     },
+    BodyPattern {
+        needle: "ここから教科書体",
+        family: BodyFamily::Emphasis,
+    },
+    BodyPattern {
+        needle: "ここで教科書体終わり",
+        family: BodyFamily::Emphasis,
+    },
     // Kunten okurigana opener (full-width left paren U+FF08).
     BodyPattern {
         needle: "（",
@@ -1658,12 +1666,7 @@ pub(super) fn classify_annotation_body(
             // `太字` / `斜体` / `ここから太字` / `ここで斜体終わり` … —
             // re-parse the full body for the kind, the block vs inline
             // form, and open vs close.
-            let (weight, padded, is_close) = parse_emphasis_body(body)?;
-            let region = match weight {
-                EmphasisWeight::Bold => RegionFormat::Bold { padded },
-                EmphasisWeight::Gothic => RegionFormat::Gothic { padded },
-                EmphasisWeight::Italic => RegionFormat::Italic { padded },
-            };
+            let (region, is_close) = parse_emphasis_body(body)?;
             Some((open_or_close(region, is_close), None))
         }
         BodyFamily::SmallScriptRange => {
@@ -2502,38 +2505,25 @@ fn parse_line_font_size(body: &str) -> Option<(AbsoluteSize, bool)> {
     Some((size, bold))
 }
 
-/// The weight / typeface axis of an emphasis range: 太字 / ゴシック体 / 斜体.
-#[derive(Clone, Copy)]
-pub(super) enum EmphasisWeight {
-    /// 太字 (bold).
-    Bold,
-    /// ゴシック体 (gothic) — distinct from 太字.
-    Gothic,
-    /// 斜体 (italic).
-    Italic,
-}
-
-/// Parse a 太字 / ゴシック体 / 斜体 range / block body into
-/// `(weight, padded, is_close)`. `padded` is `true` for the `ここから…` /
-/// `ここで…終わり` block form, `false` for the bare inline range. Returns `None`
-/// (→ `Directive{Unknown}`) for any non-emphasis body. ゴシック体 keeps its own
-/// [`EmphasisWeight::Gothic`] rather than folding to 太字; ゴチック is not
-/// recognised (declines to Unknown + Tier1 → ゴシック体).
-pub(super) fn parse_emphasis_body(body: &str) -> Option<(EmphasisWeight, bool, bool)> {
-    use EmphasisWeight::{Bold, Gothic, Italic};
+/// Parse supplied emphasis and typeface scope spellings directly to their
+/// authoritative opening attribute and whether this marker closes it.
+pub(super) fn parse_emphasis_body(body: &str) -> Option<(RegionFormat, bool)> {
+    use RegionFormat::{Bold, Gothic, Italic, Textbook};
     Some(match body {
-        "太字" => (Bold, false, false),
-        "太字終わり" => (Bold, false, true),
-        "ここから太字" => (Bold, true, false),
-        "ここで太字終わり" => (Bold, true, true),
-        "ゴシック体" => (Gothic, false, false),
-        "ゴシック体終わり" => (Gothic, false, true),
-        "ここからゴシック体" => (Gothic, true, false),
-        "ここでゴシック体終わり" => (Gothic, true, true),
-        "斜体" => (Italic, false, false),
-        "斜体終わり" => (Italic, false, true),
-        "ここから斜体" => (Italic, true, false),
-        "ここで斜体終わり" => (Italic, true, true),
+        "太字" => (Bold { padded: false }, false),
+        "太字終わり" => (Bold { padded: false }, true),
+        "ここから太字" => (Bold { padded: true }, false),
+        "ここで太字終わり" => (Bold { padded: true }, true),
+        "ゴシック体" => (Gothic { padded: false }, false),
+        "ゴシック体終わり" => (Gothic { padded: false }, true),
+        "ここからゴシック体" => (Gothic { padded: true }, false),
+        "ここでゴシック体終わり" => (Gothic { padded: true }, true),
+        "斜体" => (Italic { padded: false }, false),
+        "斜体終わり" => (Italic { padded: false }, true),
+        "ここから斜体" => (Italic { padded: true }, false),
+        "ここで斜体終わり" => (Italic { padded: true }, true),
+        "ここから教科書体" => (Textbook, false),
+        "ここで教科書体終わり" => (Textbook, true),
         _ => return None,
     })
 }

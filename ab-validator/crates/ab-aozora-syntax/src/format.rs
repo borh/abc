@@ -375,6 +375,8 @@ pub enum Format {
     /// weight of 太字: the corpus uses ゴシック体 and 太字 in disjoint works and
     /// print sets them differently, so the parser keeps them separate.
     Gothic,
+    /// 教科書体 — the supplied textbook typeface designation.
+    Textbook,
     /// 斜体 (italic).
     Italic,
     /// 傍点 / 傍線 (emphasis dots / sidelines).
@@ -449,6 +451,7 @@ impl Format {
         match self {
             Self::Bold => "bold",
             Self::Gothic => "gothic",
+            Self::Textbook => "textbook",
             Self::Italic => "italic",
             Self::Bouten(_) => "bouten",
             Self::Framed(_) => "framed",
@@ -767,6 +770,8 @@ pub enum CaptionScope {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub enum RegionFormat {
+    /// Explicitly scoped 教科書体, without a selected font asset.
+    Textbook,
     /// 太字 range / block. `padded` = block-level (`<div>`, `\n\n` padded);
     /// `!padded` = inline bare range (`<b>`).
     Bold {
@@ -840,6 +845,7 @@ impl RegionFormat {
     #[must_use]
     pub const fn format(self) -> Format {
         match self {
+            Self::Textbook => Format::Textbook,
             Self::Bold { .. } => Format::Bold,
             Self::Gothic { .. } => Format::Gothic,
             Self::Italic { .. } => Format::Italic,
@@ -879,6 +885,7 @@ impl RegionFormat {
             Self::Bouten { .. } => "boutenRange",
             Self::Bold { .. } => "bold",
             Self::Gothic { .. } => "gothic",
+            Self::Textbook => "textbook",
             Self::Italic { .. } => "italic",
             Self::Heading { .. } => "heading",
             Self::Columns(_) => "columns",
@@ -907,6 +914,7 @@ impl RegionFormat {
             Self::Bouten { .. } => "bouten-range",
             Self::Bold { .. } => "bold",
             Self::Gothic { .. } => "gothic",
+            Self::Textbook => "textbook",
             Self::Italic { .. } => "italic",
             Self::Heading { .. } => "heading",
             Self::Columns(_) => "columns",
@@ -956,7 +964,7 @@ impl RegionFormat {
     /// the payload is irrelevant to the discriminant-only tag projections. Lets
     /// the wire-tag exhaustiveness test and the codegen enumerate the family
     /// list without a hand-maintained parallel.
-    pub const ALL: [Self; 20] = [
+    pub const ALL: [Self; 21] = [
         Self::Indent(IndentBlock {
             purpose: None,
             partial: None,
@@ -969,6 +977,7 @@ impl RegionFormat {
             layout: IndentLayout::None,
             styles: BlockStyles::EMPTY,
         }),
+        Self::Textbook,
         Self::Warichu,
         Self::Framed(EnclosureKind::Rule),
         Self::AlignEnd { offset: 0 },
@@ -1024,6 +1033,8 @@ impl RegionFormat {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub enum RegionClose {
+    /// Close the explicitly supplied textbook typeface scope.
+    Textbook,
     /// `字下げ終わり`, or the `字下げ、{W}字組み終わり` compound (the close
     /// carries `W`, so the marker round-trips byte-exact).
     Indent {
@@ -1131,6 +1142,7 @@ impl RegionClose {
             RegionFormat::Bouten { kind, position } => Self::Bouten { kind, position },
             RegionFormat::Bold { padded } => Self::Bold { padded },
             RegionFormat::Gothic { padded } => Self::Gothic { padded },
+            RegionFormat::Textbook => Self::Textbook,
             RegionFormat::Italic { padded } => Self::Italic { padded },
             RegionFormat::Heading {
                 level,
@@ -1172,6 +1184,7 @@ impl RegionClose {
             Self::Bouten { .. } => "bouten-range",
             Self::Bold { .. } => "bold",
             Self::Gothic { .. } => "gothic",
+            Self::Textbook => "textbook",
             Self::Italic { .. } => "italic",
             Self::Heading { .. } => "heading",
             Self::Columns(_) => "columns",

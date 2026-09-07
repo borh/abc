@@ -1421,3 +1421,14 @@
       (is (empty? (get-in result [:ir "interpretation_problems"])))
       (is (some #(and (= "layout" (get % "family")) (= "omitted" (get % "disposition")))
                 (get (projection/report :projection/markdown (:view result)) "counts"))))))
+
+(deftest textbook-typeface-keeps-embedded-style-and-mid-paragraph-boundary
+  (let [result (transcribe (source "［＃ここから教科書体］\n一。\n人［＃「人」は太字］　話［＃ここで教科書体終わり］後"))
+        scopes (filterv #(= "textbook" (attribute % "rend")) (elements result "hi"))]
+    (is (= "一。\n人　話後" (:plaintext result)))
+    (is (= ["一。" "人　話"] (mapv #(.getTextContent ^Node %) scopes)))
+    (is (= "人　話後" (.getTextContent ^Node (.getParentNode ^Node (last scopes)))))
+    (is (= ["人"] (mapv #(.getTextContent ^Node %)
+                       (filter #(= "bold" (attribute % "rend")) (elements result "hi")))))
+    (is (every? #(string/blank? (attribute % "style")) scopes))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))

@@ -1488,22 +1488,7 @@ impl EstablishedInterpretation {
             {
                 Some(Self::Gaiji)
             }
-            Some("style")
-                if matches!(
-                    node["style_type"].as_str(),
-                    Some(
-                        "bold"
-                            | "gothic"
-                            | "italic"
-                            | "superscript"
-                            | "subscript"
-                            | "bouten"
-                            | "bosen"
-                    )
-                ) && has_content =>
-            {
-                Some(Self::Emphasis)
-            }
+            Some("style") if Self::is_emphasis_style(node) && has_content => Some(Self::Emphasis),
             Some("typography_block")
                 if node["children"]
                     .as_array()
@@ -1565,6 +1550,22 @@ impl EstablishedInterpretation {
             Some("layout_block") => Some(Self::LineLayout),
             _ => None,
         }
+    }
+
+    fn is_emphasis_style(node: &Value) -> bool {
+        matches!(
+            node["style_type"].as_str(),
+            Some(
+                "bold"
+                    | "gothic"
+                    | "textbook"
+                    | "italic"
+                    | "superscript"
+                    | "subscript"
+                    | "bouten"
+                    | "bosen"
+            )
+        )
     }
 
     fn kind(self) -> &'static str {
@@ -5425,6 +5426,12 @@ fn region_formatting(region: RegionFormat) -> Option<(String, Value)> {
             if padded { "bold-block" } else { "bold" },
             ForwardAttr::Bold,
         ),
+        RegionFormat::Textbook => {
+            return Some((
+                "textbook".to_owned(),
+                json!({"kind":"style", "style_type":"textbook"}),
+            ));
+        }
         RegionFormat::Gothic { padded } => (
             if padded { "gothic-block" } else { "gothic" },
             ForwardAttr::Gothic,
@@ -5484,6 +5491,7 @@ fn region_formatting_close(close: RegionClose) -> Option<(String, Option<Value>)
                     "bold"
                 }
             }
+            RegionClose::Textbook => "textbook",
             RegionClose::Gothic { padded } => {
                 if padded {
                     "gothic-block"

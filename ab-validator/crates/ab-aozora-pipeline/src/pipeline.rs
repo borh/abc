@@ -454,7 +454,9 @@ fn decorate_ruby_bases(out: &mut [ClassifiedSpan], source: &str, store: &NodeSto
         let SpanKind::Aozora(Node::Format(f)) = out[idx].kind else {
             continue;
         };
-        if !matches!(f.origin, ForwardOrigin::Referenced) || !attr_decorates_ruby_base(f.attr) {
+        if !matches!(f.origin, ForwardOrigin::Referenced)
+            || !f.attrs.single().is_some_and(attr_decorates_ruby_base)
+        {
             continue;
         }
         // A ruby base is a single `Plain` run; a structured target never matches.
@@ -495,7 +497,9 @@ fn decorate_ruby_bases(out: &mut [ClassifiedSpan], source: &str, store: &NodeSto
         let Some(ruby_idx) = ruby_match else {
             continue;
         };
-        let attr = f.attr;
+        let Some(attr) = f.attrs.single() else {
+            continue;
+        };
         let directive_span = out[idx].source_span;
         if let SpanKind::Aozora(Node::Ruby(ref mut r)) = out[ruby_idx].kind {
             r.base_emphasis = Some(attr);

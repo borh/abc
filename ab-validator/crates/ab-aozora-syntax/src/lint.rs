@@ -397,7 +397,6 @@ pub const EDITORIAL_MUST_STAY_UNKNOWN: &[&str] = &[
     "「甲」は上部に出ている",
     "「甲」は「乙」の下にポイントを下げて2行で",
     // Reducing a multi-axis compound to one directive would lose an axis.
-    "「甲」は縦中横、行右小書き",
     "ここから3字下げ、「甲」は返り点",
     "「甲」は上付き小文字、「乙」は分数",
     "「甲」は縦中横、「乙」は上付き小書き",

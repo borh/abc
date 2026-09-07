@@ -278,3 +278,82 @@ fn paired_font_size_preserves_leading_space_and_enclosing_layout() {
         .collect();
     assert_eq!(text.trim_matches('\n'), "　〔中略〕続き。");
 }
+
+#[test]
+fn compound_attributes_share_one_target_and_exact_marker() {
+    let marker = "［＃「１）」は縦中横、行右小書き］";
+    let ir = convert(&format!("前１）{marker}後。"));
+    let all = nodes(&ir);
+    let compound = all
+        .iter()
+        .filter(|node| node["type"] == "layout-span" && node["layout"].is_array())
+        .collect::<Vec<_>>();
+    assert_eq!(compound.len(), 1, "{ir}");
+    assert_eq!(compound[0]["text"], "１）");
+    assert_eq!(
+        compound[0]["layout"],
+        json!([
+            {"kind":"tcy","source":"aat-inline","marker":null},
+            {"kind":"small-script","source":"aat-inline","position":"right"}
+        ])
+    );
+    assert_eq!(ir["interpretation_problems"], json!([]));
+    assert!(
+        ir["interpretation_facts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|fact| {
+                let source = format!("題\n作者\n\n前１）{marker}後。\n\n底本：本\n");
+                let span = &fact["source_span"];
+                &source[span["start"].as_u64().unwrap() as usize
+                    ..span["end"].as_u64().unwrap() as usize]
+                    == marker
+            })
+    );
+}
+
+#[test]
+fn unsupported_compound_clauses_and_missing_targets_remain_explicit() {
+    for body in [
+        "１）［＃「１）」は縦中横、未知の書式］",
+        "前［＃「１）」は縦中横、行右小書き］",
+    ] {
+        let ir = convert(body);
+        assert!(
+            !ir["interpretation_problems"].as_array().unwrap().is_empty(),
+            "{ir}"
+        );
+        assert!(
+            !nodes(&ir)
+                .iter()
+                .any(|node| node["type"] == "layout-span" && node["layout"].is_array())
+        );
+    }
+}
+
+#[test]
+fn intervening_unresolved_variant_does_not_create_an_empty_formatting_target() {
+    let ir = convert("覆われた２）［＃「)」は底本では欠落］［＃「２）」は縦中横、行右小書き］。");
+    let all = nodes(&ir);
+    assert!(
+        !all.iter()
+            .any(|node| node["type"] == "layout-span" && node["layout"].is_array())
+    );
+    assert!(
+        ir["interpretation_problems"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|problem| problem["raw"] == "［＃「２）」は縦中横、行右小書き］")
+    );
+    let visible = all
+        .iter()
+        .filter(|node| node["type"] == "text")
+        .filter_map(|node| node["text"].as_str())
+        .collect::<Vec<_>>();
+    assert!(
+        visible.iter().any(|text| text.contains("覆われた２）")),
+        "{ir}"
+    );
+}

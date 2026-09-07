@@ -1,10 +1,14 @@
 //! Flat backing store for the owned AST.
 //!
-//! Two variable-length payloads — `NonEmpty<Content>` runs and `[Segment]`
-//! slices — are stored as half-open ranges ([`ContentRange`] / [`SegRange`])
+//! Content runs, segment slices, and co-applied formatting attributes
+//! are stored as half-open ranges
 //! into flat `Vec`s held by [`NodeStore`], alongside the [`StrInterner`] that
 //! owns every interned string. `StrId` / range payloads on the owned nodes
 //! resolve against this store.
+
+use std::slice;
+
+use crate::ForwardAttr;
 
 use super::intern::{StrId, StrInterner};
 use super::payload::{Content, Segment};
@@ -28,6 +32,34 @@ pub struct SegRange {
     pub len: u32,
 }
 
+/// Attributes applying together to one forward-reference target.
+/// Storage order preserves source spelling; it implies no layout nesting.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ForwardAttrs {
+    /// One attribute needs no arena allocation.
+    One(ForwardAttr),
+    /// Multiple attributes share the document's flat pool.
+    Many(ForwardAttrRange),
+}
+
+impl ForwardAttrs {
+    /// The single attribute, when this is not a compound directive.
+    #[must_use]
+    pub const fn single(self) -> Option<ForwardAttr> {
+        match self {
+            Self::One(attr) => Some(attr),
+            Self::Many(_) => None,
+        }
+    }
+}
+
+/// Range of co-applied attributes in a document store.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ForwardAttrRange {
+    start: u32,
+    len: u32,
+}
+
 /// Owned backing store: the string interner plus the flat content / segment
 /// `Vec`s the owned nodes' [`StrId`] / range payloads resolve against.
 ///
@@ -41,6 +73,7 @@ pub struct NodeStore {
     contents: Vec<Content>,
     /// Flat pool of [`Segment`] entries; [`SegRange`]s index here.
     segments: Vec<Segment>,
+    forward_attrs: Vec<ForwardAttr>,
 }
 
 impl NodeStore {
@@ -48,6 +81,35 @@ impl NodeStore {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Store a nonempty collection of distinct, co-applied attributes.
+    ///
+    /// # Panics
+    /// Panics for an empty or duplicate collection, or an exhausted pool.
+    pub fn push_forward_attrs(&mut self, attrs: &[ForwardAttr]) -> ForwardAttrs {
+        assert!(!attrs.is_empty(), "forward attributes must be nonempty");
+        for (idx, attr) in attrs.iter().enumerate() {
+            assert!(!attrs[..idx].contains(attr), "duplicate forward attribute");
+        }
+        if let [attr] = attrs {
+            return ForwardAttrs::One(*attr);
+        }
+        let start = u32::try_from(self.forward_attrs.len()).expect("attribute pool exceeds u32");
+        let len = u32::try_from(attrs.len()).expect("attribute run exceeds u32");
+        self.forward_attrs.extend_from_slice(attrs);
+        ForwardAttrs::Many(ForwardAttrRange { start, len })
+    }
+
+    /// Resolve attributes against the store that owns their range.
+    #[must_use]
+    pub fn resolve_forward_attrs<'a>(&'a self, attrs: &'a ForwardAttrs) -> &'a [ForwardAttr] {
+        match attrs {
+            ForwardAttrs::One(attr) => slice::from_ref(attr),
+            ForwardAttrs::Many(range) => {
+                &self.forward_attrs[range.start as usize..(range.start + range.len) as usize]
+            }
+        }
     }
 
     /// Intern `s` into the store's interner, returning a stable [`StrId`].

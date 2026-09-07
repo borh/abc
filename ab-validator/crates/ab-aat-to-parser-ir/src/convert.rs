@@ -965,8 +965,8 @@ fn append_plain_visible_inline_text(node: &Value, out: &mut String) -> Result<()
                 .unwrap_or(""),
         ),
         "accent" => out.push_str(node["resolved"].as_str().unwrap_or("")),
-        "style" | "font_size" | "small_script" | "tcy" | "keigakomi" | "caption" | "yokogumi"
-        | "warichu" | "text-variant" => {
+        "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi" | "caption"
+        | "yokogumi" | "warichu" | "text-variant" => {
             append_plain_visible_content_text(node.get("content"), out)?;
         }
         "warigaki" => {
@@ -1270,7 +1270,7 @@ fn map_inline_to_nodes(
             Ok(offset)
         }
         "raw" => map_raw_to_nodes(node, nodes, recorder, offset, path),
-        "font_size" | "small_script" | "tcy" | "keigakomi" | "yokogumi" => {
+        "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi" | "yokogumi" => {
             map_layout_span_to_node(node, nodes, recorder, synthetic_warnings, offset, path, 0)
         }
         "caption" => {
@@ -1314,6 +1314,13 @@ fn map_inline_to_nodes(
 
 fn layout_scope(node: &Value) -> Result<Value> {
     match node["kind"].as_str().unwrap_or("") {
+        "formatting" => node["attributes"]
+            .as_array()
+            .context("formatting attributes must be an array")?
+            .iter()
+            .map(layout_scope)
+            .collect::<Result<Vec<_>>>()
+            .map(Value::Array),
         "font_size" => {
             let mut layout =
                 json!({"kind":"font-size", "source":"aat-inline", "size_type":node["size_type"]});
@@ -1538,7 +1545,7 @@ fn inline_child_node(
             }));
             Ok(end)
         }
-        "font_size" | "small_script" | "tcy" | "keigakomi" | "yokogumi" => {
+        "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi" | "yokogumi" => {
             let text = plain_visible_content_text(node.get("content"))?;
             let end = offset + utf8_len(&text);
             let inline_children = inline_children_nodes(
@@ -2135,15 +2142,14 @@ fn append_visible_inline_text(
                 out,
             )?;
         }
-        "font_size" | "small_script" | "tcy" | "keigakomi" | "yokogumi" | "warichu" => {
-            append_visible_content_text(
-                node.get("content"),
-                recorder,
-                &format!("{path}.content"),
-                target_pointer,
-                out,
-            )?
-        }
+        "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi" | "yokogumi"
+        | "warichu" => append_visible_content_text(
+            node.get("content"),
+            recorder,
+            &format!("{path}.content"),
+            target_pointer,
+            out,
+        )?,
         "warigaki" => {
             append_visible_content_text(
                 node.get("upper"),

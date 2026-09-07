@@ -250,8 +250,8 @@ impl RecogniseCtx<'_, '_> {
     ///   catch-all, which would otherwise claim every body. Pinned by
     ///   `editorial_notes_type_as_asis_and_textual_note`.
     /// * 縦中横 compound ≺ small-script range — `「X」は縦中横、行右小書き`
-    ///   is 縦中横, not a small-script range nor `Unknown`. Pinned by
-    ///   `tcy_small_script_compound_recognised_as_tcy`.
+    ///   assigns both attributes to one target. The compound must be
+    ///   recognized before the single-attribute small-script classifier.
     /// * 縦中横 `ShapedNoTarget` diagnostic survives the fall-through —
     ///   when the target is absent the directive degrades to
     ///   `Directive{Unknown}`, but its `tcy_target_not_found` warning is
@@ -846,11 +846,8 @@ enum ForwardTcy {
 /// form (`［＃縦中横］…［＃縦中横終わり］`) is handled by the
 /// paired-container classifier and not matched here.
 ///
-/// Only the exact `「X」は縦中横` shape is recognised (spec §6.3).
-/// Multi-quote `［＃「A」「B」は縦中横］` bodies and the non-canonical
-/// `は縦中横、行右/左小書き` / `は横一列` variants decline to
-/// `Directive{Unknown}` (lossless verbatim) rather than being silently
-/// folded — each is served by an opt-in Tier1 lint / Tier2 render instead.
+/// The compound form adds right-side small script to the same target.
+/// Unknown clauses and multiple quoted targets retain their raw directive.
 impl RecogniseCtx<'_, '_> {
     fn classify_forward_tcy(
         &mut self,
@@ -862,17 +859,14 @@ impl RecogniseCtx<'_, '_> {
         else {
             return ForwardTcy::NotTcy;
         };
-        // Only the exact spec form `「X」は縦中横` (spec §6.3) is recognised
-        //. The non-canonical corpus variants decline to
-        // `Directive{Unknown}` (lossless verbatim), each served by an opt-in
-        // layer instead of a silent parser fold:
-        //   - `は縦中横、行右/左小書き` dropped the small-script axis silently
-        //     (data loss); it now stays Unknown.
-        //   - `は横一列` (a punctuation run set horizontal) → Unknown + Tier1
-        //     lint suggests `は縦中横`.
-        if extracted.suffix != "は縦中横" {
-            return ForwardTcy::NotTcy;
-        }
+        let attrs = match extracted.suffix {
+            "は縦中横" => &[ForwardAttr::CombineUpright][..],
+            "は縦中横、行右小書き" => &[
+                ForwardAttr::CombineUpright,
+                ForwardAttr::SmallScript(BoutenPosition::Right),
+            ][..],
+            _ => return ForwardTcy::NotTcy,
+        };
         // Single target only — a multi-quote `「A」「B」は縦中横` is not a real
         // Aozora shape and used to keep only the first target (silent data
         // loss); it now declines to `Directive{Unknown}`, mirroring emphasis.
@@ -896,13 +890,8 @@ impl RecogniseCtx<'_, '_> {
         else {
             return ForwardTcy::NotTcy;
         };
-        let (node, consume_start, diag) = self.resolve_forward_format(
-            view,
-            open_idx,
-            open_span.start,
-            ForwardAttr::CombineUpright,
-            first,
-        );
+        let (node, consume_start, diag) =
+            self.resolve_forward_formats(view, open_idx, open_span.start, attrs, first);
         ForwardTcy::Recognised(node, consume_start, diag)
     }
 }
@@ -1475,6 +1464,17 @@ impl RecogniseCtx<'_, '_> {
         attr: ForwardAttr,
         only: &str,
     ) -> (Node, u32, ForwardDiag) {
+        self.resolve_forward_formats(view, open_idx, open_span_start, &[attr], only)
+    }
+
+    fn resolve_forward_formats(
+        &mut self,
+        view: BodyView<'_>,
+        open_idx: usize,
+        open_span_start: u32,
+        attrs: &[ForwardAttr],
+        only: &str,
+    ) -> (Node, u32, ForwardDiag) {
         let text = self.alloc.content_plain(only);
         match resolve_forward_referent(
             view.events,
@@ -1485,25 +1485,25 @@ impl RecogniseCtx<'_, '_> {
         ) {
             ForwardReferent::Adjacent(consume_start) => (
                 self.alloc
-                    .forward_format(attr, text, ForwardOrigin::Reclaimed),
+                    .forward_formats(attrs, text, ForwardOrigin::Reclaimed),
                 consume_start,
                 ForwardDiag::None,
             ),
             ForwardReferent::Interior { start, end } => {
                 let deco = self
                     .alloc
-                    .forward_format(attr, text, ForwardOrigin::Detached);
+                    .forward_formats(attrs, text, ForwardOrigin::Detached);
                 self.pending_decoration = Some((deco, Span::new(start, end)));
                 (
                     self.alloc
-                        .forward_format(attr, text, ForwardOrigin::Referenced),
+                        .forward_formats(attrs, text, ForwardOrigin::Referenced),
                     open_span_start,
                     ForwardDiag::None,
                 )
             }
             ForwardReferent::Unresolvable => (
                 self.alloc
-                    .forward_format(attr, text, ForwardOrigin::Referenced),
+                    .forward_formats(attrs, text, ForwardOrigin::Referenced),
                 open_span_start,
                 ForwardDiag::NotStylable,
             ),

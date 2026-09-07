@@ -376,7 +376,19 @@ fn emit_format<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W) -> f
     if matches!(f.origin, ForwardOrigin::Detached) {
         return Ok(());
     }
-    if let ForwardAttr::Bouten { kind, position } = f.attr {
+    let Some(attr) = f.attrs.single() else {
+        out.write_str("［＃「")?;
+        emit_content_as_plain_range(f.target, store, out)?;
+        out.write_str("」は")?;
+        for (index, attr) in store.resolve_forward_attrs(&f.attrs).iter().enumerate() {
+            if index > 0 {
+                out.write_char('、')?;
+            }
+            out.write_str(attr.keyword())?;
+        }
+        return out.write_char('］');
+    };
+    if let ForwardAttr::Bouten { kind, position } = attr {
         out.write_str("［＃")?;
         emit_bouten_targets(store.resolve_content_range(f.target), store, out)?;
         match position {
@@ -387,14 +399,14 @@ fn emit_format<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W) -> f
         out.write_str(kind.keyword())?;
         return out.write_char('］');
     }
-    if matches!(f.attr, ForwardAttr::Framed(EnclosureKind::Box)) {
+    if matches!(attr, ForwardAttr::Framed(EnclosureKind::Box)) {
         // 「□」囲み: the keyword embeds the quoted glyph, so it can't come from
         // `keyword()`. □ (U+25A1) is the canonical spelling of the Box kind.
         out.write_str("［＃「")?;
         emit_content_as_plain_range(f.target, store, out)?;
         return out.write_str("」は「□」囲み］");
     }
-    if matches!(f.attr, ForwardAttr::AccentDot) {
+    if matches!(attr, ForwardAttr::AccentDot) {
         // ドット付き: the body is a selector grammar, not the
         // `「target」は<keyword>` shape, so re-emit the interned raw body verbatim
         // (byte-exact round-trip). The `Reclaimed` leading literal — the run the
@@ -408,14 +420,14 @@ fn emit_format<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W) -> f
     out.write_str("［＃「")?;
     emit_content_as_plain_range(f.target, store, out)?;
     out.write_str("」は")?;
-    if let ForwardAttr::FontSize(shift) = f.attr {
+    if let ForwardAttr::FontSize(shift) = attr {
         let word = if shift.larger() {
             "大きな"
         } else {
             "小さな"
         };
         write!(out, "{}段階{word}文字", shift.magnitude())?;
-    } else if let ForwardAttr::AlignEnd { offset } = f.attr {
+    } else if let ForwardAttr::AlignEnd { offset } = attr {
         // Anchor is not distinguished in the model (like LineFormat::AlignEnd), so
         // canonicalise: 0 → 地付き (the zero-lift spelling), else 文末より…字上げ揃え.
         // Both re-parse to the same offset.
@@ -424,13 +436,13 @@ fn emit_format<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W) -> f
         } else {
             write!(out, "文末より{offset}字上げ揃え")?;
         }
-    } else if let ForwardAttr::Accent(mark) = f.attr {
+    } else if let ForwardAttr::Accent(mark) = attr {
         // アクサン / ウムラウト: the suffix carries the bracketed mark symbol, not a
         // bare keyword (so `keyword()` returns its 太字 default) — re-emit the
         // exact source suffix for a byte-exact round-trip.
         out.write_str(accent_suffix(mark))?;
     } else {
-        out.write_str(f.attr.keyword())?;
+        out.write_str(attr.keyword())?;
     }
     out.write_char('］')
 }

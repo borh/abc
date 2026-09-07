@@ -7,12 +7,13 @@
 //! exactly that: a representation they can own, cache, and move between
 //! threads.
 //!
-//! One variant per node. Three payload kinds use `u32` handles instead of
+//! One variant per node. Variable-length payloads use `u32` handles instead of
 //! inline variable-length data:
 //!
 //! - interned `&str` → [`StrId`] into a [`StrInterner`];
 //! - `NonEmpty<Content>` → [`ContentRange`] into [`NodeStore`]'s content pool;
-//! - `[Segment]` → [`SegRange`] into [`NodeStore`]'s segment pool.
+//! - `[Segment]` → [`SegRange`] into [`NodeStore`]'s segment pool;
+//! - compound attributes → [`ForwardAttrRange`] into its attribute pool.
 //!
 //! Lifetime-free `Copy` payloads (`LineFormat`, `RegionFormat`, `Container`,
 //! the scalar enums, `Span`, `Diagnostic`, …) are used directly, without an
@@ -43,7 +44,7 @@ pub use payload::{
     HeadingHint, Illustration, Kunten, KuntenKind, MarginNote, Node, Ruby, Segment, Warichu,
 };
 pub use registry::{ContainerPair, NodeRef, Registry};
-pub use store::{ContentRange, NodeStore, SegRange};
+pub use store::{ContentRange, ForwardAttrRange, ForwardAttrs, NodeStore, SegRange};
 
 #[cfg(test)]
 mod tests {

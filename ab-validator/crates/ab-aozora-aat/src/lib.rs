@@ -270,6 +270,7 @@ enum ProjectedKind {
     },
     Node(NodeKind),
     Format(ForwardAttr),
+    FormatMany(Vec<ForwardAttr>),
     Region(RegionFormat),
     RegionClose(RegionClose),
     Directive(DirectiveKind),
@@ -292,7 +293,7 @@ impl ProjectedKind {
             Self::RegionClose(_) => "containerClose",
             Self::Format(ForwardAttr::Bouten { .. }) => "bouten",
             Self::Format(ForwardAttr::CombineUpright) => "combineUpright",
-            Self::Format(_) => "emphasis",
+            Self::Format(_) | Self::FormatMany(_) => "emphasis",
             Self::Directive(DirectiveKind::WarichuOpen) => "warichuOpen",
             Self::Directive(DirectiveKind::WarichuClose) => "warichuClose",
             Self::Directive(_) | Self::TextVariant { .. } => "directive",
@@ -342,7 +343,14 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                     }
                 }
                 NodeRef::Inline(Node::Format(format))
-                | NodeRef::BlockLeaf(Node::Format(format)) => ProjectedKind::Format(format.attr),
+                | NodeRef::BlockLeaf(Node::Format(format)) => format.attrs.single().map_or_else(
+                    || {
+                        ProjectedKind::FormatMany(
+                            tree.store.resolve_forward_attrs(&format.attrs).to_vec(),
+                        )
+                    },
+                    ProjectedKind::Format,
+                ),
                 NodeRef::BlockOpen(region) => ProjectedKind::Region(region),
                 NodeRef::BlockClose(close) => ProjectedKind::RegionClose(close),
                 NodeRef::Inline(Node::Directive(directive))
@@ -814,7 +822,7 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
             {
                 Some(EstablishedInterpretation::Emphasis)
             }
-            Some("font_size" | "small_script")
+            Some("formatting" | "font_size" | "small_script")
                 if node["content"]
                     .as_array()
                     .is_some_and(|children| !children.is_empty()) =>
@@ -1726,7 +1734,7 @@ fn inline_content(
             ProjectedKind::Format(ForwardAttr::CombineUpright) => {
                 content.push(tcy_node(decoded, node));
             }
-            ProjectedKind::Format(_) => {
+            ProjectedKind::Format(_) | ProjectedKind::FormatMany(_) => {
                 push_style_node(&mut content, decoded, node, "emphasis");
             }
             ProjectedKind::Node(NodeKind::ForcedBreak) => content.push(json!({
@@ -2271,6 +2279,23 @@ fn push_style_node(
     style_type: &str,
 ) {
     let mut style = style_node(decoded, node, style_type);
+    if let ProjectedKind::FormatMany(attrs) = &node.kind {
+        let fields: Option<Vec<_>> = attrs
+            .iter()
+            .map(|attr| match attr {
+                ForwardAttr::CombineUpright => Some(json!({"kind":"tcy"})),
+                other => formatting_fields(*other),
+            })
+            .collect();
+        if let Some(fields) = fields {
+            style["kind"] = json!("formatting");
+            style
+                .as_object_mut()
+                .expect("style object")
+                .remove("style_type");
+            style["attributes"] = json!(fields);
+        }
+    }
     if let ProjectedKind::Format(attr) = node.kind
         && let Some(fields) = formatting_fields(attr)
     {
@@ -2285,6 +2310,15 @@ fn push_style_node(
         style["span"]["byte_start"] = children[0]["span"]["byte_start"].clone();
         style["span"]["line_start"] = children[0]["span"]["line_start"].clone();
         style["content"] = json!(children);
+    }
+    if matches!(node.kind, ProjectedKind::FormatMany(_))
+        && style["content"].as_array().is_some_and(Vec::is_empty)
+    {
+        let mut retained = raw_node(decoded, node, "unresolved-formatting-target");
+        retained["interpretation_problem"] = json!({"kind":"uninterpreted-notation", "code":"uninterpreted-notation",
+            "aspects":["structure", "layout"], "influence":{"kind":"document"}});
+        content.push(retained);
+        return;
     }
     style["interpretation_marker_spans"] = json!(
         node.marker_span

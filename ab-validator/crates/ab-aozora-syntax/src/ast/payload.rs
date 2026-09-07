@@ -16,7 +16,7 @@ use crate::{
 };
 
 use super::intern::StrId;
-use super::store::{ContentRange, NodeStore, SegRange};
+use super::store::{ContentRange, ForwardAttrs, NodeStore, SegRange};
 
 /// Body content that may carry nested Aozora constructs. Two-tier: a single
 /// plain run or a mixed sequence of segments.
@@ -140,7 +140,7 @@ pub struct MarginNote {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ForwardFormat {
     /// Which forward-scope attribute decorates the run.
-    pub attr: ForwardAttr,
+    pub attrs: ForwardAttrs,
     /// The decorated run.
     pub target: ContentRange,
     /// Target-text provenance.
@@ -317,9 +317,9 @@ impl Node {
         use crate::NodeKind;
         match self {
             Self::Ruby(_) => NodeKind::Ruby,
-            Self::Format(f) => match f.attr {
-                ForwardAttr::Bouten { .. } => NodeKind::Bouten,
-                ForwardAttr::CombineUpright => NodeKind::CombineUpright,
+            Self::Format(f) => match f.attrs.single() {
+                Some(ForwardAttr::Bouten { .. }) => NodeKind::Bouten,
+                Some(ForwardAttr::CombineUpright) => NodeKind::CombineUpright,
                 _ => NodeKind::Emphasis,
             },
             Self::Gaiji(_) => NodeKind::Gaiji,
@@ -353,9 +353,9 @@ impl Node {
     pub const fn xml_node_name(self) -> &'static str {
         match self {
             Self::Ruby(_) => "aozora_ruby",
-            Self::Format(f) => match f.attr {
-                ForwardAttr::Bouten { .. } => "aozora_bouten",
-                ForwardAttr::CombineUpright => "aozora_tcy",
+            Self::Format(f) => match f.attrs.single() {
+                Some(ForwardAttr::Bouten { .. }) => "aozora_bouten",
+                Some(ForwardAttr::CombineUpright) => "aozora_tcy",
                 _ => "aozora_emphasis",
             },
             Self::Gaiji(_) => "aozora_gaiji",

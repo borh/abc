@@ -34,9 +34,9 @@ use crate::{
 };
 
 use super::ast::{
-    AngleQuote, Content, ContentRange, Directive, ForwardFormat, Gaiji, GaijiCanonicalOwned,
-    Heading, HeadingHint, Illustration, Kunten, KuntenKind, MarginNote, Node, NodeStore, Ruby,
-    Segment, Warichu,
+    AngleQuote, Content, ContentRange, Directive, ForwardAttrs, ForwardFormat, Gaiji,
+    GaijiCanonicalOwned, Heading, HeadingHint, Illustration, Kunten, KuntenKind, MarginNote, Node,
+    NodeStore, Ruby, Segment, Warichu,
 };
 
 /// `true` for the canonical empty-content form (an empty segment run).
@@ -302,7 +302,27 @@ impl Allocator {
             "classify stage must emit a forward format with a non-empty target",
         );
         Node::Format(ForwardFormat {
-            attr,
+            attrs: ForwardAttrs::One(attr),
+            target,
+            origin,
+            accent_body: None,
+        })
+    }
+
+    /// Resolve a shared target once and apply each attribute without nesting.
+    ///
+    /// # Panics
+    /// Panics for empty text or invalid attribute collections.
+    pub fn forward_formats(
+        &mut self,
+        attrs: &[ForwardAttr],
+        text: Content,
+        origin: ForwardOrigin,
+    ) -> Node {
+        let attrs = self.store.push_forward_attrs(attrs);
+        let target = self.push_nonempty(text, "forward format requires a nonempty target");
+        Node::Format(ForwardFormat {
+            attrs,
             target,
             origin,
             accent_body: None,
@@ -324,7 +344,7 @@ impl Allocator {
         );
         let accent_body = Some(self.store.intern(body));
         Node::Format(ForwardFormat {
-            attr: ForwardAttr::AccentDot,
+            attrs: ForwardAttrs::One(ForwardAttr::AccentDot),
             target,
             origin,
             accent_body,
@@ -581,7 +601,7 @@ mod tests {
             panic!("expected Format(Bouten), got {n:?}");
         };
         assert_eq!(
-            b.attr,
+            b.attrs.single().unwrap(),
             ForwardAttr::Bouten {
                 kind: BoutenKind::Goma,
                 position: BoutenPosition::Right,
@@ -598,7 +618,7 @@ mod tests {
         let Node::Format(t) = a.tate_chu_yoko(text, ForwardOrigin::Referenced) else {
             panic!("expected Format(CombineUpright)");
         };
-        assert_eq!(t.attr, ForwardAttr::CombineUpright);
+        assert_eq!(t.attrs.single().unwrap(), ForwardAttr::CombineUpright);
         assert_eq!(plain(&a, t.target), Some("12"));
     }
 
@@ -610,7 +630,7 @@ mod tests {
         else {
             panic!("expected Format(Bold)");
         };
-        assert_eq!(e.attr, ForwardAttr::Bold);
+        assert_eq!(e.attrs.single().unwrap(), ForwardAttr::Bold);
         assert_eq!(plain(&a, e.target), Some("重要"));
         assert_eq!(e.origin, ForwardOrigin::Reclaimed);
     }

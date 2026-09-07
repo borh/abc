@@ -407,6 +407,12 @@
         "span": { "$ref": "#/$defs/span" }
       }
     },
+    "formatting_attribute": {
+      "oneOf": [
+        { "type":"object", "additionalProperties":false, "required":["kind"], "properties":{"kind":{"const":"tcy"}} },
+        { "type":"object", "additionalProperties":false, "required":["kind","position"], "properties":{"kind":{"const":"small_script"},"position":{"enum":["right","left"]}} }
+      ]
+    },
     "inline_container": {
       "type": "object",
       "required": ["kind", "content"],
@@ -414,8 +420,9 @@
       "patternProperties": { "^x-": true },
       "properties": {
         "interpretation_marker_spans": { "type": "array", "items": { "$ref": "#/$defs/span" } },
-        "kind": { "enum": ["style", "font_size", "small_script", "tcy", "keigakomi", "yokogumi", "caption"] },
+        "kind": { "enum": ["style", "formatting", "font_size", "small_script", "tcy", "keigakomi", "yokogumi", "caption"] },
         "decoration": {"type":"object", "additionalProperties":false, "required":["kind","position"], "properties":{"kind":{"type":"string"}, "position":{"enum":["right","left","both","unknown"]}}},
+        "attributes": { "type":"array", "minItems":2, "uniqueItems":true, "items": { "$ref":"#/$defs/formatting_attribute" } },
         "style_type": { "type": "string" },
         "size_type": { "enum": ["large", "small", "absolute"] },
         "level": { "type": "integer", "minimum": 1 },
@@ -430,6 +437,7 @@
         "content": { "type": "array", "items": { "$ref": "#/$defs/inline" } }
       },
       "allOf": [
+        { "if":{"properties":{"kind":{"const":"formatting"}}}, "then":{"required":["attributes"]}, "else":{"not":{"required":["attributes"]}} },
         {
           "if": { "properties": { "kind": { "const": "small_script" } } },
           "then": { "required": ["position"] }

@@ -2875,7 +2875,7 @@ mod tests {
             panic!("expected Format(Bouten)");
         };
         assert_eq!(
-            f.attr,
+            f.attrs.single().unwrap(),
             ForwardAttr::Bouten {
                 kind: BoutenKind::Goma,
                 position: BoutenPosition::Right,

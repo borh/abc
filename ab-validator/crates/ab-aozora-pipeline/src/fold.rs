@@ -157,7 +157,10 @@ fn node_policy(node: Node) -> Option<(ConstructId, Role, Disposition, EvidenceCl
     let typed = EvidenceClass::TypedNode;
     Some(match node {
         Node::Ruby(_) => (ConstructId::Ruby, Role::Ruby, semantic, typed),
-        Node::Format(format) => forward_attr_policy(format.attr)?,
+        Node::Format(format) => match format.attrs.single() {
+            Some(attr) => forward_attr_policy(attr)?,
+            None => (ConstructId::Emphasis, Role::Typography, semantic, typed),
+        },
         Node::Gaiji(_) => (ConstructId::Gaiji, Role::Gaiji, semantic, typed),
         Node::Line(line) => match line {
             LineFormat::Indent { .. } => (ConstructId::Indent, Role::Layout, semantic, typed),

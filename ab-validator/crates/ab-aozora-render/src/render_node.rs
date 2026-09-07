@@ -18,9 +18,9 @@ use core::fmt::{self, Write};
 use ab_aozora_syntax::GaijiCanonical;
 use ab_aozora_syntax::accent::{compose_accent, compose_accent_dots};
 use ab_aozora_syntax::ast::{
-    AngleQuote, Content, ContentRange, Directive, ForwardFormat, Gaiji, GaijiCanonicalOwned,
-    Heading, HeadingHint, Illustration, Kunten, KuntenKind, MarginNote, Node, NodeStore, Ruby,
-    Segment,
+    AngleQuote, Content, ContentRange, Directive, ForwardAttrs, ForwardFormat, Gaiji,
+    GaijiCanonicalOwned, Heading, HeadingHint, Illustration, Kunten, KuntenKind, MarginNote, Node,
+    NodeStore, Ruby, Segment,
 };
 use ab_aozora_syntax::format::ForwardOrigin;
 use ab_aozora_syntax::{AccentMark, DirectiveKind, EnclosureKind, ForwardAttr, RubySide};
@@ -135,7 +135,7 @@ fn render_ruby<W: Write>(r: &Ruby, store: &NodeStore, out: &mut W) -> fmt::Resul
     match r.base_emphasis {
         Some(attr) => {
             let deco = ForwardFormat {
-                attr,
+                attrs: ForwardAttrs::One(attr),
                 target: r.base,
                 origin: ForwardOrigin::SelfContained,
                 accent_body: None,
@@ -178,7 +178,32 @@ fn render_format<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W) ->
     if matches!(f.origin, ForwardOrigin::Referenced) {
         return Ok(());
     }
-    match f.attr {
+    let Some(attr) = f.attrs.single() else {
+        out.write_str("<span class=\"")?;
+        for (index, attr) in store.resolve_forward_attrs(&f.attrs).iter().enumerate() {
+            if index > 0 {
+                out.write_char(' ')?;
+            }
+            let class = match attr {
+                ForwardAttr::CombineUpright => "aozora-combine-upright",
+                ForwardAttr::SmallScript(_) => {
+                    write!(
+                        out,
+                        "aozora-{}",
+                        ab_aozora_spec::roman_slug(attr.keyword())
+                            .expect("small script has a spec slug")
+                    )?;
+                    continue;
+                }
+                _ => "aozora-unsupported-format",
+            };
+            out.write_str(class)?;
+        }
+        out.write_str("\">")?;
+        render_content_range(f.target, store, out)?;
+        return out.write_str("</span>");
+    };
+    match attr {
         ForwardAttr::Bouten { kind, position } => {
             write!(
                 out,
@@ -246,7 +271,7 @@ fn render_format<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W) ->
                 render_content_range(f.target, store, out)?;
                 out.write_str("</span>")
             }
-            None => render_forward_semantic(f, f.attr, store, out),
+            None => render_forward_semantic(f, attr, store, out),
         },
         // ドット付き: compose the addressed letters of the reclaimed run
         // into their precomposed dotted glyphs (ṁ / ṣ) — see `render_accent_dot`.

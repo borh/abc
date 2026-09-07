@@ -325,16 +325,25 @@
 
 (defn- render-layout-span-node
   ([acc node depth]
-   (let [layout (get node "layout")]
-     (if-let [rend (some-> layout inline-layout-rend)]
-       (let [params (layout-params layout)]
+   (let [layout (get node "layout")
+         layouts (if (vector? layout) layout [layout])
+         rends (mapv inline-layout-rend layouts)]
+     (if (every? some? rends)
+       (let [rend (string/join " " rends)
+             params (if (vector? layout)
+                      (not-empty (string/join ";" (mapcat (fn [attribute]
+                                                            (when-let [params (layout-params attribute)]
+                                                              (map #(str (get attribute "kind") "." %)
+                                                                   (string/split params #";"))))
+                                                          layouts)))
+                      (layout-params layout))]
          (render-inline-wrapper acc
                                 (seq (get node "inline_children"))
                                 (get node "text")
                                 depth
                                 (sourced node [:hi (cond-> {:rend rend}
-                                                     (get layout "kind")
-                                                     (assoc :abc/layout-kind (get layout "kind"))
+                                                     (seq layouts)
+                                                     (assoc :abc/layout-kind (string/join " " (map #(get % "kind") layouts)))
 
                                                      params
                                                      (assoc :abc/layout-params params))])))

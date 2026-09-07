@@ -359,20 +359,28 @@
 
 (defn- render-heading-node
   ([acc node depth]
-   (let [children (seq (get node "inline_children"))
-         base (-> acc flush-paragraph flush-division)]
-     (if children
-       (let [scratch (assoc base :current-paragraph [])
-             rendered (render-inline-children scratch children depth)
-             head-fragment (:current-paragraph rendered)]
-         (-> rendered
-             (assoc :current-paragraph [])
-             (update :current-division conj
-                     (into (sourced node [:head (heading-attrs node)])
-                           head-fragment))))
-       (update base :current-division conj
-               (sourced node [:head (heading-attrs node)
-                              (get node "text")]))))))
+   (if (#{"dogyo" "mado"} (get node "style"))
+     (render-inline-wrapper acc
+                            (seq (get node "inline_children"))
+                            (get node "text")
+                            depth
+                            (sourced node [:seg (assoc (heading-attrs node)
+                                                       :type "heading"
+                                                       :rend (get node "style"))]))
+     (let [children (seq (get node "inline_children"))
+           base (-> acc flush-paragraph flush-division)]
+       (if children
+         (let [scratch (assoc base :current-paragraph [])
+               rendered (render-inline-children scratch children depth)
+               head-fragment (:current-paragraph rendered)]
+           (-> rendered
+               (assoc :current-paragraph [])
+               (update :current-division conj
+                       (into (sourced node [:head (heading-attrs node)])
+                             head-fragment))))
+         (update base :current-division conj
+                 (sourced node [:head (heading-attrs node)
+                                (get node "text")])))))))
 
 (defn- render-indentation-node
   ([acc node _depth]

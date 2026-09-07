@@ -4,7 +4,7 @@
   "mapping_schema_hash": "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2",
   "source_aat_version": 1,
   "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "target_parser_ir_schema_hash": "sha256:7bce2e1b611f7db6eda4170ee42c53e0cb95ab0b14d4e37f57e104c983d9d1bc",
+  "target_parser_ir_schema_hash": "sha256:7e51c606da51b01ac25cbfef13cb6fa20cd201428457df6a41ba304809e3fe0a",
   "transform_rule_descriptions": [
     {
       "rule_id": "A-01",
@@ -1375,14 +1375,6 @@
       "description": "Observed 39 occurrences; first_path=blocks[128].children[0].children[0].content[2].ruby.reading_content. Historical reading_content observation; current conversion retains text and gaiji references in reading_children wherever the containing ruby is emitted, while nested formatting is flattened"
     },
     {
-      "rule_id": "L-12",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].children[].children[].heading.style",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 21 occurrences; first_path=blocks[0].children[0].children[0].heading.style. heading.style='normal' dropped"
-    },
-    {
       "rule_id": "L-13",
       "category": "LOSS",
       "aat_pointer": "blocks[].children[].content[].accent.name",
@@ -2605,14 +2597,6 @@
       "parser_ir_pointer": null,
       "action": "drop",
       "description": "Observed 21 occurrences; first_path=blocks[38].children[0].heading.content[4].ruby.reading_content. Historical reading_content observation; current conversion retains text and gaiji references in reading_children wherever the containing ruby is emitted, while nested formatting is flattened"
-    },
-    {
-      "rule_id": "L-170",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].children[].heading.style",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 71461 occurrences; first_path=blocks[16].children[0].heading.style. heading.style='normal' dropped"
     },
     {
       "rule_id": "L-171",
@@ -4917,14 +4901,6 @@
       "parser_ir_pointer": null,
       "action": "drop",
       "description": "Observed 16936 occurrences; first_path=blocks[9].heading.content[0].ruby.reading_content. Historical reading_content observation; current conversion retains text and gaiji references in reading_children wherever the containing ruby is emitted, while nested formatting is flattened"
-    },
-    {
-      "rule_id": "L-464",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].heading.style",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 87024 occurrences; first_path=blocks[1].heading.style. heading.style='handled_elsewhere' dropped"
     },
     {
       "rule_id": "L-465",

@@ -15,7 +15,7 @@
       "type": "object", "additionalProperties": false,
       "required": ["kind", "outcome", "aspects", "source_span"],
       "properties": {
-        "kind": {"enum": ["ruby", "gaiji", "emphasis", "warichu", "kunten"]},
+        "kind": {"enum": ["ruby", "gaiji", "emphasis", "warichu", "kunten", "heading"]},
         "outcome": {"const": "established"},
         "aspects": {"type":"array", "minItems":1, "uniqueItems":true, "items":{"enum":["content","structure","layout"]}},
         "source_span": {"type":"object", "additionalProperties":false, "required":["start","end","coordinate_system"],
@@ -205,6 +205,7 @@
     },
     "inline": {
       "oneOf": [
+        { "$ref": "#/$defs/heading" },
         { "$ref": "#/$defs/text" },
         { "$ref": "#/$defs/ruby" },
         { "$ref": "#/$defs/gaiji" },
@@ -235,6 +236,7 @@
       "additionalProperties": false,
       "patternProperties": { "^x-": true },
       "properties": {
+        "interpretation_marker_spans": { "type": "array", "items": { "$ref": "#/$defs/span" } },
         "kind": { "const": "heading" },
         "level": { "type": "integer", "minimum": 1, "maximum": 3 },
         "style": { "type": "string" },

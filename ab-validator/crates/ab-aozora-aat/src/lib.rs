@@ -27,7 +27,7 @@ use ab_aozora_facade::{
 // so the checker's comparison source (`ab-check::body_text`) can never
 // drift from the parser's own cut.
 use ab_aozora_facade::syntax::{
-    AbsoluteSize,
+    AbsoluteSize, HeadingStyle,
     ast::{Content, KuntenKind, Segment},
 };
 use ab_source_syntax::{RegionError, SourceRegions, aozora_body_range};
@@ -862,6 +862,7 @@ enum EstablishedInterpretation {
     Emphasis,
     Warichu,
     Kunten,
+    Heading,
 }
 
 impl EstablishedInterpretation {
@@ -872,6 +873,7 @@ impl EstablishedInterpretation {
             Self::Emphasis => "emphasis",
             Self::Warichu => "warichu",
             Self::Kunten => "kunten",
+            Self::Heading => "heading",
         }
     }
 
@@ -880,7 +882,7 @@ impl EstablishedInterpretation {
             Self::Ruby => &["content", "structure"],
             Self::Gaiji => &["content"],
             Self::Emphasis => &["layout"],
-            Self::Warichu => &["structure", "layout"],
+            Self::Warichu | Self::Heading => &["structure", "layout"],
             Self::Kunten => &["content", "structure", "layout"],
         }
     }
@@ -940,6 +942,7 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
             }
             Some("warichu") => Some(EstablishedInterpretation::Warichu),
             Some("kunten") => Some(EstablishedInterpretation::Kunten),
+            Some("heading") => Some(EstablishedInterpretation::Heading),
             _ => None,
         };
         if let Some(interpretation) = interpretation {
@@ -1214,6 +1217,35 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
 
     while index < content.len() {
         let mut node = content[index].clone();
+        if let Some(close_index) = native_scopes.get(&index).copied()
+            && let Some(attributes) = node.get("x-heading")
+        {
+            let mut inner = content[index + 1..close_index].to_vec();
+            if attributes["style"] == "normal" {
+                strip_boundary_newlines(&mut inner);
+            }
+            let close = &content[close_index];
+            let mut heading = json!({
+                "kind":"heading", "level":attributes["level"], "style":attributes["style"],
+                "content":inner,
+                "span":{"byte_start":node["span"]["byte_start"], "byte_end":close["span"]["byte_end"],
+                    "line_start":node["span"]["line_start"], "line_end":close["span"]["line_end"]},
+                "interpretation_marker_spans":[node["span"],close["span"]]
+            });
+            if let Some(indent) = paragraph.last().and_then(heading_indent_marker) {
+                paragraph.pop();
+                heading["indent"] = json!(indent);
+            }
+            if attributes["style"] == "normal" {
+                push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
+                blocks.push(heading);
+                strip_next_leading_newline = true;
+            } else {
+                paragraph.push(heading);
+            }
+            index = close_index + 1;
+            continue;
+        }
         if strip_next_leading_newline {
             strip_leading_newline(&mut node);
             strip_next_leading_newline = false;
@@ -1354,9 +1386,13 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
         if is_heading_hint_raw(&node)
             && let Some(heading) = heading_block_from_hint(&mut paragraph, &node, source)
         {
-            push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
-            blocks.push(heading);
-            strip_next_leading_newline = true;
+            if heading["style"] == "normal" {
+                push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
+                blocks.push(heading);
+                strip_next_leading_newline = true;
+            } else {
+                paragraph.push(heading);
+            }
             index += 1;
             continue;
         }
@@ -2809,6 +2845,17 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
         ProjectedKind::Region(region) => {
             if let Some(close) = &node.container_close {
                 value["x-native-close-span"] = span_json(close, &decoded.span_ctx);
+            }
+            if let RegionFormat::Heading { level, style, .. } = region {
+                let style = match style {
+                    HeadingStyle::Standard => Some("normal"),
+                    HeadingStyle::SameLine => Some("dogyo"),
+                    HeadingStyle::Window => Some("mado"),
+                    _ => None,
+                };
+                if let Some(style) = style {
+                    value["x-heading"] = json!({"level":level.outline_level(), "style":style});
+                }
             }
             // AAT's paired inline scopes must not terminate enclosing blocks,
             // even when the native renderer uses block presentation for them.

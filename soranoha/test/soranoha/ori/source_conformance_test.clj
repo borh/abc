@@ -53,6 +53,20 @@
 (defn- attribute [^Element node ^String name] (.getAttribute node name))
 (defn- texts [result tag] (mapv view/visible-text (elements result tag)))
 
+(deftest heading-regions-preserve-presentation-and-rich-reading
+  (doseq [[prefix style] [["同行" "dogyo"] ["窓" "mado"]]]
+    (let [result (transcribe (source (str "前［＃" prefix "中見出し］漢字《かんじ》［＃"
+                                          prefix "中見出し終わり］後")))
+          heading (first (filter #(= "heading" (attribute % "type")) (elements result "seg")))]
+      (is (= "前漢字後" (:plaintext result)))
+      (is (= style (attribute heading "rend")))
+      (is (= "2" (attribute heading "n")))
+      (is (= ["漢字"] (texts result "rb")))
+      (is (= ["かんじ"] (texts result "rt")))
+      (is (empty? (elements result "head")))
+      (is (= 2 (count (filter #(= "heading" (get % "kind"))
+                              (get-in result [:ir "interpretation_facts"]))))))))
+
 (deftest gaiji-ruby-indentation-and-apparatus-retain-independent-values
   (doseq [encoding ["UTF-8" "windows-31j"]]
     (let [result (transcribe (source (str "［＃８字下げ］一［＃「一」は中見出し］\n\n"

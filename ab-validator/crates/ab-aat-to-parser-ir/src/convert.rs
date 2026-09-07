@@ -407,14 +407,6 @@ fn map_block_content(
                 block.get("level").cloned(),
                 block.get("level").cloned(),
             )?;
-            let style_pointer = format!("{path}.heading.style");
-            recorder.record(
-                "LOSS",
-                Some(style_pointer.as_str()),
-                None,
-                block.get("style").cloned(),
-                None,
-            )?;
             let text = plain_visible_content_text(block.get("content"))?;
             let inline_children = inline_children_nodes(
                 block.get("content"),
@@ -432,6 +424,7 @@ fn map_block_content(
                 "text": text,
                 "inline_children": inline_children,
                 "level": block.get("level").and_then(Value::as_u64).unwrap_or(1),
+                "style": block["style"],
             });
             if let Some(indent) = block.get("indent").or_else(|| block.get("x-indent")) {
                 heading["indent"] = indent.clone();
@@ -994,7 +987,7 @@ fn append_plain_visible_inline_text(node: &Value, out: &mut String) -> Result<()
         ),
         "accent" => out.push_str(node["resolved"].as_str().unwrap_or("")),
         "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi" | "caption"
-        | "yokogumi" | "warichu" | "text-variant" => {
+        | "yokogumi" | "warichu" | "text-variant" | "heading" => {
             append_plain_visible_content_text(node.get("content"), out)?;
         }
         "warigaki" => {
@@ -1141,6 +1134,7 @@ fn map_inline_to_nodes(
     path: &str,
 ) -> Result<u64> {
     match node["kind"].as_str().unwrap_or("") {
+        "heading" => map_heading_inline(node, nodes, recorder, synthetic_warnings, offset, path, 0),
         "text-variant" => {
             map_text_variant_to_node(node, nodes, recorder, synthetic_warnings, offset, path, 0)
         }
@@ -1452,6 +1446,34 @@ fn inline_children_nodes(
     Ok(nodes)
 }
 
+fn map_heading_inline(
+    node: &Value,
+    nodes: &mut Vec<Value>,
+    recorder: &mut DivergenceRecorder,
+    synthetic_warnings: &mut Vec<Value>,
+    offset: u64,
+    path: &str,
+    depth: usize,
+) -> Result<u64> {
+    let text = plain_visible_content_text(node.get("content"))?;
+    let end = offset + utf8_len(&text);
+    let children = inline_children_nodes(
+        node.get("content"),
+        recorder,
+        synthetic_warnings,
+        offset,
+        &format!("{path}.content"),
+        depth + 1,
+    )?;
+    let mut heading = json!({"type":"heading", "span":synthetic_span(offset,end),
+        "text":text, "inline_children":children, "level":node["level"], "style":node["style"]});
+    if let Some(indent) = node.get("indent") {
+        heading["indent"] = indent.clone();
+    }
+    nodes.push(heading);
+    Ok(end)
+}
+
 fn inline_child_node(
     node: &Value,
     nodes: &mut Vec<Value>,
@@ -1481,6 +1503,15 @@ fn inline_child_node(
     }
 
     match node["kind"].as_str().unwrap_or("") {
+        "heading" => map_heading_inline(
+            node,
+            nodes,
+            recorder,
+            synthetic_warnings,
+            offset,
+            path,
+            depth,
+        ),
         "text-variant" => map_text_variant_to_node(
             node,
             nodes,
@@ -2179,7 +2210,7 @@ fn append_visible_inline_text(
             )?;
         }
         "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi" | "yokogumi"
-        | "warichu" => append_visible_content_text(
+        | "warichu" | "heading" => append_visible_content_text(
             node.get("content"),
             recorder,
             &format!("{path}.content"),

@@ -26,6 +26,7 @@
       (doseq [[body expected expected-markdown] [["Venus［＃「e」はアクサン（´）付き］" "Vénus"]
                                                  ["〔ru_pam［＃mは上ドット付き］〕" "rūpaṁ"]
                                                  ["〔Mi_hr〕［＃hは下ドット付き］" "Mīḥr"]
+                                                 ["Samgha《サングハ》［＃mは上ドット付き］" "Saṁgha" "<ruby><rb>Saṁgha</rb><rt>サングハ</rt></ruby>"]
                                                  ["〔rattha-sva_mi_〕［＃tはともに下ドット付き］" "raṭṭha-svāmī" "raṭṭha\\-svāmī"]
                                                  ["Konkana［＃前のnは上ドット付き、後のnは下ドット付き］" "Koṅkaṇa"]]]
         (let [source (str "題\n作者\n\n" body "\n\n底本：本\n")
@@ -53,7 +54,9 @@
             (is (= 1 (.getLength (.getElementsByTagNameNS document view/tei-namespace "orig"))))
             (is (= 1 (.getLength (.getElementsByTagNameNS document view/tei-namespace "reg"))))
             (let [^Element choice (.item (.getElementsByTagNameNS document view/tei-namespace "choice") 0)
-                  span (get (first (filter #(= "supplied-diacritic" (get % "type")) (get ir "nodes"))) "annotation_span")]
+                  nodes (get ir "nodes")
+                  span (get (first (filter #(= "supplied-diacritic" (get % "type"))
+                                           (concat nodes (mapcat #(get % "inline_children") nodes)))) "annotation_span")]
               (is (= (str "#source-" (get span "start") "-" (get span "end")) (.getAttribute choice "corresp")))))
           (spit path tei)
           (is (= "passed" (get (validation/tei-validation-result (validation/profile-paths ".") path) "status")))))

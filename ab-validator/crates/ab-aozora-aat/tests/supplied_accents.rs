@@ -77,3 +77,55 @@ fn native_composition_survives_projection_once_with_original_spans() {
         );
     }
 }
+
+#[test]
+fn supplied_dot_after_ruby_realizes_only_its_source_owned_base() {
+    let body = "Samgha《サングハ》［＃mは上ドット付き］";
+    let source = format!("題\n作者\n\n{body}\n");
+    let aat: Value =
+        serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
+    let mut found = Vec::new();
+    accents(&aat["blocks"], &mut found);
+    assert_eq!(found.len(), 1, "{aat}");
+    assert_eq!(found[0]["text"], "Saṁgha");
+    assert_eq!(found[0]["source"], "Samgha");
+    assert!(aat.to_string().contains("サングハ"));
+}
+
+#[test]
+fn ruby_dot_target_does_not_cross_boundaries_or_resolve_ambiguous_letters() {
+    for body in [
+        "Samgha《サングハ》 ［＃mは上ドット付き］",
+        "Samgha《サングハ》\n［＃mは上ドット付き］",
+        "mama《ママ》［＃mは上ドット付き］",
+        "Sanga《m》［＃mは上ドット付き］",
+    ] {
+        let source = format!("題\n作者\n\n{body}\n");
+        let aat: Value =
+            serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
+        let mut found = Vec::new();
+        accents(&aat["blocks"], &mut found);
+        assert!(found.is_empty(), "{body}: {aat}");
+        assert!(aat.to_string().contains("interpretation_problem"));
+    }
+}
+
+#[test]
+fn ruby_dot_spans_bind_the_original_decoded_target_and_annotation() {
+    let source = "題\r\n作者\r\n\r\n〔cafe'〕 Samgha《サングハ》［＃mは上ドット付き］ 後\r\n";
+    let (encoded, _, errors) = encoding_rs::SHIFT_JIS.encode(source);
+    assert!(!errors);
+    for bytes in [source.as_bytes(), encoded.as_ref()] {
+        let aat: Value = serde_json::from_slice(&aat_json_from_bytes(bytes).unwrap()).unwrap();
+        let mut found = Vec::new();
+        accents(&aat["blocks"], &mut found);
+        assert_eq!(found.len(), 1);
+        let target = &found[0]["span"];
+        let marker = &found[0]["interpretation_marker_spans"][0];
+        for (span, expected) in [(target, "Samgha"), (marker, "［＃mは上ドット付き］")] {
+            let start = usize::try_from(span["byte_start"].as_u64().unwrap()).unwrap();
+            let end = usize::try_from(span["byte_end"].as_u64().unwrap()).unwrap();
+            assert_eq!(&source[start..end], expected);
+        }
+    }
+}

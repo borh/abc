@@ -44,10 +44,10 @@ use crate::lexer::{
 };
 use ab_aozora_spec::{Diagnostic, PairKind, PairLink};
 
-use ab_aozora_syntax::accent::decompose_fragment_sites;
+use ab_aozora_syntax::accent::{compose_accent_dots, decompose_fragment_sites};
 use ab_aozora_syntax::alloc::Allocator;
 use ab_aozora_syntax::ast::canonicalize_classified_source_facts;
-use ab_aozora_syntax::ast::{LexOutput, Node, NodeStore, NonEmptySpan, Registry};
+use ab_aozora_syntax::ast::{LexOutput, Node, NodeStore, NonEmptySpan, Registry, Segment};
 use ab_aozora_syntax::format::ForwardOrigin;
 use ab_aozora_syntax::{ForwardAttr, Span};
 use std::collections::BTreeMap;
@@ -302,6 +302,7 @@ impl Pipeline<'_, Paired> {
             let (mut lowered, ruby_base_decorated) =
                 lower_spans(spans, &sanitized_text, &mut alloc);
             resolve_adjacent_note_targets(&mut lowered, &sanitized_text, alloc.store(), &links);
+            resolve_adjacent_ruby_dots(&mut lowered, &sanitized_text, &mut alloc, &links);
             // Ruby-base forward emphasis: a directive the lowering pass
             // decorated onto a preceding ruby base is no longer an unstyled
             // decline, so drop its `forward_referent_not_stylable` warning. Only
@@ -417,6 +418,82 @@ fn lower_spans(
     // it uniquely names.
     let decorated = decorate_ruby_bases(&mut out, source, alloc.store());
     (out, decorated)
+}
+
+/// Apply supplied dot selectors to an adjacent typed ruby base, never its reading.
+fn resolve_adjacent_ruby_dots(
+    spans: &mut [ClassifiedSpan],
+    source: &str,
+    alloc: &mut Allocator,
+    links: &[PairLink],
+) {
+    if !spans.windows(2).any(|pair| {
+        matches!(pair[0].kind, SpanKind::Aozora(Node::Ruby(_)))
+            && matches!(pair[1].kind, SpanKind::Aozora(Node::Directive(_)))
+    }) {
+        return;
+    }
+    let pairs: BTreeMap<_, _> = links.iter().map(|pair| (pair.close.end, pair)).collect();
+    for index in 1..spans.len() {
+        let SpanKind::Aozora(Node::Directive(directive)) = spans[index].kind else {
+            continue;
+        };
+        if directive.kind != ab_aozora_syntax::DirectiveKind::Unknown {
+            continue;
+        }
+        let SpanKind::Aozora(Node::Ruby(mut ruby)) = spans[index - 1].kind else {
+            continue;
+        };
+        if spans[index - 1].source_span.end != spans[index].source_span.start {
+            continue;
+        }
+        let (Some(ruby_pair), Some(marker)) = (
+            pairs.get(&spans[index - 1].source_span.end),
+            pairs.get(&spans[index].source_span.end),
+        ) else {
+            continue;
+        };
+        if ruby_pair.kind != PairKind::Ruby || marker.kind != PairKind::Bracket {
+            continue;
+        }
+        let Some(body) =
+            source[marker.open.end as usize..marker.close.start as usize].strip_prefix('＃')
+        else {
+            continue;
+        };
+        let (Some(base), Some(reading)) = (
+            alloc.store().content_range_as_plain(ruby.base),
+            alloc.store().content_range_as_plain(ruby.reading),
+        ) else {
+            continue;
+        };
+        if compose_accent_dots(base, body).is_none() {
+            continue;
+        }
+        let base = base.to_owned();
+        let reading = reading.to_owned();
+        let mut base_start = spans[index - 1].source_span.start;
+        if source[base_start as usize..].starts_with('｜') {
+            base_start += 3;
+        }
+        let target = alloc.content_plain(&base);
+        let Node::Format(format) = alloc.accent_dot(target, body, ForwardOrigin::Detached) else {
+            unreachable!()
+        };
+        let content = alloc.content_segments(&[Segment::Format {
+            value: format,
+            source_span: Span::new(base_start, ruby_pair.open.start),
+        }]);
+        let reading = alloc.content_plain(&reading);
+        let Node::Ruby(replacement) = alloc.ruby(content, reading) else {
+            unreachable!()
+        };
+        ruby.base = replacement.base;
+        spans[index - 1].kind = SpanKind::Aozora(Node::Ruby(ruby));
+        let mut reference = format;
+        reference.origin = ForwardOrigin::Referenced;
+        spans[index].kind = SpanKind::Aozora(Node::Format(reference));
+    }
 }
 
 /// Resolve source quotations within the immediately preceding typed base.

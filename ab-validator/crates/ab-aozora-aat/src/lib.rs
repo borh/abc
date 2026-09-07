@@ -37,7 +37,7 @@ use ab_aozora_facade::syntax::{
     AbsoluteSize, BlockStyles, Centering, EnclosureKind, HeadingStyle, IndentLayout, LineFormat,
     MarginNoteKind, MarginNotePosition,
     accent::{compose_accent, compose_accent_dots},
-    ast::{ContainerEnd, Content, IterationMark, KuntenKind, Segment},
+    ast::{ContainerEnd, Content, IterationMark, KuntenKind, Ruby, Segment},
 };
 use ab_source_syntax::{RegionError, SourceRegions, aozora_body_range};
 
@@ -406,6 +406,10 @@ struct LocatedAnnotation {
 
 #[derive(Debug, Clone)]
 enum NestedAnnotation {
+    Accent {
+        text: String,
+        marker: Span,
+    },
     IterationMark(IterationMark),
     Kunten {
         kind: KuntenKind,
@@ -603,7 +607,8 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                 let key = (format.target.start, format.target.len);
                 let origin = format.origin;
                 if origin == ab_aozora_facade::ForwardOrigin::Referenced
-                    && detached_accents.contains(&key)
+                    && (detached_accents.contains(&key)
+                        || format.attrs.single() == Some(ForwardAttr::AccentDot))
                 {
                     kind = ProjectedKind::AccentReference;
                 } else if matches!(
@@ -734,8 +739,88 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
         .collect()
 }
 
+fn referenced_dot_markers(tree: &LexOutput) -> BTreeMap<(u32, u32), Span> {
+    tree.source_nodes
+        .iter()
+        .filter_map(|node| {
+            let NodeRef::Inline(Node::Format(format)) = node.node else {
+                return None;
+            };
+            (format.origin == ab_aozora_facade::ForwardOrigin::Referenced
+                && format.attrs.single() == Some(ForwardAttr::AccentDot))
+            .then_some((
+                (format.target.start, format.target.len),
+                Span::from(node.source_span),
+            ))
+        })
+        .collect()
+}
+
+fn ruby_annotations(
+    tree: &LexOutput,
+    ruby: &Ruby,
+    pairs: &BTreeMap<u32, &ab_aozora_facade::PairLink>,
+    accent_markers: &BTreeMap<(u32, u32), Span>,
+) -> Vec<LocatedAnnotation> {
+    let store = &tree.store;
+    [ruby.base, ruby.reading]
+        .into_iter()
+        .flat_map(|range| store.resolve_content_range(range))
+        .filter_map(|content| match content {
+            Content::Segments(range) => Some(store.resolve_seg_range(*range)),
+            _ => None,
+        })
+        .flatten()
+        .filter_map(|segment| match segment {
+            Segment::IterationMark { value, source_span } => Some(LocatedAnnotation {
+                span: (*source_span).into(),
+                payload: NestedAnnotation::IterationMark(*value),
+            }),
+            Segment::Kunten { value, source_span } => Some(LocatedAnnotation {
+                span: (*source_span).into(),
+                payload: NestedAnnotation::Kunten {
+                    kind: value.kind,
+                    text: store.resolve_str(value.text).to_owned(),
+                },
+            }),
+            Segment::Format { value, source_span }
+                if value.attrs.single() == Some(ForwardAttr::AccentDot) =>
+            {
+                let text = compose_accent_dots(
+                    store.content_range_as_plain(value.target)?,
+                    store.resolve_str(value.annotation_body?),
+                )?;
+                let marker = *accent_markers.get(&(value.target.start, value.target.len))?;
+                Some(LocatedAnnotation {
+                    span: (*source_span).into(),
+                    payload: NestedAnnotation::Accent { text, marker },
+                })
+            }
+            Segment::Format { value, source_span } => Some(LocatedAnnotation {
+                span: (*source_span).into(),
+                payload: NestedAnnotation::Format {
+                    attrs: store.resolve_forward_attrs(&value.attrs).to_vec(),
+                    marker: pairs
+                        .get(&source_span.end)
+                        .filter(|pair| pair.kind == ab_aozora_facade::PairKind::Bracket)
+                        .map(|pair| Span {
+                            start: pair.open.start as usize,
+                            end: pair.close.end as usize,
+                        }),
+                },
+            }),
+            Segment::Directive { value, source_span } => Some(LocatedAnnotation {
+                span: (*source_span).into(),
+                payload: NestedAnnotation::Directive(value.kind),
+            }),
+            _ => None,
+        })
+        .collect()
+}
+
 fn ruby_projection(tree: &LexOutput) -> Result<Vec<AozoraRubyEntry>> {
     let store = &tree.store;
+    let accent_markers = referenced_dot_markers(tree);
     let mut entries = Vec::new();
     let pairs: BTreeMap<_, _> = tree
         .pairs
@@ -748,46 +833,7 @@ fn ruby_projection(tree: &LexOutput) -> Result<Vec<AozoraRubyEntry>> {
         else {
             continue;
         };
-        let annotations: Vec<_> = [ruby.base, ruby.reading]
-            .into_iter()
-            .flat_map(|range| store.resolve_content_range(range))
-            .filter_map(|content| match content {
-                Content::Segments(range) => Some(store.resolve_seg_range(*range)),
-                _ => None,
-            })
-            .flatten()
-            .filter_map(|segment| match segment {
-                Segment::IterationMark { value, source_span } => Some(LocatedAnnotation {
-                    span: (*source_span).into(),
-                    payload: NestedAnnotation::IterationMark(*value),
-                }),
-                Segment::Kunten { value, source_span } => Some(LocatedAnnotation {
-                    span: (*source_span).into(),
-                    payload: NestedAnnotation::Kunten {
-                        kind: value.kind,
-                        text: store.resolve_str(value.text).to_owned(),
-                    },
-                }),
-                Segment::Format { value, source_span } => Some(LocatedAnnotation {
-                    span: (*source_span).into(),
-                    payload: NestedAnnotation::Format {
-                        attrs: store.resolve_forward_attrs(&value.attrs).to_vec(),
-                        marker: pairs
-                            .get(&source_span.end)
-                            .filter(|pair| pair.kind == ab_aozora_facade::PairKind::Bracket)
-                            .map(|pair| Span {
-                                start: pair.open.start as usize,
-                                end: pair.close.end as usize,
-                            }),
-                    },
-                }),
-                Segment::Directive { value, source_span } => Some(LocatedAnnotation {
-                    span: (*source_span).into(),
-                    payload: NestedAnnotation::Directive(value.kind),
-                }),
-                _ => None,
-            })
-            .collect();
+        let annotations = ruby_annotations(tree, &ruby, &pairs, &accent_markers);
         let plain = (
             store.content_range_as_plain(ruby.base),
             store.content_range_as_plain(ruby.reading),
@@ -2960,6 +3006,29 @@ struct SourceSegments<'a> {
     annotations: &'a BTreeMap<usize, &'a LocatedAnnotation>,
 }
 
+fn push_nested_format(
+    content: &mut Vec<Value>,
+    decoded: &DecodedSource,
+    mark: &LocatedAnnotation,
+) -> bool {
+    let NestedAnnotation::Format { attrs, marker } = &mark.payload else {
+        return false;
+    };
+    let kind = match attrs.as_slice() {
+        [attr] => ProjectedKind::Format(*attr),
+        _ => ProjectedKind::FormatMany(attrs.clone()),
+    };
+    let node = AozoraNode {
+        kind,
+        span: mark.span,
+        marker_span: *marker,
+        container_end: None,
+        layout_clauses: Vec::new(),
+    };
+    push_style_node(content, decoded, &node, "emphasis");
+    true
+}
+
 fn source_segments(
     decoded: &DecodedSource,
     start: usize,
@@ -2976,25 +3045,21 @@ fn source_segments(
             if mark.span.end <= cursor || mark.span.end > end {
                 return None;
             }
-            if let NestedAnnotation::Format { attrs, marker } = &mark.payload {
-                let kind = match attrs.as_slice() {
-                    [attr] => ProjectedKind::Format(*attr),
-                    _ => ProjectedKind::FormatMany(attrs.clone()),
-                };
-                let node = AozoraNode {
-                    kind,
-                    span: mark.span,
-                    marker_span: *marker,
-                    container_end: None,
-                    layout_clauses: Vec::new(),
-                };
-                push_style_node(&mut content, decoded, &node, "emphasis");
+            if push_nested_format(&mut content, decoded, mark) {
                 resolved_text = content_target_text(&content);
                 marker_count += 1;
                 cursor = mark.span.end;
                 continue;
             }
             content.push(match &mark.payload {
+                NestedAnnotation::Accent { text, marker } => {
+                    if let Some(value) = &mut resolved_text { value.push_str(text); }
+                    let start = decoded.span_ctx.to_decoded(mark.span.start);
+                    let end = decoded.span_ctx.to_decoded_end(mark.span.end);
+                    json!({"kind":"supplied-diacritic", "text":text,"source":&decoded.text[start..end],
+                        "span":span_json(&mark.span,&decoded.span_ctx),
+                        "interpretation_marker_spans":[span_json(marker,&decoded.span_ctx)]})
+                }
                 NestedAnnotation::Format { .. } => unreachable!("formatting handled above"),
                 NestedAnnotation::IterationMark(value) => {
                     if let Some(text) = &mut resolved_text {

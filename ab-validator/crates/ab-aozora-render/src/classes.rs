@@ -182,7 +182,7 @@ mod tests {
     use ab_aozora_syntax::ast::{KuntenKind, Node, NodeStore};
     use ab_aozora_syntax::{
         AbsoluteSize, AccentMark, BOUTEN_KINDS, BlockStyles, BoutenKind, BoutenPosition,
-        ColumnCount, Container, DirectiveKind, EnclosureKind, FontShift, ForwardAttr,
+        ColumnBlock, ColumnCount, Container, DirectiveKind, EnclosureKind, FontShift, ForwardAttr,
         ForwardOrigin, HEADING_KINDS, HEADING_STYLES, HeadingKind, HeadingStyle, IndentBlock,
         IndentLayout, Kumi, LineFormat, LineWidth, MarginNoteKind, RegionFormat, SECTION_KINDS,
     };
@@ -562,7 +562,11 @@ mod tests {
             RegionFormat::Gothic { padded: true },
             RegionFormat::Italic { padded: false },
             RegionFormat::Italic { padded: true },
-            RegionFormat::Columns(cc(2)),
+            RegionFormat::Columns(ColumnBlock {
+                count: cc(2),
+                styles: BlockStyles::EMPTY,
+                partial: None,
+            }),
             RegionFormat::Table,
             RegionFormat::Horizontal,
             RegionFormat::FontSize(fs(2)),

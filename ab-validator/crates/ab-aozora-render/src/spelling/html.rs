@@ -51,6 +51,32 @@ pub(crate) struct RenderState {
     warichu_depth: u32,
 }
 
+fn render_block_style_classes<W: Write>(styles: BlockStyles, writer: &mut W) -> fmt::Result {
+    let BlockStyles {
+        gothic,
+        horizontal,
+        framed,
+        font,
+    } = styles;
+    if gothic {
+        writer.write_str(" aozora-container-goshikku")?;
+    }
+    if horizontal {
+        writer.write_str(" aozora-container-yokogumi")?;
+    }
+    if framed {
+        writer.write_str(" aozora-container-keigakomi")?;
+    }
+    if let Some(shift) = font {
+        writer.write_str(if shift.larger() {
+            " aozora-container-font-larger"
+        } else {
+            " aozora-container-font-smaller"
+        })?;
+    }
+    Ok(())
+}
+
 impl RenderState {
     fn flush_pending_separator<W: Write>(&mut self, out: &mut W) -> fmt::Result {
         if self.pending_block_separator {
@@ -330,14 +356,7 @@ fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::R
             layout,
             styles,
         }) => {
-            // Exhaustive destructure (no `..`) so a new decoration is
-            // compiler-flagged here rather than silently dropped from the markup.
-            let BlockStyles {
-                gothic,
-                horizontal,
-                framed,
-                font,
-            } = styles;
+            let BlockStyles { font, .. } = styles;
             write!(
                 writer,
                 r#"<div class="aozora-container aozora-container-indent aozora-container-indent-{amount}"#,
@@ -364,22 +383,7 @@ fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::R
             // attribute's standalone-container class so one stylesheet rule
             // serves both forms. Canonical order = gothic, horizontal, framed,
             // font (matches `BlockStyles::iter_formats` / the serializer).
-            if gothic {
-                writer.write_str(" aozora-container-goshikku")?;
-            }
-            if horizontal {
-                writer.write_str(" aozora-container-yokogumi")?;
-            }
-            if framed {
-                writer.write_str(" aozora-container-keigakomi")?;
-            }
-            if let Some(shift) = font {
-                writer.write_str(if shift.larger() {
-                    " aozora-container-font-larger"
-                } else {
-                    " aozora-container-font-smaller"
-                })?;
-            }
+            render_block_style_classes(styles, writer)?;
             write!(writer, r#"" data-amount="{amount}""#)?;
             if partial.is_some() {
                 writer.write_str(r#" data-layout-partial="true""#)?;
@@ -459,11 +463,18 @@ fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::R
         RegionFormat::Italic { padded: true } => {
             writer.write_str(r#"<div class="aozora-container aozora-container-shatai">"#)
         }
-        RegionFormat::Columns(count) => write!(
-            writer,
-            r#"<div class="aozora-container aozora-container-columns" data-columns="{}">"#,
-            count.0,
-        ),
+        RegionFormat::Columns(block) => {
+            writer.write_str(r#"<div class="aozora-container aozora-container-columns"#)?;
+            render_block_style_classes(block.styles, writer)?;
+            write!(writer, r#"" data-columns="{}""#, block.count.0)?;
+            if block.partial.is_some() {
+                writer.write_str(r#" data-layout-partial="true""#)?;
+            }
+            if let Some(shift) = block.styles.font {
+                write!(writer, r#" data-steps="{}""#, shift.magnitude())?;
+            }
+            writer.write_str(">")
+        }
         RegionFormat::Table => {
             writer.write_str(r#"<div class="aozora-container aozora-container-table">"#)
         }

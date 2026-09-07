@@ -215,7 +215,12 @@ pub fn base_edition_concealed_characters(source: &str) -> Option<NonZeroU32> {
 /// alternatives remain outside this grammar.
 #[must_use]
 pub fn edition_note(source: &str) -> Option<(EditionNoteKind, &str)> {
-    let body = source.strip_prefix("［＃")?.strip_suffix('］')?;
+    edition_statement(source.strip_prefix("［＃")?.strip_suffix('］')?)
+}
+
+/// Interpret one source-owned edition statement, including a clause within a layout marker.
+#[must_use]
+pub fn edition_statement(body: &str) -> Option<(EditionNoteKind, &str)> {
     if body
         .strip_prefix("底本では")
         .is_some_and(|text| !text.is_empty())

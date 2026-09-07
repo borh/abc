@@ -128,8 +128,8 @@ impl NodeStore {
 
     /// Resolve evidence against the document that allocated its handle.
     #[must_use]
-    pub fn resolve_partial_layout(&self, id: PartialLayoutId) -> PartialLayout {
-        self.partial_layouts[(id.0.get() - 1) as usize]
+    pub fn resolve_partial_layout(&self, id: PartialLayoutId) -> &PartialLayout {
+        &self.partial_layouts[(id.0.get() - 1) as usize]
     }
     /// Empty store.
     #[must_use]

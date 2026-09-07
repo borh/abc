@@ -197,7 +197,18 @@ pub(crate) fn emit_container_open<W: Write>(
             heading_style_keyword(style),
             heading_level_word(level),
         ),
-        RegionFormat::Columns(count) => write!(out, "［＃ここから{}段組み］", count.0),
+        RegionFormat::Columns(block) => {
+            if let Some(id) = block.partial {
+                return write!(
+                    out,
+                    "［＃{}］",
+                    store.resolve_str(store.resolve_partial_layout(id).body)
+                );
+            }
+            write!(out, "［＃ここから{}段組み", block.count.0)?;
+            emit_block_styles(block.styles, out)?;
+            out.write_str("］")
+        }
         RegionFormat::Table => out.write_str("［＃ここから表］"),
         RegionFormat::Horizontal => out.write_str("［＃ここから横組み］"),
         RegionFormat::CombineUpright => out.write_str("［＃縦中横］"),
@@ -285,6 +296,17 @@ fn emit_indent_open<W: Write>(block: IndentBlock, store: &NodeStore, out: &mut W
     if let Some(columns) = column_count {
         write!(out, "、{}段組み", columns.0)?;
     }
+    emit_block_styles(styles, out)?;
+    out.write_str("］")
+}
+
+fn emit_block_styles<W: Write>(styles: BlockStyles, out: &mut W) -> fmt::Result {
+    let BlockStyles {
+        gothic,
+        horizontal,
+        framed,
+        font,
+    } = styles;
     if gothic {
         out.write_str("、ゴシック体")?;
     }
@@ -306,7 +328,7 @@ fn emit_indent_open<W: Write>(block: IndentBlock, store: &NodeStore, out: &mut W
             write!(out, "、{}段階小さな文字", shift.magnitude())?;
         }
     }
-    out.write_str("］")
+    Ok(())
 }
 
 /// 小書き side keyword: `右` / `左`.

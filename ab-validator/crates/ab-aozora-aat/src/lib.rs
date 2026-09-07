@@ -14,7 +14,7 @@ use std::{
 use ab_aozora_pipeline::lexer::sanitize::{SanitizeMaps, sanitize_mapped};
 use ab_aozora_pipeline::text_variant::{
     EditionNoteKind, TextVariant, TextVariantTarget, base_edition_concealed_characters,
-    concealed_placeholder, edition_note, formatted_text_variant, text_variant,
+    concealed_placeholder, edition_note, edition_statement, formatted_text_variant, text_variant,
 };
 use ab_aozora_pipeline::{LexOutput, Pipeline};
 use anyhow::Result;
@@ -33,8 +33,8 @@ use ab_aozora_facade::{
 // so the checker's comparison source (`ab-check::body_text`) can never
 // drift from the parser's own cut.
 use ab_aozora_facade::syntax::{
-    AbsoluteSize, Centering, EnclosureKind, HeadingStyle, IndentLayout, LineFormat, MarginNoteKind,
-    MarginNotePosition,
+    AbsoluteSize, BlockStyles, Centering, EnclosureKind, HeadingStyle, IndentLayout, LineFormat,
+    MarginNoteKind, MarginNotePosition,
     ast::{ContainerEnd, Content, IterationMark, KuntenKind, Segment},
 };
 use ab_source_syntax::{RegionError, SourceRegions, aozora_body_range};
@@ -361,7 +361,7 @@ struct AozoraNode {
     span: Span,
     marker_span: Option<Span>,
     container_end: Option<ContainerEnd>,
-    unresolved_layout: Option<Span>,
+    layout_clauses: Vec<Span>,
 }
 
 type AozoraGaiji = encoding::gaiji::GaijiResolution;
@@ -561,18 +561,28 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
             {
                 marker_span = Some(span);
             }
-            let unresolved_layout = match &kind {
-                ProjectedKind::Region(RegionFormat::Indent(block)) => block
-                    .partial
-                    .map(|id| tree.store.resolve_partial_layout(id).unresolved.into()),
+            let partial = match &kind {
+                ProjectedKind::Region(RegionFormat::Indent(block)) => block.partial,
+                ProjectedKind::Region(RegionFormat::Columns(block)) => block.partial,
                 _ => None,
             };
+            let layout_clauses = partial
+                .map(|id| {
+                    tree.store
+                        .resolve_partial_layout(id)
+                        .clauses
+                        .iter()
+                        .copied()
+                        .map(Into::into)
+                        .collect()
+                })
+                .unwrap_or_default();
             AozoraNode {
                 kind,
                 span,
                 marker_span,
                 container_end: container_ends.get(&source_node.source_span.start).copied(),
-                unresolved_layout,
+                layout_clauses,
             }
         })
         .chain(tree.classified_source_facts.iter().filter_map(|fact| {
@@ -584,7 +594,7 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                 span,
                 marker_span: None,
                 container_end: None,
-                unresolved_layout: None,
+                layout_clauses: Vec::new(),
             })
         }))
         .collect()
@@ -844,7 +854,7 @@ fn projections(
             kind: ProjectedKind::QuoteOpen,
             marker_span: None,
             container_end: None,
-            unresolved_layout: None,
+            layout_clauses: Vec::new(),
             span: Span {
                 start: node.span.start,
                 end: start,
@@ -854,7 +864,7 @@ fn projections(
             kind: ProjectedKind::QuoteClose,
             marker_span: None,
             container_end: None,
-            unresolved_layout: None,
+            layout_clauses: Vec::new(),
             span: Span {
                 start: end,
                 end: node.span.end,
@@ -880,7 +890,7 @@ fn projections(
                 span.end += offset;
             }
             rebase_variant_spans(&mut inner.kind, start);
-            rebase_partial_layout(&mut inner.unresolved_layout, start);
+            rebase_partial_layout(&mut inner.layout_clauses, start);
             pending.push(inner);
         }
         let inner_ruby = ruby_projection(&inner_tree)?;
@@ -1634,9 +1644,12 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
                 let mut block = layout.clone();
                 block["kind"] = json!("layout_block");
                 let mut children = blocks_from_inline_content(inner, source);
-                if let Some(unresolved) = node.get("x-unresolved-clause") {
-                    children.insert(0, json!({"kind":"paragraph", "content":[unresolved]}));
-                    if explicit_close {
+                let annotations = node["x-layout-annotations"].as_array();
+                let unresolved =
+                    annotations.is_some_and(|notes| notes.iter().any(|note| note["kind"] == "raw"));
+                if let Some(annotations) = annotations {
+                    children.insert(0, json!({"kind":"paragraph", "content":annotations}));
+                    if unresolved && explicit_close {
                         children.push(json!({"kind":"paragraph", "content":[content[boundary]]}));
                     }
                 }
@@ -1645,7 +1658,7 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
                 if explicit_close {
                     markers.push(content[boundary]["span"].clone());
                 }
-                if node.get("x-unresolved-clause").is_some() {
+                if unresolved {
                     markers.clear();
                 }
                 block["interpretation_marker_spans"] = json!(markers);
@@ -2048,7 +2061,7 @@ fn parsed_source_fragment(decoded: &DecodedSource, range: Range<usize>) -> Optio
             span.end = span.end.checked_add(offset)?;
         }
         rebase_variant_spans(&mut node.kind, range.start);
-        rebase_partial_layout(&mut node.unresolved_layout, range.start);
+        rebase_partial_layout(&mut node.layout_clauses, range.start);
     }
     for entry in &mut gaiji {
         entry.start += range.start;
@@ -3037,7 +3050,7 @@ fn push_style_node(
             span: marker,
             marker_span: Some(marker),
             container_end: None,
-            unresolved_layout: None,
+            layout_clauses: Vec::new(),
         };
         let assertion = raw_node(decoded, &variant_node, "base-text-variant");
         if !attach_formatting_variant(&mut style, &assertion, &decoded.text) {
@@ -3603,11 +3616,33 @@ fn layout_break_kind(kind: &ProjectedKind) -> Option<&'static str> {
     }
 }
 
-fn rebase_partial_layout(span: &mut Option<Span>, offset: usize) {
-    if let Some(span) = span {
+fn rebase_partial_layout(spans: &mut [Span], offset: usize) {
+    for span in spans {
         span.start += offset;
         span.end += offset;
     }
+}
+
+fn apply_block_styles(fields: &mut Value, block: BlockStyles) -> Option<()> {
+    let mut styles = Vec::new();
+    if block.horizontal {
+        fields["direction"] = json!("horizontal");
+    }
+    if block.framed {
+        fields["border"] = json!("solid");
+    }
+    if block.gothic {
+        styles.push(formatting_fields(ForwardAttr::Gothic)?);
+    }
+    if let Some(font) = block.font {
+        styles.push(formatting_fields(ForwardAttr::FontSize(font))?);
+    }
+    match styles.len() {
+        0 => {}
+        1 => fields["formatting"] = styles.remove(0),
+        _ => fields["formatting"] = json!({"kind":"compound", "attributes":styles}),
+    }
+    Some(())
 }
 
 fn layout_fields(kind: &ProjectedKind) -> Option<Value> {
@@ -3638,28 +3673,12 @@ fn layout_fields(kind: &ProjectedKind) -> Option<Value> {
                     fields["line_count"] = json!(kumi.lines.get());
                 }
             }
-            let mut styles = Vec::new();
-            if block.styles.horizontal {
-                fields["direction"] = json!("horizontal");
-            }
-            if block.styles.framed {
-                fields["border"] = json!("solid");
-            }
-            if block.styles.gothic {
-                styles.push(formatting_fields(ForwardAttr::Gothic)?);
-            }
-            if let Some(font) = block.styles.font {
-                styles.push(formatting_fields(ForwardAttr::FontSize(font))?);
-            }
-            match styles.len() {
-                0 => {}
-                1 => fields["formatting"] = styles.remove(0),
-                _ => fields["formatting"] = json!({"kind":"compound", "attributes":styles}),
-            }
+            apply_block_styles(&mut fields, block.styles)?;
         }
         ProjectedKind::Region(RegionFormat::Table) => fields["role"] = json!("table"),
-        ProjectedKind::Region(RegionFormat::Columns(count)) => {
-            fields["column_count"] = json!(count.0.get());
+        ProjectedKind::Region(RegionFormat::Columns(block)) => {
+            fields["column_count"] = json!(block.count.0.get());
+            apply_block_styles(&mut fields, block.styles)?;
         }
         ProjectedKind::Region(RegionFormat::LineWidth(width)) => {
             fields["width"] = json!(width.0.get());
@@ -3785,13 +3804,24 @@ fn marker_target(source: &str) -> Option<&str> {
     Some(&rest[..end])
 }
 
-fn unresolved_layout_clause(decoded: &DecodedSource, span: Span) -> Value {
+fn layout_clause(decoded: &DecodedSource, span: Span) -> Value {
     let start = decoded.span_ctx.to_decoded(span.start);
     let end = decoded.span_ctx.to_decoded_end(span.end);
+    if let Some((kind, text)) = edition_statement(&decoded.text[start..end]) {
+        return json!({"kind":"editorial_note", "note_kind":match kind {EditionNoteKind::BaseEdition=>"base-edition", EditionNoteKind::FirstPublication=>"first-publication"}, "text":text, "span":span_json(&span, &decoded.span_ctx)});
+    }
     json!({"kind":"raw", "source": &decoded.text[start..end],
         "span":span_json(&span, &decoded.span_ctx),
         "interpretation_problem":{"kind":"uninterpreted-notation", "code":"uninterpreted-notation",
             "aspects":["structure","layout"], "influence":{"kind":"document"}}})
+}
+
+fn layout_annotations(decoded: &DecodedSource, spans: &[Span]) -> Value {
+    spans
+        .iter()
+        .copied()
+        .map(|span| layout_clause(decoded, span))
+        .collect()
 }
 
 fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Value {
@@ -3805,8 +3835,8 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
     if let Some(layout) = layout_fields(&node.kind) {
         value["x-layout"] = layout;
     }
-    if let Some(span) = node.unresolved_layout {
-        value["x-unresolved-clause"] = unresolved_layout_clause(decoded, span);
+    if !node.layout_clauses.is_empty() {
+        value["x-layout-annotations"] = layout_annotations(decoded, &node.layout_clauses);
     }
     if let ProjectedKind::TextVariant {
         target,

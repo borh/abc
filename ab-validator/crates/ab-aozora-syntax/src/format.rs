@@ -277,14 +277,26 @@ pub enum Centering {
     Line,
 }
 
-/// Source retained when a compound layout instruction is only partly understood.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Clauses not interpreted as layout, retained individually for apparatus interpretation.
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct PartialLayout {
     /// Original annotation body in the owning node store.
     pub body: StrId,
-    /// Unresolved clauses in sanitized-source coordinates.
-    pub unresolved: crate::Span,
+    /// Individual unmatched or conflicting clauses in sanitized-source coordinates.
+    pub clauses: Vec<crate::Span>,
+}
+
+/// A supplied column scope with independent presentation and retained source clauses.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct ColumnBlock {
+    /// Number of columns supplied by the source.
+    pub count: ColumnCount,
+    /// Co-applied presentation, independent of column count.
+    pub styles: BlockStyles,
+    /// Source clauses retained outside the column geometry.
+    pub partial: Option<PartialLayoutId>,
 }
 
 /// The block-only payload of an indent region.
@@ -294,7 +306,7 @@ pub struct PartialLayout {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct IndentBlock {
-    /// Original clauses and their unresolved extent, when present.
+    /// Original source and clauses interpreted separately from geometry.
     pub partial: Option<PartialLayoutId>,
     /// Supplied column count, independent of character indentation.
     pub column_count: Option<ColumnCount>,
@@ -772,7 +784,7 @@ pub enum RegionFormat {
     /// 表 block.
     Table,
     /// 段組 block.
-    Columns(ColumnCount),
+    Columns(ColumnBlock),
     /// 横組み block.
     Horizontal,
     /// N段階大きな / 小さな文字 block.
@@ -800,7 +812,7 @@ impl RegionFormat {
             Self::AlignEnd { .. } => Format::AlignEnd,
             Self::LineWidth(_) => Format::LineWidth,
             Self::Table => Format::Table,
-            Self::Columns(c) => Format::Columns(c),
+            Self::Columns(block) => Format::Columns(block.count),
             Self::Horizontal => Format::Horizontal,
             Self::FontSize(f) => Format::FontSize(f),
             Self::Framed(k) => Format::Framed(k),
@@ -921,7 +933,11 @@ impl RegionFormat {
             style: HeadingStyle::Standard,
             padded: false,
         },
-        Self::Columns(ColumnCount(NonZeroU8::MIN)),
+        Self::Columns(ColumnBlock {
+            count: ColumnCount(NonZeroU8::MIN),
+            styles: BlockStyles::EMPTY,
+            partial: None,
+        }),
         Self::Table,
         Self::Horizontal,
         Self::FontSize(FontShift(NonZeroI8::MIN)),
@@ -1060,7 +1076,7 @@ impl RegionClose {
                 style,
                 padded,
             },
-            RegionFormat::Columns(count) => Self::Columns(Some(count)),
+            RegionFormat::Columns(block) => Self::Columns(Some(block.count)),
             RegionFormat::Table => Self::Table,
             RegionFormat::Horizontal => Self::Horizontal,
             RegionFormat::FontSize(shift) => Self::FontSize {

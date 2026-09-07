@@ -20,7 +20,7 @@ use core::num::{NonZeroI8, NonZeroU8};
 use ab_aozora_syntax::alloc::Allocator;
 use ab_aozora_syntax::ast::Directive;
 use ab_aozora_syntax::{
-    AbsoluteSize, BOUTEN_KINDS, BlockStyles, BoutenKind, BoutenPosition, ColumnCount,
+    AbsoluteSize, BOUTEN_KINDS, BlockStyles, BoutenKind, BoutenPosition, ColumnBlock, ColumnCount,
     DirectiveKind, EnclosureKind, FontShift, HeadingKind, HeadingStyle, IndentBlock, IndentLayout,
     Kumi, LineFormat, LineWidth, RegionClose, RegionFormat, SectionKind, Span,
 };
@@ -1323,16 +1323,13 @@ pub(super) fn classify_annotation_body(
                         None,
                     )
                 })
-            } else if tail == "段組" || tail == "段組み" {
-                // ここから{N}段組(み) — multi-column container (段組): N
-                // columns. Shares the `ここから` prefix; closes with
-                // `ここで段組(み)終わり`. `NonZero` folds the `N >= 1` guard.
-                NonZeroU8::new(n).map(|c| {
-                    (
-                        EmitKind::BlockOpen(RegionFormat::Columns(ColumnCount(c))),
-                        None,
-                    )
-                })
+            } else if let Some(after) = tail
+                .strip_prefix("段組み")
+                .or_else(|| tail.strip_prefix("段組"))
+            {
+                let count = ColumnCount(NonZeroU8::new(n)?);
+                let block = parse_column_compound(count, after, source, alloc)?;
+                Some((EmitKind::BlockOpen(RegionFormat::Columns(block)), None))
             } else {
                 // ここから{N}段階大きな/小さな文字 — block font-size shift.
                 // Shares the `ここから` prefix; closes with the direction-only
@@ -1807,7 +1804,7 @@ fn parse_indent_compound(
     let mut layout = ClauseAxis::Absent;
     let mut font = ClauseAxis::Absent;
     let mut columns = ClauseAxis::Absent;
-    let mut unresolved: Option<Span> = None;
+    let mut clauses = Vec::new();
     for (segment, span) in source.clauses(after) {
         let mut candidate = IndentBlock {
             partial: None,
@@ -1856,12 +1853,7 @@ fn parse_indent_compound(
             problem
         };
         if let Some(problem) = problem {
-            unresolved = Some(unresolved.map_or(problem, |previous| {
-                Span::new(
-                    previous.start.min(problem.start),
-                    previous.end.max(problem.end),
-                )
-            }));
+            clauses.push(problem);
         }
     }
     block.wrap = wrap.value();
@@ -1869,8 +1861,45 @@ fn parse_indent_compound(
     block.layout = layout.value().unwrap_or(IndentLayout::None);
     block.styles.font = font.value();
     block.column_count = columns.value();
-    if let Some(unresolved) = unresolved {
-        block.partial = Some(alloc.partial_layout(source.text, unresolved));
+    if !clauses.is_empty() {
+        block.partial = Some(alloc.partial_layout(source.text, clauses));
+    }
+    Some(block)
+}
+
+fn parse_column_compound(
+    count: ColumnCount,
+    after: &str,
+    source: &AnnotationBody<'_>,
+    alloc: &mut Allocator,
+) -> Option<ColumnBlock> {
+    let mut block = ColumnBlock {
+        count,
+        styles: BlockStyles::EMPTY,
+        partial: None,
+    };
+    if after.is_empty() {
+        return Some(block);
+    }
+    let after = after.strip_prefix('、')?;
+    let mut clauses = Vec::new();
+    let mut font = ClauseAxis::Absent;
+    for (segment, span) in source.clauses(after) {
+        let mut candidate = BlockStyles::EMPTY;
+        if resolve_block_style(segment, &mut candidate).is_none() {
+            clauses.push(span);
+        } else {
+            block.styles.gothic |= candidate.gothic;
+            block.styles.horizontal |= candidate.horizontal;
+            block.styles.framed |= candidate.framed;
+            if let Some(conflict) = candidate.font.and_then(|value| font.observe(value, span)) {
+                clauses.push(conflict);
+            }
+        }
+    }
+    block.styles.font = font.value();
+    if !clauses.is_empty() {
+        block.partial = Some(alloc.partial_layout(source.text, clauses));
     }
     Some(block)
 }
@@ -1913,8 +1942,10 @@ fn resolve_indent_segment(segment: &str, block: &mut IndentBlock) -> Option<()> 
         block.layout = layout;
         return Some(());
     }
-    // Decorative styles (co-applied, close with the generic 字下げ終わり).
-    let styles = &mut block.styles;
+    resolve_block_style(segment, &mut block.styles)
+}
+
+fn resolve_block_style(segment: &str, styles: &mut BlockStyles) -> Option<()> {
     match segment {
         "ゴシック体" if !styles.gothic => styles.gothic = true,
         "横書き" | "横組み" if !styles.horizontal => styles.horizontal = true,

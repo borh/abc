@@ -57,7 +57,13 @@
                :families #{"emphasis.basic" "decoration.boten" "decoration.bousen"
                            "decoration.bold_italic" "decoration.typeface" "decoration.font_size" "layout.tcy"} :aspects #{"layout"}}
    "caption" {:markers #{"CommandFullwidth" "CommandAscii"}
-              :families #{"figure.image_caption" "caption.block"} :aspects #{"structure" "layout"}}
+              :families #{"figure.image_caption" "caption.block" "caption.inline"} :aspects #{"structure" "layout"}}
+   "text-variant" {:markers #{"CommandFullwidth" "CommandAscii"}
+                   :families #{"annotation.chuuki"} :aspects #{"content" "structure"}}
+   "editorial-note" {:markers #{"CommandFullwidth" "CommandAscii"}
+                     :families #{"annotation.chuuki"} :aspects #{"content" "structure"}}
+   "layout" {:markers #{"CommandFullwidth" "CommandAscii"}
+             :families #{"decoration.keigakomi" "layout.yokogumi" "glyph.variant_note"} :aspects #{"layout"}}
    "warichu" {:markers #{"CommandFullwidth" "CommandAscii"}
               :families #{"warichu.basic"} :aspects #{"structure" "layout"}}})
 
@@ -151,7 +157,7 @@
 (defn coverage-stage
   "Independent lexical oracle + parser IR -> explicit claim accounting."
   [clj-toolchain-id]
-  {:stage-id "interpretation-coverage" :stage-version "3" :toolchain-id clj-toolchain-id
+  {:stage-id "interpretation-coverage" :stage-version "4" :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob]} inputs]
         (let [input-bytes (into {} (map (fn [name] [name (blob (get inputs name))]))
                                 ["source-accountability" "parser-ir"])

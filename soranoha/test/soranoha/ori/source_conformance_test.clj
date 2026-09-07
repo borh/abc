@@ -123,6 +123,26 @@
            (into [] (keep #(let [rend (attribute % "rend")] (when (string/includes? rend "chitsuki") rend)))
                  (elements result "p"))))))
 
+(deftest inline-scopes-preserve-enclosing-paragraph-layout
+  (doseq [[opening rendition body expected]
+          [["［＃ここから１字下げ］" "jisage indent(1)"
+            "ビタミン［＃縦中横］B1［＃「1」は下付き小文字］［＃縦中横終わり］　二ミリグラム"
+            "ビタミンB1　二ミリグラム"]
+           ["［＃ここから改行天付き、折り返して１字下げ］" "burasage first(0) rest(1)"
+            "（［＃縦中横］10［＃縦中横終わり］）注。" "（10）注。"]]]
+    (let [result (transcribe (source (str opening "\n" body "\n次の行。\n［＃ここで字下げ終わり］")))
+          paragraph (first (filter #(= expected (view/visible-text %)) (elements result "p")))
+          following (first (filter #(= "次の行。" (view/visible-text %)) (elements result "p")))
+          tcy (first (filter #(= "text-combine-upright" (attribute % "rend")) (elements result "hi")))]
+      (is (= (str expected "\n次の行。") (:plaintext result)))
+      (is (some? paragraph))
+      (when paragraph
+        (is (= rendition (attribute paragraph "rend")))
+        (is (within? paragraph tcy)))
+      (is (some? following))
+      (when following
+        (is (= rendition (attribute following "rend")))))))
+
 (deftest supplied-ruby-variant-is-not-an-asserted-source-error
   (let [result (transcribe (source "私は籠《ざる》［＃ルビの「ざる」は底本では「さる」］をさげ"))]
     (is (= "私は籠をさげ" (:plaintext result)))

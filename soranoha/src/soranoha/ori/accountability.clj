@@ -73,7 +73,7 @@
    "table" {:markers #{"CommandFullwidth" "CommandAscii"}
             :families #{"structure.table"} :aspects #{"structure" "layout"}}
    "layout-break" {:markers #{"CommandFullwidth" "CommandAscii"}
-                   :families #{"break.page_line"} :aspects #{"structure" "layout"}}
+                   :families #{"break.page_line" "break.line_explicit"} :aspects #{"structure" "layout"}}
    "warichu" {:markers #{"CommandFullwidth" "CommandAscii"}
               :families #{"warichu.basic"} :aspects #{"structure" "layout"}}})
 
@@ -197,7 +197,7 @@
 (defn coverage-stage
   "Independent lexical oracle + parser IR -> explicit claim accounting."
   [clj-toolchain-id]
-  {:stage-id "interpretation-coverage" :stage-version "7" :toolchain-id clj-toolchain-id
+  {:stage-id "interpretation-coverage" :stage-version "8" :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob]} inputs]
         (let [input-bytes (into {} (map (fn [name] [name (blob (get inputs name))]))
                                 ["source-accountability" "parser-ir"])

@@ -996,6 +996,13 @@ impl EstablishedInterpretation {
             Some("editorial_note") => Some(Self::EditorialNote),
             Some("layout_block") if node["role"] == "table" => Some(Self::Table),
             Some("layout_break") => Some(Self::LayoutBreak),
+            Some("text")
+                if node["x-break-kind"] == "line"
+                    && node["x-break-marker"] == "forced"
+                    && node["value"] == "\n" =>
+            {
+                Some(Self::LayoutBreak)
+            }
             Some("layout_block") => Some(Self::LineLayout),
             _ => None,
         }
@@ -1082,10 +1089,11 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
             facts.extend(gaiji_ruby_facts(node));
         }
         if let Some(interpretation) = interpretation {
-            let spans = if matches!(
-                node["kind"].as_str(),
-                Some("gaiji" | "kunten" | "text-variant" | "editorial_note" | "layout_break")
-            ) {
+            let spans = if matches!(interpretation, EstablishedInterpretation::LayoutBreak)
+                || matches!(
+                    node["kind"].as_str(),
+                    Some("gaiji" | "kunten" | "text-variant" | "editorial_note" | "layout_break")
+                ) {
                 node.get("span").into_iter().collect::<Vec<_>>()
             } else {
                 node["interpretation_marker_spans"]
@@ -1623,7 +1631,11 @@ fn ends_source_line(node: &Value, source: &str) -> bool {
         _ => None,
     };
     value.is_some_and(|value| value.ends_with(['\n', '\r']))
-        && node["span"]["byte_end"].as_u64().and_then(|end| usize::try_from(end).ok()).and_then(|end| source.get(..end)).is_some_and(|before| before.ends_with(['\n', '\r']))
+        && node["span"]["byte_end"]
+            .as_u64()
+            .and_then(|end| usize::try_from(end).ok())
+            .and_then(|end| source.get(..end))
+            .is_some_and(|before| before.ends_with(['\n', '\r']))
 }
 
 #[allow(
@@ -1804,22 +1816,36 @@ fn strip_leading_newline(node: &mut Value, source: &str) {
     let Some(value) = node.get("value").and_then(Value::as_str) else {
         return;
     };
-    let Some(stripped) = value.strip_prefix('\n').map(str::to_owned) else { return; };
-    if let Some(start) = node["span"]["byte_start"].as_u64().and_then(|start| usize::try_from(start).ok())
+    let Some(stripped) = value.strip_prefix('\n').map(str::to_owned) else {
+        return;
+    };
+    if let Some(start) = node["span"]["byte_start"]
+        .as_u64()
+        .and_then(|start| usize::try_from(start).ok())
         && let Some(tail) = source.get(start..)
-        && let Some(width) = if tail.starts_with("\r\n") { Some(2) } else if tail.starts_with(['\r','\n']) { Some(1) } else { None }
+        && let Some(width) = if tail.starts_with("\r\n") {
+            Some(2)
+        } else if tail.starts_with(['\r', '\n']) {
+            Some(1)
+        } else {
+            None
+        }
     {
         node["span"]["byte_start"] = json!(start + width);
         if let Some(line) = node["span"]["line_start"].as_u64() {
             node["span"]["line_start"] = json!(line + 1);
-            if node["span"]["byte_start"] == node["span"]["byte_end"] { node["span"]["line_end"] = json!(line + 1); }
+            if node["span"]["byte_start"] == node["span"]["byte_end"] {
+                node["span"]["line_end"] = json!(line + 1);
+            }
         }
         node["value"] = json!(stripped);
     }
 }
 
 fn strip_trailing_newline(node: &mut Value, source: &str) {
-    if !ends_source_line(node, source) { return; }
+    if !ends_source_line(node, source) {
+        return;
+    }
     if node.get("kind").and_then(Value::as_str) != Some("text") {
         return;
     }

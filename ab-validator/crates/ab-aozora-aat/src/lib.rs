@@ -1735,7 +1735,7 @@ fn inline_content(
                 "span":span_json(&node.span, &decoded.span_ctx)
             })),
             ProjectedKind::Kunten { kind, ref text } => {
-                content.push(kunten_node(decoded, &node.span, kind, text))
+                content.push(kunten_node(decoded, &node.span, kind, text));
             }
             ProjectedKind::Node(NodeKind::Directive)
                 if source_slice(&decoded.span_text, &node.span).contains("返り点") =>

@@ -372,3 +372,11 @@
       (is (= ["return-mark" "okurigana" "okurigana" "return-mark"] (mapv #(attribute % "subtype") notes)))
       (is (= ["subscript" "superscript" "superscript" "subscript"] (mapv #(attribute % "rend") notes)))
       (is (empty? (get-in result [:ir "interpretation_problems"]))))))
+
+(deftest paired-inline-scopes-retain-text-and-both-source-markers
+  (let [result (transcribe (source "前［＃斜体］本文［＃斜体終わり］後"))
+        facts (filter #(= "emphasis" (get % "kind")) (get-in result [:ir "interpretation_facts"]))]
+    (is (= "前本文後" (:plaintext result)))
+    (is (= ["本文"] (texts result "hi")))
+    (is (= "italic" (attribute (first (elements result "hi")) "rend")))
+    (is (= 2 (count facts)))))

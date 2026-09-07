@@ -1760,6 +1760,9 @@ fn map_editorial_note(
     } else {
         note["text"] = node["text"].clone();
     }
+    if let Some(filename) = node.get("source_filename") {
+        note["source_filename"] = filename.clone();
+    }
     if let Some(targets) = node.get("target_source_spans").and_then(Value::as_array) {
         let mut end = 0;
         let mut spans = Vec::with_capacity(targets.len());

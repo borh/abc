@@ -34,6 +34,7 @@ pub mod accent;
 pub mod alloc;
 pub mod ast;
 pub mod degraded;
+pub mod external_table_reference;
 pub mod format;
 pub mod lint;
 pub mod node_kind;
@@ -494,6 +495,8 @@ pub enum DirectiveKind {
     IncompletenessNote,
     /// A source-positioned explanation, without inferred target or agency.
     ExplanationNote,
+    /// A supplied external table filename, without its content or resolution.
+    ExternalTableReference,
     /// Ruby-presence editorial note (`［＃「X」にルビ］`) — records that the run
     /// `X` carries a ruby gloss in the source. The gloss text itself is not in
     /// the directive; this is a proofreading marker, not renderable ruby.

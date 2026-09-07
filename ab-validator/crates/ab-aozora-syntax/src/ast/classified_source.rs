@@ -93,6 +93,7 @@ pub enum ConstructId {
     OmissionNote,
     IncompletenessNote,
     ExplanationNote,
+    ExternalTableReference,
     RubyAttached,
     RubyRetarget,
     RubyPairOpen,

@@ -12,6 +12,7 @@ use super::super::instrumentation::{Subsystem, SubsystemGuard};
 use crate::text_variant::image_edition_note;
 use ab_aozora_syntax::ast::KuntenKind;
 use ab_aozora_syntax::ast::{Content, Node};
+use ab_aozora_syntax::external_table_reference::external_table_filename;
 
 use std::sync::OnceLock;
 
@@ -1008,6 +1009,9 @@ pub(crate) fn prewarm() {
 /// here. The note does not restyle its target, so the caller leaves X in
 /// the text and consumes only the bracket.
 pub(super) fn editorial_note_kind(body: &str) -> Option<DirectiveKind> {
+    if external_table_filename(body).is_some() {
+        return Some(DirectiveKind::ExternalTableReference);
+    }
     if body
         .strip_prefix("現代語訳「")
         .and_then(|text| text.strip_suffix('」'))

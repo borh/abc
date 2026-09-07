@@ -273,6 +273,12 @@ fn node_policy(node: Node) -> Option<(ConstructId, Role, Disposition, EvidenceCl
                 semantic,
                 typed,
             ),
+            DirectiveKind::ExternalTableReference => (
+                ConstructId::ExternalTableReference,
+                Role::SourceAnnotation,
+                semantic,
+                typed,
+            ),
             DirectiveKind::ExplanationNote => (
                 ConstructId::ExplanationNote,
                 Role::SourceAnnotation,

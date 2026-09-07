@@ -134,6 +134,14 @@
                         {:view/problem :view/interpretation-problem :view/evidence problem})))))
           (range (.getLength notes)))))
 
+(defn- source-local-external-content? [problem]
+  (let [{:strs [kind code influence source_span]} (:view/evidence problem)
+        {:strs [start end coordinate_system]} source_span]
+    (and (= "content-outside-primary-input" kind code)
+         (= {"kind" "source-location"} influence)
+         (= "decoded_utf8" coordinate_system)
+         (integer? start) (integer? end) (<= 0 start) (< start end))))
+
 (defn from-document [^Document document]
   (let [texts (filterv #(= "text" (local-name %)) (children (.getDocumentElement document)))
         bodies (into [] (mapcat #(filter (fn [node] (= "body" (local-name node))) (children %))) texts)]
@@ -147,7 +155,8 @@
                                    [(conj result (assoc segment :view/start start :view/end end)) end]))
                                [[] 0] segments)
           problems (interpretation-problems document)
-          content-uncertain? (some #(some #{"content"} (get-in % [:view/evidence "aspects"])) problems)
+          content-uncertain? (some #(and (some #{"content"} (get-in % [:view/evidence "aspects"]))
+                                         (not (source-local-external-content? %))) problems)
           excluded (filter #(= :view/unresolved-glyph (:view/kind %)) segments)
           [eligible offset] (reduce (fn [[spans offset] {:view/keys [start end]}]
                                       [(cond-> spans (< offset start) (conj [offset start])) end])

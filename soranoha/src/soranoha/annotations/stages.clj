@@ -6,7 +6,7 @@
 (defn enrichment-stage
   "Consume a TEI blob and an ordered layers vector of JSON blob hashes."
   [clj-toolchain-id]
-  {:stage-id "enrich-tei" :stage-version "1" :toolchain-id clj-toolchain-id
+  {:stage-id "enrich-tei" :stage-version "2" :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob]} inputs]
         (let [base (String. ^bytes (blob (get inputs "tei")) "UTF-8")
               text-view (view/from-tei base)

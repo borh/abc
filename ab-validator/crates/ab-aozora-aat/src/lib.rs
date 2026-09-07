@@ -27,6 +27,7 @@ use serde_json::{Value, json};
 
 use sha2::{Digest, Sha256};
 
+use ab_aozora_facade::syntax::external_table_reference::external_table_filename;
 use ab_aozora_facade::syntax::parse_image_dimensions;
 use ab_aozora_facade::{
     self, BoutenKind, BoutenPosition, Diagnostic, DirectiveKind, ForwardAttr, Node, NodeKind,
@@ -1440,6 +1441,7 @@ enum EstablishedInterpretation {
     Illustration,
     Layout,
     EditorialNote,
+    ExternalTableReference,
     LineLayout,
     Table,
     LayoutBreak,
@@ -1524,6 +1526,9 @@ impl EstablishedInterpretation {
             Some("figure") if node.get("interpretation_problem").is_none() => {
                 Some(Self::Illustration)
             }
+            Some("editorial_note") if node["note_kind"] == "external-table-reference" => {
+                Some(Self::ExternalTableReference)
+            }
             Some("editorial_note") => Some(Self::EditorialNote),
             Some("layout_block") if node["role"] == "table" => Some(Self::Table),
             Some("layout_break") => Some(Self::LayoutBreak),
@@ -1559,6 +1564,7 @@ impl EstablishedInterpretation {
             Self::Illustration => "illustration",
             Self::Layout => "layout",
             Self::EditorialNote => "editorial-note",
+            Self::ExternalTableReference => "external-table-reference",
             Self::LineLayout => "line-layout",
             Self::Table => "table",
             Self::LayoutBreak => "layout-break",
@@ -1567,7 +1573,7 @@ impl EstablishedInterpretation {
 
     fn aspects(self) -> &'static [&'static str] {
         match self {
-            Self::Exponent | Self::Translation => &["structure"],
+            Self::Exponent | Self::Translation | Self::ExternalTableReference => &["structure"],
             Self::Ruby | Self::GaijiRuby | Self::TextVariant | Self::EditorialNote => {
                 &["content", "structure"]
             }
@@ -2781,6 +2787,7 @@ fn directive_node(decoded: &DecodedSource, node: &AozoraNode, kind: DirectiveKin
         DirectiveKind::IncompletenessNote => "incompleteness",
         DirectiveKind::ExplanationNote => "explanation",
         DirectiveKind::Sic => "sic",
+        DirectiveKind::ExternalTableReference => "external-table-reference",
         _ => return raw_node(decoded, node, node.kind.as_str()),
     };
     let raw = source_slice(&decoded.span_text, &node.span);
@@ -2794,6 +2801,19 @@ fn directive_node(decoded: &DecodedSource, node: &AozoraNode, kind: DirectiveKin
         .expect("classified source statement retains its delimiters");
     let mut statement = json!({"kind":"editorial_note", "note_kind":note_kind, "text":text.trim(),
         "span":span_json(&node.span, &decoded.span_ctx)});
+    if kind == DirectiveKind::ExternalTableReference {
+        statement["source_filename"] = json!(
+            external_table_filename(text)
+                .expect("classified external table reference retains its filename")
+        );
+        let start = decoded.span_ctx.to_decoded(node.span.start);
+        let end = decoded.span_ctx.to_decoded_end(node.span.end);
+        statement["source"] = json!(&decoded.text[start..end]);
+        statement["interpretation_problem"] = json!({
+            "kind":"content-outside-primary-input", "code":"content-outside-primary-input",
+            "aspects":["content"], "influence":{"kind":"source-location"}
+        });
+    }
     if matches!(kind, DirectiveKind::ExplanationNote | DirectiveKind::Sic) {
         let start = node.span.start + text.as_ptr().addr() - raw.as_ptr().addr();
         let Some(content) = source_fragment(decoded, start..start + text.len()) else {

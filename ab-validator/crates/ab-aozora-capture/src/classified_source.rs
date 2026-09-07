@@ -280,6 +280,7 @@ fn wire_construct(value: ConstructId) -> &'static str {
         ConstructId::OmissionNote => "omission_note",
         ConstructId::IncompletenessNote => "incompleteness_note",
         ConstructId::ExplanationNote => "explanation_note",
+        ConstructId::ExternalTableReference => "external_table_reference",
         ConstructId::RubyAttached => "ruby_attached",
         ConstructId::RubyRetarget => "ruby_retarget",
         ConstructId::RubyPairOpen => "ruby_pair_open",

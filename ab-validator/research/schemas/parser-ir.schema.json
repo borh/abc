@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
   "title": "ABC Parser IR",
-  "version": "0.48.0",
+  "version": "0.49.0",
   "type": "object",
   "required": ["schema_id", "schema_hash", "source", "nodes", "warnings", "errors", "interpretation_problems", "interpretation_facts"],
   "additionalProperties": false,
@@ -43,30 +43,8 @@
         "normalization": { "type": "string", "enum": ["source", "NFC", "NFKC"] }
       }
     },
-    "interpretation_facts": {"type":"array", "items":{
-      "type": "object", "additionalProperties": false,
-      "required": ["kind", "outcome", "aspects", "source_span"],
-      "properties": {
-        "kind": {"enum": ["ruby", "gaiji", "gaiji-ruby", "iteration-mark", "supplied-diacritic", "illustration", "baseline-position", "exponent", "emphasis", "warichu", "kunten", "heading", "caption", "translation", "text-variant", "annotated-text", "layout", "editorial-note", "line-layout", "table", "layout-break"]},
-        "outcome": {"const": "established"},
-        "aspects": {"type":"array", "minItems":1, "uniqueItems":true, "items":{"enum":["content","structure","layout"]}},
-        "source_span": {"type":"object", "additionalProperties":false, "required":["start","end","coordinate_system"],
-          "properties":{"start":{"type":"integer","minimum":0}, "end":{"type":"integer","minimum":0},
-            "line":{"type":"integer","minimum":1}, "coordinate_system":{"const":"decoded_utf8"}}}
-      }
-    }},
-    "interpretation_problems": {
-      "type": "array", "items": {
-        "type": "object", "additionalProperties": false,
-        "required": ["kind", "code", "raw", "source_span", "aspects", "influence"],
-        "properties": {
-          "kind": {"enum": ["unknown-notation", "unresolved-variant", "uninterpreted-notation"]}, "code": {"enum": ["unknown-notation", "unresolved-variant", "uninterpreted-notation", "unparsed-source-gap"]},
-          "raw": {"type": "string"}, "source_span": {"$ref": "#/$defs/sourceSpan"},
-          "aspects": {"enum": [["layout"], ["structure"], ["content", "structure", "layout"], ["content", "structure"], ["content", "layout"], ["structure", "layout"]]},
-          "influence": {"const": {"kind": "document"}}
-        }
-      }
-    },
+    "interpretation_facts": {"type":"array","items":{"type":"object","additionalProperties":false,"required":["kind","outcome","aspects","source_span"],"properties":{"kind":{"enum":["ruby","gaiji","gaiji-ruby","iteration-mark","supplied-diacritic","illustration","baseline-position","exponent","emphasis","warichu","kunten","heading","caption","translation","text-variant","annotated-text","layout","editorial-note","line-layout","table","layout-break","external-table-reference"]},"outcome":{"const":"established"},"aspects":{"type":"array","minItems":1,"uniqueItems":true,"items":{"enum":["content","structure","layout"]}},"source_span":{"type":"object","additionalProperties":false,"required":["start","end","coordinate_system"],"properties":{"start":{"type":"integer","minimum":0},"end":{"type":"integer","minimum":0},"line":{"type":"integer","minimum":1},"coordinate_system":{"const":"decoded_utf8"}}}}}},
+    "interpretation_problems": {"type":"array","items":{"type":"object","additionalProperties":false,"required":["kind","code","raw","source_span","aspects","influence"],"properties":{"kind":{"enum":["unknown-notation","unresolved-variant","uninterpreted-notation","content-outside-primary-input"]},"code":{"enum":["unknown-notation","unresolved-variant","uninterpreted-notation","unparsed-source-gap","content-outside-primary-input"]},"raw":{"type":"string"},"source_span":{"$ref":"#/$defs/sourceSpan"},"aspects":{"enum":[["layout"],["structure"],["content","structure","layout"],["content","structure"],["content","layout"],["structure","layout"],["content"]]},"influence":{"enum":[{"kind":"document"},{"kind":"source-location"}]}},"allOf":[{"if":{"properties":{"kind":{"const":"content-outside-primary-input"}}},"then":{"properties":{"code":{"const":"content-outside-primary-input"},"aspects":{"const":["content"]},"influence":{"const":{"kind":"source-location"}}}},"else":{"properties":{"code":{"not":{"const":"content-outside-primary-input"}},"influence":{"const":{"kind":"document"}}}}}]}},
     "layout_blocks": {
       "type": "array",
       "description": "Source scopes in postorder: when ranges coincide, the inner scope precedes its enclosing scope.",
@@ -695,32 +673,7 @@
           "text":{"type":"string","minLength":1}}
       }]
     },
-    "editorNoteNode": {
-      "allOf": [
-        { "$ref": "#/$defs/baseNode" },
-        {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["type", "span"],
-          "oneOf": [
-            {"required":["note"], "not":{"anyOf":[{"required":["note_kind"]},{"required":["text"]},{"required":["annotation_children"]}]}},
-            {"required":["note_kind","text"], "not":{"anyOf":[{"required":["note"]},{"required":["annotation_children"]}]}},
-            {"required":["note_kind","annotation_children"], "not":{"anyOf":[{"required":["note"]},{"required":["text"]}]}}
-          ],
-          "properties": {
-            "type": { "const": "editor-note" },
-            "span": { "$ref": "#/$defs/span" },
-            "source_span": { "$ref": "#/$defs/sourceSpan" },
-            "note": { "$ref": "#/$defs/note" },
-            "note_kind": {"enum":["base-edition","first-publication","transcription","omission","incompleteness","explanation","sic"]},
-            "text": {"type":"string","minLength":1},
-            "target_source_spans": {"type":"array","minItems":1,"items":{"$ref":"#/$defs/sourceSpan"}},
-            "closing_source_span": {"$ref":"#/$defs/sourceSpan"},
-            "annotation_children": {"type":"array","minItems":1,"items":{"$ref":"#/$defs/annotationNode"}}
-          }
-        }
-      ]
-    },
+    "editorNoteNode": {"allOf":[{"$ref":"#/$defs/baseNode"},{"type":"object","additionalProperties":false,"required":["type","span"],"oneOf":[{"required":["note"],"not":{"anyOf":[{"required":["note_kind"]},{"required":["text"]},{"required":["annotation_children"]}]}},{"required":["note_kind","text"],"not":{"anyOf":[{"required":["note"]},{"required":["annotation_children"]}]}},{"required":["note_kind","annotation_children"],"not":{"anyOf":[{"required":["note"]},{"required":["text"]}]}}],"properties":{"type":{"const":"editor-note"},"span":{"$ref":"#/$defs/span"},"source_span":{"$ref":"#/$defs/sourceSpan"},"note":{"$ref":"#/$defs/note"},"note_kind":{"enum":["base-edition","first-publication","transcription","omission","incompleteness","explanation","external-table-reference","sic"]},"text":{"type":"string","minLength":1},"target_source_spans":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/sourceSpan"}},"closing_source_span":{"$ref":"#/$defs/sourceSpan"},"annotation_children":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/annotationNode"}},"source_filename":{"type":"string","minLength":1,"pattern":"^[A-Za-z0-9_.-]+$","not":{"enum":[".",".."]}}},"allOf":[{"if":{"required":["note_kind"],"properties":{"note_kind":{"const":"external-table-reference"}}},"then":{"required":["text","source_filename"]},"else":{"not":{"anyOf":[{"required":["source_filename"]}]}}}]}]},
     "emphasisNode": {
       "allOf": [
         { "$ref": "#/$defs/baseNode" },

@@ -1277,3 +1277,20 @@
     (is (= "ママ" (.getTextContent ^Node note)))
     (is (= "」ママ" (.getTextContent (.getParentNode ^Node note))))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
+(deftest external-table-reference-retains-prose-and-reports-the-external-slot
+  (let [marker "［＃ここに表組入る、別ファイル（densyanokonzatsu_table.txt）参照］"
+        result (transcribe (source (str "前。" marker "後。")))
+        note (first (filter #(= "external-table-reference" (attribute % "type")) (elements result "note")))
+        reference (first (elements result "ref"))
+        problem (first (get-in result [:ir "interpretation_problems"]))]
+    (is (= "前。後。" (:plaintext result)))
+    (is (= "前。後。" (projection/markdown (:view result))))
+    (is (= "densyanokonzatsu_table.txt" (attribute reference "target")))
+    (is (= note (.getParentNode ^Node reference)))
+    (is (not (string/blank? (attribute note "source"))))
+    (is (= marker (get problem "raw")))
+    (is (= "content-outside-primary-input" (get problem "kind")))
+    (is (= {"kind" "source-location"} (get problem "influence")))
+    (is (= [[0 12]] (:view/eligible-spans (:view result))))
+    (doseq [profile [:projection/plaintext :projection/markdown]]
+      (is (= "limited" (get (projection/report profile (:view result)) "status"))))))

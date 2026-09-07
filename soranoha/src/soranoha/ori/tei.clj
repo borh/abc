@@ -296,7 +296,12 @@
         acc (if annotation (assoc annotation :current-paragraph before) acc)
         element (sourced node
                          (if-let [kind (get node "note_kind")]
-                           (into [:note {:type kind}] (if annotation (:current-paragraph annotation) [(get node "text")]))
+                           (into [:note {:type kind}]
+                                 (cond
+                                   (= kind "external-table-reference")
+                                   [[:ref {:target (get node "source_filename")} (get node "text")]]
+                                   annotation (:current-paragraph annotation)
+                                   :else [(get node "text")]))
                            (let [note (get node "note")]
                              [:note (cond-> {:type (get note "category")}
                                       (get note "resolution") (assoc :subtype (get note "resolution")))

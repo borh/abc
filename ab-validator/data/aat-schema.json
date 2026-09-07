@@ -23,16 +23,7 @@
       "allOf":[{"if":{"properties":{"anchor_kind":{"const":"text"}}},"then":{"required":["offset_chars"]},"else":{"not":{"required":["offset_chars"]}}}]
     },
 
-    "interpretationFact": {
-      "type": "object", "additionalProperties": false,
-      "required": ["kind", "outcome", "aspects", "source_span"],
-      "properties": {
-        "kind": {"enum": ["ruby", "gaiji", "gaiji-ruby", "iteration-mark", "supplied-diacritic", "illustration", "baseline-position", "exponent", "emphasis", "warichu", "kunten", "heading", "caption", "translation", "text-variant", "annotated-text", "layout", "editorial-note", "line-layout", "table", "layout-break"]},
-        "outcome": {"const": "established"},
-        "aspects": {"type":"array", "minItems":1, "uniqueItems":true, "items":{"enum":["content","structure","layout"]}},
-        "source_span": {"$ref":"#/$defs/sourceSpan"}
-      }
-    },
+    "interpretationFact": {"type":"object","additionalProperties":false,"required":["kind","outcome","aspects","source_span"],"properties":{"kind":{"enum":["ruby","gaiji","gaiji-ruby","iteration-mark","supplied-diacritic","illustration","baseline-position","exponent","emphasis","warichu","kunten","heading","caption","translation","text-variant","annotated-text","layout","editorial-note","line-layout","table","layout-break","external-table-reference"]},"outcome":{"const":"established"},"aspects":{"type":"array","minItems":1,"uniqueItems":true,"items":{"enum":["content","structure","layout"]}},"source_span":{"$ref":"#/$defs/sourceSpan"}}},
     "span": {
       "type": "object",
       "required": ["line_start", "line_end", "byte_start", "byte_end"],
@@ -64,21 +55,7 @@
         "parse_complete": { "type": "boolean" },
         "warnings": { "type": "array", "items": { "$ref": "#/$defs/warning" } },
         "interpretation_facts": {"type":"array", "items":{"$ref":"#/$defs/interpretationFact"}},
-        "interpretation_problems": {
-          "type": "array",
-          "items": {
-            "type": "object", "additionalProperties": false,
-            "required": ["kind", "code", "aspects", "influence", "raw", "source_span"],
-            "properties": {
-              "kind": {"$ref":"#/$defs/raw/properties/interpretation_problem/properties/kind"},
-              "code": {"$ref":"#/$defs/raw/properties/interpretation_problem/properties/code"},
-              "aspects": {"$ref":"#/$defs/raw/properties/interpretation_problem/properties/aspects"},
-              "influence": {"$ref":"#/$defs/raw/properties/interpretation_problem/properties/influence"},
-              "raw": {"type":"string"},
-              "source_span": {"$ref":"#/$defs/interpretationFact/properties/source_span"}
-            }
-          }
-        },
+        "interpretation_problems": {"type":"array","items":{"type":"object","additionalProperties":false,"required":["kind","code","aspects","influence","raw","source_span"],"properties":{"kind":{"$ref":"#/$defs/raw/properties/interpretation_problem/properties/kind"},"code":{"$ref":"#/$defs/raw/properties/interpretation_problem/properties/code"},"aspects":{"$ref":"#/$defs/raw/properties/interpretation_problem/properties/aspects"},"influence":{"$ref":"#/$defs/raw/properties/interpretation_problem/properties/influence"},"raw":{"type":"string"},"source_span":{"$ref":"#/$defs/interpretationFact/properties/source_span"}},"allOf":[{"if":{"properties":{"kind":{"const":"content-outside-primary-input"}}},"then":{"properties":{"code":{"const":"content-outside-primary-input"},"aspects":{"const":["content"]},"influence":{"const":{"kind":"source-location"}}}},"else":{"properties":{"code":{"not":{"const":"content-outside-primary-input"}},"influence":{"const":{"kind":"document"}}}}}]}},
         "metrics": { "$ref": "#/$defs/metrics" },
         "semantic_summary": { "$ref": "#/$defs/semantic_summary" }
       }
@@ -405,15 +382,7 @@
           "enum": ["parser-derived", "source-derived", "adapter-derived"]
         },
         "x-source-marker-kind": { "type": "string" },
-        "interpretation_problem": {
-          "type": "object", "additionalProperties": false,
-          "required": ["kind", "code", "aspects", "influence"],
-          "properties": {
-            "kind": {"enum": ["unknown-notation", "unresolved-variant", "uninterpreted-notation"]}, "code": {"enum": ["unknown-notation", "unresolved-variant", "uninterpreted-notation", "unparsed-source-gap"]},
-            "aspects": {"enum": [["layout"], ["structure"], ["content", "structure", "layout"], ["content", "structure"], ["content", "layout"], ["structure", "layout"]]},
-            "influence": {"const": {"kind": "document"}}
-          }
-        },
+        "interpretation_problem": {"type":"object","additionalProperties":false,"required":["kind","code","aspects","influence"],"properties":{"kind":{"enum":["unknown-notation","unresolved-variant","uninterpreted-notation","content-outside-primary-input"]},"code":{"enum":["unknown-notation","unresolved-variant","uninterpreted-notation","unparsed-source-gap","content-outside-primary-input"]},"aspects":{"enum":[["layout"],["structure"],["content","structure","layout"],["content","structure"],["content","layout"],["structure","layout"],["content"]]},"influence":{"enum":[{"kind":"document"},{"kind":"source-location"}]}},"allOf":[{"if":{"properties":{"kind":{"const":"content-outside-primary-input"}}},"then":{"properties":{"code":{"const":"content-outside-primary-input"},"aspects":{"const":["content"]},"influence":{"const":{"kind":"source-location"}}}},"else":{"properties":{"code":{"not":{"const":"content-outside-primary-input"}},"influence":{"const":{"kind":"document"}}}}}]},
             "text_variant": {
           "type": "object", "required": ["target_kind", "current", "base_text"], "additionalProperties": false,
           "properties": {
@@ -428,12 +397,7 @@
         "span": { "$ref": "#/$defs/span" }
       }
     },
-    "editorial_note": {
-      "type":"object", "additionalProperties":false,
-      "required":["kind","note_kind","span"],
-      "oneOf":[{"required":["text"],"not":{"required":["annotation_content"]}},{"required":["annotation_content"],"not":{"required":["text"]}}],
-      "properties": {"interpretation_marker_spans":{"type":"array","items":{"$ref":"#/$defs/span"}}, "kind":{"const":"editorial_note"}, "note_kind":{"enum":["base-edition","first-publication","transcription","omission","incompleteness","explanation","sic"]}, "text":{"type":"string","minLength":1}, "span":{"$ref":"#/$defs/span"}, "target_source_spans":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/span"}}, "closing_source_span":{"$ref":"#/$defs/span"}, "annotation_content":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/inline"}}}
-    },
+    "editorial_note": {"type":"object","additionalProperties":false,"required":["kind","note_kind","span"],"oneOf":[{"required":["text"],"not":{"required":["annotation_content"]}},{"required":["annotation_content"],"not":{"required":["text"]}}],"properties":{"interpretation_marker_spans":{"type":"array","items":{"$ref":"#/$defs/span"}},"kind":{"const":"editorial_note"},"note_kind":{"enum":["base-edition","first-publication","transcription","omission","incompleteness","explanation","external-table-reference","sic"]},"text":{"type":"string","minLength":1},"span":{"$ref":"#/$defs/span"},"target_source_spans":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/span"}},"closing_source_span":{"$ref":"#/$defs/span"},"annotation_content":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/inline"}},"source_filename":{"type":"string","minLength":1,"pattern":"^[A-Za-z0-9_.-]+$","not":{"enum":[".",".."]}},"source":{"type":"string","minLength":1},"interpretation_problem":{"$ref":"#/$defs/raw/properties/interpretation_problem"}},"allOf":[{"if":{"required":["note_kind"],"properties":{"note_kind":{"const":"external-table-reference"}}},"then":{"required":["text","source_filename","source","interpretation_problem"],"properties":{"interpretation_problem":{"properties":{"kind":{"const":"content-outside-primary-input"}}}}},"else":{"not":{"anyOf":[{"required":["source_filename"]},{"required":["source"]},{"required":["interpretation_problem"]}]}}}]},
     "gap": {
       "type":"object", "additionalProperties":false,
       "required":["kind","reason"],
@@ -453,20 +417,7 @@
         "span":{"$ref":"#/$defs/span"}
       }
     },
-    "text_variant": {
-      "type": "object",
-      "required": ["kind", "content", "base_text", "base_content", "source", "span"],
-      "additionalProperties": false,
-      "properties": {
-        "kind": { "const": "text-variant" },
-        "current_interpretation_facts": {"description":"Source-owned claims for the supplied current quotation, emitted only after its target and structural constraints match.", "type":"array", "uniqueItems":true, "items":{"$ref":"#/$defs/interpretationFact"}},
-        "content": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/inline" } },
-        "base_text": { "type": "string", "description": "Explicit witness text; empty means source-stated absence." },
-        "base_content": { "type":"array", "items":{"$ref":"#/$defs/inline"} },
-        "source": { "type": "string", "minLength": 1 },
-        "span": { "$ref": "#/$defs/span" }
-      }
-    },
+    "text_variant": {"type":"object","required":["kind","content","base_text","base_content","source","span"],"additionalProperties":false,"properties":{"kind":{"const":"text-variant"},"current_interpretation_facts":{"description":"Source-owned claims for the supplied current quotation, emitted only after its target and structural constraints match.","type":"array","uniqueItems":true,"items":{"$ref":"#/$defs/interpretationFact"}},"content":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/inline"}},"base_text":{"type":"string","description":"Explicit witness text; empty means source-stated absence."},"base_content":{"type":"array","items":{"$ref":"#/$defs/inline"}},"source":{"type":"string","minLength":1},"span":{"$ref":"#/$defs/span"}}},
     "formatting_attribute": {
       "oneOf": [
         {"type":"object","additionalProperties":false,"required":["kind","position"],"properties":{"kind":{"const":"baseline_position"},"position":{"const":"lowered"}}},

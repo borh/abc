@@ -12,6 +12,7 @@
             [soranoha.kura.cas :as cas]
             [soranoha.kura.engine :as engine]
             [soranoha.ori.stages :as publication-stages]
+            [soranoha.ori.projection :as projection]
             [soranoha.ori.validate :as validation])
   (:import [java.nio.file FileAlreadyExistsException]
            [org.w3c.dom Document Node NodeList]))
@@ -205,3 +206,25 @@
     (is (= [] (:view/eligible-spans (view/from-tei (with-problem ["content"] {})))))
     (is (thrown? clojure.lang.ExceptionInfo
                  (layer/validate-layer unknown (analysis ordinary "tokens" [["t" 0 6 "token"]]))))))
+
+(deftest external-content-slot-limits-projections-without-invalidating-retained-prose
+  (let [base (document "<a:p>本文</a:p>")
+        problem {"kind" "content-outside-primary-input" "code" "content-outside-primary-input"
+                 "raw" "［＃ここに表組入る、別ファイル（table.txt）参照］"
+                 "aspects" ["content"] "influence" {"kind" "source-location"}
+                 "source_span" {"coordinate_system" "decoded_utf8" "start" 100 "end" 175}}
+        reading (fn [problem]
+                  (view/from-tei
+                   (str/replace base "</a:text>"
+                                (str "<a:back><a:div><a:note type='interpretation-problem'>"
+                                     (json/write-json-str problem)
+                                     "</a:note></a:div></a:back></a:text>"))))
+        external (reading problem)]
+    (is (= (:view/id (view/from-tei base)) (:view/id external)))
+    (is (= [[0 6]] (:view/eligible-spans external)))
+    (doseq [profile [:projection/plaintext :projection/markdown]]
+      (let [report (projection/report profile external)]
+        (is (= "limited" (get report "status")))
+        (is (some #{{"family" "external-content" "disposition" "unresolved" "count" 1}}
+                  (get report "counts")))))
+    (is (= [] (:view/eligible-spans (reading (dissoc problem "source_span")))))))

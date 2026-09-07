@@ -167,7 +167,10 @@
                            (when (= Node/ELEMENT_NODE (.getNodeType node))
                              (node-outcomes profile node)))
                          (tree-seq #(seq (descend %)) descend body))
-        counts (frequencies outcomes)]
+        external-content (for [problem (:view/problems reading)
+                               :when (= "content-outside-primary-input" (get-in problem [:view/evidence "code"]))]
+                           ["external-content" :projection/unresolved])
+        counts (frequencies (concat outcomes external-content))]
     {"profile" (str (name profile) (if (= :projection/markdown profile) "/2" "/1"))
      "view" (:view/id reading)
      "status" (if (some (fn [[[_ disposition] _]]

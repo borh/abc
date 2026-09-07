@@ -388,6 +388,10 @@ pub enum Format {
     SuperScript,
     /// 下付き小文字 (subscript).
     SubScript,
+    /// 下付き — lowered baseline without a supplied smaller size.
+    Lowered,
+    /// 指数 — supplied mathematical exponent role, without a base association.
+    Exponent,
     /// 行右 / 行左小書き (small side-script).
     SmallScript(BoutenPosition),
     /// 縦中横 (tate-chu-yoko).
@@ -442,6 +446,8 @@ impl Format {
             Self::Caption => "caption",
             Self::SuperScript => "superScript",
             Self::SubScript => "subScript",
+            Self::Lowered => "lowered",
+            Self::Exponent => "exponent",
             Self::SmallScript(_) => "smallScript",
             Self::CombineUpright => "combineUpright",
             Self::Fraction => "fraction",
@@ -482,6 +488,10 @@ pub enum ForwardAttr {
     SuperScript,
     /// 下付き小文字.
     SubScript,
+    /// 下付き — lowered baseline without a supplied smaller size.
+    Lowered,
+    /// 指数 — supplied mathematical exponent role, without a base association.
+    Exponent,
     /// 行右 / 行左小書き.
     SmallScript(BoutenPosition),
     /// 罫囲み / 「□」囲み — an enclosure of some [`EnclosureKind`].
@@ -591,6 +601,8 @@ impl ForwardAttr {
             Self::Italic => Format::Italic,
             Self::SuperScript => Format::SuperScript,
             Self::SubScript => Format::SubScript,
+            Self::Lowered => Format::Lowered,
+            Self::Exponent => Format::Exponent,
             Self::SmallScript(p) => Format::SmallScript(p),
             Self::Framed(k) => Format::Framed(k),
             Self::Horizontal => Format::Horizontal(HorizontalPresentation { align: None }),
@@ -619,6 +631,8 @@ impl ForwardAttr {
             Self::Italic => "斜体",
             Self::SuperScript => "上付き小文字",
             Self::SubScript => "下付き小文字",
+            Self::Lowered => "下付き",
+            Self::Exponent => "指数",
             Self::SmallScript(BoutenPosition::Right) => "行右小書き",
             Self::SmallScript(BoutenPosition::Left) => "行左小書き",
             Self::Framed(EnclosureKind::Rule) => "罫囲み",

@@ -1870,6 +1870,8 @@ pub(super) fn forward_attr_from_suffix(s: &str) -> Option<ForwardAttr> {
         "斜体" => ForwardAttr::Italic,
         "上付き小文字" => ForwardAttr::SuperScript,
         "下付き小文字" => ForwardAttr::SubScript,
+        "下付き" => ForwardAttr::Lowered,
+        "指数" => ForwardAttr::Exponent,
         "行右小書き" | "小書き右寄せ" => ForwardAttr::SmallScript(BoutenPosition::Right),
         "行左小書き" => ForwardAttr::SmallScript(BoutenPosition::Left),
         "罫囲み" => ForwardAttr::Framed(EnclosureKind::Rule),

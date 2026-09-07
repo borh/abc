@@ -368,6 +368,8 @@ const fn forward_attr_policy(
         | ForwardAttr::Italic
         | ForwardAttr::SuperScript
         | ForwardAttr::SubScript
+        | ForwardAttr::Lowered
+        | ForwardAttr::Exponent
         | ForwardAttr::SmallScript(_)
         | ForwardAttr::Framed(_)
         | ForwardAttr::Horizontal

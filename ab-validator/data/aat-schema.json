@@ -27,7 +27,7 @@
       "type": "object", "additionalProperties": false,
       "required": ["kind", "outcome", "aspects", "source_span"],
       "properties": {
-        "kind": {"enum": ["ruby", "gaiji", "gaiji-ruby", "iteration-mark", "supplied-diacritic", "illustration", "emphasis", "warichu", "kunten", "heading", "caption", "text-variant", "annotated-text", "layout", "editorial-note", "line-layout", "table", "layout-break"]},
+        "kind": {"enum": ["ruby", "gaiji", "gaiji-ruby", "iteration-mark", "supplied-diacritic", "illustration", "baseline-position", "exponent", "emphasis", "warichu", "kunten", "heading", "caption", "text-variant", "annotated-text", "layout", "editorial-note", "line-layout", "table", "layout-break"]},
         "outcome": {"const": "established"},
         "aspects": {"type":"array", "minItems":1, "uniqueItems":true, "items":{"enum":["content","structure","layout"]}},
         "source_span": {"$ref":"#/$defs/sourceSpan"}
@@ -466,7 +466,8 @@
     },
     "formatting_attribute": {
       "oneOf": [
-        {"type":"object","additionalProperties":false,"required":["kind"],"properties":{"kind":{"enum":["yokogumi","fraction"]}}},
+        {"type":"object","additionalProperties":false,"required":["kind","position"],"properties":{"kind":{"const":"baseline_position"},"position":{"const":"lowered"}}},
+        {"type":"object","additionalProperties":false,"required":["kind"],"properties":{"kind":{"enum":["yokogumi","fraction","exponent"]}}},
         {"type":"object","additionalProperties":false,"required":["kind","border"],"properties":{"kind":{"const":"keigakomi"},"border":{"enum":["rule","unspecified","dashed-rule","box","circle","dotted-circle","double-rule"]}}},
         {"type":"object","additionalProperties":false,"required":["kind"],"properties":{"kind":{"enum":["caption","warichu"]}}},
         {"type":"object","additionalProperties":false,"required":["kind","style_type"],"properties":{"kind":{"const":"style"},"style_type":{"enum":["bold","italic","gothic","bouten","bosen"]},"decoration":{"type":"object","additionalProperties":false,"required":["kind","position"],"properties":{"kind":{"type":"string"},"position":{"enum":["right","left","both","unknown"]}}}}},
@@ -483,7 +484,7 @@
       "patternProperties": { "^x-": true },
       "properties": {
         "interpretation_marker_spans": { "type": "array", "items": { "$ref": "#/$defs/span" } },
-        "kind": { "enum": ["style", "formatting", "font_size", "small_script", "tcy", "keigakomi", "yokogumi", "caption", "fraction"] },
+        "kind": { "enum": ["style", "formatting", "font_size", "small_script", "baseline_position", "exponent", "tcy", "keigakomi", "yokogumi", "caption", "fraction"] },
         "border": {"enum":["rule","unspecified","dashed-rule","box","circle","dotted-circle","double-rule"]},
         "decoration": {"type":"object", "additionalProperties":false, "required":["kind","position"], "properties":{"kind":{"type":"string"}, "position":{"enum":["right","left","both","unknown"]}}},
         "attributes": { "type":"array", "minItems":2, "uniqueItems":true, "items": { "$ref":"#/$defs/formatting_attribute" } },
@@ -493,7 +494,7 @@
         "qualifier": { "enum": ["やや", "ひとまわり"] },
         "level": { "type": "integer", "minimum": 1 },
         "size": { "enum": ["extra-large", "large", "medium", "small"] },
-        "position": { "enum": ["right", "left"] },
+        "position": { "enum": ["right", "left", "lowered"] },
         "class_name": { "type": "string" },
         "align": { "const": "right" },
         "offset_from_end": { "type": "integer", "minimum": 0 },
@@ -503,10 +504,12 @@
         "content": { "type": "array", "items": { "$ref": "#/$defs/inline" } }
       },
       "allOf": [
+        {"if":{"properties":{"kind":{"const":"baseline_position"}}},"then":{"required":["position"],"properties":{"position":{"const":"lowered"}}}},
+        {"if":{"properties":{"kind":{"enum":["baseline_position","exponent"]}}},"then":{"not":{"anyOf":[{"required":["level"]},{"required":["size"]},{"required":["size_type"]}]}}},
         { "if":{"properties":{"kind":{"const":"formatting"}}}, "then":{"required":["attributes"]}, "else":{"not":{"required":["attributes"]}} },
         {
           "if": { "properties": { "kind": { "const": "small_script" } } },
-          "then": { "required": ["position"] }
+          "then": { "required": ["position"], "properties":{"position":{"enum":["right","left"]}} }
         },
         {
           "if": { "properties": { "kind": { "const": "font_size" } } },

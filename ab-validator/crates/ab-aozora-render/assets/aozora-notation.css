@@ -566,3 +566,6 @@
 .aozora-directive[hidden] {
   display: none;
 }
+
+.aozora-lowered { vertical-align: sub; font-size: inherit; }
+.aozora-exponent { vertical-align: super; font-size: inherit; }

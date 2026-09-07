@@ -100,6 +100,11 @@ Qualitative font comparisons preserve direction and any supplied `やや` or
 `font-size qualitative(smaller)` or `font-size qualitative(larger)` and an
 optional `qualifier(...)`; explicit bold weight and gothic typeface remain
 separate attributes.
+Bare `下付き` preserves lowered placement without small type, while `指数`
+preserves the exponent role without identifying a mathematical base. TEI marks
+the original target glyphs with `baseline-lowered` or `exponent`; plaintext and
+Markdown retain those glyphs unchanged. Markdown uses inline HTML with inherited
+font size for the placement; explicit `下付き小文字` remains distinct.
 Presentation supplied on an indentation opener can end before the indentation.
 Alignment supplied within a horizontal-writing clause ends with that clause;
 an unclosed indentation remains explicit uncertainty.

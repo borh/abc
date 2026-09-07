@@ -1422,6 +1422,8 @@ pub fn diagnostics_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
 
 #[derive(Clone, Copy)]
 enum EstablishedInterpretation {
+    BaselinePosition,
+    Exponent,
     Ruby,
     Gaiji,
     GaijiRuby,
@@ -1448,6 +1450,8 @@ impl EstablishedInterpretation {
             .as_array()
             .is_some_and(|children| !children.is_empty());
         match node["kind"].as_str() {
+            Some("baseline_position") if has_content => Some(Self::BaselinePosition),
+            Some("exponent") if has_content => Some(Self::Exponent),
             Some("keigakomi" | "yokogumi" | "fraction") if has_content => Some(Self::Layout),
             Some("ruby")
                 if node["base"].as_str().is_some_and(|text| !text.is_empty())
@@ -1530,6 +1534,8 @@ impl EstablishedInterpretation {
 
     fn kind(self) -> &'static str {
         match self {
+            Self::BaselinePosition => "baseline-position",
+            Self::Exponent => "exponent",
             Self::Ruby => "ruby",
             Self::Gaiji => "gaiji",
             Self::GaijiRuby => "gaiji-ruby",
@@ -1553,11 +1559,14 @@ impl EstablishedInterpretation {
 
     fn aspects(self) -> &'static [&'static str] {
         match self {
+            Self::Exponent => &["structure"],
             Self::Ruby | Self::GaijiRuby | Self::TextVariant | Self::EditorialNote => {
                 &["content", "structure"]
             }
             Self::Gaiji | Self::IterationMark | Self::SuppliedDiacritic => &["content"],
-            Self::Emphasis | Self::Layout | Self::LineLayout => &["layout"],
+            Self::BaselinePosition | Self::Emphasis | Self::Layout | Self::LineLayout => {
+                &["layout"]
+            }
             Self::Warichu | Self::Heading | Self::Caption | Self::Table | Self::LayoutBreak => {
                 &["structure", "layout"]
             }
@@ -4143,8 +4152,8 @@ fn adjacent_principal_ruby(nodes: &mut [Value]) -> Option<&mut Value> {
             "editorial_note" => {}
             "raw" if node.get("text_variant").is_some() => {}
             "ruby" => return Some(node),
-            "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi"
-            | "yokogumi" | "heading" => {
+            "style" | "formatting" | "font_size" | "baseline_position" | "exponent"
+            | "small_script" | "tcy" | "keigakomi" | "yokogumi" | "heading" => {
                 return adjacent_principal_ruby(node["content"].as_array_mut()?);
             }
             _ => return None,
@@ -4224,8 +4233,8 @@ fn attach_principal_subrange(
             true
         }
         Some(
-            "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi"
-            | "yokogumi" | "heading",
+            "style" | "formatting" | "font_size" | "baseline_position" | "exponent"
+            | "small_script" | "tcy" | "keigakomi" | "yokogumi" | "heading",
         ) => {
             let Some(children) = node["content"].as_array_mut() else {
                 return false;
@@ -4368,8 +4377,9 @@ fn preceding_reading(nodes: &mut [Value]) -> Option<&mut Value> {
                 }
             }
             "ruby" => return Some(node),
-            "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi"
-            | "yokogumi" | "fraction" | "text-variant" | "annotated_text" | "heading" => {
+            "style" | "formatting" | "font_size" | "baseline_position" | "exponent"
+            | "small_script" | "tcy" | "keigakomi" | "yokogumi" | "fraction" | "text-variant"
+            | "annotated_text" | "heading" => {
                 return preceding_reading(node["content"].as_array_mut()?);
             }
             _ => return None,
@@ -4502,8 +4512,9 @@ fn fragment_text(node: &Value, glyph: GlyphRealization) -> Option<Cow<'_, str>> 
         })),
         "iteration-mark" | "supplied-diacritic" => Some(Cow::Borrowed(node["text"].as_str()?)),
         "editorial_note" | "kunten" | "figure" => Some(Cow::Borrowed("")),
-        "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi"
-        | "yokogumi" | "fraction" | "warichu" | "text-variant" | "annotated_text" | "heading" => {
+        "style" | "formatting" | "font_size" | "baseline_position" | "exponent"
+        | "small_script" | "tcy" | "keigakomi" | "yokogumi" | "fraction" | "warichu"
+        | "text-variant" | "annotated_text" | "heading" => {
             let mut text = String::new();
             for child in node["content"].as_array()? {
                 text.push_str(&fragment_text(child, glyph)?);
@@ -4774,6 +4785,8 @@ fn formatting_fields(attr: ForwardAttr) -> Option<Value> {
         ForwardAttr::Italic => json!({"kind":"style", "style_type":"italic"}),
         ForwardAttr::SuperScript => json!({"kind":"style", "style_type":"superscript"}),
         ForwardAttr::SubScript => json!({"kind":"style", "style_type":"subscript"}),
+        ForwardAttr::Lowered => json!({"kind":"baseline_position", "position":"lowered"}),
+        ForwardAttr::Exponent => json!({"kind":"exponent"}),
         ForwardAttr::SmallScript(BoutenPosition::Right) => {
             json!({"kind":"small_script", "position":"right"})
         }

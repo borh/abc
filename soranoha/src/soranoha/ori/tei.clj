@@ -90,6 +90,7 @@
                         level (get layout "level")]
                     (when (and size-type (some? level))
                       (str "size-type=" size-type ";level=" level))))
+    "baseline-position" (str "position=" (get layout "position"))
     "small-script" (str "position=" (get layout "position"))
     "tcy" (when-let [marker (get layout "marker")]
             (str "marker=" marker))
@@ -115,6 +116,8 @@
                         level (get layout "level")]
                     (when (and size-type (some? level))
                       (str "font-size " size-type "(" level ")"))))
+    "baseline-position" (str "baseline-" (get layout "position"))
+    "exponent" "exponent"
     "small-script" (str "small-script " (get layout "position"))
     "tcy" "text-combine-upright"
     "keigakomi" (if-let [border (get layout "border")]

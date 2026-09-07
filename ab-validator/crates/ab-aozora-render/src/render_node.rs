@@ -335,7 +335,9 @@ fn render_forward_semantic<W: Write>(
         ForwardAttr::Italic => ("i", "</i>"),
         ForwardAttr::SuperScript => ("sup", "</sup>"),
         ForwardAttr::SubScript => ("sub", "</sub>"),
-        ForwardAttr::SmallScript(_)
+        ForwardAttr::Lowered
+        | ForwardAttr::Exponent
+        | ForwardAttr::SmallScript(_)
         | ForwardAttr::Framed(_)
         | ForwardAttr::Horizontal
         | ForwardAttr::Caption
@@ -343,7 +345,11 @@ fn render_forward_semantic<W: Write>(
         // Bold and any future weight default to the bold element.
         _ => ("b", "</b>"),
     };
-    let slug = ab_aozora_spec::roman_slug(attr.keyword()).unwrap_or("futoji");
+    let slug = match attr {
+        ForwardAttr::Lowered => "lowered",
+        ForwardAttr::Exponent => "exponent",
+        _ => ab_aozora_spec::roman_slug(attr.keyword()).unwrap_or("futoji"),
+    };
     write!(out, r#"<{el} class="aozora-{slug}">"#)?;
     render_content_range(target, store, out)?;
     out.write_str(close)

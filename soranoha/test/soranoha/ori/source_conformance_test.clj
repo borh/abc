@@ -1160,3 +1160,20 @@
     (is (= ["泖"] (texts result "g")))
     (is (not (string/blank? (attribute annotated "source"))))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest supplied-baseline-position-and-exponent-do-not-invent-size
+  (doseq [[body expected rend kind]
+          [["“［＃「“」は下付き］MON”［＃「”」は下付き］" "“MON”" "baseline-lowered" "baseline-position"]
+           ["A2［＃「2」は指数］－B2［＃「2」は指数］" "A2－B2" "exponent" "exponent"]]]
+    (let [result (transcribe (source body))
+          marked (filterv #(= rend (attribute % "rend")) (elements result "hi"))]
+      (is (= expected (:plaintext result)))
+      (let [markdown (projection/markdown (:view result))]
+        (is (= expected (string/replace markdown #"<[^>]+>" "")))
+        (is (string/includes? markdown (str "data-tei-rend=\"" rend "\"")))
+        (is (string/includes? markdown "font-size: inherit")))
+      (is (= 2 (count marked)))
+      (is (every? #(not (string/blank? (attribute % "source"))) marked))
+      (is (not (string/includes? (:tei result) "small-script")))
+      (is (= 2 (count (filter #(= kind (get % "kind")) (get-in result [:ir "interpretation_facts"])))))
+      (is (empty? (get-in result [:ir "interpretation_problems"]))))))

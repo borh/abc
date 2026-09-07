@@ -60,6 +60,10 @@
             :aspects #{"content"}}
    "gaiji-ruby" {:markers #{"GaijiFullwidth" "GaijiAscii" "RubyExplicit"}
                  :families #{"gaiji_ruby.inline_base"} :aspects #{"content" "structure"}}
+   "baseline-position" {:markers #{"CommandFullwidth" "CommandAscii"}
+                        :families #{"decoration.font_size"} :aspects #{"layout"}}
+   "exponent" {:markers #{"CommandFullwidth" "CommandAscii"}
+               :families #{"glyph.variant_note"} :aspects #{"structure"}}
    "emphasis" {:markers #{"CommandFullwidth" "CommandAscii"}
                :families #{"emphasis.basic" "decoration.boten" "decoration.bousen"
                            "decoration.bold_italic" "decoration.typeface" "decoration.font_size" "layout.tcy"} :aspects #{"layout"}}

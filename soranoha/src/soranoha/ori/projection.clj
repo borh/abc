@@ -48,6 +48,8 @@
   (when-not (.hasAttribute node "style")
     (let [rend (.getAttribute node "rend")]
       (or ({"text-combine-upright" "text-combine-upright: all"
+            "baseline-lowered" "vertical-align: sub; font-size: inherit"
+            "exponent" "vertical-align: super; font-size: inherit"
             "yokogumi horizontal" "writing-mode: horizontal-tb"
             "keigakomi" "border: 1px solid"} rend)
           (when-let [[_ family shape side] (re-matches #"(bouten|bosen) ([^ ]+) (right|left|both)" rend)]

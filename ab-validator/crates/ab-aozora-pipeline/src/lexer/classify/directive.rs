@@ -1462,8 +1462,7 @@ pub(super) fn classify_annotation_body(
             // (corpus's most common top form) and the bare `天付き` spellings
             // appear; accept either before the leading-digit parse below.
             if let Some(after) = rest
-                .strip_prefix("改行天付き、折り返して")
-                .or_else(|| rest.strip_prefix("天付き、折り返して"))
+                .strip_prefix("天付き、折り返して")
                 .or_else(|| rest.strip_prefix("天付き折り返して"))
             {
                 let (m, tail2) = parse_indent_count_prefix(after)?;

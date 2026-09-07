@@ -73,6 +73,7 @@ fn canonical_source_preserves_a_supplied_closing_magnitude() {
 fn unrelated_or_conflicting_remainder_is_not_an_indent_alias() {
     for opener in [
         "ここから一二字下げ",
+        "ここから改行改行天付き、折り返して２字下げ",
         "ここから300字下げ",
         "ここから改行１字下げらしい",
         "ここより１字下げという説明",

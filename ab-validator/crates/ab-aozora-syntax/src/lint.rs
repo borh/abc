@@ -24,7 +24,6 @@ use std::borrow::Cow;
 /// Literal whole-body variant → canonical maps.
 const EXACT: &[(&str, &str)] = &[
     // 字下げ close: okurigana / 文字下げ / bare-with-N drift of ここで字下げ終わり.
-    ("字下げ終わり", "ここで字下げ終わり"),
     ("字下げ終り", "ここで字下げ終わり"),
     ("字下げおわり", "ここで字下げ終わり"),
     ("文字下げ終わり", "ここで字下げ終わり"),
@@ -45,7 +44,6 @@ const EXACT: &[(&str, &str)] = &[
     ("傍点◎", "二重丸傍点"),
     // Region-close synonyms — okurigana drift / 文字下げ / 横書き=横組み /
     // 横組みの表=表, all resolving to the canonical `ここで…終わり` close.
-    ("ここで字下げおわり", "ここで字下げ終わり"),
     ("ここで字下げ終り", "ここで字下げ終わり"),
     ("ここで文字下げ終わり", "ここで字下げ終わり"),
     ("ここで横書き終わり", "ここで横組み終わり"),
@@ -257,7 +255,6 @@ fn forward_form(body: &str) -> Option<String> {
 /// `Some`, `［＃sample］` parses to Unknown, and `［＃<canonical>］` parses to a
 /// non-Unknown node.
 pub const CATALOGUE_SAMPLES: &[&str] = &[
-    "字下げ終わり",
     "字下げ終り",
     "字下げおわり",
     "文字下げ終わり",
@@ -302,7 +299,6 @@ pub const CATALOGUE_SAMPLES: &[&str] = &[
     // Bare parenthesised 縦中横 target.
     "（一）は縦中横",
     // Region-close synonyms (EXACT + parameterized).
-    "ここで字下げおわり",
     "ここで文字下げ終わり",
     "ここで横書き終わり",
     "ここで左から右への横組み終わり",
@@ -483,7 +479,6 @@ mod tests {
     #[test]
     fn region_synonyms_resolve() {
         for (v, c) in [
-            ("ここで字下げおわり", "ここで字下げ終わり"),
             ("ここで横書き終わり", "ここで横組み終わり"),
             ("ここで横組みの表終わり", "ここで表終わり"),
             ("地付きで", "地付き"),

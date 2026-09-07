@@ -300,6 +300,14 @@ static BODY_PATTERNS: &[BodyPattern] = &[
         needle: "ここで字下げ終わり",
         family: BodyFamily::IndentBlockEnd,
     },
+    BodyPattern {
+        needle: "ここで字下げおわり",
+        family: BodyFamily::IndentBlockEnd,
+    },
+    BodyPattern {
+        needle: "字下げ終わり",
+        family: BodyFamily::IndentBlockEnd,
+    },
     // The 字組み compound closer carries the width (`ここで字下げ、20字組み終わり`). Distinct from the generic `ここで字下げ終わり` above — the char after
     // `ここで字下げ` is `、` vs `終`, so the two needles never overlap.
     BodyPattern {
@@ -1980,7 +1988,9 @@ fn resolve_indent_segment(segment: &str, block: &mut IndentBlock) -> Option<()> 
 fn resolve_block_style(segment: &str, styles: &mut BlockStyles) -> Option<()> {
     match segment {
         "ゴシック体" if !styles.gothic => styles.gothic = true,
-        "横書き" | "横組み" if !styles.horizontal => styles.horizontal = true,
+        "横書き" | "横組み" | "横組みで" | "文章は横組み" if !styles.horizontal => {
+            styles.horizontal = true;
+        }
         "罫囲み" if !styles.framed => styles.framed = true,
         // 小さい活字 = one stage smaller (FontShift(-1)).
         "小さい活字" if styles.font.is_none() => {
@@ -2040,6 +2050,9 @@ fn parse_indent_line_layout(after: &str) -> Option<IndentLayout> {
     let after_lines = rest.strip_prefix('行')?;
     let (width, tail) = parse_decimal_u8_prefix(after_lines)?;
     let width = NonZeroU8::new(width)?; // folds the `width >= 1` guard
+    if lead.get() == 1 && tail == "字" {
+        return Some(IndentLayout::LineWidth(LineWidth(width)));
+    }
     if matches!(tail, "字組み" | "字組みで") {
         return Some(IndentLayout::Kumi(Kumi { lines: lead, width }));
     }

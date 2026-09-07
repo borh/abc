@@ -50,23 +50,25 @@ pub fn container_close_source(open: RegionFormat) -> String {
     s
 }
 
-/// Wraps the serialize output and remembers the last `char` emitted.
+/// Remembers the emitted context that can extend a following ruby base.
 ///
-/// `emit_ruby` reads it to decide whether a bare `《reading》` would
-/// re-parse to the *same* base (drop `｜`) or a different one (keep `｜`)
-/// The predecessor may be a preceding NODE (e.g. a kaeriten
-/// `二`, which is a ruby-base char) and not just text, so the last char
-/// must be tracked at the writer, not per `on_text`.
+/// A stray `｜` can extend across an emitted directive. The immediate
+/// predecessor alone cannot determine whether dropping a ruby's explicit
+/// boundary would absorb that directive into its base.
 pub(crate) struct TrackingWriter<W: Write> {
     inner: W,
     last: Option<char>,
+    unclosed_ruby_bar: bool,
 }
 
 impl<W: Write> TrackingWriter<W> {
-    /// Wrap `inner`, with no predecessor char recorded yet. The construction
-    /// site for the owned serializer's tracking writer.
+    /// Start with no preceding text or pending ruby boundary.
     pub(crate) const fn new(inner: W) -> Self {
-        Self { inner, last: None }
+        Self {
+            inner,
+            last: None,
+            unclosed_ruby_bar: false,
+        }
     }
 
     /// The last `char` written so far, if any. `emit_ruby` reads it to
@@ -74,12 +76,25 @@ impl<W: Write> TrackingWriter<W> {
     pub(crate) const fn last(&self) -> Option<char> {
         self.last
     }
+
+    /// A literal bar remains significant until a line break or completed ruby.
+    pub(crate) const fn has_unclosed_ruby_bar(&self) -> bool {
+        self.unclosed_ruby_bar
+    }
+
+    /// A parsed ruby closes its boundary; a stray literal `》` does not.
+    pub(crate) fn finish_ruby(&mut self) {
+        self.unclosed_ruby_bar = false;
+    }
 }
 
 impl<W: Write> Write for TrackingWriter<W> {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         if let Some(c) = s.chars().next_back() {
             self.last = Some(c);
+        }
+        if let Some(c) = s.chars().rev().find(|c| matches!(c, '｜' | '\n' | '\r')) {
+            self.unclosed_ruby_bar = c == '｜';
         }
         self.inner.write_str(s)
     }

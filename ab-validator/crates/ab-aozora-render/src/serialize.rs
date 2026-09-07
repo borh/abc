@@ -336,26 +336,33 @@ fn emit_ruby<W: Write>(r: &Ruby, store: &NodeStore, out: &mut TrackingWriter<W>)
         emit_content_range(r.reading, store, out)?;
         return out.write_str("」のルビ］");
     }
-    if ruby_needs_bar(store.resolve_content_range(r.base), out.last(), store) {
+    if ruby_needs_bar(
+        store.resolve_content_range(r.base),
+        out.last(),
+        out.has_unclosed_ruby_bar(),
+        store,
+    ) {
         out.write_char('｜')?;
     }
     emit_content_range(r.base, store, out)?;
     out.write_char('《')?;
     emit_content_range(r.reading, store, out)?;
-    out.write_char('》')
+    out.write_char('》')?;
+    out.finish_ruby();
+    Ok(())
 }
 
 /// Decide whether a right-side ruby base needs an explicit `｜` start bar:
 /// true when the base is not a uniform single `RubyBaseClass` run (a bare
 /// reading would re-parse a shorter base), or the preceding char is the
-/// same class as the base or `｜` (it would otherwise extend into the
-/// base). A right-side base is always a single `Plain`; the resolved run is
-/// matched accordingly. For a kanji base this is byte-for-byte the previous
-/// `is_ruby_base_char`-based rule (the `Kanji` class equals the old set);
-/// the class-awareness only governs the non-kanji bases that
-/// `trailing_ruby_base_start` newly forms — the same lockstep the
-/// classifier walks.
-fn ruby_needs_bar(base_run: &[Content], prev: Option<char>, store: &NodeStore) -> bool {
+/// same class as the base or an earlier explicit bar remains unclosed.
+/// Both would otherwise extend the base on reparse.
+fn ruby_needs_bar(
+    base_run: &[Content],
+    prev: Option<char>,
+    unclosed_bar: bool,
+    store: &NodeStore,
+) -> bool {
     // An all-gaiji base (`※［＃…］《…》` or an adjacent run `※…※…《…》`) re-parses
     // implicitly via the classifier's deferred-emit accumulation, so it never
     // needs an explicit `｜` — a preceding character cannot extend into a
@@ -376,7 +383,8 @@ fn ruby_needs_bar(base_run: &[Content], prev: Option<char>, store: &NodeStore) -
         let Some(base_class) = s.chars().next_back().and_then(ruby_base_class) else {
             return true;
         };
-        s.chars().any(|c| ruby_base_class(c) != Some(base_class))
+        unclosed_bar
+            || s.chars().any(|c| ruby_base_class(c) != Some(base_class))
             || prev.is_some_and(|c| ruby_base_class(c) == Some(base_class) || c == '｜')
     })
 }

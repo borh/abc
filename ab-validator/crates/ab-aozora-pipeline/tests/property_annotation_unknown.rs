@@ -158,6 +158,13 @@ fn quoted_annotations_round_trip() {
     assert_annotation_invariants("text［＃「これは未知の指示」］more");
 }
 
+#[test]
+fn directive_before_repeated_explicit_ruby_markers_round_trips() {
+    let source = "｜｜［＃改］｜ABC《≫》》";
+    assert_annotation_invariants(source);
+    assert_eq!(serialize(&lex(source)), source);
+}
+
 proptest! {
     #![proptest_config(default_config())]
 

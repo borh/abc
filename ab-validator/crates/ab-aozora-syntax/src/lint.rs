@@ -165,22 +165,8 @@ fn parameterized_align(body: &str) -> Option<String> {
     None
 }
 
-/// Forward-reference forms `「X」…` — substitute the trailing keyword while
-/// preserving the `「X」` target. Most rules are guarded on a leading `「`; the
-/// sole exception is the bare-parenthesised 縦中横 target, whose `（…）` operand
-/// is unquoted and so is normalised (by quoting it) before that guard.
+/// Substitute unrecognized forward-reference keywords while retaining the target.
 fn forward_form(body: &str) -> Option<String> {
-    // `（X）は縦中横` → `「（X）」は縦中横`: the tate-chu-yoko target is an
-    // unquoted full-width `（…）` run; quote it so the forward directive
-    // resolves. Anchored on the exact tail, so the COMPOUND
-    // `（十一）は縦中横、…` form (trailing clause) never matches.
-    if let Some(target) = body.strip_suffix("は縦中横")
-        && target.starts_with('（')
-        && target.ends_with('）')
-    {
-        return Some(format!("「{target}」は縦中横"));
-    }
-
     if !body.starts_with('「') {
         return None;
     }
@@ -296,8 +282,6 @@ pub const CATALOGUE_SAMPLES: &[&str] = &[
     // Sic-marker annotation notes.
     "「甫」にママの注記",
     "「甫」に「ママ」と注記",
-    // Bare parenthesised 縦中横 target.
-    "（一）は縦中横",
     // Region-close synonyms (EXACT + parameterized).
     "ここで文字下げ終わり",
     "ここで横書き終わり",
@@ -453,11 +437,8 @@ mod tests {
     }
 
     #[test]
-    fn bare_paren_tcy_is_quoted() {
-        assert_eq!(
-            canonical_directive("（一）は縦中横").as_deref(),
-            Some("「（一）」は縦中横")
-        );
+    fn parenthesized_tcy_needs_no_spelling_repair() {
+        assert_eq!(canonical_directive("（一）は縦中横"), None);
         // Already-quoted and compound-tail forms are left alone.
         assert_eq!(canonical_directive("「（一）」は縦中横"), None);
         assert_eq!(

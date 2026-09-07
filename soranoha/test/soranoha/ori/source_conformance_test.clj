@@ -889,3 +889,11 @@
     (is (= {"layout" 2 "line-layout" 2}
            (frequencies (filter #{"layout" "line-layout"}
                                 (map #(get % "kind") (get-in result [:ir "interpretation_facts"]))))))))
+
+(deftest parenthesized-tcy-alias-retains-target-and-visible-text
+  (let [result (transcribe (source "前（イ）［＃（イ）は縦中横］後"))
+        upright (first (filter #(= "text-combine-upright" (attribute % "rend")) (elements result "hi")))]
+    (is (= "前（イ）後" (:plaintext result)))
+    (is (= "（イ）" (view/visible-text upright)))
+    (is (= 1 (count (get-in result [:ir "interpretation_facts"]))))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))

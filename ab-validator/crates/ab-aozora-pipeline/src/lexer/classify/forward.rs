@@ -40,23 +40,9 @@ use super::directive::{
 use super::{AnnotationMatch, BodyView, EmitKind, RecogniseCtx};
 
 thread_local! {
-    /// Forward-reference target → first byte offset in source.
-    ///
-    /// `state.installed = true` means the map is authoritative: every
-    /// target queried by `forward_target_is_preceded` is either in the
-    /// map or genuinely absent from source. `state.installed = false`
-    /// means the lookup falls back to the legacy
-    /// `source[..cutoff].contains` path for correctness.
-    ///
-    /// Pre-I-2 the streaming classify-stage entry point built this index from
-    /// a complete event slice up-front. Streaming has no event slice,
-    /// so the index is left empty: every `forward_target_is_preceded`
-    /// query falls back to substring scan. The pathological doc
-    /// (170 ms with substring, 20 ms with AC) regresses; the median
-    /// document was already on the substring path so corpus
-    /// throughput is unchanged. A future re-introduction can scan raw
-    /// source bytes for `［＃「TARGET」` patterns (event-free) and
-    /// re-populate the index without breaking the streaming pipeline.
+    /// First source positions of quoted targets in annotation-dense documents.
+    /// Unindexed operands still require source lookup; absence from this cache
+    /// is not evidence that a target is absent from the document.
     static FORWARD_TARGET_INDEX: RefCell<ForwardTargetState> = RefCell::default();
 }
 
@@ -925,16 +911,27 @@ impl RecogniseCtx<'_, '_> {
         open_idx: usize,
         close_idx: usize,
     ) -> ForwardTcy {
-        let Some(extracted) = extract_forward_quote_targets(view, self.source, open_idx, close_idx)
-        else {
-            return ForwardTcy::NotTcy;
-        };
         let (PairEvent::PairOpen { span: opener, .. }, PairEvent::PairClose { span: closer, .. }) =
             (&view.events[open_idx], &view.events[close_idx])
         else {
             return ForwardTcy::NotTcy;
         };
         let marker = &self.source[opener.start as usize..closer.end as usize];
+        let Some(extracted) = extract_forward_quote_targets(view, self.source, open_idx, close_idx)
+            .or_else(|| {
+                let target = marker.strip_prefix("［＃")?.strip_suffix("は縦中横］")?;
+                let body = target.strip_prefix('（')?.strip_suffix('）')?;
+                if body.is_empty() || body.contains(['（', '）', '［', '］', '\n', '\r']) {
+                    return None;
+                }
+                Some(ForwardTargetExtract {
+                    targets: smallvec::smallvec![target],
+                    suffix: "は縦中横",
+                })
+            })
+        else {
+            return ForwardTcy::NotTcy;
+        };
         let edition = formatted_text_variant(marker);
         let suffix = edition.as_ref().map_or_else(
             || {
@@ -1010,24 +1007,22 @@ fn forward_target_is_preceded(
     };
     let cutoff = span.start;
 
-    // Hot path: a pre-built per-classify Aho-Corasick index covers the
-    // target in O(1). Only installed when the doc has enough forward-
-    // reference targets to amortise the AC build (see
-    // `install_forward_target_index` and `FORWARD_AC_THRESHOLD`).
+    // The index contains quoted targets. Unquoted operands use the source
+    // lookup when no cached position exists.
     let indexed = FORWARD_TARGET_INDEX.with(|cell| {
         let state = cell.borrow();
         if !state.installed {
             return None;
         }
-        Some(matches!(state.first_position.get(target), Some(&first_pos) if first_pos < cutoff))
+        state
+            .first_position
+            .get(target)
+            .map(|&first_pos| first_pos < cutoff)
     });
     if let Some(decided) = indexed {
         return decided;
     }
 
-    // Fallback: median corpus doc has too few forward-reference
-    // targets to make the AC build worthwhile. Pay the legacy
-    // substring scan instead.
     source[..cutoff as usize].contains(target)
 }
 
@@ -1208,12 +1203,10 @@ fn resolve_forward_referent(
         })
 }
 
-/// Result of walking the `［＃「…」「…」…<particle><keyword>］`
-/// shape. `targets` holds each non-empty quote body in document order
-/// (length `>= 1` when `Some(_)` is returned) and `suffix` is the
-/// trimmed source between the last quote's `」` and the bracket's `］`,
-/// ready for particle + keyword matching.
-struct ForwardQuoteExtract<'s> {
+/// Source-identified targets and the remaining formatting instruction.
+/// Quoted targets exclude their quotation delimiters; an unquoted
+/// parenthesized target retains its supplied parentheses.
+struct ForwardTargetExtract<'s> {
     /// Inline capacity 4 covers the corpus 99th percentile — most
     /// forward-reference annotations have a single quoted target,
     /// the long tail rarely exceeds 2-3.
@@ -1238,7 +1231,7 @@ fn extract_forward_quote_targets<'s>(
     source: &'s str,
     open_idx: usize,
     close_idx: usize,
-) -> Option<ForwardQuoteExtract<'s>> {
+) -> Option<ForwardTargetExtract<'s>> {
     let events = view.events;
     let &PairEvent::PairClose {
         span: bracket_close_span,
@@ -1291,7 +1284,7 @@ fn extract_forward_quote_targets<'s>(
         return None;
     }
     let suffix = source[last_quote_end as usize..bracket_close_span.start as usize].trim();
-    Some(ForwardQuoteExtract { targets, suffix })
+    Some(ForwardTargetExtract { targets, suffix })
 }
 
 /// Classify a `［＃「target」は(大|中|小)見出し］` forward-reference

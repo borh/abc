@@ -46,13 +46,11 @@ const EXACT: &[(&str, &str)] = &[
     // 横組みの表=表, all resolving to the canonical `ここで…終わり` close.
     ("ここで字下げ終り", "ここで字下げ終わり"),
     ("ここで文字下げ終わり", "ここで字下げ終わり"),
-    ("ここで横書き終わり", "ここで横組み終わり"),
     ("ここで左から右への横組み終わり", "ここで横組み終わり"),
     ("ここで横組みの表終わり", "ここで表終わり"),
     // Region-open synonyms — 地付きで/こ地付き=地付き, 横書き=横組み.
     ("地付きで", "地付き"),
     ("こ地付き", "地付き"),
-    ("ここから横書き", "ここから横組み"),
 ];
 
 /// Map a non-canonical `［＃…］` directive body to its canonical spelling, or
@@ -179,7 +177,6 @@ fn forward_form(body: &str) -> Option<String> {
         ("は斜体字", "は斜体"),
         ("は中中見出し", "は中見出し"),
         ("の部分はイタリック体", "は斜体"),
-        ("は横書き", "は横組み"),
         ("の縦中横", "は縦中横"),
         ("は下付き", "は下付き小文字"),
         ("は上付き", "は上付き小文字"),
@@ -257,7 +254,6 @@ pub const CATALOGUE_SAMPLES: &[&str] = &[
     "「梅」傍点",
     // Forward keyword / particle drift.
     "「文」の部分はイタリック体",
-    "「AB」は横書き",
     "「12」の縦中横",
     "「2」は下付き",
     "「2」は上付き",
@@ -281,7 +277,6 @@ pub const CATALOGUE_SAMPLES: &[&str] = &[
     "「甫」に「ママ」と注記",
     // Region-close synonyms (EXACT + parameterized).
     "ここで文字下げ終わり",
-    "ここで横書き終わり",
     "ここで左から右への横組み終わり",
     "ここで横組みの表終わり",
     "ここで2字下げ終わり",
@@ -289,7 +284,6 @@ pub const CATALOGUE_SAMPLES: &[&str] = &[
     // Region-open synonyms.
     "地付きで",
     "こ地付き",
-    "ここから横書き",
     "以下2字下げ",
     "ここから2　字下げ",
     // 字下げ numeric.
@@ -403,7 +397,6 @@ mod tests {
     fn forward_keyword_particle_drift() {
         for (v, c) in [
             ("「文」の部分はイタリック体", "「文」は斜体"),
-            ("「AB」は横書き", "「AB」は横組み"),
             ("「12」の縦中横", "「12」は縦中横"),
             ("「2」は下付き", "「2」は下付き小文字"),
             ("「2」は上付き", "「2」は上付き小文字"),
@@ -457,11 +450,9 @@ mod tests {
     #[test]
     fn region_synonyms_resolve() {
         for (v, c) in [
-            ("ここで横書き終わり", "ここで横組み終わり"),
             ("ここで横組みの表終わり", "ここで表終わり"),
             ("地付きで", "地付き"),
             ("こ地付き", "地付き"),
-            ("ここから横書き", "ここから横組み"),
         ] {
             assert_eq!(canonical_directive(v).as_deref(), Some(c), "variant {v:?}");
             assert_eq!(canonical_directive(c), None, "canonical {c:?} re-matched");

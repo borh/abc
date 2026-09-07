@@ -355,6 +355,14 @@ static BODY_PATTERNS: &[BodyPattern] = &[
         family: BodyFamily::HorizontalBlockEnd,
     },
     BodyPattern {
+        needle: "ここから横書き",
+        family: BodyFamily::HorizontalBlockOpen,
+    },
+    BodyPattern {
+        needle: "ここで横書き終わり",
+        family: BodyFamily::HorizontalBlockEnd,
+    },
+    BodyPattern {
         needle: "ここで大きな文字終わり",
         family: BodyFamily::FontSizeBlockEnd,
     },

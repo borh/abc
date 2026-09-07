@@ -897,3 +897,19 @@
     (is (= "（イ）" (view/visible-text upright)))
     (is (= 1 (count (get-in result [:ir "interpretation_facts"]))))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest horizontal-writing-aliases-retain-supplied-targets-and-source-lines
+  (let [result (transcribe (source "前しらおか［＃「しらおか」は横書き］後\n［＃ここから横書き］\n甲\n乙\n［＃ここで横書き終わり］"))
+        horizontal? #(= "yokogumi horizontal" (attribute % "rend"))]
+    (is (= "前しらおか後\n甲\n乙" (:plaintext result)))
+    (is (= ["しらおか"] (mapv view/visible-text (filter horizontal? (elements result "hi")))))
+    (is (= 1 (count (filter horizontal? (elements result "div")))))
+    (is (= 3 (count (get-in result [:ir "interpretation_facts"]))))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest horizontal-writing-without-a-target-cannot-introduce-principal-text
+  (doseq [spelling ["横書き" "横組み"]]
+    (let [result (transcribe (source (str "前［＃「不在」は" spelling "］後")))]
+      (is (= "前後" (:plaintext result)))
+      (is (empty? (get-in result [:ir "interpretation_facts"])))
+      (is (= ["uninterpreted-notation"] (mapv #(get % "kind") (get-in result [:ir "interpretation_problems"])))))))

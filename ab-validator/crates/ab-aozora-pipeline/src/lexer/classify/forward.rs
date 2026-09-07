@@ -1723,6 +1723,15 @@ impl RecogniseCtx<'_, '_> {
             return None;
         };
         if !forward_target_is_preceded(view.events, self.source, open_idx, only) {
+            if attr == ForwardAttr::Horizontal {
+                return Some(self.resolve_forward_format(
+                    view,
+                    open_idx,
+                    open_span.start,
+                    attr,
+                    only,
+                ));
+            }
             // No referent: the quoted target has no earlier copy, so it *is* the
             // styled run (`ForwardOrigin::SelfContained`) rather than falling
             // through to a hidden `Unknown` directive. Consume the whole bracket
@@ -1900,7 +1909,7 @@ pub(super) fn forward_attr_from_suffix(s: &str) -> Option<ForwardAttr> {
         "○付き文字" => ForwardAttr::Framed(EnclosureKind::Circle),
         "点線丸囲み" => ForwardAttr::Framed(EnclosureKind::CircleDotted),
         "二重罫囲み" => ForwardAttr::Framed(EnclosureKind::DoubleRule),
-        "横組み" => ForwardAttr::Horizontal,
+        "横組み" | "横書き" => ForwardAttr::Horizontal,
         "キャプション" => ForwardAttr::Caption,
         // 絶対サイズ: `「X」は小文字` (corpus-attested) and its 特大/大/中 siblings.
         // Distinct from the relative `N段階…文字` (parse_font_size_suffix) and

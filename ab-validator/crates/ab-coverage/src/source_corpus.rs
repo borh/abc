@@ -183,7 +183,7 @@ mod tests {
     }
 
     fn temp_file(name: &str) -> std::path::PathBuf {
-        let path = temp_dir("source-corpus").join(format!("{}-{name}", std::process::id()));
+        let path = temp_dir(name).join(name);
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent).unwrap();
         }

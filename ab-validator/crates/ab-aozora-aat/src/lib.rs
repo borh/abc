@@ -1148,7 +1148,8 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
                 || matches!(
                     node["kind"].as_str(),
                     Some(
-                        "gaiji" | "iteration-mark"
+                        "gaiji"
+                            | "iteration-mark"
                             | "kunten"
                             | "text-variant"
                             | "annotated_text"

@@ -157,6 +157,16 @@ pub fn edition_note(source: &str) -> Option<(EditionNoteKind, &str)> {
         {
             return Some((EditionNoteKind::FirstPublication, body));
         }
+        if let Some((current, witness)) = split_attribution(quoted, EditionNoteKind::BaseEdition)
+            && !current.is_empty()
+            && witness.starts_with('「')
+            && let Some((base, bibliography)) = witness.split_once("」。以下の本では「")
+            && base.len() > '「'.len_utf8()
+            && bibliography.contains('『')
+            && bibliography.contains('』')
+        {
+            return Some((EditionNoteKind::BaseEdition, body));
+        }
         if let Some((current, description)) =
             split_attribution(quoted, EditionNoteKind::BaseEdition)
             && !current.is_empty()
@@ -166,6 +176,21 @@ pub fn edition_note(source: &str) -> Option<(EditionNoteKind, &str)> {
         {
             return Some((EditionNoteKind::BaseEdition, body));
         }
+    }
+    if let Some((subject, description)) = body
+        .split_once("は底本では")
+        .or_else(|| body.split_once("は、底本では"))
+        && let Some((qualifier, quoted)) = subject.split_once('「')
+        && !qualifier.is_empty()
+        && !qualifier.starts_with("ここから")
+        && !qualifier.starts_with("ここまで")
+        && !qualifier.contains(['、', '」', '［', '］', '\n'])
+        && (qualifier != "ルビの" || quoted.matches('「').count() > 0)
+        && quoted.contains('」')
+        && !description.is_empty()
+        && !description.contains("は底本では")
+    {
+        return Some((EditionNoteKind::BaseEdition, body));
     }
     if let Some((subject, description)) = body.split_once("は底本では")
         && !subject.is_empty()

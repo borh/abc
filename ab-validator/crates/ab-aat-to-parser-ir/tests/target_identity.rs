@@ -471,3 +471,39 @@ fn target_identity_retains_terminal_kunten_without_giving_it_principal_width() {
         assert_eq!(ir["interpretation_problems"], json!([]));
     }
 }
+
+#[test]
+fn qualified_and_bibliographic_statements_do_not_fabricate_adjacent_targets() {
+    for statement in [
+        "第三段目「□４□」は底本では「□５□」",
+        "八段目九段目左端「１」は底本では「□」",
+        "注記の「く」は底本では欠落",
+        "ルビの「まへ」の「へ」は底本では左に九十度傾いている",
+        "この行「｛｝」に挟まれ「／」で区切られた要素は、底本では真横に並ぶ",
+        "「麗艶」は底本では「艶麗」。以下の本では「麗艶」。『鏡花全集　卷五』（岩波書店）",
+    ] {
+        let ir = convert(&format!("無関係な本文。［＃{statement}］後。"));
+        let all = nodes(&ir);
+        let note = all
+            .iter()
+            .find(|node| node["note_kind"] == "base-edition")
+            .unwrap();
+        assert_eq!(note["text"], statement);
+        assert_eq!(note["span"]["start"], note["span"]["end"]);
+        assert!(!all.iter().any(|node| node["type"] == "base-text-variant"));
+        assert_eq!(ir["interpretation_problems"], json!([]));
+    }
+    for statement in [
+        "ルビの「違う」は底本では「別」",
+        "ここから２字下げ、底本では一行目は１字下げ",
+        "「１）」は縦中横、行右小書き、「１」が底本では欠落",
+        "「字」は底本では「別",
+    ] {
+        let ir = convert(&format!("無関係な本文。［＃{statement}］後。"));
+        assert!(
+            !nodes(&ir)
+                .iter()
+                .any(|node| node["note_kind"] == "base-edition")
+        );
+    }
+}

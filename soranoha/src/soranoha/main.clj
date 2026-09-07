@@ -210,16 +210,22 @@
                 concurrency
                 (.availableProcessors (Runtime/getRuntime)))
             started (System/currentTimeMillis)
-            results (parallel/ordered-pmap
-                     n
-                     (fn [candidate]
-                       (try
-                         (run-work! store stage-set candidate
-                                    (get rows-by-work (catalog/row-work-id (:row candidate))))
-                         (catch Exception e
-                           (throw (ex-info (ex-message e)
-                                           (assoc (ex-data e) :slug (:slug candidate)) e)))))
-                     candidates)
+            outcomes (parallel/ordered-pmap
+                      n
+                      (fn [candidate]
+                        (try
+                          {:work (run-work! store stage-set candidate
+                                            (get rows-by-work (catalog/row-work-id (:row candidate))))}
+                          (catch Exception e
+                            {:failure {:slug (:slug candidate)
+                                       :message (ex-message e)
+                                       :data (ex-data e)}})))
+                      candidates)
+            failures (into [] (keep :failure) outcomes)
+            _ (when (seq failures)
+                (throw (ex-info (str (count failures) " work builds failed")
+                                {:reason :build/work-failures :failures failures})))
+            results (mapv :work outcomes)
             relpath-of (into {} (map (juxt :slug :relpath)) candidates)
           ;; the report is a disposable trace-store export, but it must
           ;; carry everything the second-revision delta oracle consumes:

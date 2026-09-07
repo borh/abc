@@ -636,9 +636,10 @@
               (is (= :already-published (:outcome (main/release! opts))))
               (is (= 1 @checks))
               (swap! selected-stages assoc :accountability (:accountability corpus/stage-set))
-              (is (= :invalid-converter-input
+              (is (= [:invalid-converter-input]
                      (try (main/build! opts) nil
-                          (catch clojure.lang.ExceptionInfo e (:reason (ex-data e))))))))))
+                          (catch clojure.lang.ExceptionInfo e
+                            (mapv #(get-in % [:data :reason]) (:failures (ex-data e)))))))))))
       (testing "an entirely withdrawn artifact demand does not resolve unused toolchains"
         (is (= :published
                (:outcome (fx/publish-event!

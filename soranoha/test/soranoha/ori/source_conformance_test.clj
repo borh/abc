@@ -691,3 +691,8 @@
     (is (= ["きんどく"] (texts result "rt")))
     (is (= "キノコ" (.getTextContent ^Node note)))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest supplied-multiline-accent-scope-retains-physical-lines
+  (let [result (transcribe (source "〔Pardonnez a` mon bavardage\nJ'en suis a` mon premier voyage.〕"))]
+    (is (= "Pardonnez à mon bavardage\nJ'en suis à mon premier voyage." (:plaintext result)))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))

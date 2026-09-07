@@ -522,18 +522,6 @@ fn render_container_close<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::
     }
 }
 
-/// Render a `［＃挿絵（file）入る］` illustration as a semantic
-/// Parse the bundled `横W×縦H` pixel-size note into `(width, height)` —
-/// both runs of ASCII digits. Returns `None` for any other shape (the
-/// dimensions then carry no HTML width/height hint).
-pub(crate) fn parse_sashie_dimensions(dims: &str) -> Option<(&str, &str)> {
-    let (w, h) = dims.split_once('×')?;
-    let w = w.strip_prefix('横')?;
-    let h = h.strip_prefix('縦')?;
-    let digits = |s: &str| !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit());
-    (digits(w) && digits(h)).then_some((w, h))
-}
-
 /// The HTML tag for a heading. The 窓 (window) style is an inset block, not an
 /// outline level, so it takes a `<div>`; otherwise the 大 / 中 / 小 level maps
 /// to the semantic `<h1>`–`<h3>` outline tag.

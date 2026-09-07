@@ -272,7 +272,11 @@ fn emit_content_range<W: Write>(
 
 /// Emit a single [`Content`] as plain text: a gaiji segment writes its
 /// `hint`, not its glyph form.
-fn emit_content_as_plain_one<W: Write>(c: Content, store: &NodeStore, out: &mut W) -> fmt::Result {
+pub(crate) fn emit_content_as_plain_one<W: Write>(
+    c: Content,
+    store: &NodeStore,
+    out: &mut W,
+) -> fmt::Result {
     match c {
         Content::Plain(id) => out.write_str(store.resolve_str(id)),
         Content::Segments(range) => {

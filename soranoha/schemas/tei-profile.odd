@@ -103,7 +103,7 @@
           <item><label>abc-gaiji-reference</label> error: gaiji must retain original marker and either a resolved replacement or unresolved status.</item>
           <item><label>abc-gaiji-chardecl-resolution</label> error: gaiji `@ref` fragment identifiers must point to a `charDecl/char` declaration in this document.</item>
           <item><label>abc-char-resolution-form</label> error: tei:charDecl/tei:char must declare at least one of tei:mapping, tei:unicodeProp, tei:localProp, or tei:desc (closes the &lt;char xml:id="x"/&gt; empty-declaration loophole).</item>
-          <item><label>abc-figure-accessibility</label> warning: figures/images should have `figDesc`, `head`, or caption mapping where available.</item>
+          <item><label>abc-figure-accessibility</label> warning: figures/images should preserve nonempty supplied descriptions or caption references where available.</item>
           <item><label>abc-source-span-reference</label> error: elements claiming source spans must point to valid span identifiers.</item>
           <item><label>abc-source-span-target-exists</label> error: each fragment id in `@source` must resolve to an `@xml:id` defined in this document.</item>
           <item><label>abc-transcription-vs-annotation</label> warning: linguistic enrichment must not be mixed into transcription unless declared.</item>
@@ -299,8 +299,8 @@
           <desc>Warn when a figure has no textual description.</desc>
           <constraint>
             <sch:rule context="tei:figure">
-              <sch:report role="warning" test="not(tei:figDesc or tei:head or tei:p)">
-                ABC TEI figure should preserve a figDesc, head, or caption paragraph when available.
+              <sch:report role="warning" test="not((tei:figDesc | tei:head | tei:p | tei:note[@type = ('image-description', 'caption-reference')])[normalize-space(.) != ''])">
+                ABC TEI figure should preserve a nonempty source description or caption reference when available.
               </sch:report>
             </sch:rule>
           </constraint>

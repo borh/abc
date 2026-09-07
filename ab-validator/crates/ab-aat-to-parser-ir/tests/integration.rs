@@ -2611,22 +2611,19 @@ fn projects_measured_figure_inline_to_image_node() {
     assert_eq!(nodes[1]["span"]["end"], 1);
     assert_eq!(nodes[2]["text"], "B");
     assert_eq!(nodes[2]["span"]["start"], 1);
-    for (category, aat_pointer, parser_ir_pointer) in [
-        (
-            "INVENTION",
-            "blocks[].content[].figure.filename",
-            Some("image.src"),
-        ),
-        ("LOSS", "blocks[].content[].figure.caption", None),
-        ("LOSS", "blocks[].content[].figure.css_class", None),
-        ("LOSS", "blocks[].content[].figure.height", None),
-        ("LOSS", "blocks[].content[].figure.width", None),
-    ] {
-        assert!(
-            has_divergence_record(&output, category, aat_pointer, parser_ir_pointer),
-            "missing measured figure divergence {category} {aat_pointer:?} {parser_ir_pointer:?}"
-        );
-    }
+    assert_eq!(nodes[1]["width"], 640);
+    assert_eq!(nodes[1]["height"], 480);
+    assert_eq!(nodes[1]["caption_reference_children"][0]["text"], "caption");
+    assert_eq!(
+        nodes[1]["caption_reference_children"][0]["span"]["coordinate_system"],
+        "annotation_utf8"
+    );
+    assert!(has_divergence_record(
+        &output,
+        "LOSS",
+        "blocks[].content[].figure.css_class",
+        None
+    ));
 
     validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
 }

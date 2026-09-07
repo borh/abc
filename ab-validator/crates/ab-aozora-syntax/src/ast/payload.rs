@@ -295,10 +295,14 @@ pub struct Illustration {
     pub number: Option<StrId>,
     /// Optional verbatim `横W×縦H` size note.
     pub dimensions: Option<StrId>,
-    /// Optional caption.
+    /// Quoted caption reference inside the image annotation, not body text.
     pub caption: Option<Content>,
+    /// Exact quoted reference fragment when retained by the source classifier.
+    pub caption_span: Option<crate::Span>,
     /// Optional alt description.
     pub description: Option<StrId>,
+    /// Exact description fragment when supplied by the source classifier.
+    pub description_span: Option<crate::Span>,
 }
 
 /// Generic annotation (注記).

@@ -6,11 +6,17 @@ source nodes nor adds sentence wrappers to base TEI.
 
 Analysis consumes an identified text view of TEI rather than an export's presentation
 whitespace. The `body-v1` view selects ruby bases and corrected or regularized readings,
-omits notes and running matter, and retains semantic line/page breaks and block
+omits notes, figure descriptions and running matter, and retains semantic line/page breaks and block
 separators. UTF-8 byte offsets are the coordinate unit. An unresolved empty glyph
 occupies U+FFFC and is excluded from eligible ranges; it is never silently deleted.
 The view identity binds the exact text and reading policy. Its DOM alignment is local
-to the source document and is not part of the reusable analyzer input.
+to the source document and is not part of the reusable analyzer input. Image
+metadata is not principal text: `figDesc` preserves descriptions and a
+`note` of type `caption-reference` preserves any quoted caption reference. The
+separately transcribed visible caption remains body text, following the
+[Aozora image convention](https://www.aozora.gr.jp/annotation/graphics.html).
+Correcting previously included descriptions changes affected text identities;
+image-free readings retain their existing `body-v1` identity.
 
 `soranoha-annotation-layer/1` JSON stores each producer's claims separately. The envelope
 contains the view identity, a vocabulary content hash, named producer input hashes,
@@ -33,9 +39,7 @@ same layer may be attached to the new edition through its current TEI alignment.
 
 Enriched TEI retains the original transcription, inserts anchors and appends stand-off
 span groups. Each group references the separately stored layer by content identity;
-record labels use `span/@n` and feature objects use JSON text inside the span. The
-project profile permits anchors inside `figDesc` so its included description text
-can receive internal analysis boundaries without a fabricated rendition. These
+record labels use `span/@n` and feature objects use JSON text inside the span. These
 are analysis claims rather than source assertions. The base TEI and plaintext stages
 do not depend on the selected analysis layers. The enrichment stage consumes only
 the base TEI and ordered layer blob identities.

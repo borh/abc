@@ -437,13 +437,25 @@
   ([acc node _depth]
    (append-inline acc (sourced node [:lb]))))
 
-(defn- render-image-node
-  ([acc node _depth]
-   (append-block acc
-                 (sourced node (cond-> [:figure
-                                        [:graphic {:url (get node "src")}]]
-                                 (present-text? (get node "alt"))
-                                 (conj [:figDesc (get node "alt")]))))))
+(defn- render-image-node [acc node depth]
+  (let [before (:current-paragraph acc)
+        rendered (render-inline-children (assoc acc :current-paragraph [])
+                                         (get node "caption_reference_children") depth)
+        description (render-inline-children (assoc rendered :current-paragraph [])
+                                            (get node "description_children") depth)
+        graphic (cond-> {:url (get node "src")}
+                  (some? (get node "width")) (assoc :width (str (get node "width") "px"))
+                  (some? (get node "height")) (assoc :height (str (get node "height") "px")))
+        figure (cond-> [:figure (cond-> {} (get node "number") (assoc :n (get node "number")))
+                        [:graphic graphic]]
+                 (and (present-text? (get node "alt")) (empty? (:current-paragraph description))) (conj [:figDesc (get node "alt")])
+                 (seq (:current-paragraph description)) (conj (into [:note {:type "image-description"}] (:current-paragraph description)))
+                 (seq (:current-paragraph rendered)) (conj (into [:note {:type "caption-reference"}] (:current-paragraph rendered)))
+                 (get node "description_source") (conj [:note {:type "uninterpreted-image-description"} (get node "description_source")])
+                 (get node "caption_source") (conj [:note {:type "uninterpreted-caption-reference"} (get node "caption_source")])
+                 (and (get node "dimensions_source") (nil? (get node "width")))
+                 (conj [:note {:type "image-dimensions"} (get node "dimensions_source")]))]
+    (append-inline (assoc description :current-paragraph before) (sourced node figure))))
 
 (defn- render-caption-node
   ([acc node depth]

@@ -4,7 +4,7 @@
   "mapping_schema_hash": "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2",
   "source_aat_version": 2,
   "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "target_parser_ir_schema_hash": "sha256:3058f77b1b000091a6e87ddb5f72857c9ec7b8a3935223fbdd39744e9fec234e",
+  "target_parser_ir_schema_hash": "sha256:c90d29f06e98200b9f362a47a4cd43f364391e2d171982b588634a25dbf4278b",
   "transform_rule_descriptions": [
     {
       "rule_id": "A-02",
@@ -1015,14 +1015,6 @@
       "description": "used accent.code='1-09-63' as free-form style string"
     },
     {
-      "rule_id": "I-09",
-      "category": "INVENTION",
-      "aat_pointer": "blocks[].children[].content[].figure.filename",
-      "parser_ir_pointer": "image.src",
-      "action": "invent",
-      "description": "filename is not a resolved source path; used as src"
-    },
-    {
       "rule_id": "I-10",
       "category": "INVENTION",
       "aat_pointer": "blocks[].children[].content[].gaiji.description",
@@ -1055,14 +1047,6 @@
       "description": "Observed 10 occurrences; first_path=blocks[7].children[0].content[1].warigaki.upper[1].gaiji.description. AAT has no raw source marker; used description as raw_marker"
     },
     {
-      "rule_id": "I-17",
-      "category": "INVENTION",
-      "aat_pointer": "blocks[].children[].heading.content[].figure.filename",
-      "parser_ir_pointer": "image.src",
-      "action": "invent",
-      "description": "Observed 4 occurrences; first_path=blocks[38].children[1].heading.content[10].figure.filename. filename is not a resolved source path; used as src"
-    },
-    {
       "rule_id": "I-18",
       "category": "INVENTION",
       "aat_pointer": "blocks[].children[].heading.content[].gaiji.description",
@@ -1087,14 +1071,6 @@
       "description": "Observed 1016 occurrences; first_path=blocks[23].content[0].content[3].accent.code. used accent.code='1-09-92' as free-form style string"
     },
     {
-      "rule_id": "I-22",
-      "category": "INVENTION",
-      "aat_pointer": "blocks[].content[].content[].figure.filename",
-      "parser_ir_pointer": "image.src",
-      "action": "invent",
-      "description": "Observed 1034 occurrences; first_path=blocks[3].content[0].content[1].figure.filename. filename is not a resolved source path; used as src"
-    },
-    {
       "rule_id": "I-23",
       "category": "INVENTION",
       "aat_pointer": "blocks[].content[].content[].gaiji.description",
@@ -1109,14 +1085,6 @@
       "parser_ir_pointer": "gaiji.raw_marker",
       "action": "invent",
       "description": "Observed 10 occurrences; first_path=blocks[1].content[0].content[13].warigaki.upper[1].gaiji.description. AAT has no raw source marker; used description as raw_marker"
-    },
-    {
-      "rule_id": "I-25",
-      "category": "INVENTION",
-      "aat_pointer": "blocks[].content[].figure.filename",
-      "parser_ir_pointer": "image.src",
-      "action": "invent",
-      "description": "Observed 6513 occurrences; first_path=blocks[5].content[1].figure.filename. filename is not a resolved source path; used as src"
     },
     {
       "rule_id": "I-26",
@@ -1149,14 +1117,6 @@
       "parser_ir_pointer": "emphasis.style",
       "action": "invent",
       "description": "Observed 33 occurrences; first_path=blocks[22].heading.content[2].accent.code. used accent.code='1-09-81' as free-form style string"
-    },
-    {
-      "rule_id": "I-30",
-      "category": "INVENTION",
-      "aat_pointer": "blocks[].heading.content[].figure.filename",
-      "parser_ir_pointer": "image.src",
-      "action": "invent",
-      "description": "Observed 32 occurrences; first_path=blocks[3].heading.content[149].figure.filename. filename is not a resolved source path; used as src"
     },
     {
       "rule_id": "I-31",
@@ -1205,22 +1165,6 @@
       "parser_ir_pointer": null,
       "action": "drop",
       "description": "css_class=illustration dropped; parser-IR image has no such field"
-    },
-    {
-      "rule_id": "L-06",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].children[].content[].figure.height",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "height=461 dropped; parser-IR image has no such field"
-    },
-    {
-      "rule_id": "L-07",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].children[].content[].figure.width",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "width=147 dropped; parser-IR image has no such field"
     },
     {
       "rule_id": "L-08",
@@ -2351,36 +2295,12 @@
       "description": "Observed 12 occurrences; first_path=blocks[81].children[0].content[0].warigaki.upper[0].ruby.reading_content. Historical reading_content observation; current conversion retains text and gaiji references in reading_children wherever the containing ruby is emitted, while nested formatting is flattened"
     },
     {
-      "rule_id": "L-163",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].children[].heading.content[].figure.caption",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 3 occurrences; first_path=blocks[40].children[0].heading.content[14].figure.caption. nested figure caption[] dropped (could be emitted as caption node, scope target ambiguous)"
-    },
-    {
       "rule_id": "L-164",
       "category": "LOSS",
       "aat_pointer": "blocks[].children[].heading.content[].figure.css_class",
       "parser_ir_pointer": null,
       "action": "drop",
       "description": "Observed 4 occurrences; first_path=blocks[38].children[1].heading.content[10].figure.css_class. css_class= dropped; parser-IR image has no such field"
-    },
-    {
-      "rule_id": "L-165",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].children[].heading.content[].figure.height",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 4 occurrences; first_path=blocks[38].children[1].heading.content[10].figure.height. height=86 dropped; parser-IR image has no such field"
-    },
-    {
-      "rule_id": "L-166",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].children[].heading.content[].figure.width",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 4 occurrences; first_path=blocks[38].children[1].heading.content[10].figure.width. width=21 dropped; parser-IR image has no such field"
     },
     {
       "rule_id": "L-167",
@@ -3927,36 +3847,12 @@
       "description": "Observed 690 occurrences; first_path=blocks[2].content[1].content[1].figure. style text projection dropped inline kind 'figure'"
     },
     {
-      "rule_id": "L-362",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].content[].content[].figure.caption",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 164 occurrences; first_path=blocks[69].content[0].content[15].figure.caption. nested figure caption[] dropped (could be emitted as caption node, scope target ambiguous)"
-    },
-    {
       "rule_id": "L-363",
       "category": "LOSS",
       "aat_pointer": "blocks[].content[].content[].figure.css_class",
       "parser_ir_pointer": null,
       "action": "drop",
       "description": "Observed 1034 occurrences; first_path=blocks[3].content[0].content[1].figure.css_class. css_class= dropped; parser-IR image has no such field"
-    },
-    {
-      "rule_id": "L-364",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].content[].content[].figure.height",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 1033 occurrences; first_path=blocks[3].content[0].content[1].figure.height. height=590 dropped; parser-IR image has no such field"
-    },
-    {
-      "rule_id": "L-365",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].content[].content[].figure.width",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 1033 occurrences; first_path=blocks[3].content[0].content[1].figure.width. width=530 dropped; parser-IR image has no such field"
     },
     {
       "rule_id": "L-366",
@@ -4015,36 +3911,12 @@
       "description": "Observed 6 occurrences; first_path=blocks[0].content[0].content[3].warigaki.upper[1].ruby.reading_content. Historical reading_content observation; current conversion retains text and gaiji references in reading_children wherever the containing ruby is emitted, while nested formatting is flattened"
     },
     {
-      "rule_id": "L-375",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].content[].figure.caption",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 737 occurrences; first_path=blocks[38].content[0].figure.caption. nested figure caption[] dropped (could be emitted as caption node, scope target ambiguous)"
-    },
-    {
       "rule_id": "L-376",
       "category": "LOSS",
       "aat_pointer": "blocks[].content[].figure.css_class",
       "parser_ir_pointer": null,
       "action": "drop",
       "description": "Observed 6513 occurrences; first_path=blocks[5].content[1].figure.css_class. css_class=illustration dropped; parser-IR image has no such field"
-    },
-    {
-      "rule_id": "L-377",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].content[].figure.height",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 6259 occurrences; first_path=blocks[5].content[1].figure.height. height=829 dropped; parser-IR image has no such field"
-    },
-    {
-      "rule_id": "L-378",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].content[].figure.width",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 6259 occurrences; first_path=blocks[5].content[1].figure.width. width=570 dropped; parser-IR image has no such field"
     },
     {
       "rule_id": "L-379",
@@ -4655,36 +4527,12 @@
       "description": "Observed 1 occurrence; first_path=blocks[27].heading.content[0].content[139].upper[1].ruby.reading. style text projection kept ruby base text only; reading not represented inside emphasis.text"
     },
     {
-      "rule_id": "L-457",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].heading.content[].figure.caption",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 8 occurrences; first_path=blocks[23].heading.content[114].figure.caption. nested figure caption[] dropped (could be emitted as caption node, scope target ambiguous)"
-    },
-    {
       "rule_id": "L-458",
       "category": "LOSS",
       "aat_pointer": "blocks[].heading.content[].figure.css_class",
       "parser_ir_pointer": null,
       "action": "drop",
       "description": "Observed 32 occurrences; first_path=blocks[3].heading.content[149].figure.css_class. css_class= dropped; parser-IR image has no such field"
-    },
-    {
-      "rule_id": "L-459",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].heading.content[].figure.height",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 32 occurrences; first_path=blocks[3].heading.content[149].figure.height. height=234 dropped; parser-IR image has no such field"
-    },
-    {
-      "rule_id": "L-460",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].heading.content[].figure.width",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 32 occurrences; first_path=blocks[3].heading.content[149].figure.width. width=354 dropped; parser-IR image has no such field"
     },
     {
       "rule_id": "L-461",

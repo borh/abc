@@ -24,6 +24,7 @@ use serde_json::{Value, json};
 
 use sha2::{Digest, Sha256};
 
+use ab_aozora_facade::syntax::parse_image_dimensions;
 use ab_aozora_facade::{
     self, BoutenKind, BoutenPosition, Diagnostic, DirectiveKind, ForwardAttr, Node, NodeKind,
     NodeRef, RegionClose, RegionFormat, SectionKind, Severity, encoding, json as aozora_json,
@@ -273,6 +274,15 @@ impl From<ab_aozora_facade::Span> for Span {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum ProjectedKind {
+    Illustration {
+        file: String,
+        number: Option<String>,
+        dimensions: Option<String>,
+        description: Option<String>,
+        description_span: Option<Span>,
+        caption: Option<String>,
+        caption_span: Option<Span>,
+    },
     MarginNote {
         kind: MarginNoteKind,
         position: Option<MarginNotePosition>,
@@ -320,6 +330,7 @@ impl ProjectedKind {
     fn as_str(&self) -> &'static str {
         match self {
             Self::IterationMark(_) => "iteration-mark",
+            Self::Illustration { .. } => "illustration",
             Self::Kunten { .. } => "kunten",
             Self::MarginNote { .. } => "sideNote",
             Self::Node(kind) => kind.as_json_tag(),
@@ -444,6 +455,23 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
         .iter()
         .map(|source_node| {
             let kind = match source_node.node {
+                NodeRef::Inline(Node::Illustration(image))
+                | NodeRef::BlockLeaf(Node::Illustration(image)) => ProjectedKind::Illustration {
+                    file: tree.store.resolve_str(image.file).to_owned(),
+                    number: image.number.map(|id| tree.store.resolve_str(id).to_owned()),
+                    dimensions: image
+                        .dimensions
+                        .map(|id| tree.store.resolve_str(id).to_owned()),
+                    description: image
+                        .description
+                        .map(|id| tree.store.resolve_str(id).to_owned()),
+                    caption: image.caption.and_then(|content| match content {
+                        Content::Plain(id) => Some(tree.store.resolve_str(id).to_owned()),
+                        _ => None,
+                    }),
+                    caption_span: image.caption_span.map(Into::into),
+                    description_span: image.description_span.map(Into::into),
+                },
                 NodeRef::Inline(Node::MarginNote(note))
                 | NodeRef::BlockLeaf(Node::MarginNote(note)) => ProjectedKind::MarginNote {
                     kind: note.kind,
@@ -975,6 +1003,7 @@ enum EstablishedInterpretation {
     Caption,
     TextVariant,
     AnnotatedText,
+    Illustration,
     Layout,
     EditorialNote,
     LineLayout,
@@ -1046,6 +1075,9 @@ impl EstablishedInterpretation {
             Some("caption" | "caption_block") => Some(Self::Caption),
             Some("text-variant") => Some(Self::TextVariant),
             Some("annotated_text") => Some(Self::AnnotatedText),
+            Some("figure") if node.get("interpretation_problem").is_none() => {
+                Some(Self::Illustration)
+            }
             Some("editorial_note") => Some(Self::EditorialNote),
             Some("layout_block") if node["role"] == "table" => Some(Self::Table),
             Some("layout_break") => Some(Self::LayoutBreak),
@@ -1074,6 +1106,7 @@ impl EstablishedInterpretation {
             Self::Caption => "caption",
             Self::TextVariant => "text-variant",
             Self::AnnotatedText => "annotated-text",
+            Self::Illustration => "illustration",
             Self::Layout => "layout",
             Self::EditorialNote => "editorial-note",
             Self::LineLayout => "line-layout",
@@ -1092,7 +1125,9 @@ impl EstablishedInterpretation {
             Self::Warichu | Self::Heading | Self::Caption | Self::Table | Self::LayoutBreak => {
                 &["structure", "layout"]
             }
-            Self::Kunten | Self::AnnotatedText => &["content", "structure", "layout"],
+            Self::Kunten | Self::AnnotatedText | Self::Illustration => {
+                &["content", "structure", "layout"]
+            }
         }
     }
 }
@@ -1153,6 +1188,7 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
                             | "kunten"
                             | "text-variant"
                             | "annotated_text"
+                            | "figure"
                             | "editorial_note"
                             | "layout_break"
                     )
@@ -1923,6 +1959,17 @@ fn strip_trailing_newline(node: &mut Value, source: &str) {
 }
 
 fn rebase_variant_spans(kind: &mut ProjectedKind, offset: usize) {
+    if let ProjectedKind::Illustration {
+        caption_span,
+        description_span,
+        ..
+    } = kind
+    {
+        for span in [caption_span, description_span].into_iter().flatten() {
+            span.start += offset;
+            span.end += offset;
+        }
+    }
     if let ProjectedKind::MarginNote {
         note_span,
         target_span,
@@ -2074,6 +2121,7 @@ fn inline_content_range(
                 );
             }
             ProjectedKind::BaseEditionConcealment { .. } | ProjectedKind::ConcealedPlaceholder { .. } => push_concealment(&mut content, decoded, node),
+            ProjectedKind::Illustration { .. } => content.push(illustration_node(decoded, node)),
             ProjectedKind::MarginNote { .. } => push_annotated_text(&mut content, decoded, node),
             ProjectedKind::Format(_) | ProjectedKind::FormatMany(_) => {
                 push_style_node(&mut content, decoded, node, "emphasis");
@@ -2716,6 +2764,66 @@ fn push_concealment(content: &mut Vec<Value>, decoded: &DecodedSource, node: &Ao
     content.push(retained);
 }
 
+fn illustration_node(decoded: &DecodedSource, node: &AozoraNode) -> Value {
+    let ProjectedKind::Illustration {
+        file,
+        number,
+        dimensions,
+        description,
+        description_span,
+        caption,
+        caption_span,
+    } = &node.kind
+    else {
+        unreachable!("illustration payload")
+    };
+    let mut uncertain_aspects = Vec::new();
+    let mut value = json!({"kind":"figure", "filename":file,"alt":description.as_deref().unwrap_or(""),"css_class":"illustration", "source":&decoded.span_text[node.span.start..node.span.end], "span":span_json(&node.span,&decoded.span_ctx)});
+    if let Some(span) = description_span {
+        if let Some(children) = source_fragment(decoded, span.start..span.end) {
+            if children.iter().any(|child| child["kind"] != "text") {
+                value["description_content"] = json!(children);
+            }
+        } else {
+            value["description_source"] = json!(description);
+            value["alt"] = json!("");
+            uncertain_aspects.push("structure");
+        }
+    }
+    if let Some(number) = number {
+        value["number"] = json!(number);
+    }
+    if let Some(raw) = dimensions {
+        if let Some((width, height)) = parse_image_dimensions(raw)
+            && let (Ok(width), Ok(height)) = (width.parse::<u64>(), height.parse::<u64>())
+        {
+            value["width"] = json!(width);
+            value["height"] = json!(height);
+        } else {
+            value["dimensions_source"] = json!(raw);
+            uncertain_aspects.push("layout");
+        }
+    }
+    if let Some(caption) = caption {
+        if let Some(children) =
+            caption_span.and_then(|span| source_fragment(decoded, span.start..span.end))
+        {
+            value["caption"] = json!(children);
+        } else {
+            value["caption_source"] = json!(caption);
+            uncertain_aspects.push("structure");
+        }
+    }
+    if !uncertain_aspects.is_empty() {
+        let aspects = ["structure", "layout"]
+            .into_iter()
+            .filter(|aspect| uncertain_aspects.contains(aspect))
+            .collect::<Vec<_>>();
+        value["interpretation_problem"] = json!({"kind":"uninterpreted-notation","code":"uninterpreted-notation","aspects":aspects,"influence":{"kind":"document"}});
+    }
+    value
+}
+
 fn push_annotated_text(content: &mut Vec<Value>, decoded: &DecodedSource, node: &AozoraNode) {
     let ProjectedKind::MarginNote {
         kind,
@@ -3222,7 +3330,7 @@ fn target_text(node: &Value) -> Option<Cow<'_, str>> {
         "ruby" => Some(Cow::Borrowed(node["base"].as_str()?)),
         "gaiji" => Some(Cow::Borrowed(node["resolved"].as_str()?)),
         "iteration-mark" => Some(Cow::Borrowed(node["text"].as_str()?)),
-        "editorial_note" | "kunten" => Some(Cow::Borrowed("")),
+        "editorial_note" | "kunten" | "figure" => Some(Cow::Borrowed("")),
         "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi"
         | "yokogumi" | "fraction" | "text-variant" | "annotated_text" => {
             let mut text = String::new();

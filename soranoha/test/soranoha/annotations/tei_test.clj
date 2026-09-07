@@ -51,14 +51,14 @@
 (deftest body-view-has-explicit-reading-and-whitespace-policy
   (let [base (document rich-body)
         text-view (view/from-tei base)]
-    (is (= "犍陀多は籠をさげ\n前　後𠮷\n続\n末\n看板\n挿絵" (:view/text text-view)))
+    (is (= "犍陀多は籠をさげ\n前　後𠮷\n続\n末\n看板" (:view/text text-view)))
     (is (= (:view/id text-view)
            (:view/id (view/from-tei (document (str/replace rich-body "\n" "\n    "))))))
     (is (= "ざる" (view/visible-text (-> ^Document (:view/document text-view)
                                        (.getElementsByTagNameNS view/tei-namespace "rt") (.item 1)))))
     (is (= "正形" (:view/text (view/from-tei (document "<a:p><a:choice><a:orig>原形</a:orig><a:reg>正形</a:reg></a:choice></a:p>"))))))
-  (is (= "D\n\nALT\nCAP\nQ"
-         (:view/text (view/from-tei (document "<a:p>D</a:p><a:pb/><a:p><a:lb/></a:p><a:figure><a:figDesc>ALT</a:figDesc></a:figure><a:figDesc>CAP</a:figDesc><a:p>Q</a:p>")))))
+  (is (= "D\n\nCAP\nQ"
+         (:view/text (view/from-tei (document "<a:p>D</a:p><a:pb/><a:p><a:lb/></a:p><a:figure><a:figDesc>ALT</a:figDesc></a:figure><a:p><a:seg type='caption'>CAP</a:seg></a:p><a:p>Q</a:p>")))))
   (is (thrown? clojure.lang.ExceptionInfo (view/from-tei "<TEI><text><body/></text></TEI>"))))
 
 (deftest unresolved-glyphs-are-present-and-ineligible

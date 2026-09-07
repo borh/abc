@@ -35,11 +35,12 @@
     (.getLocalName node)))
 
 (defn selected-children
-  "Select the established body reading. Call on an rt directly to read its content."
+  "Select principal body text, excluding editorial notes and figure descriptions.
+  Call on an rt directly to read its content."
   [node]
   (let [nodes (children node)]
     (case (local-name node)
-      ("note" "fw") []
+      ("note" "fw" "figDesc") []
       "ruby" (filterv #(= "rb" (local-name %)) nodes)
       "app" (let [lemmas (filterv #(= "lem" (local-name %)) nodes)]
               (when-not (= 1 (count lemmas))
@@ -77,7 +78,7 @@
             (recur next-char (long next-byte)
                    (if (wanted next-byte) (assoc! result next-byte next-char) result))))))))
 
-(def ^:private block-tags #{"p" "head" "l" "ab" "item" "figDesc"})
+(def ^:private block-tags #{"p" "head" "l" "ab" "item"})
 (def ^:private structural-tags #{"body" "div" "lg" "list" "text" "floatingText" "figure"})
 
 (defn- text-segments [^Node node]

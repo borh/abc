@@ -9,8 +9,8 @@
 //! variants ([`Node::Line`] / [`Node::PageBreak`] /
 //! [`Node::BodyEnd`] / [`Node::ForcedBreak`] /
 //! [`Node::SectionBreak`]) emit their fixed markup directly (e.g. the
-//! section-break slug table). The heading tag writers, the illustration
-//! dimension parser, the line renderer, and the text escaper are reused from
+//! section-break slug table). The heading tag writers, line renderer,
+//! and text escaper are reused from
 //! [`crate::spelling::html`].
 
 use core::fmt::{self, Write};
@@ -26,9 +26,8 @@ use ab_aozora_syntax::format::ForwardOrigin;
 use ab_aozora_syntax::{AccentMark, DirectiveKind, EnclosureKind, ForwardAttr, RubySide};
 
 use crate::classes;
-use crate::spelling::html::{
-    escape_text, parse_sashie_dimensions, render_line, write_heading_close, write_heading_open,
-};
+use crate::serialize::emit_content_as_plain_one;
+use crate::spelling::html::{escape_text, render_line, write_heading_close, write_heading_open};
 
 /// Render a single owned [`Node`] into `writer`.
 ///
@@ -549,8 +548,8 @@ fn render_angle_quote<W: Write>(d: AngleQuote, store: &NodeStore, out: &mut W) -
 
 /// Render an illustration as a `<figure class="aozora-illustration">` with an
 /// `<img>` (optional width/height from the dimensions, alt from the
-/// description) and an optional `<figcaption>`. The figure `number` is ignored
-/// in HTML (serialize-only).
+/// description or quoted caption reference). The visible caption is supplied
+/// separately by the source.
 fn render_sashie<W: Write>(s: &Illustration, store: &NodeStore, out: &mut W) -> fmt::Result {
     out.write_str(r#"<figure class="aozora-illustration"><img src=""#)?;
     escape_text(store.resolve_str(s.file), out)?;
@@ -558,7 +557,7 @@ fn render_sashie<W: Write>(s: &Illustration, store: &NodeStore, out: &mut W) -> 
     if let Some((w, h)) = s
         .dimensions
         .map(|id| store.resolve_str(id))
-        .and_then(parse_sashie_dimensions)
+        .and_then(ab_aozora_syntax::parse_image_dimensions)
     {
         write!(out, r#" width="{w}" height="{h}""#)?;
     }
@@ -568,12 +567,12 @@ fn render_sashie<W: Write>(s: &Illustration, store: &NodeStore, out: &mut W) -> 
     if let Some(description) = s.description {
         escape_text(store.resolve_str(description), out)?;
     }
-    out.write_str(r#"" />"#)?;
     if let Some(caption) = s.caption {
-        out.write_str("<figcaption>")?;
-        render_content_one(caption, store, out)?;
-        out.write_str("</figcaption>")?;
+        let mut reference = String::new();
+        emit_content_as_plain_one(caption, store, &mut reference)?;
+        escape_text(&reference, out)?;
     }
+    out.write_str(r#"" />"#)?;
     out.write_str("</figure>")
 }
 

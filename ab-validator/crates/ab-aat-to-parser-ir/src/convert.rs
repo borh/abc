@@ -1006,7 +1006,7 @@ fn append_plain_visible_inline_text(node: &Value, out: &mut String) -> Result<()
             append_plain_visible_content_text(node.get("lower"), out)?;
         }
         "raw" | "kunten" | "editorial_note" | "layout_break" => {}
-        "figure" => out.push_str(node["alt"].as_str().unwrap_or("")),
+        "figure" => {}
         other => bail!("unsupported inline kind in source attribution projection: {other}"),
     }
     Ok(())
@@ -1300,7 +1300,7 @@ fn map_inline_to_nodes(
         "warigaki" | "warichu" => {
             map_warigaki_to_nodes(node, nodes, recorder, synthetic_warnings, offset, path, 0)
         }
-        "figure" => map_figure_to_node(node, nodes, recorder, offset, path),
+        "figure" => map_figure_to_node(node, nodes, recorder, synthetic_warnings, offset, path, 0),
         "kunten" => {
             nodes.push(json!({"type":"kunten", "kunten_kind":node["kunten_kind"], "text":node["text"], "span":synthetic_span(offset, offset)}));
             Ok(offset)
@@ -1693,10 +1693,15 @@ fn inline_child_node(
             path,
             depth,
         ),
-        "figure" => {
-            let alt = node["alt"].as_str().unwrap_or("");
-            push_unrecorded_text_node(alt, nodes, offset)
-        }
+        "figure" => map_figure_to_node(
+            node,
+            nodes,
+            recorder,
+            synthetic_warnings,
+            offset,
+            path,
+            depth,
+        ),
         "kunten" => {
             nodes.push(json!({"type":"kunten", "kunten_kind":node["kunten_kind"], "text":node["text"], "span":synthetic_span(offset, offset)}));
             Ok(offset)
@@ -2047,31 +2052,44 @@ fn map_figure_to_node(
     node: &Value,
     nodes: &mut Vec<Value>,
     recorder: &mut DivergenceRecorder,
+    warnings: &mut Vec<Value>,
     offset: u64,
     path: &str,
+    depth: usize,
 ) -> Result<u64> {
-    let filename_pointer = format!("{path}.figure.filename");
-    let filename = node["filename"].as_str().unwrap_or("");
-    recorder.record(
-        "INVENTION",
-        Some(filename_pointer.as_str()),
-        Some("image.src"),
-        node.get("filename").cloned(),
-        Some(json!(filename)),
-    )?;
-
-    record_optional_figure_loss(node, recorder, path, "caption")?;
+    let mut result = json!({"type":"image", "span":map_node_span(node.get("span"),offset,offset,recorder,path)?, "src":node["filename"]});
+    for key in [
+        "alt",
+        "number",
+        "width",
+        "height",
+        "dimensions_source",
+        "caption_source",
+        "description_source",
+    ] {
+        if let Some(value) = node.get(key) {
+            result[key] = value.clone();
+        }
+    }
+    for (input, output) in [
+        ("caption", "caption_reference_children"),
+        ("description_content", "description_children"),
+    ] {
+        if node.get(input).is_some_and(|value| !value.is_null()) {
+            let mut children = inline_children_nodes(
+                node.get(input),
+                recorder,
+                warnings,
+                0,
+                &format!("{path}.{input}"),
+                depth + 1,
+            )?;
+            content_coordinates(&mut children, "annotation_utf8");
+            result[output] = json!(children);
+        }
+    }
     record_optional_figure_loss(node, recorder, path, "css_class")?;
-    record_optional_figure_loss(node, recorder, path, "height")?;
-    record_optional_figure_loss(node, recorder, path, "width")?;
-
-    let span = map_node_span(node.get("span"), offset, offset, recorder, path)?;
-    nodes.push(json!({
-        "type": "image",
-        "span": span,
-        "src": filename,
-        "alt": node.get("alt").cloned().unwrap_or(Value::Null),
-    }));
+    nodes.push(result);
     Ok(offset)
 }
 
@@ -2330,7 +2348,6 @@ fn append_visible_inline_text(
                 None,
                 None,
             );
-            out.push_str(node["alt"].as_str().unwrap_or(""));
         }
         other => bail!("unsupported inline kind in visible projection: {other}"),
     }

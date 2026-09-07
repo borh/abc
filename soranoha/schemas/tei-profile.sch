@@ -62,7 +62,8 @@
    </pattern>
    <pattern id="abc-figure-accessibility">
       <rule context="tei:figure">
-         <report role="warning" test="not(tei:figDesc or tei:head or tei:p)"> ABC TEI figure should preserve a figDesc, head, or caption paragraph when available.</report>
+         <report role="warning"
+                 test="not((tei:figDesc | tei:head | tei:p | tei:note[@type = ('image-description', 'caption-reference')])[normalize-space(.) != ''])"> ABC TEI figure should preserve a nonempty source description or caption reference when available.</report>
       </rule>
    </pattern>
    <pattern id="abc-source-span-reference">

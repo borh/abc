@@ -736,3 +736,13 @@ mod tests {
         }
     }
 }
+
+/// Read the explicit pixel dimensions used by image insertion annotations.
+#[must_use]
+pub fn parse_image_dimensions(dims: &str) -> Option<(&str, &str)> {
+    let (w, h) = dims.split_once('×')?;
+    let w = w.strip_prefix('横')?;
+    let h = h.strip_prefix('縦')?;
+    let digits = |s: &str| !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit());
+    (digits(w) && digits(h)).then_some((w, h))
+}

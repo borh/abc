@@ -471,7 +471,7 @@ impl RecogniseCtx<'_, '_> {
         }
 
         // `「caption」のキャプション付きの(図|挿絵)（file）入る` — illustration
-        // whose caption precedes the figure. Emits a Illustration (consumes the whole
+        // with a quoted caption reference. Emits an Illustration (consumes the whole
         // bracket); checked here, after the styling recognisers.
         if let Some(node) = self.classify_caption_figure(view, open_idx, close_idx) {
             return Some(AnnotationMatch {
@@ -487,8 +487,13 @@ impl RecogniseCtx<'_, '_> {
         // — the free leading description (図 / 地図 / コンドル博士の図 …) is the
         // alt. Its description is arbitrary so it has no prefix needle in the
         // body dispatcher; checked here, after the more-specific 「caption」
-        // form so that keeps its figcaption, and before the Unknown catch-all.
-        if let Some(emit) = classify_general_image_body(body, self.alloc) {
+        // form so it retains the quoted reference, and before the Unknown catch-all.
+        if let Some(emit) = classify_general_image_body(
+            body,
+            u32::try_from(body.as_ptr().addr() - self.source.as_ptr().addr())
+                .expect("source offset fits u32"),
+            self.alloc,
+        ) {
             return Some(AnnotationMatch {
                 emit,
                 annotation_payload: None,
@@ -1457,11 +1462,8 @@ impl RecogniseCtx<'_, '_> {
         Some((result, consume_start))
     }
 
-    /// Classify a `「caption」のキャプション付きの(図|挿絵)（file）入る`
-    /// illustration whose caption *precedes* the figure (distinct from the
-    /// trailing `挿絵（file）「caption」入る` form `classify_sashie_body`
-    /// handles). Emits a `Illustration` with the leading quote as its caption and
-    /// the parenthesised path as its file; consumes only the bracket.
+    /// Preserve the quoted caption reference as image metadata. The visible
+    /// caption is transcribed separately in the body by the source convention.
     fn classify_caption_figure(
         &mut self,
         view: BodyView<'_>,
@@ -1483,12 +1485,23 @@ impl RecogniseCtx<'_, '_> {
             .or_else(|| rest.strip_prefix("写真"))?;
         let rest = rest.strip_prefix('（')?;
         let close_off = rest.find('）')?;
-        let file = &rest[..close_off];
-        if file.is_empty() || &rest[close_off + '）'.len_utf8()..] != "入る" {
+        let spec = &rest[..close_off];
+        let (file, dimensions) = super::directive::illustration_file_spec(spec)?;
+        if &rest[close_off + '）'.len_utf8()..] != "入る" {
             return None;
         }
         let caption_content = self.alloc.content_plain(caption);
-        Some(self.alloc.sashie(file, None, None, Some(caption_content)))
+        let mut result = self
+            .alloc
+            .sashie(file, None, dimensions, Some(caption_content));
+        if let Node::Illustration(image) = &mut result {
+            let start = caption.as_ptr().addr() - self.source.as_ptr().addr();
+            image.caption_span = Some(Span::new(
+                u32::try_from(start).expect("source offset fits u32"),
+                u32::try_from(start + caption.len()).expect("source offset fits u32"),
+            ));
+        }
+        Some(result)
     }
 }
 

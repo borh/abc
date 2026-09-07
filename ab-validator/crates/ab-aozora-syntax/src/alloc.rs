@@ -497,7 +497,9 @@ impl Allocator {
             number,
             dimensions,
             caption,
+            caption_span: None,
             description: None,
+            description_span: None,
         })
     }
 
@@ -529,7 +531,9 @@ impl Allocator {
             number: None,
             dimensions,
             caption: None,
+            caption_span: None,
             description: Some(description),
+            description_span: None,
         })
     }
 

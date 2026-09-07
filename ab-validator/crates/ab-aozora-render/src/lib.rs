@@ -53,4 +53,14 @@ mod tests {
         let s = serialize(&out);
         assert_eq!(s, "plain text");
     }
+    #[test]
+    fn quoted_image_caption_is_escaped_metadata_not_an_extra_visible_caption() {
+        let source =
+            "［＃「説明&<字>」のキャプション付きの図（fig.png、横10×縦20）入る］\n説明&<字>";
+        let tree = ab_aozora_pipeline::lex(source);
+        let html = render_html(&tree);
+        assert!(html.contains("alt=\"説明&amp;&lt;字&gt;\""), "{html}");
+        assert!(!html.contains("figcaption"), "{html}");
+        assert!(html.contains("width=\"10\" height=\"20\""), "{html}");
+    }
 }

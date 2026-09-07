@@ -10,6 +10,7 @@
 #[cfg(feature = "classify-instrument")]
 use super::super::instrumentation::{Subsystem, SubsystemGuard};
 use ab_aozora_syntax::ast::KuntenKind;
+use ab_aozora_syntax::ast::Node;
 
 use std::sync::OnceLock;
 
@@ -1263,7 +1264,7 @@ pub(super) fn classify_annotation_body(
                 None,
             ))
         }
-        BodyFamily::SashiePrefix => classify_sashie_body(body, alloc).map(|e| (e, None)),
+        BodyFamily::SashiePrefix => classify_sashie_body(source, alloc).map(|e| (e, None)),
         BodyFamily::IndentBlockParamPrefix => {
             // body == ここから{N}字下げ; remainder = body[match_end..]
             let rest = &body[match_end..];
@@ -1509,6 +1510,13 @@ const fn is_okurigana_char(ch: char) -> bool {
     )
 }
 
+pub(super) fn illustration_file_spec(spec: &str) -> Option<(&str, Option<&str>)> {
+    let (file, dimensions) = spec
+        .split_once('、')
+        .map_or((spec, None), |(file, dimensions)| (file, Some(dimensions)));
+    (!file.is_empty()).then_some((file, dimensions))
+}
+
 /// Classify a `［＃挿絵（file）入る］` sashie (illustration insert),
 /// optionally bundling a caption: `［＃挿絵（file）「caption」入る］`.
 ///
@@ -1516,9 +1524,10 @@ const fn is_okurigana_char(ch: char) -> bool {
 /// the AC has already verified the `挿絵（` prefix at body[0..9]; this
 /// function captures the filename between `（` and `）`, an optional
 /// `「caption」` (per <https://www.aozora.gr.jp/annotation/graphics.html>),
-/// and confirms the trailing `入る` keyword. The caption is plain content,
-/// rendered into `<figcaption>` (§8).
-fn classify_sashie_body(body: &str, alloc: &mut Allocator) -> Option<EmitKind> {
+/// and confirms the trailing `入る` keyword. Quoted caption text stays
+/// image metadata; visible captions are separate source content.
+fn classify_sashie_body(source: &AnnotationBody<'_>, alloc: &mut Allocator) -> Option<EmitKind> {
+    let body = source.text;
     // `挿絵（file）入る` and the numbered `挿絵{N}（file）入る` (N a run of
     // half/full-width digits before the `（`). A description *before* 挿絵
     // (`女性と犬の挿絵（…）`, `「…」のキャプション付きの挿絵（…）`) is a separate,
@@ -1546,13 +1555,7 @@ fn classify_sashie_body(body: &str, alloc: &mut Allocator) -> Option<EmitKind> {
     // the optional pixel-size note so `file` stays a clean `<img src>` path
     // and the dimensions render as `width`/`height` (see render_node).
     let inside = &rest[..close_off];
-    let (file, dimensions) = match inside.split_once('、') {
-        Some((f, dims)) if !f.is_empty() && !dims.is_empty() => (f, Some(dims)),
-        _ => (inside, None),
-    };
-    if file.is_empty() {
-        return None;
-    }
+    let (file, dimensions) = illustration_file_spec(inside)?;
     let tail = &rest[close_off + '）'.len_utf8()..];
     // After `）` the tail is either the bare `入る` keyword or a bundled
     // `「caption」入る`. Any other shape declines (→ `Directive{Unknown}`).
@@ -1569,9 +1572,18 @@ fn classify_sashie_body(body: &str, alloc: &mut Allocator) -> Option<EmitKind> {
     } else {
         return None;
     };
-    Some(EmitKind::Aozora(
-        alloc.sashie(file, number, dimensions, caption),
-    ))
+    let mut result = alloc.sashie(file, number, dimensions, caption);
+    if let Node::Illustration(image) = &mut result
+        && caption.is_some()
+    {
+        let start = source.start
+            + u32::try_from(tail.as_ptr().addr() - body.as_ptr().addr() + '「'.len_utf8())
+                .expect("source offset fits u32");
+        let end = source.start
+            + u32::try_from(body.len() - "」入る".len()).expect("source offset fits u32");
+        image.caption_span = Some(Span::new(start, end));
+    }
+    Some(EmitKind::Aozora(result))
 }
 
 /// Classify the *general* image form `［＃<説明>（file［、横W×縦H］）入る］`
@@ -1587,7 +1599,11 @@ fn classify_sashie_body(body: &str, alloc: &mut Allocator) -> Option<EmitKind> {
 /// description, tried just before the `Directive{Unknown}` catch-all (it
 /// has no prefix needle because the description is arbitrary). Returns
 /// `None` for any body that is not a complete `<非空>（<file>）入る`.
-pub(super) fn classify_general_image_body(body: &str, alloc: &mut Allocator) -> Option<EmitKind> {
+pub(super) fn classify_general_image_body(
+    body: &str,
+    source_start: u32,
+    alloc: &mut Allocator,
+) -> Option<EmitKind> {
     let middle = body.strip_suffix("入る")?;
     // The file spec `（file、横W×縦H）` is always the LAST paren group before
     // `入る`; use `rfind` so a description that itself embeds `（…）` (e.g.
@@ -1607,18 +1623,15 @@ pub(super) fn classify_general_image_body(body: &str, alloc: &mut Allocator) -> 
         return None;
     }
     let inside = &rest[..close_off];
-    let (file, dimensions) = match inside.split_once('、') {
-        Some((f, dims)) if !f.is_empty() && !dims.is_empty() => (f, Some(dims)),
-        _ => (inside, None),
-    };
-    if file.is_empty() {
-        return None;
+    let (file, dimensions) = illustration_file_spec(inside)?;
+    let mut result = alloc.sashie_general(file, description, dimensions);
+    if let Node::Illustration(image) = &mut result {
+        image.description_span = Some(Span::new(
+            source_start,
+            source_start + u32::try_from(description.len()).expect("source offset fits u32"),
+        ));
     }
-    Some(EmitKind::Aozora(alloc.sashie_general(
-        file,
-        description,
-        dimensions,
-    )))
+    Some(EmitKind::Aozora(result))
 }
 
 /// Parse a heading keyword into `(style, kind)`. An optional `同行`

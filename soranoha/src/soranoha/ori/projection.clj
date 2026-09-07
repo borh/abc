@@ -93,12 +93,12 @@
       (#{Node/COMMENT_NODE Node/PROCESSING_INSTRUCTION_NODE} (.getNodeType node)) ""
       :else (content))))
 
-(def ^:private block-tags #{"p" "head" "l" "ab" "item" "figDesc"})
+(def ^:private block-tags #{"p" "head" "l" "ab" "item"})
 
 (defn- blocks [node]
   (cond
     (block-tags (view/local-name node)) [node]
-    (#{"note" "fw"} (view/local-name node)) []
+    (#{"note" "fw" "figDesc"} (view/local-name node)) []
     :else (into [] (mapcat blocks) (view/selected-children node))))
 
 (defn markdown
@@ -125,7 +125,7 @@
   (let [tag (view/local-name node)]
     (cond
       (and (= "g" tag) (empty? (.getTextContent node))) :projection/unresolved
-      (#{"note" "fw"} tag) :projection/omitted
+      (#{"note" "fw" "figDesc"} tag) :projection/omitted
       (= "graphic" tag) (if (= :projection/plaintext profile) :projection/omitted :projection/unsupported)
       (= "hi" tag) (if (or (= :projection/plaintext profile)
                            (and (not (.hasAttribute node "style"))

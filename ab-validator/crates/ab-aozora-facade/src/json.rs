@@ -1,35 +1,9 @@
-//! Driver-shared wire format for serialising `aozora` parser output.
+//! Native JSON projections for diagnostics, nodes, ruby pairs, container pairs,
+//! annotation slugs and gaiji. Each result has a `{schemaVersion, data}` envelope.
 //!
-//! Three driver crates (`aozora-ffi`, `aozora-wasm`, `aozora-py`) all
-//! need to project the owned-AST parser output to a stable byte stream.
-//! This module is the **single authority** for that projection — each
-//! driver calls into here and is guaranteed bit-identical output
-//! across language boundaries.
-//!
-//! # Schema envelope
-//!
-//! Every JSON envelope has the shape
-//!
-//! ```json
-//! { "schemaVersion": 3, "data": [ /* …entries… */ ] }
-//! ```
-//!
-//! [`SCHEMA_VERSION`] is bumped on any breaking change to the
-//! serialised shape (variant additions, field renames, envelope
-//! changes). Clients that read the wire format SHOULD branch on the
-//! version to decide their handling — schema 1 makes no guarantees of
-//! forward-compatibility with later schemas.
-//!
-//! # Stability vs. `non_exhaustive`
-//!
-//! Both [`crate::Diagnostic`] and [`crate::Node`] are
-//! `#[non_exhaustive]` upstream so the library can add variants in
-//! minor releases. The wire format protects callers by:
-//!
-//! - falling back to `kind: "unknown"` for unrecognised variants, and
-//! - bumping [`SCHEMA_VERSION`] when new variants land in the wire
-//!   (so a client that branches on the version can react before
-//!   `"unknown"` shows up in production traffic).
+//! Versions belong to individual envelopes: adding a container kind changes
+//! the container-pair contract without changing diagnostic records or ruby pairs.
+//! Consumers validate the version of the projection they read.
 
 use serde::Serialize;
 
@@ -38,17 +12,18 @@ use crate::encoding::gaiji::{self, gaiji_resolutions};
 use crate::encoding::gaiji::{find_span, resolve_at};
 use crate::{DiagnosticSource, NodeRef, RubySide, Severity, Tree};
 
-/// Wire-format schema version. Bumped on any breaking change to the
-/// serialised shape (variant additions, field renames, envelope
-/// changes).
-///
-/// Schema 2: added the `gothic` weight tag (emphasis / container);
-/// renamed the `lineBold` node kind to `lineGothic`; removed the
-/// `combineUprightRange` container tag (縦中横 has no paired-range form).
-///
-/// Schema 3: added the stable kebab-case `code` field to
-/// diagnostics entries.
-pub const SCHEMA_VERSION: u32 = 3;
+/// Diagnostic records and their envelope.
+pub const DIAGNOSTICS_SCHEMA_VERSION: u32 = 3;
+/// Source-keyed node entries and their envelope.
+pub const NODES_SCHEMA_VERSION: u32 = 3;
+/// Ruby pair entries and their envelope.
+pub const PAIRS_SCHEMA_VERSION: u32 = 3;
+/// Container pairs, including scoped TCY's `combineUprightRange` tag.
+pub const CONTAINER_PAIRS_SCHEMA_VERSION: u32 = 4;
+/// Canonical annotation slug entries and their envelope.
+pub const SLUGS_SCHEMA_VERSION: u32 = 3;
+/// Gaiji resolution entries and their envelope.
+pub const GAIJI_SCHEMA_VERSION: u32 = 3;
 
 /// Project a slice of [`crate::Diagnostic`] into a `{ schemaVersion, data }`
 /// JSON envelope. Every entry has the shape
@@ -59,7 +34,7 @@ pub const SCHEMA_VERSION: u32 = 3;
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
 pub fn diagnostics(diagnostics: &[crate::Diagnostic]) -> String {
-    serialize_envelope(&diagnostic_entries(diagnostics))
+    serialize_envelope(DIAGNOSTICS_SCHEMA_VERSION, &diagnostic_entries(diagnostics))
 }
 
 /// The structured `Diagnostic` records that back `diagnostics()` —
@@ -80,7 +55,7 @@ pub fn diagnostic_entries(diagnostics: &[crate::Diagnostic]) -> Vec<Diagnostic> 
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
 pub fn nodes(tree: &Tree<'_>) -> String {
-    serialize_envelope(&node_entries(tree))
+    serialize_envelope(NODES_SCHEMA_VERSION, &node_entries(tree))
 }
 
 /// The structured `Node` records that back `nodes()` — prefer this to
@@ -111,7 +86,7 @@ pub fn node_entries(tree: &Tree<'_>) -> Vec<Node> {
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
 pub fn pairs(tree: &Tree<'_>) -> String {
-    serialize_envelope(&pair_entries(tree))
+    serialize_envelope(PAIRS_SCHEMA_VERSION, &pair_entries(tree))
 }
 
 /// The structured `Pair` records that back `pairs()` — prefer this to
@@ -142,12 +117,15 @@ pub fn pair_entries(tree: &Tree<'_>) -> Vec<Pair> {
 /// source-coordinate container pairs must translate through
 /// [`Tree::source_nodes`].
 ///
-/// Empty parse → `{"schemaVersion":3,"data":[]}`.
+/// Empty parse → `{"schemaVersion":4,"data":[]}`.
 #[cfg(feature = "json")]
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
 pub fn container_pairs(tree: &Tree<'_>) -> String {
-    serialize_envelope(&container_pair_entries(tree))
+    serialize_envelope(
+        CONTAINER_PAIRS_SCHEMA_VERSION,
+        &container_pair_entries(tree),
+    )
 }
 
 /// The structured `ContainerPair` records that back
@@ -183,7 +161,7 @@ pub fn container_pair_entries(tree: &Tree<'_>) -> Vec<ContainerPair> {
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
 pub fn slugs() -> String {
-    serialize_envelope(&slug_entries())
+    serialize_envelope(SLUGS_SCHEMA_VERSION, &slug_entries())
 }
 
 /// The structured `Slug` records that back `slugs()` — prefer this to
@@ -219,7 +197,7 @@ pub fn slug_entries() -> Vec<Slug> {
 #[cfg_attr(docsrs, doc(cfg(feature = "json")))]
 #[must_use]
 pub fn gaiji(source: &str) -> String {
-    serialize_envelope(&gaiji_entries(source))
+    serialize_envelope(GAIJI_SCHEMA_VERSION, &gaiji_entries(source))
 }
 
 /// The structured `GaijiResolution` records that back `gaiji()` —
@@ -332,6 +310,7 @@ struct Envelope<'a, T> {
 #[must_use]
 pub fn schema_diagnostics() -> serde_json::Value {
     envelope_schema(
+        DIAGNOSTICS_SCHEMA_VERSION,
         "AozoraDiagnosticsEnvelope",
         "Envelope returned by aozora::json::diagnostics.",
         schemars::schema_for!(Diagnostic),
@@ -344,6 +323,7 @@ pub fn schema_diagnostics() -> serde_json::Value {
 #[must_use]
 pub fn schema_nodes() -> serde_json::Value {
     envelope_schema(
+        NODES_SCHEMA_VERSION,
         "AozoraNodesEnvelope",
         "Envelope returned by aozora::json::nodes.",
         schemars::schema_for!(Node),
@@ -356,6 +336,7 @@ pub fn schema_nodes() -> serde_json::Value {
 #[must_use]
 pub fn schema_pairs() -> serde_json::Value {
     envelope_schema(
+        PAIRS_SCHEMA_VERSION,
         "AozoraPairsEnvelope",
         "Envelope returned by aozora::json::pairs.",
         schemars::schema_for!(Pair),
@@ -368,6 +349,7 @@ pub fn schema_pairs() -> serde_json::Value {
 #[must_use]
 pub fn schema_container_pairs() -> serde_json::Value {
     envelope_schema(
+        CONTAINER_PAIRS_SCHEMA_VERSION,
         "AozoraContainerPairsEnvelope",
         "Envelope returned by aozora::json::container_pairs.",
         schemars::schema_for!(ContainerPair),
@@ -380,6 +362,7 @@ pub fn schema_container_pairs() -> serde_json::Value {
 /// varies.
 #[cfg(feature = "schema")]
 fn envelope_schema(
+    version: u32,
     title: &str,
     description: &str,
     item_schema: schemars::Schema,
@@ -407,9 +390,9 @@ fn envelope_schema(
         "required": ["schemaVersion", "data"],
         "properties": {
             "schemaVersion": {
-                "description": "Wire schema version. See aozora::json::SCHEMA_VERSION.",
+                "description": "Version of this envelope's wire contract.",
                 "type": "integer",
-                "const": SCHEMA_VERSION,
+                "const": version,
             },
             "data": {
                 "description": "Per-entry payload array; one item per emitted diagnostic / node / pair.",
@@ -427,13 +410,13 @@ fn envelope_schema(
 }
 
 #[cfg(feature = "json")]
-fn serialize_envelope<T: Serialize>(data: &[T]) -> String {
+fn serialize_envelope<T: Serialize>(version: u32, data: &[T]) -> String {
     let env = Envelope {
-        schema_version: SCHEMA_VERSION,
+        schema_version: version,
         data,
     };
     serde_json::to_string(&env)
-        .unwrap_or_else(|_| format!(r#"{{"schemaVersion":{SCHEMA_VERSION},"data":[]}}"#))
+        .unwrap_or_else(|_| format!(r#"{{"schemaVersion":{version},"data":[]}}"#))
 }
 
 /// One half-open `[start, end)` byte span in a wire envelope.
@@ -658,8 +641,13 @@ mod tests {
     }
 
     #[test]
-    fn schema_version_is_one() {
-        assert_eq!(SCHEMA_VERSION, 3);
+    fn scoped_tcy_changes_only_the_container_pair_contract() {
+        assert_eq!(CONTAINER_PAIRS_SCHEMA_VERSION, 4);
+        assert_eq!(DIAGNOSTICS_SCHEMA_VERSION, 3);
+        assert_eq!(NODES_SCHEMA_VERSION, 3);
+        assert_eq!(PAIRS_SCHEMA_VERSION, 3);
+        assert_eq!(SLUGS_SCHEMA_VERSION, 3);
+        assert_eq!(GAIJI_SCHEMA_VERSION, 3);
     }
 
     #[test]
@@ -776,7 +764,7 @@ mod tests {
         // container-pairs wire tag (no `_ => "unknown"` fallback —
         // exhaustiveness is enforced in aozora-syntax). The scope-specific
         // `boutenRange` / `combineUprightRange` strings are preserved verbatim
-        // so SCHEMA_VERSION=1 stays byte-stable.
+        // so unrelated region tags stay byte-stable.
         assert_eq!(RegionFormat::Bold { padded: false }.as_json_tag(), "bold");
         assert_eq!(RegionFormat::Bold { padded: true }.as_json_tag(), "bold");
         assert_eq!(

@@ -154,6 +154,25 @@ fn empty_authenticated_capture_is_available_and_vacuous() {
 }
 
 #[test]
+fn native_tcy_does_not_change_the_diagnostic_contract() {
+    for (source, expected) in [
+        (
+            "前［＃縦中横］29［＃縦中横終わり］後",
+            "{\"data\":[],\"schemaVersion\":3}\n",
+        ),
+        (
+            "［＃tail",
+            "{\"data\":[{\"code\":\"unclosed-bracket\",\"kind\":\"unclosed_bracket\",\"severity\":\"error\",\"source\":\"source\",\"span\":{\"end\":3,\"start\":0}}],\"schemaVersion\":3}\n",
+        ),
+    ] {
+        let capture = ab_aozora_capture::capture_generation_from_bytes(source.as_bytes()).unwrap();
+        assert_eq!(capture.raw_diagnostics, expected.as_bytes());
+        let raw = &capture.raw_diagnostics;
+        assert!(validate_diagnostic_capture(raw, &hash(raw), raw.len() as u64).is_ok());
+    }
+}
+
+#[test]
 fn decoded_source_identity_is_independent_of_work_identity() {
     let source = b"abc".to_vec();
     let record = record_for_work(&source, "000001_1");

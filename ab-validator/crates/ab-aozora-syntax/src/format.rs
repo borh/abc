@@ -734,6 +734,8 @@ pub enum RegionFormat {
     },
     /// 行右 / 行左小書き range.
     SmallScript(BoutenPosition),
+    /// Inline horizontal text within vertical composition.
+    CombineUpright,
     /// 字下げ block (`［＃ここから N字下げ］ …`).
     Indent(IndentBlock),
     /// 地付き / 地から N 字上げ block.
@@ -769,6 +771,7 @@ impl RegionFormat {
             Self::Heading { level, style, .. } => Format::Heading { level, style },
             Self::Bouten { kind, .. } => Format::Bouten(kind),
             Self::SmallScript(p) => Format::SmallScript(p),
+            Self::CombineUpright => Format::CombineUpright,
             Self::Indent(_) => Format::Indent,
             Self::AlignEnd { .. } => Format::AlignEnd,
             Self::LineWidth(_) => Format::LineWidth,
@@ -804,6 +807,7 @@ impl RegionFormat {
             Self::Horizontal => "horizontal",
             Self::FontSize(_) => "fontSize",
             Self::SmallScript(_) => "smallScript",
+            Self::CombineUpright => "combineUprightRange",
             Self::Caption { .. } => "caption",
         }
     }
@@ -828,6 +832,7 @@ impl RegionFormat {
             Self::Horizontal => "horizontal",
             Self::FontSize(_) => "font-size",
             Self::SmallScript(_) => "small-script",
+            Self::CombineUpright => "combine-upright",
             Self::Caption { .. } => "caption",
         }
     }
@@ -847,6 +852,7 @@ impl RegionFormat {
                 | Self::Gothic { padded: false }
                 | Self::Italic { padded: false }
                 | Self::SmallScript(_)
+                | Self::CombineUpright
                 | Self::Caption { padded: false }
         )
     }
@@ -865,7 +871,7 @@ impl RegionFormat {
     /// the payload is irrelevant to the discriminant-only tag projections. Lets
     /// the wire-tag exhaustiveness test and the codegen enumerate the family
     /// list without a hand-maintained parallel.
-    pub const ALL: [Self; 16] = [
+    pub const ALL: [Self; 17] = [
         Self::Indent(IndentBlock {
             amount: 0,
             wrap: None,
@@ -894,6 +900,7 @@ impl RegionFormat {
         Self::Horizontal,
         Self::FontSize(FontShift(NonZeroI8::MIN)),
         Self::SmallScript(BoutenPosition::Right),
+        Self::CombineUpright,
         Self::Caption { padded: false },
     ];
 }
@@ -983,6 +990,8 @@ pub enum RegionClose {
     },
     /// `行右 / 行左小書き終わり`.
     SmallScript(BoutenPosition),
+    /// `縦中横終わり`.
+    CombineUpright,
     /// `キャプション終わり` (`!padded`) / `ここでキャプション終わり` (`padded`).
     Caption {
         /// `true` = `ここで` block close; `false` = inline bare-range close.
@@ -1032,6 +1041,7 @@ impl RegionClose {
                 larger: shift.larger(),
             },
             RegionFormat::SmallScript(side) => Self::SmallScript(side),
+            RegionFormat::CombineUpright => Self::CombineUpright,
             RegionFormat::Caption { padded } => Self::Caption { padded },
         }
     }
@@ -1057,6 +1067,7 @@ impl RegionClose {
             Self::Horizontal => "horizontal",
             Self::FontSize { .. } => "font-size",
             Self::SmallScript(_) => "small-script",
+            Self::CombineUpright => "combine-upright",
             Self::Caption { .. } => "caption",
         }
     }
@@ -1072,6 +1083,7 @@ impl RegionClose {
                 | Self::Gothic { padded: false }
                 | Self::Italic { padded: false }
                 | Self::SmallScript(_)
+                | Self::CombineUpright
                 | Self::Caption { padded: false }
         )
     }
@@ -1100,8 +1112,7 @@ mod tests {
         assert!(size_of::<RegionFormat>() <= 12);
     }
 
-    /// The container-pairs wire tags are pinned: an accidental rename breaks
-    /// this test instead of silently shifting the `SCHEMA_VERSION=1` wire.
+    /// The container-pairs wire tags distinguish region scopes from attributes.
     #[test]
     fn region_format_wire_tags_are_stable() {
         assert_eq!(

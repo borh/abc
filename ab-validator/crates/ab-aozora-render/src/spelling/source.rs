@@ -202,6 +202,7 @@ pub(crate) fn emit_container_open<W: Write>(open: RegionFormat, out: &mut W) -> 
         RegionFormat::Columns(count) => write!(out, "［＃ここから{}段組み］", count.0),
         RegionFormat::Table => out.write_str("［＃ここから表］"),
         RegionFormat::Horizontal => out.write_str("［＃ここから横組み］"),
+        RegionFormat::CombineUpright => out.write_str("［＃縦中横］"),
         RegionFormat::FontSize(shift) => {
             let word = if shift.larger() {
                 "大きな"
@@ -373,6 +374,7 @@ pub(crate) fn emit_container_close<W: Write>(close: RegionClose, out: &mut W) ->
         RegionClose::Columns => out.write_str("［＃ここで段組み終わり］"),
         RegionClose::Table => out.write_str("［＃ここで表終わり］"),
         RegionClose::Horizontal => out.write_str("［＃ここで横組み終わり］"),
+        RegionClose::CombineUpright => out.write_str("［＃縦中横終わり］"),
         RegionClose::FontSize { larger: true } => out.write_str("［＃ここで大きな文字終わり］"),
         RegionClose::FontSize { larger: false } => out.write_str("［＃ここで小さな文字終わり］"),
         RegionClose::SmallScript(side) => {

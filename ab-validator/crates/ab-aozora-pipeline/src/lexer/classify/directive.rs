@@ -96,6 +96,10 @@ enum BodyFamily {
     /// emphasis leaf; `parse_small_script_range_body` reads the full body
     /// for the 右/左 side and open vs close.
     SmallScriptRange,
+    /// Exact scoped TCY opener.
+    CombineUprightOpen,
+    /// Exact scoped TCY closer.
+    CombineUprightClose,
 
     /// キャプション range / block (`キャプション` / `キャプション終わり` inline,
     /// `ここからキャプション` / `ここでキャプション終わり` block).
@@ -161,6 +165,8 @@ const fn body_family_mode(family: BodyFamily) -> MatchMode {
         | BodyFamily::TableBlockEnd
         | BodyFamily::HorizontalBlockOpen
         | BodyFamily::HorizontalBlockEnd
+        | BodyFamily::CombineUprightOpen
+        | BodyFamily::CombineUprightClose
         | BodyFamily::FontSizeBlockEnd
         | BodyFamily::WarichuOpen
         | BodyFamily::WarichuClose
@@ -285,6 +291,14 @@ static BODY_PATTERNS: &[BodyPattern] = &[
     BodyPattern {
         needle: "横組み終わり",
         family: BodyFamily::HorizontalBlockEnd,
+    },
+    BodyPattern {
+        needle: "縦中横",
+        family: BodyFamily::CombineUprightOpen,
+    },
+    BodyPattern {
+        needle: "縦中横終わり",
+        family: BodyFamily::CombineUprightClose,
     },
     // 小書き range: ［＃行右小書き］ … ［＃行右小書き終わり］ (and 行左).
     // LeftmostLongest keeps 行右小書き終わり winning over 行右小書き.
@@ -1341,6 +1355,12 @@ pub(super) fn classify_annotation_body(
                 open_or_close(RegionFormat::SmallScript(side), is_close),
                 None,
             ))
+        }
+        BodyFamily::CombineUprightOpen => {
+            Some((EmitKind::BlockOpen(RegionFormat::CombineUpright), None))
+        }
+        BodyFamily::CombineUprightClose => {
+            Some((EmitKind::BlockClose(RegionClose::CombineUpright), None))
         }
         BodyFamily::CaptionRange => {
             // `キャプション` (inline) / `ここからキャプション` (block) with an

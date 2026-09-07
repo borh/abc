@@ -19,10 +19,13 @@ fn empty_parse_serialises_to_canonical_envelope() {
     assert_eq!(json::pairs(&tree), canonical);
 }
 
-/// Schema version is one. Bumped only when JSON shape changes.
+/// Scoped TCY changes container pairs without changing diagnostics or ruby pairs.
 #[test]
-fn schema_version_is_pinned_to_one() {
-    assert_eq!(json::SCHEMA_VERSION, 3);
+fn envelope_versions_change_independently() {
+    assert_eq!(json::CONTAINER_PAIRS_SCHEMA_VERSION, 4);
+    assert_eq!(json::DIAGNOSTICS_SCHEMA_VERSION, 3);
+    assert_eq!(json::NODES_SCHEMA_VERSION, 3);
+    assert_eq!(json::PAIRS_SCHEMA_VERSION, 3);
 }
 
 /// Severity / source axes are present and correctly classified.

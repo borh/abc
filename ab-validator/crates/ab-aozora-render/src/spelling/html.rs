@@ -483,6 +483,9 @@ fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::R
             writer.write_str(r#"<span class="aozora-kogaki-left">"#)
         }
         RegionFormat::SmallScript(_) => writer.write_str(r#"<span class="aozora-kogaki-right">"#),
+        RegionFormat::CombineUpright => {
+            writer.write_str(r#"<span class="aozora-combine-upright">"#)
+        }
         // Caption: inline `<span>` for the bare range, block `<div>` for ここから.
         RegionFormat::Caption { padded: false } => {
             writer.write_str(r#"<span class="aozora-caption">"#)
@@ -503,7 +506,9 @@ fn render_container_close<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::
             RegionFormat::Bouten { .. } => "</em>",
             RegionFormat::Bold { padded: false } | RegionFormat::Gothic { padded: false } => "</b>",
             RegionFormat::Italic { padded: false } => "</i>",
-            RegionFormat::SmallScript(_) | RegionFormat::Caption { padded: false } => "</span>",
+            RegionFormat::SmallScript(_)
+            | RegionFormat::CombineUpright
+            | RegionFormat::Caption { padded: false } => "</span>",
             _ => "</div>",
         }),
     }

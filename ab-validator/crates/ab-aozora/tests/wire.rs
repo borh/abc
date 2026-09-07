@@ -18,7 +18,7 @@ fn version_carries_the_identity_fields() {
         "ab-aozora 0.6.0",
         "aat-schema 2",
         "facade 0.3.0",
-        "wire-schema 3",
+        "diagnostics-schema 3",
         "git ",
     ] {
         assert!(text.contains(field), "--version missing {field:?}: {text}");

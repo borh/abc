@@ -35,13 +35,10 @@ use ab_aozora_proptest::config::default_config;
 use ab_aozora_proptest::generators::*;
 use proptest::prelude::*;
 
-fn assert_envelope_is_well_formed_json(label: &str, source: &str, json: &str) {
+fn assert_envelope_is_well_formed_json(label: &str, expected: u32, source: &str, json: &str) {
     let parsed: serde_json::Value = serde_json::from_str(json).unwrap_or_else(|e| {
         panic!("{label} envelope is not valid JSON for source {source:?}\n{e}\n---\n{json}")
     });
-    // Envelope shape contract: top-level object with `schemaVersion`
-    // = 1 and a `data` array. A regression that drops either is a
-    // JSON-shape break.
     let obj = parsed.as_object().unwrap_or_else(|| {
         panic!("{label} envelope must be a JSON object for source {source:?}\n---\n{json}")
     });
@@ -53,9 +50,8 @@ fn assert_envelope_is_well_formed_json(label: &str, source: &str, json: &str) {
         });
     assert_eq!(
         u32::try_from(version).ok(),
-        Some(json::SCHEMA_VERSION),
+        Some(expected),
         "{label} envelope schemaVersion drift for source {source:?}: got {version}, expected {expected}",
-        expected = json::SCHEMA_VERSION,
     );
     assert!(
         obj.get("data").is_some_and(serde_json::Value::is_array),
@@ -86,19 +82,29 @@ fn assert_json_round_trip(source: &str) {
 
     // (1) and (2) for each of the four envelope flavours.
     let diags = json::diagnostics(tree.diagnostics());
-    assert_envelope_is_well_formed_json("diagnostics", source, &diags);
+    assert_envelope_is_well_formed_json(
+        "diagnostics",
+        json::DIAGNOSTICS_SCHEMA_VERSION,
+        source,
+        &diags,
+    );
     assert_envelope_round_trips("diagnostics", source, &diags);
 
     let nodes = json::nodes(&tree);
-    assert_envelope_is_well_formed_json("nodes", source, &nodes);
+    assert_envelope_is_well_formed_json("nodes", json::NODES_SCHEMA_VERSION, source, &nodes);
     assert_envelope_round_trips("nodes", source, &nodes);
 
     let pairs = json::pairs(&tree);
-    assert_envelope_is_well_formed_json("pairs", source, &pairs);
+    assert_envelope_is_well_formed_json("pairs", json::PAIRS_SCHEMA_VERSION, source, &pairs);
     assert_envelope_round_trips("pairs", source, &pairs);
 
     let containers = json::container_pairs(&tree);
-    assert_envelope_is_well_formed_json("container_pairs", source, &containers);
+    assert_envelope_is_well_formed_json(
+        "container_pairs",
+        json::CONTAINER_PAIRS_SCHEMA_VERSION,
+        source,
+        &containers,
+    );
     assert_envelope_round_trips("container_pairs", source, &containers);
 }
 

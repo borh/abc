@@ -34,8 +34,8 @@ use ab_aozora_facade::{
 // so the checker's comparison source (`ab-check::body_text`) can never
 // drift from the parser's own cut.
 use ab_aozora_facade::syntax::{
-    AbsoluteSize, BlockStyles, Centering, EnclosureKind, HeadingStyle, IndentLayout, LineFormat,
-    MarginNoteKind, MarginNotePosition,
+    AbsoluteSize, BlockStyles, EnclosureKind, HeadingStyle, IndentLayout, LineAlignment,
+    LineFormat, MarginNoteKind, MarginNotePosition,
     accent::{compose_accent, compose_accent_dots},
     ast::{ContainerEnd, Content, IterationMark, KuntenKind, Ruby, Segment},
 };
@@ -4352,14 +4352,16 @@ fn layout_fields(kind: &ProjectedKind) -> Option<Value> {
             if let Some(wrap) = block.wrap {
                 fields["continuation_indent"] = json!(wrap);
             }
-            match block.center {
-                Some(Centering::Page) => {
-                    fields["page_placement"] = json!("center");
-                }
-                Some(Centering::Line) => {
-                    fields["align"] = json!("center");
-                }
+            if block.page_horizontal_center {
+                fields["page_placement"] = json!("horizontal-center");
+            }
+            match block.align {
+                Some(LineAlignment::Center) => fields["align"] = json!("center"),
+                Some(LineAlignment::Right) => fields["align"] = json!("right"),
                 None => {}
+            }
+            if let Some(offset) = block.end_offset {
+                fields["offset_from_end"] = json!(offset);
             }
             match block.layout {
                 IndentLayout::None => {}
@@ -4385,7 +4387,8 @@ fn layout_fields(kind: &ProjectedKind) -> Option<Value> {
             fields["offset_from_end"] = json!(offset);
         }
         ProjectedKind::Line(LineFormat::Center { page }) => {
-            fields[if *page { "page_placement" } else { "align" }] = json!("center");
+            fields[if *page { "page_placement" } else { "align" }] =
+                json!(if *page { "horizontal-center" } else { "center" });
         }
         ProjectedKind::Line(LineFormat::Indent { amount, end_offset }) => {
             fields["indent"] = json!(amount);

@@ -352,7 +352,9 @@ fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::R
             column_count,
             amount,
             wrap,
-            center,
+            page_horizontal_center,
+            align,
+            end_offset,
             layout,
             styles,
         }) => {
@@ -364,8 +366,17 @@ fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::R
             if wrap.is_some() {
                 writer.write_str(" aozora-container-wrap-indent")?;
             }
-            if center.is_some() {
-                writer.write_str(" aozora-container-center")?;
+            if page_horizontal_center {
+                writer.write_str(" aozora-container-page-horizontal-center")?;
+            }
+            match align {
+                Some(ab_aozora_syntax::LineAlignment::Center) => {
+                    writer.write_str(" aozora-container-center")?;
+                }
+                Some(ab_aozora_syntax::LineAlignment::Right) => {
+                    writer.write_str(" aozora-container-align-right")?;
+                }
+                None => {}
             }
             // secondary line-layout: 字組み grid gets its own class,
             // 字詰め reuses the standalone line-width class (same semantics).
@@ -393,6 +404,12 @@ fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::R
             }
             if let Some(w) = wrap {
                 write!(writer, r#" data-wrap="{w}""#)?;
+            }
+            if let Some(offset) = end_offset {
+                write!(
+                    writer,
+                    r#" data-offset="{offset}" style="padding-inline-end: {offset}em""#
+                )?;
             }
             match layout {
                 IndentLayout::Kumi(kumi) => {

@@ -252,8 +252,8 @@ pub(crate) fn emit_container_open<W: Write>(
 
 /// Serialize a `［＃ここから…字下げ…］` opener from its [`IndentBlock`].
 ///
-/// Built incrementally in a fixed **canonical clause order** (wrap → center →
-/// line-layout → bold → horizontal → framed → font), independent of the source
+/// Built incrementally in a fixed **canonical clause order** (wrap → page placement
+/// → alignment → end margin → line layout → decorative styles), independent of the source
 /// order, so the compound is a 1-pass serialize fixed point. The order and
 /// keywords mirror `render_container_open` and [`BlockStyles::iter_formats`].
 /// The `..`-free destructure means a new [`IndentBlock`] / [`BlockStyles`]
@@ -265,7 +265,9 @@ fn emit_indent_open<W: Write>(block: IndentBlock, store: &NodeStore, out: &mut W
         column_count,
         amount,
         wrap,
-        center,
+        page_horizontal_center,
+        align,
+        end_offset,
         layout,
         styles,
     } = block;
@@ -284,7 +286,9 @@ fn emit_indent_open<W: Write>(block: IndentBlock, store: &NodeStore, out: &mut W
     // single-char indent with no clauses; anything else takes the numbered form.
     let bare = column_count.is_none()
         && wrap.is_none()
-        && center.is_none()
+        && !page_horizontal_center
+        && align.is_none()
+        && end_offset.is_none()
         && matches!(layout, IndentLayout::None)
         && !gothic
         && !horizontal
@@ -298,10 +302,16 @@ fn emit_indent_open<W: Write>(block: IndentBlock, store: &NodeStore, out: &mut W
     if let Some(wrap) = wrap {
         write!(out, "、折り返して{wrap}字下げ")?;
     }
-    match center {
-        Some(ab_aozora_syntax::Centering::Page) => out.write_str("、ページの左右中央に")?,
-        Some(ab_aozora_syntax::Centering::Line) => out.write_str("、中央揃え")?,
+    if page_horizontal_center {
+        out.write_str("、ページの左右中央に")?;
+    }
+    match align {
+        Some(ab_aozora_syntax::LineAlignment::Center) => out.write_str("、中央揃え")?,
+        Some(ab_aozora_syntax::LineAlignment::Right) => out.write_str("、右揃え")?,
         None => {}
+    }
+    if let Some(offset) = end_offset {
+        write!(out, "、地より{offset}字上げ")?;
     }
     match layout {
         IndentLayout::Kumi(kumi) => write!(out, "、{}行{}字組みで", kumi.lines, kumi.width)?,

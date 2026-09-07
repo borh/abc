@@ -110,7 +110,6 @@ fn supplied_unknown_clauses_do_not_erase_indentation() {
     for (amount, clause) in [
         (3, "「甲」は返り点"),
         (5, "ここから数式"),
-        (2, "横組み右揃えで"),
         (5, "本文よりひとまわり大きい太ゴシック体"),
         (4, "破線枠囲み"),
     ] {

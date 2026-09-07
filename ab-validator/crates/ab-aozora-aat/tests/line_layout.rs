@@ -86,7 +86,7 @@ fn page_placement_ends_before_the_real_page_break() {
             serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
         let block = &aat["blocks"][0];
         assert_eq!(block["kind"], "layout_block", "{aat}");
-        assert_eq!(block["page_placement"], "center");
+        assert_eq!(block["page_placement"], "horizontal-center");
         assert!(block.get("align").is_none());
         assert!(block.get("indent").is_none());
         assert!(

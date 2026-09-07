@@ -49,7 +49,7 @@ fn page_placement_and_nested_indentation_are_distinct_scopes() {
     let scopes = ir["layout_blocks"].as_array().unwrap();
     assert_eq!(scopes.len(), 2);
     assert_eq!(scopes[0]["indent"], 3);
-    assert_eq!(scopes[1]["page_placement"], "center");
+    assert_eq!(scopes[1]["page_placement"], "horizontal-center");
     assert!(scopes[1].get("align").is_none());
     assert!(scopes[1].get("indent").is_none());
     assert!(

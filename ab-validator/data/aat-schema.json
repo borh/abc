@@ -279,7 +279,7 @@
         "line_count": {"type":"integer","minimum":1},
         "column_count":{"type":"integer","minimum":1},
         "role":{"const":"table"},
-        "page_placement": {"const":"center"},
+        "page_placement": {"const":"horizontal-center"},
         "direction":{"const":"horizontal"},
         "align":{"enum":["center","right"]},
         "border":{"const":"solid"},

@@ -366,6 +366,13 @@
 .aozora-container-align-end {
   text-align: end;
 }
+.aozora-container-align-right {
+  text-align: right;
+}
+.aozora-container-page-horizontal-center {
+  margin-left: auto;
+  margin-right: auto;
+}
 
 .aozora-align-end {
   display: inline-block;

@@ -638,7 +638,7 @@
                  (get block "border") (conj "border-style: solid"))
         rend (cond-> []
                (get block "typography") (conj (inline-layout-rend (get block "typography")))
-               (get block "page_placement") (conj "page-center")
+               (get block "page_placement") (conj "page-horizontal-center")
                (get block "line_count") (conj (str "line-count(" (get block "line_count") ")")))]
     (cond-> {:type (get block "role" "layout")}
       (source-reference block) (assoc :source (str "#" (source-reference block)))

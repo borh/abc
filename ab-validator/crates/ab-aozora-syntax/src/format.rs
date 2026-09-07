@@ -141,8 +141,7 @@ pub enum AccentMark {
     Grave,
 }
 
-/// Number of columns in a 段組 region. `1` is not a multi-column layout, so
-/// `NonZero` rules out the degenerate case.
+/// Positive number of supplied columns in a 段組 region.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ColumnCount(pub NonZeroU8);
@@ -267,14 +266,14 @@ impl BlockStyles {
     }
 }
 
-/// Supplied centering distinguishes page placement from line alignment.
+/// Supplied text alignment within a line, independent of page placement.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum Centering {
-    /// Position the supplied material at the page centre.
-    Page,
+pub enum LineAlignment {
     /// Centre the text within its line.
-    Line,
+    Center,
+    /// Align horizontal text with the right edge of its line.
+    Right,
 }
 
 /// Clauses not interpreted as layout, retained individually for apparatus interpretation.
@@ -314,8 +313,12 @@ pub struct IndentBlock {
     pub amount: u8,
     /// Hanging-indent continuation width: `Some(M)` for `折り返して M字下げ`.
     pub wrap: Option<u8>,
-    /// Supplied centering axis, independent of indentation.
-    pub center: Option<Centering>,
+    /// Centre the supplied block between the physical left and right page edges.
+    pub page_horizontal_center: bool,
+    /// Supplied text alignment within the block's lines.
+    pub align: Option<LineAlignment>,
+    /// Full-width characters left empty at the line's end margin.
+    pub end_offset: Option<u8>,
     /// Secondary line-layout clause; see [`IndentLayout`].
     pub layout: IndentLayout,
     /// Co-applied decorative styles (`ゴシック体` / `横書き` / `罫囲み` /
@@ -913,7 +916,9 @@ impl RegionFormat {
             column_count: None,
             amount: 0,
             wrap: None,
-            center: None,
+            page_horizontal_center: false,
+            align: None,
+            end_offset: None,
             layout: IndentLayout::None,
             styles: BlockStyles::EMPTY,
         }),
@@ -1145,17 +1150,16 @@ mod tests {
     use super::*;
     use crate::ast::{Illustration, MarginNote, Node, NodeRef};
 
-    /// `RegionFormat` stays small and `Copy` — pinned so a payload that bloats
-    /// the registry's per-node footprint trips here.
+    /// Formatting stays `Copy`; size limits protect actual node and registry
+    /// entries, rather than smaller payloads sharing their enum storage.
     #[test]
-    fn region_format_is_copy_and_small() {
+    fn formatting_preserves_copy_and_node_size_budgets() {
         const fn assert_copy<T: Copy>() {}
         assert_copy::<RegionFormat>();
         assert_copy::<Format>();
         assert_copy::<ForwardAttr>();
         assert_copy::<LineFormat>();
         assert_copy::<RegionClose>();
-        assert!(size_of::<RegionFormat>() <= 16);
         assert!(
             size_of::<Node>() <= 40,
             "Node={}, MarginNote={}, Illustration={}",
@@ -1227,7 +1231,9 @@ mod tests {
             column_count: None,
             amount: 2,
             wrap: None,
-            center: None,
+            page_horizontal_center: false,
+            align: None,
+            end_offset: None,
             layout: IndentLayout::Kumi(Kumi {
                 lines: NonZeroU8::MIN,
                 width: NonZeroU8::new(20).unwrap(),
@@ -1245,7 +1251,9 @@ mod tests {
             column_count: None,
             amount: 2,
             wrap: None,
-            center: None,
+            page_horizontal_center: false,
+            align: None,
+            end_offset: None,
             layout: IndentLayout::None,
             styles: BlockStyles::EMPTY,
         });

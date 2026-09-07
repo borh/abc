@@ -86,8 +86,9 @@ or an inferred transliteration. Unresolved selectors retain explicit uncertainty
 Supplied block geometry retains indentation, continuation indentation, line width,
 and distance from the line end independently. Hanging indentation uses the
 continuation padding and the difference between first and continuation indents.
-TEI retains supplied line counts as `rend="line-count(N)"` and page placement as
-`rend="page-center"`; page placement does not imply centered text alignment.
+TEI retains supplied line counts as `rend="line-count(N)"` and placement between
+the physical left and right page edges as `rend="page-horizontal-center"`.
+Page placement and text alignment remain independent.
 Consecutive indentation instructions replace the preceding indentation scope.
 Page placement ends before the next supplied page break, which remains in TEI.
 

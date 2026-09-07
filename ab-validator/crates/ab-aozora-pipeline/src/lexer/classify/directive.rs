@@ -130,7 +130,7 @@ enum BodyFamily {
     KeigakomiOpen,       // 罫囲み
     KeigakomiClose,      // 罫囲み終わり
     IndentBlock1,        // ここから字下げ → Indent { amount: 1 }
-    PageCenterBlockOpen, // ここからページの左右中央 → Indent { amount: 0, center }
+    PageCenterBlockOpen, // ここからページの左右中央
     AlignEndBlock0,      // ここから地付き → AlignEnd { offset: 0 }
     IndentBlockEnd,      // ここで字下げ終わり
     AlignEndBlockEnd,    // ここで地付き終わり
@@ -1123,7 +1123,9 @@ pub(super) fn classify_annotation_body(
                 column_count: None,
                 amount: 1,
                 wrap: None,
-                center: None,
+                page_horizontal_center: false,
+                align: None,
+                end_offset: None,
                 layout: IndentLayout::None,
                 styles: BlockStyles::EMPTY,
             })),
@@ -1284,7 +1286,9 @@ pub(super) fn classify_annotation_body(
                     column_count: None,
                     amount: 0,
                     wrap: Some(m),
-                    center: None,
+                    page_horizontal_center: false,
+                    align: None,
+                    end_offset: None,
                     layout: IndentLayout::None,
                     styles: BlockStyles::EMPTY,
                 })),
@@ -1313,7 +1317,9 @@ pub(super) fn classify_annotation_body(
                         column_count: None,
                         amount: 0,
                         wrap: Some(m),
-                        center: None,
+                        page_horizontal_center: false,
+                        align: None,
+                        end_offset: None,
                         layout: IndentLayout::None,
                         styles: BlockStyles::EMPTY,
                     })),
@@ -1328,7 +1334,9 @@ pub(super) fn classify_annotation_body(
                         column_count: None,
                         amount: n,
                         wrap: None,
-                        center: None,
+                        page_horizontal_center: false,
+                        align: None,
+                        end_offset: None,
                         layout: IndentLayout::None,
                         styles: BlockStyles::EMPTY,
                     })),
@@ -1849,12 +1857,15 @@ fn parse_indent_compound(
         column_count: None,
         amount,
         wrap: None,
-        center: None,
+        page_horizontal_center: false,
+        align: None,
+        end_offset: None,
         layout: IndentLayout::None,
         styles: BlockStyles::EMPTY,
     };
     let mut wrap = ClauseAxis::Absent;
-    let mut center = ClauseAxis::Absent;
+    let mut align = ClauseAxis::Absent;
+    let mut end_offset = ClauseAxis::Absent;
     let mut layout = ClauseAxis::Absent;
     let mut font = ClauseAxis::Absent;
     let mut columns = ClauseAxis::Absent;
@@ -1865,7 +1876,9 @@ fn parse_indent_compound(
             column_count: None,
             amount,
             wrap: None,
-            center: None,
+            page_horizontal_center: false,
+            align: None,
+            end_offset: None,
             layout: IndentLayout::None,
             styles: BlockStyles::EMPTY,
         };
@@ -1879,9 +1892,10 @@ fn parse_indent_compound(
             let mut problem = None;
             let conflicts = [
                 candidate.wrap.and_then(|value| wrap.observe(value, span)),
+                candidate.align.and_then(|value| align.observe(value, span)),
                 candidate
-                    .center
-                    .and_then(|value| center.observe(value, span)),
+                    .end_offset
+                    .and_then(|value| end_offset.observe(value, span)),
                 (!matches!(candidate.layout, IndentLayout::None))
                     .then(|| layout.observe(candidate.layout, span))
                     .flatten(),
@@ -1902,6 +1916,7 @@ fn parse_indent_compound(
                 }));
             }
             block.styles.gothic |= candidate.styles.gothic;
+            block.page_horizontal_center |= candidate.page_horizontal_center;
             block.styles.horizontal |= candidate.styles.horizontal;
             block.styles.framed |= candidate.styles.framed;
             problem
@@ -1911,7 +1926,8 @@ fn parse_indent_compound(
         }
     }
     block.wrap = wrap.value();
-    block.center = center.value();
+    block.align = align.value();
+    block.end_offset = end_offset.value();
     block.layout = layout.value().unwrap_or(IndentLayout::None);
     block.styles.font = font.value();
     block.column_count = columns.value();
@@ -1973,19 +1989,32 @@ fn resolve_indent_segment(segment: &str, block: &mut IndentBlock) -> Option<()> 
         block.wrap = Some(m);
         return Some(());
     }
-    // ページの左右中央[に] / 左右中央 / 中央揃え — page centring.
+    // Physical page placement does not change text alignment within a line.
     if matches!(
         segment,
-        "ページの左右中央" | "ページの左右中央に" | "左右中央" | "中央揃え"
+        "ページの左右中央" | "ページの左右中央に" | "ページ左右中央" | "左右中央"
     ) {
-        if block.center.is_some() {
+        block.page_horizontal_center = true;
+        return Some(());
+    }
+    if matches!(segment, "中央揃え" | "右揃え" | "横組み右揃えで") {
+        block.align = Some(if segment == "中央揃え" {
+            ab_aozora_syntax::LineAlignment::Center
+        } else {
+            ab_aozora_syntax::LineAlignment::Right
+        });
+        block.styles.horizontal = segment == "横組み右揃えで";
+        return Some(());
+    }
+    if let Some(rest) = segment
+        .strip_prefix("地より")
+        .or_else(|| segment.strip_prefix("地から"))
+    {
+        let (offset, tail) = parse_decimal_u8_prefix(rest)?;
+        if tail != "字上げ" {
             return None;
         }
-        block.center = Some(if segment == "中央揃え" {
-            ab_aozora_syntax::Centering::Line
-        } else {
-            ab_aozora_syntax::Centering::Page
-        });
+        block.end_offset = Some(offset);
         return Some(());
     }
     // {W}字詰め / {L}行{W}字組み[で] — secondary line layout.

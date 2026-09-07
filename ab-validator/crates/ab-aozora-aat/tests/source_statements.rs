@@ -9,6 +9,7 @@ fn source_statements_preserve_assertion_kind_and_exact_marker() {
     for (statement, kind) in [
         ("「註」略", "omission"),
         ("未完", "incompleteness"),
+        ("現代語訳「月は明るい。」", "explanation"),
         (
             "この作品は表題と副題のみで、本文はありません。",
             "explanation",
@@ -99,6 +100,10 @@ fn statement_like_prose_and_unknown_qualifiers_remain_distinct() {
         "［＃「省略」とある］",
         "［＃図省略か］",
         "［＃図が入るが省略。底本不明ページ］",
+        "［＃現代語訳「」］",
+        "［＃現代語訳「月は明るい］",
+        "［＃現代語訳「月は明るい」か］",
+        "［＃「現代語訳」は見出しらしい］",
     ] {
         let aat: Value =
             serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
@@ -110,4 +115,39 @@ fn statement_like_prose_and_unknown_qualifiers_remain_distinct() {
                 .all(|node| node["kind"] != "editorial_note")
         );
     }
+}
+
+#[test]
+fn supplied_translation_preserves_ruby_as_note_content() {
+    let marker = "［＃現代語訳「松籟《しょうらい》を聞かせる。」］";
+    let source = format!("前{marker}後");
+    assert_eq!(Document::new(source.as_str()).parse().to_source(), source);
+    let aat: Value =
+        serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
+    let content = aat["blocks"][0]["content"].as_array().unwrap();
+    let note = content
+        .iter()
+        .find(|node| node["kind"] == "editorial_note")
+        .unwrap();
+    assert_eq!(note["note_kind"], "explanation");
+    let ruby = note["annotation_content"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|node| node["kind"] == "ruby")
+        .unwrap();
+    assert_eq!(ruby["base"], "松籟");
+    assert_eq!(ruby["reading"], "しょうらい");
+    assert_eq!(ruby["span"]["byte_start"], source.find("松籟").unwrap());
+    assert_eq!(content.first().unwrap()["value"], "前");
+    assert_eq!(content.last().unwrap()["value"], "後");
+    assert!(
+        aat["meta"]["interpretation_facts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|fact| fact["kind"] == "editorial-note"
+                && fact["source_span"]["start"] == "前".len()
+                && fact["source_span"]["end"] == "前".len() + marker.len())
+    );
 }

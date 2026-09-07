@@ -1259,6 +1259,34 @@ fn source_inventory_classifies_source_note_labels() {
 }
 
 #[test]
+fn translation_note_family_does_not_claim_a_quoted_heading() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    for text in ["月は明るい。", "松籟《しょうらい》を聞かせる。"] {
+        let source = format!("［＃現代語訳「{text}」］");
+        let summary = inventory_document("fixture", &source, &patterns);
+        assert!(summary.row_counts.contains_key("annotation.chuuki"));
+        assert!(
+            !summary
+                .row_counts
+                .contains_key("source.reviewed_residual_command")
+        );
+    }
+    let summary = inventory_document(
+        "fixture",
+        "［＃「現代語訳　雨月物語」は大見出し］",
+        &patterns,
+    );
+    assert!(summary.row_counts.contains_key("heading.basic"));
+    assert!(
+        summary
+            .row_counts
+            .contains_key("source.reviewed_residual_command")
+    );
+    assert!(!summary.row_counts.contains_key("annotation.chuuki"));
+}
+
+#[test]
 fn source_inventory_classifies_residual_source_label_gloss_notes() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     let patterns = patterns_from_rows(matrix.rows());
@@ -1636,7 +1664,7 @@ fn source_inventory_classifies_source_authority_remaining_command_batch() {
             .row_counts
             .get("source.reviewed_residual_command")
             .map(|count| count.occurrences),
-        Some(38)
+        Some(37)
     );
 }
 

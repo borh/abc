@@ -974,7 +974,15 @@ pub(crate) fn prewarm() {
 /// here. The note does not restyle its target, so the caller leaves X in
 /// the text and consumes only the bracket.
 pub(super) fn editorial_note_kind(body: &str) -> Option<DirectiveKind> {
-    if body == "ママ" || body.ends_with("はママ") || body == "底本のまま" {
+    if body
+        .strip_prefix("現代語訳「")
+        .and_then(|text| text.strip_suffix('」'))
+        .is_some_and(|text| {
+            !text.is_empty() && !text.contains(['「', '」', '［', '］', '\r', '\n'])
+        })
+    {
+        Some(DirectiveKind::ExplanationNote)
+    } else if body == "ママ" || body.ends_with("はママ") || body == "底本のまま" {
         Some(DirectiveKind::Sic)
     } else if body.contains("底本では") || body.contains("初出では") {
         // Checked before EditorNote so a 底本 correction that happens to cite a

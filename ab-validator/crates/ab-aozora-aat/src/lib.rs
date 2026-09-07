@@ -2773,8 +2773,22 @@ fn directive_node(decoded: &DecodedSource, node: &AozoraNode, kind: DirectiveKin
                 .and_then(|body| body.strip_suffix(']'))
         })
         .expect("classified source statement retains its delimiters");
-    json!({"kind":"editorial_note", "note_kind":note_kind, "text":text.trim(),
-        "span":span_json(&node.span, &decoded.span_ctx)})
+    let mut statement = json!({"kind":"editorial_note", "note_kind":note_kind, "text":text.trim(),
+        "span":span_json(&node.span, &decoded.span_ctx)});
+    if kind == DirectiveKind::ExplanationNote {
+        let start = node.span.start + text.as_ptr().addr() - raw.as_ptr().addr();
+        let Some(content) = source_fragment(decoded, start..start + text.len()) else {
+            return raw_node(decoded, node, node.kind.as_str());
+        };
+        if content.iter().any(|child| child["kind"] != "text") {
+            statement
+                .as_object_mut()
+                .expect("editorial note is an object")
+                .remove("text");
+            statement["annotation_content"] = json!(content);
+        }
+    }
+    statement
 }
 
 #[allow(

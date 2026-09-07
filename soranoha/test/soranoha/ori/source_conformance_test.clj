@@ -1177,3 +1177,13 @@
       (is (not (string/includes? (:tei result) "small-script")))
       (is (= 2 (count (filter #(= kind (get % "kind")) (get-in result [:ir "interpretation_facts"])))))
       (is (empty? (get-in result [:ir "interpretation_problems"]))))))
+
+(deftest supplied-modern-translation-remains-rich-apparatus
+  (let [result (transcribe (source "前［＃現代語訳「松籟《しょうらい》を聞かせる。」］後"))
+        note (first (filter #(= "explanation" (attribute % "type")) (elements result "note")))]
+    (is (= "前後" (:plaintext result)))
+    (is (= "前後" (projection/markdown (:view result))))
+    (is (= ["松籟"] (texts result "rb")))
+    (is (= ["しょうらい"] (texts result "rt")))
+    (is (= "現代語訳「松籟しょうらいを聞かせる。」" (.getTextContent ^Node note)))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))

@@ -516,6 +516,19 @@
       (is (= "本文\n後" (:plaintext result)))
       (is (empty? (get-in result [:ir "interpretation_problems"]))))))
 
+(deftest compound-layout-keeps-page-placement-independent-of-line-alignment
+  (doseq [[clauses style placement]
+          [["地より１字上げ" "padding-inline-start: 3em; padding-inline-end: 1em" nil]
+           ["横組み右揃えで" "padding-inline-start: 3em; writing-mode: horizontal-tb; text-align: right" nil]
+           ["ページの左右中央、中央揃え" "padding-inline-start: 3em; text-align: center" "page-horizontal-center"]
+           ["ページの左右中央" "padding-inline-start: 3em" "page-horizontal-center"]]]
+    (let [result (transcribe (source (str "［＃ここから３字下げ、" clauses "］\n本文\n［＃ここで字下げ終わり］\n後")))
+          scope (first (filter #(= style (attribute % "style")) (elements result "div")))]
+      (is (some? scope))
+      (is (= (or placement "") (attribute scope "rend")))
+      (is (= "本文\n後" (:plaintext result)))
+      (is (empty? (get-in result [:ir "interpretation_problems"]))))))
+
 (deftest multiline-typography-preserves-source-paragraph-boundaries
   (let [result (transcribe (source "前。\n［＃ここから１段階小さな文字］\n第一。\n第二。\n［＃ここで小さな文字終わり］\n後。"))
         wrapper (first (filter #(= "font-size small(1)" (attribute % "rend")) (elements result "div")))

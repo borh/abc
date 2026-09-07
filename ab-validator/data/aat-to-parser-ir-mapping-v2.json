@@ -1,6 +1,6 @@
 {
   "mapping_id": "https://w3id.org/abc/mappings/aat-v2-to-parser-ir-v1/generated-probe",
-  "mapping_version": "0.25.0",
+  "mapping_version": "0.26.0",
   "mapping_schema_hash": "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2",
   "source_aat_version": 2,
   "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",

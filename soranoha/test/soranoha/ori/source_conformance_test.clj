@@ -484,3 +484,12 @@
     (is (= "出来ない。後。" (:plaintext result)))
     (is (= "omission" (attribute alternative "subtype")))
     (is (= "" (.getTextContent ^Node alternative)))))
+
+(deftest retrospective-formatting-keeps-kunten-out-of-the-body-reading
+  (let [result (transcribe (source "野［＃（ノ）］宮ごもり［＃「野［＃（ノ）］宮ごもり」に傍線］"))
+        note (first (filter #(= "kunten" (attribute % "type")) (elements result "note")))
+        emphasis (first (elements result "hi"))]
+    (is (= "野宮ごもり" (:plaintext result)))
+    (is (= "ノ" (.getTextContent ^Node note)))
+    (is (within? emphasis note))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))

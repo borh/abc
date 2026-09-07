@@ -972,7 +972,7 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
             {
                 Some(EstablishedInterpretation::Emphasis)
             }
-            Some("formatting" | "font_size" | "small_script") if has_content => {
+            Some("formatting" | "font_size" | "small_script" | "tcy") if has_content => {
                 Some(EstablishedInterpretation::Emphasis)
             }
             Some("warichu" | "warichu_block") => Some(EstablishedInterpretation::Warichu),
@@ -1951,9 +1951,9 @@ fn rebase_variant_spans(kind: &mut ProjectedKind, offset: usize) {
     }
 }
 
-// Quoted witness fragments use the native inline interpreter with the same
-// source mapping as the enclosing document, restricted to their exact extent.
-fn variant_fragment(decoded: &DecodedSource, range: Range<usize>) -> Option<Vec<Value>> {
+// Source fragments reuse the native inline interpreter, restricted to their
+// exact extent and mapped onto the enclosing document’s decoded coordinates.
+fn source_fragment(decoded: &DecodedSource, range: Range<usize>) -> Option<Vec<Value>> {
     let (mut nodes, _diagnostics, mut gaiji, mut ruby, accents) =
         projections(decoded.span_text.get(range.clone())?).ok()?;
     if !accents.is_empty() {
@@ -1966,6 +1966,10 @@ fn variant_fragment(decoded: &DecodedSource, range: Range<usize>) -> Option<Vec<
             marker.start += range.start;
             marker.end += range.start;
         }
+        if let Some(close) = &mut node.container_close {
+            close.start += range.start;
+            close.end += range.start;
+        }
         rebase_variant_spans(&mut node.kind, range.start);
     }
     for entry in &mut gaiji {
@@ -1975,6 +1979,16 @@ fn variant_fragment(decoded: &DecodedSource, range: Range<usize>) -> Option<Vec<
     for entry in &mut ruby {
         entry.span.start += range.start;
         entry.span.end += range.start;
+        if let Some((base, reading)) = &mut entry.windows {
+            base.start += range.start;
+            base.end += range.start;
+            reading.start += range.start;
+            reading.end += range.start;
+        }
+        for mark in &mut entry.annotations {
+            mark.span.start += range.start;
+            mark.span.end += range.start;
+        }
     }
     let gaiji = gaiji
         .into_iter()
@@ -2052,9 +2066,6 @@ fn inline_content_range(
                     node,
                     if kind.is_line() { "bosen" } else { "bouten" },
                 );
-            }
-            ProjectedKind::Format(ForwardAttr::CombineUpright) => {
-                content.push(tcy_node(decoded, node));
             }
             ProjectedKind::Format(_) | ProjectedKind::FormatMany(_) => {
                 push_style_node(&mut content, decoded, node, "emphasis");
@@ -2672,13 +2683,7 @@ fn push_style_node(
 ) {
     let mut style = style_node(decoded, node, style_type);
     if let ProjectedKind::FormatMany(attrs) = &node.kind {
-        let fields: Option<Vec<_>> = attrs
-            .iter()
-            .map(|attr| match attr {
-                ForwardAttr::CombineUpright => Some(json!({"kind":"tcy"})),
-                other => formatting_fields(*other),
-            })
-            .collect();
+        let fields: Option<Vec<_>> = attrs.iter().map(|attr| formatting_fields(*attr)).collect();
         if let Some(fields) = fields {
             style["kind"] = json!("formatting");
             style
@@ -2876,7 +2881,7 @@ fn target_text(node: &Value) -> Option<Cow<'_, str>> {
         "text" => Some(Cow::Borrowed(node["value"].as_str()?)),
         "ruby" => Some(Cow::Borrowed(node["base"].as_str()?)),
         "gaiji" => Some(Cow::Borrowed(node["resolved"].as_str()?)),
-        "editorial_note" => Some(Cow::Borrowed("")),
+        "editorial_note" | "kunten" => Some(Cow::Borrowed("")),
         "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi"
         | "yokogumi" | "fraction" | "text-variant" => {
             let mut text = String::new();
@@ -2930,7 +2935,9 @@ fn quoted_structure_matches(quoted: &[Value], actual: &[Value]) -> bool {
                         ) && !key.starts_with("x-")
                     });
                     output.push((start, end, Value::Object(identity)));
-                    marks(node["content"].as_array()?, offset, output)?;
+                    if let Some(children) = node["content"].as_array() {
+                        marks(children, offset, output)?;
+                    }
                 }
             }
             *offset = end;
@@ -3010,40 +3017,23 @@ fn take_visible_suffix_matching(
 }
 
 fn style_node(decoded: &DecodedSource, node: &AozoraNode, style_type: &str) -> Value {
-    let source = source_slice(&decoded.span_text, &node.span);
+    let content = node
+        .marker_span
+        .as_ref()
+        .filter(|marker| node.span.start < marker.start)
+        .and_then(|marker| source_fragment(decoded, node.span.start..marker.start))
+        .unwrap_or_default();
     json!({
         "kind": "style",
         "style_type": style_type,
-        "content": annotation_content(source),
+        "content": content,
         "span": span_json(&node.span, &decoded.span_ctx)
     })
-}
-
-fn tcy_node(decoded: &DecodedSource, node: &AozoraNode) -> Value {
-    let source = source_slice(&decoded.span_text, &node.span);
-    json!({
-        "kind": "tcy",
-        "content": annotation_content(source),
-        "span": span_json(&node.span, &decoded.span_ctx)
-    })
-}
-
-/// Content for a style/tcy annotation node. When the node span covers the
-/// target text plus its marker, the quoted target is the node's one copy
-/// of that text. A span that starts at the marker itself (the tree
-/// anchors there when the target contains a ruby/gaiji and was already
-/// emitted as its own nodes) contributes no new text. The style caller
-/// adopts those existing nodes when their visible suffix matches the target.
-fn annotation_content(source: &str) -> Vec<Value> {
-    if source.starts_with("［＃") || source.starts_with("[#") {
-        return Vec::new();
-    }
-    let text = marker_target(source).unwrap_or(source);
-    vec![json!({"kind": "text", "value": text})]
 }
 
 fn formatting_fields(attr: ForwardAttr) -> Option<Value> {
     Some(match attr {
+        ForwardAttr::CombineUpright => json!({"kind":"tcy"}),
         ForwardAttr::Framed(kind) => json!({"kind":"keigakomi", "border":enclosure_kind(kind)}),
         ForwardAttr::Horizontal => json!({"kind":"yokogumi"}),
         ForwardAttr::Fraction => json!({"kind":"fraction"}),
@@ -3186,12 +3176,12 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
         if let Some(statement) = editorial_statement {
             value["text_variant"]["editorial_statement"] = json!(statement);
         }
-        if let Some(current_content) = variant_fragment(decoded, current_span.clone()) {
+        if let Some(current_content) = source_fragment(decoded, current_span.clone()) {
             value["text_variant"]["current_content"] = json!(current_content);
         }
         let base_content = base_span.as_ref().map_or_else(
             || Some(Vec::new()),
-            |range| variant_fragment(decoded, range.clone()),
+            |range| source_fragment(decoded, range.clone()),
         );
         if let Some(base_content) = base_content {
             value["text_variant"]["base_content"] = json!(base_content);

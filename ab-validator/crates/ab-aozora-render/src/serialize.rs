@@ -244,6 +244,7 @@ fn emit_content_one<W: Write>(c: Content, store: &NodeStore, out: &mut W) -> fmt
                     Segment::Directive { value, .. } => {
                         out.write_str(store.resolve_str(value.raw))?;
                     }
+                    Segment::Format { value, .. } => emit_format(&value, store, out)?,
                     Segment::Kunten { value, .. } => emit_kunten(value, store, out)?,
                     Segment::IterationMark { value, .. } => out.write_str(value.source())?,
                     // `Segment` is `#[non_exhaustive]`; forward-compat skip.
@@ -287,6 +288,7 @@ pub(crate) fn emit_content_as_plain_one<W: Write>(
                     Segment::Directive { value, .. } => {
                         out.write_str(store.resolve_str(value.raw))?;
                     }
+                    Segment::Format { value, .. } => emit_format(&value, store, out)?,
                     Segment::Kunten { value, .. } => emit_kunten(value, store, out)?,
                     Segment::IterationMark { value, .. } => out.write_str(value.source())?,
                     // `Segment` is `#[non_exhaustive]`; forward-compat skip.

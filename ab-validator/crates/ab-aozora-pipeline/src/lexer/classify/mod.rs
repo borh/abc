@@ -1417,18 +1417,19 @@ where
             push_text_segment(&mut segs, self.source, prefix.start..prefix.end, self.alloc);
         }
         let mut previous_end = None;
-        for gaiji in &pending.segs {
-            if let Some(start) = previous_end.filter(|start| *start < gaiji.span.source_span.start)
+        for segment in &pending.segs {
+            if let Some(start) =
+                previous_end.filter(|start| *start < segment.span.source_span.start)
             {
                 push_text_segment(
                     &mut segs,
                     self.source,
-                    start..gaiji.span.source_span.start,
+                    start..segment.span.source_span.start,
                     self.alloc,
                 );
             }
-            segs.push(gaiji.payload);
-            previous_end = Some(gaiji.span.source_span.end);
+            segs.push(segment.payload);
+            previous_end = Some(segment.span.source_span.end);
         }
         if pending.end() < open_span.start {
             push_text_segment(
@@ -1647,7 +1648,7 @@ where
         let decoration = ctx.pending_decoration.take();
         if !matches!(
             m.emit,
-            EmitKind::Aozora(Node::Kunten(_) | Node::Directive(_))
+            EmitKind::Aozora(Node::Kunten(_) | Node::Directive(_) | Node::Format(_))
         ) && let Some(pending) = self.pending_ruby_base.take()
         {
             self.emit_pending_base(pending);
@@ -1714,6 +1715,10 @@ where
 
     fn defer_explicit_base_annotation(&mut self, span: &ClassifiedSpan) -> bool {
         let payload = match span.kind {
+            SpanKind::Aozora(Node::Format(value)) => Segment::Format {
+                value,
+                source_span: span.source_span,
+            },
             SpanKind::Aozora(Node::Kunten(value)) => Segment::Kunten {
                 value,
                 source_span: span.source_span,
@@ -1873,18 +1878,19 @@ where
             });
         }
         let mut previous_end = None;
-        for gaiji in pending.segs {
-            if let Some(start) = previous_end.filter(|start| *start < gaiji.span.source_span.start)
+        for segment in pending.segs {
+            if let Some(start) =
+                previous_end.filter(|start| *start < segment.span.source_span.start)
             {
                 self.push_output(ClassifiedSpan {
                     kind: SpanKind::Plain(PlainSpan {
                         provenance: PlainProvenance::Text,
                     }),
-                    source_span: Span::new(start, gaiji.span.source_span.start),
+                    source_span: Span::new(start, segment.span.source_span.start),
                 });
             }
-            previous_end = Some(gaiji.span.source_span.end);
-            self.push_output(gaiji.span);
+            previous_end = Some(segment.span.source_span.end);
+            self.push_output(segment.span);
         }
     }
 

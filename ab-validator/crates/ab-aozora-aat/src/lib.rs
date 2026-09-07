@@ -385,8 +385,15 @@ struct LocatedAnnotation {
 #[derive(Debug, Clone)]
 enum NestedAnnotation {
     IterationMark(IterationMark),
-    Kunten { kind: KuntenKind, text: String },
+    Kunten {
+        kind: KuntenKind,
+        text: String,
+    },
     Directive(DirectiveKind),
+    Format {
+        attrs: Vec<ForwardAttr>,
+        marker: Option<Span>,
+    },
 }
 
 fn project_text_variant(kind: ProjectedKind, source: &str, span: Span) -> ProjectedKind {
@@ -586,7 +593,6 @@ fn ruby_projection(tree: &LexOutput) -> Result<Vec<AozoraRubyEntry>> {
     let pairs: BTreeMap<_, _> = tree
         .pairs
         .iter()
-        .filter(|pair| pair.kind == ab_aozora_facade::PairKind::Ruby)
         .map(|pair| (pair.close.end, pair))
         .collect();
     for source_node in &tree.source_nodes {
@@ -613,6 +619,19 @@ fn ruby_projection(tree: &LexOutput) -> Result<Vec<AozoraRubyEntry>> {
                     payload: NestedAnnotation::Kunten {
                         kind: value.kind,
                         text: store.resolve_str(value.text).to_owned(),
+                    },
+                }),
+                Segment::Format { value, source_span } => Some(LocatedAnnotation {
+                    span: (*source_span).into(),
+                    payload: NestedAnnotation::Format {
+                        attrs: store.resolve_forward_attrs(&value.attrs).to_vec(),
+                        marker: pairs
+                            .get(&source_span.end)
+                            .filter(|pair| pair.kind == ab_aozora_facade::PairKind::Bracket)
+                            .map(|pair| Span {
+                                start: pair.open.start as usize,
+                                end: pair.close.end as usize,
+                            }),
                     },
                 }),
                 Segment::Directive { value, source_span } => Some(LocatedAnnotation {
@@ -2635,7 +2654,26 @@ fn source_segments(
             if mark.span.end <= cursor || mark.span.end > end {
                 return None;
             }
+            if let NestedAnnotation::Format { attrs, marker } = &mark.payload {
+                let kind = match attrs.as_slice() {
+                    [attr] => ProjectedKind::Format(*attr),
+                    _ => ProjectedKind::FormatMany(attrs.clone()),
+                };
+                let node = AozoraNode {
+                    kind,
+                    span: mark.span,
+                    marker_span: *marker,
+                    container_end: None,
+                    unresolved_layout: None,
+                };
+                push_style_node(&mut content, decoded, &node, "emphasis");
+                resolved_text = content_target_text(&content);
+                marker_count += 1;
+                cursor = mark.span.end;
+                continue;
+            }
             content.push(match &mark.payload {
+                NestedAnnotation::Format { .. } => unreachable!("formatting handled above"),
                 NestedAnnotation::IterationMark(value) => {
                     if let Some(text) = &mut resolved_text {
                         text.push(value.character());

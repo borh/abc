@@ -52,6 +52,13 @@ pub enum Segment {
         /// Annotation extent in sanitized UTF-8 source bytes.
         source_span: crate::Span,
     },
+    /// Supplied formatting over its established target within rich content.
+    Format {
+        /// Native formatting attributes and target content.
+        value: ForwardFormat,
+        /// Target and directive extent in sanitized UTF-8 source bytes.
+        source_span: crate::Span,
+    },
     /// Supplied kunten at its native sanitized UTF-8 source coordinates.
     Kunten {
         /// Supplied mark or okurigana, without a derived reading order.

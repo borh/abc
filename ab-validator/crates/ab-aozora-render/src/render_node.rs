@@ -103,6 +103,7 @@ fn render_content_one<W: Write>(c: Content, store: &NodeStore, out: &mut W) -> f
                     Segment::Text(id) => escape_text(store.resolve_str(id), out)?,
                     Segment::Gaiji(g) => render_gaiji(&g, store, out)?,
                     Segment::Directive { value, .. } => render_annotation(value, store, out)?,
+                    Segment::Format { value, .. } => render_format(&value, store, out)?,
                     Segment::Kunten { value, .. } => render_kunten(value, store, out)?,
                     Segment::IterationMark { value, .. } => out.write_char(value.character())?,
                     // `Segment` is `#[non_exhaustive]`; forward-compat skip.

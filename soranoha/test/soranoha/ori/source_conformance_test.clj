@@ -626,3 +626,18 @@
     (is (string/includes? (.getTextContent ^Node description) "漢"))
     (is (string/includes? (.getTextContent ^Node description) "かん"))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest explicit-ruby-base-preserves-internal-formatting
+  (doseq [[body base styled]
+          [["｜宜引［＃「引」は小書き右寄せ］縞《いいしま》" "宜引縞" "引"]
+           ["｜羯阿［＃「阿」は一段階小さな文字］迦《ぎゃあぎあ》" "羯阿迦" "阿"]
+           ["｜咳［＃「咳」は罫囲み］声《しわぶき》" "咳声" "咳"]]]
+    (let [result (transcribe (source body))
+          base-node (first (elements result "rb"))
+          style (first (filter #(= styled (view/visible-text %)) (elements result "hi")))]
+      (is (= base (:plaintext result)))
+      (is (= [base] (texts result "rb")))
+      (is (within? base-node style))
+      (is (empty? (get-in result [:ir "interpretation_problems"])))
+      (is (some #(= "ruby" (get % "kind"))
+                (get-in result [:ir "interpretation_facts"]))))))

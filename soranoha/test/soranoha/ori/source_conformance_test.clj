@@ -72,6 +72,18 @@
     (is (seq (get-in result [:view :view/eligible-spans])))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
 
+(deftest normalized-and-warichu-variants-preserve-the-principal-stream
+  (doseq [[body plain supplied witness]
+          [["前〔Annette von Droste=Hu:lshoff［＃「Hu:lshoff」は底本では「Hu:lshoffs」］〕後"
+            "前Annette von Droste=Hülshoff後" "Hülshoff" "Hülshoffs"]
+           ["（［＃割り注］「前篇」の「五　インド征服」［＃割り注終わり］）［＃「（［＃割り注］「前篇」の「五　インド征服」［＃割り注終わり］）」は底本では「（［＃割り注］五一頁参照［＃割り注終わり］）」］"
+            "（「前篇」の「五　インド征服」）" "（「前篇」の「五　インド征服」）" "（五一頁参照）"]]]
+    (let [result (transcribe (source body))]
+      (is (= plain (:plaintext result)))
+      (is (= [supplied] (texts result "lem")))
+      (is (= [witness] (texts result "rdg")))
+      (is (empty? (get-in result [:ir "interpretation_problems"]))))))
+
 (deftest supplied-table-retains-lines-and-literal-separators
   (let [result (transcribe (source "［＃ここから表］\n人口の表\n年次／出生／死亡\n一七五七年／八一八七八／六九〇五四\n［＃ここで表終わり］"))
         table (first (filter #(= "table" (attribute % "type")) (elements result "div")))]

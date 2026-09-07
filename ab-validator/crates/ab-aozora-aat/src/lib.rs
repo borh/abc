@@ -1709,9 +1709,9 @@ fn build_aat(
             decoded,
             nodes,
         ),
-        &decoded.text,
+        decoded,
     ));
-    blocks = resolve_text_variants_in_blocks(blocks, &decoded.text);
+    blocks = resolve_text_variants_in_blocks(blocks, decoded);
     let mut warnings = diagnostics
         .iter()
         .map(|diagnostic| diagnostic_warning(diagnostic, &decoded.span_ctx))
@@ -1914,7 +1914,8 @@ fn source_note_block(content: Vec<Value>, region_class: &str) -> Value {
     clippy::too_many_lines,
     reason = "classifier precedence determines which block consumes each source marker"
 )]
-fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
+fn blocks_from_inline_content(content: Vec<Value>, decoded: &DecodedSource) -> Vec<Value> {
+    let source = decoded.text.as_str();
     let native_scopes = native_scope_pairs(&content);
     let source_positions: BTreeMap<_, _> = content
         .iter()
@@ -2011,7 +2012,7 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
                 "span":{"byte_start":node["span"]["byte_start"], "byte_end":content[close_index]["span"]["byte_end"],
                     "line_start":node["span"]["line_start"], "line_end":content[close_index]["span"]["line_end"]},
                 "interpretation_marker_spans":[node["span"],content[close_index]["span"]],
-                "children":blocks_inside_native_scope(inner, source, &content[close_index])
+                "children":blocks_inside_native_scope(inner, decoded, &content[close_index])
             });
             blocks.push(container);
             strip_next_leading_newline = marker_ends_source_line(&content[close_index], source);
@@ -2070,9 +2071,9 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
                 let mut block = layout.clone();
                 block["kind"] = json!("layout_block");
                 let mut children = if explicit_close {
-                    blocks_inside_native_scope(inner, source, &content[boundary])
+                    blocks_inside_native_scope(inner, decoded, &content[boundary])
                 } else {
-                    blocks_from_inline_content(inner, source)
+                    blocks_from_inline_content(inner, decoded)
                 };
                 let annotations = node["x-layout-annotations"].as_array();
                 let unresolved =
@@ -2117,7 +2118,7 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
         }
 
         if is_heading_hint_raw(&node)
-            && let Some(heading) = heading_block_from_hint(&mut paragraph, &node, source)
+            && let Some(heading) = heading_block_from_hint(&mut paragraph, &node, decoded)
         {
             if heading["style"] == "normal" {
                 push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
@@ -2162,14 +2163,18 @@ fn marker_ends_source_line(node: &Value, source: &str) -> bool {
 
 /// Share the actual ending event only with inner scopes that native pairing
 /// established at that same source marker.
-fn blocks_inside_native_scope(mut content: Vec<Value>, source: &str, close: &Value) -> Vec<Value> {
+fn blocks_inside_native_scope(
+    mut content: Vec<Value>,
+    decoded: &DecodedSource,
+    close: &Value,
+) -> Vec<Value> {
     if content
         .iter()
         .any(|node| node.get("x-native-close-span") == close.get("span"))
     {
         content.push(close.clone());
     }
-    blocks_from_inline_content(content, source)
+    blocks_from_inline_content(content, decoded)
 }
 
 /// Resolve native-established scope extents against this source-node sequence.
@@ -2326,13 +2331,13 @@ fn is_heading_hint_raw(node: &Value) -> bool {
 fn heading_block_from_hint(
     paragraph: &mut Vec<Value>,
     node: &Value,
-    decoded_source: &str,
+    decoded: &DecodedSource,
 ) -> Option<Value> {
     let source = node.get("source").and_then(Value::as_str)?;
     let (target, directive) = source.strip_prefix("［＃「")?.rsplit_once("」は")?;
     let level = heading_level(directive);
     let style = heading_style(directive);
-    let heading_content = take_visible_suffix(paragraph, target, decoded_source)?;
+    let heading_content = take_visible_suffix(paragraph, target, decoded)?;
     let indent = paragraph.last().and_then(heading_indent_marker);
     if indent.is_some() {
         paragraph.pop();
@@ -2713,7 +2718,7 @@ fn push_inline_heading(content: &mut Vec<Value>, decoded: &DecodedSource, node: 
     else {
         return;
     };
-    if let Some(children) = take_visible_suffix(content, target, &decoded.text) {
+    if let Some(children) = take_visible_suffix(content, target, decoded) {
         content.push(heading_from_content(
             children,
             &span_json(&node.span, &decoded.span_ctx),
@@ -3379,7 +3384,7 @@ fn push_concealment(content: &mut Vec<Value>, decoded: &DecodedSource, node: &Ao
         _ => unreachable!("concealment projection"),
     };
     if let Some((target, note_kind, gap)) = supplied
-        && let Some(children) = take_visible_suffix(content, target, &decoded.text)
+        && let Some(children) = take_visible_suffix(content, target, decoded)
     {
         content.push(json!({"kind":"annotated_text", "content":children,
                 "annotation_content":[gap], "note_kind":note_kind,
@@ -3503,7 +3508,7 @@ fn push_annotated_text(content: &mut Vec<Value>, decoded: &DecodedSource, node: 
     let children = if node.span.start < marker.start {
         parsed_source_fragment(decoded, node.span.start..marker.start)
     } else {
-        take_visible_suffix(content, target, &decoded.text)
+        take_visible_suffix(content, target, decoded)
     };
     if let (Some(children), Some(annotation)) = (&children, &annotation)
         && (source_owned || content_target_text(children).as_deref() == Some(target))
@@ -3709,8 +3714,7 @@ fn push_style_node(
         && let Some(target) = node.target_quote
         && let Some(quoted) = source_fragment(decoded, target.start..target.end)
         && let Some(text) = content_target_text(&quoted)
-        && let Some(children) =
-            take_visible_suffix_matching(content, &text, &decoded.text, Some(&quoted))
+        && let Some(children) = take_visible_suffix_matching(content, &text, decoded, Some(&quoted))
     {
         style["span"]["byte_start"] = children[0]["span"]["byte_start"].clone();
         style["span"]["line_start"] = children[0]["span"]["line_start"].clone();
@@ -3778,7 +3782,8 @@ fn push_style_node(
 
 // Resolve quoted targets after scopes are assembled, while source lines and
 // typed principal/reading contributions remain available in one representation.
-fn resolve_text_variants_in_blocks(nodes: Vec<Value>, source: &str) -> Vec<Value> {
+fn resolve_text_variants_in_blocks(nodes: Vec<Value>, decoded: &DecodedSource) -> Vec<Value> {
+    let source = decoded.text.as_str();
     let mut resolved = Vec::with_capacity(nodes.len());
     for mut node in nodes {
         for key in [
@@ -3791,7 +3796,7 @@ fn resolve_text_variants_in_blocks(nodes: Vec<Value>, source: &str) -> Vec<Value
             "annotation_content",
         ] {
             if let Some(children) = node.get_mut(key).and_then(Value::as_array_mut) {
-                *children = resolve_text_variants_in_blocks(mem::take(children), source);
+                *children = resolve_text_variants_in_blocks(mem::take(children), decoded);
             }
         }
         if let Some(variant) = node.get("text_variant")
@@ -3806,7 +3811,7 @@ fn resolve_text_variants_in_blocks(nodes: Vec<Value>, source: &str) -> Vec<Value
                 if let Some(children) = take_visible_suffix_matching(
                     &mut resolved,
                     &current_text,
-                    source,
+                    decoded,
                     Some(current),
                 ) {
                     resolved.push(json!({"kind":"text-variant", "content":children,
@@ -4103,7 +4108,7 @@ fn fragment_text(node: &Value, glyph: GlyphRealization) -> Option<Cow<'_, str>> 
         "iteration-mark" | "supplied-diacritic" => Some(Cow::Borrowed(node["text"].as_str()?)),
         "editorial_note" | "kunten" | "figure" => Some(Cow::Borrowed("")),
         "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi"
-        | "yokogumi" | "fraction" | "text-variant" | "annotated_text" | "heading" => {
+        | "yokogumi" | "fraction" | "warichu" | "text-variant" | "annotated_text" | "heading" => {
             let mut text = String::new();
             for child in node["content"].as_array()? {
                 text.push_str(&fragment_text(child, glyph)?);
@@ -4192,14 +4197,65 @@ fn quoted_structure_matches(quoted: &[Value], actual: &[Value]) -> bool {
         && quoted_marks.iter().all(|mark| actual_marks.contains(mark))
 }
 
-fn take_visible_suffix(content: &mut Vec<Value>, target: &str, source: &str) -> Option<Vec<Value>> {
-    take_visible_suffix_matching(content, target, source, None)
+fn take_visible_suffix(
+    content: &mut Vec<Value>,
+    target: &str,
+    decoded: &DecodedSource,
+) -> Option<Vec<Value>> {
+    take_visible_suffix_matching(content, target, decoded, None)
+}
+
+fn partition_offset(limit: usize, before: impl Fn(usize) -> bool) -> usize {
+    let (mut low, mut high) = (0, limit);
+    while low < high {
+        let mid = low + (high - low) / 2;
+        if before(mid) {
+            low = mid + 1;
+        } else {
+            high = mid;
+        }
+    }
+    low
+}
+
+fn decoded_suffix_boundary(
+    node: &Value,
+    suffix: &str,
+    decoded: &DecodedSource,
+) -> Option<(usize, usize)> {
+    let end = usize::try_from(node["span"]["byte_end"].as_u64()?).ok()?;
+    if let Some(start) = end.checked_sub(suffix.len())
+        && decoded.text.get(start..end) == Some(suffix)
+    {
+        return Some((start, start));
+    }
+    let start = usize::try_from(node["span"]["byte_start"].as_u64()?).ok()?;
+    let ctx = &decoded.span_ctx;
+    let limit = decoded.span_text.len() + 1;
+    let normalized_start = partition_offset(limit, |offset| ctx.to_decoded(offset) < start);
+    let normalized_end =
+        partition_offset(limit, |offset| ctx.to_decoded_end(offset) <= end).checked_sub(1)?;
+    if ctx.to_decoded(normalized_start) != start
+        || ctx.to_decoded_end(normalized_end) != end
+        || decoded.span_text.get(normalized_start..normalized_end) != node["value"].as_str()
+    {
+        return None;
+    }
+    let split = normalized_end.checked_sub(suffix.len())?;
+    if split < normalized_start || decoded.span_text.get(split..normalized_end) != Some(suffix) {
+        return None;
+    }
+    // Inside an edit the maps overlap; at a removed delimiter they leave a
+    // source-syntax gap between the two text extents. Never divide an edit.
+    let before = ctx.to_decoded_end(split);
+    let after = ctx.to_decoded(split);
+    (after >= before).then_some((before, after))
 }
 
 fn take_visible_suffix_matching(
     content: &mut Vec<Value>,
     target: &str,
-    source: &str,
+    decoded: &DecodedSource,
     quoted: Option<&[Value]>,
 ) -> Option<Vec<Value>> {
     if target.is_empty() || target.contains(['\n', '\r']) {
@@ -4229,16 +4285,10 @@ fn take_visible_suffix_matching(
                 return Some(content.split_off(index));
             }
         } else if kind == "text" && text.ends_with(remaining) {
-            let end = usize::try_from(node["span"]["byte_end"].as_u64()?).ok()?;
-            let start = end.checked_sub(remaining.len())?;
-            // Only split literal source text: normalized characters do not
-            // establish a byte-for-byte source boundary at this position.
-            if source.get(start..end)? != remaining {
-                return None;
-            }
+            let (prefix_end, suffix_start) = decoded_suffix_boundary(node, remaining, decoded)?;
             let mut tail = node.clone();
             tail["value"] = json!(remaining);
-            tail["span"]["byte_start"] = json!(start);
+            tail["span"]["byte_start"] = json!(suffix_start);
             tail["span"]["line_start"] = node["span"]["line_end"].clone();
             if let Some(expected) = quoted {
                 let mut selected = vec![tail.clone()];
@@ -4248,7 +4298,7 @@ fn take_visible_suffix_matching(
                 }
             }
             content[index]["value"] = json!(&text[..text.len() - remaining.len()]);
-            content[index]["span"]["byte_end"] = json!(start);
+            content[index]["span"]["byte_end"] = json!(prefix_end);
             let mut children = vec![tail];
             children.extend(content.split_off(index + 1));
             return Some(children);
@@ -5378,7 +5428,14 @@ mod tests {
                 last["span"]["byte_end"] = json!(source.len() - 1);
             }
             let before = content.clone();
-            assert!(take_visible_suffix(&mut content, target, source).is_none());
+            assert!(
+                take_visible_suffix(
+                    &mut content,
+                    target,
+                    &decode_source_bytes(source.as_bytes()).unwrap()
+                )
+                .is_none()
+            );
             assert_eq!(content, before);
         }
     }
@@ -6385,7 +6442,7 @@ mod tests {
             .collect::<BTreeMap<_, _>>();
         let no_pass_blocks = Value::Array(blocks_from_inline_content(
             inline_content(&decoded, &nodes, &gaiji_by_start, &ruby_by_span),
-            &decoded.text,
+            &decoded,
         ));
         let open = find_raw_with_source(&no_pass_blocks, "［＃横組み］")
             .expect("no-pass tree keeps the open marker raw")

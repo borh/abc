@@ -680,6 +680,63 @@ fn unknown_witness_directives_and_unknown_target_glyphs_are_not_inferred() {
 }
 
 #[test]
+fn source_variants_preserve_structured_warichu_in_both_readings() {
+    let ir = convert(
+        "（［＃割り注］「前篇」の「五　インド征服」［＃割り注終わり］）［＃「（［＃割り注］「前篇」の「五　インド征服」［＃割り注終わり］）」は底本では「（［＃割り注］五一頁参照［＃割り注終わり］）」］",
+    );
+    let all = nodes(&ir);
+    let app = all
+        .iter()
+        .find(|node| node["type"] == "base-text-variant")
+        .unwrap();
+    assert_eq!(app["text"], "（「前篇」の「五　インド征服」）");
+    assert_eq!(app["variant"]["base_text"], "（五一頁参照）");
+    for children in [&app["inline_children"], &app["variant"]["base_children"]] {
+        assert!(nodes(children).iter().any(|node| node["type"] == "warichu"));
+    }
+    assert_eq!(ir["interpretation_problems"], json!([]));
+}
+
+#[test]
+fn normalized_accent_targets_keep_their_exact_original_source_extent() {
+    for (body, expected_source) in [
+        (
+            "前〔Annette von Droste=Hu:lshoff［＃「Hu:lshoff」は底本では「Hu:lshoffs」］〕後",
+            "Hu:lshoff",
+        ),
+        (
+            "前 〔UN COUP D'OE&IL〕［＃「〔UN COUP D'OE&IL〕」は底本では「〔UN COUP D,OE&IL〕」］後",
+            "UN COUP D'OE&IL",
+        ),
+    ] {
+        let ir = convert(body);
+        let all = nodes(&ir);
+        let app = all
+            .iter()
+            .find(|node| node["type"] == "base-text-variant")
+            .unwrap();
+        let child = &app["inline_children"][0];
+        let source = format!("題\n作者\n\n{body}\n\n底本：本\n");
+        let start = usize::try_from(child["source_span"]["start"].as_u64().unwrap()).unwrap();
+        let end = usize::try_from(child["source_span"]["end"].as_u64().unwrap()).unwrap();
+        let raw = &source[start..end];
+        assert_eq!(raw, expected_source);
+        assert!(!app["text"].as_str().unwrap().contains([':', '&']));
+        assert_eq!(ir["interpretation_problems"], json!([]));
+    }
+    let ir = convert("前Hu:lshoff［＃「〔Hu:lshoff〕」は底本では「〔Hu:lshoffs〕」］");
+    assert!(
+        !nodes(&ir)
+            .iter()
+            .any(|node| node["type"] == "base-text-variant")
+    );
+    assert_eq!(
+        ir["interpretation_problems"][0]["kind"],
+        "unresolved-variant"
+    );
+}
+
+#[test]
 fn unresolved_principal_glyph_occupies_one_placeholder_and_retains_its_description() {
     let ir = convert("前※［＃「弋＋頁」、74-10］後");
     let all = nodes(&ir);

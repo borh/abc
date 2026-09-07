@@ -311,6 +311,7 @@ enum ProjectedKind {
         marker: Span,
     },
     AccentReference,
+    FormattingReference,
     Kunten {
         kind: KuntenKind,
         text: String,
@@ -354,6 +355,7 @@ impl ProjectedKind {
             Self::Illustration { .. } => "illustration",
             Self::Accent { .. } => "supplied-diacritic",
             Self::AccentReference => "accent-annotation",
+            Self::FormattingReference => "formatting-annotation",
             Self::Kunten { .. } => "kunten",
             Self::MarginNote { .. } | Self::TranscribedNotes { .. } => "sideNote",
             Self::Node(kind) => kind.as_json_tag(),
@@ -473,19 +475,33 @@ fn projected_variant(variant: TextVariant<'_>, start: usize) -> ProjectedKind {
 fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
     // A detached decoration and its reference share one arena target. This
     // identity preserves the native association without matching quoted text.
-    let accent_references: BTreeMap<_, _> = tree
+    let format_references: BTreeMap<_, _> = tree
         .source_nodes
         .iter()
         .filter_map(|node| {
             let NodeRef::Inline(Node::Format(format)) = node.node else {
                 return None;
             };
-            (format.origin == ab_aozora_facade::ForwardOrigin::Referenced
-                && matches!(format.attrs.single(), Some(ForwardAttr::Accent(_))))
-            .then_some((
+            (format.origin == ab_aozora_facade::ForwardOrigin::Referenced).then_some((
                 (format.target.start, format.target.len),
                 Span::from(node.source_span),
             ))
+        })
+        .collect();
+    let detached_formatting: BTreeSet<_> = tree
+        .source_nodes
+        .iter()
+        .filter_map(|node| {
+            let NodeRef::Inline(Node::Format(format)) = node.node else {
+                return None;
+            };
+            (format.origin == ab_aozora_facade::ForwardOrigin::Detached
+                && tree
+                    .store
+                    .resolve_forward_attrs(&format.attrs)
+                    .iter()
+                    .all(|attr| formatting_fields(*attr).is_some()))
+            .then_some((format.target.start, format.target.len))
         })
         .collect();
     let detached_accents: BTreeSet<_> = tree
@@ -609,6 +625,10 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                 let key = (format.target.start, format.target.len);
                 let origin = format.origin;
                 if origin == ab_aozora_facade::ForwardOrigin::Referenced
+                    && detached_formatting.contains(&key)
+                {
+                    kind = ProjectedKind::FormattingReference;
+                } else if origin == ab_aozora_facade::ForwardOrigin::Referenced
                     && (detached_accents.contains(&key)
                         || format.attrs.single() == Some(ForwardAttr::AccentDot))
                 {
@@ -632,7 +652,7 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                         _ => None,
                     });
                     let marker = if origin == ab_aozora_facade::ForwardOrigin::Detached {
-                        accent_references.get(&key).copied()
+                        format_references.get(&key).copied()
                     } else {
                         pairs
                             .get(&(source_node.source_span.end as usize))
@@ -665,17 +685,26 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                 }
                 _ => None,
             };
-            let mut marker_span = pairs
-                .get(&span.end)
-                .filter(|pair| {
-                    Some(pair.kind) == marker_kind
-                        && usize::try_from(pair.open.start).expect("source offset fits usize")
-                            >= span.start
-                })
-                .map(|pair| Span {
-                    start: usize::try_from(pair.open.start).expect("source offset fits usize"),
-                    end: usize::try_from(pair.close.end).expect("source offset fits usize"),
-                });
+            let mut marker_span = if let NodeRef::Inline(Node::Format(format)) = source_node.node
+                && format.origin == ab_aozora_facade::ForwardOrigin::Detached
+                && detached_formatting.contains(&(format.target.start, format.target.len))
+            {
+                format_references
+                    .get(&(format.target.start, format.target.len))
+                    .copied()
+            } else {
+                pairs
+                    .get(&span.end)
+                    .filter(|pair| {
+                        Some(pair.kind) == marker_kind
+                            && usize::try_from(pair.open.start).expect("source offset fits usize")
+                                >= span.start
+                    })
+                    .map(|pair| Span {
+                        start: usize::try_from(pair.open.start).expect("source offset fits usize"),
+                        end: usize::try_from(pair.close.end).expect("source offset fits usize"),
+                    })
+            };
             if marker_kind == Some(ab_aozora_facade::PairKind::Ruby)
                 && tree.sanitized[span.start..span.end].starts_with('｜')
                 && marker_span.is_some()
@@ -2572,6 +2601,7 @@ fn inline_content_range(
                 content.push(accent);
             }
             ProjectedKind::AccentReference => content.push(raw_node(decoded, node, "accent-annotation")),
+            ProjectedKind::FormattingReference => {}
             ProjectedKind::Node(NodeKind::Directive)
                 if source_slice(&decoded.span_text, &node.span).contains("返り点") =>
             {
@@ -4073,7 +4103,9 @@ fn style_node(decoded: &DecodedSource, node: &AozoraNode, style_type: &str) -> V
         .marker_span
         .as_ref()
         .filter(|marker| node.span.start < marker.start)
-        .and_then(|marker| source_fragment(decoded, node.span.start..marker.start))
+        .and_then(|marker| {
+            source_fragment(decoded, node.span.start..marker.start.min(node.span.end))
+        })
         .unwrap_or_default();
     json!({
         "kind": "style",

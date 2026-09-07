@@ -755,3 +755,11 @@
     (is (identical? (second scopes) (.getParentNode ^Node (nth scopes 2))))
     (is (= 6 (count (get-in result [:ir "interpretation_facts"]))))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest detached-fraction-preserves-the-source-target-and-space
+  (let [result (transcribe (source "ν = 1/n ［＃「1/n」は分数］"))
+        scopes (filterv #(= "fraction" (attribute % "rend")) (elements result "hi"))]
+    (is (= "ν = 1/n " (:plaintext result)))
+    (is (= ["1/n"] (mapv view/visible-text scopes)))
+    (is (= 1 (count (get-in result [:ir "interpretation_facts"]))))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))

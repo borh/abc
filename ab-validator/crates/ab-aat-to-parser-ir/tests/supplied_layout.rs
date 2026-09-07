@@ -73,3 +73,34 @@ fn native_enclosure_kinds_do_not_collapse_to_one_border() {
         assert_eq!(ir["nodes"][0]["text"], "花");
     }
 }
+
+#[test]
+fn detached_fraction_keeps_its_source_target_and_intervening_space() {
+    let ir = convert("ν = 1/n ［＃「1/n」は分数］");
+    assert!(ir["interpretation_problems"].as_array().unwrap().is_empty());
+    let nodes = ir["nodes"].as_array().unwrap();
+    assert_eq!(
+        nodes
+            .iter()
+            .filter(|n| n["type"] != "source-note")
+            .filter_map(|n| n["text"].as_str())
+            .collect::<String>(),
+        "ν = 1/n "
+    );
+    let fraction = nodes
+        .iter()
+        .find(|node| node["type"] == "layout-span")
+        .unwrap();
+    assert_eq!(fraction["layout"]["kind"], "fraction");
+    assert_eq!(fraction["text"], "1/n");
+    let facts = ir["interpretation_facts"].as_array().unwrap();
+    assert_eq!(facts.len(), 1);
+    assert_eq!(
+        facts[0]["source_span"]["start"],
+        "題\n作者\n\nν = 1/n ".len()
+    );
+    assert_eq!(
+        facts[0]["source_span"]["end"],
+        "題\n作者\n\nν = 1/n ［＃「1/n」は分数］".len()
+    );
+}

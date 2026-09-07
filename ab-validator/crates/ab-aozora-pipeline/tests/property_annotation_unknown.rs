@@ -193,3 +193,8 @@ proptest! {
         assert_annotation_invariants(&s);
     }
 }
+
+#[test]
+fn opaque_multiline_directive_cannot_extend_a_later_ruby_base() {
+    assert_annotation_invariants("｜［＃\n］［＃］｜改丁《］》");
+}

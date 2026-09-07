@@ -15,7 +15,8 @@ fn ruby_reading_kunten_roundtrips_and_uses_annotation_layout() {
     ] {
         let document = Document::new(source);
         let tree = document.parse();
-        assert_eq!(tree.to_source(), source);
+        assert_eq!(tree.source(), source);
+        assert_eq!(tree.to_source(), format!("｜{source}"));
         assert!(tree.to_html().contains(expected), "{}", tree.to_html());
     }
 }
@@ -34,6 +35,8 @@ fn explicit_mixed_base_replays_source_when_no_reading_adopts_it() {
     ] {
         let document = Document::new(source);
         let tree = document.parse();
-        assert_eq!(tree.to_source(), source, "{}", tree.to_html());
+        assert_eq!(tree.source(), source);
+        let canonical = source.replace("\n次《つぎ》", "\n｜次《つぎ》");
+        assert_eq!(tree.to_source(), canonical, "{}", tree.to_html());
     }
 }

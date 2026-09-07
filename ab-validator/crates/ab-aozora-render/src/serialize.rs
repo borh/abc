@@ -8,7 +8,7 @@
 //! [`SegRange`](ab_aozora_syntax::ast::SegRange) against the [`NodeStore`].
 //!
 //! The container-marker spelling (`emit_container_open` / `emit_container_close`)
-//! and the writer machinery (`NewlineCappedWriter` / `TrackingWriter`) are
+//! and newline capping (`NewlineCappedWriter`) are
 //! **reused** from [`crate::spelling::source`] — they read only `Copy` `RegionFormat`
 //! / `RegionClose` discriminants, so there is a single byte-spelling authority.
 //! Only the AST-reading emitters live here.
@@ -21,8 +21,8 @@ use core::fmt::{self, Write};
 use std::collections::BTreeMap;
 
 use crate::spelling::source::{
-    NewlineCappedWriter, TrackingWriter, emit_container_close, emit_container_open, emit_line,
-    emit_section_break, heading_level_word, heading_style_keyword,
+    NewlineCappedWriter, emit_container_close, emit_container_open, emit_line, emit_section_break,
+    heading_level_word, heading_style_keyword,
 };
 use crate::walk::{SentinelKind, WalkSink, walk};
 use ab_aozora_pipeline::{has_long_rule_line, isolate_decorative_rules};
@@ -37,7 +37,6 @@ use ab_aozora_syntax::format::ForwardOrigin;
 use ab_aozora_syntax::lint::canonical_directive;
 use ab_aozora_syntax::{
     AccentMark, BoutenPosition, DirectiveKind, EnclosureKind, ForwardAttr, RubySide,
-    ruby_base_class,
 };
 
 /// Which notation-hygiene catalogue tiers a serialize / render pass consults
@@ -148,10 +147,9 @@ pub fn serialize_into_with<W: Write>(
     writer: &mut W,
     opts: SerializeOptions,
 ) -> fmt::Result {
-    let mut tracking = TrackingWriter::new(writer);
     let mut sink = SerializeSink {
         store: &out.store,
-        out: &mut tracking,
+        out: writer,
         directives: opts.directives,
         shared_closes: shared_close_emissions(out),
     };
@@ -179,7 +177,7 @@ fn shared_close_emissions(out: &LexOutput) -> BTreeMap<NormalizedOffset, &str> {
 struct SerializeSink<'a, W: Write> {
     shared_closes: BTreeMap<NormalizedOffset, &'a str>,
     store: &'a NodeStore,
-    out: &'a mut TrackingWriter<W>,
+    out: &'a mut W,
     /// Which notation-hygiene tiers to apply to `DirectiveKind::Unknown`
     /// near-misses (`Off` = verbatim; `Canonical` = Tier1; `Degraded` = Tier1+Tier2).
     directives: DirectiveNormalization,
@@ -229,7 +227,7 @@ impl<W: Write> WalkSink for SerializeSink<'_, W> {
 fn emit_aozora<W: Write>(
     node: Node,
     store: &NodeStore,
-    out: &mut TrackingWriter<W>,
+    out: &mut W,
     directives: DirectiveNormalization,
 ) -> fmt::Result {
     match node {
@@ -359,8 +357,8 @@ fn emit_content_as_plain_range<W: Write>(
 
 /// Serialize a ruby node: a left-side ruby to its
 /// `base［＃「base」の左に「reading」のルビ］` form; a right-side ruby to
-/// `base《reading》`, prefixed with `｜` when the base needs an explicit bar.
-fn emit_ruby<W: Write>(r: &Ruby, store: &NodeStore, out: &mut TrackingWriter<W>) -> fmt::Result {
+/// `｜base《reading》`, retaining an explicit boundary for every base.
+fn emit_ruby<W: Write>(r: &Ruby, store: &NodeStore, out: &mut W) -> fmt::Result {
     if matches!(r.side, RubySide::Left) {
         emit_content_range(r.base, store, out)?;
         out.write_str("［＃「")?;
@@ -369,57 +367,12 @@ fn emit_ruby<W: Write>(r: &Ruby, store: &NodeStore, out: &mut TrackingWriter<W>)
         emit_content_range(r.reading, store, out)?;
         return out.write_str("」のルビ］");
     }
-    if ruby_needs_bar(
-        store.resolve_content_range(r.base),
-        out.last(),
-        out.has_unclosed_ruby_bar(),
-        store,
-    ) {
-        out.write_char('｜')?;
-    }
+    out.write_char('｜')?;
     emit_content_range(r.base, store, out)?;
     out.write_char('《')?;
     emit_content_range(r.reading, store, out)?;
     out.write_char('》')?;
-    out.finish_ruby();
     Ok(())
-}
-
-/// Decide whether a right-side ruby base needs an explicit `｜` start bar:
-/// true when the base is not a uniform single `RubyBaseClass` run (a bare
-/// reading would re-parse a shorter base), or the preceding char is the
-/// same class as the base or an earlier explicit bar remains unclosed.
-/// Both would otherwise extend the base on reparse.
-fn ruby_needs_bar(
-    base_run: &[Content],
-    prev: Option<char>,
-    unclosed_bar: bool,
-    store: &NodeStore,
-) -> bool {
-    // An all-gaiji base (`※［＃…］《…》` or an adjacent run `※…※…《…》`) re-parses
-    // implicitly via the classifier's deferred-emit accumulation, so it never
-    // needs an explicit `｜` — a preceding character cannot extend into a
-    // structured gaiji node, and adjacent gaiji re-accumulate into one base.
-    // Emitting a bar here would inject a `｜` absent from the source and break
-    // the round-trip fixed point.
-    if let [Content::Segments(range)] = base_run {
-        let segs = store.resolve_seg_range(*range);
-        if !segs.is_empty() && segs.iter().all(|s| matches!(s, Segment::Gaiji(_))) {
-            return false;
-        }
-    }
-    let plain = match base_run {
-        [Content::Plain(id)] => Some(store.resolve_str(*id)),
-        _ => None,
-    };
-    plain.is_none_or(|s| {
-        let Some(base_class) = s.chars().next_back().and_then(ruby_base_class) else {
-            return true;
-        };
-        unclosed_bar
-            || s.chars().any(|c| ruby_base_class(c) != Some(base_class))
-            || prev.is_some_and(|c| ruby_base_class(c) == Some(base_class) || c == '｜')
-    })
 }
 
 /// Serialize a forward-format node to its `［＃…］` bracket form. A `Reclaimed`

@@ -11,7 +11,11 @@ fn literal_private_use_characters_survive_beside_real_markup() {
         let source = format!("{codepoint}漢《かん》{codepoint}");
         let document = Document::new(source.clone());
         let tree = document.parse();
-        assert_eq!(tree.to_source(), source);
+        assert_eq!(tree.source(), source);
+        assert_eq!(
+            tree.to_source(),
+            format!("{codepoint}｜漢《かん》{codepoint}")
+        );
         assert_eq!(tree.source_nodes().len(), 1);
     }
 }

@@ -13,7 +13,10 @@ fn missing_closes_report_the_exact_opening_marker() {
         let document = Document::new(source.clone());
         let tree = document.parse();
         assert_eq!(tree.source(), source);
-        assert_eq!(tree.to_source().replace('\n', ""), source);
+        assert_eq!(
+            tree.to_source().replace('\n', ""),
+            format!("前{marker}｜漢字《かんじ》後")
+        );
         let diagnostics = tree.diagnostics();
         let diagnostic = diagnostics
             .iter()

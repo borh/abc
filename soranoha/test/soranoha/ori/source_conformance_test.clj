@@ -455,3 +455,22 @@
     (is (= 2 (count paragraphs)))
     (is (= "説明。" (.getTextContent ^Node (second paragraphs))))
     (is (= "text-indent: 1em" (attribute (second paragraphs) "style")))))
+
+(deftest variants-retain-their-targets-through-formatting-and-reading-suffixes
+  (let [styled (transcribe (source "ΩIV［＃「IV」は上付き小文字］［＃「IV」は底本では「VI」］k［＃「k」は下付き小文字］"))
+        lemma (first (elements styled "lem"))
+        reading (transcribe (source "人を過《あや》め［＃ルビの「あや」は底本では「なや」］後。"))]
+    (is (= "ΩIVk" (:plaintext styled)))
+    (is (= ["VI"] (texts styled "rdg")))
+    (is (within? lemma (first (elements styled "hi"))))
+    (is (= "人を過め後。" (:plaintext reading)))
+    (is (= ["あや"] (texts reading "lem")))
+    (is (= ["なや"] (texts reading "rdg")))
+    (is (within? (first (elements reading "rt")) (first (elements reading "app"))))))
+
+(deftest explicit-witness-omission-preserves-principal-punctuation
+  (let [result (transcribe (source "出来ない。［＃「。」は底本では欠落］後。"))
+        alternative (first (elements result "rdg"))]
+    (is (= "出来ない。後。" (:plaintext result)))
+    (is (= "omission" (attribute alternative "subtype")))
+    (is (= "" (.getTextContent ^Node alternative)))))

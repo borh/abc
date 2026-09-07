@@ -143,6 +143,20 @@
       (when following
         (is (= rendition (attribute following "rend")))))))
 
+(deftest inline-font-scope-retains-leading-indentation
+  (let [result (transcribe (source (str "［＃ここから改行天付き、折り返して１字下げ］\n"
+                                        "　［＃１段階小さな文字］〔中略〕［＃小さな文字終わり］\n"
+                                        "次の行。\n［＃ここで字下げ終わり］")))
+        paragraph (first (filter #(= "〔中略〕" (view/visible-text %)) (elements result "p")))
+        font (first (filter #(= "font-size small(1)" (attribute % "rend")) (elements result "hi")))]
+    (is (= "　〔中略〕\n次の行。" (:plaintext result)))
+    (is (some? paragraph))
+    (is (some? font))
+    (when paragraph
+      (is (= "burasage first(0) rest(1)" (attribute paragraph "rend")))
+      (is (string/includes? (attribute paragraph "style") "text-indent: 1em"))
+      (is (within? paragraph font)))))
+
 (deftest supplied-ruby-variant-is-not-an-asserted-source-error
   (let [result (transcribe (source "私は籠《ざる》［＃ルビの「ざる」は底本では「さる」］をさげ"))]
     (is (= "私は籠をさげ" (:plaintext result)))

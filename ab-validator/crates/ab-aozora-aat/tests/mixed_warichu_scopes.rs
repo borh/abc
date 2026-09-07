@@ -67,3 +67,17 @@ fn absent_or_crossed_opener_does_not_authorize_bare_closer() {
         assert!(aat.to_string().contains("raw"), "{aat}");
     }
 }
+
+#[test]
+fn nested_scope_aliases_retain_warichu_end_ownership() {
+    let source =
+        "前［＃ここから割り注］一［＃ここから太字］二［＃太字終わり］三［＃割り注終わり］後";
+    let aat: Value =
+        serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
+    assert_eq!(aat["meta"]["parse_complete"], true, "{aat}");
+    assert_eq!(warichu_count(&aat["blocks"]), 1, "{aat}");
+    let span = &aat["blocks"][0]["content"][1]["interpretation_marker_spans"][1];
+    let start = usize::try_from(span["byte_start"].as_u64().unwrap()).unwrap();
+    let end = usize::try_from(span["byte_end"].as_u64().unwrap()).unwrap();
+    assert_eq!(&source[start..end], "［＃割り注終わり］");
+}

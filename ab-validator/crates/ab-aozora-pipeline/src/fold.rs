@@ -514,25 +514,7 @@ impl<'src> Normalizer<'src> {
     /// Establish matching families or report the recovered mismatch.
     fn container_matches(&mut self, open: RegionFormat, close: RegionClose, span: Span) -> bool {
         let expected = RegionClose::of(open);
-        let attributes_match = match (expected, close) {
-            (
-                RegionClose::Heading {
-                    level: expected_level,
-                    style: expected_style,
-                    ..
-                },
-                RegionClose::Heading { level, style, .. },
-            ) => level.is_none() || (level == expected_level && style == expected_style),
-            (RegionClose::Columns(expected), RegionClose::Columns(actual)) => {
-                actual.is_none() || expected == actual
-            }
-            (RegionClose::Indent { .. }, RegionClose::Indent { kumi_width: None })
-            | (RegionClose::Bold { .. }, RegionClose::Bold { .. })
-            | (RegionClose::Gothic { .. }, RegionClose::Gothic { .. })
-            | (RegionClose::Italic { .. }, RegionClose::Italic { .. })
-            | (RegionClose::Caption { .. }, RegionClose::Caption { .. }) => true,
-            _ => expected == close,
-        };
+        let attributes_match = scope_closer_matches(open, close);
         if discriminant(&expected) != discriminant(&close) {
             self.diagnostics
                 .push(Diagnostic::mismatched_container_close(
@@ -608,6 +590,30 @@ impl<'src> Normalizer<'src> {
             }
             _ => {}
         }
+    }
+}
+
+/// Match supplied closing attributes, including source-defined omitted payloads.
+pub(crate) fn scope_closer_matches(open: RegionFormat, close: RegionClose) -> bool {
+    let expected = RegionClose::of(open);
+    match (expected, close) {
+        (
+            RegionClose::Heading {
+                level: expected_level,
+                style: expected_style,
+                ..
+            },
+            RegionClose::Heading { level, style, .. },
+        ) => level.is_none() || (level == expected_level && style == expected_style),
+        (RegionClose::Columns(expected), RegionClose::Columns(actual)) => {
+            actual.is_none() || expected == actual
+        }
+        (RegionClose::Indent { .. }, RegionClose::Indent { kumi_width: None })
+        | (RegionClose::Bold { .. }, RegionClose::Bold { .. })
+        | (RegionClose::Gothic { .. }, RegionClose::Gothic { .. })
+        | (RegionClose::Italic { .. }, RegionClose::Italic { .. })
+        | (RegionClose::Caption { .. }, RegionClose::Caption { .. }) => true,
+        _ => expected == close,
     }
 }
 

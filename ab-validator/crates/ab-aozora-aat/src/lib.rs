@@ -2729,7 +2729,7 @@ fn pair_bare_toggles_in_blocks(nodes: Vec<Value>) -> Vec<Value> {
 ///
 /// Paragraphs without bare-toggle markers return after one scan, without cloning.
 pub(crate) fn pair_bare_toggles(content: Vec<Value>) -> Vec<Value> {
-    let markers: Vec<BareToggleMarker> = content
+    let mut markers: Vec<BareToggleMarker> = content
         .iter()
         .enumerate()
         .filter_map(|(index, node)| {
@@ -2752,6 +2752,28 @@ pub(crate) fn pair_bare_toggles(content: Vec<Value>) -> Vec<Value> {
         .collect();
     if markers.is_empty() {
         return content;
+    }
+    // Native scope matching owns omitted attributes and delimiter aliases.
+    // The exact closing extent transfers that established identity to the
+    // marker grammar without reconstructing it from source spelling.
+    let native_closers: BTreeMap<_, _> = markers
+        .iter()
+        .filter(|marker| marker.is_open)
+        .filter_map(|marker| {
+            let span = &content[marker.index]["x-native-close-span"];
+            Some((
+                (span["byte_start"].as_u64()?, span["byte_end"].as_u64()?),
+                marker.construct.clone(),
+            ))
+        })
+        .collect();
+    for marker in markers.iter_mut().filter(|marker| !marker.is_open) {
+        let span = &content[marker.index]["span"];
+        if let (Some(start), Some(end)) = (span["byte_start"].as_u64(), span["byte_end"].as_u64())
+            && let Some(construct) = native_closers.get(&(start, end))
+        {
+            marker.construct.clone_from(construct);
+        }
     }
 
     // Run the two-pass grammar per line (markers are already in source order

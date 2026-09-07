@@ -52,7 +52,7 @@ use ab_aozora_syntax::format::ForwardOrigin;
 use ab_aozora_syntax::{ForwardAttr, Span};
 use std::collections::BTreeMap;
 
-use crate::fold::Normalizer;
+use crate::fold::{Normalizer, scope_closer_matches};
 
 // =====================================================================
 // State markers (field-bound — each state carries the stage output it is
@@ -448,7 +448,7 @@ fn resolve_warichu_closer_aliases(spans: &mut [ClassifiedSpan]) {
             SpanKind::BlockClose(close) => {
                 if openers
                     .last()
-                    .is_some_and(|open| open.is_some_and(|kind| RegionClose::of(kind) == close))
+                    .is_some_and(|open| open.is_some_and(|kind| scope_closer_matches(kind, close)))
                 {
                     openers.pop();
                 } else {

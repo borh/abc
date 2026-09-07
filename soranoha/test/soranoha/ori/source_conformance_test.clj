@@ -1209,3 +1209,14 @@
     (is (= "前。\n説明一。\n説明二。\n後。" (:plaintext result)))
     (is (empty? (get-in result [:ir "interpretation_problems"])))
     (is (= 2 (count (filter #(= "caption" (get % "kind")) (get-in result [:ir "interpretation_facts"])))))))
+(deftest supplied-indentation-spellings-retain-geometry-and-close-constraints
+  (let [result (transcribe (source "［＃ここから改行一字下げ、折り返して二字下げ］\n本文\n［＃ここで１字下げ終わり］"))
+        layout (first (get-in result [:ir "layout_blocks"]))]
+    (is (= "本文" (:plaintext result)))
+    (is (= 1 (get layout "indent")))
+    (is (= 2 (get layout "continuation_indent")))
+    (is (string/includes? (:tei result) "padding-inline-start: 2em")))
+  (let [result (transcribe (source "［＃ここから２字下げ］\n本文\n［＃ここで１字下げ終わり］"))]
+    (is (= "本文" (:plaintext result)))
+    (is (seq (get-in result [:ir "interpretation_problems"])))
+    (is (empty? (get-in result [:ir "layout_blocks"])))))

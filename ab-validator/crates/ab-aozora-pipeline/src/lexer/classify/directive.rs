@@ -294,8 +294,20 @@ static BODY_PATTERNS: &[BodyPattern] = &[
         family: BodyFamily::AlignEndBlockParamPrefix,
     },
     BodyPattern {
+        needle: "ここより",
+        family: BodyFamily::IndentBlockParamPrefix,
+    },
+    BodyPattern {
         needle: "ここから",
         family: BodyFamily::IndentBlockParamPrefix,
+    },
+    BodyPattern {
+        needle: "ここで字下げ終り",
+        family: BodyFamily::IndentBlockEnd,
+    },
+    BodyPattern {
+        needle: "ここで文字下げ終わり",
+        family: BodyFamily::IndentBlockEnd,
     },
     BodyPattern {
         needle: "ここで字下げ終わり",
@@ -1249,6 +1261,7 @@ pub(super) fn classify_annotation_body(
             let tail = &body[match_end..];
             (tail.is_empty() || (tail.starts_with('、') && tail.ends_with("終わり"))).then_some((
                 EmitKind::BlockClose(RegionClose::Indent {
+                    amount: None,
                     kumi_width: None,
                     styles: BlockStyles::EMPTY,
                 }),
@@ -1271,6 +1284,7 @@ pub(super) fn classify_annotation_body(
             }) {
                 return Some((
                     EmitKind::BlockClose(RegionClose::Indent {
+                        amount: None,
                         kumi_width: None,
                         styles,
                     }),
@@ -1290,6 +1304,7 @@ pub(super) fn classify_annotation_body(
                 .map(|w| {
                     (
                         EmitKind::BlockClose(RegionClose::Indent {
+                            amount: None,
                             kumi_width: Some(LineWidth(w)),
                             styles: BlockStyles::EMPTY,
                         }),
@@ -1322,6 +1337,18 @@ pub(super) fn classify_annotation_body(
                 return Some((EmitKind::BlockClose(close), None));
             }
             let rest = &body[match_end..];
+            if let Some((amount, tail)) = parse_indent_count_prefix(rest)
+                && tail == "字下げ終わり"
+            {
+                return Some((
+                    EmitKind::BlockClose(RegionClose::Indent {
+                        amount: Some(amount),
+                        kumi_width: None,
+                        styles: BlockStyles::EMPTY,
+                    }),
+                    None,
+                ));
+            }
             let (count, rest) = match parse_decimal_u8_prefix(rest) {
                 Some((n, tail)) => (Some(ColumnCount(NonZeroU8::new(n)?)), tail),
                 None => (None, rest),
@@ -1426,6 +1453,7 @@ pub(super) fn classify_annotation_body(
         BodyFamily::IndentBlockParamPrefix => {
             // body == ここから{N}字下げ; remainder = body[match_end..]
             let rest = &body[match_end..];
+            let rest = rest.strip_prefix("改行").unwrap_or(rest);
             // ここから[改行]天付き、折り返して{M}字下げ — top-flush hanging
             // indent: the first line sits at the top margin (天付き = no
             // indent), wrapped continuation lines indent M. Models as the same
@@ -1436,8 +1464,9 @@ pub(super) fn classify_annotation_body(
             if let Some(after) = rest
                 .strip_prefix("改行天付き、折り返して")
                 .or_else(|| rest.strip_prefix("天付き、折り返して"))
+                .or_else(|| rest.strip_prefix("天付き折り返して"))
             {
-                let (m, tail2) = parse_decimal_u8_prefix(after)?;
+                let (m, tail2) = parse_indent_count_prefix(after)?;
                 return (tail2 == "字下げ").then_some((
                     EmitKind::BlockOpen(RegionFormat::Indent(IndentBlock {
                         partial: None,
@@ -1453,7 +1482,8 @@ pub(super) fn classify_annotation_body(
                     None,
                 ));
             }
-            let (n, tail) = parse_decimal_u8_prefix(rest)?;
+            let (n, tail) = parse_indent_count_prefix(rest)?;
+            let tail = tail.trim_start_matches([' ', '　']);
             if tail == "字下げ" {
                 Some((
                     EmitKind::BlockOpen(RegionFormat::Indent(IndentBlock {
@@ -1469,7 +1499,10 @@ pub(super) fn classify_annotation_body(
                     })),
                     None,
                 ))
-            } else if let Some(after) = tail.strip_prefix("字下げ、") {
+            } else if let Some(after) = tail.strip_prefix("字下げ、").or_else(|| {
+                tail.strip_prefix("字下げ")
+                    .filter(|rest| rest.starts_with("折り返して"))
+            }) {
                 // Independent clauses share the supplied indentation scope;
                 // unresolved clauses retain their source rather than erasing it.
                 parse_indent_compound(n, after, source, alloc)
@@ -2149,7 +2182,7 @@ fn resolve_indent_segment(segment: &str, block: &mut IndentBlock) -> Option<()> 
     }
     // 折り返して{M}字下げ — hanging-indent continuation width.
     if let Some(rest) = segment.strip_prefix("折り返して") {
-        let (m, tail) = parse_decimal_u8_prefix(rest)?;
+        let (m, tail) = parse_indent_count_prefix(rest)?;
         if tail != "字下げ" || block.wrap.is_some() {
             return None;
         }
@@ -2186,7 +2219,7 @@ fn resolve_indent_segment(segment: &str, block: &mut IndentBlock) -> Option<()> 
         .strip_prefix("地より")
         .or_else(|| segment.strip_prefix("地から"))
     {
-        let (offset, tail) = parse_decimal_u8_prefix(rest)?;
+        let (offset, tail) = parse_indent_count_prefix(rest)?;
         if tail != "字上げ" {
             return None;
         }
@@ -2442,6 +2475,26 @@ pub(super) fn parse_emphasis_body(body: &str) -> Option<(EmphasisWeight, bool, b
         "ここで斜体終わり" => (Italic, true, true),
         _ => return None,
     })
+}
+
+fn parse_indent_count_prefix(source: &str) -> Option<(u8, &str)> {
+    if let Some(parsed) = parse_decimal_u8_prefix(source) {
+        return Some(parsed);
+    }
+    let mut chars = source.chars();
+    let digit = match chars.next()? {
+        '一' => 1,
+        '二' => 2,
+        '三' => 3,
+        '四' => 4,
+        '五' => 5,
+        '六' => 6,
+        '七' => 7,
+        '八' => 8,
+        '九' => 9,
+        _ => return None,
+    };
+    Some((digit, chars.as_str()))
 }
 
 /// Parse a leading run of ASCII / full-width decimal digits into a

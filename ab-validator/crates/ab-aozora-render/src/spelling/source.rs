@@ -368,8 +368,16 @@ pub(crate) fn emit_container_close<W: Write>(close: RegionClose, out: &mut W) ->
         RegionClose::Gothic { padded: true } => out.write_str("［＃ここでゴシック体終わり］"),
         RegionClose::Italic { padded: false } => out.write_str("［＃斜体終わり］"),
         RegionClose::Italic { padded: true } => out.write_str("［＃ここで斜体終わり］"),
-        RegionClose::Indent { kumi_width, styles } => {
-            out.write_str("［＃ここで字下げ")?;
+        RegionClose::Indent {
+            amount,
+            kumi_width,
+            styles,
+        } => {
+            out.write_str("［＃ここで")?;
+            if let Some(amount) = amount {
+                write!(out, "{amount}")?;
+            }
+            out.write_str("字下げ")?;
             if let Some(width) = kumi_width {
                 write!(out, "、{}字組み", width.0)?;
             }

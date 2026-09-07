@@ -567,6 +567,7 @@ impl<'src> Normalizer<'src> {
 
     fn emit_block_close(&mut self, span: Span, close: RegionClose) {
         if let RegionClose::Indent {
+            amount,
             kumi_width,
             mut styles,
         } = close
@@ -583,7 +584,11 @@ impl<'src> Normalizer<'src> {
             )
             && self.open_stack.len() >= 2
         {
-            let indent = RegionClose::Indent { kumi_width, styles };
+            let indent = RegionClose::Indent {
+                amount,
+                kumi_width,
+                styles,
+            };
             if scope_closer_matches(self.open_stack[self.open_stack.len() - 2].1, indent) {
                 self.emit_verified_closes(span, [RegionClose::Horizontal, indent]);
                 return;
@@ -789,12 +794,20 @@ fn take_compound_presentation(open: &mut RegionFormat, close: RegionClose) -> Op
 /// Match supplied closing attributes, including source-defined omitted payloads.
 pub(crate) fn scope_closer_matches(open: RegionFormat, close: RegionClose) -> bool {
     let expected = RegionClose::of(open);
-    if let (RegionFormat::Indent(block), RegionClose::Indent { kumi_width, styles }) = (open, close)
+    if let (
+        RegionFormat::Indent(block),
+        RegionClose::Indent {
+            amount,
+            kumi_width,
+            styles,
+        },
+    ) = (open, close)
     {
         let width_matches = kumi_width.is_none()
             || matches!(expected,
             RegionClose::Indent { kumi_width: expected_width, .. } if kumi_width == expected_width);
-        return width_matches
+        return amount.is_none_or(|supplied| supplied == block.amount)
+            && width_matches
             && styles.iter_formats().all(|supplied| {
                 block.styles.iter_formats().any(|established| {
                     matches!(

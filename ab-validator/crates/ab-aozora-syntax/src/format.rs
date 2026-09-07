@@ -998,6 +998,8 @@ pub enum RegionClose {
     /// `字下げ終わり`, or the `字下げ、{W}字組み終わり` compound (the close
     /// carries `W`, so the marker round-trips byte-exact).
     Indent {
+        /// Explicit indentation magnitude on the closing marker.
+        amount: Option<u8>,
         /// The `W` of a `字組み終わり` compound; `None` for the generic
         /// `字下げ終わり` (plain / 字詰め / 折り返して / 中央 indents).
         kumi_width: Option<LineWidth>,
@@ -1071,16 +1073,15 @@ pub enum RegionClose {
 }
 
 impl RegionClose {
-    /// The close that matches a given open [`RegionFormat`], preserving the
-    /// open's payload.
+    /// Canonical closing form for a region.
     ///
-    /// Used two ways: in the classifier, on the [`RegionFormat`] parsed from
-    /// the *close* marker (so it carries the close's own data); and in the
-    /// pairing-mismatch check, on the *open* (to derive the expected close).
+    /// A parsed source closer may supply additional magnitude constraints;
+    /// the scope matcher checks those against the actual opening payload.
     #[must_use]
     pub const fn of(region: RegionFormat) -> Self {
         match region {
             RegionFormat::Indent(block) => Self::Indent {
+                amount: None,
                 styles: BlockStyles::EMPTY,
                 kumi_width: match block.layout {
                     IndentLayout::Kumi(kumi) => Some(LineWidth(kumi.width)),
@@ -1268,6 +1269,7 @@ mod tests {
         assert_eq!(
             RegionClose::of(kumi),
             RegionClose::Indent {
+                amount: None,
                 kumi_width: Some(LineWidth(NonZeroU8::new(20).unwrap())),
                 styles: BlockStyles::EMPTY,
             }
@@ -1286,6 +1288,7 @@ mod tests {
         assert_eq!(
             RegionClose::of(plain),
             RegionClose::Indent {
+                amount: None,
                 kumi_width: None,
                 styles: BlockStyles::EMPTY
             }

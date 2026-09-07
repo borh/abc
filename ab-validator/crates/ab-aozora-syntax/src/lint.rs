@@ -43,8 +43,6 @@ const EXACT: &[(&str, &str)] = &[
     ("傍点◎", "二重丸傍点"),
     // Region-close synonyms — okurigana drift / 文字下げ / 横書き=横組み /
     // 横組みの表=表, all resolving to the canonical `ここで…終わり` close.
-    ("ここで字下げ終り", "ここで字下げ終わり"),
-    ("ここで文字下げ終わり", "ここで字下げ終わり"),
     ("ここで左から右への横組み終わり", "ここで横組み終わり"),
     ("ここで横組みの表終わり", "ここで表終わり"),
     // Region-open synonyms — 地付きで/こ地付き=地付き, 横書き=横組み.
@@ -98,8 +96,8 @@ fn parameterized_font_size(body: &str) -> Option<String> {
 
 /// Region-open indent synonyms → canonical `ここから{N}字下げ`.
 fn parameterized_indent_open(body: &str) -> Option<String> {
-    // ここか / ここより / 以下 {N}字下げ (malformed or 以下-prefixed open).
-    for bad in ["ここか", "ここより", "以下"] {
+    // ここか / 以下 {N}字下げ (malformed or 以下-prefixed open).
+    for bad in ["ここか", "以下"] {
         if let Some(n) = body
             .strip_prefix(bad)
             .and_then(|rest| rest.strip_suffix("字下げ"))
@@ -108,29 +106,14 @@ fn parameterized_indent_open(body: &str) -> Option<String> {
             return Some(format!("ここから{n}字下げ"));
         }
     }
-    // ここから{N}　字下げ → drop the stray full-width space.
-    if let Some(n) = body
-        .strip_prefix("ここから")
-        .and_then(|r| r.strip_suffix("　字下げ"))
-        && is_digit_run(n)
-    {
-        return Some(format!("ここから{n}字下げ"));
-    }
     None
 }
 
-/// Region-close okurigana / magnitude / stray-bracket drift → `ここで…終わり`.
+/// Remove a trailing bracket from an otherwise complete region closer.
 /// Tail-anchored and digit-run guarded, so `、`-bearing compound closes (which
 /// carry a second axis) never match.
 fn parameterized_region_close(body: &str) -> Option<String> {
-    let inner = body.strip_prefix("ここで")?;
-    // ここで{N}字下げ終わり → ここで字下げ終わり (drop the redundant N).
-    if let Some(n) = inner.strip_suffix("字下げ終わり")
-        && is_digit_run(n)
-    {
-        return Some("ここで字下げ終わり".to_owned());
-    }
-
+    body.strip_prefix("ここで")?;
     // ここで…終わり」 → drop a stray trailing `」`.
     if let Some(head) = body.strip_suffix('」')
         && head.ends_with("終わり")
@@ -244,7 +227,6 @@ pub const CATALOGUE_SAMPLES: &[&str] = &[
     "中中見出し",
     "３回り大きな文字",
     "ここか２字下げ",
-    "ここより２字下げ",
     "２字下げて",
     "「梅」に黒丸傍点",
     "「梅」は斜体字",
@@ -272,16 +254,13 @@ pub const CATALOGUE_SAMPLES: &[&str] = &[
     "「甫」にママの注記",
     "「甫」に「ママ」と注記",
     // Region-close synonyms (EXACT + parameterized).
-    "ここで文字下げ終わり",
     "ここで左から右への横組み終わり",
     "ここで横組みの表終わり",
-    "ここで2字下げ終わり",
     "ここで字下げ終わり」",
     // Region-open synonyms.
     "地付きで",
     "こ地付き",
     "以下2字下げ",
-    "ここから2　字下げ",
     // 字下げ numeric.
     "この行2字下げ",
 ];
@@ -375,10 +354,7 @@ mod tests {
             canonical_directive("ここか２字下げ").as_deref(),
             Some("ここから２字下げ")
         );
-        assert_eq!(
-            canonical_directive("ここより10字下げ").as_deref(),
-            Some("ここから10字下げ")
-        );
+        assert_eq!(canonical_directive("ここより10字下げ"), None);
         assert_eq!(canonical_directive("2字下げて").as_deref(), Some("2字下げ"));
     }
 
@@ -466,10 +442,8 @@ mod tests {
     #[test]
     fn region_numeric_parameterized() {
         for (v, c) in [
-            ("ここで2字下げ終わり", "ここで字下げ終わり"),
             ("ここで字下げ終わり」", "ここで字下げ終わり"),
             ("以下2字下げ", "ここから2字下げ"),
-            ("ここから2　字下げ", "ここから2字下げ"),
             ("この行2字下げ", "2字下げ"),
         ] {
             assert_eq!(canonical_directive(v).as_deref(), Some(c), "variant {v:?}");

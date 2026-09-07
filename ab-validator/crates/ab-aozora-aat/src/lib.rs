@@ -39,7 +39,7 @@ use ab_aozora_facade::{
 use ab_aozora_facade::syntax::{
     AbsoluteSize, BlockStyles, CaptionScope, EnclosureKind, HeadingStyle, IndentLayout,
     LineAlignment, LineFormat, MarginNoteKind, MarginNotePosition, RelativePlacement,
-    accent::{compose_accent, compose_accent_dots},
+    accent::{compose_accent, compose_accent_dots, decompose_fragment},
     ast::{ContainerEnd, ContainerPair, Content, IterationMark, KuntenKind, Ruby, Segment},
 };
 use ab_source_syntax::{RegionError, SourceRegions, aozora_body_range};
@@ -4248,11 +4248,87 @@ fn attach_accent_scope_variant(
     decoded: &DecodedSource,
 ) -> bool {
     let Some(content) = accent_scope_variant_content(nodes, annotation, current, target, decoded)
+        .or_else(|| accent_spelling_variant_content(nodes, annotation, current, decoded))
     else {
         return false;
     };
     *nodes = content;
     true
+}
+
+fn preceding_accent_scope(
+    annotation: &Value,
+    decoded: &DecodedSource,
+) -> Option<ab_aozora_facade::Span> {
+    let marker = value_source_span(annotation)?;
+    decoded.accent_scopes.iter().copied().find(|scope| {
+        let end = decoded.span_ctx.to_decoded_end(scope.end as usize);
+        decoded.text.get(end..marker.start) == Some("〕")
+    })
+}
+
+fn accent_literal_content(nodes: &[Value], decoded: &DecodedSource) -> Option<Vec<Value>> {
+    nodes
+        .iter()
+        .map(|node| {
+            if node["kind"] != "text" {
+                return None;
+            }
+            let source = value_source_span(node)?;
+            let text = node["value"].as_str()?;
+            if decoded.text.get(source.start..source.end)? != text {
+                return None;
+            }
+            let mut realized = node.clone();
+            realized["value"] = json!(decompose_fragment(text));
+            Some(realized)
+        })
+        .collect()
+}
+
+fn accent_spelling_variant_content(
+    nodes: &[Value],
+    annotation: &Value,
+    current: &[Value],
+    decoded: &DecodedSource,
+) -> Option<Vec<Value>> {
+    let [quoted] = current else {
+        return None;
+    };
+    let spelling = quoted["value"].as_str()?;
+    let scope = preceding_accent_scope(annotation, decoded)?;
+    let end = decoded.span_ctx.to_decoded_end(scope.end as usize);
+    let start = end.checked_sub(spelling.len())?;
+    if start < decoded.span_ctx.to_decoded(scope.start as usize)
+        || decoded.text.get(start..end)? != spelling
+    {
+        return None;
+    }
+    // A quoted source spelling inherits encoding only from its exact owned
+    // target. The quotations gain no fabricated accent-scope delimiters.
+    let current = accent_literal_content(current, decoded)?;
+    let target = content_structured_text(&current)?;
+    if target == spelling {
+        return None;
+    }
+    let base = accent_literal_content(
+        annotation["text_variant"]["base_content"].as_array()?,
+        decoded,
+    )?;
+    let base_text = content_structured_text(&base)?;
+    let mut content = nodes.to_vec();
+    let selected = take_visible_suffix_matching(&mut content, &target, decoded, Some(&current))?;
+    if value_source_span(selected.first()?)?.start != start
+        || value_source_span(selected.last()?)?.end != end
+    {
+        return None;
+    }
+    content.push(json!({"kind":"text-variant", "content":selected,
+        "current_interpretation_facts":established_interpretations(&current),
+        "base_text":base_text, "base_content":base,
+        "source":annotation["source"], "span":annotation["span"]}));
+    append_variant_statement(&mut content, annotation);
+    Some(content)
 }
 
 fn accent_scope_variant_content(
@@ -4265,11 +4341,7 @@ fn accent_scope_variant_content(
     if target.is_empty() {
         return None;
     }
-    let marker = value_source_span(annotation)?;
-    let scope = decoded.accent_scopes.iter().find(|scope| {
-        let end = decoded.span_ctx.to_decoded_end(scope.end as usize);
-        decoded.text.get(end..marker.start) == Some("〕")
-    })?;
+    let scope = preceding_accent_scope(annotation, decoded)?;
     let source = decoded
         .span_text
         .get(scope.start as usize..scope.end as usize)?;

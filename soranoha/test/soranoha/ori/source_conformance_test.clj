@@ -1376,3 +1376,15 @@
       (is (= [witness] (texts result "rdg")))
       (is (empty? (get-in result [:ir "interpretation_problems"])))
       (is (every? #(not (string/blank? (attribute % "source"))) (elements result "app"))))))
+
+(deftest a-source-spelling-variant-retains-the-targets-accent-context
+  (let [body "〔Ich danke dir für dein Ha:tte.“〕"
+        original (transcribe (source body))
+        result (transcribe (source (str body "［＃「Ha:tte.“」は底本では「Ha:tte“.」］")))]
+    (is (= "Ich danke dir für dein Hätte.“" (:plaintext result)))
+    (is (= (:plaintext original) (:plaintext result)))
+    (is (= (projection/markdown (:view original)) (projection/markdown (:view result))))
+    (is (= ["Hätte.“"] (texts result "lem")))
+    (is (= ["Hätte“."] (texts result "rdg")))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))
+    (is (every? #(not (string/blank? (attribute % "source"))) (elements result "app")))))

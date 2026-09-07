@@ -1509,3 +1509,69 @@ fn edition_targets_retain_the_immediately_preceding_accent_scope() {
         );
     }
 }
+
+#[test]
+fn a_quoted_source_spelling_inherits_only_its_exact_target_accent_context() {
+    let body = "〔Ich danke dir für dein Ha:tte.“〕［＃「Ha:tte.“」は底本では「Ha:tte“.」］";
+    let ir = convert(body);
+    let all = nodes(&ir);
+    let app = all
+        .iter()
+        .find(|node| node["type"] == "base-text-variant")
+        .unwrap();
+    assert_eq!(app["text"], "Hätte.“");
+    assert_eq!(app["variant"]["base_text"], "Hätte“.");
+    let source = format!("題\n作者\n\n{body}\n\n底本：本\n");
+    for (node, spelling) in [
+        (&app["inline_children"][0], "Ha:tte.“"),
+        (&app["variant"]["base_children"][0], "Ha:tte“."),
+    ] {
+        let span = &node["source_span"];
+        let start = usize::try_from(span["start"].as_u64().unwrap()).unwrap();
+        let end = usize::try_from(span["end"].as_u64().unwrap()).unwrap();
+        assert_eq!(&source[start..end], spelling);
+    }
+    assert_eq!(ir["interpretation_problems"], json!([]));
+    let facts = ir["interpretation_facts"].as_array().unwrap();
+    assert_eq!(facts.len(), 1);
+    assert_eq!(facts[0]["kind"], "text-variant");
+    assert_eq!(
+        facts[0]["source_span"]["start"],
+        source.find("［＃").unwrap()
+    );
+    let ligature = convert("〔ae&〕［＃「ae&」は底本では「oe&」］");
+    let ligature_nodes = nodes(&ligature);
+    let ligature_app = ligature_nodes
+        .iter()
+        .find(|node| node["type"] == "base-text-variant")
+        .unwrap();
+    assert_eq!(ligature_app["text"], "æ");
+    assert_eq!(ligature_app["variant"]["base_text"], "œ");
+    let span = &ligature_app["inline_children"][0]["source_span"];
+    assert_eq!(
+        span["end"].as_u64().unwrap() - span["start"].as_u64().unwrap(),
+        3
+    );
+    for body in [
+        "〔ae&〕［＃「e&」は底本では「o&」］",
+        "Hätte.“［＃「Ha:tte.“」は底本では「Ha:tte“.」］",
+        "〔cafe' Hätte.“〕［＃「Ha:tte.“」は底本では「Ha:tte“.」］",
+        "〔Ha:tte.“〕別［＃「Ha:tte.“」は底本では「Ha:tte“.」］",
+        "〔Ha:tte.“〕\n［＃「Ha:tte.“」は底本では「Ha:tte“.」］",
+        "〔Ha:tte.“ danach〕［＃「Ha:tte.“」は底本では「Ha:tte“.」］",
+        "〔Ha:tte.“〕〔cafe'〕［＃「Ha:tte.“」は底本では「Ha:tte“.」］",
+        "〔Ha:tte.“〕［＃「Ha:tte.“」は底本では「Ha:tte［＃未知］“.」］",
+    ] {
+        let ir = convert(body);
+        assert!(
+            !nodes(&ir)
+                .iter()
+                .any(|node| node["type"] == "base-text-variant"),
+            "{body}"
+        );
+        assert!(
+            !ir["interpretation_problems"].as_array().unwrap().is_empty(),
+            "{body}"
+        );
+    }
+}

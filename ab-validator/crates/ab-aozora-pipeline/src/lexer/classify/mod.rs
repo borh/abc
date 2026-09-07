@@ -498,7 +498,12 @@ fn literal_reference_sign(source: &str, span: Span) -> bool {
     }
     // A pending explicit ruby base needs ownership of the sign as well as its
     // following text; accepting the sign alone would hide a truncated base.
-    if before.chars().rev().find(|ch| matches!(ch, '｜' | '》' | '\n')) == Some('｜') {
+    if before
+        .chars()
+        .rev()
+        .find(|ch| matches!(ch, '｜' | '》' | '\n'))
+        == Some('｜')
+    {
         return false;
     }
     if after.starts_with("記号") || after.starts_with("番号") {

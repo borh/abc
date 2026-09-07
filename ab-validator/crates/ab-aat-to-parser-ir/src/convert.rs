@@ -1795,42 +1795,6 @@ fn map_text_variant_to_node(
     Ok(end)
 }
 
-fn attach_ruby_variant(source_node: &Value, variant: &Value, nodes: &mut [Value]) -> Result<bool> {
-    if variant["target_kind"] != "ruby-reading" {
-        return Ok(false);
-    }
-    let Some(ruby) = nodes.last_mut() else {
-        return Ok(false);
-    };
-    if ruby["type"] != "ruby"
-        || ruby["ruby"]["reading"] != variant["current"]
-        || ruby["source_span"]["end"].as_u64().is_none()
-        || ruby["source_span"]["end"].as_u64() != source_node["span"]["byte_start"].as_u64()
-    {
-        return Ok(false);
-    }
-    let Some(current) = variant["current"].as_str() else {
-        return Ok(false);
-    };
-    let children = ruby.get_mut("reading_children").map(Value::take).unwrap_or_else(|| json!([
-        {"type": "text", "text": current, "span": {"start": 0, "end": utf8_len(current), "coordinate_system": "reading_utf8"}}
-    ]));
-    if children.as_array().is_some_and(|children| {
-        children
-            .iter()
-            .any(|child| child["type"] == "base-text-variant")
-    }) {
-        ruby["reading_children"] = children;
-        return Ok(false);
-    }
-    let mut annotation = json!({"type": "base-text-variant", "text": current,
-        "variant": {"base_text": variant["base_text"]}, "inline_children": children,
-        "span": {"start": 0, "end": utf8_len(current), "coordinate_system": "reading_utf8"}});
-    attach_source_span(&mut annotation, source_node.get("span"))?;
-    ruby["reading_children"] = json!([annotation]);
-    Ok(true)
-}
-
 fn map_raw_to_nodes(
     node: &Value,
     nodes: &mut Vec<Value>,
@@ -1838,10 +1802,7 @@ fn map_raw_to_nodes(
     offset: u64,
     path: &str,
 ) -> Result<u64> {
-    if let Some(variant) = node.get("text_variant") {
-        if attach_ruby_variant(node, variant, nodes)? {
-            return Ok(offset);
-        }
+    if node.get("text_variant").is_some() {
         nodes.push(
             json!({"type": "editor-note", "span": synthetic_span(offset, offset),
             "note": {"raw": node["source"], "category": "variant", "resolution": "unresolved"}}),

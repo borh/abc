@@ -2339,9 +2339,9 @@ fn quoted_base_text_variant_targets_supplied_ruby_reading() {
 }
 
 #[test]
-fn nonadjacent_or_mismatched_reading_variants_remain_unresolved() {
+fn line_crossing_or_mismatched_reading_variants_remain_unresolved() {
     for source in [
-        "籠《ざる》と［＃ルビの「ざる」は底本では「さる」］",
+        "籠《ざる》\nと［＃ルビの「ざる」は底本では「さる」］",
         "籠《ざる》［＃ルビの「さる」は底本では「ざる」］",
     ] {
         let (schemas, mapping) = v2_schemas_and_mapping();

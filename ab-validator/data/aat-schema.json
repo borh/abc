@@ -396,7 +396,7 @@
           "properties": {
             "target_kind": { "enum": ["ruby-reading", "text"] },
             "current": { "type": "string", "minLength": 1 },
-            "base_text": { "type": "string", "minLength": 1 }
+            "base_text": { "type": "string", "description": "Explicit witness text; empty means source-stated absence." }
           }
         },
         "span": { "$ref": "#/$defs/span" }
@@ -409,7 +409,7 @@
       "properties": {
         "kind": { "const": "text-variant" },
         "content": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/inline" } },
-        "base_text": { "type": "string", "minLength": 1 },
+        "base_text": { "type": "string", "description": "Explicit witness text; empty means source-stated absence." },
         "source": { "type": "string", "minLength": 1 },
         "span": { "$ref": "#/$defs/span" }
       }

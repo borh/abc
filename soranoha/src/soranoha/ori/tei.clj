@@ -292,7 +292,10 @@
     (append-inline (assoc rendered :current-paragraph before)
                    (sourced node [:app {:type "base-text-variant"}
                                   (into [:lem] (:current-paragraph rendered))
-                                  [:rdg {:type "base-text"} (get-in node ["variant" "base_text"])]]))))
+                                  [:rdg (cond-> {:type "base-text"}
+                                          (= "" (get-in node ["variant" "base_text"]))
+                                          (assoc :subtype "omission"))
+                                   (get-in node ["variant" "base_text"])]]))))
 
 (defn- render-inline-wrapper [acc children text depth wrapper]
   (if (seq children)

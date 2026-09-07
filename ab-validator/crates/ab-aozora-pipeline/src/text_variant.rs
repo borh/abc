@@ -1,4 +1,4 @@
-//! Explicit quoted alternatives supplied by Aozora base-text notes.
+//! Explicit witness alternatives and absence supplied by Aozora base-text notes.
 
 /// Content addressed by a quoted base-text note.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -9,14 +9,14 @@ pub enum TextVariantTarget {
     Text,
 }
 
-/// A supplied reading or text and its explicitly quoted base-text alternative.
+/// A supplied reading or text and its explicitly stated base-text alternative.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TextVariant<'s> {
     /// Which content sequence the note addresses.
     pub target: TextVariantTarget,
     /// The spelling supplied in the Aozora text.
     pub current: &'s str,
-    /// The alternative attributed to the base text.
+    /// The alternative attributed to the base text; empty only for explicit absence.
     pub base_text: &'s str,
 }
 
@@ -30,10 +30,18 @@ pub fn text_variant(source: &str) -> Option<TextVariant<'_>> {
     } else {
         (TextVariantTarget::Text, body.strip_prefix('「')?)
     };
-    let (current, base_text) = body.split_once("」は底本では「")?;
-    let base_text = base_text.strip_suffix('」')?;
+    let (current, witness) = body.split_once("」は底本では")?;
+    let base_text = match witness {
+        "欠落" | "なし" => "",
+        quoted => {
+            let text = quoted.strip_prefix('「')?.strip_suffix('」')?;
+            if text.is_empty() {
+                return None;
+            }
+            text
+        }
+    };
     if current.is_empty()
-        || base_text.is_empty()
         || current.contains(['「', '」', '\n'])
         || base_text.contains(['「', '」', '\n'])
     {

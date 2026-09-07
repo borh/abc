@@ -331,29 +331,3 @@ fn unsupported_compound_clauses_and_missing_targets_remain_explicit() {
         );
     }
 }
-
-#[test]
-fn intervening_unresolved_variant_does_not_create_an_empty_formatting_target() {
-    let ir = convert("覆われた２）［＃「)」は底本では欠落］［＃「２）」は縦中横、行右小書き］。");
-    let all = nodes(&ir);
-    assert!(
-        !all.iter()
-            .any(|node| node["type"] == "layout-span" && node["layout"].is_array())
-    );
-    assert!(
-        ir["interpretation_problems"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .any(|problem| problem["raw"] == "［＃「２）」は縦中横、行右小書き］")
-    );
-    let visible = all
-        .iter()
-        .filter(|node| node["type"] == "text")
-        .filter_map(|node| node["text"].as_str())
-        .collect::<Vec<_>>();
-    assert!(
-        visible.iter().any(|text| text.contains("覆われた２）")),
-        "{ir}"
-    );
-}

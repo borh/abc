@@ -1,5 +1,6 @@
 //! AAT (Aozora AST Transform) projection of native source interpretation.
 
+use std::borrow::Cow;
 use std::{
     collections::{BTreeMap, BTreeSet},
     fmt::Write as _,
@@ -1009,6 +1010,7 @@ fn build_aat(
         inline_content(decoded, nodes, &gaiji_by_start, &ruby_by_span),
         &decoded.text,
     ));
+    blocks = resolve_text_variants_in_blocks(blocks, &decoded.text);
     let mut warnings = diagnostics
         .iter()
         .map(|diagnostic| diagnostic_warning(diagnostic, &decoded.span_ctx))
@@ -1973,12 +1975,6 @@ fn inline_content(
                 "x-break-kind": "page",
                 "span": span_json(&node.span, &decoded.span_ctx)
             })),
-            ProjectedKind::TextVariant {
-                target: TextVariantTarget::Text,
-                ..
-            } => {
-                push_text_variant_node(&mut content, decoded, node);
-            }
             ProjectedKind::Node(_)
             | ProjectedKind::Region(_)
             | ProjectedKind::RegionClose(_)
@@ -2636,17 +2632,117 @@ fn push_style_node(
     }
 }
 
-fn push_text_variant_node(content: &mut Vec<Value>, decoded: &DecodedSource, node: &AozoraNode) {
-    let raw = raw_node(decoded, node, "directive");
-    if let ProjectedKind::TextVariant {
-        current, base_text, ..
-    } = &node.kind
-        && let Some(children) = take_visible_suffix(content, current, &decoded.text)
+// Resolve quoted targets after scopes are assembled, while source lines and
+// typed principal/reading contributions remain available in one representation.
+fn resolve_text_variants_in_blocks(nodes: Vec<Value>, source: &str) -> Vec<Value> {
+    let mut resolved = Vec::with_capacity(nodes.len());
+    for mut node in nodes {
+        for key in [
+            "children",
+            "content",
+            "upper",
+            "lower",
+            "base_content",
+            "reading_content",
+        ] {
+            if let Some(children) = node.get_mut(key).and_then(Value::as_array_mut) {
+                *children = resolve_text_variants_in_blocks(mem::take(children), source);
+            }
+        }
+        if let Some(variant) = node.get("text_variant") {
+            if variant["target_kind"] == "text" {
+                if let Some(children) = variant["current"]
+                    .as_str()
+                    .and_then(|current| take_visible_suffix(&mut resolved, current, source))
+                {
+                    resolved.push(json!({"kind":"text-variant", "content":children,
+                        "base_text":variant["base_text"], "source":node["source"], "span":node["span"]}));
+                    continue;
+                }
+            } else if attach_reading_variant(&mut resolved, &node) {
+                continue;
+            }
+        }
+        resolved.push(node);
+    }
+    resolved
+}
+
+fn preceding_reading(nodes: &mut [Value]) -> Option<&mut Value> {
+    for node in nodes.iter_mut().rev() {
+        match node["kind"].as_str()? {
+            "text" => {
+                if node["value"].as_str()?.contains(['\n', '\r']) {
+                    return None;
+                }
+            }
+            "ruby" => return Some(node),
+            "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi"
+            | "yokogumi" | "text-variant" => {
+                return preceding_reading(node["content"].as_array_mut()?);
+            }
+            _ => return None,
+        }
+    }
+    None
+}
+
+fn attach_reading_variant(nodes: &mut [Value], note: &Value) -> bool {
+    let variant = &note["text_variant"];
+    let Some(ruby) = preceding_reading(nodes) else {
+        return false;
+    };
+    if ruby["span"]["line_end"].as_u64().is_none()
+        || ruby["span"]["line_end"] != note["span"]["line_start"]
     {
-        content.push(json!({"kind":"text-variant", "content":children,
-            "base_text":base_text, "source":raw["source"], "span":raw["span"]}));
+        return false;
+    }
+    let reading = if let Some(children) = ruby["reading_content"].as_array() {
+        let mut text = String::new();
+        for child in children {
+            if child["kind"] == "text-variant" {
+                return false;
+            }
+            let Some(part) = target_text(child) else {
+                return false;
+            };
+            text.push_str(&part);
+        }
+        text
     } else {
-        content.push(raw);
+        ruby["reading"].as_str().unwrap_or("").to_owned()
+    };
+    if reading.is_empty() || variant["current"] != reading {
+        return false;
+    }
+    let children = ruby
+        .as_object_mut()
+        .expect("ruby object")
+        .remove("reading_content")
+        .unwrap_or_else(|| json!([{"kind":"text", "value":reading}]));
+    ruby["reading_content"] = json!([{"kind":"text-variant", "content":children,
+        "base_text":variant["base_text"], "source":note["source"], "span":note["span"]}]);
+    true
+}
+
+// Match known principal content without assigning typography a reading order.
+// An explicitly typed witness note contributes no principal characters even
+// when its own quoted target remains unresolved.
+fn target_text(node: &Value) -> Option<Cow<'_, str>> {
+    match node["kind"].as_str()? {
+        "text" => Some(Cow::Borrowed(node["value"].as_str()?)),
+        "ruby" => Some(Cow::Borrowed(node["base"].as_str()?)),
+        "gaiji" => Some(Cow::Borrowed(node["resolved"].as_str()?)),
+        "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi"
+        | "yokogumi" | "text-variant" => {
+            let mut text = String::new();
+            for child in node["content"].as_array()? {
+                text.push_str(&target_text(child)?);
+            }
+            Some(Cow::Owned(text))
+        }
+        "raw" if node.get("text_variant").is_some() => Some(Cow::Borrowed("")),
+        _ => None,
     }
 }
 
@@ -2658,16 +2754,14 @@ fn take_visible_suffix(content: &mut Vec<Value>, target: &str, source: &str) -> 
     for index in (0..content.len()).rev() {
         let node = &content[index];
         let kind = node["kind"].as_str()?;
-        let text = match kind {
-            "text" => node["value"].as_str()?,
-            "ruby" => node["base"].as_str()?,
-            "gaiji" => node["resolved"].as_str()?,
-            _ => return None,
-        };
+        let text = target_text(node)?;
         if text.is_empty() {
+            if kind == "raw" && node.get("text_variant").is_some() {
+                continue;
+            }
             return None;
         }
-        if let Some(prefix) = remaining.strip_suffix(text) {
+        if let Some(prefix) = remaining.strip_suffix(text.as_ref()) {
             remaining = prefix;
             if remaining.is_empty() {
                 return Some(content.split_off(index));

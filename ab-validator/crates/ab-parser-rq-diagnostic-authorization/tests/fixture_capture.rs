@@ -132,6 +132,16 @@ fn generate(root: &Path) -> BTreeMap<String, String> {
     for (name, source) in cases {
         let generation =
             capture_generation_from_bytes_for_identity(source.as_bytes(), IDENTITY_REF).unwrap();
+        if matches!(name, "observe-only" | "silent-gap") {
+            let parser: Value = serde_json::from_slice(&generation.parser_output).unwrap();
+            let raw = &parser["blocks"][0]["content"][0];
+            assert_eq!(raw["kind"], "raw");
+            assert_eq!(raw["source"], source);
+            assert_eq!(raw["span"]["byte_start"], 0);
+            assert_eq!(raw["span"]["byte_end"], source.len());
+            assert_eq!(raw["interpretation_problem"]["code"], "unparsed-source-gap");
+            assert_eq!(parser["meta"]["parse_complete"], false);
+        }
         let manifest: Value = serde_json::from_slice(&generation.manifest).unwrap();
         let work_id = manifest["work_id"].as_str().unwrap().to_owned();
         let published = generation.publish(&store).unwrap();
@@ -242,6 +252,19 @@ fn generate(root: &Path) -> BTreeMap<String, String> {
             .iter()
             .find_map(|(name, id)| (id == &entry.work_id).then_some(name.clone()))
             .unwrap();
+        if matches!(name.as_str(), "observe-only" | "silent-gap") {
+            let source = cases.iter().find(|(key, _)| *key == name).unwrap().1;
+            assert_eq!(
+                result.silent_intervals.as_deref(),
+                Some(
+                    [ab_parser_rq_diagnostic_authorization::Interval {
+                        start: 0,
+                        end: u64::try_from(source.len()).unwrap(),
+                    }]
+                    .as_slice()
+                ),
+            );
+        }
         observed.insert(
             name,
             (
@@ -271,9 +294,9 @@ fn generate(root: &Path) -> BTreeMap<String, String> {
     });
     assert_eq!(observed["clean-vacuous"], (0, 0, 0, 0, 0, true));
     assert_eq!(observed["literal-pua"], (0, 3, 0, 0, 0, true));
-    assert_eq!(observed["observe-only"], (0, 6, 1, 0, 1, false));
+    assert_eq!(observed["observe-only"], (0, 18, 1, 0, 1, false));
     assert_eq!(observed["opaque-unknown"], (0, 15, 0, 0, 0, true));
-    assert_eq!(observed["silent-gap"], (0, 6, 1, 0, 1, false));
+    assert_eq!(observed["silent-gap"], (0, 10, 1, 0, 1, false));
     let gap_bytes = canonical_json(&aggregate_json(&aggregate))
         .unwrap()
         .into_bytes();

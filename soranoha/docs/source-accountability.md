@@ -7,7 +7,8 @@ source region and recognized syntax families. Editorial legend examples remain
 visible as front matter. Unrecognized markers and lossy decoding remain explicit.
 
 This scanner runs independently of the parser. Its stage identity binds the
-scanner executable and matrix; parser changes do not invalidate its evidence.
+scanner executable and matrix; changes confined to the parser stage do not
+invalidate its evidence. Changes to shared scanner dependencies can invalidate it.
 The native command is `ab-source-inventory --source source.txt --matrix matrix.toml
 --output-json accountability.json`. The publication wrapper supplies
 `AB_SOURCE_INVENTORY_BIN` and `AB_AOZORA_SYNTAX_MATRIX`.

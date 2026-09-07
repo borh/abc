@@ -27,10 +27,18 @@
      (case kind
        :view/text
        (reduce-kv (fn [points byte char]
-                    (let [offset (+ start byte)]
-                      (if (wanted offset) (assoc points offset {:node node :char char}) points)))
-                  points (view/utf8-boundaries text))
-       :view/break
+                    (let [offset (+ start byte)
+                          parent (.getParentNode ^Node node)]
+                      (if-not (wanted offset)
+                        points
+                        (if (= "g" (view/local-name parent))
+                          (cond
+                            (= offset start) (assoc points offset {:node parent :side :before})
+                            (= offset end) (assoc points offset {:node parent :side :after})
+                            :else (throw (ex-info "Analysis boundary splits an atomic TEI glyph" {:offset offset})))
+                          (assoc points offset {:node node :char char})))))
+                  points (view/utf8-offsets text (map #(- % start) (subseq wanted >= start <= end))))
+       (:view/break :view/unresolved-glyph)
        (cond-> points
          (wanted start) (assoc start {:node node :side :before})
          (wanted end) (assoc end {:node node :side :after}))
@@ -75,8 +83,8 @@
           _ (when-not (= (count identities) (count (set identities)))
               (throw (ex-info "Duplicate analysis layer selection" {})))
           wanted (into (sorted-set) (mapcat (fn [layer]
-                                             (mapcat (juxt :annotation/start :annotation/end)
-                                                     (:layer/records layer)))) layers)
+                                              (mapcat (juxt :annotation/start :annotation/end)
+                                                      (:layer/records layer)))) layers)
           points (source-points (:view/segments text-view) wanted)
           prefix (str "analysis-" (subs (:view/id text-view) 7 23) "-")
           anchor-id #(str prefix %)
@@ -102,7 +110,6 @@
                                {"xml:id" (group-id identity)
                                 "type" "analysis"
                                 "corresp" (str "urn:" identity)
-                                "source" (str "urn:" (:view/id text-view))
                                 "n" (:producer/name (:layer/producer analysis))})]
             (.appendChild stand-off (.createTextNode doc "\n  "))
             (doseq [{:annotation/keys [id start end label features]} (:layer/records analysis)]

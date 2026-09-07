@@ -11,7 +11,7 @@
 (defn- indent [^Element element]
   (when element
     (when-let [[_ width] (re-find #"(?:^|;)\s*text-indent:\s*(\d+)em(?:;|$)"
-                                (.getAttribute element "style"))]
+                                  (.getAttribute element "style"))]
       (apply str (repeat (Long/parseLong width) "　")))))
 
 (defn plaintext
@@ -31,7 +31,7 @@
   (string/escape text {\& "&amp;" \< "&lt;" \> "&gt;" \" "&quot;"}))
 
 (defn- markdown-text [text]
-  (string/replace text #"([\\`*_{}\[\]()#+.!|>~-])" "\\$1"))
+  (string/replace (html-text text) #"([\\`*_{}\[\]()#+.!|>~-])" (fn [[_ token]] (str "\\" token))))
 
 (declare inline)
 
@@ -43,7 +43,7 @@
         content #(inline-children node html?)]
     (cond
       (= Node/TEXT_NODE (.getNodeType node))
-      ((if html? html-text markdown-text) (.getNodeValue node))
+      (markdown-text (.getNodeValue node))
 
       (= "ruby" tag)
       (str "<ruby>"
@@ -55,7 +55,11 @@
 
       (#{"lb" "pb"} tag) (if html? "<br>" "  \n")
       (= "g" tag) (if (empty? (.getTextContent node)) "�" (content))
-      (= "hi" tag) (str "<em>" (inline-children node true) "</em>")
+      (= "hi" tag) (let [rend (.getAttribute ^Element node "rend")]
+                     (case rend
+                       "bold" (str "<strong>" (inline-children node true) "</strong>")
+                       "italic" (str "<em>" (inline-children node true) "</em>")
+                       (content)))
       (#{Node/COMMENT_NODE Node/PROCESSING_INSTRUCTION_NODE} (.getNodeType node)) ""
       :else (content))))
 
@@ -68,7 +72,7 @@
     :else (into [] (mapcat blocks) (view/selected-children node))))
 
 (defn markdown
-  "Markdown with HTML ruby; readers must permit ruby, rb, rt, em and br elements."
+  "Markdown with HTML ruby; readers must permit ruby, rb, rt, strong, em and br elements."
   [reading]
   (let [^org.w3c.dom.Document document (:view/document reading)
         body (.item (.getElementsByTagNameNS document view/tei-namespace "body") 0)]
@@ -77,3 +81,64 @@
                         (str (when (= "head" (view/local-name node)) "## ")
                              (inline-children node false)))
                       (blocks body)))))
+
+(def ^:private structural-tags
+  #{"TEI" "text" "body" "div" "floatingText" "p" "s" "seg" "ab" "l" "lg" "list" "item"
+    "anchor" "rb" "rt" "corr" "sic" "orig" "reg" "abbr" "expan" "quote" "figure" "figDesc"})
+
+(defn- report-children [profile node]
+  (if (and (= :projection/markdown profile) (= "ruby" (view/local-name node)))
+    (filterv #(#{"rb" "rt"} (view/local-name %)) (view/children node))
+    (view/selected-children node)))
+
+(defn- disposition [profile ^Element node]
+  (let [tag (view/local-name node)]
+    (cond
+      (and (= "g" tag) (empty? (.getTextContent node))) :projection/unresolved
+      (#{"note" "fw"} tag) :projection/omitted
+      (= "graphic" tag) (if (= :projection/plaintext profile) :projection/omitted :projection/unsupported)
+      (= "hi" tag) (if (or (= :projection/plaintext profile)
+                           (#{"bold" "italic"} (.getAttribute node "rend")))
+                     :projection/transformed :projection/unsupported)
+      (#{"ruby" "choice" "head" "lb"} tag) :projection/transformed
+      (= "pb" tag) (if (= :projection/plaintext profile) :projection/transformed :projection/omitted)
+      (or (= "g" tag) (structural-tags tag)) :projection/represented
+      :else :projection/unsupported)))
+
+(defn- node-outcomes [profile ^Element node]
+  (let [tag (view/local-name node)]
+    (cond-> [[(or tag (.getNodeName node)) (disposition profile node)]]
+      (and (= "ruby" tag) (= :projection/plaintext profile))
+      (into (map (fn [_] ["ruby-reading" :projection/omitted])
+                 (filter #(= "rt" (view/local-name %)) (view/children node))))
+
+      (and (= "rt" tag) (.hasAttribute node "place"))
+      (conj ["ruby-placement" :projection/unsupported])
+
+      (and (not= "hi" tag) (or (.hasAttribute node "rend") (.hasAttribute node "style")))
+      (conj ["layout" :projection/omitted])
+
+      (= "choice" tag)
+      (into (map (fn [_] ["alternative-reading" :projection/omitted])
+                 (remove (set (view/selected-children node))
+                         (filter #(= Node/ELEMENT_NODE (.getNodeType ^Node %)) (view/children node))))))))
+
+(defn report [profile reading]
+  (when-not (#{:projection/plaintext :projection/markdown} profile)
+    (throw (ex-info "Unknown projection profile" {:profile profile})))
+  (let [^org.w3c.dom.Document document (:view/document reading)
+        body (.item (.getElementsByTagNameNS document view/tei-namespace "body") 0)
+        descend (partial report-children profile)
+        outcomes (mapcat (fn [^Node node]
+                           (when (= Node/ELEMENT_NODE (.getNodeType node))
+                             (node-outcomes profile node)))
+                         (tree-seq #(seq (descend %)) descend body))
+        counts (frequencies outcomes)]
+    {"profile" (str (name profile) "/1")
+     "view" (:view/id reading)
+     "status" (if (some (fn [[[_ disposition] _]]
+                          (#{:projection/unresolved :projection/unsupported} disposition)) counts)
+                "limited" "complete-for-profile")
+     "counts" (mapv (fn [[[family disposition] count]]
+                      {"family" family "disposition" (name disposition) "count" count})
+                    (sort-by key counts))}))

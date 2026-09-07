@@ -1,7 +1,8 @@
 (ns soranoha.annotations.view
   "Body reading and UTF-8 alignment for analysis of TEI transcription.
   DOM mappings are local to a parsed document; only text and policy identify a view."
-  (:require [soranoha.core.hash :as hash])
+  (:require [clojure.string :as str]
+            [soranoha.core.hash :as hash])
   (:import [java.io ByteArrayInputStream]
            [javax.xml.parsers DocumentBuilderFactory]
            [org.w3c.dom Document Node]))
@@ -43,29 +44,36 @@
                            (let [matches (filterv #(= tag (local-name %)) nodes)]
                              (when (seq matches) matches)))
                          ["corr" "reg" "expan" "sic" "orig" "abbr"])
-                    (throw (ex-info "No supported reading in TEI choice" {})))
+                   (throw (ex-info "No supported reading in TEI choice" {})))
       (filterv #(not= "rt" (local-name %)) nodes))))
 
 (defn utf8-size [^String text]
   (alength (.getBytes text "UTF-8")))
 
-(defn utf8-boundaries
-  "Map valid UTF-8 boundaries to Java string offsets; reject unpaired surrogates."
-  [^String text]
-  (loop [char-offset 0 byte-offset 0 result (transient {0 0})]
-    (if (= char-offset (.length text))
-      (persistent! result)
-      (let [cp (.codePointAt text char-offset)
-            chars (Character/charCount cp)]
-        (when (<= 0xd800 cp 0xdfff)
-          (throw (ex-info "Unpaired surrogate in analysis text" {:offset char-offset})))
-        (let [bytes (cond (< cp 0x80) 1 (< cp 0x800) 2 (< cp 0x10000) 3 :else 4)
-              next-char (+ char-offset chars)
-              next-byte (+ byte-offset bytes)]
-          (recur next-char next-byte (assoc! result next-byte next-char)))))))
+(defn utf8-offsets
+  "Map requested UTF-8 boundaries to Java offsets without indexing every character."
+  [^String text offsets]
+  (when-not (every? #(and (integer? %) (<= 0 %)) offsets)
+    (throw (ex-info "Invalid UTF-8 offset" {})))
+  (let [wanted (set offsets)]
+    (loop [char-offset 0 byte-offset 0 result (transient (if (wanted 0) {0 0} {}))]
+      (if (= char-offset (.length text))
+        (let [result (persistent! result)]
+          (when-not (= wanted (set (keys result)))
+            (throw (ex-info "Offset is outside text or inside a UTF-8 sequence" {})))
+          result)
+        (let [cp (.codePointAt text char-offset)
+              chars (Character/charCount cp)]
+          (when (<= 0xd800 cp 0xdfff)
+            (throw (ex-info "Unpaired surrogate in analysis text" {:offset char-offset})))
+          (let [bytes (cond (< cp 0x80) 1 (< cp 0x800) 2 (< cp 0x10000) 3 :else 4)
+                next-char (+ char-offset chars)
+                next-byte (+ byte-offset bytes)]
+            (recur next-char (long next-byte)
+                   (if (wanted next-byte) (assoc! result next-byte next-char) result))))))))
 
-(def ^:private block-tags #{"p" "head" "l" "ab" "item"})
-(def ^:private structural-tags #{"body" "div" "lg" "list" "text"})
+(def ^:private block-tags #{"p" "head" "l" "ab" "item" "figDesc"})
+(def ^:private structural-tags #{"body" "div" "lg" "list" "text" "floatingText" "figure"})
 
 (defn- text-segments [^Node node]
   (let [tag (local-name node)]
@@ -80,6 +88,9 @@
       (#{"lb" "pb"} tag)
       [{:view/kind :view/break :view/text "\n" :view/node node}]
 
+      (and (= "g" tag) (empty? (.getTextContent node)))
+      [{:view/kind :view/unresolved-glyph :view/text "\uFFFC" :view/node node}]
+
       (#{Node/COMMENT_NODE Node/PROCESSING_INSTRUCTION_NODE} (.getNodeType node)) []
 
       :else
@@ -89,7 +100,14 @@
           segments)))))
 
 (defn- reading-segments [node]
-  (let [segments (text-segments node)]
+  (let [raw (text-segments node)
+        segments (reduce (fn [result [index segment]]
+                           (if (and (= :view/block-end (:view/kind segment))
+                                    (or (str/ends-with? (or (:view/text (peek result)) "") "\n")
+                                        (str/starts-with? (or (:view/text (get raw (inc index))) "") "\n")))
+                             result
+                             (conj result segment)))
+                         [] (map-indexed vector raw))]
     (if (= :view/block-end (:view/kind (peek segments)))
       (pop segments)
       segments)))
@@ -98,20 +116,29 @@
   (apply str (map :view/text (reading-segments node))))
 
 (defn from-document [^Document document]
-  (let [bodies (.getElementsByTagNameNS document tei-namespace "body")]
-    (when-not (= 1 (.getLength bodies))
-      (throw (ex-info "Analysis requires exactly one TEI body" {:count (.getLength bodies)})))
-    (let [segments (reading-segments (.item bodies 0))
+  (let [texts (filterv #(= "text" (local-name %)) (children (.getDocumentElement document)))
+        bodies (into [] (mapcat #(filter (fn [node] (= "body" (local-name node))) (children %))) texts)]
+    (when-not (= 1 (count bodies))
+      (throw (ex-info "Analysis requires exactly one outer TEI body" {:count (count bodies)})))
+    (let [segments (reading-segments (first bodies))
           text (apply str (map :view/text segments))
-          _ (utf8-boundaries text)
+          _ (utf8-offsets text [])
           [segments _] (reduce (fn [[result start] segment]
                                  (let [end (+ start (utf8-size (:view/text segment)))]
                                    [(conj result (assoc segment :view/start start :view/end end)) end]))
-                               [[] 0] segments)]
+                               [[] 0] segments)
+          excluded (filter #(= :view/unresolved-glyph (:view/kind %)) segments)
+          [eligible offset] (reduce (fn [[spans offset] {:view/keys [start end]}]
+                                      [(cond-> spans (< offset start) (conj [offset start])) end])
+                                    [[] 0] excluded)
+          eligible (cond-> eligible (< offset (utf8-size text)) (conj [offset (utf8-size text)]))]
       {:view/id (hash/format-sha256
                  (hash/sha256-canonical-json {"policy" "body-v1" "unit" "utf8-bytes" "text" text}))
        :view/policy :view/body-v1
        :view/text text
+       :view/eligible-spans eligible
+       :view/problems (mapv #(hash-map :view/problem :view/unresolved-glyph
+                                       :view/start (:view/start %) :view/end (:view/end %)) excluded)
        :view/segments segments
        :view/document document})))
 

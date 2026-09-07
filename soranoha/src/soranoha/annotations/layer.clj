@@ -15,8 +15,8 @@
 
 (defn- exact-keys! [value required optional]
   (require! (and (map? value)
-                (every? #(contains? value %) required)
-                (every? (into (set required) optional) (keys value)))
+                 (every? #(contains? value %) required)
+                 (every? (into (set required) optional) (keys value)))
             "Invalid annotation object fields" {:required required :fields (when (map? value) (keys value))}))
 
 (defn- nonblank? [value]
@@ -36,7 +36,7 @@
 (defn- eligibility? [boundaries spans]
   (and (vector? spans) (every? #(span? boundaries %) spans)
        (every? (fn [[a b]] (< a b)) spans)
-       (every? (fn [[[ _ end] [start _]]] (<= end start)) (partition 2 1 spans))))
+       (every? (fn [[[_ end] [start _]]] (<= end start)) (partition 2 1 spans))))
 
 (defn validate-layer
   "Reject mismatched views, invalid UTF-8 ranges, undeclared inputs and inconsistent outcomes.
@@ -45,7 +45,11 @@
   (exact-keys! layer [:layer/view-id :layer/vocabulary :layer/producer :layer/dependencies
                       :layer/eligible-spans :layer/status :layer/records] [])
   (let [{:layer/keys [view-id vocabulary producer dependencies eligible-spans status records]} layer
-        boundaries (view/utf8-boundaries (:view/text text-view))]
+        _ (require! (and (vector? records) (vector? eligible-spans) (every? vector? eligible-spans))
+                    "Annotation records and eligible spans must be vectors" {})
+        boundaries (view/utf8-offsets (:view/text text-view)
+                                      (concat (mapcat identity eligible-spans)
+                                              (mapcat (juxt :annotation/start :annotation/end) records)))]
     (require! (= view-id (:view/id text-view)) "Annotation layer targets a different text view" {:view-id view-id})
     (require! (identity? vocabulary) "Expected vocabulary content identity" {:vocabulary vocabulary})
     (exact-keys! producer [:producer/name :producer/inputs] [])
@@ -55,6 +59,10 @@
               "Producer requires named content-addressed inputs" {})
     (require! (identities? dependencies) "Invalid annotation dependency identities" {})
     (require! (eligibility? boundaries eligible-spans) "Invalid eligible UTF-8 spans" {})
+    (require! (every? (fn [[start end]]
+                        (some (fn [[a b]] (<= a start end b)) (:view/eligible-spans text-view)))
+                      eligible-spans)
+              "Producer eligibility includes an unresolved glyph" {})
     (require! (contains? (set (vals statuses)) status) "Invalid annotation execution status" {:status status})
     (require! (vector? records) "Annotation records must be a vector" {})
     (require! (or (#{:layer/completed :layer/partial} status) (empty? records))
@@ -104,6 +112,7 @@
     (exact-keys! wire ["schema" "view" "vocabulary" "producer" "dependencies" "eligible_spans" "status" "records"] [])
     (require! (= "soranoha-annotation-layer/1" (get wire "schema")) "Unknown annotation layer schema" {})
     (require! (contains? statuses (get wire "status")) "Unknown annotation execution status" {})
+    (require! (vector? (get wire "records")) "Annotation records must be a vector" {})
     (let [producer (get wire "producer")]
       (exact-keys! producer ["name" "inputs"] [])
       (validate-layer

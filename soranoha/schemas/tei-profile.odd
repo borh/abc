@@ -34,7 +34,7 @@
         <moduleRef key="figures"/>
         <moduleRef key="gaiji"/>
         <moduleRef key="analysis"/>
-        <moduleRef key="linking" include="seg"/>
+        <moduleRef key="linking" include="seg anchor standOff"/>
 
         <!-- Schematron constraint declarations -->
         <constraintDecl scheme="schematron" queryBinding="xslt2">

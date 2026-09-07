@@ -34,57 +34,58 @@ pub fn detect_orthographic_annotations(
         .get("nodes")
         .and_then(Value::as_array)
         .context("parser-IR missing nodes[]")?;
-    let sentences = output
+    let paragraphs = output
         .parser_ir
-        .get("sentences")
+        .get("paragraphs")
         .and_then(Value::as_array)
-        .context("parser-IR missing sentences[]")?;
-
-    let mut owned_sentence_text = Vec::with_capacity(sentences.len());
-    let mut sentence_offsets = Vec::with_capacity(sentences.len());
-    let mut sentence_char_offsets = Vec::with_capacity(sentences.len());
-    let mut next_char_offset = 0usize;
-    for sentence in sentences {
-        let start = sentence
+        .context("parser-IR missing paragraphs[]")?;
+    let mut paragraph_texts = Vec::new();
+    let mut byte_offsets = Vec::new();
+    for paragraph in paragraphs {
+        if paragraph.get("role").and_then(Value::as_str) != Some("body") {
+            continue;
+        }
+        let start = paragraph
             .pointer("/node_range/start")
             .and_then(Value::as_u64)
-            .context("sentence missing node_range.start")? as usize;
-        let end = sentence
+            .context("paragraph missing node_range.start")? as usize;
+        let end = paragraph
             .pointer("/node_range/end")
             .and_then(Value::as_u64)
-            .context("sentence missing node_range.end")? as usize;
+            .context("paragraph missing node_range.end")? as usize;
         if start > end || end > nodes.len() {
             bail!(
-                "sentence node_range {}..{} is out of bounds for {} parser-IR nodes",
-                start,
-                end,
+                "paragraph node_range {start}..{end} is out of bounds for {} parser-IR nodes",
                 nodes.len()
             );
         }
-        let byte_offset = sentence
+        let byte_offset = paragraph
             .pointer("/span/start")
             .and_then(Value::as_u64)
-            .context("sentence missing span.start")? as usize;
-        let text = nodes[start..end]
-            .iter()
-            .map(crate::sentences::parser_ir_node_visible_text)
-            .collect::<Result<Vec<_>>>()?
-            .concat();
-        sentence_offsets.push(byte_offset);
-        sentence_char_offsets.push(next_char_offset);
-        next_char_offset += text.chars().count();
-        owned_sentence_text.push(text);
+            .context("paragraph missing span.start")? as usize;
+        paragraph_texts.push(
+            nodes[start..end]
+                .iter()
+                .map(crate::content::parser_ir_node_visible_text)
+                .collect::<Result<Vec<_>>>()?
+                .concat(),
+        );
+        byte_offsets.push(byte_offset);
     }
-
-    let spans = owned_sentence_text
-        .iter()
-        .zip(sentence_offsets.iter().zip(sentence_char_offsets.iter()))
-        .map(|(text, (byte_offset, char_offset))| SentenceSpan {
-            text,
-            byte_offset: *byte_offset,
-            char_offset: *char_offset,
-        })
-        .collect::<Vec<_>>();
+    let mut spans = Vec::new();
+    let mut next_char_offset = 0usize;
+    for (text, byte_offset) in paragraph_texts.iter().zip(byte_offsets) {
+        spans.extend(
+            ab_plaintext::split_sentences(text)
+                .into_iter()
+                .map(|span| SentenceSpan {
+                    text: span.text,
+                    byte_offset: byte_offset + span.byte_offset,
+                    char_offset: next_char_offset + span.char_offset,
+                }),
+        );
+        next_char_offset += text.chars().count();
+    }
 
     Ok(OrthoAnnotationsBundle {
         work_id,

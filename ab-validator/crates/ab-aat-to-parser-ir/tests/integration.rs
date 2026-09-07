@@ -259,13 +259,9 @@ fn include_fixture_json(name: &str) -> serde_json::Value {
         .unwrap_or_else(|err| panic!("failed to parse fixture {}: {err}", path.display()))
 }
 
-/// Reconstruct the visible text of a parser-IR sentence from its node_range,
-/// for fragment-attribution assertions. Handles the inline node types emitted
-/// by the quote-synthesis converter (text, quote). Other types fall back to
-/// their `text` field.
-fn visible_text_for_sentence(nodes: &[Value], sentence: &Value) -> String {
-    let start = sentence["node_range"]["start"].as_u64().unwrap() as usize;
-    let end = sentence["node_range"]["end"].as_u64().unwrap() as usize;
+fn visible_text_for_node_range(nodes: &[Value], region: &Value) -> String {
+    let start = region["node_range"]["start"].as_u64().unwrap() as usize;
+    let end = region["node_range"]["end"].as_u64().unwrap() as usize;
     let mut out = String::new();
     for node in &nodes[start..end] {
         match node["type"].as_str() {
@@ -778,7 +774,7 @@ fn mapping_preflight_accepts_checked_in_v1_artifact() {
 
     mapping.preflight(&schemas).unwrap();
 
-    assert_eq!(mapping.mapping_version, "0.10.0");
+    assert_eq!(mapping.mapping_version, "0.11.0");
     assert_eq!(
         mapping.target_parser_ir_schema_hash,
         schema_hash(&schemas.parser_ir_schema).unwrap()
@@ -800,9 +796,6 @@ fn mapping_preflight_accepts_checked_in_v1_artifact() {
         .iter()
         .map(|entry| entry.parser_ir_pointer.as_str())
         .collect();
-    assert!(synthetic_pointers.contains("sentence_segmentation"));
-    assert!(synthetic_pointers.contains("sentences"));
-    assert!(synthetic_pointers.contains("sentences[].tags"));
     assert!(synthetic_pointers.contains("orthographic_annotations"));
     assert!(synthetic_pointers.contains("source.work_content_hash"));
     assert!(
@@ -824,7 +817,7 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
     let mapping =
         MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2.json"))
             .unwrap();
-    assert_eq!(mapping.mapping_version, "0.11.0");
+    assert_eq!(mapping.mapping_version, "0.12.0");
     assert_eq!(mapping.source_aat_version, 2);
     let schemas = SchemaSet::load_for_aat_version(&repo_root, &research_root, 2).unwrap();
     mapping.preflight(&schemas).unwrap();
@@ -1009,131 +1002,7 @@ fn detect_orthographic_annotations_populates_sentence_char_offsets() {
 }
 
 #[test]
-fn parser_ir_emits_split_sentence_rows_and_ortho_tags() {
-    let (schemas, mapping) = schemas_and_mapping();
-    let bundle = ortho_fixture_bundle();
-    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
-        aat: include_fixture_json("sentence-segmentation-input.aat.json"),
-        mapping,
-        schemas: schemas.clone(),
-        options: ConversionOptions {
-            orthographic_annotations: Some(bundle),
-            ..default_test_options()
-        },
-    })
-    .unwrap();
-
-    assert_eq!(
-        output
-            .parser_ir
-            .pointer("/sentence_segmentation/splitter_id"),
-        Some(&json!("ab-plaintext-japanese-v2"))
-    );
-    assert_eq!(
-        output.parser_ir.pointer("/paragraphs/0/node_range"),
-        Some(&json!({"start":0,"end":2}))
-    );
-    assert_eq!(
-        output.parser_ir.pointer("/paragraphs/1/node_range"),
-        Some(&json!({"start":2,"end":3}))
-    );
-    assert_eq!(
-        output.parser_ir.pointer("/sentences/0/span"),
-        Some(&json!({"start":0,"end":24,"coordinate_system":"parser_text_utf8"}))
-    );
-    assert_eq!(
-        output.parser_ir.pointer("/sentences/1/span"),
-        Some(&json!({"start":24,"end":48,"coordinate_system":"parser_text_utf8"}))
-    );
-    assert_eq!(
-        output.parser_ir.pointer("/sentences/2/span"),
-        Some(&json!({"start":48,"end":63,"coordinate_system":"parser_text_utf8"}))
-    );
-    assert_eq!(
-        output.parser_ir.pointer("/sentences/0/tags"),
-        Some(&json!(["orthographic-katakana"]))
-    );
-    assert_eq!(
-        output
-            .parser_ir
-            .pointer("/sentences/0/orthographic_annotation_indices"),
-        Some(&json!([0]))
-    );
-    assert_eq!(
-        output.parser_ir.pointer("/sentences/1/tags"),
-        Some(&json!(["orthographic-katakana"]))
-    );
-    assert_eq!(
-        output
-            .parser_ir
-            .pointer("/sentences/1/orthographic_annotation_indices"),
-        Some(&json!([1]))
-    );
-    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
-}
-
-#[test]
-fn sentence_segmentation_uses_ruby_base_not_reading() {
-    let (schemas, mapping) = schemas_and_mapping();
-    let first_sentence = "名前はまだ無い。";
-    let full_text = "名前はまだ無い。ここは次。";
-    let aat = json!({
-        "version": 1,
-        "work_id": "ruby-sentence",
-        "meta": base_meta(
-            "utf-8",
-            "sha256:abababababababababababababababababababababababababababababababab",
-        ),
-        "blocks": [{
-            "kind": "paragraph",
-            "content": [{
-                "kind": "ruby",
-                "base": "名前",
-                "reading": "めいしょう"
-            }, {
-                "kind": "text",
-                "value": "はまだ無い。ここは次。"
-            }]
-        }]
-    });
-
-    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
-        aat,
-        mapping,
-        schemas: schemas.clone(),
-        options: default_test_options(),
-    })
-    .unwrap();
-
-    assert_eq!(
-        output.parser_ir.pointer("/sentences/0/span/start"),
-        Some(&json!(0))
-    );
-    assert_eq!(
-        output.parser_ir.pointer("/sentences/0/span/end"),
-        Some(&json!(first_sentence.len()))
-    );
-    assert_eq!(
-        output.parser_ir.pointer("/sentences/1/span/start"),
-        Some(&json!(first_sentence.len()))
-    );
-    assert_eq!(
-        output.parser_ir.pointer("/sentences/1/span/end"),
-        Some(&json!(full_text.len()))
-    );
-    assert_eq!(
-        output.parser_ir.pointer("/sentences/0/node_range"),
-        Some(&json!({"start": 0, "end": 2}))
-    );
-    assert_eq!(
-        output.parser_ir.pointer("/nodes/0/ruby/reading"),
-        Some(&json!("めいしょう"))
-    );
-    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
-}
-
-#[test]
-fn checked_in_schema_accepts_sentence_segmentation_and_ortho_annotations() {
+fn checked_in_schema_preserves_ortho_annotations_without_sentence_analysis() {
     let (schemas, mapping) = schemas_and_mapping();
     let output = ab_aat_to_parser_ir::convert(ConversionRequest {
         aat: ortho_fixture_aat(),
@@ -1146,8 +1015,8 @@ fn checked_in_schema_accepts_sentence_segmentation_and_ortho_annotations() {
     })
     .unwrap();
 
-    assert!(output.parser_ir.get("sentence_segmentation").is_some());
-    assert!(output.parser_ir.get("sentences").is_some());
+    assert!(output.parser_ir.get("sentence_segmentation").is_none());
+    assert!(output.parser_ir.get("sentences").is_none());
     assert!(output.parser_ir.get("orthographic_annotations").is_some());
     validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
 }
@@ -1167,138 +1036,7 @@ fn orthographic_annotations_bundle_matches_golden_fixture() {
 }
 
 #[test]
-fn ortho_indices_cover_multiple_annotations_in_one_sentence() {
-    // Regression matrix (6b): a single sentence whose byte span overlaps two
-    // orthographic annotations records both indices and a single katakana tag.
-    let (schemas, mapping) = schemas_and_mapping();
-    let hash = "sha256:3333333333333333333333333333333333333333333333333333333333333333";
-    let aat = json!({
-        "version": 1,
-        "work_id": "000000",
-        "meta": base_meta("utf-8", hash),
-        "blocks": [{
-            "kind": "paragraph",
-            "content": [{ "kind": "text", "value": "吾輩ハ猫デアル。" }]
-        }]
-    });
-    let bundle: ab_aat_to_parser_ir::ortho_annotations::OrthoAnnotationsBundle =
-        serde_json::from_value(json!({
-            "work_id": "000000",
-            "primary_text_hash": hash,
-            "coordinate_system": "parser_text_utf8",
-            "detector_id": "HeuristicV1",
-            "annotations": [
-                {"source_byte_range":{"start":0,"end":12},"normalized_text":"吾輩は猫","kind":"ScriptKatakanaToHiragana","confidence":null},
-                {"source_byte_range":{"start":12,"end":24},"normalized_text":"であある。","kind":"ScriptKatakanaToHiragana","confidence":null}
-            ]
-        }))
-        .unwrap();
-
-    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
-        aat,
-        mapping,
-        schemas: schemas.clone(),
-        options: ConversionOptions {
-            orthographic_annotations: Some(bundle),
-            ..default_test_options()
-        },
-    })
-    .unwrap();
-
-    assert_eq!(
-        output.parser_ir.pointer("/sentences/0/span"),
-        Some(&json!({"start":0,"end":24,"coordinate_system":"parser_text_utf8"}))
-    );
-    assert_eq!(
-        output
-            .parser_ir
-            .pointer("/sentences/0/orthographic_annotation_indices"),
-        Some(&json!([0, 1]))
-    );
-    assert_eq!(
-        output.parser_ir.pointer("/sentences/0/tags"),
-        Some(&json!(["orthographic-katakana"]))
-    );
-    // Exactly one sentence row: both annotations land in it.
-    assert_eq!(output.parser_ir.pointer("/sentences/1"), None);
-    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
-}
-
-#[test]
-fn ortho_annotation_spanning_two_sentences_tags_both() {
-    // Regression matrix (6c): a single annotation whose byte range crosses a
-    // sentence boundary is recorded (and tagged) on both sentences; it must not
-    // be snapped to one side.
-    let (schemas, mapping) = schemas_and_mapping();
-    let hash = "sha256:3333333333333333333333333333333333333333333333333333333333333333";
-    let aat = json!({
-        "version": 1,
-        "work_id": "000000",
-        "meta": base_meta("utf-8", hash),
-        "blocks": [{
-            "kind": "paragraph",
-            "content": [{ "kind": "text", "value": "吾輩ハ猫。名前ハ無イ。" }]
-        }]
-    });
-    let bundle: ab_aat_to_parser_ir::ortho_annotations::OrthoAnnotationsBundle =
-        serde_json::from_value(json!({
-            "work_id": "000000",
-            "primary_text_hash": hash,
-            "coordinate_system": "parser_text_utf8",
-            "detector_id": "HeuristicV1",
-            "annotations": [
-                {"source_byte_range":{"start":6,"end":21},"normalized_text":"猫。名前ハ","kind":"ScriptKatakanaToHiragana","confidence":null}
-            ]
-        }))
-        .unwrap();
-
-    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
-        aat,
-        mapping,
-        schemas: schemas.clone(),
-        options: ConversionOptions {
-            orthographic_annotations: Some(bundle),
-            ..default_test_options()
-        },
-    })
-    .unwrap();
-
-    assert_eq!(
-        output.parser_ir.pointer("/sentences/0/span"),
-        Some(&json!({"start":0,"end":15,"coordinate_system":"parser_text_utf8"}))
-    );
-    assert_eq!(
-        output.parser_ir.pointer("/sentences/1/span"),
-        Some(&json!({"start":15,"end":33,"coordinate_system":"parser_text_utf8"}))
-    );
-    assert_eq!(
-        output
-            .parser_ir
-            .pointer("/sentences/0/orthographic_annotation_indices"),
-        Some(&json!([0]))
-    );
-    assert_eq!(
-        output
-            .parser_ir
-            .pointer("/sentences/1/orthographic_annotation_indices"),
-        Some(&json!([0]))
-    );
-    assert_eq!(
-        output.parser_ir.pointer("/sentences/0/tags"),
-        Some(&json!(["orthographic-katakana"]))
-    );
-    assert_eq!(
-        output.parser_ir.pointer("/sentences/1/tags"),
-        Some(&json!(["orthographic-katakana"]))
-    );
-    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
-}
-
-#[test]
-fn coalesces_sentence_boundary_inside_atomic_ruby_child_from_aat() {
-    // Regression matrix (6e): a sentence terminal inside a `ruby` base nested in
-    // an emphasis. `ruby` stays atomic (B-D2), so conversion coalesces the
-    // sentence bounds around the ruby child instead of slicing the node.
+fn preserves_emphasis_with_internal_ruby_sentence_boundary() {
     let (schemas, mapping) = schemas_and_mapping();
     let output = ab_aat_to_parser_ir::convert(ConversionRequest {
         aat: include_fixture_json("atomic-boundary-emphasis-input.aat.json"),
@@ -1307,27 +1045,13 @@ fn coalesces_sentence_boundary_inside_atomic_ruby_child_from_aat() {
         options: default_test_options(),
     })
     .unwrap();
-    assert_eq!(
-        output.parser_ir.pointer("/sentences/0/span/start"),
-        Some(&json!(0))
-    );
-    assert_eq!(
-        output.parser_ir.pointer("/sentences/0/span/end"),
-        Some(&json!(9))
-    );
-    assert_eq!(
-        output.parser_ir.pointer("/sentences/0/node_range"),
-        Some(&json!({"start":0,"end":1}))
-    );
-    assert_eq!(output.parser_ir.pointer("/sentences/1"), None);
+    assert_eq!(output.parser_ir["nodes"].as_array().unwrap().len(), 1);
+    assert!(output.parser_ir.get("sentences").is_none());
     validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
 }
 
 #[test]
-fn splits_emphasis_container_at_sentence_boundary_keeping_ruby_whole() {
-    // an emphasis carrying inline_children with an interior terminal
-    // in a splittable text child splits into two sibling emphases; a ruby sibling
-    // is kept whole. This is the case the old hard-fail regressed.
+fn preserves_emphasis_across_internal_sentence_boundaries() {
     let (schemas, mapping) = schemas_and_mapping();
     let aat = json!({
         "version": 1,
@@ -1357,33 +1081,14 @@ fn splits_emphasis_container_at_sentence_boundary_keeping_ruby_whole() {
     })
     .unwrap();
 
-    // Two emphasis siblings; the ruby stays a single whole child in the second.
+    assert_eq!(output.parser_ir["nodes"].as_array().unwrap().len(), 1);
+    assert_eq!(output.parser_ir["nodes"][0]["type"], "emphasis");
+    assert_eq!(output.parser_ir["nodes"][0]["text"], "甲。乙丙");
     assert_eq!(
-        output.parser_ir.pointer("/nodes/0/type"),
-        Some(&json!("emphasis"))
+        output.parser_ir["nodes"][0]["inline_children"][1]["ruby"]["base"],
+        "丙"
     );
-    assert_eq!(
-        output.parser_ir.pointer("/nodes/0/text"),
-        Some(&json!("甲。"))
-    );
-    assert_eq!(
-        output.parser_ir.pointer("/nodes/1/type"),
-        Some(&json!("emphasis"))
-    );
-    assert_eq!(
-        output
-            .parser_ir
-            .pointer("/nodes/1/inline_children/1/ruby/base"),
-        Some(&json!("丙"))
-    );
-    assert_eq!(
-        output.parser_ir.pointer("/sentences/0/span/end"),
-        Some(&json!(6))
-    );
-    assert_eq!(
-        output.parser_ir.pointer("/sentences/1/span/start"),
-        Some(&json!(6))
-    );
+    assert!(output.parser_ir.get("sentences").is_none());
     validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
 }
 
@@ -4185,7 +3890,7 @@ fn cli_convert_accepts_matching_mapping_generation_version_and_hash() {
 }
 
 #[test]
-fn cli_convert_with_ortho_annotations_emits_sentence_tags() {
+fn cli_convert_preserves_independent_ortho_annotations() {
     let repo = repo_root();
     let abc = research_root(&repo);
     let temp = tempfile::tempdir().unwrap();
@@ -4223,10 +3928,7 @@ fn cli_convert_with_ortho_annotations_emits_sentence_tags() {
 
     assert!(status.success());
     let parser_ir_json = read_json(&parser_ir).unwrap();
-    assert_eq!(
-        parser_ir_json.pointer("/sentences/0/tags/0"),
-        Some(&json!("orthographic-katakana"))
-    );
+    assert!(parser_ir_json.get("sentences").is_none());
     assert!(parser_ir_json.get("orthographic_annotations").is_some());
     assert!(divergence.exists());
 }
@@ -4667,117 +4369,6 @@ fn quote_node_emission_from_text() {
 }
 
 #[test]
-fn fragment_assembly_single_inner_sentence() {
-    let (schemas, mapping) = schemas_and_mapping();
-    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
-        aat: include_fixture_json("nested-sentence-basic.aat.json"),
-        mapping,
-        schemas: schemas.clone(),
-        options: default_test_options(),
-    })
-    .unwrap();
-    let sentences = output.parser_ir["sentences"].as_array().unwrap();
-    // Outer-I, one inner sentence, outer-F.
-    assert_eq!(sentences.len(), 3);
-    assert_eq!(sentences[0]["part"], "I");
-    assert!(
-        sentences[1].get("part").is_none(),
-        "inner sentence has no part"
-    );
-    assert_eq!(sentences[2]["part"], "F");
-    // I <-> F linking (skips the inner sentence).
-    assert_eq!(sentences[0]["next_id"], sentences[2]["id"]);
-    assert_eq!(sentences[2]["prev_id"], sentences[0]["id"]);
-    assert_eq!(sentences[0]["fragment_group"], "fg000000");
-    assert_eq!(sentences[2]["fragment_group"], "fg000000");
-    // Framing-punctuation redistribution: the 「 belongs to the inner sentence,
-    // not the outer-I fragment.
-    let nodes = output.parser_ir["nodes"].as_array().unwrap();
-    let i_text = visible_text_for_sentence(nodes, &sentences[0]);
-    let inner_text = visible_text_for_sentence(nodes, &sentences[1]);
-    assert_eq!(i_text, "先生は梢を見上げて、");
-    assert!(
-        inner_text.starts_with('「'),
-        "inner sentence keeps the open marker: {inner_text}"
-    );
-    assert!(
-        inner_text.ends_with('」'),
-        "inner sentence keeps the close marker: {inner_text}"
-    );
-}
-
-#[test]
-fn fragment_assembly_multiple_inner_sentences() {
-    let (schemas, mapping) = schemas_and_mapping();
-    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
-        aat: include_fixture_json("nested-sentence-multiple.aat.json"),
-        mapping,
-        schemas: schemas.clone(),
-        options: default_test_options(),
-    })
-    .unwrap();
-    let sentences = output.parser_ir["sentences"].as_array().unwrap();
-    // Outer-I, two inner sentences, outer-F.
-    assert_eq!(sentences.len(), 4);
-    assert_eq!(sentences[0]["part"], "I");
-    assert!(
-        sentences[1].get("part").is_none(),
-        "inner sentence 1 has no part"
-    );
-    assert!(
-        sentences[2].get("part").is_none(),
-        "inner sentence 2 has no part"
-    );
-    assert_eq!(sentences[3]["part"], "F");
-    assert_eq!(sentences[0]["next_id"], sentences[3]["id"]);
-    assert_eq!(sentences[3]["prev_id"], sentences[0]["id"]);
-    // Spans tile the paragraph with no gaps.
-    for w in sentences.windows(2) {
-        let prev_end = w[0]["span"]["end"].as_u64().unwrap();
-        let next_start = w[1]["span"]["start"].as_u64().unwrap();
-        assert_eq!(prev_end, next_start, "sentence spans must be contiguous");
-    }
-}
-
-#[test]
-fn fragment_field_coherence_holds() {
-    let (schemas, mapping) = schemas_and_mapping();
-    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
-        aat: include_fixture_json("nested-sentence-multiple.aat.json"),
-        mapping,
-        schemas: schemas.clone(),
-        options: default_test_options(),
-    })
-    .unwrap();
-    let sentences = output.parser_ir["sentences"].as_array().unwrap();
-    for s in sentences {
-        let part = s.get("part").and_then(|v| v.as_str());
-        let next = s.get("next_id");
-        let prev = s.get("prev_id");
-        let group = s.get("fragment_group");
-        let present = |v: &serde_json::Value| !(v.is_null());
-        match part {
-            Some("I") => {
-                assert!(next.is_some() && present(next.unwrap()));
-                assert!(prev.is_none() || !present(prev.unwrap()));
-                assert!(group.is_some() && present(group.unwrap()));
-            }
-            Some("F") => {
-                assert!(prev.is_some() && present(prev.unwrap()));
-                assert!(next.is_none() || !present(next.unwrap()));
-                assert!(group.is_some() && present(group.unwrap()));
-            }
-            None => {
-                assert!(group.is_none() || !present(group.unwrap()));
-                assert!(next.is_none() || !present(next.unwrap()));
-                assert!(prev.is_none() || !present(prev.unwrap()));
-            }
-            other => panic!("unexpected part: {other:?}"),
-        }
-    }
-}
-
-#[test]
 fn ruby_node_spans_distinguish_parser_text_and_source_markup() {
     // Ruby occupies its base width in parser text and its full markup width in source.
     let (schemas, mapping) = schemas_and_mapping();
@@ -4843,7 +4434,7 @@ fn ruby_node_spans_distinguish_parser_text_and_source_markup() {
     );
 
     // The whole (ruby-bearing) document must convert and remain schema-valid — the
-    // sentence projection over the now-consistent decoded spans succeeds.
+    // The node spans retain the same visible-text coordinate basis.
     validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
 }
 
@@ -5006,11 +4597,7 @@ fn unresolved_gaiji_ruby_uses_child_projection_for_decoded_coordinates() {
             assert_eq!(first["span"]["end"], expected.len());
         } else {
             let nodes = output.parser_ir["nodes"].as_array().unwrap();
-            let sentences = output.parser_ir["sentences"].as_array().unwrap();
-            let text: String = sentences
-                .iter()
-                .map(|sentence| visible_text_for_sentence(nodes, sentence))
-                .collect();
+            let text = visible_text_for_node_range(nodes, &output.parser_ir["paragraphs"][0]);
             assert_eq!(text, expected);
             assert_eq!(
                 output.parser_ir["paragraphs"][0]["span"]["end"],
@@ -5215,4 +4802,40 @@ fn structured_ruby_reading_preserves_resolved_gaiji_in_body_and_heading() {
         );
         validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
     }
+}
+
+#[test]
+fn corpus_warichu_with_multiple_sentences_preserves_one_source_container() {
+    let text = "宇宙にはあらゆる象徴瀰漫す。しかして、その神秘的な法則と配列の妙義は、隠れたる事象を人に告げ、あるいは予め告げ知らしむ。";
+    let source = format!("題\n作者\n\n前［＃割り注］{text}［＃割り注終わり］後。\n\n底本：本\n");
+    let aat: Value =
+        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
+            .unwrap();
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: default_test_options(),
+    })
+    .unwrap();
+    let nodes = output.parser_ir["nodes"].as_array().unwrap();
+    let warichu: Vec<_> = nodes
+        .iter()
+        .filter(|node| node["type"] == "warichu")
+        .collect();
+    assert_eq!(warichu.len(), 1);
+    assert_eq!(warichu[0]["text"], text);
+    assert_eq!(warichu[0]["inline_children"][0]["text"], text);
+    let start = warichu[0]["source_span"]["start"].as_u64().unwrap() as usize;
+    let end = warichu[0]["source_span"]["end"].as_u64().unwrap() as usize;
+    assert_eq!(
+        &source[start..end],
+        format!("［＃割り注］{text}［＃割り注終わり］")
+    );
+    assert!(warichu[0].get("upper_children").is_none());
+    assert!(warichu[0].get("lower_children").is_none());
+    assert!(output.parser_ir.get("sentences").is_none());
+    assert!(output.parser_ir.get("sentence_segmentation").is_none());
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
 }

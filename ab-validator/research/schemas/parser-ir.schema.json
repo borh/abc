@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
   "title": "ABC Parser IR",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "type": "object",
   "required": ["schema_id", "schema_hash", "source", "nodes", "warnings", "errors", "interpretation_problems", "interpretation_facts"],
   "additionalProperties": false,
@@ -90,12 +90,6 @@
     "paragraphs": {
       "type": "array",
       "items": { "$ref": "#/$defs/paragraph" },
-      "default": []
-    },
-    "sentence_segmentation": { "$ref": "#/$defs/sentenceSegmentation" },
-    "sentences": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/sentence" },
       "default": []
     },
     "orthographic_annotations": { "$ref": "#/$defs/orthographicAnnotations" },
@@ -196,65 +190,6 @@
       "properties": {
         "start": { "type": "integer", "minimum": 0 },
         "end": { "type": "integer", "minimum": 0 }
-      }
-    },
-    "sentenceSegmentation": {
-      "type": "object",
-      "required": ["schema_version", "splitter_id", "coordinate_system", "coverage"],
-      "additionalProperties": false,
-      "properties": {
-        "schema_version": { "const": "sentence-segmentation-v1" },
-        "splitter_id": { "enum": ["ab-plaintext-japanese-v1", "ab-plaintext-japanese-v2"] },
-        "coordinate_system": { "const": "parser_text_utf8" },
-        "coverage": { "const": "body-paragraphs" }
-      }
-    },
-    "sentence": {
-      "type": "object",
-      "required": [
-        "id",
-        "paragraph_id",
-        "span",
-        "node_range",
-        "tags",
-        "orthographic_annotation_indices"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "id": { "type": "string", "pattern": "^s[0-9]{6}$" },
-        "paragraph_id": { "type": "string", "pattern": "^p[0-9]{6}$" },
-        "span": { "$ref": "#/$defs/span" },
-        "node_range": { "$ref": "#/$defs/nodeRange" },
-        "tags": {
-          "type": "array",
-          "items": { "enum": ["orthographic-katakana"] },
-          "uniqueItems": true
-        },
-        "orthographic_annotation_indices": {
-          "type": "array",
-          "items": { "type": "integer", "minimum": 0 },
-          "uniqueItems": true
-        },
-        "part": {
-          "type": "string",
-          "enum": ["I", "M", "F"],
-          "description": "Fragment position for TEI Chapter 21 fragmented sentences. Absent for complete sentences."
-        },
-        "fragment_group": {
-          "type": "string",
-          "pattern": "^fg[0-9]{6}$",
-          "description": "Parser-IR-internal grouping key linking fragments of one logical sentence. Not rendered in TEI."
-        },
-        "next_id": {
-          "type": "string",
-          "pattern": "^s[0-9]{6}$",
-          "description": "ID of the next fragment in the group (parser-IR-internal; rendered as TEI @next)."
-        },
-        "prev_id": {
-          "type": "string",
-          "pattern": "^s[0-9]{6}$",
-          "description": "ID of the previous fragment in the group (parser-IR-internal; rendered as TEI @prev)."
-        }
       }
     },
     "orthographicAnnotations": {

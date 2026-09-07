@@ -1,0 +1,56 @@
+use anyhow::{Result, bail};
+use serde_json::Value;
+
+/// Visible text for analysis consumers, derived from structured children when present.
+pub(crate) fn parser_ir_node_visible_text(node: &Value) -> Result<String> {
+    if let Some(children) = inline_children(node) {
+        let mut text = String::new();
+        for child in children {
+            text.push_str(&parser_ir_node_visible_text(child)?);
+        }
+        return Ok(text);
+    }
+    if node_type(node) == "warichu" {
+        let mut text = String::new();
+        for key in ["upper_children", "lower_children"] {
+            if let Some(children) = node.get(key).and_then(Value::as_array) {
+                for child in children {
+                    text.push_str(&parser_ir_node_visible_text(child)?);
+                }
+            }
+        }
+        return Ok(text);
+    }
+    let node_type = node_type(node);
+    let text = match node_type {
+        "text" | "quote" | "emphasis" | "layout-span" | "heading" | "source-note" => {
+            node.get("text").and_then(Value::as_str).unwrap_or("")
+        }
+        "ruby" => node
+            .pointer("/ruby/base")
+            .and_then(Value::as_str)
+            .unwrap_or(""),
+        "gaiji" => node
+            .pointer("/gaiji/unicode")
+            .and_then(Value::as_str)
+            .or_else(|| node.pointer("/gaiji/raw_marker").and_then(Value::as_str))
+            .unwrap_or(""),
+        "line-break" => "\n",
+        "page-break" | "image" | "editor-note" | "indentation" => "",
+        other => bail!("unsupported parser-IR node type for visible-text projection: {other}"),
+    };
+    Ok(text.to_owned())
+}
+
+/// The non-empty `inline_children` array of an inline container, if present.
+fn inline_children(node: &Value) -> Option<&Vec<Value>> {
+    node.get("inline_children")
+        .and_then(Value::as_array)
+        .filter(|children| !children.is_empty())
+}
+
+fn node_type(node: &Value) -> &str {
+    node.get("type")
+        .and_then(Value::as_str)
+        .unwrap_or("unknown")
+}

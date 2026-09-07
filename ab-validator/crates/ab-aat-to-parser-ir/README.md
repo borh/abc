@@ -37,15 +37,12 @@ cargo run -p ab-aat-to-parser-ir -- convert \
 ### `--ortho-annotations <PATH>`
 
 Optional path to an orthographic annotations JSON file produced by the
-`ab-ortho-detect` layer. When used with parser-IR schema 0.6.0 or newer,
-`--ortho-annotations` emits both:
-
-- `orthographic_annotations`: detector provenance and byte ranges
-- `sentences[].tags`: renderer-facing sentence tags, including
-  `orthographic-katakana`
+`ab-ortho-detect` layer. The converter retains detector provenance and byte ranges
+in `orthographic_annotations` without changing source content nodes.
 
 The annotation file must use `parser_text_utf8` coordinates in the converted
-sentence text, and identify the same AAT input: `work_id` must equal `AAT.work_id`, and `primary_text_hash` must equal
+visible text and identify the same AAT input: `work_id` must equal `AAT.work_id`,
+and `primary_text_hash` must equal
 `AAT.meta.primary_text_hash` (or historical `AAT.meta.source_hash`). Historical
 annotation files using `work_content_hash` are accepted and migrated on read;
 new output emits only `primary_text_hash`. Bundles tagged `decoded_utf8` are

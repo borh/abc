@@ -774,7 +774,7 @@ fn mapping_preflight_accepts_checked_in_v1_artifact() {
 
     mapping.preflight(&schemas).unwrap();
 
-    assert_eq!(mapping.mapping_version, "0.18.0");
+    assert_eq!(mapping.mapping_version, "0.19.0");
     assert_eq!(
         mapping.target_parser_ir_schema_hash,
         schema_hash(&schemas.parser_ir_schema).unwrap()
@@ -817,7 +817,7 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
     let mapping =
         MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2.json"))
             .unwrap();
-    assert_eq!(mapping.mapping_version, "0.19.0");
+    assert_eq!(mapping.mapping_version, "0.20.0");
     assert_eq!(mapping.source_aat_version, 2);
     let schemas = SchemaSet::load_for_aat_version(&repo_root, &research_root, 2).unwrap();
     mapping.preflight(&schemas).unwrap();
@@ -2950,7 +2950,7 @@ fn inline_children_depth_limit_records_warning() {
 }
 
 #[test]
-fn measured_policy_flattens_epub3_tcy_and_block_containers() {
+fn inline_tcy_is_represented_without_unsupported_divergence() {
     let (schemas, mapping) = schemas_and_mapping();
     let aat = json!({
         "version": 1,
@@ -2966,19 +2966,6 @@ fn measured_policy_flattens_epub3_tcy_and_block_containers() {
                     {"kind": "text", "value": "第"},
                     {"kind": "tcy", "content": [{"kind": "text", "value": "10"}]},
                     {"kind": "text", "value": "章"}
-                ]
-            },
-            {
-                "kind": "keigakomi_block",
-                "children": []
-            },
-            {
-                "kind": "yokogumi_block",
-                "children": [
-                    {
-                        "kind": "paragraph",
-                        "content": [{"kind": "text", "value": "横組"}]
-                    }
                 ]
             }
         ]
@@ -3007,7 +2994,7 @@ fn measured_policy_flattens_epub3_tcy_and_block_containers() {
             }
         })
         .collect::<String>();
-    assert_eq!(projected_text, "第10章横組");
+    assert_eq!(projected_text, "第10章");
 
     assert!(
         !output
@@ -3024,37 +3011,6 @@ fn measured_policy_flattens_epub3_tcy_and_block_containers() {
             }),
         "inline tcy should be represented as layout-span after schema delta"
     );
-    assert!(
-        output
-            .divergence_bundle
-            .pointer("/records")
-            .and_then(Value::as_array)
-            .unwrap()
-            .iter()
-            .any(|record| {
-                record["category"] == "UNSUPPORTED"
-                    && record["aat_pointer"]
-                        .as_str()
-                        .is_some_and(|pointer| pointer.contains("keigakomi_block"))
-            }),
-        "expected measured keigakomi_block unsupported divergence"
-    );
-    assert!(
-        output
-            .divergence_bundle
-            .pointer("/records")
-            .and_then(Value::as_array)
-            .unwrap()
-            .iter()
-            .any(|record| {
-                record["category"] == "UNSUPPORTED"
-                    && record["aat_pointer"]
-                        .as_str()
-                        .is_some_and(|pointer| pointer.contains("yokogumi_block"))
-            }),
-        "expected measured yokogumi_block unsupported divergence"
-    );
-
     validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
 }
 

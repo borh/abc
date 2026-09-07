@@ -259,8 +259,6 @@
           "enum": [
             "jisage_block",
             "quote_block",
-            "keigakomi_block",
-            "yokogumi_block",
             "caption_block",
             "warichu_block",
             "jizume_block",

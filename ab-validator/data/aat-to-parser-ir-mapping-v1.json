@@ -4911,44 +4911,12 @@
       "description": "Observed 71461 occurrences; first_path=blocks[16].children[0].heading. block container of kind 'heading' has no parser-IR node; boundary + span + style lost, only inlines emitted"
     },
     {
-      "rule_id": "S-05",
-      "category": "STRUCTURAL",
-      "aat_pointer": "blocks[].children[].keigakomi_block",
-      "parser_ir_pointer": null,
-      "action": "flatten",
-      "description": "Observed 175 occurrences; first_path=blocks[574].children[0].keigakomi_block. block container of kind 'keigakomi_block' has no parser-IR node; boundary + span + style lost, only inlines emitted"
-    },
-    {
-      "rule_id": "S-06",
-      "category": "STRUCTURAL",
-      "aat_pointer": "blocks[].children[].yokogumi_block",
-      "parser_ir_pointer": null,
-      "action": "flatten",
-      "description": "Observed 52 occurrences; first_path=blocks[19].children[0].yokogumi_block. block container of kind 'yokogumi_block' has no parser-IR node; boundary + span + style lost, only inlines emitted"
-    },
-    {
       "rule_id": "S-07",
       "category": "STRUCTURAL",
       "aat_pointer": "blocks[].heading",
       "parser_ir_pointer": null,
       "action": "flatten",
       "description": "Observed 87024 occurrences; first_path=blocks[1].heading. block container of kind 'heading' has no parser-IR node; boundary + span + style lost, only inlines emitted"
-    },
-    {
-      "rule_id": "S-09",
-      "category": "STRUCTURAL",
-      "aat_pointer": "blocks[].keigakomi_block",
-      "parser_ir_pointer": null,
-      "action": "flatten",
-      "description": "Observed 113 occurrences; first_path=blocks[4].keigakomi_block. block container of kind 'keigakomi_block' has no parser-IR node; boundary + span + style lost, only inlines emitted"
-    },
-    {
-      "rule_id": "S-10",
-      "category": "STRUCTURAL",
-      "aat_pointer": "blocks[].yokogumi_block",
-      "parser_ir_pointer": null,
-      "action": "flatten",
-      "description": "Observed 119 occurrences; first_path=blocks[12].yokogumi_block. block container of kind 'yokogumi_block' has no parser-IR node; boundary + span + style lost, only inlines emitted"
     },
     {
       "rule_id": "U-01",
@@ -4981,22 +4949,6 @@
       "parser_ir_pointer": null,
       "action": "drop",
       "description": "Observed 156 occurrences; first_path=blocks[1081].children[0].heading.content[3].raw. parser-IR has no raw node; faithful escape hatch dropped"
-    },
-    {
-      "rule_id": "U-13",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].children[].keigakomi_block",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 175 occurrences; first_path=blocks[574].children[0].keigakomi_block. block_container kind 'keigakomi_block' has no parser-IR equivalent"
-    },
-    {
-      "rule_id": "U-14",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].children[].yokogumi_block",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 52 occurrences; first_path=blocks[19].children[0].yokogumi_block. block_container kind 'yokogumi_block' has no parser-IR equivalent"
     },
     {
       "rule_id": "U-24",
@@ -5037,22 +4989,6 @@
       "parser_ir_pointer": null,
       "action": "drop",
       "description": "Observed 1673 occurrences; first_path=blocks[0].heading.content[1].raw. parser-IR has no raw node; faithful escape hatch dropped"
-    },
-    {
-      "rule_id": "U-39",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].keigakomi_block",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 113 occurrences; first_path=blocks[4].keigakomi_block. block_container kind 'keigakomi_block' has no parser-IR equivalent"
-    },
-    {
-      "rule_id": "U-40",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].yokogumi_block",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 119 occurrences; first_path=blocks[12].yokogumi_block. block_container kind 'yokogumi_block' has no parser-IR equivalent"
     },
     {
       "rule_id": "U-41",

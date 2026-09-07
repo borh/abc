@@ -974,7 +974,7 @@ impl EstablishedInterpretation {
                     .as_array()
                     .is_some_and(|children| !children.is_empty()) =>
             {
-                Some(Self::Emphasis)
+                Some(if matches!(node["formatting"]["kind"].as_str(), Some("keigakomi" | "yokogumi")) { Self::Layout } else { Self::Emphasis })
             }
             Some("formatting" | "font_size" | "small_script" | "tcy") if has_content => {
                 Some(Self::Emphasis)
@@ -1407,8 +1407,10 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
 
         if matches!(
             node["x-formatting"]["kind"].as_str(),
-            Some("style" | "font_size" | "small_script" | "tcy" | "caption" | "warichu")
-        ) && let Some(close_index) = native_scopes.get(&index).copied()
+            Some("style" | "font_size" | "small_script" | "tcy" | "caption" | "warichu" | "keigakomi" | "yokogumi")
+        ) && (!matches!(node["x-formatting"]["kind"].as_str(), Some("keigakomi" | "yokogumi"))
+            || node["source"].as_str().is_some_and(|source| source.starts_with("［＃ここから")))
+            && let Some(close_index) = native_scopes.get(&index).copied()
             && node["span"]["line_start"] != content[close_index]["span"]["line_start"]
         {
             push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
@@ -1513,34 +1515,6 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
                 index = boundary + usize::from(explicit_close);
                 continue;
             }
-        }
-
-        if block_container_open(&node, "［＃ここから罫囲み］") {
-            if let Some(close_index) = native_scopes.get(&index).copied() {
-                push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
-                let mut inner = content[index + 1..close_index].to_vec();
-                strip_boundary_newlines(&mut inner);
-                blocks.push(json!({
-                    "kind": "keigakomi_block",
-                    "children": blocks_from_inline_content(inner, source)
-                }));
-                strip_next_leading_newline = true;
-                index = close_index + 1;
-                continue;
-            }
-        } else if block_container_open(&node, "［＃ここから横組み］")
-            && let Some(close_index) = native_scopes.get(&index).copied()
-        {
-            push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
-            let mut inner = content[index + 1..close_index].to_vec();
-            strip_boundary_newlines(&mut inner);
-            blocks.push(json!({
-                "kind": "yokogumi_block",
-                "children": blocks_from_inline_content(inner, source)
-            }));
-            strip_next_leading_newline = true;
-            index = close_index + 1;
-            continue;
         }
 
         if is_heading_hint_raw(&node)
@@ -1656,19 +1630,6 @@ fn push_paragraph_if_not_empty(blocks: &mut Vec<Value>, content: Vec<Value>) {
     blocks.push(paragraph);
 }
 
-fn block_container_open(node: &Value, marker: &str) -> bool {
-    is_container_open_raw(node)
-        && node
-            .get("source")
-            .and_then(Value::as_str)
-            .is_some_and(|source| source.trim() == marker)
-}
-
-fn is_container_open_raw(node: &Value) -> bool {
-    node["x-source-flow"] != "inline"
-        && node.get("kind").and_then(Value::as_str) == Some("raw")
-        && node.get("x-source-marker-kind").and_then(Value::as_str) == Some("containerOpen")
-}
 
 fn parse_aozora_number_before(source: &str, needle: &str) -> Option<u64> {
     let prefix = source.split_once(needle)?.0;
@@ -3271,6 +3232,8 @@ fn layout_fields(kind: &ProjectedKind) -> Option<Value> {
 
 fn region_formatting(region: RegionFormat) -> Option<(String, Value)> {
     let (key, attr) = match region {
+        RegionFormat::Framed(kind) => return Some((format!("keigakomi:{}", enclosure_kind(kind)), formatting_fields(ForwardAttr::Framed(kind))?)),
+        RegionFormat::Horizontal => ("yokogumi", ForwardAttr::Horizontal),
         RegionFormat::Warichu => return Some(("warichu".to_owned(), json!({"kind":"warichu"}))),
         RegionFormat::Caption { .. } => {
             return Some(("caption".to_owned(), json!({"kind":"caption"})));
@@ -3318,6 +3281,8 @@ fn region_formatting(region: RegionFormat) -> Option<(String, Value)> {
 fn region_formatting_close(close: RegionClose) -> Option<String> {
     Some(
         match close {
+            RegionClose::Framed(kind) => return Some(format!("keigakomi:{}", enclosure_kind(kind))),
+            RegionClose::Horizontal => "yokogumi",
             RegionClose::Warichu => "warichu",
             RegionClose::Caption { .. } => "caption",
             RegionClose::Bouten { kind, position } => return Some(bouten_key(kind, position)),
@@ -4269,10 +4234,11 @@ mod tests {
             serde_json::from_slice(&aat_json_from_bytes(src.as_bytes()).unwrap()).unwrap();
         assert_eq!(
             block_kinds(&doc),
-            ["paragraph", "keigakomi_block", "paragraph"]
+            ["paragraph", "typography_block", "paragraph"]
         );
         let block = &doc["blocks"][1];
-        assert!(block.get("span").is_none() && block.get("indent").is_none());
+        assert!(block.get("span").is_some() && block.get("indent").is_none());
+        assert_eq!(block["formatting"]["kind"], "keigakomi");
         let children = block["children"].as_array().unwrap();
         assert_eq!(children[0]["kind"], "paragraph");
         let text: String = children
@@ -4290,7 +4256,7 @@ mod tests {
         let src = "［＃ここから横組み］\nＡＢＣ\n［＃ここで横組み終わり］\n";
         let doc: Value =
             serde_json::from_slice(&aat_json_from_bytes(src.as_bytes()).unwrap()).unwrap();
-        assert!(block_kinds(&doc).contains(&"yokogumi_block".to_owned()));
+        assert!(block_kinds(&doc).contains(&"typography_block".to_owned()));
     }
 
     #[test]
@@ -4298,7 +4264,7 @@ mod tests {
         let src = "前\n［＃ここから罫囲み］\n中身\n";
         let doc: Value =
             serde_json::from_slice(&aat_json_from_bytes(src.as_bytes()).unwrap()).unwrap();
-        assert!(!block_kinds(&doc).contains(&"keigakomi_block".to_owned()));
+        assert!(!block_kinds(&doc).contains(&"typography_block".to_owned()));
         assert!(
             serde_json::to_string(&doc)
                 .unwrap()
@@ -4312,8 +4278,8 @@ mod tests {
         let doc: Value =
             serde_json::from_slice(&aat_json_from_bytes(src.as_bytes()).unwrap()).unwrap();
         let kinds = block_kinds(&doc);
-        assert_eq!(kinds, ["keigakomi_block"]);
-        let frame = find_node(&doc, "keigakomi_block").unwrap();
+        assert_eq!(kinds, ["typography_block"]);
+        let frame = find_node(&doc, "typography_block").unwrap();
         let indent = find_node(frame, "layout_block").unwrap();
         assert!(serde_json::to_string(indent).unwrap().contains('ａ'));
     }
@@ -4349,8 +4315,8 @@ mod tests {
         );
         assert!(find_node(&aat, "layout_block").is_none());
         assert!(find_node(&aat, "raw").is_some());
-        let keigakomi = find_first_node(&aat, "keigakomi_block");
-        assert_eq!(keigakomi["kind"], "keigakomi_block");
+        let keigakomi = find_first_node(&aat, "typography_block");
+        assert_eq!(keigakomi["kind"], "typography_block");
     }
 
     #[test]

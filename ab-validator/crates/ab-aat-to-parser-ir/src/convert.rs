@@ -701,39 +701,6 @@ fn map_block_content(
             }));
             return Ok(current);
         }
-        "keigakomi_block" | "yokogumi_block" => {
-            recorder.record(
-                "STRUCTURAL",
-                Some(structural_pointer.as_str()),
-                None,
-                None,
-                None,
-            )?;
-            recorder.record(
-                "UNSUPPORTED",
-                Some(structural_pointer.as_str()),
-                None,
-                None,
-                None,
-            )?;
-            for (index, child) in block["children"]
-                .as_array()
-                .into_iter()
-                .flatten()
-                .enumerate()
-            {
-                current = map_block(
-                    child,
-                    outputs,
-                    recorder,
-                    current,
-                    &format!("{path}.children[{index}]"),
-                    None,
-                    false,
-                    heuristic_enabled,
-                )?;
-            }
-        }
         "quote_block" => {
             recorder.record_if_measured(
                 "STRUCTURAL",

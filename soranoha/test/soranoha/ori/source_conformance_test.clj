@@ -563,3 +563,12 @@
     (is (some #(string/includes? % closing) (map #(.getTextContent ^Node %) (elements result "note"))))
     (is (seq (get-in result [:ir "interpretation_problems"])))
     (is (empty? (get-in result [:ir "interpretation_facts"])))))
+(deftest scoped-frames-and-horizontal-writing-retain-partial-paragraphs
+  (doseq [[name rend] [["罫囲み" "keigakomi border(rule)"] ["横組み" "yokogumi horizontal"]]]
+    (let [result (transcribe (source (str "前［＃ここから" name "］甲\n乙［＃ここで" name "終わり］後")))
+          wrappers (filterv #(= rend (attribute % "rend")) (elements result "hi"))]
+      (is (= "前甲\n乙後" (:plaintext result)))
+      (is (= ["前甲" "乙後"] (texts result "p")))
+      (is (= ["甲" "乙"] (mapv view/visible-text wrappers)))
+      (is (= 1 (count (set (map #(attribute % "source") wrappers)))))
+      (is (empty? (get-in result [:ir "interpretation_problems"]))))))

@@ -460,7 +460,8 @@ fn d_font_size(n: &Value) -> bool {
 
 fn d_keigakomi(n: &Value) -> bool {
     let kind = n.get("kind").and_then(Value::as_str);
-    kind == Some("keigakomi_block")
+    (kind == Some("keigakomi") && n.get("content").is_some())
+        || (kind == Some("typography_block") && n["formatting"]["kind"] == "keigakomi")
         || (kind == Some("style") && style_type_of(n) == Some("keigakomi"))
 }
 
@@ -471,8 +472,8 @@ fn d_jisage_block(node: &Value) -> bool {
 
 fn d_yokogumi(n: &Value) -> bool {
     let kind = n.get("kind").and_then(Value::as_str);
-    kind == Some("yokogumi")
-        || kind == Some("yokogumi_block")
+    (kind == Some("yokogumi") && n.get("content").is_some())
+        || (kind == Some("typography_block") && n["formatting"]["kind"] == "yokogumi")
         || (kind == Some("style") && style_type_of(n) == Some("yokogumi"))
 }
 
@@ -616,7 +617,7 @@ mod tests {
         let aat = json!({
             "kind": "paragraph",
             "content": [
-                {"kind": "keigakomi_block", "children": []},
+                {"kind": "typography_block", "formatting": {"kind": "keigakomi"}, "children": []},
                 {"kind": "style", "style_type": "keigakomi", "content": []},
                 {"kind": "style", "style_type": "boten", "content": []},
             ]

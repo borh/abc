@@ -115,8 +115,9 @@ impl RecogniseCtx<'_, '_> {
         // aozora-encoding — shared with the resolution view and the
         // gaiji() wire. The simple `「desc」` quoted form is a gaiji even
         // without a mencode; the composed / bare forms need a trailing mencode
-        // anchor; a non-serializable description (stray quote imbalance, an
-        // embedded `［＃`) is declined. Declined brackets fall through to
+        // anchor. Complete nested glyph references remain documentary parts
+        // of the description; incomplete or unmarked nested annotations
+        // are declined. Declined brackets fall through to
         // `Directive{Unknown}` and round-trip byte-identical.
         let body = &self.source[hash_end as usize..bracket_close_span.start as usize];
         let gaiji_resolve::GaijiBody {

@@ -104,6 +104,8 @@ fn nested_components(
         if !matches!(
             parent.kind,
             SourceMarkerKind::RubyExplicit
+                | SourceMarkerKind::GaijiFullwidth
+                | SourceMarkerKind::GaijiAscii
                 | SourceMarkerKind::RubyImplicit
                 | SourceMarkerKind::BracketNote
                 | SourceMarkerKind::CommandFullwidth
@@ -201,6 +203,24 @@ fn nested_components(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn nested_glyph_components_keep_independent_source_spans() {
+        let source = "前※［＃「姉」の正字、「女＋※［＃第3水準1-85-57］のつくり」、252-下-27］後";
+        let patterns = vec![SourceInventoryPattern {
+            row_id: "gaiji.marker".into(),
+            source_patterns: vec!["※［＃".into()],
+        }];
+        let marker = source_markers(source).remove(0);
+        let components = nested_components(&marker, &compile_patterns(&patterns));
+        assert_eq!(components.len(), 1);
+        assert_eq!(components[0]["raw"], "※［＃第3水準1-85-57］");
+        let start =
+            usize::try_from(components[0]["source_span"]["start"].as_u64().unwrap()).unwrap();
+        let end = usize::try_from(components[0]["source_span"]["end"].as_u64().unwrap()).unwrap();
+        assert_eq!(&source[start..end], "※［＃第3水準1-85-57］");
+        assert!(marker.span.start < start && end < marker.span.end);
+    }
 
     #[test]
     fn nested_gaiji_ruby_uses_the_same_adjacent_marker_identity_as_top_level() {

@@ -567,7 +567,7 @@ fn scan_next_marker(txt: &str, offset: usize, line: usize) -> Option<RawMarker<'
     }
     if rest.starts_with("※［＃") {
         let content_start = offset + "※［＃".len();
-        if let Some(content_end) = marker_end_on_same_line(txt, content_start, '］') {
+        if let Some(content_end) = gaiji_end_on_same_line(txt, content_start, '］') {
             let marker_end = content_end + '］'.len_utf8();
             return Some(raw_marker(
                 txt,
@@ -595,7 +595,7 @@ fn scan_next_marker(txt: &str, offset: usize, line: usize) -> Option<RawMarker<'
     }
     if rest.starts_with("※[#") {
         let content_start = offset + "※[#".len();
-        if let Some(content_end) = marker_end_on_same_line(txt, content_start, ']') {
+        if let Some(content_end) = gaiji_end_on_same_line(txt, content_start, ']') {
             let marker_end = content_end + 1;
             return Some(raw_marker(
                 txt,
@@ -1183,6 +1183,11 @@ fn quoted_text_end_on_same_line(text: &str, start: usize, end_marker: char) -> O
     None
 }
 
+fn gaiji_end_on_same_line(text: &str, content_start: usize, end_marker: char) -> Option<usize> {
+    let end = command_end(text, content_start, end_marker)?;
+    (!text[content_start..end].contains(['\r', '\n'])).then_some(end)
+}
+
 fn command_end(text: &str, content_start: usize, end_marker: char) -> Option<usize> {
     let multiline = text[content_start..].starts_with("入力者註：")
         || text[content_start..].starts_with("入力者注：");
@@ -1197,14 +1202,14 @@ fn command_end(text: &str, content_start: usize, end_marker: char) -> Option<usi
         }
         if rest.starts_with("※［＃") {
             let nested_start = offset + "※［＃".len();
-            if let Some(end) = marker_end_on_same_line(text, nested_start, '］') {
+            if let Some(end) = gaiji_end_on_same_line(text, nested_start, '］') {
                 offset = end + '］'.len_utf8();
                 continue;
             }
         }
         if rest.starts_with("※[#") {
             let nested_start = offset + "※[#".len();
-            if let Some(end) = marker_end_on_same_line(text, nested_start, ']') {
+            if let Some(end) = gaiji_end_on_same_line(text, nested_start, ']') {
                 offset = end + 1;
                 continue;
             }

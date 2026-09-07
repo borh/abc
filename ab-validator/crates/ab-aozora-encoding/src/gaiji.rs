@@ -447,7 +447,9 @@ pub fn parse_gaiji_body(body: &str) -> GaijiBody<'_> {
     // Composed / bare form: right-to-left mencode scan. The run admits both
     // the canonical page-line forms and the near-miss ones (fused 上/中/下,
     // full-width minus, poetry locators).
-    let shaped = |t: &str| is_mencode_shaped(t) || is_near_miss_page_line_shaped(t);
+    let shaped = |t: &str| {
+        is_mencode_shaped(t) || is_near_miss_page_line_shaped(t) || is_numbered_column_locator(t)
+    };
     let commas: Vec<usize> = body.match_indices('、').map(|(i, _)| i).collect();
     let tokens: Vec<&str> = body.split('、').map(str::trim).collect();
     let mut run_start = tokens.len();
@@ -465,7 +467,16 @@ pub fn parse_gaiji_body(body: &str) -> GaijiBody<'_> {
         .iter()
         .any(|t| is_near_miss_page_line_shaped(t) && !is_page_line_shaped(t));
     let anchored = run.iter().any(|t| is_mencode_shaped(t));
-    if run_start == tokens.len() || run_start == 0 || (uses_near_miss && !anchored) {
+    let substitution_locator = run_start > 0
+        && run_start < tokens.len()
+        && run.iter().all(|t| is_numbered_column_locator(t))
+        && is_substitution_description(body[..commas[run_start - 1]].trim());
+    if run_start == tokens.len()
+        || run_start == 0
+        || ((uses_near_miss || run.iter().any(|t| is_numbered_column_locator(t)))
+            && !anchored
+            && !substitution_locator)
+    {
         return GaijiBody {
             description: body,
             mencode: None,
@@ -484,6 +495,14 @@ pub fn parse_gaiji_body(body: &str) -> GaijiBody<'_> {
 /// when the source supplies no character code or page reference.
 fn is_substitution_description(description: &str) -> bool {
     fn quoted(input: &str) -> Option<&str> {
+        if let Some(content) = input.strip_prefix("「※［＃") {
+            let hash_open = '「'.len_utf8() + '※'.len_utf8();
+            let end = gaiji_marker_end(input, hash_open)?;
+            if content.starts_with('］') {
+                return None;
+            }
+            return input[end..].trim_start().strip_prefix('」');
+        }
         let (content, rest) = input.strip_prefix('「')?.split_once('」')?;
         (!content.is_empty() && !content.contains(['「', '［', '］'])).then_some(rest)
     }
@@ -495,13 +514,19 @@ fn is_substitution_description(description: &str) -> bool {
         .is_some_and(str::is_empty)
 }
 
+fn is_numbered_column_locator(value: &str) -> bool {
+    let mut parts = value.split('-');
+    matches!((parts.next(), parts.next(), parts.next(), parts.next()),
+        (Some(page), Some("上段" | "中段" | "下段"), Some(line), None)
+            if is_digit_run(page) && is_digit_run(line))
+}
+
 /// Whether a gaiji `description` can be kept (it both serializes and
 /// round-trips); otherwise the bracket falls through to a plain directive.
 ///
 /// Rejects:
-///   - a description embedding `［＃` (a nested annotation opener would leak a
-///     bare `［＃` outside the directive wrapper, violating the Tier A canary),
-///     and
+///   - an incomplete nested glyph reference, or a nested annotation without
+///     its supplied glyph marker, and
 ///   - a description carrying structural `「…」` quotes without a trailing
 ///     `、mencode` anchor or a complete component-substitution statement
 ///     (these distinguish glyph descriptions from text quotations). Anchored forms are
@@ -510,8 +535,12 @@ fn is_substitution_description(description: &str) -> bool {
 ///     the source bytes and the reference stays resolvable.
 #[must_use]
 pub fn gaiji_description_serializable(description: &str, has_mencode: bool) -> bool {
-    if description.contains("［＃") {
-        return false;
+    for (start, _) in description.match_indices(BRACKET_HASH) {
+        if !description[..start].ends_with(GAIJI_REFMARK)
+            || gaiji_marker_end(description, start).is_none()
+        {
+            return false;
+        }
     }
     if description.contains(['「', '」']) {
         return has_mencode || is_substitution_description(description);
@@ -865,17 +894,41 @@ pub fn gaiji_resolutions(source: &str) -> Vec<GaijiResolution> {
         } else {
             hash_open
         };
-        let body_start = hash_open + BRACKET_HASH.len();
-        let Some(close_rel) = source[body_start..].find(GAIJI_CLOSE) else {
+        let Some(span_end) = gaiji_marker_end(source, hash_open) else {
             break;
         };
-        let span_end = body_start + close_rel + GAIJI_CLOSE.len();
         if let Some(res) = resolve_at(source, span_start, span_end) {
             out.push(res);
         }
         cursor = span_end;
     }
     out
+}
+
+/// Locate a complete reference without ending at a nested component's closer.
+fn gaiji_marker_end(source: &str, hash_open: usize) -> Option<usize> {
+    let body_start = hash_open.checked_add(BRACKET_HASH.len())?;
+    let mut depth = 1usize;
+    for (relative, ch) in source.get(body_start..)?.char_indices() {
+        let start = body_start + relative;
+        match ch {
+            '［' if source[start..].starts_with(BRACKET_HASH) => depth += 1,
+            '］' => {
+                // A quoted delimiter is the supplied glyph, not a boundary.
+                if source[..start].ends_with('「')
+                    && source[start + ch.len_utf8()..].starts_with('」')
+                {
+                    continue;
+                }
+                depth -= 1;
+                if depth == 0 {
+                    return Some(start + ch.len_utf8());
+                }
+            }
+            _ => {}
+        }
+    }
+    None
 }
 
 /// Byte-range of the `※［＃…］` span containing `byte_offset`.
@@ -900,11 +953,9 @@ pub fn find_span(source: &str, byte_offset: usize) -> Option<(usize, usize)> {
     let win_offset = byte_offset.saturating_sub(win_start);
 
     for (hash_in_win, _) in window.match_indices(BRACKET_HASH) {
-        let after_open = hash_in_win + BRACKET_HASH.len();
-        let Some(end_rel) = window.get(after_open..).and_then(|s| s.find(GAIJI_CLOSE)) else {
+        let Some(end_in_win) = gaiji_marker_end(window, hash_in_win) else {
             continue;
         };
-        let end_in_win = after_open + end_rel + GAIJI_CLOSE.len();
         // Fold a preceding `※` into the span (refmark form).
         let start_in_win = if window[..hash_in_win].ends_with(GAIJI_REFMARK) {
             hash_in_win - GAIJI_REFMARK.len()

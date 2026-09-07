@@ -421,6 +421,7 @@
     "text_variant": {"type":"object","required":["kind","content","base_text","base_content","source","span"],"additionalProperties":false,"properties":{"kind":{"const":"text-variant"},"current_interpretation_facts":{"description":"Source-owned claims for the supplied current quotation, emitted only after its target and structural constraints match.","type":"array","uniqueItems":true,"items":{"$ref":"#/$defs/interpretationFact"}},"content":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/inline"}},"base_text":{"type":"string","description":"Explicit witness text; empty means source-stated absence."},"base_content":{"type":"array","items":{"$ref":"#/$defs/inline"}},"source":{"type":"string","minLength":1},"span":{"$ref":"#/$defs/span"}}},
     "formatting_attribute": {
       "oneOf": [
+        {"type":"object","additionalProperties":false,"required":["kind","align","offset_from_end"],"properties":{"kind":{"const":"chitsuki"},"align":{"const":"right"},"offset_from_end":{"type":"integer","minimum":0}}},
         {"type":"object","additionalProperties":false,"required":["kind","position"],"properties":{"kind":{"const":"baseline_position"},"position":{"const":"lowered"}}},
         {"type":"object","additionalProperties":false,"required":["kind"],"properties":{"kind":{"enum":["yokogumi","fraction","exponent"]}}},
         {"type":"object","additionalProperties":false,"required":["kind","border"],"properties":{"kind":{"const":"keigakomi"},"border":{"enum":["rule","unspecified","dashed-rule","box","circle","dotted-circle","double-rule"]}}},
@@ -441,7 +442,7 @@
       "patternProperties": { "^x-": true },
       "properties": {
         "interpretation_marker_spans": { "type": "array", "items": { "$ref": "#/$defs/span" } },
-        "kind": { "enum": ["style", "formatting", "font_size", "small_script", "baseline_position", "exponent", "tcy", "keigakomi", "yokogumi", "caption", "fraction"] },
+        "kind": { "enum": ["style", "formatting", "font_size", "small_script", "baseline_position", "chitsuki", "exponent", "tcy", "keigakomi", "yokogumi", "caption", "fraction"] },
         "border": {"enum":["rule","unspecified","dashed-rule","box","circle","dotted-circle","double-rule"]},
         "decoration": {"type":"object", "additionalProperties":false, "required":["kind","position"], "properties":{"kind":{"type":"string"}, "position":{"enum":["right","left","both","unknown"]}}},
         "attributes": { "type":"array", "minItems":2, "uniqueItems":true, "items": { "$ref":"#/$defs/formatting_attribute" } },
@@ -461,6 +462,7 @@
         "content": { "type": "array", "items": { "$ref": "#/$defs/inline" } }
       },
       "allOf": [
+        {"if":{"properties":{"kind":{"const":"chitsuki"}}},"then":{"required":["align","offset_from_end"]}},
         {"if":{"properties":{"kind":{"const":"baseline_position"}}},"then":{"required":["position"],"properties":{"position":{"const":"lowered"}}}},
         {"if":{"properties":{"kind":{"enum":["baseline_position","exponent"]}}},"then":{"not":{"anyOf":[{"required":["level"]},{"required":["size"]},{"required":["size_type"]}]}}},
         { "if":{"properties":{"kind":{"const":"formatting"}}}, "then":{"required":["attributes"]}, "else":{"not":{"required":["attributes"]}} },

@@ -619,6 +619,10 @@ static BODY_PATTERNS: &[BodyPattern] = &[
         family: BodyFamily::AlignEndSpacingPrefix,
     },
     BodyPattern {
+        needle: "地付きで",
+        family: BodyFamily::AlignEnd0,
+    },
+    BodyPattern {
         needle: "地付き",
         family: BodyFamily::AlignEnd0,
     },
@@ -1450,13 +1454,11 @@ pub(super) fn classify_annotation_body(
             )
         }
         BodyFamily::AlignEndSpacingPrefix => {
-            let (offset, tail) = parse_layout_count_prefix(&body[match_end..])?;
-            (offset > 0 && matches!(tail, "字アキ" | "字あき")).then(|| {
-                (
-                    EmitKind::Aozora(alloc.line(LineFormat::AlignEnd { offset })),
-                    None,
-                )
-            })
+            let offset = parse_end_spacing(&body[match_end..])?;
+            Some((
+                EmitKind::Aozora(alloc.line(LineFormat::AlignEnd { offset })),
+                None,
+            ))
         }
         BodyFamily::TopIndentPrefix => {
             // body == 天から/天より{N}字下げ[、地より{M}字…] — single-line indent
@@ -2534,6 +2536,11 @@ pub(super) fn parse_emphasis_body(body: &str) -> Option<(EmphasisWeight, bool, b
         "ここで斜体終わり" => (Italic, true, true),
         _ => return None,
     })
+}
+
+pub(super) fn parse_end_spacing(source: &str) -> Option<u8> {
+    let (offset, tail) = parse_layout_count_prefix(source)?;
+    (offset > 0 && matches!(tail, "字アキ" | "字あき")).then_some(offset)
 }
 
 fn parse_layout_count_prefix(source: &str) -> Option<(u8, &str)> {

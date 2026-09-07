@@ -1469,6 +1469,7 @@ impl EstablishedInterpretation {
             .as_array()
             .is_some_and(|children| !children.is_empty());
         match node["kind"].as_str() {
+            Some("chitsuki") if has_content => Some(Self::LineLayout),
             Some("baseline_position") if has_content => Some(Self::BaselinePosition),
             Some("exponent") if has_content => Some(Self::Exponent),
             Some("keigakomi" | "yokogumi" | "fraction") if has_content => Some(Self::Layout),
@@ -2282,7 +2283,11 @@ fn blocks_from_inline_content(content: Vec<Value>, decoded: &DecodedSource) -> V
                 .filter(|boundary| *boundary > index + 1 || (!is_region && !paragraph.is_empty()))
             {
                 let mut inner = mem::take(&mut paragraph);
-                if is_region || is_page {
+                if is_region
+                    || is_page
+                    || (layout.get("offset_from_end").is_some()
+                        && !marker_ends_source_line(&node, source))
+                {
                     push_paragraph_if_not_empty(&mut blocks, mem::take(&mut inner));
                 }
                 let first_span = inner
@@ -4524,8 +4529,8 @@ fn adjacent_principal_ruby(nodes: &mut [Value]) -> Option<&mut Value> {
             "editorial_note" => {}
             "raw" if node.get("text_variant").is_some() => {}
             "ruby" => return Some(node),
-            "style" | "formatting" | "font_size" | "baseline_position" | "exponent"
-            | "small_script" | "tcy" | "keigakomi" | "yokogumi" | "heading" => {
+            "style" | "formatting" | "font_size" | "baseline_position" | "chitsuki"
+            | "exponent" | "small_script" | "tcy" | "keigakomi" | "yokogumi" | "heading" => {
                 return adjacent_principal_ruby(node["content"].as_array_mut()?);
             }
             _ => return None,
@@ -4606,7 +4611,7 @@ fn attach_principal_subrange(
             true
         }
         Some(
-            "style" | "formatting" | "font_size" | "baseline_position" | "exponent"
+            "style" | "formatting" | "font_size" | "baseline_position" | "chitsuki" | "exponent"
             | "small_script" | "tcy" | "keigakomi" | "yokogumi" | "heading",
         ) => {
             let Some(children) = node["content"].as_array_mut() else {
@@ -4752,9 +4757,9 @@ fn preceding_reading(nodes: &mut [Value]) -> Option<&mut Value> {
                 }
             }
             "ruby" => return Some(node),
-            "style" | "formatting" | "font_size" | "baseline_position" | "exponent"
-            | "small_script" | "tcy" | "keigakomi" | "yokogumi" | "fraction" | "text-variant"
-            | "annotated_text" | "heading" => {
+            "style" | "formatting" | "font_size" | "baseline_position" | "chitsuki"
+            | "exponent" | "small_script" | "tcy" | "keigakomi" | "yokogumi" | "fraction"
+            | "text-variant" | "annotated_text" | "heading" => {
                 return preceding_reading(node["content"].as_array_mut()?);
             }
             _ => return None,
@@ -4902,7 +4907,7 @@ fn fragment_text(node: &Value, glyph: GlyphRealization) -> Option<Cow<'_, str>> 
         })),
         "iteration-mark" | "supplied-diacritic" => Some(Cow::Borrowed(node["text"].as_str()?)),
         "editorial_note" | "kunten" | "figure" => Some(Cow::Borrowed("")),
-        "style" | "formatting" | "font_size" | "baseline_position" | "exponent"
+        "style" | "formatting" | "font_size" | "baseline_position" | "chitsuki" | "exponent"
         | "small_script" | "tcy" | "keigakomi" | "yokogumi" | "fraction" | "warichu"
         | "text-variant" | "annotated_text" | "heading" => {
             let mut text = String::new();
@@ -5181,6 +5186,9 @@ fn formatting_fields(attr: ForwardAttr) -> Option<Value> {
         ForwardAttr::Framed(kind) => json!({"kind":"keigakomi", "border":enclosure_kind(kind)}),
         ForwardAttr::Horizontal => json!({"kind":"yokogumi"}),
         ForwardAttr::Fraction => json!({"kind":"fraction"}),
+        ForwardAttr::AlignEnd { offset } => {
+            json!({"kind":"chitsuki", "align":"right", "offset_from_end":offset})
+        }
         ForwardAttr::Bouten { kind, position } => json!({"kind":"style",
             "style_type": if kind.is_line() { "bosen" } else { "bouten" },
             "decoration":{"kind":kind.keyword(), "position":bouten_position(position)}}),

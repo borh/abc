@@ -104,6 +104,7 @@
 
 (defn- inline-layout-rend [layout]
   (case (get layout "kind")
+    "chitsuki" (layout-rend layout)
     "emphasis" (string/join " " (remove nil? [(get layout "style")
                                               (get-in layout ["decoration" "kind"])
                                               (get-in layout ["decoration" "position"])]))
@@ -407,7 +408,8 @@
   ([acc node depth]
    (let [layout (get node "layout")
          layouts (layout-attributes layout)
-         rends (mapv inline-layout-rend layouts)]
+         rends (mapv inline-layout-rend layouts)
+         geometry? (some #(= "chitsuki" (get % "kind")) layouts)]
      (if (every? some? rends)
        (let [rend (string/join " " rends)
              params (if (vector? layout)
@@ -421,12 +423,12 @@
                                 (seq (get node "inline_children"))
                                 (get node "text")
                                 depth
-                                (sourced node [:hi (cond-> {:rend rend}
-                                                     (seq layouts)
-                                                     (assoc :abc/layout-kind (string/join " " (map #(get % "kind") layouts)))
+                                (sourced node [(if geometry? :seg :hi) (cond-> {:rend rend}
+                                                                         (seq layouts)
+                                                                         (assoc :abc/layout-kind (string/join " " (map #(get % "kind") layouts)))
 
-                                                     params
-                                                     (assoc :abc/layout-params params))])))
+                                                                         params
+                                                                         (assoc :abc/layout-params params))])))
        (mark-omitted acc "layout-span")))))
 
 (defn- heading-attrs [node]
@@ -702,10 +704,17 @@
 
 (defn- wrap-scope-intersections [content scopes]
   (reduce (fn [children scope]
-            [(into [(if (get scope "typography") :hi :seg)
-                    (cond-> (layout-block-attrs scope)
-                      (get scope "typography") (dissoc :type))]
-                   children)])
+            (let [alignment (when (and (= "right" (get scope "align"))
+                                       (contains? scope "offset_from_end"))
+                              (assoc (select-keys scope ["align" "offset_from_end"]) "kind" "chitsuki"))
+                  attrs (layout-block-attrs (if alignment (dissoc scope "align" "offset_from_end") scope))]
+              [(into [(if (get scope "typography") :hi :seg)
+                      (cond-> attrs
+                        (get scope "typography") (dissoc :type)
+                        alignment (assoc :rend (string/join " " (remove nil? [(:rend attrs) (layout-rend alignment)]))
+                                         :abc/layout-kind "chitsuki"
+                                         :abc/layout-params (layout-params alignment)))]
+                     children)]))
           content (reverse scopes)))
 
 (defn- render-paragraph-intersections [acc nodes start end scopes]

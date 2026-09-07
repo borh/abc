@@ -45,8 +45,7 @@ const EXACT: &[(&str, &str)] = &[
     // 横組みの表=表, all resolving to the canonical `ここで…終わり` close.
     ("ここで左から右への横組み終わり", "ここで横組み終わり"),
     ("ここで横組みの表終わり", "ここで表終わり"),
-    // Region-open synonyms — 地付きで/こ地付き=地付き, 横書き=横組み.
-    ("地付きで", "地付き"),
+    // Misspelled end-alignment marker.
     ("こ地付き", "地付き"),
 ];
 
@@ -256,7 +255,6 @@ pub const CATALOGUE_SAMPLES: &[&str] = &[
     "ここで横組みの表終わり",
     "ここで字下げ終わり」",
     // Region-open synonyms.
-    "地付きで",
     "こ地付き",
     "以下2字下げ",
     // 字下げ numeric.
@@ -429,7 +427,6 @@ mod tests {
     fn region_synonyms_resolve() {
         for (v, c) in [
             ("ここで横組みの表終わり", "ここで表終わり"),
-            ("地付きで", "地付き"),
             ("こ地付き", "地付き"),
         ] {
             assert_eq!(canonical_directive(v).as_deref(), Some(c), "variant {v:?}");

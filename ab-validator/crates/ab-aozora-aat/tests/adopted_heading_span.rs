@@ -32,8 +32,10 @@ fn heading_adoption_preserves_exact_target_and_marker_extent() {
         assert!(markers[0]["byte_start"].as_u64().unwrap() > u64::try_from(start).unwrap());
         let layout = find(&aat, "layout_block").unwrap();
         assert!(layout["span"]["byte_start"].is_u64());
-        let aligned = &layout["children"][0];
+        assert_eq!(layout["children"][0]["kind"], "paragraph");
+        let aligned = &layout["children"][1];
         assert_eq!(aligned["align"], "right");
-        assert_eq!(aligned["span"]["byte_start"], start);
+        assert_eq!(aligned["span"]["byte_start"], end);
+        assert_eq!(aligned["children"][0]["content"][0]["value"], "２・27");
     }
 }

@@ -35,7 +35,8 @@ use super::super::pair::{PairEvent, PairKind};
 use super::super::token::TriggerKind;
 use super::directive::{
     AnnotationBody, bouten_kind_from_suffix, classify_annotation_body, classify_general_image_body,
-    editorial_note_kind, is_return_mark, parse_decimal_u8_prefix, parse_heading_keyword,
+    editorial_note_kind, is_return_mark, parse_decimal_u8_prefix, parse_end_spacing,
+    parse_heading_keyword,
 };
 use super::{AnnotationMatch, BodyView, EmitKind, RecogniseCtx};
 
@@ -2048,6 +2049,9 @@ fn parse_align_end_suffix(s: &str) -> Option<ForwardAttr> {
     if s == "地付き" {
         return Some(ForwardAttr::AlignEnd { offset: 0 });
     }
+    if let Some(spacing) = s.strip_prefix("地付き、地より") {
+        return parse_end_spacing(spacing).map(|offset| ForwardAttr::AlignEnd { offset });
+    }
     let rest = s
         .strip_prefix("文末より")
         .or_else(|| s.strip_prefix("行末より"))
@@ -2182,10 +2186,13 @@ mod tests {
             forward_attr_from_suffix("地より１１字上げ"),
             Some(ForwardAttr::AlignEnd { offset: 11 })
         );
-        // Misspelling, zero magnitude, and 、-joined compound all stay Unknown.
+        // Misspelling and zero magnitude remain unsupported.
         assert_eq!(forward_attr_from_suffix("地付け"), None);
         assert_eq!(forward_attr_from_suffix("地より0字上げ"), None);
-        assert_eq!(forward_attr_from_suffix("地付き、地より３字アキ"), None);
+        assert_eq!(
+            forward_attr_from_suffix("地付き、地より３字アキ"),
+            Some(ForwardAttr::AlignEnd { offset: 3 })
+        );
         // Zero offset and unrelated suffixes stay Unknown.
         assert_eq!(forward_attr_from_suffix("文末より0字上げ"), None);
         assert_eq!(forward_attr_from_suffix("文末より字上げ"), None);

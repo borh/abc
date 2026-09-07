@@ -1001,7 +1001,7 @@ fn append_plain_visible_inline_text(node: &Value, out: &mut String) -> Result<()
         "ruby" => out.push_str(&ruby_component_text(node, "base", "base_content")?),
         "gaiji" => out.push_str(unicode_or_placeholder(node["resolved"].as_str())),
         "accent" => out.push_str(node["resolved"].as_str().unwrap_or("")),
-        "style" | "formatting" | "font_size" | "baseline_position" | "exponent"
+        "style" | "formatting" | "font_size" | "baseline_position" | "chitsuki" | "exponent"
         | "small_script" | "tcy" | "keigakomi" | "caption" | "yokogumi" | "fraction"
         | "warichu" | "text-variant" | "annotated_text" | "heading" => {
             append_plain_visible_content_text(node.get("content"), out)?;
@@ -1313,8 +1313,8 @@ fn map_inline_to_nodes(
         }
         "layout_break" => map_layout_break(node, nodes, offset),
         "raw" => map_raw_to_nodes(node, nodes, recorder, offset, path),
-        "formatting" | "font_size" | "baseline_position" | "exponent" | "small_script" | "tcy"
-        | "keigakomi" | "yokogumi" | "fraction" => {
+        "formatting" | "font_size" | "baseline_position" | "chitsuki" | "exponent"
+        | "small_script" | "tcy" | "keigakomi" | "yokogumi" | "fraction" => {
             map_layout_span_to_node(node, nodes, recorder, synthetic_warnings, offset, path, 0)
         }
         "caption" => {
@@ -1387,6 +1387,9 @@ fn layout_scope(node: &Value) -> Result<Value> {
         }
         "baseline_position" => Ok(
             json!({"kind":"baseline-position", "source":"aat-inline", "position":node["position"]}),
+        ),
+        "chitsuki" => Ok(
+            json!({"kind":"chitsuki", "source":"aat-inline", "align":"right", "offset_from_end":node["offset_from_end"]}),
         ),
         "exponent" => Ok(json!({"kind":"exponent", "source":"aat-inline"})),
         "small_script" => {
@@ -1658,8 +1661,8 @@ fn inline_child_node(
             }));
             Ok(end)
         }
-        "formatting" | "font_size" | "baseline_position" | "exponent" | "small_script" | "tcy"
-        | "keigakomi" | "yokogumi" | "fraction" => {
+        "formatting" | "font_size" | "baseline_position" | "chitsuki" | "exponent"
+        | "small_script" | "tcy" | "keigakomi" | "yokogumi" | "fraction" => {
             let text = plain_visible_content_text(node.get("content"))?;
             let end = offset + utf8_len(&text);
             let inline_children = inline_children_nodes(
@@ -2370,16 +2373,15 @@ fn append_visible_inline_text(
                 out,
             )?;
         }
-        "formatting" | "font_size" | "baseline_position" | "exponent" | "small_script" | "tcy"
-        | "keigakomi" | "yokogumi" | "fraction" | "warichu" | "heading" => {
-            append_visible_content_text(
-                node.get("content"),
-                recorder,
-                &format!("{path}.content"),
-                target_pointer,
-                out,
-            )?
-        }
+        "formatting" | "font_size" | "baseline_position" | "chitsuki" | "exponent"
+        | "small_script" | "tcy" | "keigakomi" | "yokogumi" | "fraction" | "warichu"
+        | "heading" => append_visible_content_text(
+            node.get("content"),
+            recorder,
+            &format!("{path}.content"),
+            target_pointer,
+            out,
+        )?,
         "warigaki" => {
             append_visible_content_text(
                 node.get("upper"),

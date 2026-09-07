@@ -1400,3 +1400,24 @@
       (is (= [target] (texts result "lem")))
       (is (= [witness] (texts result "rdg")))
       (is (empty? (get-in result [:ir "interpretation_problems"]))))))
+
+(deftest end-alignment-retains-the-supplied-inline-target
+  (doseq [[body expected markdown target offset]
+          [["前文。頓首　敬白［＃「頓首　敬白」は地付き、地より３字アキ］" "前文。頓首　敬白" "前文。頓首　敬白" "頓首　敬白" 3]
+           ["前文。［＃地付きで］（完）" "前文。（完）" "前文。（完）" "（完）" 0]
+           ["前文。署名《しょめい》［＃「署名」は地付き、地より１字アキ］" "前文。署名" "前文。<ruby><rb>署名</rb><rt>しょめい</rt></ruby>" "署名" 1]]]
+    (let [result (transcribe (source body))
+          aligned (filterv #(or (string/includes? (attribute % "rend") "chitsuki")
+                                (string/includes? (attribute % "rend") "align(right)"))
+                           (elements result "seg"))]
+      (is (= expected (:plaintext result)))
+      (is (= markdown (projection/markdown (:view result))))
+      (is (= [target] (mapv view/visible-text aligned)))
+      (is (every? #(not (string/includes? (attribute % "style") "text-align")) aligned))
+      (is (= 1 (count (filter #(string/starts-with? (view/visible-text %) "前文。")
+                              (elements result "p")))))
+      (is (every? #(or (string/includes? (attribute % "rend") (str "offset-from-end(" offset ")"))
+                       (string/includes? (attribute % "style") (str "padding-inline-end: " offset "em"))) aligned))
+      (is (empty? (get-in result [:ir "interpretation_problems"])))
+      (is (some #(and (= "layout" (get % "family")) (= "omitted" (get % "disposition")))
+                (get (projection/report :projection/markdown (:view result)) "counts"))))))

@@ -282,7 +282,7 @@
               export CLJ_CONFIG="${cache}/.clojure"
               export CLJ_CACHE="$TMPDIR/cp-cache"
               export GITLIBS="${cache}/.gitlibs"
-              clojure -M:check
+              clojure -Sthreads 1 -M:check
               touch "$out"
             '';
           # The soranoha kernel + snh conformance suite plus its lint and
@@ -333,7 +333,7 @@
                 export GITLIBS="$HOME/.gitlibs"
 
                 set -o pipefail
-                clojure -M:test 2>&1 | tee test-output.log
+                clojure -Sthreads 1 -M:test 2>&1 | tee test-output.log
                 if grep -q "^Reflection warning, soranoha/" test-output.log; then
                   exit 1
                 fi

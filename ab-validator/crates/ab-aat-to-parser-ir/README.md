@@ -13,13 +13,16 @@ with `--research-root`.
 
 Parser-IR `span` uses `parser_text_utf8`: UTF-8 bytes in the converter's text
 projection, before publication whitespace filtering. Ruby occupies its base text
-width and resolved gaiji occupy their Unicode width. Headings and source notes
+width and resolved gaiji occupy their Unicode width. An unresolved gaiji occupies
+one U+FFFC object-replacement character; its description remains glyph metadata.
+The same convention applies to the local ruby-reading, witness and annotation
+axes. Headings and source notes
 also advance this projection; it is not the final plaintext export.
 
 Optional `source_span` uses `decoded_utf8`: the exact AAT byte extent in the full
 decoded source, including markup and source line metadata. Unknown extents remain
-absent. Sentence splitting does not copy a parent's source extent onto newly
-created fragments when their exact source mapping is unknown.
+absent. These source coordinates are independent of glyph realization and of
+the converter's text projection.
 
 ## Commands
 

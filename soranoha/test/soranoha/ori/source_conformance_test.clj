@@ -59,6 +59,19 @@
       (recur (.getParentNode node) style))))
 (defn- texts [result tag] (mapv view/visible-text (elements result tag)))
 
+(deftest unencoded-witness-glyph-remains-apparatus
+  (let [result (transcribe (source "貳朱《にしゅ》を［＃「貳朱を」は底本では「※［＃「弋＋頁」、74-10］朱を」］"))
+        witness (first (elements result "rdg"))
+        glyph (first (elements result "g"))]
+    (is (= "貳朱を" (:plaintext result)))
+    (is (= ["貳朱を"] (texts result "lem")))
+    (is (= "rdg" (.getLocalName ^Node (.getParentNode ^Node glyph))))
+    (is (= "朱を" (.getTextContent ^Node witness)))
+    (is (not (string/blank? (attribute glyph "ref"))))
+    (is (string/includes? (:tei result) "弋＋頁"))
+    (is (seq (get-in result [:view :view/eligible-spans])))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
 (deftest supplied-table-retains-lines-and-literal-separators
   (let [result (transcribe (source "［＃ここから表］\n人口の表\n年次／出生／死亡\n一七五七年／八一八七八／六九〇五四\n［＃ここで表終わり］"))
         table (first (filter #(= "table" (attribute % "type")) (elements result "div")))]

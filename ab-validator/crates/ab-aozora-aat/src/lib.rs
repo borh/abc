@@ -2509,6 +2509,12 @@ fn source_fragment(decoded: &DecodedSource, range: Range<usize>) -> Option<Vec<V
     Some(content)
 }
 
+fn witness_fragment(decoded: &DecodedSource, range: Range<usize>) -> Option<Vec<Value>> {
+    let content = parsed_source_fragment(decoded, range)?;
+    content_witness_text(&content)?;
+    Some(content)
+}
+
 fn parsed_source_fragment(decoded: &DecodedSource, range: Range<usize>) -> Option<Vec<Value>> {
     let (mut nodes, _diagnostics, mut gaiji, mut ruby, accents) = projections(
         decoded.span_text.get(range.clone())?,
@@ -3794,7 +3800,7 @@ fn resolve_text_variants_in_blocks(nodes: Vec<Value>, source: &str) -> Vec<Value
                 variant["base_content"].as_array(),
             )
             && let (Some(current_text), Some(base_text)) =
-                (content_target_text(current), content_target_text(base))
+                (content_target_text(current), content_witness_text(base))
         {
             if variant["target_kind"] == "text" {
                 if let Some(children) = take_visible_suffix_matching(
@@ -3854,7 +3860,7 @@ fn attach_formatting_variant(style: &mut Value, note: &Value, source: &str) -> b
     let Some(base) = note["text_variant"]["base_content"].as_array() else {
         return false;
     };
-    let Some(base_text) = content_target_text(base) else {
+    let Some(base_text) = content_witness_text(base) else {
         return false;
     };
     let Some(children) = style["content"].as_array() else {
@@ -3983,7 +3989,7 @@ fn literal_variant_content(
     }
     let end = index + target.len();
     content.push(json!({"kind":"text-variant", "content":[text_node(index, end)],
-        "base_text":content_target_text(note["text_variant"]["base_content"].as_array()?)?,
+        "base_text":content_witness_text(note["text_variant"]["base_content"].as_array()?)?,
         "base_content":note["text_variant"]["base_content"], "source":note["source"], "span":note["span"]}));
     append_variant_statement(&mut content, note);
     if end < base.len() {
@@ -4071,17 +4077,36 @@ fn attach_reading_variant(
 // An explicitly typed witness note contributes no principal characters even
 // when its own quoted target remains unresolved.
 fn target_text(node: &Value) -> Option<Cow<'_, str>> {
+    fragment_text(node, GlyphRealization::Required)
+}
+
+#[derive(Clone, Copy)]
+enum GlyphRealization {
+    Required,
+    Placeholder,
+}
+
+fn fragment_text(node: &Value, glyph: GlyphRealization) -> Option<Cow<'_, str>> {
     match node["kind"].as_str()? {
         "text" => Some(Cow::Borrowed(node["value"].as_str()?)),
-        "ruby" => Some(Cow::Borrowed(node["base"].as_str()?)),
-        "gaiji" => Some(Cow::Borrowed(node["resolved"].as_str()?)),
+        "ruby" => match node["base_content"].as_array() {
+            Some(children) => content_fragment_text(children, glyph).map(Cow::Owned),
+            None => Some(Cow::Borrowed(node["base"].as_str()?)),
+        },
+        "gaiji" => Some(Cow::Borrowed(match node["resolved"].as_str() {
+            Some(text) => text,
+            None => match glyph {
+                GlyphRealization::Required => return None,
+                GlyphRealization::Placeholder => "\u{fffc}",
+            },
+        })),
         "iteration-mark" | "supplied-diacritic" => Some(Cow::Borrowed(node["text"].as_str()?)),
         "editorial_note" | "kunten" | "figure" => Some(Cow::Borrowed("")),
         "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi"
         | "yokogumi" | "fraction" | "text-variant" | "annotated_text" | "heading" => {
             let mut text = String::new();
             for child in node["content"].as_array()? {
-                text.push_str(&target_text(child)?);
+                text.push_str(&fragment_text(child, glyph)?);
             }
             Some(Cow::Owned(text))
         }
@@ -4091,9 +4116,17 @@ fn target_text(node: &Value) -> Option<Cow<'_, str>> {
 }
 
 fn content_target_text(nodes: &[Value]) -> Option<String> {
+    content_fragment_text(nodes, GlyphRealization::Required)
+}
+
+fn content_witness_text(nodes: &[Value]) -> Option<String> {
+    content_fragment_text(nodes, GlyphRealization::Placeholder)
+}
+
+fn content_fragment_text(nodes: &[Value], glyph: GlyphRealization) -> Option<String> {
     let mut text = String::new();
     for node in nodes {
-        text.push_str(&target_text(node)?);
+        text.push_str(&fragment_text(node, glyph)?);
     }
     Some(text)
 }
@@ -4561,7 +4594,7 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
         }
         let base_content = base_span.as_ref().map_or_else(
             || Some(Vec::new()),
-            |range| source_fragment(decoded, range.clone()),
+            |range| witness_fragment(decoded, range.clone()),
         );
         if let Some(base_content) = base_content {
             value["text_variant"]["base_content"] = json!(base_content);

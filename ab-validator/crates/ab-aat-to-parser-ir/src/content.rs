@@ -1,6 +1,11 @@
 use anyhow::{Result, bail};
 use serde_json::Value;
 
+/// Unknown glyphs occupy one object-replacement character; descriptions remain metadata.
+pub(crate) fn unicode_or_placeholder(unicode: Option<&str>) -> &str {
+    unicode.unwrap_or("\u{fffc}")
+}
+
 /// Visible text for analysis consumers, derived from structured children when present.
 pub(crate) fn parser_ir_node_visible_text(node: &Value) -> Result<String> {
     if let Some(children) = inline_children(node) {
@@ -29,11 +34,7 @@ pub(crate) fn parser_ir_node_visible_text(node: &Value) -> Result<String> {
             .pointer("/ruby/base")
             .and_then(Value::as_str)
             .unwrap_or(""),
-        "gaiji" => node
-            .pointer("/gaiji/unicode")
-            .and_then(Value::as_str)
-            .or_else(|| node.pointer("/gaiji/raw_marker").and_then(Value::as_str))
-            .unwrap_or(""),
+        "gaiji" => unicode_or_placeholder(node.pointer("/gaiji/unicode").and_then(Value::as_str)),
         "line-break" => "\n",
         "page-break" | "image" | "editor-note" | "kunten" | "indentation" => "",
         other => bail!("unsupported parser-IR node type for visible-text projection: {other}"),

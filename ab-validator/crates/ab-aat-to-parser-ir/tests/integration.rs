@@ -4535,8 +4535,8 @@ fn unresolved_gaiji_ruby_uses_child_projection_for_decoded_coordinates() {
         } else {
             &first["inline_children"][0]
         };
-        assert_eq!(ruby_node["ruby"]["base"], "てへん＋諂のつくり");
-        assert_eq!(ruby_node["span"]["end"], "てへん＋諂のつくり".len());
+        assert_eq!(ruby_node["ruby"]["base"], "\u{fffc}");
+        assert_eq!(ruby_node["span"]["end"], "\u{fffc}".len());
         assert_eq!(
             ruby_node["inline_children"][0]["span"]["end"],
             ruby_node["span"]["end"]
@@ -4546,7 +4546,7 @@ fn unresolved_gaiji_ruby_uses_child_projection_for_decoded_coordinates() {
             ruby_node["inline_children"][0]["gaiji"]["raw_marker"],
             "てへん＋諂のつくり"
         );
-        let expected = "てへん＋諂のつくり花\n\n　六月の事なりき。年ごとに";
+        let expected = "\u{fffc}花\n\n　六月の事なりき。年ごとに";
         if wrapper == "heading" {
             assert_eq!(first["text"], expected);
             assert_eq!(first["span"]["end"], expected.len());

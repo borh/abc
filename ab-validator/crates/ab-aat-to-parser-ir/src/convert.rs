@@ -4,6 +4,7 @@ use anyhow::{Context, Result, bail};
 use serde_json::{Value, json};
 
 use crate::{
+    content::unicode_or_placeholder,
     divergence::{AatMeta, DivergenceRecorder},
     mapping::{MappingDocument, MappingIndex},
     ortho_annotations::OrthoAnnotationsBundle,
@@ -992,12 +993,7 @@ fn append_plain_visible_inline_text(node: &Value, out: &mut String) -> Result<()
             out.push_str(node["text"].as_str().unwrap_or(""))
         }
         "ruby" => out.push_str(&ruby_component_text(node, "base", "base_content")?),
-        "gaiji" => out.push_str(
-            node["resolved"]
-                .as_str()
-                .or_else(|| node["description"].as_str())
-                .unwrap_or(""),
-        ),
+        "gaiji" => out.push_str(unicode_or_placeholder(node["resolved"].as_str())),
         "accent" => out.push_str(node["resolved"].as_str().unwrap_or("")),
         "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi" | "caption"
         | "yokogumi" | "fraction" | "warichu" | "text-variant" | "annotated_text" | "heading" => {
@@ -1204,10 +1200,7 @@ fn map_inline_to_nodes(
             Ok(end)
         }
         "gaiji" => {
-            let visible = node["resolved"]
-                .as_str()
-                .or_else(|| node["description"].as_str())
-                .unwrap_or("");
+            let visible = unicode_or_placeholder(node["resolved"].as_str());
             let end = offset + utf8_len(visible);
             let span = map_node_span(node.get("span"), offset, end, recorder, path)?;
             let description_pointer = format!("{path}.gaiji.description");
@@ -1600,10 +1593,7 @@ fn inline_child_node(
             Ok(end)
         }
         "gaiji" => {
-            let visible = node["resolved"]
-                .as_str()
-                .or_else(|| node["description"].as_str())
-                .unwrap_or("");
+            let visible = unicode_or_placeholder(node["resolved"].as_str());
             let end = offset + utf8_len(visible);
             nodes.push(json!({
                 "type": "gaiji",
@@ -2272,12 +2262,7 @@ fn append_visible_inline_text(
                 node.get("resolved").cloned(),
                 node.get("resolved").cloned(),
             );
-            out.push_str(
-                node["resolved"]
-                    .as_str()
-                    .or_else(|| node["description"].as_str())
-                    .unwrap_or(""),
-            );
+            out.push_str(unicode_or_placeholder(node["resolved"].as_str()));
         }
         "accent" => {
             if let Some(target) = target_pointer {

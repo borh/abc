@@ -638,3 +638,58 @@ fn attributed_variants_preserve_qualified_editorial_wording() {
     assert_eq!(app["variant"]["base_text"], "ＡととＢとは");
     assert_eq!(ir["interpretation_problems"], json!([]));
 }
+
+#[test]
+fn a_witness_can_retain_an_unencoded_glyph_without_inventing_its_character() {
+    let body = "貳朱《にしゅ》を［＃「貳朱を」は底本では「※［＃「弋＋頁」、74-10］朱を」］";
+    let ir = convert(body);
+    let all = nodes(&ir);
+    let app = all
+        .iter()
+        .find(|node| node["type"] == "base-text-variant")
+        .unwrap();
+    assert_eq!(app["text"], "貳朱を");
+    assert_eq!(app["variant"]["base_text"], "\u{fffc}朱を");
+    let glyph = &app["variant"]["base_children"][0];
+    assert_eq!(glyph["type"], "gaiji");
+    assert!(glyph["gaiji"]["unicode"].is_null());
+    assert_eq!(glyph["gaiji"]["raw_marker"], "弋＋頁");
+    assert_eq!(glyph["span"]["coordinate_system"], "witness_utf8");
+    assert_eq!(glyph["span"]["end"], 3);
+    let source = format!("題\n作者\n\n{body}\n\n底本：本\n");
+    let start = usize::try_from(glyph["source_span"]["start"].as_u64().unwrap()).unwrap();
+    let end = usize::try_from(glyph["source_span"]["end"].as_u64().unwrap()).unwrap();
+    assert_eq!(&source[start..end], "※［＃「弋＋頁」、74-10］");
+    assert_eq!(ir["interpretation_problems"], json!([]));
+}
+
+#[test]
+fn unknown_witness_directives_and_unknown_target_glyphs_are_not_inferred() {
+    for body in [
+        "字［＃「字」は底本では「字［＃未知の意味］」］",
+        "※［＃「弋＋頁」、74-10］［＃「※［＃「木＋貝」、74-10］」は底本では「字」］",
+    ] {
+        let ir = convert(body);
+        assert!(
+            !nodes(&ir)
+                .iter()
+                .any(|node| node["type"] == "base-text-variant")
+        );
+        assert!(!ir["interpretation_problems"].as_array().unwrap().is_empty());
+    }
+}
+
+#[test]
+fn unresolved_principal_glyph_occupies_one_placeholder_and_retains_its_description() {
+    let ir = convert("前※［＃「弋＋頁」、74-10］後");
+    let all = nodes(&ir);
+    let glyph = all.iter().find(|node| node["type"] == "gaiji").unwrap();
+    assert_eq!(glyph["span"]["start"], 3);
+    assert_eq!(glyph["span"]["end"], 6);
+    assert_eq!(glyph["gaiji"]["raw_marker"], "弋＋頁");
+    let after = all
+        .iter()
+        .find(|node| node["type"] == "text" && node["text"] == "後")
+        .unwrap();
+    assert_eq!(after["span"]["start"], 6);
+}

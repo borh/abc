@@ -2927,13 +2927,18 @@ fn push_annotated_text(content: &mut Vec<Value>, decoded: &DecodedSource, node: 
         content.extend(after);
         return;
     }
+    let source_owned = target_span.is_some_and(|span| {
+        span.start == node.span.start
+            && span.end == marker.start
+            && decoded.span_text.get(span.start..span.end) == Some(target.as_str())
+    });
     let children = if node.span.start < marker.start {
         parsed_source_fragment(decoded, node.span.start..marker.start)
     } else {
         take_visible_suffix(content, target, &decoded.text)
     };
     if let (Some(children), Some(annotation)) = (&children, &annotation)
-        && content_target_text(children).as_deref() == Some(target)
+        && (source_owned || content_target_text(children).as_deref() == Some(target))
     {
         content.push(wrapper(children, annotation));
         return;

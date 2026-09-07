@@ -672,3 +672,13 @@
       (is (empty? (get-in result [:ir "interpretation_problems"])))
       (is (some #(= "ruby" (get % "kind"))
                 (get-in result [:ir "interpretation_facts"]))))))
+
+(deftest annotations-retain-source-selected-rich-targets
+  (doseq [[target visible]
+          [["どふ／＼" "どふ〱"]
+           ["※［＃濁点付き片仮名ヱ、1-7-84］" "ヹ"]
+           ["白《タク》衾" "白衾"]]]
+    (let [result (transcribe (source (str "前、" target "［＃「" target "」に「マヽ」の注記］後")))]
+      (is (= (str "前、" visible "後") (:plaintext result)))
+      (is (empty? (get-in result [:ir "interpretation_problems"])))
+      (is (some #(= "マヽ" (.getTextContent ^Node %)) (elements result "note"))))))

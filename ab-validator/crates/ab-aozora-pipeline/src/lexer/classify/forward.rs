@@ -28,6 +28,8 @@ use ab_aozora_syntax::{
     MarginNoteKind, Span,
 };
 
+use crate::text_variant::formatted_text_variant;
+
 use super::super::pair::{PairEvent, PairKind};
 use super::super::token::TriggerKind;
 use super::directive::{
@@ -846,8 +848,9 @@ enum ForwardTcy {
 /// form (`［＃縦中横］…［＃縦中横終わり］`) is handled by the
 /// paired-container classifier and not matched here.
 ///
-/// The compound form adds right-side small script to the same target.
-/// Unknown clauses and multiple quoted targets retain their raw directive.
+/// The compound form adds right-side small script to the same target. An
+/// edition assertion is retained with that formatting; unrecognized clauses
+/// and multiple formatting targets remain raw directives.
 impl RecogniseCtx<'_, '_> {
     fn classify_forward_tcy(
         &mut self,
@@ -859,9 +862,25 @@ impl RecogniseCtx<'_, '_> {
         else {
             return ForwardTcy::NotTcy;
         };
-        let attrs = match extracted.suffix {
-            "は縦中横" => &[ForwardAttr::CombineUpright][..],
-            "は縦中横、行右小書き" => &[
+        let (PairEvent::PairOpen { span: opener, .. }, PairEvent::PairClose { span: closer, .. }) =
+            (&view.events[open_idx], &view.events[close_idx])
+        else {
+            return ForwardTcy::NotTcy;
+        };
+        let marker = &self.source[opener.start as usize..closer.end as usize];
+        let edition = formatted_text_variant(marker);
+        let suffix = edition.as_ref().map_or_else(
+            || {
+                extracted
+                    .suffix
+                    .strip_prefix('は')
+                    .unwrap_or(extracted.suffix)
+            },
+            |(formatting, _)| *formatting,
+        );
+        let attrs = match suffix {
+            "縦中横" => &[ForwardAttr::CombineUpright][..],
+            "縦中横、行右小書き" => &[
                 ForwardAttr::CombineUpright,
                 ForwardAttr::SmallScript(BoutenPosition::Right),
             ][..],
@@ -890,8 +909,16 @@ impl RecogniseCtx<'_, '_> {
         else {
             return ForwardTcy::NotTcy;
         };
-        let (node, consume_start, diag) =
+        let (mut node, consume_start, diag) =
             self.resolve_forward_formats(view, open_idx, open_span.start, attrs, first);
+        if edition.is_some()
+            && let Node::Format(format) = &mut node
+            && let Content::Plain(body) = self
+                .alloc
+                .content_plain(&marker["［＃".len()..marker.len() - '］'.len_utf8()])
+        {
+            format.annotation_body = Some(body);
+        }
         ForwardTcy::Recognised(node, consume_start, diag)
     }
 }

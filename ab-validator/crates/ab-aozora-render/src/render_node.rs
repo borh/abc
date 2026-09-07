@@ -139,7 +139,7 @@ fn render_ruby<W: Write>(r: &Ruby, store: &NodeStore, out: &mut W) -> fmt::Resul
                 attrs: ForwardAttrs::One(attr),
                 target: r.base,
                 origin: ForwardOrigin::SelfContained,
-                accent_body: None,
+                annotation_body: None,
             };
             render_format(&deco, store, out)?;
         }
@@ -345,13 +345,13 @@ fn render_forward_semantic<W: Write>(
 
 /// Render a dotted-letter forward: compose the addressed letters of the
 /// reclaimed run into their precomposed glyphs inside an `aozora-accent-dot`
-/// span. The selector grammar lives in the interned `accent_body`; the shared
+/// span. The selector grammar lives in the interned `annotation_body`; the shared
 /// composer (also the classifier's validator) produces the visible run. A
 /// literal class (not slug-derived) keeps this off the `slugs.rs` / Hepburn
 /// path; a body-less or structured target falls back to the run verbatim.
 fn render_accent_dot<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W) -> fmt::Result {
     out.write_str(r#"<span class="aozora-accent-dot">"#)?;
-    match (store.content_range_as_plain(f.target), f.accent_body) {
+    match (store.content_range_as_plain(f.target), f.annotation_body) {
         (Some(run), Some(body_id)) => match compose_accent_dots(run, store.resolve_str(body_id)) {
             Some(composed) => escape_text(&composed, out)?,
             // Unreachable post-classify; render the run rather than drop it.

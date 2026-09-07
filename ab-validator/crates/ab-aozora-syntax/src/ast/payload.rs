@@ -157,12 +157,10 @@ pub struct ForwardFormat {
     pub target: ContentRange,
     /// Target-text provenance.
     pub origin: ForwardOrigin,
-    /// Raw directive body for [`ForwardAttr::AccentDot`], interned so
-    /// the renderer can re-derive the per-letter dot composition and the
-    /// serializer can re-emit the body byte-exact. `None` for every other
-    /// attribute — the arena handle lives here (not on the scope-independent
-    /// `ForwardAttr`) to keep that enum a `Copy`, serde-safe, arena-free unit.
-    pub accent_body: Option<StrId>,
+    /// Exact directive body when attributes alone omit source semantics, such as
+    /// accent-dot composition or an accompanying edition assertion. The source
+    /// serializer retains it; the accent renderer reads it only for `AccentDot`.
+    pub annotation_body: Option<StrId>,
 }
 
 /// Owned, lifetime-free counterpart of

@@ -454,7 +454,7 @@ pub enum ForwardAttr {
     /// ドット付き. Composes a combining dot onto an addressed Latin letter
     /// in the reclaimed run (`Sam` + `mは上ドット付き` → `Saṁ`). The selector
     /// grammar lives in the raw directive body, interned on the owned leaf's
-    /// `accent_body` (this attribute stays a `Copy` unit, arena-free).
+    /// `annotation_body` (this attribute stays a `Copy` unit, arena-free).
     AccentDot,
     /// アクサン / ウムラウト — map a single quoted Latin letter to its precomposed
     /// accented glyph (`「e」はアクサン（´）付き` → é, `「o」はウムラウト（¨）付き` → ö).

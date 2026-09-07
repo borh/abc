@@ -12,7 +12,8 @@ use std::{
 
 use ab_aozora_pipeline::lexer::sanitize::{SanitizeMaps, sanitize_mapped};
 use ab_aozora_pipeline::text_variant::{
-    EditionNoteKind, TextVariantTarget, edition_note, text_variant,
+    EditionNoteKind, TextVariant, TextVariantTarget, edition_note, formatted_text_variant,
+    text_variant,
 };
 use ab_aozora_pipeline::{LexOutput, Pipeline};
 use anyhow::Result;
@@ -367,20 +368,23 @@ fn project_text_variant(kind: ProjectedKind, source: &str, span: Span) -> Projec
                     }
                 })
             },
-            |variant| ProjectedKind::TextVariant {
-                editorial_statement: variant.editorial_statement.map(str::to_owned),
-                target: variant.target,
-                current: variant.current.to_owned(),
-                base_text: variant.base_text.to_owned(),
-                current_span: span.start + variant.current_span.start
-                    ..span.start + variant.current_span.end,
-                base_span: variant
-                    .base_span
-                    .map(|range| span.start + range.start..span.start + range.end),
-            },
+            |variant| projected_variant(variant, span.start),
         )
     } else {
         kind
+    }
+}
+
+fn projected_variant(variant: TextVariant<'_>, start: usize) -> ProjectedKind {
+    ProjectedKind::TextVariant {
+        editorial_statement: variant.editorial_statement.map(str::to_owned),
+        target: variant.target,
+        current: variant.current.to_owned(),
+        base_text: variant.base_text.to_owned(),
+        current_span: start + variant.current_span.start..start + variant.current_span.end,
+        base_span: variant
+            .base_span
+            .map(|range| start + range.start..start + range.end),
     }
 }
 
@@ -2544,6 +2548,23 @@ fn push_style_node(
             .into_iter()
             .collect::<Vec<_>>()
     );
+    if let Some(marker) = node.marker_span
+        && let Some((_, variant)) =
+            formatted_text_variant(source_slice(&decoded.span_text, &marker))
+    {
+        let variant_node = AozoraNode {
+            kind: projected_variant(variant, marker.start),
+            span: marker,
+            marker_span: Some(marker),
+            container_close: None,
+        };
+        let assertion = raw_node(decoded, &variant_node, "base-text-variant");
+        if !attach_formatting_variant(&mut style, &assertion, &decoded.text) {
+            content.push(style);
+            content.push(assertion);
+            return;
+        }
+    }
     content.push(style);
     if let ProjectedKind::Format(attr) = node.kind
         && !matches!(
@@ -2639,6 +2660,65 @@ fn adjacent_principal_ruby(nodes: &mut [Value]) -> Option<&mut Value> {
     None
 }
 
+fn attach_formatting_variant(style: &mut Value, note: &Value, source: &str) -> bool {
+    let Some(base) = note["text_variant"]["base_content"].as_array() else {
+        return false;
+    };
+    let Some(base_text) = content_target_text(base) else {
+        return false;
+    };
+    let Some(children) = style["content"].as_array() else {
+        return false;
+    };
+    let Some(current) = note["text_variant"]["current_content"].as_array() else {
+        return false;
+    };
+    let Some(target) = content_target_text(current) else {
+        return false;
+    };
+    if !quoted_structure_matches(current, children) {
+        return false;
+    }
+    let Some(text) = content_target_text(children) else {
+        return false;
+    };
+    if text == target {
+        let mut content = vec![json!({"kind":"text-variant", "content":children,
+            "base_text":base_text, "base_content":base,
+            "source":note["source"], "span":note["span"]})];
+        append_variant_statement(&mut content, note);
+        style["content"] = json!(content);
+        return true;
+    }
+    // A partial target can divide exact literal text, never a ruby reading or a
+    // normalized glyph. The containing formatting remains one shared scope.
+    let [text_node] = children.as_slice() else {
+        return false;
+    };
+    if text_node["kind"] != "text" {
+        return false;
+    }
+    let Some(start) = text_node["span"]["byte_start"]
+        .as_u64()
+        .and_then(|n| usize::try_from(n).ok())
+    else {
+        return false;
+    };
+    let Some(content) = literal_variant_content(
+        &text_node["span"],
+        &text,
+        start,
+        note,
+        current,
+        &target,
+        source,
+    ) else {
+        return false;
+    };
+    style["content"] = json!(content);
+    true
+}
+
 // A unique principal-letter range can carry an alternative inside one rb;
 // the associated ruby reading remains whole and owns its existing reading axis.
 fn attach_principal_ruby_variant(
@@ -2665,28 +2745,43 @@ fn principal_ruby_variant_content(
     target: &str,
     source: &str,
 ) -> Option<Vec<Value>> {
-    if target.is_empty()
-        || ruby.get("base_content").is_some()
-        || !quoted_structure_matches(current, &[json!({"kind":"text", "value":target})])
-    {
+    if ruby.get("base_content").is_some() {
         return None;
     }
     let base = ruby["base"].as_str()?;
-    let mut matches = base.match_indices(target);
-    let (index, _) = matches.next()?;
-    if matches.next().is_some() {
-        return None;
-    }
     let mut start = usize::try_from(ruby["span"]["byte_start"].as_u64()?).ok()?;
     let source_end = usize::try_from(ruby["span"]["byte_end"].as_u64()?).ok()?;
     if source.get(start..source_end)?.starts_with('｜') {
         start += '｜'.len_utf8();
     }
+    literal_variant_content(&ruby["span"], base, start, note, current, target, source)
+}
+
+fn literal_variant_content(
+    provenance: &Value,
+    base: &str,
+    start: usize,
+    note: &Value,
+    current: &[Value],
+    target: &str,
+    source: &str,
+) -> Option<Vec<Value>> {
+    if target.is_empty()
+        || !quoted_structure_matches(current, &[json!({"kind":"text", "value":target})])
+    {
+        return None;
+    }
+    let mut matches = base.match_indices(target);
+    let (index, _) = matches.next()?;
+    if matches.next().is_some() {
+        return None;
+    }
+    let source_end = usize::try_from(provenance["byte_end"].as_u64()?).ok()?;
     if start + base.len() > source_end || source.get(start..start + base.len())? != base {
         return None;
     }
     let text_node = |from: usize, to: usize| {
-        let mut span = ruby["span"].clone();
+        let mut span = provenance.clone();
         span["byte_start"] = json!(start + from);
         span["byte_end"] = json!(start + to);
         span["line_end"] = span["line_start"].clone();

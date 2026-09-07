@@ -291,7 +291,7 @@ fn source_error_assertion_survives_beside_the_structured_alternative() {
 #[test]
 fn mixed_current_formatting_and_malformed_variants_are_not_discharged_as_prose() {
     for body in [
-        "１）［＃「１）」は縦中横、行右小書き、「１」が底本では欠落］",
+        "１）［＃「１）」は縦中横、未知の属性、「１」が底本では欠落］",
         "字［＃「字」は底本では「他］",
     ] {
         let ir = convert(body);
@@ -504,6 +504,71 @@ fn qualified_and_bibliographic_statements_do_not_fabricate_adjacent_targets() {
             !nodes(&ir)
                 .iter()
                 .any(|node| node["note_kind"] == "base-edition")
+        );
+    }
+}
+
+#[test]
+fn mixed_tcy_clauses_preserve_formatting_and_whole_or_partial_witnesses() {
+    for (body, current, witness) in [
+        (
+            "１）［＃「１）」は縦中横、行右小書き、底本では欠落］",
+            "１）",
+            "",
+        ),
+        (
+            "２）［＃「２）」は縦中横、行右小書き、底本では「１）」］",
+            "２）",
+            "１）",
+        ),
+        (
+            "１）［＃「１）」は縦中横、行右小書き、「１」が底本では欠落］",
+            "１",
+            "",
+        ),
+        (
+            "３）［＃「３）」は縦中横、行右小書き、「）」が底本では欠落］",
+            "）",
+            "",
+        ),
+        (
+            "１）［＃「１）」は縦中横、行右小書き、「１」が底本では「２」］",
+            "１",
+            "２",
+        ),
+    ] {
+        let ir = convert(body);
+        let all = nodes(&ir);
+        let formatting = all
+            .iter()
+            .find(|node| node["type"] == "layout-span")
+            .unwrap();
+        assert_eq!(formatting["layout"][0]["kind"], "tcy");
+        assert_eq!(formatting["layout"][1]["kind"], "small-script");
+        assert_eq!(formatting["layout"][1]["position"], "right");
+        let app = nodes(formatting)
+            .into_iter()
+            .find(|node| node["type"] == "base-text-variant")
+            .unwrap();
+        assert_eq!(app["text"], current);
+        assert_eq!(app["variant"]["base_text"], witness);
+        assert_eq!(ir["interpretation_problems"], json!([]));
+    }
+}
+
+#[test]
+fn mixed_edition_targets_require_unique_literal_source_evidence() {
+    for body in [
+        "１）［＃「１）」は縦中横、行右小書き、「９」が底本では欠落］",
+        "１１）［＃「１１）」は縦中横、行右小書き、「１」が底本では欠落］",
+    ] {
+        let ir = convert(body);
+        let all = nodes(&ir);
+        assert!(all.iter().any(|node| node["type"] == "layout-span"));
+        assert!(!all.iter().any(|node| node["type"] == "base-text-variant"));
+        assert_eq!(
+            ir["interpretation_problems"][0]["kind"],
+            "unresolved-variant"
         );
     }
 }

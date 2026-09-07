@@ -648,7 +648,7 @@ mod tests {
                 "太字",
             ),
             // AccentDot's body is the selector grammar (serialized from the
-            // interned `accent_body`, never `keyword()`), so it rides the 太字
+            // interned `annotation_body`, never `keyword()`), so it rides the 太字
             // default too — `keyword()` is never called for it.
             (ForwardAttr::AccentDot, "太字"),
             // Accent's suffix carries the bracketed mark symbol (serialized in a

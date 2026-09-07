@@ -305,7 +305,7 @@ impl Allocator {
             attrs: ForwardAttrs::One(attr),
             target,
             origin,
-            accent_body: None,
+            annotation_body: None,
         })
     }
 
@@ -325,7 +325,7 @@ impl Allocator {
             attrs,
             target,
             origin,
-            accent_body: None,
+            annotation_body: None,
         })
     }
 
@@ -342,12 +342,12 @@ impl Allocator {
             text,
             "classify stage must emit an accent-dot format with a non-empty target",
         );
-        let accent_body = Some(self.store.intern(body));
+        let annotation_body = Some(self.store.intern(body));
         Node::Format(ForwardFormat {
             attrs: ForwardAttrs::One(ForwardAttr::AccentDot),
             target,
             origin,
-            accent_body,
+            annotation_body,
         })
     }
 

@@ -71,6 +71,60 @@ pub fn text_variant(source: &str) -> Option<TextVariant<'_>> {
     };
     let (current, witness) = split_attribution(body, EditionNoteKind::BaseEdition)?;
     let witness_start = source.len() - '］'.len_utf8() - witness.len();
+    let current_start = source.len() - '］'.len_utf8() - body.len();
+    variant_parts(
+        statement,
+        target,
+        current,
+        current_start,
+        witness,
+        witness_start,
+    )
+}
+
+/// Separate an edition clause from a shared-target formatting suffix.
+/// The caller must interpret the returned formatting suffix in its own closed vocabulary.
+#[must_use]
+pub fn formatted_text_variant(source: &str) -> Option<(&str, TextVariant<'_>)> {
+    let statement = source.strip_prefix("［＃")?.strip_suffix('］')?;
+    let (formatted, suffix) = statement.strip_prefix('「')?.split_once("」は")?;
+    if formatted.is_empty() || formatted.contains(['「', '」', '\n']) {
+        return None;
+    }
+    let (formatting, current, current_start, witness) =
+        if let Some((formatting, witness)) = suffix.split_once("、底本では") {
+            (formatting, formatted, "［＃「".len(), witness)
+        } else {
+            let (formatting, assertion) = suffix.split_once("、「")?;
+            let (current, witness) = assertion.split_once("」が底本では")?;
+            if current.contains(['「', '」', '\n']) {
+                return None;
+            }
+            let start = source.len() - '］'.len_utf8() - assertion.len();
+            (formatting, current, start, witness)
+        };
+    let witness_start = source.len() - '］'.len_utf8() - witness.len();
+    Some((
+        formatting,
+        variant_parts(
+            statement,
+            TextVariantTarget::Text,
+            current,
+            current_start,
+            witness,
+            witness_start,
+        )?,
+    ))
+}
+
+fn variant_parts<'s>(
+    statement: &'s str,
+    target: TextVariantTarget,
+    current: &'s str,
+    current_start: usize,
+    witness: &'s str,
+    witness_start: usize,
+) -> Option<TextVariant<'s>> {
     let asserted = ["と誤記", "と誤植", "となっている", "と欠字"]
         .iter()
         .find_map(|suffix| {
@@ -93,7 +147,6 @@ pub fn text_variant(source: &str) -> Option<TextVariant<'_>> {
     if current.is_empty() || current.contains('\n') || base_text.contains('\n') {
         return None;
     }
-    let current_start = source.len() - '］'.len_utf8() - body.len();
     let base_span = (!base_text.is_empty()).then(|| {
         let start = witness_start + '「'.len_utf8();
         start..start + base_text.len()

@@ -382,6 +382,11 @@ fn emit_format<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W) -> f
     if matches!(f.origin, ForwardOrigin::Detached) {
         return Ok(());
     }
+    if let Some(body) = f.annotation_body {
+        out.write_str("［＃")?;
+        out.write_str(store.resolve_str(body))?;
+        return out.write_char('］');
+    }
     let Some(attr) = f.attrs.single() else {
         out.write_str("［＃「")?;
         emit_content_as_plain_range(f.target, store, out)?;
@@ -411,17 +416,6 @@ fn emit_format<W: Write>(f: &ForwardFormat, store: &NodeStore, out: &mut W) -> f
         out.write_str("［＃「")?;
         emit_content_as_plain_range(f.target, store, out)?;
         return out.write_str("」は「□」囲み］");
-    }
-    if matches!(attr, ForwardAttr::AccentDot) {
-        // ドット付き: the body is a selector grammar, not the
-        // `「target」は<keyword>` shape, so re-emit the interned raw body verbatim
-        // (byte-exact round-trip). The `Reclaimed` leading literal — the run the
-        // dots compose onto — was already emitted above.
-        out.write_str("［＃")?;
-        if let Some(id) = f.accent_body {
-            out.write_str(store.resolve_str(id))?;
-        }
-        return out.write_char('］');
     }
     out.write_str("［＃「")?;
     emit_content_as_plain_range(f.target, store, out)?;
@@ -676,6 +670,18 @@ mod tests {
         let first = serialize(&ab_aozora_pipeline::lex(src));
         let second = serialize(&ab_aozora_pipeline::lex(&first));
         assert_eq!(first, second, "serialize fixed point diverged for {src:?}");
+    }
+
+    #[test]
+    fn mixed_formatting_keeps_its_edition_assertion_in_source_serialization() {
+        for source in [
+            "１）［＃「１）」は縦中横、行右小書き、底本では欠落］",
+            "１）［＃「１）」は縦中横、行右小書き、「１」が底本では欠落］",
+            "２）［＃「２）」は縦中横、行右小書き、底本では「１）」］",
+        ] {
+            assert_eq!(serialize(&ab_aozora_pipeline::lex(source)), source);
+            assert_parity(source);
+        }
     }
 
     #[test]

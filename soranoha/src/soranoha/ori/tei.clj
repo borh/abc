@@ -440,6 +440,8 @@
                                          (get node "caption_reference_children") depth)
         description (render-inline-children (assoc rendered :current-paragraph [])
                                             (get node "description_children") depth)
+        annotations (render-inline-children (assoc description :current-paragraph [])
+                                            (get node "annotation_children") depth)
         graphic (cond-> {:url (get node "src")}
                   (some? (get node "width")) (assoc :width (str (get node "width") "px"))
                   (some? (get node "height")) (assoc :height (str (get node "height") "px")))
@@ -452,7 +454,8 @@
                  (get node "caption_source") (conj [:note {:type "uninterpreted-caption-reference"} (get node "caption_source")])
                  (and (get node "dimensions_source") (nil? (get node "width")))
                  (conj [:note {:type "image-dimensions"} (get node "dimensions_source")]))]
-    (append-inline (assoc description :current-paragraph before) (sourced node figure))))
+    (append-inline (assoc annotations :current-paragraph before)
+                   (sourced node (into figure (:current-paragraph annotations))))))
 
 (defn- render-caption-node
   ([acc node depth]

@@ -9,8 +9,9 @@
 
 #[cfg(feature = "classify-instrument")]
 use super::super::instrumentation::{Subsystem, SubsystemGuard};
+use crate::text_variant::image_edition_note;
 use ab_aozora_syntax::ast::KuntenKind;
-use ab_aozora_syntax::ast::Node;
+use ab_aozora_syntax::ast::{Content, Node};
 
 use std::sync::OnceLock;
 
@@ -1596,12 +1597,16 @@ fn classify_sashie_body(source: &AnnotationBody<'_>, alloc: &mut Allocator) -> O
 /// via its anchored needle; this is the fallback for every other
 /// description, tried just before the `Directive{Unknown}` catch-all (it
 /// has no prefix needle because the description is arbitrary). Returns
-/// `None` for any body that is not a complete `<非空>（<file>）入る`.
+/// `None` unless the insertion is complete; an explicitly attributed statement
+/// about image lettering may follow it as documentary apparatus.
 pub(super) fn classify_general_image_body(
     body: &str,
     source_start: u32,
     alloc: &mut Allocator,
 ) -> Option<EmitKind> {
+    let mixed = image_edition_note(body);
+    let original = body;
+    let body = mixed.map_or(body, |(image, _)| image);
     let middle = body.strip_suffix("入る")?;
     // The file spec `（file、横W×縦H）` is always the LAST paren group before
     // `入る`; use `rfind` so a description that itself embeds `（…）` (e.g.
@@ -1622,9 +1627,14 @@ pub(super) fn classify_general_image_body(
     }
     let inside = &rest[..close_off];
     let (file, dimensions) = illustration_file_spec(inside)?;
+    let annotation_body = mixed.and_then(|_| match alloc.content_plain(original) {
+        Content::Plain(id) => Some(id),
+        _ => None,
+    });
     let result = alloc.sashie_general(file, description, dimensions);
     if let Node::Illustration(id) = result {
         let image = alloc.illustration_mut(id);
+        image.annotation_body = annotation_body;
         image.description_span = Some(Span::new(
             source_start,
             source_start + u32::try_from(description.len()).expect("source offset fits u32"),

@@ -2074,6 +2074,7 @@ fn map_figure_to_node(
     for (input, output) in [
         ("caption", "caption_reference_children"),
         ("description_content", "description_children"),
+        ("annotation_content", "annotation_children"),
     ] {
         if node.get(input).is_some_and(|value| !value.is_null()) {
             let mut children = inline_children_nodes(

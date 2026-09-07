@@ -630,6 +630,10 @@ fn emit_side_note<W: Write>(s: &MarginNote, store: &NodeStore, out: &mut W) -> f
 /// description, or `挿絵` + optional number; optional dimensions and caption).
 fn emit_sashie<W: Write>(s: &Illustration, store: &NodeStore, out: &mut W) -> fmt::Result {
     out.write_str("［＃")?;
+    if let Some(body) = s.annotation_body {
+        out.write_str(store.resolve_str(body))?;
+        return out.write_char('］');
+    }
     if let Some(description) = s.description {
         out.write_str(store.resolve_str(description))?;
     } else {

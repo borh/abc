@@ -53,3 +53,28 @@
         (is (= "warning" (get validated "status")))
         (is (= ["abc-figure-accessibility"] (mapv #(get % "rule_id") (get validated "findings")))))
       (finally (fs/delete-tree dir)))))
+
+(deftest figure-edition-statement-does-not-supply-an-image-description
+  (let [tei (:tei (render/render-work
+                   {:parser-ir {"nodes" [{"type" "text" "text" "前"}
+                                         {"type" "image" "src" "fig.png"
+                                          "annotation_children" [{"type" "editor-note" "note_kind" "base-edition" "text" "底本では異なる寸法"}]}
+                                         {"type" "text" "text" "後"}]}
+                    :metadata-record {"work" {"title" "試験" "work_id" "1" "aozora_modified" "2026-09-07"} "contributors" []}
+                    :persons-by-id {}}))
+        reading (view/from-tei tei)
+        ^Document doc (:view/document reading)
+        ^Element figure (.item (.getElementsByTagNameNS doc view/tei-namespace "figure") 0)
+        ^Element note (.item (.getElementsByTagNameNS figure view/tei-namespace "note") 0)
+        dir (fs/create-temp-dir {:prefix "figure-edition"})
+        path (str (fs/path dir "tei.xml"))]
+    (is (= "前後" (:view/text reading) (projection/plaintext reading) (projection/markdown reading)))
+    (is (= "base-edition" (.getAttribute note "type")))
+    (is (= figure (.getParentNode note)))
+    (is (= 0 (.getLength (.getElementsByTagNameNS figure view/tei-namespace "figDesc"))))
+    (try
+      (spit path tei)
+      (let [validated (validation/tei-validation-result (validation/profile-paths ".") path)]
+        (is (= "warning" (get validated "status")))
+        (is (= ["abc-figure-accessibility"] (mapv #(get % "rule_id") (get validated "findings")))))
+      (finally (fs/delete-tree dir)))))

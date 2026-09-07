@@ -117,6 +117,23 @@ pub fn formatted_text_variant(source: &str) -> Option<(&str, TextVariant<'_>)> {
     ))
 }
 
+/// Preserve an edition statement about lettering inside an explicitly inserted image.
+#[must_use]
+pub fn image_edition_note(body: &str) -> Option<(&str, &str)> {
+    let (image, statement) = body.split_once("入る。")?;
+    let quoted = statement.strip_prefix('「')?;
+    let (current, witness) = quoted.split_once("」とあるのは底本では「")?;
+    let witness = witness.strip_suffix('」')?;
+    if current.is_empty()
+        || witness.is_empty()
+        || current.contains(['「', '」', '\n'])
+        || witness.contains(['「', '」', '\n'])
+    {
+        return None;
+    }
+    Some((&body[..image.len() + "入る".len()], statement))
+}
+
 /// Separate a formatting suffix and an explicitly attributed edition statement.
 /// The formatting caller must still recognize its complete suffix.
 #[must_use]

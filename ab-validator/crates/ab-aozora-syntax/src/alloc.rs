@@ -499,6 +499,7 @@ impl Allocator {
             .map(|n| self.store.intern(n));
         let dimensions = dimensions.map(|d| self.store.intern(d));
         Node::Illustration(self.store.push_illustration(Illustration {
+            annotation_body: None,
             file,
             number,
             dimensions,
@@ -533,6 +534,7 @@ impl Allocator {
         let description = self.store.intern(description);
         let dimensions = dimensions.map(|d| self.store.intern(d));
         Node::Illustration(self.store.push_illustration(Illustration {
+            annotation_body: None,
             file,
             number: None,
             dimensions,

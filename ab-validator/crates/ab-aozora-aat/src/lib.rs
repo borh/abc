@@ -15,7 +15,7 @@ use ab_aozora_pipeline::lexer::sanitize::{SanitizeMaps, sanitize_mapped};
 use ab_aozora_pipeline::text_variant::{
     EditionNoteKind, TextVariant, TextVariantTarget, base_edition_concealed_characters,
     concealed_placeholder, edition_note, edition_statement, formatted_text_variant,
-    formatting_edition_note, text_variant,
+    formatting_edition_note, image_edition_note, text_variant,
 };
 use ab_aozora_pipeline::{LexOutput, Pipeline};
 use anyhow::Result;
@@ -2844,6 +2844,14 @@ fn illustration_node(decoded: &DecodedSource, node: &AozoraNode) -> Value {
             value["alt"] = json!("");
             uncertain_aspects.push("structure");
         }
+    }
+    let marker = &decoded.span_text[node.span.start..node.span.end];
+    if let Some(body) = marker
+        .strip_prefix("［＃")
+        .and_then(|body| body.strip_suffix('］'))
+        && let Some((_, statement)) = image_edition_note(body)
+    {
+        value["annotation_content"] = json!([{"kind":"editorial_note", "note_kind":"base-edition", "text":statement, "span":span_json(&node.span,&decoded.span_ctx)}]);
     }
     if let Some(number) = number {
         value["number"] = json!(number);

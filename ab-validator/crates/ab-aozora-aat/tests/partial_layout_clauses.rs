@@ -244,3 +244,23 @@ fn bouten_keeps_current_target_and_base_edition_description_separate() {
             .contains(marker)
     );
 }
+
+#[test]
+fn mixed_image_source_preserves_the_complete_documentary_clause() {
+    let marker = "［＃「脳髄の大きさの比較」の図（fig18353_07.png）入る。「（実物の二分の一大）」とあるのは底本では「（実物の五分の二大）」］";
+    let document = ab_aozora_facade::Document::new(format!("前{marker}後"));
+    assert!(document.parse().to_source().contains(marker));
+}
+
+#[test]
+fn image_insertion_does_not_swallow_an_uninterpreted_tail() {
+    let source = "前［＃図（fig.png）入る。未対応の指示］後";
+    let aat: Value =
+        serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
+    let content = aat["blocks"][0]["content"].as_array().unwrap();
+    assert!(!content.iter().any(|node| node["kind"] == "figure"));
+    assert!(
+        content.iter().any(|node| node["kind"] == "raw"
+            && node["source"] == "［＃図（fig.png）入る。未対応の指示］")
+    );
+}

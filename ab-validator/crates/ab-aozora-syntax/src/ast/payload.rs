@@ -321,6 +321,8 @@ pub struct HeadingHint {
 /// Illustration (挿絵).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Illustration {
+    /// Complete source body when image insertion carries documentary clauses.
+    pub annotation_body: Option<StrId>,
     /// Image path / filename.
     pub file: StrId,
     /// Optional figure number (raw digits).

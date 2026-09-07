@@ -140,3 +140,26 @@ fn unknown_image_metadata_retains_all_uncertain_aspects() {
             .any(|fact| fact["kind"] == "illustration")
     );
 }
+
+#[test]
+fn image_lettering_edition_statement_stays_on_the_annotation_axis() {
+    let marker = "［＃「脳髄の大きさの比較」の図（fig18353_07.png）入る。「（実物の二分の一大）」とあるのは底本では「（実物の五分の二大）」］";
+    let ir = convert(&format!("前{marker}後"));
+    let image = nodes(&ir)
+        .into_iter()
+        .find(|n| n["type"] == "image")
+        .unwrap();
+    assert_eq!(image["src"], "fig18353_07.png");
+    assert_eq!(image["alt"], "「脳髄の大きさの比較」の図");
+    let note = &image["annotation_children"][0];
+    assert_eq!(note["type"], "editor-note");
+    assert_eq!(note["note_kind"], "base-edition");
+    assert_eq!(
+        note["text"],
+        "「（実物の二分の一大）」とあるのは底本では「（実物の五分の二大）」"
+    );
+    assert_eq!(note["span"]["coordinate_system"], "annotation_utf8");
+    assert_eq!(note["span"]["start"], note["span"]["end"]);
+    assert_eq!(note["source_span"], image["source_span"]);
+    assert!(ir["interpretation_problems"].as_array().unwrap().is_empty());
+}

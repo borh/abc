@@ -390,6 +390,7 @@
         "width": { "type": ["integer", "null"], "minimum": 0 },
         "height": { "type": ["integer", "null"], "minimum": 0 },
         "description_content": {"type":"array","items":{"$ref":"#/$defs/inline"}},
+        "annotation_content": {"type":"array","items":{"$ref":"#/$defs/inline"}},
         "caption": { "type": ["array", "null"], "items": { "$ref": "#/$defs/inline" } },
         "span": { "$ref": "#/$defs/span" }
       }

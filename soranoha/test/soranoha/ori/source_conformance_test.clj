@@ -1239,3 +1239,14 @@
   (let [result (transcribe (source "［＃ここから別の訳文］\n訳文\n［＃ここで訳文終わり］"))]
     (is (empty? (filter #(= "translation" (attribute % "type")) (elements result "div"))))
     (is (seq (get-in result [:ir "interpretation_problems"])))))
+
+(deftest editorial-gloss-preserves-supplied-edition-provenance
+  (let [statement "校注、「枕橋の架してある堀の奥のところ」、ただし底本では校注が脱落、底本の親本にて確認"
+        result (transcribe (source (str "本所｜〆切《しめきり》［＃「〆切」に" statement "］後")))
+        note (first (filter #(= "gloss" (attribute % "type")) (elements result "note")))]
+    (is (= "本所〆切後" (:plaintext result)))
+    (is (= ["しめきり"] (texts result "rt")))
+    (is (= statement (.getTextContent ^Node note)))
+    (is (string/blank? (attribute note "place")))
+    (is (string/blank? (attribute note "resp")))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))

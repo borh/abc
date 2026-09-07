@@ -1482,6 +1482,15 @@ fn note_role_suffix(suffix: &str) -> Option<(MarginNoteKind, &str)> {
     }
 }
 
+fn edition_verified_gloss(suffix: &str) -> Option<&str> {
+    let statement = suffix.strip_prefix('に')?;
+    let (gloss, provenance) = statement.strip_prefix("校注、「")?.split_once('」')?;
+    (!gloss.is_empty()
+        && !gloss.contains(['「', '\n', '\r'])
+        && provenance == "、ただし底本では校注が脱落、底本の親本にて確認")
+        .then_some(statement)
+}
+
 fn parenthesized_note_role_target<'s>(
     view: BodyView<'_>,
     source: &'s str,
@@ -1529,6 +1538,8 @@ impl RecogniseCtx<'_, '_> {
         let (kind, position, note_text) =
             if let Some((kind, word)) = note_role_suffix(extracted.suffix) {
                 (kind, None, word)
+            } else if let Some(statement) = edition_verified_gloss(extracted.suffix) {
+                (MarginNoteKind::Gloss, None, statement)
             } else if let Some(location) = page_reference_location(target, extracted.suffix) {
                 (MarginNoteKind::CrossReference, None, location)
             } else {

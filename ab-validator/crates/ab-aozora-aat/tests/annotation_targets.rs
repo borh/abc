@@ -4,6 +4,64 @@ use ab_aozora_aat::aat_json_from_bytes;
 use serde_json::Value;
 
 #[test]
+fn editorial_gloss_keeps_edition_provenance_and_original_ruby() {
+    let statement =
+        "校注、「枕橋の架してある堀の奥のところ」、ただし底本では校注が脱落、底本の親本にて確認";
+    let source = format!("本所｜〆切《しめきり》［＃「〆切」に{statement}］後");
+    let aat: Value =
+        serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
+    let content = aat["blocks"][0]["content"].as_array().unwrap();
+    let note = content
+        .iter()
+        .find(|node| node["kind"] == "annotated_text")
+        .unwrap();
+    let ruby = &note["content"][0];
+    assert_eq!(ruby["kind"], "ruby");
+    assert_eq!(ruby["base"], "〆切");
+    assert_eq!(ruby["reading"], "しめきり");
+    assert_eq!(note["note_kind"], "gloss");
+    assert_eq!(note["annotation_content"][0]["value"], statement);
+    assert!(note.get("position").is_none());
+    assert!(content.iter().all(|node| node["kind"] != "raw"));
+    let document = ab_aozora_facade::Document::new(source.as_str());
+    let tree = document.parse();
+    assert_eq!(tree.source(), source);
+    let canonical = tree.to_source();
+    assert_eq!(
+        tree.to_html(),
+        ab_aozora_facade::Document::new(canonical.as_str())
+            .parse()
+            .to_html()
+    );
+}
+
+#[test]
+fn editorial_gloss_does_not_guess_target_or_provenance() {
+    for (base, statement) in [
+        (
+            "締切",
+            "校注、「説明」、ただし底本では校注が脱落、底本の親本にて確認",
+        ),
+        ("〆切", "校注、「説明」、ただし底本の状態は不明"),
+        (
+            "〆切",
+            "校注、「」、ただし底本では校注が脱落、底本の親本にて確認",
+        ),
+    ] {
+        let source = format!("{base}《しめきり》［＃「〆切」に{statement}］");
+        let aat: Value =
+            serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
+        assert!(
+            aat["blocks"][0]["content"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|node| node["kind"] == "raw")
+        );
+    }
+}
+
+#[test]
 fn adjacent_source_targets_retain_rich_principal_content() {
     for (target, child_kind) in [
         ("どふ／＼", "iteration-mark"),

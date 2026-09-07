@@ -153,12 +153,15 @@
     (is (some #{[:p "後"]} (tree-seq vector? seq (get-in body [1 3]))))))
 
 (deftest supplied-frame-kind-and-typeface-share-a-scope
-  (doseq [[border style] [["rule" "solid"] ["dashed-rule" "dashed"]]]
+  (doseq [[border style] [["rule" "solid"] ["dashed-rule" "dashed"] ["unspecified" nil]]]
     (let [scope (assoc (block 1 5) "typography"
                        [{"kind" "keigakomi" "border" border "source" "aat-block"}
                         {"kind" "emphasis" "style" "gothic" "source" "aat-block"}])
           body (:body (tei/render (document [scope])))
           frame (first (framed-scopes body))]
-      (is (string/includes? (get-in frame [1 :style]) (str "border-style: " style)))
+      (is (if style
+            (string/includes? (get-in frame [1 :style]) (str "border-style: " style))
+            (not (string/includes? (get-in frame [1 :style]) "border-style"))))
+      (is (string/includes? (get-in frame [1 :rend]) (str "border(" border ")")))
       (is (string/includes? (get-in frame [1 :rend]) "gothic"))
       (is (= 4 (count (rendered-paragraphs frame)))))))

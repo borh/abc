@@ -632,7 +632,7 @@
         frame-style (some (fn [attribute]
                             (when (= "keigakomi" (get attribute "kind"))
                               (case (get attribute "border")
-                                ("rule" "unspecified" "box" "circle") "border-style: solid"
+                                ("rule" "box" "circle") "border-style: solid"
                                 "dashed-rule" "border-style: dashed"
                                 "dotted-circle" "border-style: dotted"
                                 "double-rule" "border-style: double"

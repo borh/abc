@@ -82,8 +82,9 @@ fn partial_clause_spans_remain_on_original_decoded_source() {
 }
 
 #[test]
-fn supplied_unknown_styles_do_not_erase_indentation() {
+fn supplied_unknown_clauses_do_not_erase_indentation() {
     for (amount, clause) in [
+        (3, "「甲」は返り点"),
         (5, "ここから数式"),
         (2, "横組み右揃えで"),
         (5, "本文よりひとまわり大きい太ゴシック体"),
@@ -96,5 +97,10 @@ fn supplied_unknown_styles_do_not_erase_indentation() {
         let layout = &aat["blocks"][0];
         assert_eq!(layout["indent"], amount, "{aat}");
         assert_eq!(layout["children"][0]["content"][0]["source"], clause);
+        assert!(
+            aat["meta"]["interpretation_facts"]
+                .as_array()
+                .is_none_or(Vec::is_empty)
+        );
     }
 }

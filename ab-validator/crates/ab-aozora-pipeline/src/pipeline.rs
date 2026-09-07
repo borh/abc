@@ -49,7 +49,7 @@ use ab_aozora_syntax::alloc::Allocator;
 use ab_aozora_syntax::ast::canonicalize_classified_source_facts;
 use ab_aozora_syntax::ast::{LexOutput, Node, NodeStore, Registry};
 use ab_aozora_syntax::format::ForwardOrigin;
-use ab_aozora_syntax::{ForwardAttr, RegionClose, RegionFormat, Span};
+use ab_aozora_syntax::{ForwardAttr, Span};
 
 use crate::fold::Normalizer;
 
@@ -410,9 +410,7 @@ fn lower_spans(
         }
         out.push(span);
     }
-    // Second phase: fold S4-foldable inline-range emphasis into forward leaves.
-    let mut out = fold_inline_emphasis(out, source, alloc);
-    // Third phase: apply a declined forward emphasis onto a preceding ruby base
+    // Apply a declined forward emphasis onto a preceding ruby base
     // it uniquely names.
     let decorated = decorate_ruby_bases(&mut out, source, alloc.store());
     (out, decorated)
@@ -560,121 +558,6 @@ fn promote_headings(
         span.source_span.start = referent_start;
     }
     spans
-}
-
-/// The forward-scope attribute an inline-range region folds to.
-const fn foldable_inline_attr(region: RegionFormat) -> Option<ForwardAttr> {
-    match region {
-        RegionFormat::Bold { padded: false } => Some(ForwardAttr::Bold),
-        RegionFormat::Gothic { padded: false } => Some(ForwardAttr::Gothic),
-        RegionFormat::Italic { padded: false } => Some(ForwardAttr::Italic),
-        RegionFormat::Caption { padded: false } => Some(ForwardAttr::Caption),
-        RegionFormat::Bouten { kind, position } => Some(ForwardAttr::Bouten { kind, position }),
-        RegionFormat::SmallScript(position) => Some(ForwardAttr::SmallScript(position)),
-        _ => None,
-    }
-}
-
-/// An open inline-range marker awaiting its close, with the spans seen since.
-struct OpenFrame {
-    /// The `BlockOpen` span itself (re-emitted verbatim if the pair does not fold).
-    open: ClassifiedSpan,
-    /// The open marker's region (drives foldability and the close-match check).
-    region: RegionFormat,
-    /// Spans between this open and its eventual close, in source order.
-    collected: Vec<ClassifiedSpan>,
-}
-
-/// Push a finished span onto the innermost open frame, or to `output` at top level.
-fn emit_to(stack: &mut [OpenFrame], output: &mut Vec<ClassifiedSpan>, span: ClassifiedSpan) {
-    if let Some(top) = stack.last_mut() {
-        top.collected.push(span);
-    } else {
-        output.push(span);
-    }
-}
-
-/// Fold a matched inline-range pair into a forward leaf, or `None` to keep it as
-/// a container.
-fn try_fold_inline(
-    frame: &OpenFrame,
-    close: &ClassifiedSpan,
-    source: &str,
-    alloc: &mut Allocator,
-) -> Option<ClassifiedSpan> {
-    let attr = foldable_inline_attr(frame.region)?;
-    let SpanKind::BlockClose(close_region) = close.kind else {
-        return None;
-    };
-    if RegionClose::of(frame.region) != close_region {
-        return None;
-    }
-    if frame.collected.is_empty()
-        || !frame
-            .collected
-            .iter()
-            .all(|s| matches!(s.kind, SpanKind::Plain(_)))
-    {
-        return None;
-    }
-    let mut text = String::new();
-    for s in &frame.collected {
-        text.push_str(&source[s.source_span.start as usize..s.source_span.end as usize]);
-    }
-    if text.is_empty() {
-        return None;
-    }
-    let content = alloc.content_plain(&text);
-    // An inline-range fold is adjacent by construction: the opener sits right
-    // before the enclosed run, so the leaf reclaims its literal.
-    let node = alloc.forward_format(attr, content, ForwardOrigin::Reclaimed);
-    Some(ClassifiedSpan {
-        kind: SpanKind::Aozora(node),
-        source_span: Span::new(frame.open.source_span.start, close.source_span.end),
-    })
-}
-
-/// Fold S4-foldable inline-range emphasis pairs into forward leaves.
-fn fold_inline_emphasis(
-    spans: Vec<ClassifiedSpan>,
-    source: &str,
-    alloc: &mut Allocator,
-) -> Vec<ClassifiedSpan> {
-    let mut output: Vec<ClassifiedSpan> = Vec::with_capacity(spans.len());
-    let mut stack: Vec<OpenFrame> = Vec::new();
-    for span in spans {
-        match span.kind {
-            SpanKind::BlockOpen(region) => {
-                stack.push(OpenFrame {
-                    open: span,
-                    region,
-                    collected: Vec::new(),
-                });
-            }
-            SpanKind::BlockClose(_) => {
-                if let Some(frame) = stack.pop() {
-                    if let Some(folded) = try_fold_inline(&frame, &span, source, alloc) {
-                        emit_to(&mut stack, &mut output, folded);
-                    } else {
-                        emit_to(&mut stack, &mut output, frame.open);
-                        for c in frame.collected {
-                            emit_to(&mut stack, &mut output, c);
-                        }
-                        emit_to(&mut stack, &mut output, span);
-                    }
-                } else {
-                    output.push(span);
-                }
-            }
-            _ => emit_to(&mut stack, &mut output, span),
-        }
-    }
-    // Flush any unclosed opens (bottom-to-top reconstructs source order).
-    for frame in stack {
-        output.push(frame.open);
-        output.extend(frame.collected);
-    }
-    output
 }
 
 #[cfg(test)]

@@ -20,8 +20,8 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
 use ab_aozora_facade::{
-    self, BoutenPosition, Diagnostic, DirectiveKind, ForwardAttr, Node, NodeKind, NodeRef,
-    RegionClose, RegionFormat, Severity, encoding, json as aozora_json,
+    self, BoutenKind, BoutenPosition, Diagnostic, DirectiveKind, ForwardAttr, Node, NodeKind,
+    NodeRef, RegionClose, RegionFormat, Severity, encoding, json as aozora_json,
 };
 // Body/tail boundary detection is the shared `ab-source-syntax` authority
 // so the checker's comparison source (`ab-check::body_text`) can never
@@ -1823,37 +1823,25 @@ fn pair_warichu(content: Vec<Value>) -> Vec<Value> {
 /// A same-line marker and the formatting family its close must match.
 struct BareToggleMarker {
     index: usize,
-    construct: &'static str,
+    construct: String,
     is_open: bool,
     line: u64,
 }
 
 /// Read typed formatting markers; recognize the exact bare horizontal and box forms.
 /// Block forms remain available to block classification.
-fn bare_toggle_marker(node: &Value) -> Option<(&'static str, bool)> {
+fn bare_toggle_marker(node: &Value) -> Option<(String, bool)> {
     if node.get("kind").and_then(Value::as_str) != Some("raw") {
         return None;
     }
     if let Some(key) = node["x-format-key"].as_str() {
-        let key = [
-            "bold",
-            "gothic",
-            "italic",
-            "small-script-right",
-            "small-script-left",
-            "font-large",
-            "font-small",
-            "tcy",
-        ]
-        .into_iter()
-        .find(|candidate| *candidate == key)?;
-        return Some((key, node["x-format-open"].as_bool()?));
+        return Some((key.to_owned(), node["x-format-open"].as_bool()?));
     }
     match node.get("source").and_then(Value::as_str)? {
-        "［＃横組み］" => Some(("yokogumi", true)),
-        "［＃横組み終わり］" => Some(("yokogumi", false)),
-        "［＃罫囲み］" => Some(("keigakomi", true)),
-        "［＃罫囲み終わり］" => Some(("keigakomi", false)),
+        "［＃横組み］" => Some(("yokogumi".to_owned(), true)),
+        "［＃横組み終わり］" => Some(("yokogumi".to_owned(), false)),
+        "［＃罫囲み］" => Some(("keigakomi".to_owned(), true)),
+        "［＃罫囲み終わり］" => Some(("keigakomi".to_owned(), false)),
         _ => None,
     }
 }
@@ -1895,8 +1883,7 @@ fn pair_bare_toggles_in_blocks(nodes: Vec<Value>) -> Vec<Value> {
 /// container; every other node, including the raw markers of invalid
 /// constructs, is preserved unchanged and in its original order.
 ///
-/// Perf: an O(n) scan that early-returns the input moved (no clone) whenever
-/// the paragraph carries no bare-toggle marker — the corpus hot path.
+/// Paragraphs without bare-toggle markers return after one scan, without cloning.
 pub(crate) fn pair_bare_toggles(content: Vec<Value>) -> Vec<Value> {
     let markers: Vec<BareToggleMarker> = content
         .iter()
@@ -1928,7 +1915,7 @@ pub(crate) fn pair_bare_toggles(content: Vec<Value>) -> Vec<Value> {
     // lines form a laminar family — matched pairs from one stack nest
     // properly, and different lines occupy disjoint index ranges — so they
     // splice cleanly as a forest.
-    let mut adopted: Vec<(usize, usize, &'static str)> = Vec::new();
+    let mut adopted: Vec<(usize, usize, String)> = Vec::new();
     let mut group_start = 0;
     while group_start < markers.len() {
         let line = markers[group_start].line;
@@ -1943,7 +1930,7 @@ pub(crate) fn pair_bare_toggles(content: Vec<Value>) -> Vec<Value> {
         return content;
     }
 
-    let opens: BTreeMap<usize, (usize, &'static str)> = adopted
+    let opens: BTreeMap<usize, (usize, String)> = adopted
         .into_iter()
         .map(|(open, close, kind)| (open, (close, kind)))
         .collect();
@@ -1954,9 +1941,9 @@ pub(crate) fn pair_bare_toggles(content: Vec<Value>) -> Vec<Value> {
 
 /// Pass 1 + Pass 2 over one line's markers (see `pair_bare_toggles`). Pushes
 /// each adopted `(open_index, close_index, kind)` onto `adopted`.
-fn pair_line_markers(line: &[BareToggleMarker], adopted: &mut Vec<(usize, usize, &'static str)>) {
-    let mut stack: Vec<(&'static str, usize)> = Vec::new();
-    let mut candidates: Vec<(usize, usize, &'static str)> = Vec::new();
+fn pair_line_markers(line: &[BareToggleMarker], adopted: &mut Vec<(usize, usize, String)>) {
+    let mut stack: Vec<(String, usize)> = Vec::new();
+    let mut candidates: Vec<(usize, usize, String)> = Vec::new();
     let mut invalid = BTreeSet::new();
     for marker in line {
         if marker.is_open {
@@ -1965,22 +1952,22 @@ fn pair_line_markers(line: &[BareToggleMarker], adopted: &mut Vec<(usize, usize,
                 .any(|(construct, _)| *construct == marker.construct)
             {
                 // same-construct reopen
-                invalid.insert(marker.construct);
+                invalid.insert(marker.construct.clone());
             }
-            stack.push((marker.construct, marker.index));
+            stack.push((marker.construct.clone(), marker.index));
         } else {
-            match stack.last().copied() {
+            match stack.last().cloned() {
                 // orphan close
                 None => {
-                    invalid.insert(marker.construct);
+                    invalid.insert(marker.construct.clone());
                 }
                 Some((top, open_index)) if top == marker.construct => {
                     stack.pop();
-                    candidates.push((open_index, marker.index, marker.construct));
+                    candidates.push((open_index, marker.index, marker.construct.clone()));
                 }
                 Some((top, _)) => {
                     // improper interleave: both constructs invalid, pop nothing
-                    invalid.insert(marker.construct);
+                    invalid.insert(marker.construct.clone());
                     invalid.insert(top);
                 }
             }
@@ -1988,11 +1975,11 @@ fn pair_line_markers(line: &[BareToggleMarker], adopted: &mut Vec<(usize, usize,
     }
     // Leftover open frames are orphan opens: invalidate their construct.
     for (construct, _) in &stack {
-        invalid.insert(*construct);
+        invalid.insert(construct.clone());
     }
     // Pass 2: adopt candidates whose construct was not invalidated.
     for (open_index, close_index, construct) in candidates {
-        if !invalid.contains(construct) {
+        if !invalid.contains(&construct) {
             adopted.push((open_index, close_index, construct));
         }
     }
@@ -2007,12 +1994,13 @@ fn splice_bare_toggle_containers(
     content: &mut Vec<Value>,
     start: usize,
     end: usize,
-    opens: &BTreeMap<usize, (usize, &'static str)>,
+    opens: &BTreeMap<usize, (usize, String)>,
 ) -> Vec<Value> {
     let mut out = Vec::new();
     let mut index = start;
     while index < end {
-        if let Some(&(close, kind)) = opens.get(&index) {
+        if let Some((close, kind)) = opens.get(&index) {
+            let close = *close;
             let child = splice_bare_toggle_containers(content, index + 1, close, opens);
             let open_node = mem::take(&mut content[index]);
             let close_node = mem::take(&mut content[close]);
@@ -2028,12 +2016,7 @@ fn splice_bare_toggle_containers(
 
 /// Build one `inline_container` node (same shape family as `style_node`): the
 /// span runs from the open marker's start to the close marker's end.
-fn bare_toggle_container(
-    kind: &'static str,
-    content: Vec<Value>,
-    open: &Value,
-    close: &Value,
-) -> Value {
+fn bare_toggle_container(kind: &str, content: Vec<Value>, open: &Value, close: &Value) -> Value {
     let mut value = json!({
         "kind": kind,
         // `Value::Array` moves `content` in (json! would otherwise borrow it,
@@ -2295,11 +2278,6 @@ fn push_style_node(
         object.remove("style_type");
         object.extend(fields.as_object().expect("formatting fields").clone());
     }
-    if let ProjectedKind::Format(ForwardAttr::Bouten { kind, position }) = node.kind {
-        style["decoration"] = json!({"kind": kind.keyword(), "position": match position {
-            BoutenPosition::Right => "right", BoutenPosition::Left => "left", BoutenPosition::Both => "both", _ => "unknown"
-        }});
-    }
     if style["content"].as_array().is_some_and(Vec::is_empty)
         && let Some(target) = marker_target(source_slice(&decoded.span_text, &node.span))
         && let Some(children) = take_visible_suffix(content, target, &decoded.text)
@@ -2427,6 +2405,9 @@ fn annotation_content(source: &str) -> Vec<Value> {
 
 fn formatting_fields(attr: ForwardAttr) -> Option<Value> {
     Some(match attr {
+        ForwardAttr::Bouten { kind, position } => json!({"kind":"style",
+            "style_type": if kind.is_line() { "bosen" } else { "bouten" },
+            "decoration":{"kind":kind.keyword(), "position":bouten_position(position)}}),
         ForwardAttr::Bold => json!({"kind":"style", "style_type":"bold"}),
         ForwardAttr::Gothic => json!({"kind":"style", "style_type":"gothic"}),
         ForwardAttr::Italic => json!({"kind":"style", "style_type":"italic"}),
@@ -2451,8 +2432,27 @@ fn formatting_fields(attr: ForwardAttr) -> Option<Value> {
     })
 }
 
-fn region_formatting(region: RegionFormat) -> Option<(&'static str, Value)> {
+const fn bouten_position(position: BoutenPosition) -> &'static str {
+    match position {
+        BoutenPosition::Right => "right",
+        BoutenPosition::Left => "left",
+        BoutenPosition::Both => "both",
+        _ => "unknown",
+    }
+}
+
+fn bouten_key(kind: BoutenKind, position: BoutenPosition) -> String {
+    format!("bouten:{}:{}", kind.keyword(), bouten_position(position))
+}
+
+fn region_formatting(region: RegionFormat) -> Option<(String, Value)> {
     let (key, attr) = match region {
+        RegionFormat::Bouten { kind, position } => {
+            return Some((
+                bouten_key(kind, position),
+                formatting_fields(ForwardAttr::Bouten { kind, position })?,
+            ));
+        }
         RegionFormat::Bold { padded: false } => ("bold", ForwardAttr::Bold),
         RegionFormat::Gothic { padded: false } => ("gothic", ForwardAttr::Gothic),
         RegionFormat::Italic { padded: false } => ("italic", ForwardAttr::Italic),
@@ -2472,24 +2472,28 @@ fn region_formatting(region: RegionFormat) -> Option<(&'static str, Value)> {
             },
             ForwardAttr::FontSize(shift),
         ),
-        RegionFormat::CombineUpright => return Some(("tcy", json!({"kind":"tcy"}))),
+        RegionFormat::CombineUpright => return Some(("tcy".to_owned(), json!({"kind":"tcy"}))),
         _ => return None,
     };
-    Some((key, formatting_fields(attr)?))
+    Some((key.to_owned(), formatting_fields(attr)?))
 }
 
-fn region_formatting_close(close: RegionClose) -> Option<&'static str> {
-    Some(match close {
-        RegionClose::Bold { padded: false } => "bold",
-        RegionClose::Gothic { padded: false } => "gothic",
-        RegionClose::Italic { padded: false } => "italic",
-        RegionClose::SmallScript(BoutenPosition::Right) => "small-script-right",
-        RegionClose::SmallScript(BoutenPosition::Left) => "small-script-left",
-        RegionClose::FontSize { larger: true } => "font-large",
-        RegionClose::FontSize { larger: false } => "font-small",
-        RegionClose::CombineUpright => "tcy",
-        _ => return None,
-    })
+fn region_formatting_close(close: RegionClose) -> Option<String> {
+    Some(
+        match close {
+            RegionClose::Bouten { kind, position } => return Some(bouten_key(kind, position)),
+            RegionClose::Bold { padded: false } => "bold",
+            RegionClose::Gothic { padded: false } => "gothic",
+            RegionClose::Italic { padded: false } => "italic",
+            RegionClose::SmallScript(BoutenPosition::Right) => "small-script-right",
+            RegionClose::SmallScript(BoutenPosition::Left) => "small-script-left",
+            RegionClose::FontSize { larger: true } => "font-large",
+            RegionClose::FontSize { larger: false } => "font-small",
+            RegionClose::CombineUpright => "tcy",
+            _ => return None,
+        }
+        .to_owned(),
+    )
 }
 
 fn marker_target(source: &str) -> Option<&str> {
@@ -4418,7 +4422,7 @@ mod tests {
                 }
                 stack.push(construct);
             } else {
-                match stack.last().copied() {
+                match stack.last().cloned() {
                     None => match construct {
                         "yokogumi" => invalid_yokogumi = true,
                         _ => invalid_keigakomi = true,

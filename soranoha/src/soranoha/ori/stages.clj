@@ -168,7 +168,7 @@
   change must invalidate its traces."
   [clj-toolchain-id profile]
   {:stage-id "validate-tei"
-   :stage-version "2"
+   :stage-version "3"
    :toolchain-id (core-hash/sha256-canonical-json
                   {"clj" clj-toolchain-id
                    "odd" (core-hash/sha256-file (:odd profile))

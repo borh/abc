@@ -90,7 +90,7 @@
                  (seq warnings) :validation/warning
                  :else :validation/passed)]
     {:status status
-     :layer (validation-layer status "soranoha.ported.schematron"
+     :layer (validation-layer status "soranoha.ori.schematron"
                               (case status
                                 :validation/passed "No project Schematron findings."
                                 :validation/warning "Only project Schematron warnings were reported."

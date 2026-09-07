@@ -140,7 +140,7 @@ enum BodyFamily {
     HorizontalBlockOpen, // ここから横組み
     HorizontalBlockEnd,  // ここで横組み終わり
     FontSizeBlockEnd,    // ここで大きな/小さな文字終わり
-    ColumnsBlockEnd,     // ここで段組(み)終わり
+    ParamBlockEnd,       // ここで[N]段組(み) / N段階…文字終わり
     WarichuOpen,         // 割り注
     WarichuClose,        // 割り注終わり
     KaeritenSingle,      // body must equal one of 12 single-char marks
@@ -245,7 +245,6 @@ const fn body_family_mode(family: BodyFamily) -> MatchMode {
         | BodyFamily::HorizontalBlockEnd
         | BodyFamily::CombineUprightOpen
         | BodyFamily::CombineUprightClose
-        | BodyFamily::FontSizeBlockEnd
         | BodyFamily::WarichuOpen
         | BodyFamily::WarichuClose
         | BodyFamily::KaeritenSingle
@@ -256,11 +255,12 @@ const fn body_family_mode(family: BodyFamily) -> MatchMode {
         | BodyFamily::AlignEndBlockParamPrefix
         | BodyFamily::IndentBlockEnd
         | BodyFamily::IndentKumiBlockEnd
-        | BodyFamily::ColumnsBlockEnd
+        | BodyFamily::ParamBlockEnd
         | BodyFamily::OkuriganaPrefix
         | BodyFamily::TopIndentPrefix
         | BodyFamily::KaigyouTentsukiPrefix => MatchMode::Prefix,
-        BodyFamily::IndentParamPrefix
+        BodyFamily::FontSizeBlockEnd
+        | BodyFamily::IndentParamPrefix
         | BodyFamily::BoutenRange
         | BodyFamily::Emphasis
         | BodyFamily::SmallScriptRange
@@ -468,14 +468,11 @@ static BODY_PATTERNS: &[BodyPattern] = &[
         needle: "改行天付き",
         family: BodyFamily::KaigyouTentsukiPrefix,
     },
-    // Columns close: ここで[N]段組[み]終わり. Bare ここで mirrors the ここから
-    // opener catch-all (IndentBlockParamPrefix); LeftmostLongest keeps every
-    // longer ここで…終わり closer winning over it, and the handler validates the
-    // 段組[み]終わり tail so non-columns ここで… bodies (and 、-joined compounds)
-    // decline to Unknown.
+    // Parameterized closes share ここで; longer fixed closers win. The
+    // handler validates the complete column-count or font-size suffix.
     BodyPattern {
         needle: "ここで",
-        family: BodyFamily::ColumnsBlockEnd,
+        family: BodyFamily::ParamBlockEnd,
     },
     // Section / page break (exact).
     BodyPattern {
@@ -1181,13 +1178,12 @@ pub(super) fn classify_annotation_body(
             Some((EmitKind::BlockClose(RegionClose::Horizontal), None))
         }
         BodyFamily::FontSizeBlockEnd => {
-            // The close marker carries only the direction (大きな / 小さな);
-            // its magnitude is the open's. Matches both ここで…終わり and the
-            // bare …終わり sibling, so key on the direction word.
-            let larger = !body.contains("小さな");
-            Some((EmitKind::BlockClose(RegionClose::FontSize { larger }), None))
+            font_size_block_close(body).map(|close| (EmitKind::BlockClose(close), None))
         }
-        BodyFamily::ColumnsBlockEnd => {
+        BodyFamily::ParamBlockEnd => {
+            if let Some(close) = font_size_block_close(body) {
+                return Some((EmitKind::BlockClose(close), None));
+            }
             let rest = &body[match_end..];
             let (count, rest) = match parse_decimal_u8_prefix(rest) {
                 Some((n, tail)) => (Some(ColumnCount(NonZeroU8::new(n)?)), tail),
@@ -1341,8 +1337,8 @@ pub(super) fn classify_annotation_body(
                 Some((EmitKind::BlockOpen(RegionFormat::Columns(block)), None))
             } else {
                 // ここから{N}段階大きな/小さな文字 — block font-size shift.
-                // Shares the `ここから` prefix; closes with the direction-only
-                // `ここで大きな/小さな文字終わり`.
+                // Shares the `ここから` prefix; closers supply direction and may
+                // restate the relative step count.
                 font_size_block_open_steps(tail, n)
                     .and_then(NonZeroI8::new)
                     .map(|s| {
@@ -1756,6 +1752,24 @@ fn parse_heading_directive(body: &str) -> Option<EmitKind> {
 /// where `tail` is the body after the `ここから{N}` prefix and `magnitude`
 /// is `N`. `大きな` → `+N`, `小さな` → `-N`; `None` for a zero/overflowing
 /// magnitude or any other tail.
+fn font_size_block_close(body: &str) -> Option<RegionClose> {
+    let rest = body.strip_prefix("ここで").unwrap_or(body);
+    let (magnitude, rest) = if let Some((count, tail)) = parse_decimal_u8_prefix(rest) {
+        if count > 127 {
+            return None;
+        }
+        (Some(NonZeroU8::new(count)?), tail.strip_prefix("段階")?)
+    } else {
+        (None, rest)
+    };
+    let larger = match rest {
+        "大きな文字終わり" => true,
+        "小さな文字終わり" => false,
+        _ => return None,
+    };
+    Some(RegionClose::FontSize { larger, magnitude })
+}
+
 fn font_size_block_open_steps(tail: &str, magnitude: u8) -> Option<i8> {
     let steps = i8::try_from(magnitude).ok()?;
     if steps == 0 {

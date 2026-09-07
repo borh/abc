@@ -1029,6 +1029,8 @@ pub enum RegionClose {
     FontSize {
         /// `true` = 大きな (larger); `false` = 小さな (smaller).
         larger: bool,
+        /// Supplied relative step count; omitted closers impose only direction.
+        magnitude: Option<NonZeroU8>,
     },
     /// `行右 / 行左小書き終わり`.
     SmallScript(BoutenPosition),
@@ -1081,6 +1083,7 @@ impl RegionClose {
             RegionFormat::Horizontal => Self::Horizontal,
             RegionFormat::FontSize(shift) => Self::FontSize {
                 larger: shift.larger(),
+                magnitude: NonZeroU8::new(shift.magnitude()),
             },
             RegionFormat::SmallScript(side) => Self::SmallScript(side),
             RegionFormat::CombineUpright => Self::CombineUpright,

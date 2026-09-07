@@ -605,6 +605,13 @@ pub(crate) fn scope_closer_matches(open: RegionFormat, close: RegionClose) -> bo
             },
             RegionClose::Heading { level, style, .. },
         ) => level.is_none() || (level == expected_level && style == expected_style),
+        (
+            RegionClose::FontSize {
+                larger: expected,
+                magnitude: expected_magnitude,
+            },
+            RegionClose::FontSize { larger, magnitude },
+        ) => larger == expected && (magnitude.is_none() || magnitude == expected_magnitude),
         (RegionClose::Columns(expected), RegionClose::Columns(actual)) => {
             actual.is_none() || expected == actual
         }

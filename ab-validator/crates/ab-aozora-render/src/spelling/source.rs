@@ -397,8 +397,17 @@ pub(crate) fn emit_container_close<W: Write>(close: RegionClose, out: &mut W) ->
         RegionClose::Table => out.write_str("［＃ここで表終わり］"),
         RegionClose::Horizontal => out.write_str("［＃ここで横組み終わり］"),
         RegionClose::CombineUpright => out.write_str("［＃縦中横終わり］"),
-        RegionClose::FontSize { larger: true } => out.write_str("［＃ここで大きな文字終わり］"),
-        RegionClose::FontSize { larger: false } => out.write_str("［＃ここで小さな文字終わり］"),
+        RegionClose::FontSize { larger, magnitude } => {
+            out.write_str("［＃ここで")?;
+            if let Some(magnitude) = magnitude {
+                write!(out, "{magnitude}段階")?;
+            }
+            out.write_str(if larger {
+                "大きな文字終わり］"
+            } else {
+                "小さな文字終わり］"
+            })
+        }
         RegionClose::SmallScript(side) => {
             write!(out, "［＃行{}小書き終わり］", small_script_side_word(side))
         }

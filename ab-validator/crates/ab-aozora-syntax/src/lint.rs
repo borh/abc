@@ -138,14 +138,7 @@ fn parameterized_region_close(body: &str) -> Option<String> {
     {
         return Some("ここで字下げ終わり".to_owned());
     }
-    // ここで{N}段階(大きな|小さな)文字終わり → ここで(大きな|小さな)文字終わり.
-    for size in ["大きな", "小さな"] {
-        if let Some(n) = inner.strip_suffix(&format!("段階{size}文字終わり"))
-            && is_digit_run(n)
-        {
-            return Some(format!("ここで{size}文字終わり"));
-        }
-    }
+
     // ここで…終わり」 → drop a stray trailing `」`.
     if let Some(head) = body.strip_suffix('」')
         && head.ends_with("終わり")
@@ -320,7 +313,6 @@ pub const CATALOGUE_SAMPLES: &[&str] = &[
     "ここで左から右への横組み終わり",
     "ここで横組みの表終わり",
     "ここで2字下げ終わり",
-    "ここで1段階小さな文字終わり",
     "ここで字下げ終わり」",
     // Region-open synonyms.
     "地付きで",
@@ -512,7 +504,6 @@ mod tests {
     fn region_numeric_parameterized() {
         for (v, c) in [
             ("ここで2字下げ終わり", "ここで字下げ終わり"),
-            ("ここで1段階小さな文字終わり", "ここで小さな文字終わり"),
             ("ここで字下げ終わり」", "ここで字下げ終わり"),
             ("以下2字下げ", "ここから2字下げ"),
             ("ここから2　字下げ", "ここから2字下げ"),

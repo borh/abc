@@ -2789,7 +2789,7 @@ pub(crate) fn pair_bare_toggles(content: Vec<Value>) -> Vec<Value> {
         while group_end < markers.len() && markers[group_end].line == line {
             group_end += 1;
         }
-        pair_line_markers(&markers[group_start..group_end], &mut adopted);
+        pair_line_markers(&markers[group_start..group_end], &content, &mut adopted);
         group_start = group_end;
     }
     if adopted.is_empty() {
@@ -2807,7 +2807,11 @@ pub(crate) fn pair_bare_toggles(content: Vec<Value>) -> Vec<Value> {
 
 /// Pass 1 + Pass 2 over one line's markers (see `pair_bare_toggles`). Pushes
 /// each adopted `(open_index, close_index, kind)` onto `adopted`.
-fn pair_line_markers(line: &[BareToggleMarker], adopted: &mut Vec<(usize, usize, String)>) {
+fn pair_line_markers(
+    line: &[BareToggleMarker],
+    content: &[Value],
+    adopted: &mut Vec<(usize, usize, String)>,
+) {
     let mut stack: Vec<(String, usize)> = Vec::new();
     let mut candidates: Vec<(usize, usize, String)> = Vec::new();
     let mut invalid = BTreeSet::new();
@@ -2820,7 +2824,14 @@ fn pair_line_markers(line: &[BareToggleMarker], adopted: &mut Vec<(usize, usize,
                 None => {
                     invalid.insert(marker.construct.clone());
                 }
-                Some((top, open_index)) if top == marker.construct => {
+                Some((top, open_index))
+                    if top == marker.construct
+                        && content[marker.index]
+                            .get("x-formatting")
+                            .is_none_or(|attributes| {
+                                attributes == &content[open_index]["x-formatting"]
+                            }) =>
+                {
                     stack.pop();
                     candidates.push((open_index, marker.index, marker.construct.clone()));
                 }
@@ -4137,6 +4148,10 @@ fn style_node(decoded: &DecodedSource, node: &AozoraNode, style_type: &str) -> V
     })
 }
 
+fn relative_font_fields(larger: bool, magnitude: u8) -> Value {
+    json!({"kind":"font_size", "size_type":if larger { "large" } else { "small" }, "level":magnitude})
+}
+
 fn formatting_fields(attr: ForwardAttr) -> Option<Value> {
     Some(match attr {
         ForwardAttr::CombineUpright => json!({"kind":"tcy"}),
@@ -4158,9 +4173,7 @@ fn formatting_fields(attr: ForwardAttr) -> Option<Value> {
         ForwardAttr::SmallScript(BoutenPosition::Left) => {
             json!({"kind":"small_script", "position":"left"})
         }
-        ForwardAttr::FontSize(shift) => {
-            json!({"kind":"font_size", "size_type":if shift.larger() { "large" } else { "small" }, "level":shift.magnitude()})
-        }
+        ForwardAttr::FontSize(shift) => relative_font_fields(shift.larger(), shift.magnitude()),
         ForwardAttr::FontSizeAbsolute(size) => {
             json!({"kind":"font_size", "size_type":"absolute", "size":match size {
                 AbsoluteSize::ExtraLarge => "extra-large", AbsoluteSize::Large => "large",
@@ -4343,16 +4356,25 @@ fn region_formatting(region: RegionFormat) -> Option<(String, Value)> {
     Some((key.to_owned(), formatting_fields(attr)?))
 }
 
-fn region_formatting_close(close: RegionClose) -> Option<String> {
-    Some(
+fn region_formatting_close(close: RegionClose) -> Option<(String, Option<Value>)> {
+    let attributes = match close {
+        RegionClose::FontSize {
+            larger,
+            magnitude: Some(magnitude),
+        } => Some(relative_font_fields(larger, magnitude.get())),
+        _ => None,
+    };
+    Some((
         match close {
             RegionClose::Framed(kind) => {
-                return Some(format!("keigakomi:{}", enclosure_kind(kind)));
+                return Some((format!("keigakomi:{}", enclosure_kind(kind)), attributes));
             }
             RegionClose::Horizontal => "yokogumi",
             RegionClose::Warichu => "warichu",
             RegionClose::Caption { .. } => "caption",
-            RegionClose::Bouten { kind, position } => return Some(bouten_key(kind, position)),
+            RegionClose::Bouten { kind, position } => {
+                return Some((bouten_key(kind, position), attributes));
+            }
             RegionClose::Bold { padded } => {
                 if padded {
                     "bold-block"
@@ -4376,13 +4398,14 @@ fn region_formatting_close(close: RegionClose) -> Option<String> {
             }
             RegionClose::SmallScript(BoutenPosition::Right) => "small-script-right",
             RegionClose::SmallScript(BoutenPosition::Left) => "small-script-left",
-            RegionClose::FontSize { larger: true } => "font-large",
-            RegionClose::FontSize { larger: false } => "font-small",
+            RegionClose::FontSize { larger: true, .. } => "font-large",
+            RegionClose::FontSize { larger: false, .. } => "font-small",
             RegionClose::CombineUpright => "tcy",
             _ => return None,
         }
         .to_owned(),
-    )
+        attributes,
+    ))
 }
 
 fn marker_target(source: &str) -> Option<&str> {
@@ -4492,9 +4515,12 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
             if formatting.is_some() || close.is_inline() {
                 value["x-source-flow"] = json!("inline");
             }
-            if let Some(key) = formatting {
+            if let Some((key, attributes)) = formatting {
                 value["x-format-key"] = json!(key);
                 value["x-format-open"] = json!(false);
+                if let Some(attributes) = attributes {
+                    value["x-formatting"] = attributes;
+                }
             }
             value["interpretation_problem"] = json!({"kind":"uninterpreted-notation", "code":"uninterpreted-notation",
                 "aspects":["structure","layout"], "influence":{"kind":"document"}});

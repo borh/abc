@@ -252,6 +252,7 @@ fn emit_indent_open<W: Write>(block: IndentBlock, store: &NodeStore, out: &mut W
     }
     let BlockStyles {
         gothic,
+        bold,
         horizontal,
         frame,
         font,
@@ -266,6 +267,7 @@ fn emit_indent_open<W: Write>(block: IndentBlock, store: &NodeStore, out: &mut W
         && end_offset.is_none()
         && matches!(layout, IndentLayout::None)
         && !gothic
+        && !bold
         && horizontal.is_none()
         && frame.is_none()
         && font.is_none();
@@ -303,12 +305,16 @@ fn emit_indent_open<W: Write>(block: IndentBlock, store: &NodeStore, out: &mut W
 fn emit_block_styles<W: Write>(styles: BlockStyles, out: &mut W) -> fmt::Result {
     let BlockStyles {
         gothic,
+        bold,
         horizontal,
         frame,
         font,
     } = styles;
     if gothic {
         out.write_str("、ゴシック体")?;
+    }
+    if bold {
+        out.write_str("、太字")?;
     }
     if let Some(presentation) = horizontal {
         match presentation.align {
@@ -320,17 +326,13 @@ fn emit_block_styles<W: Write>(styles: BlockStyles, out: &mut W) -> fmt::Result 
     if let Some(frame) = frame {
         write!(out, "、{}", ForwardAttr::Framed(frame).keyword())?;
     }
-    if let Some(shift) = font {
-        // `小さい活字` is the canonical one-stage-smaller spelling (the only
-        // font compound the corpus attests); a general magnitude falls back to
-        // the `N段階…文字` form so the field stays round-trippable.
-        if shift.0.get() == -1 {
-            out.write_str("、小さい活字")?;
-        } else if shift.larger() {
-            write!(out, "、{}段階大きな文字", shift.magnitude())?;
-        } else {
-            write!(out, "、{}段階小さな文字", shift.magnitude())?;
-        }
+    if let Some(size) = font {
+        use ab_aozora_syntax::QualitativeFontSize;
+        out.write_str(match size {
+            QualitativeFontSize::Smaller => "、小さい活字",
+            QualitativeFontSize::SlightlySmaller => "、字のポイントはやや小さくしてある。",
+            QualitativeFontSize::HitomawariLarger => "、本文よりひとまわり大きい",
+        })?;
     }
     Ok(())
 }

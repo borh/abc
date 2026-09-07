@@ -1364,6 +1364,11 @@ fn layout_scope(node: &Value) -> Result<Value> {
                 json!({"kind":"font-size", "source":"aat-inline", "size_type":node["size_type"]});
             if node["size_type"] == "absolute" {
                 layout["size"] = node["size"].clone();
+            } else if node["size_type"] == "qualitative" {
+                layout["direction"] = node["direction"].clone();
+                if let Some(qualifier) = node.get("qualifier") {
+                    layout["qualifier"] = qualifier.clone();
+                }
             } else {
                 layout["level"] = node["level"].clone();
             }

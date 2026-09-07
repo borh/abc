@@ -528,9 +528,10 @@ mod tests {
                 layout: IndentLayout::None,
                 styles: BlockStyles {
                     gothic: true,
+                    bold: false,
                     horizontal: Some(ab_aozora_syntax::HorizontalPresentation { align: None }),
                     frame: Some(EnclosureKind::DashedRule),
-                    font: Some(FontShift(NonZeroI8::new(-1).unwrap())),
+                    font: Some(ab_aozora_syntax::QualitativeFontSize::Smaller),
                 },
             }),
             RegionFormat::Warichu,

@@ -1597,6 +1597,10 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
     let mut pending = blocks.iter().rev().collect::<Vec<_>>();
     while let Some(node) = pending.pop() {
         let interpretation = EstablishedInterpretation::for_node(node);
+        let font_formatting = node["kind"] == "layout_block"
+            && iter::once(&node["formatting"])
+                .chain(node["formatting"].as_array().into_iter().flatten())
+                .any(|attribute| attribute["kind"] == "font_size");
         if matches!(interpretation, Some(EstablishedInterpretation::Ruby)) {
             facts.extend(gaiji_ruby_facts(node));
         }
@@ -1636,6 +1640,10 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
                 {
                     facts.push(json!({"kind":interpretation.kind(), "outcome":"established", "aspects":interpretation.aspects(),
                         "source_span":{"start":start,"end":end,"line":span["line_start"],"coordinate_system":"decoded_utf8"}}));
+                    if font_formatting {
+                        facts.push(json!({"kind":"emphasis", "outcome":"established", "aspects":["layout"],
+                            "source_span":{"start":start,"end":end,"line":span["line_start"],"coordinate_system":"decoded_utf8"}}));
+                    }
                     if node.get("relative_placement").is_some() && node["direction"] == "horizontal"
                     {
                         facts.push(json!({"kind":"layout", "outcome":"established", "aspects":["layout"],
@@ -4727,8 +4735,16 @@ fn apply_block_styles(fields: &mut Value, block: BlockStyles) -> Option<()> {
     if block.gothic {
         styles.push(formatting_fields(ForwardAttr::Gothic)?);
     }
+    if block.bold {
+        styles.push(formatting_fields(ForwardAttr::Bold)?);
+    }
     if let Some(font) = block.font {
-        styles.push(formatting_fields(ForwardAttr::FontSize(font))?);
+        let mut size = json!({"kind":"font_size", "size_type":"qualitative",
+            "direction":if font.larger() { "larger" } else { "smaller" }});
+        if let Some(qualifier) = font.qualifier() {
+            size["qualifier"] = json!(qualifier);
+        }
+        styles.push(size);
     }
     match styles.len() {
         0 => {}

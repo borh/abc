@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
   "title": "ABC Parser IR",
-  "version": "0.40.0",
+  "version": "0.41.0",
   "type": "object",
   "required": ["schema_id", "schema_hash", "source", "nodes", "warnings", "errors", "interpretation_problems", "interpretation_facts"],
   "additionalProperties": false,
@@ -363,14 +363,17 @@
           "properties": {
             "kind": { "const": "font-size" },
             "source": { "$ref": "#/$defs/layoutScopeSource" },
-            "size_type": { "enum": ["large", "small", "absolute"] },
+            "size_type": { "enum": ["large", "small", "absolute", "qualitative"] },
+            "direction": { "enum": ["larger", "smaller"] },
+            "qualifier": { "enum": ["やや", "ひとまわり"] },
             "level": { "type": "integer", "minimum": 1 },
             "size": { "enum": ["extra-large", "large", "medium", "small"] },
             "marker": { "type": ["string", "null"] }
           },
           "oneOf": [
-            { "properties": { "size_type": { "enum": ["large", "small"] } }, "required": ["level"], "not": { "required": ["size"] } },
-            { "properties": { "size_type": { "const": "absolute" } }, "required": ["size"], "not": { "required": ["level"] } }
+            { "properties": { "size_type": { "enum": ["large", "small"] } }, "required": ["level"], "not": { "anyOf": [{"required":["size"]},{"required":["direction"]},{"required":["qualifier"]}] } },
+            { "properties": { "size_type": { "const": "absolute" } }, "required": ["size"], "not": { "anyOf": [{"required":["level"]},{"required":["direction"]},{"required":["qualifier"]}] } },
+            { "properties": { "size_type": { "const": "qualitative" } }, "required": ["direction"], "not": { "anyOf": [{"required":["level"]},{"required":["size"]}] } }
           ]
         },
         {

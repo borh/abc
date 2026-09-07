@@ -81,8 +81,11 @@
                (str "width=" width))
     "line-jisage" (when-some [indent (get layout "indent")]
                     (str "indent=" indent))
-    "font-size" (if (= "absolute" (get layout "size_type"))
-                  (str "size-type=absolute;size=" (get layout "size"))
+    "font-size" (case (get layout "size_type")
+                  "absolute" (str "size-type=absolute;size=" (get layout "size"))
+                  "qualitative" (str "size-type=qualitative;direction=" (get layout "direction")
+                                     (when-let [qualifier (get layout "qualifier")]
+                                       (str ";qualifier=" qualifier)))
                   (let [size-type (get layout "size_type")
                         level (get layout "level")]
                     (when (and size-type (some? level))
@@ -103,8 +106,11 @@
     "emphasis" (string/join " " (remove nil? [(get layout "style")
                                               (get-in layout ["decoration" "kind"])
                                               (get-in layout ["decoration" "position"])]))
-    "font-size" (if (= "absolute" (get layout "size_type"))
-                  (str "font-size absolute(" (get layout "size") ")")
+    "font-size" (case (get layout "size_type")
+                  "absolute" (str "font-size absolute(" (get layout "size") ")")
+                  "qualitative" (str "font-size qualitative(" (get layout "direction") ")"
+                                     (when-let [qualifier (get layout "qualifier")]
+                                       (str " qualifier(" qualifier ")")))
                   (let [size-type (get layout "size_type")
                         level (get layout "level")]
                     (when (and size-type (some? level))

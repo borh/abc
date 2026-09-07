@@ -1066,3 +1066,23 @@
     (is (= "本文" (:plaintext result)))
     (is (not-any? #(not (string/blank? (attribute % "target"))) (elements result "note")))
     (is (= 2 (count (get-in result [:ir "interpretation_problems"]))))))
+
+(deftest qualitative-font-size-preserves-supplied-degree-without-numeric-stages
+  (doseq [[clause direction qualifier]
+          [["小さい活字" "smaller" nil]
+           ["字のポイントはやや小さくしてある。" "smaller" "やや"]
+           ["本文よりひとまわり大きい太ゴシック体" "larger" "ひとまわり"]]]
+    (let [result (transcribe (source (str "［＃ここから２字下げ、" clause "］\n本文\n［＃ここで字下げ終わり］")))
+          styled (first (filter #(string/includes? (attribute % "rend") "font-size qualitative") (elements result "div")))
+          rend (attribute styled "rend")]
+      (is (= "本文" (:plaintext result)))
+      (is (= "本文" (projection/markdown (:view result))))
+      (is (string/includes? rend (str "qualitative(" direction ")")))
+      (is (= (boolean qualifier) (string/includes? rend "qualifier(")))
+      (when qualifier
+        (is (string/includes? rend (str "qualifier(" qualifier ")"))))
+      (when (= qualifier "ひとまわり")
+        (is (string/includes? rend "bold"))
+        (is (string/includes? rend "gothic")))
+      (is (not (string/includes? (:tei result) "level=1")))
+      (is (empty? (get-in result [:ir "interpretation_problems"]))))))

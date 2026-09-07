@@ -23,8 +23,8 @@ use ab_aozora_syntax::ast::Directive;
 use ab_aozora_syntax::{
     AbsoluteSize, BOUTEN_KINDS, BlockStyles, BoutenKind, BoutenPosition, ColumnBlock, ColumnCount,
     DirectiveKind, EnclosureKind, FontShift, HeadingKind, HeadingStyle, HorizontalPresentation,
-    IndentBlock, IndentLayout, Kumi, LineFormat, LineWidth, RegionClose, RegionFormat, SectionKind,
-    Span,
+    IndentBlock, IndentLayout, Kumi, LineFormat, LineWidth, QualitativeFontSize, RegionClose,
+    RegionFormat, SectionKind, Span,
 };
 
 use super::super::pair::PairEvent;
@@ -2022,6 +2022,7 @@ fn parse_indent_compound(
                 }));
             }
             block.styles.gothic |= candidate.styles.gothic;
+            block.styles.bold |= candidate.styles.bold;
             block.page_horizontal_center |= candidate.page_horizontal_center;
             block.styles.horizontal =
                 merge_horizontal(block.styles.horizontal, candidate.styles.horizontal);
@@ -2076,6 +2077,7 @@ fn parse_column_compound(
             clauses.push(span);
         } else {
             block.styles.gothic |= candidate.gothic;
+            block.styles.bold |= candidate.bold;
             block.styles.horizontal =
                 merge_horizontal(block.styles.horizontal, candidate.horizontal);
             if let Some(conflict) = candidate.frame.and_then(|value| frame.observe(value, span)) {
@@ -2173,6 +2175,7 @@ fn merge_horizontal(
 fn resolve_block_style(segment: &str, styles: &mut BlockStyles) -> Option<()> {
     match segment {
         "ゴシック体" if !styles.gothic => styles.gothic = true,
+        "太字" if !styles.bold => styles.bold = true,
         "横書き" | "横組み" | "横組みで" | "文章は横組み" if styles.horizontal.is_none() =>
         {
             styles.horizontal = Some(HorizontalPresentation { align: None });
@@ -2186,9 +2189,19 @@ fn resolve_block_style(segment: &str, styles: &mut BlockStyles) -> Option<()> {
         "破線枠囲み" if styles.frame.is_none() => {
             styles.frame = Some(EnclosureKind::DashedRule);
         }
-        // 小さい活字 = one stage smaller (FontShift(-1)).
         "小さい活字" if styles.font.is_none() => {
-            styles.font = Some(FontShift(NonZeroI8::new(-1)?));
+            styles.font = Some(QualitativeFontSize::Smaller);
+        }
+        "字のポイントはやや小さくしてある。" if styles.font.is_none() => {
+            styles.font = Some(QualitativeFontSize::SlightlySmaller);
+        }
+        "本文よりひとまわり大きい" if styles.font.is_none() => {
+            styles.font = Some(QualitativeFontSize::HitomawariLarger);
+        }
+        "本文よりひとまわり大きい太ゴシック体" if styles.font.is_none() => {
+            styles.font = Some(QualitativeFontSize::HitomawariLarger);
+            styles.gothic = true;
+            styles.bold = true;
         }
         _ => return None,
     }

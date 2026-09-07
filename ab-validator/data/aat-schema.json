@@ -470,6 +470,7 @@
         {"type":"object","additionalProperties":false,"required":["kind"],"properties":{"kind":{"enum":["caption","warichu"]}}},
         {"type":"object","additionalProperties":false,"required":["kind","style_type"],"properties":{"kind":{"const":"style"},"style_type":{"enum":["bold","italic","gothic","bouten","bosen"]},"decoration":{"type":"object","additionalProperties":false,"required":["kind","position"],"properties":{"kind":{"type":"string"},"position":{"enum":["right","left","both","unknown"]}}}}},
         {"type":"object","additionalProperties":false,"required":["kind","size_type","level"],"properties":{"kind":{"const":"font_size"},"size_type":{"enum":["large","small"]},"level":{"type":"integer","minimum":1}}},
+        {"type":"object","additionalProperties":false,"required":["kind","size_type","direction"],"properties":{"kind":{"const":"font_size"},"size_type":{"const":"qualitative"},"direction":{"enum":["larger","smaller"]},"qualifier":{"enum":["やや","ひとまわり"]}}},
         { "type":"object", "additionalProperties":false, "required":["kind"], "properties":{"kind":{"const":"tcy"}} },
         { "type":"object", "additionalProperties":false, "required":["kind","position"], "properties":{"kind":{"const":"small_script"},"position":{"enum":["right","left"]}} }
       ]
@@ -486,7 +487,9 @@
         "decoration": {"type":"object", "additionalProperties":false, "required":["kind","position"], "properties":{"kind":{"type":"string"}, "position":{"enum":["right","left","both","unknown"]}}},
         "attributes": { "type":"array", "minItems":2, "uniqueItems":true, "items": { "$ref":"#/$defs/formatting_attribute" } },
         "style_type": { "type": "string" },
-        "size_type": { "enum": ["large", "small", "absolute"] },
+        "size_type": { "enum": ["large", "small", "absolute", "qualitative"] },
+        "direction": { "enum": ["larger", "smaller"] },
+        "qualifier": { "enum": ["やや", "ひとまわり"] },
         "level": { "type": "integer", "minimum": 1 },
         "size": { "enum": ["extra-large", "large", "medium", "small"] },
         "position": { "enum": ["right", "left"] },
@@ -509,8 +512,9 @@
           "then": {
             "required": ["size_type"],
             "oneOf": [
-              { "properties": { "size_type": { "enum": ["large", "small"] } }, "required": ["level"], "not": { "required": ["size"] } },
-              { "properties": { "size_type": { "const": "absolute" } }, "required": ["size"], "not": { "required": ["level"] } }
+              { "properties": { "size_type": { "enum": ["large", "small"] } }, "required": ["level"], "not": { "anyOf": [{"required":["size"]},{"required":["direction"]},{"required":["qualifier"]}] } },
+              { "properties": { "size_type": { "const": "absolute" } }, "required": ["size"], "not": { "anyOf": [{"required":["level"]},{"required":["direction"]},{"required":["qualifier"]}] } },
+              { "properties": { "size_type": { "const": "qualitative" } }, "required": ["direction"], "not": { "anyOf": [{"required":["level"]},{"required":["size"]}] } }
             ]
           }
         },

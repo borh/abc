@@ -50,6 +50,36 @@ impl FontShift {
     }
 }
 
+/// A supplied relative font size without a numbered stage count.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum QualitativeFontSize {
+    /// 小さい活字 — smaller type, with no supplied degree.
+    Smaller,
+    /// やや小さく — slightly smaller type.
+    SlightlySmaller,
+    /// ひとまわり大きい — larger type with the supplied qualitative comparison.
+    HitomawariLarger,
+}
+
+impl QualitativeFontSize {
+    /// Whether the supplied comparison enlarges the surrounding type.
+    #[must_use]
+    pub const fn larger(self) -> bool {
+        matches!(self, Self::HitomawariLarger)
+    }
+
+    /// The source's degree qualifier; no variant denotes a numbered stage.
+    #[must_use]
+    pub const fn qualifier(self) -> Option<&'static str> {
+        match self {
+            Self::Smaller => None,
+            Self::SlightlySmaller => Some("やや"),
+            Self::HitomawariLarger => Some("ひとまわり"),
+        }
+    }
+}
+
 /// An **absolute** font size keyword (`特大文字` / `大文字` / `中文字` /
 /// `小文字`), as distinct from the relative `N段階…文字` shift carried by
 /// [`FontShift`].
@@ -178,18 +208,21 @@ pub enum IndentLayout {
 pub struct BlockStyles {
     /// `ゴシック体` — co-applied gothic typeface (`Format::Gothic`).
     pub gothic: bool,
+    /// Explicit co-applied bold weight.
+    pub bold: bool,
     /// `横書き` / `横組み` — horizontal writing (`Format::Horizontal`).
     pub horizontal: Option<HorizontalPresentation>,
     /// The supplied enclosing shape and rule style (`Format::Framed`).
     pub frame: Option<EnclosureKind>,
-    /// Relative font shift (`Format::FontSize`).
-    pub font: Option<FontShift>,
+    /// Supplied qualitative font comparison.
+    pub font: Option<QualitativeFontSize>,
 }
 
 impl BlockStyles {
     /// No co-applied presentation attributes.
     pub const EMPTY: Self = Self {
         gothic: false,
+        bold: false,
         horizontal: None,
         frame: None,
         font: None,
@@ -201,19 +234,21 @@ impl BlockStyles {
         self == Self::EMPTY
     }
 
-    /// Project attributes in canonical typeface, direction, frame and font order.
+    /// Project attributes in canonical typeface, weight, direction, frame and font order.
     pub fn iter_formats(self) -> impl Iterator<Item = Format> {
         let Self {
             gothic,
+            bold,
             horizontal,
             frame,
             font,
         } = self;
         [
             gothic.then_some(Format::Gothic),
+            bold.then_some(Format::Bold),
             horizontal.map(Format::Horizontal),
             frame.map(Format::Framed),
-            font.map(Format::FontSize),
+            font.map(Format::QualitativeFontSize),
         ]
         .into_iter()
         .flatten()
@@ -343,6 +378,8 @@ pub enum Format {
     RelativePlacement(RelativePlacement),
     /// N段階大きな / 小さな文字 (relative font size).
     FontSize(FontShift),
+    /// Relative size with a supplied qualitative degree, never numbered stages.
+    QualitativeFontSize(QualitativeFontSize),
     /// 特大 / 大 / 中 / 小文字 (absolute font size).
     FontSizeAbsolute(AbsoluteSize),
     /// キャプション (caption).
@@ -400,6 +437,7 @@ impl Format {
             Self::Horizontal(_) => "horizontal",
             Self::RelativePlacement(_) => "relative-placement",
             Self::FontSize(_) => "fontSize",
+            Self::QualitativeFontSize(_) => "qualitativeFontSize",
             Self::FontSizeAbsolute(_) => "fontSizeAbsolute",
             Self::Caption => "caption",
             Self::SuperScript => "superScript",

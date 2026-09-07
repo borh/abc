@@ -55,10 +55,14 @@ pub(crate) struct RenderState {
 fn render_block_style_classes<W: Write>(styles: BlockStyles, writer: &mut W) -> fmt::Result {
     let BlockStyles {
         gothic,
+        bold,
         horizontal,
         frame,
         font,
     } = styles;
+    if bold {
+        writer.write_str(" aozora-container-futoji")?;
+    }
     if gothic {
         writer.write_str(" aozora-container-goshikku")?;
     }
@@ -437,8 +441,9 @@ fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::R
                 }
                 IndentLayout::None => {}
             }
-            if let Some(shift) = font {
-                write!(writer, r#" data-steps="{}""#, shift.magnitude())?;
+            if let Some(qualifier) = font.and_then(ab_aozora_syntax::QualitativeFontSize::qualifier)
+            {
+                write!(writer, r#" data-font-qualifier="{qualifier}""#)?;
             }
             writer.write_str(">")
         }
@@ -503,8 +508,12 @@ fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::R
             if block.partial.is_some() {
                 writer.write_str(r#" data-layout-partial="true""#)?;
             }
-            if let Some(shift) = block.styles.font {
-                write!(writer, r#" data-steps="{}""#, shift.magnitude())?;
+            if let Some(qualifier) = block
+                .styles
+                .font
+                .and_then(ab_aozora_syntax::QualitativeFontSize::qualifier)
+            {
+                write!(writer, r#" data-font-qualifier="{qualifier}""#)?;
             }
             writer.write_str(">")
         }

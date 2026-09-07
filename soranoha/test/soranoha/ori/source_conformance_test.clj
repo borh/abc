@@ -454,8 +454,8 @@
 
 (deftest supplied-omission-and-incompleteness-remain-source-statements
   (doseq [[statement kind] [["「註」略" "omission"] ["未完" "incompleteness"]
-                           ["図が入るが省略。底本43ページ" "omission"]
-                           ["この後、改ページに続いて「VI.　文例」の章があるが、著作権の状態が不明なため、省略する。" "omission"]]]
+                            ["図が入るが省略。底本43ページ" "omission"]
+                            ["この後、改ページに続いて「VI.　文例」の章があるが、著作権の状態が不明なため、省略する。" "omission"]]]
     (let [marker (str "［＃" statement "］")
           text (source (str "前\n" marker "\n後"))
           result (transcribe text)

@@ -10,9 +10,11 @@
   (:require [babashka.fs :as fs]
             [clojure.test :refer [deftest is testing]]
             [soranoha.core.hash :as hash]
+            [soranoha.kura.cas :as cas]
             [soranoha.snh.decode :as decode]
             [soranoha.snh.admission :as admission]
             [soranoha.snh.fixture :as fx]
+            [soranoha.snh.repo :as repo]
             [soranoha.snh.transact :as transact]
             [soranoha.snh.verify :as verify]
             [soranoha.snh.view :as view]
@@ -82,6 +84,46 @@
   (verify/verify-repository-at (view/git-view clone)
                                (fx/head-of clone)
                                (fx/pinned-keys)))
+
+(deftest publication-does-not-materialize-corpus-artifacts
+  (let [root (corpus/init-corpus! [merosu])
+        run (corpus/run-corpus! root (str (fs/create-temp-dir {:prefix "za-streaming"})))
+        {:keys [clone]} (fx/make-repos!)
+        outputs (get (corpus/works-for-assembly run) (slug-of merosu))
+        payloads #{(:tei outputs) (:plaintext outputs)}
+        read-blob cas/get-bytes
+        result (with-redefs [cas/get-bytes
+                             (fn [dir hex]
+                               (when (contains? payloads hex)
+                                 (throw (ex-info "Corpus payload was materialized" {:hex hex})))
+                               (read-blob dir hex))]
+                 (publish-release! clone run [(pd merosu)]))]
+    (is (= :published (:outcome result)))
+    (is (= 1 (:chain-length (verified-chain clone))))))
+
+(deftest changed-cas-file-cannot-reach-the-publication-origin
+  (let [root (corpus/init-corpus! [merosu])
+        run (corpus/run-corpus! root (str (fs/create-temp-dir {:prefix "za-file-integrity"})))
+        {:keys [clone]} (fx/make-repos!)
+        initial-head (fx/head-of clone)
+        outputs (get (corpus/works-for-assembly run) (slug-of merosu))
+        ^String path (cas/blob-path (:cas-dir run) (:plaintext outputs))
+        write-commit repo/write-commit!
+        push repo/push!
+        pushes (atom 0)
+        reason (with-redefs [repo/write-commit!
+                             (fn [dir opts]
+                               (with-open [file (java.io.RandomAccessFile. path "rw")]
+                                 (let [first-byte (.read file)]
+                                   (.seek file 0)
+                                   (.write file (int (bit-xor first-byte 1)))))
+                               (write-commit dir opts))
+                             repo/push! (fn [& args] (swap! pushes inc) (apply push args))]
+                 (try (publish-release! clone run [(pd merosu)])
+                      (catch clojure.lang.ExceptionInfo error (:reason (ex-data error)))))]
+    (is (= :blob-hash-mismatch reason))
+    (is (zero? @pushes))
+    (is (= initial-head (fx/head-of clone)))))
 
 (defn- temp-store! [] (str (fs/create-temp-dir {:prefix "za-store"})))
 

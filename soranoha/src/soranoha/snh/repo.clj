@@ -6,7 +6,8 @@
   (:require [babashka.fs :as fs]
             [babashka.process :as process]
             [clojure.string :as str])
-  (:import [java.io BufferedOutputStream]))
+  (:import [java.io BufferedOutputStream]
+           [java.nio.file Files Path]))
 
 (def ^:private ident-env
   ;; real commit time: two racers producing byte-identical content in the
@@ -59,10 +60,15 @@
                                    {:dir (str dir) :in :pipe :out :string :err :string})]
         (try
           (with-open [out (BufferedOutputStream. (:in child))]
-            (doseq [[i [_ ^bytes bytes]] (map-indexed vector files)]
-              (.write out (.getBytes (str "blob\nmark :" (inc i) "\ndata " (alength bytes) "\n") "UTF-8"))
-              (.write out bytes)
-              (.write out (int 10)))
+            (doseq [[i [_ payload]] (map-indexed vector files)]
+              (let [file? (instance? Path payload)
+                    size (if file? (Files/size ^Path payload) (alength ^bytes payload))]
+                (.write out (.getBytes (str "blob\nmark :" (inc i) "\ndata " size "\n") "UTF-8"))
+                (if file?
+                  (when-not (= size (Files/copy ^Path payload out))
+                    (throw (ex-info "Blob file changed during import" {:path (str payload)})))
+                  (.write out ^bytes payload))
+                (.write out (int 10))))
             (.write out (.getBytes "done\n" "UTF-8")))
           (process/check @child)
           (catch Throwable e
@@ -80,7 +86,9 @@
 (defn write-commit!
   "Write a commit whose tree is `parent`'s tree (when given) with `files`
   applied on top, and `parents` (vector of shas; empty = root commit).
-  `files` maps repo path -> byte array. Returns the commit sha. The work
+  `files` maps repo path to a byte array or a Path streamed during import.
+  File inputs must remain available and unchanged until import completes.
+  Returns the commit sha. The work
   tree and real index are never touched."
   [dir {:keys [parents base-tree-of files message]
         :or {message "snh publication"}}]

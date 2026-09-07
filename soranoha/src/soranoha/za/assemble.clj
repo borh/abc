@@ -9,7 +9,8 @@
   derived from the same per-work validation records the chain verifier
   re-derives it from. A failed validation is an artifact and a summary
   entry, never an exclusion."
-  (:require [soranoha.core.hash :as hash]
+  (:require [babashka.fs :as fs]
+            [soranoha.core.hash :as hash]
             [soranoha.kura.cas :as cas]
             [soranoha.snh.decode :as decode]
             [soranoha.snh.admission :as admission]
@@ -61,17 +62,20 @@
   (let [blobs (mapv (fn [kind]
                       (let [hex (or (get outputs (keyword kind))
                                     (fail! :work-output-missing
-                                           {:slug slug :kind kind}))]
-                        [kind hex (cas-blob cas-dir hex)]))
+                                           {:slug slug :kind kind}))
+                            path (fs/path (cas/blob-path cas-dir hex))]
+                        (when-not (fs/exists? path)
+                          (fail! :artifact-missing-from-cas {:hex hex}))
+                        [kind hex path]))
                     artifact-kinds)]
     {:entry {"slug" slug
              "source_content_hash" (bare-hex (:source-content-hash outputs))
-             "artifacts" (mapv (fn [[kind hex ^bytes bytes]]
+             "artifacts" (mapv (fn [[kind hex path]]
                                  {"type" kind
                                   "id" (str "snh:1:" kind ":" hex)
-                                  "bytes" (alength bytes)})
+                                  "bytes" (fs/size path)})
                                blobs)}
-     :blobs (into {} (map (fn [[_ hex bytes]] [hex bytes])) blobs)}))
+     :blobs (into {} (map (fn [[_ hex path]] [hex path])) blobs)}))
 
 (defn- validation-failed?
   ;; the same consumed contract the chain verifier re-derives the summary

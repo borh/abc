@@ -20,6 +20,22 @@
     (assert (zero? (:exit result)) (:err result))
     (vec (.toByteArray out))))
 
+(deftest file-backed-blobs-match-byte-backed-git-objects
+  (let [dir (fs/create-temp-dir {:prefix "repo-file-blobs"})]
+    (try
+      (git dir "init" "-q")
+      (let [path (fs/path dir "payload")
+            payload (byte-array [0 10 (unchecked-byte 255) 42])
+            _ (with-open [out (java.io.FileOutputStream. (str path))] (.write out ^bytes payload))
+            empty-path (fs/create-temp-file {:dir dir})
+            files {"payload" payload "empty" (byte-array 0) "inline" (.getBytes "inline" "UTF-8")}
+            bytes-commit (repo/write-commit! dir {:parents [] :files files})
+            file-commit (repo/write-commit! dir {:parents [] :files (assoc files "payload" path "empty" empty-path)})]
+        (is (= (git dir "rev-parse" (str bytes-commit "^{tree}"))
+               (git dir "rev-parse" (str file-commit "^{tree}"))))
+        (is (= (vec payload) (read-blob dir (str file-commit ":payload")))))
+      (finally (fs/delete-tree dir)))))
+
 (deftest commit-writes-preserve-paths-bytes-parents-and-user-state
   (let [dir (fs/create-temp-dir {:prefix "repo-writer"})]
     (try
@@ -81,7 +97,7 @@
   (let [dir (fs/create-temp-dir {:prefix "repo-writer-failure"})]
     (try
       (git dir "init" "-q")
-      (doseq [failure [:producer :importer]]
+      (doseq [failure [:producer :importer :missing-file]]
         (let [created (atom [])
               commands (atom [])
               create fs/create-temp-file
@@ -103,7 +119,8 @@
             (is (thrown? Exception
                          (repo/write-commit! dir {:parents []
                                                   :files (cond-> {"first" (.getBytes "valid" "UTF-8")}
-                                                           (= failure :producer) (assoc "second" nil))}))
+                                                           (= failure :producer) (assoc "second" nil)
+                                                           (= failure :missing-file) (assoc "second" (fs/path dir "absent")))}))
                 (name failure)))
           (is (not-any? #{"update-index" "commit-tree"} @commands))
           (is (seq @created))

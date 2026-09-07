@@ -88,7 +88,9 @@
   "Run one build publication against the origin. `assemble` is called with
   the current head manifest value (nil at genesis) and returns
   {:core <manifest without prev/withdrawn/governance_event>
-   :blobs {sha256-hex -> bytes} :selection #{slug ...}}.
+   :blobs {sha256-hex -> bytes or Path} :selection #{slug ...}}.
+  The assessment snapshot remains bytes for the totality check; file-backed
+  artifacts must remain immutable and available through commit creation.
   `sign-release` maps a manifest hex to its 64-byte signature. `push-fn`
   (default the real compare-and-swap push) may return :ok, :rejected, or
   :unknown. Returns {:outcome :published | :already-published | :requeue

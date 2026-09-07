@@ -982,6 +982,10 @@ pub(super) fn editorial_note_kind(body: &str) -> Option<DirectiveKind> {
         Some(DirectiveKind::BaseTextVariant)
     } else if is_editor_note_body(body) {
         Some(DirectiveKind::EditorNote)
+    } else if body == "「註」略" {
+        Some(DirectiveKind::OmissionNote)
+    } else if body == "未完" {
+        Some(DirectiveKind::IncompletenessNote)
     } else if body == "改行を挿入" {
         Some(DirectiveKind::TranscriptionNote)
     } else if is_ruby_attached_body(body) {

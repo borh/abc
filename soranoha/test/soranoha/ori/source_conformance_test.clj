@@ -452,6 +452,24 @@
       (is (empty? (filter #(= "layout-break" (get % "kind"))
                           (get-in result [:ir "interpretation_facts"])))))))
 
+(deftest supplied-omission-and-incompleteness-remain-source-statements
+  (doseq [[statement kind] [["「註」略" "omission"] ["未完" "incompleteness"]]]
+    (let [marker (str "［＃" statement "］")
+          text (source (str "前\n" marker "\n後"))
+          result (transcribe text)
+          note (first (filter #(= kind (attribute % "type")) (elements result "note")))
+          fact (first (filter #(= "editorial-note" (get % "kind"))
+                              (get-in result [:ir "interpretation_facts"])))
+          start (alength (.getBytes (subs text 0 (string/index-of text marker)) "UTF-8"))]
+      (is (= "前\n後" (:plaintext result)))
+      (is (= "前\n\n\n\n後" (projection/markdown (:view result))))
+      (is (= statement (.getTextContent ^Node note)))
+      (is (= start (get-in fact ["source_span" "start"])))
+      (is (= (+ start (alength (.getBytes marker "UTF-8")))
+             (get-in fact ["source_span" "end"])))
+      (is (empty? (elements result "gap")))
+      (is (empty? (get-in result [:ir "interpretation_problems"]))))))
+
 (deftest quoted-variants-do-not-create-body-ruby-or-gaiji
   (doseq [[body plain expected-ruby raw]
           [["煖爐《ストーブ》には［＃「煖爐《ストーブ》には」は底本では「煖燼《ストーブ》には」］、後。"

@@ -261,6 +261,18 @@ fn node_policy(node: Node) -> Option<(ConstructId, Role, Disposition, EvidenceCl
                 semantic,
                 typed,
             ),
+            DirectiveKind::OmissionNote => (
+                ConstructId::OmissionNote,
+                Role::SourceAnnotation,
+                semantic,
+                typed,
+            ),
+            DirectiveKind::IncompletenessNote => (
+                ConstructId::IncompletenessNote,
+                Role::SourceAnnotation,
+                semantic,
+                typed,
+            ),
             DirectiveKind::RubyAttached => (
                 ConstructId::RubyAttached,
                 Role::SourceAnnotation,

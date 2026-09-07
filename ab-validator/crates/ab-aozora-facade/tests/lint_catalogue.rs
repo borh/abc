@@ -186,7 +186,7 @@ fn default_render_options_are_byte_identical_to_to_html() {
 
 #[test]
 fn genuine_editorial_unknown_does_not_fire() {
-    for body in ["底本では「蒼空」", "入力者注", "未完", "「」は「」の「」"] {
+    for body in ["底本では「蒼空」", "入力者注", "「」は「」の「」"] {
         assert!(
             !fires_lint(body),
             "editorial Unknown {body:?} wrongly fired the notation-hygiene lint"

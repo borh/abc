@@ -481,6 +481,10 @@ pub enum DirectiveKind {
     EditorNote,
     /// A source statement about an intervention made during transcription.
     TranscriptionNote,
+    /// A source statement that notes were omitted, without supplied contents.
+    OmissionNote,
+    /// A source statement that the work is unfinished.
+    IncompletenessNote,
     /// Ruby-presence editorial note (`［＃「X」にルビ］`) — records that the run
     /// `X` carries a ruby gloss in the source. The gloss text itself is not in
     /// the directive; this is a proofreading marker, not renderable ruby.

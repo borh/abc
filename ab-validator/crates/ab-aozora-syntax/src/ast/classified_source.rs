@@ -90,6 +90,8 @@ pub enum ConstructId {
     EmptyDirective,
     EditorNote,
     TranscriptionNote,
+    OmissionNote,
+    IncompletenessNote,
     RubyAttached,
     RubyRetarget,
     RubyPairOpen,

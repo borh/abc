@@ -1220,7 +1220,6 @@ fn source_inventory_classifies_source_note_labels() {
         "［＃中條華、中條家三女。百合子が長女、次女は千鶴（生後四ヵ月で死亡）］",
         "［＃探偵小説家、生理学者。本名は、林髞］",
         "［＃スカーフ］",
-        "［＃未完］",
         "［＃「（１）」は注釈番号］",
         "［＃中條太郎］",
         "［＃倉知誠夫、倉知貞の夫］",
@@ -1255,7 +1254,7 @@ fn source_inventory_classifies_source_note_labels() {
             .row_counts
             .get("source.note_label")
             .map(|count| count.occurrences),
-        Some(30)
+        Some(29)
     );
 }
 
@@ -2859,5 +2858,19 @@ fn source_labels_do_not_match_words_inside_other_markup() {
             "{source}"
         );
         assert!(summary.unknown_examples.is_empty(), "{source}");
+    }
+}
+
+#[test]
+fn unfinished_work_statement_is_not_a_person_or_role_label() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let summary = inventory_document("fixture", "［＃未完］", &patterns);
+    assert_eq!(summary.row_counts["annotation.chuuki"].occurrences, 1);
+    assert!(!summary.row_counts.contains_key("source.note_label"));
+    for source in ["未完", "［＃未完了］"] {
+        let summary = inventory_document("fixture", source, &patterns);
+        assert!(!summary.row_counts.contains_key("source.note_label"));
+        assert!(!summary.row_counts.contains_key("annotation.chuuki"));
     }
 }

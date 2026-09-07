@@ -2668,7 +2668,13 @@ fn inline_content(
     )
 }
 
-fn transcription_note(decoded: &DecodedSource, node: &AozoraNode) -> Value {
+fn directive_node(decoded: &DecodedSource, node: &AozoraNode, kind: DirectiveKind) -> Value {
+    let note_kind = match kind {
+        DirectiveKind::TranscriptionNote => "transcription",
+        DirectiveKind::OmissionNote => "omission",
+        DirectiveKind::IncompletenessNote => "incompleteness",
+        _ => return raw_node(decoded, node, node.kind.as_str()),
+    };
     let raw = source_slice(&decoded.span_text, &node.span);
     let text = raw
         .strip_prefix("［＃")
@@ -2677,8 +2683,8 @@ fn transcription_note(decoded: &DecodedSource, node: &AozoraNode) -> Value {
             raw.strip_prefix("[#")
                 .and_then(|body| body.strip_suffix(']'))
         })
-        .expect("classified transcription note retains its delimiters");
-    json!({"kind":"editorial_note", "note_kind":"transcription", "text":text.trim(),
+        .expect("classified source statement retains its delimiters");
+    json!({"kind":"editorial_note", "note_kind":note_kind, "text":text.trim(),
         "span":span_json(&node.span, &decoded.span_ctx)})
 }
 
@@ -2750,7 +2756,7 @@ fn inline_content_range(
                 "span":span_json(&node.span, &decoded.span_ctx)
             })),
             ProjectedKind::EditorialNote { kind, ref text } => content.push(json!({"kind":"editorial_note", "note_kind":match kind {EditionNoteKind::BaseEdition=>"base-edition", EditionNoteKind::FirstPublication=>"first-publication"}, "text":text, "span":span_json(&node.span, &decoded.span_ctx)})),
-            ProjectedKind::Directive(DirectiveKind::TranscriptionNote) => content.push(transcription_note(decoded, node)),
+            ProjectedKind::Directive(kind) => content.push(directive_node(decoded, node, kind)),
             ProjectedKind::Kunten { kind, ref text } => {
                 content.push(kunten_node(decoded, &node.span, kind, text));
             }
@@ -2781,7 +2787,6 @@ fn inline_content_range(
             | ProjectedKind::Line(_)
             | ProjectedKind::Region(_)
             | ProjectedKind::RegionClose(_)
-            | ProjectedKind::Directive(_)
             | ProjectedKind::TextVariant { .. } => {
                 content.push(raw_node(decoded, node, node.kind.as_str()));
             }

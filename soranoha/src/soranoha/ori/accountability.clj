@@ -71,18 +71,20 @@
           (every? (:aspects allowed) aspects) (valid-span? source_span))
      "Invalid native interpretation fact")))
 
-(defn- occurrence-claims [occurrence active]
+(defn- marker-key [value]
+  (let [span (get value "source_span")]
+    [(get span "start") (get span "end")]))
+
+(defn- occurrence-claims [occurrence facts]
   (into []
         (keep (fn [fact]
                 (let [{:keys [markers families]} (get compatible-families (get fact "kind"))
                       matched (filterv families (get occurrence "families"))]
-                  (when (and (markers (get occurrence "kind")) (seq matched)
-                             (>= (get-in fact ["source_span" "end"])
-                                 (get-in occurrence ["source_span" "end"])))
+                  (when (and (markers (get occurrence "kind")) (seq matched))
                     {"kind" (get fact "kind") "families" matched
                      "aspects" (get fact "aspects")
                      "source_span" (get fact "source_span")}))))
-        active))
+        facts))
 
 (defn coverage-report
   "Join lexical evidence to explicit native claims; no source/export certification.
@@ -106,27 +108,21 @@
       (require-evidence (and (valid-span? (get occurrence "source_span"))
                              (vector? (get occurrence "families")))
                         "Invalid lexical occurrence"))
-    (let [results
-          (loop [remaining (sort-by #(get-in % ["source_span" "start"]) occurrences)
-                 pending (sort-by #(get-in % ["source_span" "start"]) facts)
-                 active [] result (transient [])]
-            (if-let [occurrence (first remaining)]
-              (let [start (get-in occurrence ["source_span" "start"])
-                    [incoming pending] (split-with #(<= (get-in % ["source_span" "start"]) start) pending)
-                    active (into (filterv #(> (get-in % ["source_span" "end"]) start) active) incoming)
-                    apparatus? (#{"front-matter" "body-end-boundary" "back-matter"}
-                                (get occurrence "region"))
-                    claims (if (or apparatus? (not= "lossless" (get oracle "decode_outcome")))
-                             [] (occurrence-claims occurrence active))
-                    claimed (into #{} (mapcat #(get % "families")) claims)]
-                (recur (next remaining) pending active
-                       (conj! result
-                              (assoc occurrence "claims" claims
-                                     "disposition" (if apparatus? "source-apparatus" "interpretation-evidence")
-                                     "unaccounted_families" (if apparatus? []
-                                                                (filterv #(not (claimed %)) (get occurrence "families")))
-                                     "unclassified" (and (not apparatus?) (empty? (get occurrence "families")))))))
-              (persistent! result)))
+    (let [facts-by-marker (group-by marker-key facts)
+          results
+          (into []
+                (map (fn [occurrence]
+                       (let [apparatus? (#{"front-matter" "body-end-boundary" "back-matter"}
+                                         (get occurrence "region"))
+                             claims (if (or apparatus? (not= "lossless" (get oracle "decode_outcome")))
+                                      [] (occurrence-claims occurrence (get facts-by-marker (marker-key occurrence))))
+                             claimed (into #{} (mapcat #(get % "families")) claims)]
+                         (assoc occurrence "claims" claims
+                                "disposition" (if apparatus? "source-apparatus" "interpretation-evidence")
+                                "unaccounted_families" (if apparatus? []
+                                                           (filterv #(not (claimed %)) (get occurrence "families")))
+                                "unclassified" (and (not apparatus?) (empty? (get occurrence "families")))))))
+                (sort-by #(get-in % ["source_span" "start"]) occurrences))
           families
           (reduce (fn [counts occurrence]
                     (let [claimed (into #{} (mapcat #(get % "families")) (get occurrence "claims"))]
@@ -149,7 +145,7 @@
 (defn coverage-stage
   "Independent lexical oracle + parser IR -> explicit claim accounting."
   [clj-toolchain-id]
-  {:stage-id "interpretation-coverage" :stage-version "1" :toolchain-id clj-toolchain-id
+  {:stage-id "interpretation-coverage" :stage-version "2" :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob]} inputs]
         (let [input-bytes (into {} (map (fn [name] [name (blob (get inputs name))]))
                                 ["source-accountability" "parser-ir"])

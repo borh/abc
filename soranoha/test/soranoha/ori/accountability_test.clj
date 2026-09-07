@@ -37,13 +37,29 @@
   {"source" {"primary_text_hash" "sha256:source" "decode_outcome" "utf-8"}
    "interpretation_facts" facts "interpretation_problems" []})
 
+(deftest enclosing-claims-cannot-establish-another-marker
+  (let [marker (fn [start end] {"source_span" (span start end)
+                                "kind" "CommandFullwidth" "region" "body"
+                                "families" ["emphasis.basic"]})
+        fact (fn [start end] {"source_span" (span start end) "kind" "emphasis"
+                              "outcome" "established" "aspects" ["layout"]})
+        report (accountability/coverage-report
+                (oracle [(marker 15 30) (marker 0 9)])
+                (interpretation [(fact 0 60) (fact 0 9)]))]
+    (is (= {"interpreter_claimed" 1 "unaccounted" 1}
+           (get-in report ["families" "emphasis.basic"])))
+    (is (= [0 15] (mapv #(get-in % ["source_span" "start"]) (get report "occurrences"))))
+    (is (= [(span 0 9)] (mapv #(get % "source_span") (get-in report ["occurrences" 0 "claims"]))))
+    (is (empty? (get-in report ["occurrences" 1 "claims"])))
+    (is (= ["emphasis.basic"] (get-in report ["occurrences" 1 "unaccounted_families"])))))
+
 (deftest claims-need-compatible-kinds-and-spans-and-do-not-certify-semantics
   (let [ruby {"source_span" (span 6 21) "kind" "RubyImplicit" "region" "body"
               "raw" "《かんじ》" "families" ["ruby.basic"]}
         emphasis {"kind" "emphasis" "outcome" "established" "aspects" ["layout"]
                   "source_span" (span 0 80)}
         fact {"kind" "ruby" "outcome" "established" "aspects" ["content" "structure"]
-              "source_span" (span 0 21)}
+              "source_span" (span 6 21)}
         unmatched (accountability/coverage-report (oracle [ruby]) (interpretation [emphasis]))
         matched (accountability/coverage-report (oracle [ruby]) (interpretation [emphasis fact]))]
     (is (= 1 (get-in unmatched ["families" "ruby.basic" "unaccounted"])))
@@ -73,6 +89,41 @@
     (is (thrown? clojure.lang.ExceptionInfo
                  (accountability/coverage-report (assoc (oracle [unknown]) "source_sha256" "different")
                                                  (interpretation []))))))
+
+(deftest native-claims-identify-their-own-markers-through-the-independent-oracle
+  (let [dir (fs/create-temp-dir {:prefix "marker-ownership"})
+        store (engine/open-store! {:cas-dir (str (fs/path dir "objects"))
+                                   :db-path (str (fs/path dir "trace.sqlite"))})
+        adapter (stages/resolve-adapter)
+        scanner (accountability/source-stage (accountability/resolve-tool))
+        read-output (fn [result name]
+                      (json/read-json
+                       (String. ^bytes (cas/get-bytes (:cas-dir store) (get-in result [:outputs name])) "UTF-8")))]
+    (try
+      (doseq [[body unknown expected-claimed]
+              [["［＃斜体］字［＃「字」に白四角傍点］［＃斜体終わり］" "［＃「字」に白四角傍点］" 2]
+               ["［＃斜体］字［＃「字」の部分はイタリック体］［＃斜体終わり］" "［＃「字」の部分はイタリック体］" 2]
+               ["［＃太字］字［＃「字」は斜体］［＃太字終わり］" nil 3]
+               ["｜漢字《かんじ》、漢字《かんじ》。" nil 2]]]
+        (testing body
+          (let [bytes (.getBytes (str "題\n作者\n\n" body "\n\n底本：本\n") "UTF-8")
+                source-id (cas/put-bytes! (:cas-dir store) bytes)
+                parsed (engine/run-stage! store (stages/parse-stage adapter) {"source" source-id})
+                converted (engine/run-stage! store (stages/convert-stage adapter)
+                                             {"aat" (get-in parsed [:outputs "aat"])
+                                              "work_content_hash" (hash/format-sha256 source-id)})
+                scanned (engine/run-stage! store scanner {"source" source-id})
+                report (accountability/coverage-report (read-output scanned "source-accountability")
+                                                       (read-output converted "parser-ir"))
+                occurrences (filterv #(= "body" (get % "region")) (get report "occurrences"))
+                claimed (filterv #(seq (get % "claims")) occurrences)]
+            (is (= expected-claimed (count claimed)))
+            (is (= (if unknown [unknown] [])
+                   (mapv #(get % "raw") (filter #(seq (get % "unaccounted_families")) occurrences))))
+            (doseq [occurrence claimed claim (get occurrence "claims")]
+              (is (= (select-keys (get occurrence "source_span") ["start" "end"])
+                     (select-keys (get claim "source_span") ["start" "end"])))))))
+      (finally (engine/close-store! store) (fs/delete-tree dir)))))
 
 (deftest native-interpretation-and-oracle-share-the-decoded-coordinate-axis
   (let [dir (fs/create-temp-dir {:prefix "accountability-conformance"})

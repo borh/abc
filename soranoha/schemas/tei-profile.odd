@@ -34,6 +34,7 @@
         <moduleRef key="figures"/>
         <moduleRef key="gaiji"/>
         <moduleRef key="analysis"/>
+        <moduleRef key="textcrit" include="app lem rdg"/>
         <moduleRef key="linking" include="seg anchor standOff"/>
 
         <!-- Schematron constraint declarations -->

@@ -3536,6 +3536,7 @@ Sample values include: 1] rubbing; 2] mildew; 3] smoke</a:documentation>
          <ref name="damageSpan"/>
          <ref name="delSpan"/>
          <ref name="space"/>
+         <ref name="app"/>
       </choice>
    </define>
    <define name="model.global.edit_alternation">
@@ -3546,6 +3547,7 @@ Sample values include: 1] rubbing; 2] mildew; 3] smoke</a:documentation>
          <ref name="damageSpan"/>
          <ref name="delSpan"/>
          <ref name="space"/>
+         <ref name="app"/>
       </choice>
    </define>
    <define name="model.global.edit_sequence">
@@ -3555,6 +3557,7 @@ Sample values include: 1] rubbing; 2] mildew; 3] smoke</a:documentation>
       <ref name="damageSpan"/>
       <ref name="delSpan"/>
       <ref name="space"/>
+      <ref name="app"/>
    </define>
    <define name="model.global.edit_sequenceOptional">
       <optional>
@@ -3574,6 +3577,9 @@ Sample values include: 1] rubbing; 2] mildew; 3] smoke</a:documentation>
       </optional>
       <optional>
          <ref name="space"/>
+      </optional>
+      <optional>
+         <ref name="app"/>
       </optional>
    </define>
    <define name="model.global.edit_sequenceOptionalRepeatable">
@@ -3595,6 +3601,9 @@ Sample values include: 1] rubbing; 2] mildew; 3] smoke</a:documentation>
       <zeroOrMore>
          <ref name="space"/>
       </zeroOrMore>
+      <zeroOrMore>
+         <ref name="app"/>
+      </zeroOrMore>
    </define>
    <define name="model.global.edit_sequenceRepeatable">
       <oneOrMore>
@@ -3614,6 +3623,9 @@ Sample values include: 1] rubbing; 2] mildew; 3] smoke</a:documentation>
       </oneOrMore>
       <oneOrMore>
          <ref name="space"/>
+      </oneOrMore>
+      <oneOrMore>
+         <ref name="app"/>
       </oneOrMore>
    </define>
    <define name="model.divPart">
@@ -13589,6 +13601,203 @@ Sample values include: 1] Unicode (Unicode); 2] Bridwell (E. Nelson Bridwell); 3
          <ref name="att.global.attributes"/>
          <ref name="att.cmc.attributes"/>
          <ref name="att.interpLike.attributes"/>
+         <empty/>
+      </element>
+   </define>
+   <define name="model.rdgLike">
+      <choice>
+         <ref name="rdg"/>
+      </choice>
+   </define>
+   <define name="model.rdgPart">
+      <notAllowed/>
+   </define>
+   <define name="att.witnessed.attributes">
+      <ref name="att.witnessed.attribute.wit"/>
+   </define>
+   <define name="att.witnessed.attribute.wit">
+      <optional>
+         <attribute name="wit">
+            <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">(witness or witnesses) contains a space-delimited list of one or more pointers indicating the witnesses which attest to a given reading.</a:documentation>
+            <list>
+               <oneOrMore>
+                  <data type="anyURI">
+                     <param name="pattern">\S+</param>
+                  </data>
+               </oneOrMore>
+            </list>
+         </attribute>
+      </optional>
+   </define>
+   <define name="att.textCritical.attributes">
+      <ref name="att.written.attributes"/>
+      <ref name="att.textCritical.attribute.type"/>
+      <ref name="att.textCritical.attribute.cause"/>
+      <ref name="att.textCritical.attribute.varSeq"/>
+      <ref name="att.textCritical.attribute.require"/>
+      <ref name="att.typed.attribute.subtype"/>
+   </define>
+   <define name="att.textCritical.attribute.type">
+      <optional>
+         <attribute name="type">
+            <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">classifies the reading according to some useful typology.
+Sample values include: 1] substantive (substantive); 2] orthographic (orthographic)</a:documentation>
+            <data type="token">
+               <param name="pattern">[^\p{C}\p{Z}]+</param>
+            </data>
+         </attribute>
+      </optional>
+   </define>
+   <define name="att.textCritical.attribute.cause">
+      <optional>
+         <attribute name="cause">
+            <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">classifies the cause for the variant reading, according to any appropriate typology of possible origins.
+Sample values include: 1] homeoteleuton; 2] homeoarchy; 3] paleographicConfusion; 4] haplography; 5] dittography; 6] falseEmendation</a:documentation>
+            <data type="token">
+               <param name="pattern">[^\p{C}\p{Z}]+</param>
+            </data>
+         </attribute>
+      </optional>
+   </define>
+   <define name="att.textCritical.attribute.varSeq">
+      <optional>
+         <attribute name="varSeq">
+            <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">(variant sequence) provides a number indicating the position of this reading in a sequence, when there is reason to presume a sequence to the variants. </a:documentation>
+            <data type="nonNegativeInteger"/>
+         </attribute>
+      </optional>
+   </define>
+   <define name="att.textCritical.attribute.require">
+      <optional>
+         <attribute name="require">
+            <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">points to other readings that are required when adopting the current reading or lemma.</a:documentation>
+            <list>
+               <oneOrMore>
+                  <data type="anyURI">
+                     <param name="pattern">\S+</param>
+                  </data>
+               </oneOrMore>
+            </list>
+         </attribute>
+      </optional>
+   </define>
+   <define name="app">
+      <element name="app">
+         <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">(apparatus entry) contains one entry in a critical apparatus, with an optional lemma and usually one or more readings or notes on the relevant passage. [13.1.1. The Apparatus Entry]</a:documentation>
+         <group>
+            <optional>
+               <ref name="lem"/>
+            </optional>
+            <zeroOrMore>
+               <choice>
+                  <ref name="model.rdgLike"/>
+                  <ref name="model.noteLike"/>
+               </choice>
+            </zeroOrMore>
+         </group>
+         <ref name="att.global.attributes"/>
+         <ref name="att.typed.attribute.subtype"/>
+         <optional>
+            <attribute name="type">
+               <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">classifies the variation contained in this element according to some convenient typology.</a:documentation>
+               <data type="token">
+                  <param name="pattern">[^\p{C}\p{Z}]+</param>
+               </data>
+            </attribute>
+         </optional>
+         <optional>
+            <attribute name="from">
+               <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">identifies the beginning of the lemma in the base text.</a:documentation>
+               <data type="anyURI">
+                  <param name="pattern">\S+</param>
+               </data>
+            </attribute>
+         </optional>
+         <optional>
+            <attribute name="to">
+               <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">identifies the endpoint of the lemma in the base text.</a:documentation>
+               <data type="anyURI">
+                  <param name="pattern">\S+</param>
+               </data>
+            </attribute>
+         </optional>
+         <optional>
+            <attribute name="loc">
+               <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">(location) indicates the location of the variation, when the location-referenced method of apparatus markup is used.</a:documentation>
+               <list>
+                  <oneOrMore>
+                     <data type="token">
+                        <param name="pattern">[^\p{C}\p{Z}]+</param>
+                     </data>
+                  </oneOrMore>
+               </list>
+            </attribute>
+         </optional>
+         <empty/>
+      </element>
+   </define>
+   <define name="lem">
+      <element name="lem">
+         <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">(lemma) contains the lemma, or base text, of a textual variation. [13.1. The Apparatus Entry, Readings, and Witnesses]</a:documentation>
+         <zeroOrMore>
+            <choice>
+               <text/>
+               <ref name="model.divLike"/>
+               <ref name="model.divPart"/>
+               <ref name="titlePage"/>
+               <ref name="argument"/>
+               <ref name="byline"/>
+               <ref name="docAuthor"/>
+               <ref name="docDate"/>
+               <ref name="docEdition"/>
+               <ref name="docImprint"/>
+               <ref name="docTitle"/>
+               <ref name="epigraph"/>
+               <ref name="imprimatur"/>
+               <ref name="speaker"/>
+               <ref name="titlePart"/>
+               <ref name="model.gLike"/>
+               <ref name="model.phrase"/>
+               <ref name="model.inter"/>
+               <ref name="model.global"/>
+               <ref name="model.rdgPart"/>
+            </choice>
+         </zeroOrMore>
+         <ref name="att.global.attributes"/>
+         <ref name="att.textCritical.attributes"/>
+         <ref name="att.witnessed.attributes"/>
+         <empty/>
+      </element>
+   </define>
+   <define name="rdg">
+      <element name="rdg">
+         <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">(reading) contains a single reading within a textual variation. [13.1. The Apparatus Entry, Readings, and Witnesses]</a:documentation>
+         <zeroOrMore>
+            <choice>
+               <text/>
+               <ref name="model.divLike"/>
+               <ref name="model.divPart"/>
+               <ref name="titlePage"/>
+               <ref name="argument"/>
+               <ref name="byline"/>
+               <ref name="docAuthor"/>
+               <ref name="docDate"/>
+               <ref name="docEdition"/>
+               <ref name="docImprint"/>
+               <ref name="docTitle"/>
+               <ref name="epigraph"/>
+               <ref name="imprimatur"/>
+               <ref name="titlePart"/>
+               <ref name="model.gLike"/>
+               <ref name="model.phrase"/>
+               <ref name="model.inter"/>
+               <ref name="model.global"/>
+               <ref name="model.rdgPart"/>
+            </choice>
+         </zeroOrMore>
+         <ref name="att.global.attributes"/>
+         <ref name="att.textCritical.attributes"/>
+         <ref name="att.witnessed.attributes"/>
          <empty/>
       </element>
    </define>

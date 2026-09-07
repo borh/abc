@@ -18,8 +18,10 @@
                 (record-json/write-deterministic-json-str
                  {"schema" "soranoha-text-view/1" "id" id "policy" "body-v1" "unit" "utf8-bytes"
                   "text" text "eligible_spans" eligible-spans
-                  "problems" (mapv (fn [{:view/keys [start end]}]
-                                     {"kind" "unresolved-glyph" "start" start "end" end}) problems)}))
+                  "problems" (mapv (fn [{:view/keys [problem start end evidence]}]
+                                     (case problem
+                                       :view/unresolved-glyph {"kind" "unresolved-glyph" "start" start "end" end}
+                                       :view/interpretation-problem {"kind" "interpretation-problem" "evidence" evidence})) problems)}))
     {"result" "written" "view" id "output" (str out-path)}))
 
 (defn- read-layers [text-view paths]

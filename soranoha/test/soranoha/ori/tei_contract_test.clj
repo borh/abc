@@ -1,5 +1,6 @@
 (ns soranoha.ori.tei-contract-test
   (:require [soranoha.ori.tei :as parser-ir-tei]
+            [clojure.string :as string]
             [clojure.test :refer [deftest is testing]]))
 
 (defn hiccup-nodes [node]
@@ -474,8 +475,10 @@
                         "reading_children" [gaiji]}]}
           result (parser-ir-tei/render ir)
           rt (some #(when (= :rt (first %)) %) (hiccup-nodes (:body result)))]
-      (is (= (if unicode [:rt [:g {:ref "#gaiji-1-7-84"} unicode]]
-                 [:rt [:g {:ref "#gaiji-1-7-84"}]]) rt))
+      (is (= (if unicode [:rt [:g (second (second rt)) unicode]]
+                 [:rt [:g (second (second rt))]]) rt))
+      (is (= "#gaiji-1-7-84" (get-in rt [1 1 :ref])))
+      (is (string/starts-with? (get-in rt [1 1 :source]) "#source-"))
       (is (= [{:xml-id "gaiji-1-7-84" :unicode unicode :raw-marker "濁点付き片仮名ヱ"}]
              (:char_declarations result)))
       (is (empty? (:omitted result))))))

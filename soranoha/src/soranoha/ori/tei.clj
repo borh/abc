@@ -1,9 +1,25 @@
 (ns soranoha.ori.tei
   (:require [soranoha.ori.publication-whitespace :as whitespace]
+            [soranoha.core.json :as record-json]
             [clojure.string :as string]))
 
 (defn- present-text? [text]
   (seq text))
+
+(defn- source-reference [node]
+  (when-let [span (get node "source_span")]
+    (when-not (and (= "decoded_utf8" (get span "coordinate_system"))
+                   (integer? (get span "start")) (integer? (get span "end"))
+                   (<= 0 (get span "start") (get span "end")))
+      (throw (ex-info "TEI source correspondence requires decoded UTF-8 coordinates" {:span span})))
+    (str "source-" (get span "start") "-" (get span "end"))))
+
+(defn- sourced [node element]
+  (if-let [reference (::source-reference node)]
+    (if (map? (second element))
+      (assoc-in element [1 :source] (str "#" reference))
+      (into [(first element) {:source (str "#" reference)}] (rest element)))
+    element))
 
 (defn- present-ruby-text? [text]
   (and (string? text)
@@ -97,7 +113,7 @@
   (count (re-find #"^　+" (or text ""))))
 
 (defn- source-note-hiccup [node]
-  (into [:note {:type (get node "note_type")}]
+  (into (sourced node [:note {:type (get node "note_type")}])
         (interpose [:lb]
                    (map (fn [line]
                           (let [indent (leading-indent line)]
@@ -195,8 +211,10 @@
 
 (defn- render-text-node
   ([acc node _depth]
-   (update acc :current-paragraph into
-           (whitespace/source-text->tei-inline (get node "text")))))
+   (let [content (whitespace/source-text->tei-inline (get node "text"))]
+     (if (and (seq content) (::source-reference node))
+       (append-inline acc (into (sourced node [:seg]) content))
+       (update acc :current-paragraph into content)))))
 
 (defn- render-ruby-node
   ([acc node depth]
@@ -217,9 +235,9 @@
                                                (get node "reading_children") depth)
                        (assoc base :current-paragraph [(get ruby "reading")]))]
          (append-inline (assoc reading :current-paragraph before)
-                        [:ruby attrs
-                         (into [:rb] (:current-paragraph base))
-                         (into [:rt] (:current-paragraph reading))]))
+                        (sourced node [:ruby attrs
+                                       (into [:rb] (:current-paragraph base))
+                                       (into [:rt] (:current-paragraph reading))])))
        (mark-omitted acc "ruby")))))
 
 (defn- render-gaiji-node
@@ -239,15 +257,26 @@
      (-> acc
          (assoc-in [:gaiji-identities identity] id)
          (register-char-declaration declaration)
-         (append-inline (cond-> [:g {:ref (str "#" id)}]
-                          (seq (:unicode declaration)) (conj (:unicode declaration))))))))
+         (append-inline (sourced node (cond-> [:g {:ref (str "#" id)}]
+                                        (seq (:unicode declaration)) (conj (:unicode declaration)))))))))
 
 (defn- render-editor-note-node
   ([acc node _depth]
    (let [note (get node "note")]
      (append-inline acc
-                    [:note {:type (get note "category")}
-                     (get note "raw")]))))
+                    (sourced node [:note {:type (get note "category")}
+                                   (get note "raw")])))))
+
+(defn- render-base-text-variant-node [acc node depth]
+  (let [before (:current-paragraph acc)
+        rendered (if (seq (get node "inline_children"))
+                   (render-inline-children (assoc acc :current-paragraph [])
+                                           (get node "inline_children") depth)
+                   (assoc acc :current-paragraph [(get node "text")]))]
+    (append-inline (assoc rendered :current-paragraph before)
+                   (sourced node [:app {:type "base-text-variant"}
+                                  (into [:lem] (:current-paragraph rendered))
+                                  [:rdg {:type "base-text"} (get-in node ["variant" "base_text"])]]))))
 
 (defn- render-inline-wrapper [acc children text depth wrapper]
   (if (seq children)
@@ -260,13 +289,24 @@
                    (into wrapper inline-fragment))))
     (append-inline acc (conj wrapper text))))
 
+(defn- render-warichu-node [acc node depth]
+  (let [wrapper (sourced node [:seg {:type "warichu" :rend "two-line"}])]
+    (if (contains? node "inline_children")
+      (render-inline-wrapper acc (get node "inline_children") (get node "text") depth wrapper)
+      (let [before (:current-paragraph acc)
+            upper (render-inline-wrapper (assoc acc :current-paragraph [])
+                                         (get node "upper_children") "" depth [:seg {:type "upper"}])
+            lower (render-inline-wrapper upper (get node "lower_children") "" depth [:seg {:type "lower"}])]
+        (append-inline (assoc lower :current-paragraph before)
+                       (into wrapper (:current-paragraph lower)))))))
+
 (defn- render-emphasis-node
   ([acc node depth]
    (render-inline-wrapper acc
                           (seq (get node "inline_children"))
                           (get node "text")
                           depth
-                          [:hi {:rend (get node "style")}])))
+                          (sourced node [:hi {:rend (get node "style")}]))))
 
 (defn- render-layout-span-node
   ([acc node depth]
@@ -277,12 +317,12 @@
                                 (seq (get node "inline_children"))
                                 (get node "text")
                                 depth
-                                [:hi (cond-> {:rend rend}
-                                       (get layout "kind")
-                                       (assoc :abc/layout-kind (get layout "kind"))
+                                (sourced node [:hi (cond-> {:rend rend}
+                                                     (get layout "kind")
+                                                     (assoc :abc/layout-kind (get layout "kind"))
 
-                                       params
-                                       (assoc :abc/layout-params params))]))
+                                                     params
+                                                     (assoc :abc/layout-params params))])))
        (mark-omitted acc "layout-span")))))
 
 (defn- heading-attrs [node]
@@ -301,48 +341,48 @@
          (-> rendered
              (assoc :current-paragraph [])
              (update :current-division conj
-                     (into [:head (heading-attrs node)]
+                     (into (sourced node [:head (heading-attrs node)])
                            head-fragment))))
        (update base :current-division conj
-               [:head (heading-attrs node)
-                (get node "text")])))))
+               (sourced node [:head (heading-attrs node)
+                              (get node "text")]))))))
 
 (defn- render-indentation-node
   ([acc node _depth]
    (if (present-text? (get node "text"))
      (append-inline acc
-                    [:seg {:type "indentation"
-                           :n (str (get node "depth"))}
-                     (get node "text")])
+                    (sourced node [:seg {:type "indentation"
+                                         :n (str (get node "depth"))}
+                                   (get node "text")]))
      (mark-omitted acc "indentation"))))
 
 (defn- render-page-break-node
   ([acc node _depth]
    (append-block acc
-                 (cond-> [:pb]
-                   (some? (get node "page_number"))
-                   (conj {:n (get node "page_number")})))))
+                 (sourced node (cond-> [:pb]
+                                 (some? (get node "page_number"))
+                                 (conj {:n (get node "page_number")}))))))
 
 (defn- render-line-break-node
-  ([acc _node _depth]
-   (append-inline acc [:lb])))
+  ([acc node _depth]
+   (append-inline acc (sourced node [:lb]))))
 
 (defn- render-image-node
   ([acc node _depth]
    (append-block acc
-                 (cond-> [:figure
-                          [:graphic {:url (get node "src")}]]
-                   (present-text? (get node "alt"))
-                   (conj [:figDesc (get node "alt")])))))
+                 (sourced node (cond-> [:figure
+                                        [:graphic {:url (get node "src")}]]
+                                 (present-text? (get node "alt"))
+                                 (conj [:figDesc (get node "alt")]))))))
 
 (defn- render-caption-node
   ([acc node _depth]
-   (append-block acc [:figDesc (get node "text")])))
+   (append-block acc (sourced node [:figDesc (get node "text")]))))
 
 (defn- render-quote-node
   ([acc node _depth]
    (if (present-text? (get node "text"))
-     (append-inline acc [:quote (get node "text")])
+     (append-inline acc (sourced node [:quote (get node "text")]))
      (mark-omitted acc "quote"))))
 
 (defn- render-source-note-node
@@ -366,6 +406,7 @@
    "ruby" render-ruby-node
    "gaiji" render-gaiji-node
    "editor-note" render-editor-note-node
+   "base-text-variant" render-base-text-variant-node
    "emphasis" render-emphasis-node
    "layout-span" render-layout-span-node
    "heading" render-heading-node
@@ -375,24 +416,35 @@
    "image" render-image-node
    "caption" render-caption-node
    "quote" render-quote-node
-   "source-note" render-source-note-node})
+   "source-note" render-source-note-node
+   "warichu" render-warichu-node})
 
 (defn- render-node
   ([acc node] (render-node acc node 0))
   ([acc node depth]
-   (let [node-type (get node "type")]
+   (let [node-type (get node "type")
+         reference (source-reference node)
+         span (get node "source_span")
+         existing (get-in acc [:source-spans reference])
+         _ (when (and existing (not= existing span))
+             (throw (ex-info "Conflicting metadata for one decoded source extent"
+                             {:reference reference :existing existing :span span})))
+         node (assoc node ::source-reference reference)
+         acc (cond-> acc reference (assoc-in [:source-spans reference] (get node "source_span")))]
      (if-let [render-node-fn (get node-renderers node-type)]
        (render-node-fn acc node depth)
        (throw (ex-info "Unsupported TEI parser-IR node type"
                        {:node-type node-type}))))))
 
-(defn- initial-acc []
+(defn- initial-acc [primary-text-hash]
   {:body-children []
    :current-division []
    :current-paragraph []
    :current-paragraph-attrs nil
    :front-notes []
    :back-notes []
+   :source-spans (sorted-map)
+   :primary-text-hash primary-text-hash
    :char_declarations []
    :char-declaration-ids #{}
    :gaiji-identities {}
@@ -425,7 +477,14 @@
 (defn- finalize-result [result]
   (let [result (-> result
                    flush-paragraph
-                   flush-division)]
+                   flush-division)
+        result (update result :back-notes into
+                       (map (fn [[id span]]
+                              [:note (cond-> {:type "source-span" :xml/id id}
+                                       (:primary-text-hash result)
+                                       (assoc :corresp (str "urn:" (:primary-text-hash result))))
+                               (record-json/write-deterministic-json-str span)])
+                            (:source-spans result)))]
     {:body (tei-text result)
      :char_declarations (:char_declarations result)
      :node_counts (:node_counts result)
@@ -585,7 +644,7 @@
         [acc frames])
       [acc frames])))
 
-(defn- render-with-paragraphs [nodes paragraphs sentences layout-blocks]
+(defn- render-with-paragraphs [nodes paragraphs sentences layout-blocks primary-text-hash]
   (validate-paragraph-ranges! nodes paragraphs)
   (validate-layout-blocks! nodes paragraphs layout-blocks)
   (let [sentences-by-pid (sentences-by-paragraph sentences)
@@ -600,15 +659,15 @@
                                 rendered (render-paragraph-row-with-sentences nodes sentences-by-pid acc paragraph)
                                 [closed frames] (close-layout-blocks rendered frames (inc index))]
                             [closed end frames]))
-                        [(initial-acc) 0 []]
+                        [(initial-acc primary-text-hash) 0 []]
                         (map-indexed vector paragraphs))]
     (finalize-result
      (cond-> (-> result (render-node-seq (subvec nodes end)) flush-paragraph)
        (seq layout-blocks) (update :body-children normalize-layout-siblings)))))
 
-(defn- render-flat [nodes]
+(defn- render-flat [nodes primary-text-hash]
   (finalize-result
-   (render-node-seq (initial-acc) nodes)))
+   (render-node-seq (initial-acc primary-text-hash) nodes)))
 
 (defn render [parser-ir]
   (let [nodes (vec (get parser-ir "nodes"))
@@ -617,5 +676,6 @@
     (when (and (seq (get parser-ir "layout_blocks")) (not paragraphs))
       (throw (ex-info "Layout blocks require paragraph ranges" {})))
     (if paragraphs
-      (render-with-paragraphs nodes (vec paragraphs) sentences (get parser-ir "layout_blocks" []))
-      (render-flat nodes))))
+      (render-with-paragraphs nodes (vec paragraphs) sentences (get parser-ir "layout_blocks" [])
+                              (get-in parser-ir ["source" "primary_text_hash"]))
+      (render-flat nodes (get-in parser-ir ["source" "primary_text_hash"])))))

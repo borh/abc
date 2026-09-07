@@ -180,3 +180,24 @@
         (is (:cached? (engine/run-stage! store plain-stage {"tei" tei-hash})))
         (is (:cached? (engine/run-stage! store enrich-stage {"tei" tei-hash "layers" [updated-hash]}))))
       (finally (engine/close-store! store) (fs/delete-tree dir)))))
+
+(deftest interpretation-influence-controls-certification-without-changing-reading
+  (let [base (document "<a:p>本文</a:p>")
+        with-problem (fn [aspects influence]
+                       (let [problem {"kind" "unknown-notation" "code" "unknown-notation"
+                                      "raw" "［＃未知］" "aspects" aspects "influence" influence
+                                      "source_span" {"coordinate_system" "decoded_utf8" "start" 100 "end" 115}}]
+                         (str/replace base "</a:text>"
+                                      (str "<a:back><a:div><a:note type='interpretation-problem'>"
+                                           (json/write-json-str problem)
+                                           "</a:note></a:div></a:back></a:text>"))))
+        ordinary (view/from-tei base)
+        unknown (view/from-tei (with-problem ["content" "structure" "layout"] {"kind" "document"}))
+        layout (view/from-tei (with-problem ["layout"] {"kind" "document"}))]
+    (is (= (:view/id ordinary) (:view/id unknown) (:view/id layout)))
+    (is (= [] (:view/eligible-spans unknown)))
+    (is (= [[0 6]] (:view/eligible-spans layout)))
+    (is (= "［＃未知］" (get-in unknown [:view/problems 0 :view/evidence "raw"])))
+    (is (= [] (:view/eligible-spans (view/from-tei (with-problem ["content"] {})))))
+    (is (thrown? clojure.lang.ExceptionInfo
+                 (layer/validate-layer unknown (analysis ordinary "tokens" [["t" 0 6 "token"]]))))))

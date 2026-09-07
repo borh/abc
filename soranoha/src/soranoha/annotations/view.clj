@@ -1,7 +1,8 @@
 (ns soranoha.annotations.view
   "Body reading and UTF-8 alignment for analysis of TEI transcription.
   DOM mappings are local to a parsed document; only text and policy identify a view."
-  (:require [clojure.string :as str]
+  (:require [charred.api :as json]
+            [clojure.string :as str]
             [soranoha.core.hash :as hash])
   (:import [java.io ByteArrayInputStream]
            [javax.xml.parsers DocumentBuilderFactory]
@@ -40,6 +41,10 @@
     (case (local-name node)
       ("note" "fw") []
       "ruby" (filterv #(= "rb" (local-name %)) nodes)
+      "app" (let [lemmas (filterv #(= "lem" (local-name %)) nodes)]
+              (when-not (= 1 (count lemmas))
+                (throw (ex-info "TEI apparatus requires one supplied reading" {})))
+              lemmas)
       "choice" (or (some (fn [tag]
                            (let [matches (filterv #(= tag (local-name %)) nodes)]
                              (when (seq matches) matches)))
@@ -115,6 +120,19 @@
 (defn visible-text [node]
   (apply str (map :view/text (reading-segments node))))
 
+(defn- interpretation-problems [^Document document]
+  (let [notes (.getElementsByTagNameNS document tei-namespace "note")]
+    (into []
+          (keep (fn [index]
+                  (let [^org.w3c.dom.Element note (.item notes index)]
+                    (when (= "interpretation-problem" (.getAttribute note "type"))
+                      (let [problem (json/read-json (.getTextContent note))]
+                        (when-not (and (map? problem) (vector? (get problem "aspects"))
+                                       (every? string? (get problem "aspects")))
+                          (throw (ex-info "Invalid TEI interpretation problem" {:problem problem})))
+                        {:view/problem :view/interpretation-problem :view/evidence problem})))))
+          (range (.getLength notes)))))
+
 (defn from-document [^Document document]
   (let [texts (filterv #(= "text" (local-name %)) (children (.getDocumentElement document)))
         bodies (into [] (mapcat #(filter (fn [node] (= "body" (local-name node))) (children %))) texts)]
@@ -127,6 +145,8 @@
                                  (let [end (+ start (utf8-size (:view/text segment)))]
                                    [(conj result (assoc segment :view/start start :view/end end)) end]))
                                [[] 0] segments)
+          problems (interpretation-problems document)
+          content-uncertain? (some #(some #{"content"} (get-in % [:view/evidence "aspects"])) problems)
           excluded (filter #(= :view/unresolved-glyph (:view/kind %)) segments)
           [eligible offset] (reduce (fn [[spans offset] {:view/keys [start end]}]
                                       [(cond-> spans (< offset start) (conj [offset start])) end])
@@ -136,9 +156,9 @@
                  (hash/sha256-canonical-json {"policy" "body-v1" "unit" "utf8-bytes" "text" text}))
        :view/policy :view/body-v1
        :view/text text
-       :view/eligible-spans eligible
-       :view/problems (mapv #(hash-map :view/problem :view/unresolved-glyph
-                                       :view/start (:view/start %) :view/end (:view/end %)) excluded)
+       :view/eligible-spans (if content-uncertain? [] eligible)
+       :view/problems (into problems (map #(hash-map :view/problem :view/unresolved-glyph
+                                                     :view/start (:view/start %) :view/end (:view/end %))) excluded)
        :view/segments segments
        :view/document document})))
 

@@ -84,7 +84,7 @@
 
 (def ^:private structural-tags
   #{"TEI" "text" "body" "div" "floatingText" "p" "s" "seg" "ab" "l" "lg" "list" "item"
-    "anchor" "rb" "rt" "corr" "sic" "orig" "reg" "abbr" "expan" "quote" "figure" "figDesc"})
+    "anchor" "rb" "rt" "lem" "corr" "sic" "orig" "reg" "abbr" "expan" "quote" "figure" "figDesc"})
 
 (defn- report-children [profile node]
   (if (and (= :projection/markdown profile) (= "ruby" (view/local-name node)))
@@ -100,7 +100,7 @@
       (= "hi" tag) (if (or (= :projection/plaintext profile)
                            (#{"bold" "italic"} (.getAttribute node "rend")))
                      :projection/transformed :projection/unsupported)
-      (#{"ruby" "choice" "head" "lb"} tag) :projection/transformed
+      (#{"ruby" "choice" "app" "head" "lb"} tag) :projection/transformed
       (= "pb" tag) (if (= :projection/plaintext profile) :projection/transformed :projection/omitted)
       (or (= "g" tag) (structural-tags tag)) :projection/represented
       :else :projection/unsupported)))
@@ -118,7 +118,7 @@
       (and (not= "hi" tag) (or (.hasAttribute node "rend") (.hasAttribute node "style")))
       (conj ["layout" :projection/omitted])
 
-      (= "choice" tag)
+      (#{"choice" "app"} tag)
       (into (map (fn [_] ["alternative-reading" :projection/omitted])
                  (remove (set (view/selected-children node))
                          (filter #(= Node/ELEMENT_NODE (.getNodeType ^Node %)) (view/children node))))))))

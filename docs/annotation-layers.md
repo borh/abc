@@ -54,3 +54,28 @@ layout such as exact pagination. Unsupported ruby placement, other emphasis
 renditions and unresolved glyphs remain visible in projection reports. A report's
 `complete-for-profile` result applies to that declared projection, not to correctness
 of the source parser or complete editorial fidelity.
+
+## Source correspondence and reading variants
+
+Canonical TEI attaches explicit decoded UTF-8 source ranges through local `@source`
+references. The referenced notes contain the original range record and identify the
+primary text by content hash when available. Equal range records share one local
+identifier. Parser-text offsets are a different coordinate system and cannot supply
+missing source correspondence.
+
+A supplied reading that differs from the base text is represented as `app` with
+`lem` for the supplied reading and `rdg type="base-text"` for the alternative. This
+does not assert that the base text is erroneous. Body and Markdown views select the
+supplied reading; Markdown reports the alternative as intentionally omitted.
+
+Canonical `interpretation-problem` notes retain the source interpreter's structured
+facts. Content uncertainty excludes the whole body from certified analysis until
+an influence range in the analysis view is established; a marker's source range
+alone cannot establish that range. Layout-only problems retain text eligibility.
+These masks are separate from reading identity, so unchanged analyzer text can be
+reused while a layer must still satisfy the current eligibility mask.
+
+Warichu uses `seg type="warichu" rend="two-line"`. An undivided source remains one
+content sequence; nested `seg type="upper"` and `seg type="lower"` appear only when
+the input establishes those divisions. Text projections retain their supplied
+reading order and report the omitted two-line layout.

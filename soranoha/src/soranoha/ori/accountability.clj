@@ -98,6 +98,28 @@
                      "source_span" (get fact "source_span")}))))
         facts))
 
+(defn- located-claims [occurrence facts-by-marker]
+  (let [components (mapv #(assoc % "claims" (occurrence-claims % (get facts-by-marker (marker-key %))))
+                         (get occurrence "components" []))
+        component-families (into #{} (mapcat #(get % "families")) components)
+        complete-families (into #{}
+                                (filter (fn [family]
+                                          (every? (fn [component]
+                                                    (or (not (some #{family} (get component "families")))
+                                                        (some #(some #{family} (get % "families"))
+                                                              (get component "claims"))))
+                                                  components)))
+                                component-families)
+        restrict-claims (fn [allowed claims]
+                          (keep (fn [claim]
+                                  (let [families (filterv allowed (get claim "families"))]
+                                    (when (seq families) (assoc claim "families" families))))
+                                claims))
+        claims (into (vec (restrict-claims #(not (component-families %))
+                                           (occurrence-claims occurrence (get facts-by-marker (marker-key occurrence)))))
+                     (restrict-claims complete-families (mapcat #(get % "claims") components)))]
+    [components claims]))
+
 (defn coverage-report
   "Join lexical evidence to explicit native claims; no source/export certification.
   Negative problems retain their declared influence, independently of positive claims."
@@ -105,7 +127,7 @@
   (let [facts (get parser-ir "interpretation_facts")
         problems (get parser-ir "interpretation_problems")
         occurrences (get oracle "occurrences")]
-    (require-evidence (= "aozora-source-accountability/1" (get oracle "schema"))
+    (require-evidence (= "aozora-source-accountability/2" (get oracle "schema"))
                       "Unsupported source accountability schema")
     (require-evidence (and (string? (get oracle "source_sha256"))
                            (= (get oracle "source_sha256")
@@ -119,17 +141,25 @@
     (doseq [occurrence occurrences]
       (require-evidence (and (valid-span? (get occurrence "source_span"))
                              (vector? (get occurrence "families")))
-                        "Invalid lexical occurrence"))
+                        "Invalid lexical occurrence")
+      (doseq [component (get occurrence "components")]
+        (let [parent (get occurrence "source_span") child (get component "source_span")]
+          (require-evidence (and (valid-span? child) (vector? (get component "families"))
+                                 (<= (get parent "start") (get child "start"))
+                                 (<= (get child "end") (get parent "end"))
+                                 (not= (marker-key occurrence) (marker-key component)))
+                            "Invalid lexical component"))))
     (let [facts-by-marker (group-by marker-key facts)
           results
           (into []
                 (map (fn [occurrence]
                        (let [apparatus? (#{"front-matter" "body-end-boundary" "back-matter"}
                                          (get occurrence "region"))
-                             claims (if (or apparatus? (not= "lossless" (get oracle "decode_outcome")))
-                                      [] (occurrence-claims occurrence (get facts-by-marker (marker-key occurrence))))
+                             [components claims] (located-claims occurrence
+                                                                 (if (or apparatus? (not= "lossless" (get oracle "decode_outcome")))
+                                                                   {} facts-by-marker))
                              claimed (into #{} (mapcat #(get % "families")) claims)]
-                         (assoc occurrence "claims" claims
+                         (assoc occurrence "claims" claims "components" components
                                 "disposition" (if apparatus? "source-apparatus" "interpretation-evidence")
                                 "unaccounted_families" (if apparatus? []
                                                            (filterv #(not (claimed %)) (get occurrence "families")))
@@ -157,7 +187,7 @@
 (defn coverage-stage
   "Independent lexical oracle + parser IR -> explicit claim accounting."
   [clj-toolchain-id]
-  {:stage-id "interpretation-coverage" :stage-version "4" :toolchain-id clj-toolchain-id
+  {:stage-id "interpretation-coverage" :stage-version "5" :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob]} inputs]
         (let [input-bytes (into {} (map (fn [name] [name (blob (get inputs name))]))
                                 ["source-accountability" "parser-ir"])

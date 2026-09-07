@@ -2765,7 +2765,7 @@ mod edition_results {
         assert!(command.status().unwrap().success());
         let report: serde_json::Value =
             serde_json::from_slice(&fs::read(&output).unwrap()).unwrap();
-        assert_eq!(report["schema"], "aozora-source-accountability/1");
+        assert_eq!(report["schema"], "aozora-source-accountability/2");
         assert_eq!(report["occurrences"].as_array().unwrap().len(), 2);
         assert_eq!(
             report["occurrences"][0]["families"],

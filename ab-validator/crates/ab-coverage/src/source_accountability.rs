@@ -1,11 +1,12 @@
 //! Source-authority occurrences independent of any parser interpretation.
 
 use ab_encoding::{decode_source_bytes, hex_sha256};
-use ab_source_syntax::aozora_body_range;
+use ab_source_syntax::{SourceMarker, SourceMarkerKind, aozora_body_range, source_markers};
 use serde_json::{Value, json};
 
 use crate::source_inventory::{
-    SourceInventoryPattern, SourceMarkerRegion, inventory_document_observed,
+    CompiledSourceInventoryPattern, SourceInventoryPattern, SourceMarkerRegion, compile_patterns,
+    inventory_document_observed, matching_rows,
 };
 
 /// Record lexical evidence without treating recognition as semantic support.
@@ -17,7 +18,7 @@ pub fn source_accountability(
     patterns: &[SourceInventoryPattern],
 ) -> Value {
     let mut report = json!({
-        "schema": "aozora-source-accountability/1",
+        "schema": "aozora-source-accountability/2",
         "source_sha256": format!("sha256:{}", hex_sha256(bytes)),
         "matrix_sha256": format!("sha256:{}", hex_sha256(matrix_bytes)),
         "coordinate_system": "decoded_utf8",
@@ -43,6 +44,17 @@ pub fn source_accountability(
     let (body, _) = aozora_body_range(&decoded.text);
     report["lexical_body_range"] = json!({"start": body.start, "end": body.end});
     let mut occurrences = Vec::new();
+    let component_patterns: Vec<_> = patterns
+        .iter()
+        .filter(|pattern| {
+            matches!(
+                pattern.row_id.as_str(),
+                "kunten.kaeriten" | "kunten.okurigana"
+            )
+        })
+        .cloned()
+        .collect();
+    let compiled_patterns = compile_patterns(&component_patterns);
     inventory_document_observed(
         "",
         &decoded.text,
@@ -64,11 +76,60 @@ pub fn source_accountability(
                 "raw": marker.raw,
                 "region": region,
                 "families": families,
+                "components": kunten_components(marker, &compiled_patterns),
             }));
         },
     );
     report["occurrences"] = json!(occurrences);
     report
+}
+
+fn kunten_components(
+    marker: &SourceMarker<'_>,
+    patterns: &[CompiledSourceInventoryPattern],
+) -> Vec<Value> {
+    let mut components = Vec::new();
+    let mut pending = vec![marker.clone()];
+    while let Some(parent) = pending.pop() {
+        if !matches!(
+            parent.kind,
+            SourceMarkerKind::RubyExplicit
+                | SourceMarkerKind::RubyImplicit
+                | SourceMarkerKind::BracketNote
+        ) {
+            continue;
+        }
+        let offset = parent.span.start + parent.body.as_ptr().addr() - parent.raw.as_ptr().addr();
+        for mut child in source_markers(parent.body) {
+            child.span.start += offset;
+            child.span.end += offset;
+            child.span.line += parent.span.line - 1;
+            if child.span.start <= parent.span.start && child.span.end >= parent.span.end {
+                continue;
+            }
+            if matches!(
+                child.kind,
+                SourceMarkerKind::CommandFullwidth | SourceMarkerKind::CommandAscii
+            ) {
+                let mut families = matching_rows(child.raw, patterns);
+                families.retain(|family| {
+                    matches!(family.as_str(), "kunten.kaeriten" | "kunten.okurigana")
+                });
+                families.sort();
+                if !families.is_empty() {
+                    components.push(json!({
+                        "source_span": {"start": child.span.start, "end": child.span.end,
+                                        "line": child.span.line, "coordinate_system": "decoded_utf8"},
+                        "kind": format!("{:?}", child.kind), "raw": child.raw, "families": families,
+                    }));
+                }
+            } else {
+                pending.push(child);
+            }
+        }
+    }
+    components.sort_by_key(|component| component["source_span"]["start"].as_u64());
+    components
 }
 
 #[cfg(test)]
@@ -96,6 +157,30 @@ mod tests {
             assert_eq!(&source[start..end], event["raw"].as_str().unwrap());
         }
         assert_eq!(report["semantic_coverage"], "not-assessed");
+    }
+
+    #[test]
+    fn composite_kunten_keep_one_occurrence_and_exact_component_extents() {
+        let source = "題\n作者\n\n｜遊［＃二］松島［＃一］記《まつしまにあそぶき》\n";
+        let patterns = vec![SourceInventoryPattern {
+            row_id: "kunten.kaeriten".into(),
+            source_patterns: vec!["［＃[一二]］".into()],
+        }];
+        let report = source_accountability(source.as_bytes(), b"matrix", &patterns);
+        let occurrences = report["occurrences"].as_array().unwrap();
+        assert_eq!(occurrences.len(), 1);
+        let components = occurrences[0]["components"].as_array().unwrap();
+        assert_eq!(components.len(), 2);
+        for (component, raw) in components.iter().zip(["［＃二］", "［＃一］"]) {
+            assert_eq!(component["raw"], raw);
+            let span = &component["source_span"];
+            assert_eq!(
+                &source[span["start"].as_u64().unwrap() as usize
+                    ..span["end"].as_u64().unwrap() as usize],
+                raw
+            );
+            assert_eq!(component["families"], json!(["kunten.kaeriten"]));
+        }
     }
 
     #[test]

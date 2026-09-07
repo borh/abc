@@ -182,12 +182,14 @@ pub(crate) fn inventory_document_observed(
     summary
 }
 
-struct CompiledSourceInventoryPattern {
+pub(crate) struct CompiledSourceInventoryPattern {
     row_id: String,
     source_patterns: Vec<Regex>,
 }
 
-fn compile_patterns(patterns: &[SourceInventoryPattern]) -> Vec<CompiledSourceInventoryPattern> {
+pub(crate) fn compile_patterns(
+    patterns: &[SourceInventoryPattern],
+) -> Vec<CompiledSourceInventoryPattern> {
     patterns
         .iter()
         // This row documents a research bucket; using it as a classifier hides
@@ -208,7 +210,7 @@ fn compile_patterns(patterns: &[SourceInventoryPattern]) -> Vec<CompiledSourceIn
         .collect()
 }
 
-fn matching_rows(raw: &str, patterns: &[CompiledSourceInventoryPattern]) -> Vec<String> {
+pub(crate) fn matching_rows(raw: &str, patterns: &[CompiledSourceInventoryPattern]) -> Vec<String> {
     let mut rows = Vec::new();
     append_matching_rows(&mut rows, raw, patterns);
     rows

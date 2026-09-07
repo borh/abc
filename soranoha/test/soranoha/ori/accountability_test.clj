@@ -20,7 +20,7 @@
             {"binary" (hash/sha256-file (:bin tool))
              "matrix" (hash/sha256-file (:matrix tool))})
            (:toolchain-id stage)))
-    (is (= "aozora-source-accountability/1" (get report "schema")))
+    (is (= "aozora-source-accountability/2" (get report "schema")))
     (is (= (str "sha256:" (hash/sha256-bytes source)) (get report "source_sha256")))
     (is (= "not-assessed" (get report "semantic_coverage")))
     (is (= [["ruby.basic"] []] (mapv #(get % "families") (get report "occurrences"))))
@@ -30,7 +30,7 @@
   {"start" start "end" end "coordinate_system" "decoded_utf8"})
 
 (defn- oracle [occurrences]
-  {"schema" "aozora-source-accountability/1" "source_sha256" "sha256:source"
+  {"schema" "aozora-source-accountability/2" "source_sha256" "sha256:source"
    "encoding" "utf-8" "decode_outcome" "lossless" "occurrences" occurrences})
 
 (defn- interpretation [facts]
@@ -211,3 +211,25 @@
                                             {"aat" (get-in parsed [:outputs "aat"])
                                              "work_content_hash" (hash/format-sha256 source-id)}))))))))))
       (finally (engine/close-store! store) (fs/delete-tree dir)))))
+
+(deftest composite-families-require-every-located-component
+  (let [component (fn [start end] {"source_span" (span start end) "kind" "CommandFullwidth"
+                                   "families" ["kunten.kaeriten"]})
+        occurrence {"source_span" (span 0 100) "kind" "RubyExplicit" "region" "body"
+                    "families" ["ruby.basic" "kunten.kaeriten"]
+                    "components" [(component 10 20) (component 30 40)]}
+        ruby {"kind" "ruby" "outcome" "established" "aspects" ["content" "structure"]
+              "source_span" (span 0 100)}
+        kunten (fn [start end] {"kind" "kunten" "outcome" "established" "aspects" ["content" "structure" "layout"]
+                                "source_span" (span start end)})
+        report #(accountability/coverage-report (oracle [occurrence]) (interpretation (into [ruby] %)))
+        partial (report [(kunten 10 20)])
+        complete (report [(kunten 10 20) (kunten 30 40)])]
+    (is (= ["kunten.kaeriten"] (get-in partial ["occurrences" 0 "unaccounted_families"])))
+    (is (= 1 (get-in partial ["families" "kunten.kaeriten" "unaccounted"])))
+    (is (= 1 (count (get-in partial ["occurrences" 0 "components" 0 "claims"]))))
+    (is (empty? (get-in complete ["occurrences" 0 "unaccounted_families"])))
+    (is (= 1 (get-in complete ["families" "kunten.kaeriten" "interpreter_claimed"])))
+    (is (= 1 (count (get complete "occurrences"))))
+    (is (= ["kunten.kaeriten"]
+           (get-in (report [(kunten 0 100) (kunten 10 20)]) ["occurrences" 0 "unaccounted_families"])))))

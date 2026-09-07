@@ -43,7 +43,7 @@ pub use payload::{
     AngleQuote, Content, Directive, ForwardFormat, Gaiji, GaijiCanonicalOwned, Heading,
     HeadingHint, Illustration, Kunten, KuntenKind, MarginNote, Node, Ruby, Segment, Warichu,
 };
-pub use registry::{ContainerPair, NodeRef, Registry};
+pub use registry::{ContainerEnd, ContainerPair, NodeRef, Registry};
 pub use store::{ContentRange, ForwardAttrRange, ForwardAttrs, NodeStore, SegRange};
 
 #[cfg(test)]

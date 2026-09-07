@@ -31,8 +31,8 @@ use crate::lexer::{
 use ab_aozora_spec::{Diagnostic, NormalizedOffset, Span};
 use ab_aozora_syntax::ast::{
     ClassifiedSourceDisposition as Disposition, ClassifiedSourceEvidenceClass as EvidenceClass,
-    ClassifiedSourceFact, ClassifiedSourceRole as Role, ConstructId, ContainerPair, LexOutput,
-    Node, NodeRef, SourceNode,
+    ClassifiedSourceFact, ClassifiedSourceRole as Role, ConstructId, ContainerEnd, ContainerPair,
+    LexOutput, Node, NodeRef, SourceNode,
 };
 use ab_aozora_syntax::{DirectiveKind, ForwardAttr, LineFormat, RegionClose, RegionFormat};
 
@@ -432,6 +432,31 @@ impl<'src> Normalizer<'src> {
                 }
             }
             SpanKind::BlockOpen(container) => {
+                if matches!(container, RegionFormat::Indent(_))
+                    && matches!(
+                        self.open_stack.last(),
+                        Some((_, RegionFormat::Indent(_), _))
+                    )
+                {
+                    let (open, kind, source_open) =
+                        self.open_stack.pop().expect("indent region is active");
+                    self.out.push_str("\n\n");
+                    let close = self.current_pos();
+                    self.out.push(BLOCK_CLOSE_SENTINEL);
+                    self.out.push_str("\n\n");
+                    // The normalized tree needs a close; source ownership belongs
+                    // only to the following opener, so no source node is invented.
+                    self.recorder
+                        .entries
+                        .push((close, NodeRef::BlockClose(RegionClose::of(kind))));
+                    self.container_pairs.push(ContainerPair {
+                        kind,
+                        open,
+                        close: NormalizedOffset::new(close),
+                        source_open,
+                        source_end: ContainerEnd::IndentReplacement(span.source_span),
+                    });
+                }
                 let inline = container.is_inline();
                 if !inline {
                     self.out.push_str("\n\n");
@@ -465,7 +490,7 @@ impl<'src> Normalizer<'src> {
                             open: open_pos,
                             close: NormalizedOffset::new(pos),
                             source_open,
-                            source_close: span.source_span,
+                            source_end: ContainerEnd::ClosingMarker(span.source_span),
                         });
                     }
                 } else {

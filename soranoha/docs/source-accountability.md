@@ -69,5 +69,13 @@ Paragraph-leading indentation is encoded as CSS `text-indent`; heading and
 source-note continuation indentation uses `padding-inline-start`. Structural XML
 is indented for inspection while mixed content retains its lexical whitespace.
 
+Supplied block geometry retains indentation, continuation indentation, line width,
+and distance from the line end independently. Hanging indentation uses the
+continuation padding and the difference between first and continuation indents.
+TEI retains supplied line counts as `rend="line-count(N)"` and page placement as
+`rend="page-center"`; page placement does not imply centered text alignment.
+Consecutive indentation instructions replace the preceding indentation scope.
+Page placement ends before the next supplied page break, which remains in TEI.
+
 Validation provenance binds the ODD, RNG and Schematron hashes through
 `schemas/tei-profile-generation.json`. See [TEI validation](tei-validation.md).

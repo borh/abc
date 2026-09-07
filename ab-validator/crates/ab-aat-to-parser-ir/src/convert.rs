@@ -468,6 +468,50 @@ fn map_block_content(
             }
         }
 
+        "layout_block" => {
+            let node_start = outputs.nodes.len();
+            for (index, child) in block["children"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .enumerate()
+            {
+                current = map_block(
+                    child,
+                    outputs,
+                    recorder,
+                    current,
+                    &format!("{path}.children[{index}]"),
+                    None,
+                    false,
+                    heuristic_enabled,
+                )?;
+            }
+            if outputs.nodes.len() > node_start {
+                let mut scope = json!({"node_range":{"start":node_start,"end":outputs.nodes.len()},"source_pointer":path});
+                for property in [
+                    "indent",
+                    "continuation_indent",
+                    "offset_from_end",
+                    "width",
+                    "line_count",
+                    "page_placement",
+                    "direction",
+                    "align",
+                    "border",
+                ] {
+                    if let Some(value) = block.get(property) {
+                        scope[property] = value.clone();
+                    }
+                }
+                if let Some(formatting) = block.get("formatting") {
+                    let mut typography = layout_scope(formatting)?;
+                    typography["source"] = json!("aat-block");
+                    scope["typography"] = typography;
+                }
+                outputs.layout_blocks.push(scope);
+            }
+        }
         "jisage_block" => {
             let children: Vec<&Value> =
                 block["children"].as_array().into_iter().flatten().collect();

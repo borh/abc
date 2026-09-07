@@ -623,15 +623,24 @@
                             #(- (get-in % ["node_range" "end"]))) blocks)))
 
 (defn- layout-block-attrs [block]
-  (let [styles (cond-> []
-                 (contains? block "indent") (conj (str "padding-inline-start: " (get block "indent") "em"))
+  (let [indent (get block "indent")
+        continuation (get block "continuation_indent")
+        start-padding (or continuation indent)
+        styles (cond-> []
+                 (some? start-padding) (conj (str "padding-inline-start: " start-padding "em"))
+                 (and (some? indent) (some? continuation)) (conj (str "text-indent: " (- indent continuation) "em"))
+                 (contains? block "offset_from_end") (conj (str "padding-inline-end: " (get block "offset_from_end") "em"))
+                 (contains? block "width") (conj (str "inline-size: " (get block "width") "em"))
                  (get block "direction") (conj "writing-mode: horizontal-tb")
-                 (get block "align") (conj "text-align: center")
+                 (get block "align") (conj (str "text-align: " (get block "align")))
                  (get block "border") (conj "border-style: solid"))
-        typography (get block "typography")]
+        rend (cond-> []
+               (get block "typography") (conj (inline-layout-rend (get block "typography")))
+               (get block "page_placement") (conj "page-center")
+               (get block "line_count") (conj (str "line-count(" (get block "line_count") ")")))]
     (cond-> {:type (get block "role" "layout")}
       (seq styles) (assoc :style (string/join "; " styles))
-      typography (assoc :rend (inline-layout-rend typography))
+      (seq rend) (assoc :rend (string/join " " rend))
       (= "warichu" (get block "role")) (assoc :rend "two-line"))))
 
 (defn- close-layout-blocks [acc frames node-end]

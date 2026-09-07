@@ -1030,24 +1030,15 @@ pub(super) fn classify_annotation_body(
             EmitKind::BlockOpen(RegionFormat::Indent(IndentBlock {
                 amount: 1,
                 wrap: None,
-                center: false,
+                center: None,
                 layout: IndentLayout::None,
                 styles: BlockStyles::EMPTY,
             })),
             None,
         )),
-        // `ここからページの左右中央` — a page-centred block with no indent. Reuses
-        // the indent-region model (`center` flag, `amount: 0`) so it pairs with
-        // the shared `ここで字下げ終わり` close; `emit_indent_open` renders the
-        // short opener back verbatim.
+        // Page positioning ends at a supplied page break, not an indent close.
         BodyFamily::PageCenterBlockOpen => Some((
-            EmitKind::BlockOpen(RegionFormat::Indent(IndentBlock {
-                amount: 0,
-                wrap: None,
-                center: true,
-                layout: IndentLayout::None,
-                styles: BlockStyles::EMPTY,
-            })),
+            EmitKind::Aozora(alloc.line(LineFormat::Center { page: true })),
             None,
         )),
         BodyFamily::AlignEndBlock0 => Some((
@@ -1187,7 +1178,7 @@ pub(super) fn classify_annotation_body(
                 EmitKind::BlockOpen(RegionFormat::Indent(IndentBlock {
                     amount: 0,
                     wrap: Some(m),
-                    center: false,
+                    center: None,
                     layout: IndentLayout::None,
                     styles: BlockStyles::EMPTY,
                 })),
@@ -1214,7 +1205,7 @@ pub(super) fn classify_annotation_body(
                     EmitKind::BlockOpen(RegionFormat::Indent(IndentBlock {
                         amount: 0,
                         wrap: Some(m),
-                        center: false,
+                        center: None,
                         layout: IndentLayout::None,
                         styles: BlockStyles::EMPTY,
                     })),
@@ -1227,7 +1218,7 @@ pub(super) fn classify_annotation_body(
                     EmitKind::BlockOpen(RegionFormat::Indent(IndentBlock {
                         amount: n,
                         wrap: None,
-                        center: false,
+                        center: None,
                         layout: IndentLayout::None,
                         styles: BlockStyles::EMPTY,
                     })),
@@ -1693,7 +1684,7 @@ fn parse_indent_compound(amount: u8, after: &str) -> Option<IndentBlock> {
     let mut block = IndentBlock {
         amount,
         wrap: None,
-        center: false,
+        center: None,
         layout: IndentLayout::None,
         styles: BlockStyles::EMPTY,
     };
@@ -1722,10 +1713,14 @@ fn resolve_indent_segment(segment: &str, block: &mut IndentBlock) -> Option<()> 
         segment,
         "ページの左右中央" | "ページの左右中央に" | "左右中央" | "中央揃え"
     ) {
-        if block.center {
+        if block.center.is_some() {
             return None;
         }
-        block.center = true;
+        block.center = Some(if segment == "中央揃え" {
+            ab_aozora_syntax::Centering::Line
+        } else {
+            ab_aozora_syntax::Centering::Page
+        });
         return Some(());
     }
     // {W}字詰め / {L}行{W}字組み[で] — secondary line layout.

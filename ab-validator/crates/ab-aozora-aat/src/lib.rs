@@ -28,8 +28,8 @@ use ab_aozora_facade::{
 // so the checker's comparison source (`ab-check::body_text`) can never
 // drift from the parser's own cut.
 use ab_aozora_facade::syntax::{
-    AbsoluteSize, EnclosureKind, HeadingStyle,
-    ast::{Content, KuntenKind, Segment},
+    AbsoluteSize, Centering, EnclosureKind, HeadingStyle, IndentLayout, LineFormat,
+    ast::{ContainerEnd, Content, KuntenKind, Segment},
 };
 use ab_source_syntax::{RegionError, SourceRegions, aozora_body_range};
 
@@ -277,6 +277,7 @@ enum ProjectedKind {
     FormatMany(Vec<ForwardAttr>),
     Region(RegionFormat),
     RegionClose(RegionClose),
+    Line(LineFormat),
     Directive(DirectiveKind),
     TextVariant {
         target: TextVariantTarget,
@@ -299,6 +300,7 @@ impl ProjectedKind {
         match self {
             Self::Kunten { .. } => "kunten",
             Self::Node(kind) => kind.as_json_tag(),
+            Self::Line(line) => Node::Line(*line).kind().as_json_tag(),
             Self::Region(_) => "containerOpen",
             Self::RegionClose(_) => "containerClose",
             Self::Format(ForwardAttr::Bouten { .. }) => "bouten",
@@ -321,7 +323,7 @@ struct AozoraNode {
     kind: ProjectedKind,
     span: Span,
     marker_span: Option<Span>,
-    container_close: Option<Span>,
+    container_end: Option<ContainerEnd>,
 }
 
 type AozoraGaiji = encoding::gaiji::GaijiResolution;
@@ -383,10 +385,10 @@ fn project_text_variant(kind: ProjectedKind, source: &str, span: Span) -> Projec
     reason = "source projection keeps node payloads and their owned marker extents together"
 )]
 fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
-    let container_closes: BTreeMap<_, _> = tree
+    let container_ends: BTreeMap<_, _> = tree
         .container_pairs
         .iter()
-        .map(|pair| (pair.source_open.start, pair.source_close))
+        .map(|pair| (pair.source_open.start, pair.source_end))
         .collect();
     let pairs: BTreeMap<usize, _> = tree
         .pairs
@@ -419,6 +421,9 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                 ),
                 NodeRef::BlockOpen(region) => ProjectedKind::Region(region),
                 NodeRef::BlockClose(close) => ProjectedKind::RegionClose(close),
+                NodeRef::Inline(Node::Line(line)) | NodeRef::BlockLeaf(Node::Line(line)) => {
+                    ProjectedKind::Line(line)
+                }
                 NodeRef::Inline(Node::Directive(directive))
                 | NodeRef::BlockLeaf(Node::Directive(directive)) => {
                     ProjectedKind::Directive(directive.kind)
@@ -462,10 +467,7 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                 kind,
                 span,
                 marker_span,
-                container_close: container_closes
-                    .get(&source_node.source_span.start)
-                    .copied()
-                    .map(Into::into),
+                container_end: container_ends.get(&source_node.source_span.start).copied(),
             }
         })
         .chain(tree.classified_source_facts.iter().filter_map(|fact| {
@@ -476,7 +478,7 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                 kind: ProjectedKind::RecoveredSource,
                 span,
                 marker_span: None,
-                container_close: None,
+                container_end: None,
             })
         }))
         .collect()
@@ -719,7 +721,7 @@ fn projections(
         nodes.push(AozoraNode {
             kind: ProjectedKind::QuoteOpen,
             marker_span: None,
-            container_close: None,
+            container_end: None,
             span: Span {
                 start: node.span.start,
                 end: start,
@@ -728,7 +730,7 @@ fn projections(
         nodes.push(AozoraNode {
             kind: ProjectedKind::QuoteClose,
             marker_span: None,
-            container_close: None,
+            container_end: None,
             span: Span {
                 start: end,
                 end: node.span.end,
@@ -746,9 +748,12 @@ fn projections(
                 marker.start += start;
                 marker.end += start;
             }
-            if let Some(close) = &mut inner.container_close {
-                close.start += start;
-                close.end += start;
+            if let Some(ContainerEnd::ClosingMarker(span) | ContainerEnd::IndentReplacement(span)) =
+                &mut inner.container_end
+            {
+                let offset = u32::try_from(start).expect("source offset fits u32");
+                span.start += offset;
+                span.end += offset;
             }
             rebase_variant_spans(&mut inner.kind, start);
             pending.push(inner);
@@ -894,6 +899,7 @@ enum EstablishedInterpretation {
     TextVariant,
     Layout,
     EditorialNote,
+    LineLayout,
 }
 
 impl EstablishedInterpretation {
@@ -909,6 +915,7 @@ impl EstablishedInterpretation {
             Self::TextVariant => "text-variant",
             Self::Layout => "layout",
             Self::EditorialNote => "editorial-note",
+            Self::LineLayout => "line-layout",
         }
     }
 
@@ -916,7 +923,7 @@ impl EstablishedInterpretation {
         match self {
             Self::Ruby | Self::TextVariant | Self::EditorialNote => &["content", "structure"],
             Self::Gaiji => &["content"],
-            Self::Emphasis | Self::Layout => &["layout"],
+            Self::Emphasis | Self::Layout | Self::LineLayout => &["layout"],
             Self::Warichu | Self::Heading | Self::Caption => &["structure", "layout"],
             Self::Kunten => &["content", "structure", "layout"],
         }
@@ -981,6 +988,7 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
             Some("caption" | "caption_block") => Some(EstablishedInterpretation::Caption),
             Some("text-variant") => Some(EstablishedInterpretation::TextVariant),
             Some("editorial_note") => Some(EstablishedInterpretation::EditorialNote),
+            Some("layout_block") => Some(EstablishedInterpretation::LineLayout),
             _ => None,
         };
         if let Some(interpretation) = interpretation {
@@ -1252,6 +1260,19 @@ fn source_note_block(content: Vec<Value>, region_class: &str) -> Value {
 )]
 fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
     let native_scopes = native_scope_pairs(&content);
+    let source_positions: BTreeMap<_, _> = content
+        .iter()
+        .enumerate()
+        .filter_map(|(index, node)| {
+            Some((
+                (
+                    node["span"]["byte_start"].as_u64()?,
+                    node["span"]["byte_end"].as_u64()?,
+                ),
+                index,
+            ))
+        })
+        .collect();
     let mut blocks = Vec::new();
     let mut paragraph = Vec::new();
     let mut strip_next_leading_newline = false;
@@ -1327,79 +1348,82 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
             continue;
         }
 
-        if let Some(offset) = align_end_offset(&node) {
-            let boundary = content[index + 1..]
-                .iter()
-                .position(ends_source_line)
-                .map_or(content.len(), |offset| index + offset + 2);
-            if boundary > index + 1 {
-                push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
-                let inner = content[index + 1..boundary].to_vec();
-                push_chitsuki_paragraph(&mut blocks, offset, inner);
-                index = boundary;
+        if let Some(layout) = node.get("x-layout") {
+            let is_region = node["x-source-marker-kind"] == "containerOpen";
+            let is_page = layout.get("page_placement").is_some() && !is_region;
+            let replacement = node.get("x-native-end-before-span").and_then(|span| {
+                source_positions
+                    .get(&(span["byte_start"].as_u64()?, span["byte_end"].as_u64()?))
+                    .copied()
+            });
+            let explicit_close = is_region && replacement.is_none();
+            let boundary = if is_page {
+                content[index + 1..]
+                    .iter()
+                    .position(|item| {
+                        matches!(
+                            item["x-source-marker-kind"].as_str(),
+                            Some("pageBreak" | "sectionBreak")
+                        )
+                    })
+                    .map(|offset| index + offset + 1)
+            } else if is_region {
+                replacement.or_else(|| native_scopes.get(&index).copied())
+            } else if content
+                .get(index + 1)
+                .is_some_and(|next| next.get("x-heading").is_some())
+            {
+                native_scopes.get(&(index + 1)).map(|close| close + 1)
+            } else {
+                Some(
+                    content[index + 1..]
+                        .iter()
+                        .position(ends_source_line)
+                        .map_or(content.len(), |offset| index + offset + 2),
+                )
+            };
+            if let Some(boundary) = boundary
+                .filter(|boundary| *boundary > index + 1 || (!is_region && !paragraph.is_empty()))
+            {
+                let mut inner = mem::take(&mut paragraph);
+                if is_region || is_page {
+                    push_paragraph_if_not_empty(&mut blocks, mem::take(&mut inner));
+                }
+                let first_span = inner
+                    .first()
+                    .map_or(&node["span"], |first| &first["span"])
+                    .clone();
+                inner.extend_from_slice(&content[index + 1..boundary]);
+                strip_boundary_newlines(&mut inner);
+                let mut block = layout.clone();
+                block["kind"] = json!("layout_block");
+                block["children"] = json!(blocks_from_inline_content(inner, source));
+                let mut markers = vec![node["span"].clone()];
+                if explicit_close {
+                    markers.push(content[boundary]["span"].clone());
+                }
+                block["interpretation_marker_spans"] = json!(markers);
+                let end = if explicit_close {
+                    &content[boundary]["span"]
+                } else {
+                    &content[boundary - 1]["span"]
+                };
+                block["span"] = json!({"byte_start":first_span["byte_start"], "byte_end":end["byte_end"],
+                    "line_start":first_span["line_start"], "line_end":end["line_end"]});
+                if replacement.is_some() {
+                    block["source_end"] = json!({"kind":"next-indent-opener", "span":node["x-native-end-before-span"]});
+                } else if is_page {
+                    block["source_end"] =
+                        json!({"kind":"page-break", "span":content[boundary]["span"]});
+                }
+                blocks.push(block);
+                strip_next_leading_newline = explicit_close;
+                index = boundary + usize::from(explicit_close);
                 continue;
             }
         }
 
-        if let Some((first, rest)) = burasage_container_indent(&node) {
-            // Compound container: 字下げ/burasage classification is unchanged;
-            // if the SAME marker also carries a 字詰め clause (jizume compound
-            // form), the burasage output nests inside a jizume_block instead
-            // of landing directly in `blocks`.
-            let compound_jizume_width = node
-                .get("source")
-                .and_then(Value::as_str)
-                .and_then(jizume_open_chars);
-            if let Some(close_index) = find_matching_jisage_close(&content, index + 1) {
-                push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
-                let mut inner = content[index + 1..close_index].to_vec();
-                strip_boundary_newlines(&mut inner);
-                push_burasage_paragraph_maybe_jizume(
-                    &mut blocks,
-                    compound_jizume_width,
-                    first,
-                    rest,
-                    inner,
-                );
-                strip_next_leading_newline = true;
-                index = close_index + 1;
-                continue;
-            }
-            let boundary = find_next_container_boundary(&content, index + 1);
-            if boundary > index + 1 {
-                push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
-                let mut inner = content[index + 1..boundary].to_vec();
-                strip_boundary_newlines(&mut inner);
-                push_burasage_paragraph_maybe_jizume(
-                    &mut blocks,
-                    compound_jizume_width,
-                    first,
-                    rest,
-                    inner,
-                );
-                index = boundary;
-                continue;
-            }
-        } else if let Some(indent) = jisage_container_indent(&node) {
-            if let Some(close_index) = find_matching_jisage_close(&content, index + 1) {
-                push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
-                let mut inner = content[index + 1..close_index].to_vec();
-                strip_boundary_newlines(&mut inner);
-                blocks.push(jisage_block(&node, indent, inner, source));
-                strip_next_leading_newline = true;
-                index = close_index + 1;
-                continue;
-            }
-            let boundary = find_next_container_boundary(&content, index + 1);
-            if boundary > index + 1 {
-                push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
-                let mut inner = content[index + 1..boundary].to_vec();
-                strip_boundary_newlines(&mut inner);
-                blocks.push(jisage_block(&node, indent, inner, source));
-                index = boundary;
-                continue;
-            }
-        } else if block_container_open(&node, "［＃ここから罫囲み］") {
+        if block_container_open(&node, "［＃ここから罫囲み］") {
             if let Some(close_index) = native_scopes.get(&index).copied() {
                 push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
                 let mut inner = content[index + 1..close_index].to_vec();
@@ -1531,235 +1555,12 @@ fn push_paragraph_if_not_empty(blocks: &mut Vec<Value>, content: Vec<Value>) {
     }));
 }
 
-#[allow(
-    clippy::needless_pass_by_value,
-    reason = "block assembly may replace or drain the content vector"
-)]
-fn push_chitsuki_paragraph(blocks: &mut Vec<Value>, offset: u64, content: Vec<Value>) {
-    blocks.push(json!({
-        "kind": "paragraph",
-        "content": [{
-            "kind": "style",
-            "style_type": "chitsuki",
-            "content": content,
-            "align": "right",
-            "offset_from_end": offset,
-            "x-provenance": "source-derived"
-        }]
-    }));
-}
-
-fn align_end_offset(node: &Value) -> Option<u64> {
-    if node.get("kind").and_then(Value::as_str) != Some("raw")
-        || node.get("x-source-marker-kind").and_then(Value::as_str) != Some("alignEnd")
-    {
-        return None;
-    }
-    let source = node.get("source").and_then(Value::as_str)?;
-    if source.contains("地付き") {
-        return Some(0);
-    }
-    parse_aozora_number_before(source, "字上げ")
-}
-
-#[allow(
-    clippy::needless_pass_by_value,
-    reason = "block assembly may replace or drain the content vector"
-)]
-fn push_burasage_paragraph(blocks: &mut Vec<Value>, first: u64, rest: u64, content: Vec<Value>) {
-    for paragraph in content.split_inclusive(ends_source_line) {
-        blocks.push(json!({
-        "kind": "paragraph",
-        "content": [{
-            "kind": "style",
-            "style_type": "burasage",
-            "content": paragraph,
-            "indent_first": first,
-            "indent_rest": rest,
-            "x-provenance": "source-derived"
-        }]
-        }));
-    }
-}
-
-/// As [`push_burasage_paragraph`], but if `jizume_width` is present (the
-/// compound container's marker also carried a `字詰め` clause) the burasage
-/// paragraph nests inside a `jizume_block { width }` instead of landing
-/// directly in `blocks` — the compound close-matching logic that got us
-/// here is untouched; only the destination of the classified output moves.
-#[allow(
-    clippy::needless_pass_by_value,
-    reason = "block assembly may replace or drain the content vector"
-)]
-fn push_burasage_paragraph_maybe_jizume(
-    blocks: &mut Vec<Value>,
-    jizume_width: Option<u64>,
-    first: u64,
-    rest: u64,
-    content: Vec<Value>,
-) {
-    match jizume_width {
-        Some(width) => {
-            let mut children = Vec::new();
-            push_burasage_paragraph(&mut children, first, rest, content);
-            blocks.push(json!({
-                "kind": "jizume_block",
-                "width": width,
-                "children": children
-            }));
-        }
-        None => push_burasage_paragraph(blocks, first, rest, content),
-    }
-}
-
-fn burasage_container_indent(node: &Value) -> Option<(u64, u64)> {
-    if node.get("kind").and_then(Value::as_str) != Some("raw")
-        || node.get("x-source-marker-kind").and_then(Value::as_str) != Some("containerOpen")
-    {
-        return None;
-    }
-    let source = node.get("source").and_then(Value::as_str)?;
-    burasage_open_indent(source)
-}
-
-fn burasage_open_indent(source: &str) -> Option<(u64, u64)> {
-    let marker = source.trim();
-    if !marker.starts_with("［＃ここから") || !marker.ends_with('］') {
-        return None;
-    }
-    let (first_part, rest_part) = marker.split_once("折り返して")?;
-    let rest = parse_aozora_number_before(rest_part, "字下げ")?;
-    let first = if first_part.contains("天付き") {
-        0
-    } else {
-        parse_aozora_number_before(first_part, "字下げ").unwrap_or(0)
-    };
-    Some((first, rest))
-}
-
-fn jisage_container_indent(node: &Value) -> Option<u64> {
-    if node.get("kind").and_then(Value::as_str) != Some("raw")
-        || node.get("x-source-marker-kind").and_then(Value::as_str) != Some("containerOpen")
-    {
-        return None;
-    }
-    let source = node.get("source").and_then(Value::as_str)?;
-    simple_jisage_open_indent(source)
-}
-
-fn jisage_block(opener: &Value, indent: u64, inner: Vec<Value>, source: &str) -> Value {
-    let mut block = json!({
-        "kind": "jisage_block", "indent": indent,
-        "children": blocks_from_inline_content(inner, source)
-    });
-    if opener["source"]
-        .as_str()
-        .is_some_and(|source| source.ends_with("、横書き、中央揃え、罫囲み］"))
-    {
-        block["block_style"] =
-            json!({"direction": "horizontal", "align": "center", "border": "solid"});
-    }
-    block
-}
-
-fn simple_jisage_open_indent(source: &str) -> Option<u64> {
-    let marker = source.trim();
-    if !marker.starts_with("［＃ここから") || !marker.ends_with('］') {
-        return None;
-    }
-    let (_, after_indent) = marker.split_once("字下げ")?;
-    if after_indent != "］" && after_indent != "、横書き、中央揃え、罫囲み］" {
-        return None;
-    }
-    Some(parse_aozora_number_before(marker, "字下げ").unwrap_or(1))
-}
-
-/// Recognize a `字詰め` open marker and extract the chars-per-line count.
-///
-/// Matches the standalone line-width form (`［＃ここからN字詰め］`) or a
-/// `字詰め` carried as the FINAL clause of a compound indent container
-/// (`［＃ここから６字下げ、折り返して７字下げ、２１字詰め］`).
-///
-/// NOTE (C3 gate fix): the *standalone* `［＃ここからN字詰め］` is the
-/// `line-width` container family (upstream notation spec §6.6,
-/// `line-width-open = ［＃ここから 1*DIGIT 字詰め］`). It is NOT a typed
-/// `jizume_block`; it must round-trip as a raw `containerOpen`/
-/// `containerClose` pair (conformance vector `line_width_container`). This
-/// recognizer therefore feeds ONLY the compound-indent wrap path
-/// (`push_burasage_paragraph_maybe_jizume`): a `字詰め` that appears as a
-/// clause on a `字下げ`-carrying indent opener projects the compound
-/// `jizume_block { width }`. It intentionally still *recognizes* the
-/// standalone form (a pure predicate — its semantics are pinned by
-/// `jizume_open_chars_recognizes_standalone_and_compound`), but no block
-/// classifier arm emits a standalone `jizume_block` from it.
-#[must_use]
-pub fn jizume_open_chars(source: &str) -> Option<u64> {
-    let marker = source.trim();
-    if !marker.starts_with("［＃ここから") || !marker.ends_with('］') {
-        return None;
-    }
-    let (_, after) = marker.split_once("字詰め")?;
-    if after != "］" {
-        return None;
-    }
-    parse_aozora_number_before(marker, "字詰め")
-}
-
-/// Recognize the jizume container-close marker (`［＃ここで字詰め終わり］`).
-#[must_use]
-pub fn is_jizume_close(source: &str) -> bool {
-    source.trim() == "［＃ここで字詰め終わり］"
-}
-
-fn find_matching_jisage_close(content: &[Value], start: usize) -> Option<usize> {
-    find_matching_container_close(content, start, "字下げ")
-}
-
-fn find_matching_container_close(content: &[Value], start: usize, needle: &str) -> Option<usize> {
-    for (offset, node) in content[start..].iter().enumerate() {
-        if is_container_open_raw(node) {
-            return None;
-        }
-        if is_container_close_with(node, needle) {
-            return Some(start + offset);
-        }
-    }
-    None
-}
-
-fn is_container_close_with(node: &Value, needle: &str) -> bool {
-    node["x-source-flow"] != "inline"
-        && node.get("kind").and_then(Value::as_str) == Some("raw")
-        && node.get("x-source-marker-kind").and_then(Value::as_str) == Some("containerClose")
-        && node
-            .get("source")
-            .and_then(Value::as_str)
-            .is_some_and(|source| source.contains(needle))
-}
-
 fn block_container_open(node: &Value, marker: &str) -> bool {
     is_container_open_raw(node)
         && node
             .get("source")
             .and_then(Value::as_str)
             .is_some_and(|source| source.trim() == marker)
-}
-
-fn find_next_container_boundary(content: &[Value], start: usize) -> usize {
-    content[start..]
-        .iter()
-        .position(is_container_marker_raw)
-        .map_or(content.len(), |offset| start + offset)
-}
-
-fn is_container_marker_raw(node: &Value) -> bool {
-    is_container_open_raw(node)
-        || node["x-source-flow"] != "inline"
-            && node.get("kind").and_then(Value::as_str) == Some("raw")
-            && node
-                .get("x-source-marker-kind")
-                .and_then(Value::as_str)
-                .is_some_and(|kind| kind == "containerClose")
 }
 
 fn is_container_open_raw(node: &Value) -> bool {
@@ -1966,9 +1767,10 @@ fn source_fragment(decoded: &DecodedSource, range: Range<usize>) -> Option<Vec<V
             marker.start += range.start;
             marker.end += range.start;
         }
-        if let Some(close) = &mut node.container_close {
-            close.start += range.start;
-            close.end += range.start;
+        if let Some(end) = &mut node.container_end {
+            let (ContainerEnd::ClosingMarker(span) | ContainerEnd::IndentReplacement(span)) = end;
+            span.start += range.start;
+            span.end += range.start;
         }
         rebase_variant_spans(&mut node.kind, range.start);
     }
@@ -2093,6 +1895,7 @@ fn inline_content_range(
                 "span": span_json(&node.span, &decoded.span_ctx)
             })),
             ProjectedKind::Node(_)
+            | ProjectedKind::Line(_)
             | ProjectedKind::Region(_)
             | ProjectedKind::RegionClose(_)
             | ProjectedKind::Directive(_)
@@ -3181,6 +2984,72 @@ fn bouten_key(kind: BoutenKind, position: BoutenPosition) -> String {
     format!("bouten:{}:{}", kind.keyword(), bouten_position(position))
 }
 
+fn layout_fields(kind: &ProjectedKind) -> Option<Value> {
+    let mut fields = json!({});
+    match kind {
+        ProjectedKind::Region(RegionFormat::Indent(block)) => {
+            fields["indent"] = json!(block.amount);
+            if let Some(wrap) = block.wrap {
+                fields["continuation_indent"] = json!(wrap);
+            }
+            match block.center {
+                Some(Centering::Page) => {
+                    fields["page_placement"] = json!("center");
+                }
+                Some(Centering::Line) => {
+                    fields["align"] = json!("center");
+                }
+                None => {}
+            }
+            match block.layout {
+                IndentLayout::None => {}
+                IndentLayout::LineWidth(width) => fields["width"] = json!(width.0.get()),
+                IndentLayout::Kumi(kumi) => {
+                    fields["width"] = json!(kumi.width.get());
+                    fields["line_count"] = json!(kumi.lines.get());
+                }
+            }
+            let mut styles = Vec::new();
+            if block.styles.horizontal {
+                fields["direction"] = json!("horizontal");
+            }
+            if block.styles.framed {
+                fields["border"] = json!("solid");
+            }
+            if block.styles.gothic {
+                styles.push(formatting_fields(ForwardAttr::Gothic)?);
+            }
+            if let Some(font) = block.styles.font {
+                styles.push(formatting_fields(ForwardAttr::FontSize(font))?);
+            }
+            match styles.len() {
+                0 => {}
+                1 => fields["formatting"] = styles.remove(0),
+                _ => fields["formatting"] = json!({"kind":"compound", "attributes":styles}),
+            }
+        }
+        ProjectedKind::Region(RegionFormat::LineWidth(width)) => {
+            fields["width"] = json!(width.0.get());
+        }
+        ProjectedKind::Region(RegionFormat::AlignEnd { offset })
+        | ProjectedKind::Line(LineFormat::AlignEnd { offset }) => {
+            fields["align"] = json!("right");
+            fields["offset_from_end"] = json!(offset);
+        }
+        ProjectedKind::Line(LineFormat::Center { page }) => {
+            fields[if *page { "page_placement" } else { "align" }] = json!("center");
+        }
+        ProjectedKind::Line(LineFormat::Indent { amount, end_offset }) => {
+            fields["indent"] = json!(amount);
+            if let Some(offset) = end_offset {
+                fields["offset_from_end"] = json!(offset);
+            }
+        }
+        _ => return None,
+    }
+    Some(fields)
+}
+
 fn region_formatting(region: RegionFormat) -> Option<(String, Value)> {
     let (key, attr) = match region {
         RegionFormat::Warichu => return Some(("warichu".to_owned(), json!({"kind":"warichu"}))),
@@ -3253,6 +3122,9 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
         "x-provenance": "parser-derived", "x-source-marker-kind": marker_kind,
         "span": span_json(&node.span, &decoded.span_ctx)
     });
+    if let Some(layout) = layout_fields(&node.kind) {
+        value["x-layout"] = layout;
+    }
     if let ProjectedKind::TextVariant {
         target,
         current,
@@ -3282,8 +3154,12 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
     }
     match node.kind {
         ProjectedKind::Region(region) => {
-            if let Some(close) = &node.container_close {
-                value["x-native-close-span"] = span_json(close, &decoded.span_ctx);
+            if let Some(end) = node.container_end {
+                let (key, span) = match end {
+                    ContainerEnd::ClosingMarker(span) => ("x-native-close-span", span),
+                    ContainerEnd::IndentReplacement(span) => ("x-native-end-before-span", span),
+                };
+                value[key] = span_json(&span.into(), &decoded.span_ctx);
             }
             if let RegionFormat::Heading { level, style, .. } = region {
                 let style = match style {
@@ -3996,7 +3872,7 @@ mod tests {
         let aat = aat_value_for(source);
         let heading = find_first_node(&aat, "heading");
         assert_eq!(heading["level"], 2);
-        assert_eq!(heading["indent"], 7);
+        assert_eq!(find_first_node(&aat, "layout_block")["indent"], 7);
         assert_eq!(find_first_node(heading, "ruby")["reading"], "おほどぶ");
         let content = heading["content"].as_array().unwrap();
         assert_eq!(content[0]["value"], "「");
@@ -4180,63 +4056,26 @@ mod tests {
         let kinds = block_kinds(&doc);
         assert_eq!(kinds, ["keigakomi_block"]);
         let frame = find_node(&doc, "keigakomi_block").unwrap();
-        let indent = find_node(frame, "jisage_block").unwrap();
+        let indent = find_node(frame, "layout_block").unwrap();
         assert!(serde_json::to_string(indent).unwrap().contains('ａ'));
     }
 
     #[test]
-    fn jizume_open_chars_recognizes_standalone_and_compound() {
-        assert_eq!(jizume_open_chars("［＃ここから２３字詰め］"), Some(23));
-        assert_eq!(
-            jizume_open_chars("［＃ここから６字下げ、折り返して７字下げ、２１字詰め］"),
-            Some(21)
-        );
-        assert_eq!(jizume_open_chars("［＃ここから２字下げ］"), None);
-        assert_eq!(jizume_open_chars("［＃ここで字詰め終わり］"), None);
-        assert!(is_jizume_close("［＃ここで字詰め終わり］"));
-        assert!(!is_jizume_close("［＃ここで字下げ終わり］"));
-    }
-
-    #[test]
-    fn paired_line_width_container_stays_raw() {
-        // C3 gate fix: standalone `［＃ここからN字詰め］` is the `line-width`
-        // container family (upstream notation spec §6.6, `line-width-open`),
-        // NOT a typed jizume_block. Even a fully paired open/close must
-        // round-trip as raw containerOpen/containerClose — the conformance
-        // vector `line_width_container` requires exactly this. (Pre-C3 this
-        // arm emitted a jizume_block, which over-matched the vector.)
-        let aat = aat_value_for("［＃ここから２１字詰め］\n本文\n［＃ここで字詰め終わり］\n");
-        assert!(
-            find_node(&aat, "jizume_block").is_none(),
-            "standalone line-width container must not form a jizume_block"
-        );
-        let serialized = serde_json::to_string(&aat).unwrap();
-        assert!(serialized.contains("containerOpen"));
-        assert!(serialized.contains("containerClose"));
-    }
-
-    #[test]
-    fn line_width_container_conformance_vector_stays_raw() {
-        // Pins the exact source text of the upstream conformance vector
-        // `line_width_container` (§6.6): the parser must leave it a raw
-        // containerOpen/containerClose pair so the comparator maps it 1:1 to
-        // the vector's expected node kinds. Verbatim vector source below.
+    fn line_width_scope_preserves_adjacent_paragraphs() {
         let aat = aat_value_for(
             "本文。\n［＃ここから26字詰め］\n詰めた段落。\n別の行。\n［＃ここで字詰め終わり］\n通常段落。\n",
         );
-        assert!(
-            find_node(&aat, "jizume_block").is_none(),
-            "line_width_container vector must not form a jizume_block"
-        );
-        let serialized = serde_json::to_string(&aat).unwrap();
-        assert!(serialized.contains("containerOpen"));
-        assert!(serialized.contains("containerClose"));
+        assert_eq!(aat["blocks"].as_array().unwrap().len(), 3);
+        assert_eq!(aat["blocks"][1]["width"], 26);
+        assert_eq!(aat["blocks"][1]["children"].as_array().unwrap().len(), 2);
+        assert_eq!(aat["blocks"][0]["content"][0]["value"], "本文。\n");
+        assert_eq!(aat["blocks"][2]["content"][0]["value"], "通常段落。\n");
     }
 
     #[test]
     fn unpaired_jizume_open_stays_raw() {
         let aat = aat_value_for("［＃ここから２１字詰め］\n本文\n");
-        assert!(find_node(&aat, "jizume_block").is_none());
+        assert!(find_node(&aat, "layout_block").is_none());
         // the open survives as a raw containerOpen node — zero silent drops
         assert!(
             serde_json::to_string(&aat)
@@ -4246,53 +4085,14 @@ mod tests {
     }
 
     #[test]
-    fn compound_jisage_jizume_nests_jizume_block() {
-        // The compound container still classifies as burasage (6,7) — the
-        // ２１字詰め clause now additionally wraps that classified output in
-        // a jizume_block instead of leaving it unemitted.
-        assert_eq!(
-            burasage_open_indent("［＃ここから６字下げ、折り返して７字下げ、２１字詰め］"),
-            Some((6, 7))
-        );
-        let aat = aat_value_for(
-            "［＃ここから６字下げ、折り返して７字下げ、２１字詰め］\n本文\n［＃ここで字下げ終わり］\n",
-        );
-        let jizume = find_first_node(&aat, "jizume_block");
-        assert_eq!(jizume["width"], 21);
-        // children carry the burasage classification exactly as before, now typed (6,7)
-        let style = find_first_node(jizume, "style");
-        assert_eq!(style["indent_first"], 6);
-        assert_eq!(style["indent_rest"], 7);
-    }
-
-    #[test]
-    fn compound_jizume_boundary_fallback_still_wraps() {
-        // Compound container with jizume width (21) but NO ［＃ここで字下げ終わり］
-        // close — a following container open (罫囲み) triggers the boundary-fallback
-        // arm, which finds the next container marker and classifies what's between.
-        // The burasage classification still nests inside the jizume_block (6,7,21).
+    fn unrelated_frame_cannot_supply_a_missing_indent_boundary() {
         let aat = aat_value_for(
             "［＃ここから６字下げ、折り返して７字下げ、２１字詰め］\n本文\n［＃ここから罫囲み］\nX\n［＃ここで罫囲み終わり］\n",
         );
-        // 1. A jizume_block exists with width 21
-        let jizume = find_first_node(&aat, "jizume_block");
-        assert_eq!(jizume["width"], 21);
-        // 2. Inside it, a style node with style_type "burasage", indent_first 6, indent_rest 7
-        let style = find_first_node(jizume, "style");
-        assert_eq!(style["style_type"], "burasage");
-        assert_eq!(style["indent_first"], 6);
-        assert_eq!(style["indent_rest"], 7);
-        // 3. A keigakomi_block also exists at top level
+        assert!(find_node(&aat, "layout_block").is_none());
+        assert!(find_node(&aat, "raw").is_some());
         let keigakomi = find_first_node(&aat, "keigakomi_block");
         assert_eq!(keigakomi["kind"], "keigakomi_block");
-    }
-
-    #[test]
-    fn jisage_block_emits_typed_indent() {
-        let aat = aat_value_for("［＃ここから２字下げ］\n本文\n［＃ここで字下げ終わり］\n");
-        let block = find_first_node(&aat, "jisage_block");
-        assert_eq!(block["indent"], 2);
-        assert!(block.get("x-indent").is_none());
     }
 
     #[test]
@@ -4302,42 +4102,31 @@ mod tests {
             let aat = aat_value_for(&source);
             let blocks = aat["blocks"].as_array().unwrap();
             assert_eq!(blocks.len(), 3, "{aat}");
-            let style = &blocks[0]["content"][0];
-            assert_eq!(style["style_type"], "chitsuki");
-            assert_eq!(style["offset_from_end"], 3);
-            assert_eq!(style["content"].as_array().unwrap().len(), 2);
+            let layout = &blocks[0];
+            assert_eq!(layout["kind"], "layout_block");
+            assert_eq!(layout["offset_from_end"], 3);
+            assert_eq!(
+                layout["children"][0]["content"].as_array().unwrap().len(),
+                2
+            );
             assert_eq!(blocks[1]["content"][0]["value"], "続く。\n");
             assert_eq!(blocks[2]["content"][0]["value"], "次。");
             let joined = aat_value_for(&source.replacen(newline, "", 1));
             assert_eq!(joined["blocks"].as_array().unwrap().len(), 2);
             assert_eq!(
-                joined["blocks"][0]["content"][0]["content"][1]["value"],
-                "。続く。\n"
+                joined["blocks"][0]["children"][0]["content"][1]["value"],
+                "。続く。"
             );
         }
     }
 
     #[test]
-    fn chitsuki_style_emits_typed_align_offset() {
+    fn suffix_alignment_applies_to_preceding_line_text() {
         let aat = aat_value_for("本文［＃地から２字上げ］\n");
-        let style = find_first_node(&aat, "style");
-        assert_eq!(style["align"], "right");
-        assert_eq!(style["offset_from_end"], 2);
-        assert!(style.get("x-align").is_none() && style.get("x-offset").is_none());
-        assert_eq!(style["x-provenance"], "source-derived"); // provenance retained
-    }
-
-    #[test]
-    fn burasage_style_emits_typed_first_rest() {
-        // Pinned (6,7) compound input — same source string exercised by
-        // `compound_jisage_jizume_nests_jizume_block`.
-        let src = "［＃ここから６字下げ、折り返して７字下げ、２１字詰め］\nあ\n［＃ここで字下げ終わり］\n";
-        let aat = aat_value_for(src);
-        let style = find_first_node(&aat, "style");
-        assert_eq!(style["indent_first"], 6);
-        assert_eq!(style["indent_rest"], 7);
-        assert!(style.get("x-indent-first").is_none() && style.get("x-indent-rest").is_none());
-        assert_eq!(style["x-provenance"], "source-derived");
+        let layout = find_first_node(&aat, "layout_block");
+        assert_eq!(layout["align"], "right");
+        assert_eq!(layout["offset_from_end"], 2);
+        assert_eq!(layout["children"][0]["content"][0]["value"], "本文");
     }
 
     #[test]
@@ -4345,7 +4134,7 @@ mod tests {
         // Same indented-heading line as `full-markup-utf8.txt` line 9.
         let aat = aat_value_for("［＃５字下げ］一［＃「一」は中見出し］\n");
         let heading = find_first_node(&aat, "heading");
-        assert_eq!(heading["indent"], 5);
+        assert_eq!(find_first_node(&aat, "layout_block")["indent"], 5);
         assert!(heading.get("x-indent").is_none());
     }
 
@@ -4366,7 +4155,7 @@ mod tests {
             let heading = find_first_node(&aat, "heading");
             assert_eq!(heading["level"], level, "{source}");
             assert_eq!(heading["style"], style, "{source}");
-            assert_eq!(heading["indent"], 7);
+            assert_eq!(find_first_node(&aat, "layout_block")["indent"], 7);
             assert_eq!(heading["content"][0]["value"], title);
         }
     }
@@ -5079,23 +4868,12 @@ mod tests {
     }
 
     #[test]
-    fn bare_toggle_inside_jizume_block_preserves_block_structure() {
-        // Corpus shape 000026_55738 (delta-gate BLOCK →
-        // amendment 2): a compound 字下げ (burasage) block whose body line
-        // carries a bare yokogumi pair, closed by ここで字下げ終わり, then
-        // another paragraph. With the pass running BEFORE block
-        // classification, consuming the marker nodes changed segmentation
-        // (`find_matching_jisage_close` no longer aborted at the bare
-        // `containerOpen`, so the terminator was consumed and the following
-        // paragraph merged into the burasage paragraph). The pass now runs
-        // post-block-classification: the FULL block tree must equal the
-        // no-pass tree except for exactly the adopted-pair rewrite.
+    fn inline_horizontal_scope_preserves_enclosing_layout_structure() {
         let src = "［＃ここから２字下げ、折り返して３字下げ］\n\
                    Ａ＝Ａ［＃横組み］ＡＢ［＃横組み終わり］\n\
                    ［＃ここで字下げ終わり］\n\
                    次の段落\n";
 
-        // (a) the pair adopts with the right content.
         let doc = aat_value_for(src);
         let container = find_first_node(&doc, "yokogumi");
         let content = container["content"].as_array().unwrap();
@@ -5103,11 +4881,6 @@ mod tests {
         assert_eq!(content[0]["kind"], "text");
         assert_eq!(content[0]["value"], "ＡＢ");
 
-        // (b) strongest form (mirrors the delta audit's projection): expand
-        // the adopted container back to [open, content, close] and assert
-        // the whole block tree equals the tree built WITHOUT the pass —
-        // block kinds, paragraph segmentation, jizume terminator handling,
-        // spans, provenance: everything.
         let decoded = decode_source_bytes(src.as_bytes()).unwrap();
         let (nodes, _diagnostics, gaiji, ruby, _) = projections(&decoded.span_text).unwrap();
         let gaiji_by_start = gaiji
@@ -5134,13 +4907,12 @@ mod tests {
             "block tree must differ from the no-pass tree ONLY by the adopted-pair rewrite"
         );
 
-        // The regression's visible symptom, pinned directly: the 字下げ
-        // terminator must not be dropped.
-        let raws = raw_sources_of(&doc);
-        assert!(
-            raws.iter().any(|s| s == "［＃ここで字下げ終わり］"),
-            "jisage terminator dropped: {raws:?}"
-        );
+        let layout = find_first_node(&doc, "layout_block");
+        let end = &layout["interpretation_marker_spans"][1];
+        let start = usize::try_from(end["byte_start"].as_u64().unwrap()).unwrap();
+        let end = usize::try_from(end["byte_end"].as_u64().unwrap()).unwrap();
+        assert_eq!(&src[start..end], "［＃ここで字下げ終わり］");
+        assert_eq!(doc["blocks"][1]["content"][0]["value"], "次の段落\n");
     }
 
     // --- property-test target ---------------------------------------------

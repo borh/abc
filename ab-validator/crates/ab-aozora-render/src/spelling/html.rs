@@ -343,7 +343,7 @@ fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::R
             if wrap.is_some() {
                 writer.write_str(" aozora-container-wrap-indent")?;
             }
-            if center {
+            if center.is_some() {
                 writer.write_str(" aozora-container-center")?;
             }
             // secondary line-layout: 字組み grid gets its own class,

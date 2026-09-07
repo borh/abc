@@ -153,8 +153,17 @@ pub struct ContainerPair {
     pub close: NormalizedOffset,
     /// Original opening marker in sanitized-source byte coordinates.
     pub source_open: crate::Span,
-    /// Original closing marker in sanitized-source byte coordinates.
-    pub source_close: crate::Span,
+    /// Source event that ends this region, in sanitized-source byte coordinates.
+    pub source_end: ContainerEnd,
+}
+
+/// The source event terminating a region; replacement is not a closing marker.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ContainerEnd {
+    /// An explicit matching closing marker.
+    ClosingMarker(crate::Span),
+    /// A following indentation opener replaces the current indentation.
+    IndentReplacement(crate::Span),
 }
 
 #[cfg(test)]

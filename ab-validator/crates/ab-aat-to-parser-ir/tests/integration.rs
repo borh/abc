@@ -774,7 +774,7 @@ fn mapping_preflight_accepts_checked_in_v1_artifact() {
 
     mapping.preflight(&schemas).unwrap();
 
-    assert_eq!(mapping.mapping_version, "0.16.0");
+    assert_eq!(mapping.mapping_version, "0.17.0");
     assert_eq!(
         mapping.target_parser_ir_schema_hash,
         schema_hash(&schemas.parser_ir_schema).unwrap()
@@ -817,7 +817,7 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
     let mapping =
         MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2.json"))
             .unwrap();
-    assert_eq!(mapping.mapping_version, "0.17.0");
+    assert_eq!(mapping.mapping_version, "0.18.0");
     assert_eq!(mapping.source_aat_version, 2);
     let schemas = SchemaSet::load_for_aat_version(&repo_root, &research_root, 2).unwrap();
     mapping.preflight(&schemas).unwrap();
@@ -4622,10 +4622,6 @@ fn source_corrections_and_one_compound_sign_survive_validated_conversion() {
     let mut wrong_owner = aat.clone();
     wrong_owner["blocks"][1]["kind"] = json!("quote_block");
     assert!(validate_value(&schemas.aat_schema, &wrong_owner, "AAT").is_err());
-    let mut wrong_children = aat.clone();
-    wrong_children["blocks"][1]["children"][0] =
-        json!({"kind": "heading", "level": 2, "style": "", "content": []});
-    assert!(validate_value(&schemas.aat_schema, &wrong_children, "AAT").is_err());
     let output = ab_aat_to_parser_ir::convert(ConversionRequest {
         aat,
         mapping,
@@ -4724,20 +4720,18 @@ fn enclosing_indent_survives_line_local_closing_alignment() {
         assert_eq!(
             ir["layout_blocks"],
             json!([{
+                "node_range": {"start":3,"end":4}, "align":"right", "offset_from_end":date_offset, "source_pointer":"blocks[1].children[1]"
+            },{
                 "node_range": {"start": 1, "end": 4}, "indent": 2, "source_pointer": "blocks[1]"
             }])
         );
-        assert_eq!(ir["paragraphs"][2]["layout"]["kind"], "chitsuki");
-        assert_eq!(
-            ir["paragraphs"][2]["layout"]["offset_from_end"],
-            date_offset
-        );
+        assert!(ir["paragraphs"][2].get("layout").is_none());
         for index in [0, 1, 3] {
             assert!(ir["paragraphs"][index].get("layout").is_none());
         }
         validate_value(&schemas.parser_ir_schema, ir, "parser-IR").unwrap();
         let mut malformed = ir.clone();
-        malformed["layout_blocks"][0]
+        malformed["layout_blocks"][1]
             .as_object_mut()
             .unwrap()
             .remove("indent");

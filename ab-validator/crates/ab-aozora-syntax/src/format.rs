@@ -266,6 +266,16 @@ impl BlockStyles {
     }
 }
 
+/// Supplied centering distinguishes page placement from line alignment.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum Centering {
+    /// Position the supplied material at the page centre.
+    Page,
+    /// Centre the text within its line.
+    Line,
+}
+
 /// The block-only payload of an indent region.
 ///
 /// `wrap` / `layout` / `styles` live here rather than on the single-line
@@ -277,9 +287,8 @@ pub struct IndentBlock {
     pub amount: u8,
     /// Hanging-indent continuation width: `Some(M)` for `折り返して M字下げ`.
     pub wrap: Option<u8>,
-    /// `true` for the combined `…、ページの左右中央` / `…、中央揃え` form
-    /// (also page-centred).
-    pub center: bool,
+    /// Supplied centering axis, independent of indentation.
+    pub center: Option<Centering>,
     /// Secondary line-layout clause; see [`IndentLayout`].
     pub layout: IndentLayout,
     /// Co-applied decorative styles (`ゴシック体` / `横書き` / `罫囲み` /
@@ -875,7 +884,7 @@ impl RegionFormat {
         Self::Indent(IndentBlock {
             amount: 0,
             wrap: None,
-            center: false,
+            center: None,
             layout: IndentLayout::None,
             styles: BlockStyles::EMPTY,
         }),
@@ -1171,7 +1180,7 @@ mod tests {
         let kumi = RegionFormat::Indent(IndentBlock {
             amount: 2,
             wrap: None,
-            center: false,
+            center: None,
             layout: IndentLayout::Kumi(Kumi {
                 lines: NonZeroU8::MIN,
                 width: NonZeroU8::new(20).unwrap(),
@@ -1187,7 +1196,7 @@ mod tests {
         let plain = RegionFormat::Indent(IndentBlock {
             amount: 2,
             wrap: None,
-            center: false,
+            center: None,
             layout: IndentLayout::None,
             styles: BlockStyles::EMPTY,
         });

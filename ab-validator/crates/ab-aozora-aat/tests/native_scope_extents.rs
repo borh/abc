@@ -2,6 +2,7 @@
 
 use ab_aozora_aat::aat_json_from_bytes;
 use ab_aozora_facade::Document;
+use ab_aozora_facade::syntax::ast::ContainerEnd;
 use serde_json::Value;
 
 #[test]
@@ -11,7 +12,10 @@ fn native_pairs_retain_both_original_marker_spans() {
     let tree = document.parse();
     let pair = &tree.container_pairs()[0];
     assert_eq!(pair.source_open.slice(source), "［＃中見出し］");
-    assert_eq!(pair.source_close.slice(source), "［＃中見出し終わり］");
+    let ContainerEnd::ClosingMarker(close) = pair.source_end else {
+        panic!("explicit closing marker expected")
+    };
+    assert_eq!(close.slice(source), "［＃中見出し終わり］");
 }
 
 #[test]

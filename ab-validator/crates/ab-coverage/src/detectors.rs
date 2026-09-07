@@ -466,6 +466,7 @@ fn d_keigakomi(n: &Value) -> bool {
 
 fn d_jisage_block(node: &Value) -> bool {
     node.get("kind").and_then(Value::as_str) == Some("jisage_block")
+        || (node["kind"] == "layout_block" && node.get("indent").is_some())
 }
 
 fn d_yokogumi(n: &Value) -> bool {

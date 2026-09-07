@@ -60,10 +60,11 @@ fn here_from_heading_keeps_size_indentation_and_internal_line_break() {
         let aat = document(&format!(
             "［＃３字下げ］［＃ここから{size}見出し］\n一\n二\n［＃ここで見出し終わり］"
         ));
-        let heading = &aat["blocks"][0];
+        let layout = &aat["blocks"][0];
+        assert_eq!(layout["indent"], 3);
+        let heading = &layout["children"][0];
         assert_eq!(heading["kind"], "heading");
         assert_eq!(heading["level"], level);
-        assert_eq!(heading["indent"], 3);
         let text: String = heading["content"]
             .as_array()
             .unwrap()

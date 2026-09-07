@@ -250,26 +250,10 @@ fn emit_indent_open<W: Write>(block: IndentBlock, out: &mut W) -> fmt::Result {
         font,
     } = styles;
 
-    // `［＃ここからページの左右中央］` — a pure page-centred block (`amount: 0`,
-    // `center`, no other clause). The short opener is its canonical spelling, so
-    // emit it verbatim rather than the synthetic `ここから0字下げ、…` numbered
-    // form, keeping `parse ∘ serialize` a fixed point for the source directive.
-    if amount == 0
-        && center
-        && wrap.is_none()
-        && matches!(layout, IndentLayout::None)
-        && !gothic
-        && !horizontal
-        && !framed
-        && font.is_none()
-    {
-        return out.write_str("［＃ここからページの左右中央］");
-    }
-
     // The idiomatic no-number `［＃ここから字下げ］` form is reserved for a bare
     // single-char indent with no clauses; anything else takes the numbered form.
     let bare = wrap.is_none()
-        && !center
+        && center.is_none()
         && matches!(layout, IndentLayout::None)
         && !gothic
         && !horizontal
@@ -283,8 +267,10 @@ fn emit_indent_open<W: Write>(block: IndentBlock, out: &mut W) -> fmt::Result {
     if let Some(wrap) = wrap {
         write!(out, "、折り返して{wrap}字下げ")?;
     }
-    if center {
-        out.write_str("、ページの左右中央に")?;
+    match center {
+        Some(ab_aozora_syntax::Centering::Page) => out.write_str("、ページの左右中央に")?,
+        Some(ab_aozora_syntax::Centering::Line) => out.write_str("、中央揃え")?,
+        None => {}
     }
     match layout {
         IndentLayout::Kumi(kumi) => write!(out, "、{}行{}字組みで", kumi.lines, kumi.width)?,

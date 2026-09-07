@@ -64,6 +64,10 @@
                      :families #{"annotation.chuuki"} :aspects #{"content" "structure"}}
    "layout" {:markers #{"CommandFullwidth" "CommandAscii"}
              :families #{"decoration.keigakomi" "layout.yokogumi" "glyph.variant_note"} :aspects #{"layout"}}
+   "line-layout" {:markers #{"CommandFullwidth" "CommandAscii"}
+                  :families #{"indentation.basic" "indentation.jisage_block" "indentation.jisage_oneline"
+                              "indentation.chitsuki" "indentation.jizume" "indentation.burasage" "layout.center_page"}
+                  :aspects #{"layout"}}
    "warichu" {:markers #{"CommandFullwidth" "CommandAscii"}
               :families #{"warichu.basic"} :aspects #{"structure" "layout"}}})
 

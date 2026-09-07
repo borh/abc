@@ -127,3 +127,15 @@
     (let [changed (:body (tei/render (assoc-in ir ["paragraphs" 2 "layout" "offset_from_end"] 3)))]
       (is (= (second enclosure) (get-in changed [1 2 1])))
       (is (= "chitsuki align(right) offset-from-end(3)" (get-in changed [1 2 3 1 :rend]))))))
+
+(deftest supplied-line-geometry-keeps-independent-axes
+  (let [scope {"node_range" {"start" 1 "end" 5} "source_pointer" "blocks[1]"
+               "indent" 6 "continuation_indent" 7 "width" 21 "line_count" 2
+               "offset_from_end" 3 "page_placement" "center"}
+        body (:body (tei/render (document [scope])))
+        attrs (get-in body [1 2 1])]
+    (is (= "padding-inline-start: 7em; text-indent: -1em; padding-inline-end: 3em; inline-size: 21em"
+           (:style attrs)))
+    (is (= "page-center line-count(2)" (:rend attrs)))
+    (is (= [:p "前"] (get-in body [1 1])))
+    (is (some #{[:p "後"]} (tree-seq vector? seq (get-in body [1 3]))))))

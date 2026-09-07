@@ -195,15 +195,9 @@ fn font_size_schema_rejects_mixed_absolute_and_relative_payloads() {
 
 #[test]
 fn inline_tcy_does_not_terminate_enclosing_indentation() {
-    for (open, layout) in [
-        (
-            "ここから１字下げ",
-            json!({"kind":"jisage", "source":"aat-block", "indent":1}),
-        ),
-        (
-            "ここから１字下げ、折り返して２字下げ",
-            json!({"kind":"burasage", "source":"aat-style", "first_line_indent":1, "continuation_indent":2}),
-        ),
+    for (open, continuation) in [
+        ("ここから１字下げ", None),
+        ("ここから１字下げ、折り返して２字下げ", Some(2)),
     ] {
         let ir = convert(&format!(
             "［＃{open}］\nビタミン［＃縦中横］B1［＃「1」は下付き小文字］［＃縦中横終わり］　二ミリグラム\n次の行。\n［＃ここで字下げ終わり］"
@@ -223,7 +217,13 @@ fn inline_tcy_does_not_terminate_enclosing_indentation() {
                     && paragraph["node_range"]["end"].as_u64().unwrap() > tcy_index as u64
             })
             .unwrap();
-        assert_eq!(paragraph["layout"], layout, "{ir}");
+        let scope = &ir["layout_blocks"][0];
+        assert_eq!(scope["indent"], 1);
+        assert_eq!(scope["continuation_indent"].as_u64(), continuation);
+        assert!(
+            scope["node_range"]["start"].as_u64().unwrap()
+                <= paragraph["node_range"]["start"].as_u64().unwrap()
+        );
         let start = usize::try_from(paragraph["node_range"]["start"].as_u64().unwrap()).unwrap();
         let end = usize::try_from(paragraph["node_range"]["end"].as_u64().unwrap()).unwrap();
         let text: String = ir["nodes"].as_array().unwrap()[start..end]
@@ -237,7 +237,10 @@ fn inline_tcy_does_not_terminate_enclosing_indentation() {
             .iter()
             .find(|p| p["node_range"]["start"].as_u64() == Some(end as u64))
             .unwrap();
-        assert_eq!(next["layout"], layout);
+        assert!(
+            scope["node_range"]["end"].as_u64().unwrap()
+                >= next["node_range"]["end"].as_u64().unwrap()
+        );
         let next_end = usize::try_from(next["node_range"]["end"].as_u64().unwrap()).unwrap();
         let next_text: String = ir["nodes"].as_array().unwrap()[end..next_end]
             .iter()
@@ -267,9 +270,11 @@ fn paired_font_size_preserves_leading_space_and_enclosing_layout() {
                 && p["node_range"]["end"].as_u64().unwrap() > index as u64
         })
         .unwrap();
-    assert_eq!(paragraph["layout"]["kind"], "burasage");
-    assert_eq!(paragraph["layout"]["first_line_indent"], 1);
-    assert_eq!(paragraph["layout"]["continuation_indent"], 2);
+    let scope = &ir["layout_blocks"][0];
+    assert_eq!(scope["indent"], 1);
+    assert_eq!(scope["continuation_indent"], 2);
+    assert!(scope["node_range"]["start"].as_u64().unwrap() <= index as u64);
+    assert!(scope["node_range"]["end"].as_u64().unwrap() > index as u64);
     let start = usize::try_from(paragraph["node_range"]["start"].as_u64().unwrap()).unwrap();
     let end = usize::try_from(paragraph["node_range"]["end"].as_u64().unwrap()).unwrap();
     let text: String = nodes[start..end]

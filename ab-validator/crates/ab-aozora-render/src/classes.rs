@@ -499,14 +499,14 @@ mod tests {
             RegionFormat::Indent(IndentBlock {
                 amount: 2,
                 wrap: None,
-                center: false,
+                center: None,
                 layout: IndentLayout::None,
                 styles: BlockStyles::EMPTY,
             }),
             RegionFormat::Indent(IndentBlock {
                 amount: 2,
                 wrap: Some(4),
-                center: true,
+                center: Some(ab_aozora_syntax::Centering::Page),
                 layout: IndentLayout::None,
                 styles: BlockStyles::EMPTY,
             }),
@@ -515,14 +515,14 @@ mod tests {
             RegionFormat::Indent(IndentBlock {
                 amount: 3,
                 wrap: None,
-                center: false,
+                center: None,
                 layout: IndentLayout::Kumi(kumi(1, 20)),
                 styles: BlockStyles::EMPTY,
             }),
             RegionFormat::Indent(IndentBlock {
                 amount: 8,
                 wrap: None,
-                center: false,
+                center: None,
                 layout: IndentLayout::LineWidth(lw(18)),
                 styles: BlockStyles::EMPTY,
             }),
@@ -532,7 +532,7 @@ mod tests {
             RegionFormat::Indent(IndentBlock {
                 amount: 4,
                 wrap: None,
-                center: false,
+                center: None,
                 layout: IndentLayout::None,
                 styles: BlockStyles {
                     gothic: true,

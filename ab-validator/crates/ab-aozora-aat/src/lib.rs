@@ -2779,6 +2779,15 @@ fn resolve_text_variants_in_blocks(nodes: Vec<Value>, source: &str) -> Vec<Value
                     append_variant_statement(&mut resolved, &node);
                     continue;
                 }
+                if attach_principal_ruby_variant(
+                    &mut resolved,
+                    &node,
+                    current,
+                    &current_text,
+                    source,
+                ) {
+                    continue;
+                }
             } else if attach_reading_variant(
                 &mut resolved,
                 &node,
@@ -2793,6 +2802,90 @@ fn resolve_text_variants_in_blocks(nodes: Vec<Value>, source: &str) -> Vec<Value
         resolved.push(node);
     }
     resolved
+}
+
+fn adjacent_principal_ruby(nodes: &mut [Value]) -> Option<&mut Value> {
+    for node in nodes.iter_mut().rev() {
+        match node["kind"].as_str()? {
+            "editorial_note" => {}
+            "raw" if node.get("text_variant").is_some() => {}
+            "ruby" => return Some(node),
+            "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi"
+            | "yokogumi" => {
+                return adjacent_principal_ruby(node["content"].as_array_mut()?);
+            }
+            _ => return None,
+        }
+    }
+    None
+}
+
+// A unique principal-letter range can carry an alternative inside one rb;
+// the associated ruby reading remains whole and owns its existing reading axis.
+fn attach_principal_ruby_variant(
+    nodes: &mut [Value],
+    note: &Value,
+    current: &[Value],
+    target: &str,
+    source: &str,
+) -> bool {
+    let Some(ruby) = adjacent_principal_ruby(nodes) else {
+        return false;
+    };
+    let Some(content) = principal_ruby_variant_content(ruby, note, current, target, source) else {
+        return false;
+    };
+    ruby["base_content"] = json!(content);
+    true
+}
+
+fn principal_ruby_variant_content(
+    ruby: &Value,
+    note: &Value,
+    current: &[Value],
+    target: &str,
+    source: &str,
+) -> Option<Vec<Value>> {
+    if target.is_empty()
+        || ruby.get("base_content").is_some()
+        || !quoted_structure_matches(current, &[json!({"kind":"text", "value":target})])
+    {
+        return None;
+    }
+    let base = ruby["base"].as_str()?;
+    let mut matches = base.match_indices(target);
+    let (index, _) = matches.next()?;
+    if matches.next().is_some() {
+        return None;
+    }
+    let mut start = usize::try_from(ruby["span"]["byte_start"].as_u64()?).ok()?;
+    let source_end = usize::try_from(ruby["span"]["byte_end"].as_u64()?).ok()?;
+    if source.get(start..source_end)?.starts_with('｜') {
+        start += '｜'.len_utf8();
+    }
+    if start + base.len() > source_end || source.get(start..start + base.len())? != base {
+        return None;
+    }
+    let text_node = |from: usize, to: usize| {
+        let mut span = ruby["span"].clone();
+        span["byte_start"] = json!(start + from);
+        span["byte_end"] = json!(start + to);
+        span["line_end"] = span["line_start"].clone();
+        json!({"kind":"text", "value":&base[from..to], "span":span})
+    };
+    let mut content = Vec::new();
+    if index > 0 {
+        content.push(text_node(0, index));
+    }
+    let end = index + target.len();
+    content.push(json!({"kind":"text-variant", "content":[text_node(index, end)],
+        "base_text":content_target_text(note["text_variant"]["base_content"].as_array()?)?,
+        "base_content":note["text_variant"]["base_content"], "source":note["source"], "span":note["span"]}));
+    append_variant_statement(&mut content, note);
+    if end < base.len() {
+        content.push(text_node(end, base.len()));
+    }
+    Some(content)
 }
 
 fn append_variant_statement(content: &mut Vec<Value>, note: &Value) {

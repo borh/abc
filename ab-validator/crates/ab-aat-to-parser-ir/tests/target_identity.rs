@@ -303,3 +303,75 @@ fn mixed_current_formatting_and_malformed_variants_are_not_discharged_as_prose()
         assert!(!ir["interpretation_problems"].as_array().unwrap().is_empty());
     }
 }
+
+#[test]
+fn unique_principal_subrange_preserves_the_whole_ruby_reading() {
+    for (body, base, reading, target, witness) in [
+        (
+            "渡辺崋山《わたなべかざん》［＃「崋山」は底本では「華山」］も",
+            "渡辺崋山",
+            "わたなべかざん",
+            "崋山",
+            "華山",
+        ),
+        (
+            "｜溌剌《はつらつ》［＃「剌」は底本では「刺」］たる",
+            "溌剌",
+            "はつらつ",
+            "剌",
+            "刺",
+        ),
+        (
+            "甲乙丙《こうおつへい》［＃「乙」は底本では「オツ」］",
+            "甲乙丙",
+            "こうおつへい",
+            "乙",
+            "オツ",
+        ),
+    ] {
+        let ir = convert(body);
+        let all = nodes(&ir);
+        let rubies = all
+            .iter()
+            .filter(|node| node["type"] == "ruby")
+            .collect::<Vec<_>>();
+        assert_eq!(rubies.len(), 1);
+        assert_eq!(rubies[0]["ruby"]["base"], base);
+        assert_eq!(rubies[0]["ruby"]["reading"], reading);
+        let app = rubies[0]["inline_children"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|node| node["type"] == "base-text-variant")
+            .unwrap();
+        assert_eq!(app["text"], target);
+        assert_eq!(app["variant"]["base_text"], witness);
+        let source = format!("題\n作者\n\n{body}\n\n底本：本\n");
+        let position = source.find(target).unwrap();
+        assert_eq!(app["inline_children"][0]["source_span"]["start"], position);
+        assert_eq!(
+            app["inline_children"][0]["source_span"]["end"],
+            position + target.len()
+        );
+        assert_eq!(ir["interpretation_problems"], json!([]));
+    }
+}
+
+#[test]
+fn repeated_principal_target_or_different_reading_cannot_establish_a_subrange() {
+    for body in [
+        "人人《ひとびと》［＃「人」は底本では「者」］",
+        "甲乙丙《こうおつへい》［＃「乙《おつ》」は底本では「オツ」］",
+    ] {
+        let ir = convert(body);
+        assert!(
+            !nodes(&ir)
+                .iter()
+                .any(|node| node["type"] == "base-text-variant")
+        );
+        assert_eq!(
+            ir["interpretation_problems"][0]["kind"],
+            "unresolved-variant"
+        );
+    }
+}

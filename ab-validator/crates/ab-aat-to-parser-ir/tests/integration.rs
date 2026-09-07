@@ -5018,7 +5018,7 @@ fn recursive_depth_cannot_hide_a_conflicting_mapping_rule() {
         })
         .unwrap()
         .clone();
-    duplicate.rule_id = "conflicting-recursive-rule".into();
+    duplicate.rule_id = "I-99999".into();
     duplicate.aat_pointer = duplicate
         .aat_pointer
         .map(|path| path.replace("children[].", "children[].children[]."));

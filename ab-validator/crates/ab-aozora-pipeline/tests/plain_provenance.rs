@@ -83,7 +83,7 @@ fn accepted_plain_recovery_paths_are_distinct_from_text() {
         ("｜", vec![(0, 3, R)]),
         ("＃", vec![(0, 3, R)]),
         ("｜＃", vec![(0, 6, R)]),
-        ("※", vec![(0, 3, R)]),
+        ("※", vec![(0, 3, T)]),
         ("「literal」", vec![(0, 3, R), (3, 10, T), (10, 13, R)]),
         ("〔literal〕", vec![(0, 3, R), (3, 10, T), (10, 13, R)]),
         ("［＃tail", vec![(0, 10, R)]),

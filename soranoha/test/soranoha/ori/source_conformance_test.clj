@@ -708,3 +708,10 @@
       (is (= [base] (texts result "rb")))
       (is (= [reading] (texts result "rt")))
       (is (empty? (get-in result [:ir "interpretation_problems"]))))))
+
+(deftest literal-reference-signs-survive-visible-text-projections
+  (doseq [body ["句　※１／書簡" "［※２］" "（※三）" "※記号。この※番号。" "※"]]
+    (let [result (transcribe (source body))]
+      (is (= body (:plaintext result)))
+      (is (empty? (get-in result [:ir "interpretation_problems"])))
+      (is (= [body] (texts result "p"))))))

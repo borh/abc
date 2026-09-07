@@ -330,6 +330,7 @@ enum ProjectedKind {
     },
     QuoteOpen,
     QuoteClose,
+    LiteralReferenceSign,
     RecoveredSource,
 }
 
@@ -359,6 +360,7 @@ impl ProjectedKind {
             | Self::ConcealedPlaceholder { .. } => "directive",
             Self::QuoteOpen => "angleQuoteOpen",
             Self::QuoteClose => "angleQuoteClose",
+            Self::LiteralReferenceSign => "text",
             Self::RecoveredSource => "unparsed-source-gap",
         }
     }
@@ -677,6 +679,26 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                 layout_clauses: Vec::new(),
             })
         }))
+        .chain(
+            tree.classified_source_facts
+                .iter()
+                .filter(|fact| fact.construct_id == ab_aozora_pipeline::ConstructId::PlainText)
+                .flat_map(|fact| {
+                    let span: Span = fact.source_span.into();
+                    tree.sanitized[span.start..span.end].match_indices('※').map(
+                        move |(offset, _)| AozoraNode {
+                            kind: ProjectedKind::LiteralReferenceSign,
+                            span: Span {
+                                start: span.start + offset,
+                                end: span.start + offset + '※'.len_utf8(),
+                            },
+                            marker_span: None,
+                            container_end: None,
+                            layout_clauses: Vec::new(),
+                        },
+                    )
+                }),
+        )
         .collect()
 }
 
@@ -2212,6 +2234,10 @@ fn inline_content_range(
             push_source_gap(&mut content, decoded, cursor, node.span.start);
         }
         match node.kind {
+            ProjectedKind::LiteralReferenceSign => content.push(json!({
+                "kind": "text", "value": "※",
+                "span": span_json(&node.span, &decoded.span_ctx)
+            })),
             ProjectedKind::RecoveredSource => {
                 push_source_gap(&mut content, decoded, node.span.start, node.span.end);
             }

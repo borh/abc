@@ -489,6 +489,42 @@ struct Frame {
     gaiji_refmark: Option<Span>,
 }
 
+/// Recognize visible reference-sign forms; an unexplained prose sign stays opaque.
+fn literal_reference_sign(source: &str, span: Span) -> bool {
+    let before = &source[..span.start as usize];
+    let after = &source[span.end as usize..];
+    if before.ends_with('※') || after.starts_with(['※', '［', '[']) {
+        return false;
+    }
+    // A pending explicit ruby base needs ownership of the sign as well as its
+    // following text; accepting the sign alone would hide a truncated base.
+    if before.chars().rev().find(|ch| matches!(ch, '｜' | '》' | '\n')) == Some('｜') {
+        return false;
+    }
+    if after.starts_with("記号") || after.starts_with("番号") {
+        return true;
+    }
+    if after.starts_with(|ch: char| ch.is_ascii_digit() || ('０'..='９').contains(&ch)) {
+        return true;
+    }
+    let numbered =
+        after.trim_start_matches(['一', '二', '三', '四', '五', '六', '七', '八', '九', '十']);
+    if numbered.len() != after.len()
+        && before.ends_with(['（', '(', '［', '['])
+        && numbered.starts_with(['）', ')', '］', ']'])
+    {
+        return true;
+    }
+    before
+        .rsplit('\n')
+        .next()
+        .is_some_and(|line| line.trim().is_empty())
+        && after
+            .split('\n')
+            .next()
+            .is_some_and(|line| line.trim().is_empty())
+}
+
 /// Span of the first ruby (`《…》`) opening *inside* the body
 /// event range `lo..hi`, if any. Used by [`ClassifyStream::try_ruby_emit`]
 /// to flag `nested_ruby` — `build_content_from_body` folds only nested
@@ -707,7 +743,12 @@ where
     fn fold_pending_refmark(&mut self) {
         if let Some(rm) = self.pending_refmark.take() {
             self.flush_plain_up_to(rm.start);
-            self.push_plain(rm, PlainProvenance::RecoveredVerbatim);
+            let provenance = if literal_reference_sign(self.source, rm) {
+                PlainProvenance::Text
+            } else {
+                PlainProvenance::RecoveredVerbatim
+            };
+            self.push_plain(rm, provenance);
             self.flush_plain_up_to(rm.end);
         }
     }

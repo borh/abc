@@ -905,3 +905,35 @@ fn direct_glyph_witnesses_reuse_native_reference_interpretation() {
     assert_eq!(app["variant"]["base_text"], "牡牛");
     assert_eq!(ir["interpretation_problems"], json!([]));
 }
+
+#[test]
+fn base_edition_geometry_does_not_format_or_retarget_principal_text() {
+    for statement in [
+        "左図の解説文、底本では横組み",
+        "「differentiation」の左から２番目のtは底本では上下逆",
+        "「5」の傍線は底本では欠落",
+        "「士は、」の後は、底本では改行１字下げ",
+        "「％」は底本では「・」の右横に付く",
+        "ルビの「ゲトウ」は、底本では「ゲ」が左に90度回転",
+    ] {
+        let ir = convert(&format!("本文［＃{statement}］"));
+        let all = nodes(&ir);
+        let note = all
+            .iter()
+            .find(|node| node["note_kind"] == "base-edition")
+            .unwrap();
+        assert_eq!(note["text"], statement);
+        assert!(
+            !all.iter()
+                .any(|node| node["type"] == "base-text-variant" || node["type"] == "emphasis")
+        );
+        assert_eq!(ir["interpretation_problems"], json!([]));
+    }
+    let ir = convert("別文［＃「字」は底本では「他字」］");
+    assert!(
+        !nodes(&ir)
+            .iter()
+            .any(|node| node["note_kind"] == "base-edition")
+    );
+    assert!(!ir["interpretation_problems"].as_array().unwrap().is_empty());
+}

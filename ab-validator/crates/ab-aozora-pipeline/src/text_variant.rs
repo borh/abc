@@ -291,6 +291,18 @@ pub fn edition_note(source: &str) -> Option<(EditionNoteKind, &str)> {
     edition_statement(source.strip_prefix("［＃")?.strip_suffix('］')?)
 }
 
+fn quoted_spatial_description(description: &str) -> bool {
+    let Some((glyph, relation)) = description
+        .strip_prefix('「')
+        .and_then(|s| s.split_once('」'))
+    else {
+        return false;
+    };
+    !glyph.is_empty()
+        && !glyph.contains(['「', '［', '］', '\n'])
+        && (relation == "の転倒" || relation == "の右横に付く" || relation == "が左に90度回転")
+}
+
 /// Interpret one source-owned edition statement, including a clause within a layout marker.
 #[must_use]
 pub fn edition_statement(body: &str) -> Option<(EditionNoteKind, &str)> {
@@ -326,12 +338,24 @@ pub fn edition_statement(body: &str) -> Option<(EditionNoteKind, &str)> {
         if let Some((current, description)) =
             split_attribution(quoted, EditionNoteKind::BaseEdition)
             && !current.is_empty()
-            && !current.contains(['「', '」', '\n'])
             && !description.is_empty()
-            && !description.starts_with(['「', '※'])
+            && (!description.starts_with(['「', '※']) || quoted_spatial_description(description))
         {
             return Some((EditionNoteKind::BaseEdition, body));
         }
+    }
+    if let Some((subject, description)) = body
+        .split_once("は底本では")
+        .or_else(|| body.split_once("は、底本では"))
+        && let Some((quoted, qualification)) =
+            subject.strip_prefix('「').and_then(|s| s.split_once('」'))
+        && !quoted.is_empty()
+        && qualification.starts_with('の')
+        && qualification.len() > 'の'.len_utf8()
+        && !qualification.contains(['「', '」', '［', '］', '\n'])
+        && !description.is_empty()
+    {
+        return Some((EditionNoteKind::BaseEdition, body));
     }
     if let Some((subject, description)) = body
         .split_once("は底本では")
@@ -348,9 +372,14 @@ pub fn edition_statement(body: &str) -> Option<(EditionNoteKind, &str)> {
     {
         return Some((EditionNoteKind::BaseEdition, body));
     }
-    if let Some((subject, description)) = body.split_once("は底本では")
+    if let Some((subject, description)) = body
+        .split_once("は底本では")
+        .or_else(|| body.split_once("、底本では"))
         && !subject.is_empty()
         && !subject.contains(['、', '「', '」', '［', '］', '\n'])
+        && !subject.starts_with("ここから")
+        && !subject.starts_with("ここまで")
+        && !subject.starts_with("ここで")
         && !description.is_empty()
     {
         return Some((EditionNoteKind::BaseEdition, body));
@@ -449,6 +478,26 @@ mod tests {
             assert_eq!(&source[variant.base_span.unwrap()], variant.base_text);
         }
         assert!(text_variant("［＃「字」は底本では※［＃未知の指示］］").is_none());
+    }
+
+    #[test]
+    fn qualified_base_edition_geometry_is_documentary_apparatus() {
+        for source in [
+            "［＃左図の解説文、底本では横組み］",
+            "［＃「differentiation」の左から２番目のtは底本では上下逆］",
+            "［＃「5」の傍線は底本では欠落］",
+            "［＃「士は、」の後は、底本では改行１字下げ］",
+            "［＃「％」は底本では「・」の右横に付く］",
+            "［＃ルビの「ゲトウ」は、底本では「ゲ」が左に90度回転］",
+        ] {
+            let (_, statement) = super::edition_note(source).unwrap_or_else(|| panic!("{source}"));
+            assert_eq!(
+                statement,
+                &source["［＃".len()..source.len() - '］'.len_utf8()]
+            );
+            assert!(text_variant(source).is_none());
+        }
+        assert!(super::edition_note("［＃「字」は底本では「他字］").is_none());
     }
 
     #[test]

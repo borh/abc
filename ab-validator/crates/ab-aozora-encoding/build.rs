@@ -53,10 +53,8 @@ fn main() {
     let combo_tsv = data_dir.join("jisx0213-combo.tsv");
     let dict_tsv = data_dir.join("aozora-gaiji-chuki.tsv");
     let special_tsv = data_dir.join("aozora-gaiji-special.tsv");
-    // Full mapping table — the slim TSVs above carry only 第3/第4水準, so
-    // the reverse char → 水準 classifier needs the complete
-    // file, which alone records the JIS X 0208 cells plus the
-    // `[2000]/[2004]` / `Fullwidth:` / `Windows:` annotations.
+    // The full table supplies older cells for explicit gaiji references
+    // and level annotations for the reverse character classifier.
     let std_txt = data_dir.join("jisx0213-2004-std.txt");
 
     println!("cargo:rerun-if-changed=build.rs");
@@ -66,7 +64,8 @@ fn main() {
     println!("cargo:rerun-if-changed={}", special_tsv.display());
     println!("cargo:rerun-if-changed={}", std_txt.display());
 
-    let single = parse_single_tsv(&single_tsv);
+    let mut single = parse_single_tsv(&single_tsv);
+    add_older_jis_cells(&mut single, &std_txt);
     let combo = parse_combo_tsv(&combo_tsv);
     let dict = parse_description_tsv(&dict_tsv);
     let special = parse_description_tsv(&special_tsv);
@@ -247,7 +246,7 @@ fn main() {
     writeln!(out).expect(INFALLIBLE);
     writeln!(
         out,
-        "// Summary: 第3水準={plane1_count}, 第4水準={plane2_count}, \
+        "// Summary: plane1={plane1_count}, plane2={plane2_count}, \
          combo={combo_count}, description={description_count}, \
          total={total}.",
         total = plane1_count + plane2_count + combo_count + description_count,
@@ -305,6 +304,31 @@ fn parse_single_tsv(path: &std::path::Path) -> Vec<SingleEntry> {
         });
     }
     out
+}
+
+// Explicit plane-row-cell references also occur for characters already in JIS X 0208.
+fn add_older_jis_cells(entries: &mut Vec<SingleEntry>, path: &std::path::Path) {
+    let text = fs::read_to_string(path).expect("read complete JIS mapping");
+    for line in text
+        .lines()
+        .filter(|line| !line.is_empty() && !line.starts_with('#'))
+    {
+        let mut fields = line.split('\t');
+        let jis = fields.next().expect("JIS column");
+        let unicode = fields.next().expect("Unicode column");
+        if !jis.starts_with("3-") || fields.any(|field| matches!(field.trim(), "[2000]" | "[2004]"))
+        {
+            continue;
+        }
+        if let Some(codepoint) = parse_single_u_plus(unicode) {
+            entries.push(SingleEntry {
+                plane: 1,
+                row: u8::from_str_radix(&jis[2..4], 16).expect("row hex") - 0x20,
+                cell: u8::from_str_radix(&jis[4..6], 16).expect("cell hex") - 0x20,
+                codepoint,
+            });
+        }
+    }
 }
 
 fn parse_combo_tsv(path: &std::path::Path) -> Vec<ComboEntry> {

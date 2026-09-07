@@ -35,7 +35,7 @@
 //!    only way to honour a 2-codepoint cell.
 //! 3. **Single-char table** — the bulk path; one perfect-hash probe
 //!    in `.rodata`.
-//! 4. **`U+XXXX` prefix** — `U+` followed by 1–6 hex digits. Parsed
+//! 4. **`U+XXXX` clause** — `U+` followed by 1–6 hex digits. Parsed
 //!    as a hex integer, validated via [`char::from_u32`].
 //! 5. **Description fallback** — small secondary table keyed by the
 //!    literal description text (well-known shapes like 〓, 〻).
@@ -44,13 +44,15 @@
 //!
 //! ## Why two PHF maps rather than one enum-valued map
 //!
-//! The single-char map is 4 329 entries; the combo map is 25.
+//! The single-char map includes both JIS X 0208 cells and JIS X 0213 additions.
+//! The combo map has 25 entries.
 //! Storing the common path as `phf::Map<&str, char>` keeps each value
 //! at 4 bytes (vs 16-byte `&str`) and the cache footprint of the hot
 //! lookup path tight. The combo map is consulted second; misses
 //! there cost a single probe.
 
 use core::fmt;
+use std::borrow::Cow;
 
 use crate::jisx0213_table::{
     DESCRIPTION_TO_CHAR, JISX0213_MENCODE_TO_CHAR, JISX0213_MENCODE_TO_STR, ROMAN_NUMERAL_LOWER,
@@ -123,23 +125,26 @@ pub fn lookup(
     if let Some(ch) = existing {
         return Some(Resolved::Char(ch));
     }
-    if let Some(m) = mencode {
-        let prefixed = m
-            .strip_prefix("1-")
-            .map(|_| format!("第3水準{m}"))
-            .or_else(|| m.strip_prefix("2-").map(|_| format!("第4水準{m}")));
-        let m = prefixed.as_deref().unwrap_or(m);
-        // Combo table first: the 25 multi-codepoint cells live only
-        // here. A miss is a single PHF probe — cheap.
-        if let Some(&s) = JISX0213_MENCODE_TO_STR.get(m) {
-            return Some(Resolved::Multi(s));
+    let mut reference = None;
+    for clause in mencode.into_iter().flat_map(reference_clauses).chain(
+        description
+            .rsplit('、')
+            .map(str::trim)
+            .take_while(|clause| {
+                clause.is_empty()
+                    || clause.starts_with("読みは「")
+                    || resolve_reference(clause).is_some()
+            }),
+    ) {
+        if let Some(resolved) = resolve_reference(clause) {
+            if reference.is_some_and(|previous| previous != resolved) {
+                return None;
+            }
+            reference = Some(resolved);
         }
-        if let Some(&ch) = JISX0213_MENCODE_TO_CHAR.get(m) {
-            return Some(Resolved::Char(ch));
-        }
-        if let Some(ch) = parse_u_plus(m) {
-            return Some(Resolved::Char(ch));
-        }
+    }
+    if reference.is_some() {
+        return reference;
     }
     if let Some(&ch) = DESCRIPTION_TO_CHAR.get(description) {
         return Some(Resolved::Char(ch));
@@ -169,6 +174,66 @@ pub fn lookup(
         return Some(Resolved::Char(only));
     }
     None
+}
+
+// Codes embedded in quoted component descriptions do not identify the whole glyph.
+fn reference_clauses(text: &str) -> impl Iterator<Item = &str> {
+    let mut depth = 0_u32;
+    text.split(move |ch| match ch {
+        '「' => {
+            depth += 1;
+            false
+        }
+        '」' => {
+            depth = depth.saturating_sub(1);
+            false
+        }
+        '、' => depth == 0,
+        _ => false,
+    })
+}
+
+fn resolve_reference(clause: &str) -> Option<Resolved> {
+    let clause = clause.trim();
+    let clause = clause.strip_suffix('」').unwrap_or(clause);
+    let clause = clause.strip_prefix("面区点番号").unwrap_or(clause);
+    let normalized: Cow<'_, str> = if clause.chars().any(|ch| ('０'..='９').contains(&ch)) {
+        Cow::Owned(
+            clause
+                .chars()
+                .map(|ch| {
+                    if ('０'..='９').contains(&ch) {
+                        char::from_u32(u32::from(ch) - u32::from('０') + u32::from('0'))
+                            .expect("fullwidth digit maps to ASCII digit")
+                    } else {
+                        ch
+                    }
+                })
+                .collect(),
+        )
+    } else {
+        Cow::Borrowed(clause)
+    };
+    let prefixed = normalized
+        .strip_prefix("1-")
+        .map(|_| format!("第3水準{normalized}"))
+        .or_else(|| {
+            normalized
+                .strip_prefix("2-")
+                .map(|_| format!("第4水準{normalized}"))
+        });
+    let key = prefixed.as_deref().unwrap_or(&normalized);
+    JISX0213_MENCODE_TO_STR
+        .get(key)
+        .copied()
+        .map(Resolved::Multi)
+        .or_else(|| {
+            JISX0213_MENCODE_TO_CHAR
+                .get(key)
+                .copied()
+                .map(Resolved::Char)
+        })
+        .or_else(|| parse_u_plus(key).map(Resolved::Char))
 }
 
 /// Compose the Unicode roman numeral for a bare `ローマ数字N` /
@@ -457,9 +522,9 @@ pub fn recognize_gaiji_body(body: &str) -> Option<GaijiBody<'_>> {
     Some(parsed)
 }
 
-/// The JIS / U+ token of a `mencode`, dropping any trailing 底本ページ-行
-/// suffix (`第3水準1-84-27、144-上-9` → `第3水準1-84-27`, `U+74FC、372-10`
-/// → `U+74FC`) so the resolver sees a clean men-ku-ten / codepoint.
+/// First reference-tail clause, used to recognize a mencode fused to a
+/// quoted description. Resolution itself examines the complete tail so
+/// reading notes and conflicting identifiers remain visible.
 #[must_use]
 pub fn mencode_resolution_token(mencode: &str) -> &str {
     mencode
@@ -577,10 +642,8 @@ impl<'src> GaijiCanonical<'src> {
     pub fn resolve(self, description: &str) -> Option<Resolved> {
         match self {
             Self::MenKuTen(m) => lookup(None, Some(&m.to_string()), description),
-            Self::Unicode(c) => Some(Resolved::Char(c)),
-            Self::Unresolved { mencode } => {
-                lookup(None, mencode.map(mencode_resolution_token), description)
-            }
+            Self::Unicode(c) => lookup(None, Some(&format!("U+{:X}", u32::from(c))), description),
+            Self::Unresolved { mencode } => lookup(None, mencode, description),
         }
     }
 
@@ -734,12 +797,11 @@ pub fn resolve_at(source: &str, start: usize, end: usize) -> Option<GaijiResolut
     } else {
         parse_gaiji_body(body)
     };
-    let (resolved, codepoint) = lookup(None, mencode.map(mencode_resolution_token), description)
-        .map_or((None, None), |r| {
-            let mut s = String::new();
-            _ = r.write_to(&mut s);
-            (Some(s), r.as_char().map(|c| c as u32))
-        });
+    let (resolved, codepoint) = lookup(None, mencode, description).map_or((None, None), |r| {
+        let mut s = String::new();
+        _ = r.write_to(&mut s);
+        (Some(s), r.as_char().map(|c| c as u32))
+    });
     Some(GaijiResolution {
         start,
         end,
@@ -836,6 +898,64 @@ const fn snap_to_char_boundary_right(s: &str, mut idx: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn corpus_references_resolve_without_rewriting_source_fields() {
+        for (source, expected) in [
+            ("※［＃「えんにょう＋囘」、第４水準2-12-11］", '\u{2231e}'),
+            (
+                "※［＃「にんべん＋（八／月）」、読みは「いつ」、第3水準1-14-20］",
+                '\u{4f7e}',
+            ),
+            ("※［＃「彳＋（氏／一）」、第3水準1-84-31」］", '\u{5f7d}'),
+            ("※［＃彳＋羊、第3水準1-84-32］", '\u{5f89}'),
+            (
+                "※［＃「袞」の「口」に代えて「厶」、U+886E、、59-14］",
+                '\u{886e}',
+            ),
+            (
+                "※［＃「※」は二の字点（踊り字）、面区点番号1-2-22、114-11］",
+                '\u{303b}',
+            ),
+            ("※［＃「滷－さんずい」、第3水準1-83-35］", '\u{9e75}'),
+        ] {
+            let body =
+                parse_gaiji_body(&source[GAIJI_OPEN.len()..source.len() - GAIJI_CLOSE.len()]);
+            let result = resolve_at(source, 0, source.len()).expect("gaiji occurrence");
+            assert_eq!(
+                result.resolved.as_deref(),
+                Some(expected.to_string().as_str()),
+                "{source}"
+            );
+            assert_eq!(result.description, body.description, "{source}");
+            assert_eq!(result.mencode.as_deref(), body.mencode, "{source}");
+            assert_eq!(
+                GaijiCanonical::from_mencode(body.mencode).resolve(body.description),
+                Some(Resolved::Char(expected)),
+                "{source}"
+            );
+        }
+    }
+
+    #[test]
+    fn component_references_and_conflicting_glyph_codes_do_not_resolve() {
+        for body in [
+            "非0213外字：「厂＋菫」、ただし「菫」は第3水準1-92-16のつくりの形、読みは「わづ」、289-上-12",
+            "「成分、第3水準1-84-32、を含む形」、9-1",
+            "「不明」、U+5F89、第3水準1-84-31",
+            "「不明、第3水準1-84-31」、U+5F89",
+        ] {
+            let source = format!("※［＃{body}］");
+            let result = resolve_at(&source, 0, source.len()).expect("gaiji occurrence");
+            assert_eq!(result.resolved, None, "{body}");
+            let parsed = parse_gaiji_body(body);
+            assert_eq!(
+                GaijiCanonical::from_mencode(parsed.mencode).resolve(parsed.description),
+                None,
+                "{body}"
+            );
+        }
+    }
+
     use super::*;
 
     #[test]
@@ -1333,10 +1453,8 @@ mod tests {
 
     #[test]
     fn table_sizes_match_jisx0213_2004_spec() {
-        // Pinned against the JIS X 0213:2004 normative count + the
-        // 外字注記辞書 8th edition (8 881 entries) + 2 hand-curated
-        // specials (〓 / 〻). Both data sources are checked into
-        // `crates/aozora-encoding/data/`.
+        // The complete plane 1 includes 6,879 older JIS cells plus
+        // 1,893 single-codepoint additions; combining cells are separate.
         use crate::jisx0213_table::{
             DESCRIPTION_COUNT, JISX0213_COMBO_COUNT, JISX0213_PLANE1_COUNT, JISX0213_PLANE2_COUNT,
         };
@@ -1345,8 +1463,8 @@ mod tests {
         assert_eq!(combo, JISX0213_COMBO_COUNT);
         assert_eq!(description, DESCRIPTION_COUNT);
         assert_eq!(
-            JISX0213_PLANE1_COUNT, 1893,
-            "第3水準 must equal the spec count",
+            JISX0213_PLANE1_COUNT, 8772,
+            "plane 1 must include older cells and single-codepoint additions",
         );
         assert_eq!(
             JISX0213_PLANE2_COUNT, 2436,

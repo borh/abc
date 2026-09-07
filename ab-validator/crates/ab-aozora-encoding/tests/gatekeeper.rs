@@ -59,7 +59,7 @@ fn gatekeeper_table_sizes_match_jisx0213_2004_spec() {
     // to make a failing test pass.
     let (single, combo, description) = table_sizes();
     assert_eq!(
-        single, 4329,
+        single, 11208,
         "JIS X 0213 plane-1 + plane-2 single-char count"
     );
     assert_eq!(combo, 25, "JIS X 0213 plane-1 combining-sequence cells");

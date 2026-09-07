@@ -506,7 +506,10 @@ mod tests {
     }
 
     #[test]
-    fn gaiji_lookup_returns_none_when_unresolvable() {
-        assert_eq!(gaiji::lookup(None, None, "第3水準1-85-54"), None);
+    fn gaiji_lookup_resolves_identifier_without_description() {
+        assert_eq!(
+            gaiji::lookup(None, None, "第3水準1-85-54"),
+            Some(gaiji::Resolved::Char('枘'))
+        );
     }
 }

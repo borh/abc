@@ -107,9 +107,14 @@
 (deftest enrichment-preserves-rich-transcription-and-competing-layers
   (let [base (document rich-body)
         text-view (view/from-tei base)
-        tokens-a (analysis text-view "tokenizer-a" [["t1" 0 9 "token"]])
+        tokens-a (analysis text-view "segmenter"
+                           (mapv (fn [index {:view/keys [start end]}]
+                                   [(str "s" index) start end "segment"])
+                                 (range) (:view/segments text-view)))
         tokens-b (analysis text-view "tokenizer-b" [["t1" 0 3 "token"] ["t2" 3 9 "token"]])
-        entities (analysis text-view "ner" [["e1" 0 9 "person"]])
+        entities (analysis text-view "ner" [["e1" 0 9 "person"]
+                                            ["e2" (- (view/utf8-size (:view/text text-view)) 3)
+                                             (view/utf8-size (:view/text text-view)) "description-token"]])
         enriched (tei/enrich base [tokens-a tokens-b entities])
         replacement (tei/enrich base [tokens-a tokens-b (assoc-in entities [:layer/records 0 :annotation/label] "character")])
         ^Document doc (:view/document (view/from-tei enriched))
@@ -181,7 +186,7 @@
         (is (:cached? (engine/run-stage! store enrich-stage {"tei" tei-hash "layers" [updated-hash]}))))
       (finally (engine/close-store! store) (fs/delete-tree dir)))))
 
-(deftest interpretation-influence-controls-certification-without-changing-reading
+(deftest interpretation-influence-controls-eligibility-without-changing-reading
   (let [base (document "<a:p>本文</a:p>")
         with-problem (fn [aspects influence]
                        (let [problem {"kind" "unknown-notation" "code" "unknown-notation"

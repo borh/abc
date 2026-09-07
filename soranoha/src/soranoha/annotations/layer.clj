@@ -62,7 +62,7 @@
     (require! (every? (fn [[start end]]
                         (some (fn [[a b]] (<= a start end b)) (:view/eligible-spans text-view)))
                       eligible-spans)
-              "Producer eligibility includes an unresolved glyph" {})
+              "Producer eligibility exceeds the current text view mask" {})
     (require! (contains? (set (vals statuses)) status) "Invalid annotation execution status" {:status status})
     (require! (vector? records) "Annotation records must be a vector" {})
     (require! (or (#{:layer/completed :layer/partial} status) (empty? records))

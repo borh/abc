@@ -29,7 +29,9 @@ same layer may be attached to the new edition through its current TEI alignment.
 
 Enriched TEI retains the original transcription, inserts anchors and appends stand-off
 span groups. Each group references the separately stored layer by content identity;
-record labels use `span/@n` and feature objects use JSON text inside the span. These
+record labels use `span/@n` and feature objects use JSON text inside the span. The
+project profile permits anchors inside `figDesc` so its included description text
+can receive internal analysis boundaries without a fabricated rendition. These
 are analysis claims rather than source assertions. The base TEI and plaintext stages
 do not depend on the selected analysis layers. The enrichment stage consumes only
 the base TEI and ordered layer blob identities.
@@ -69,9 +71,11 @@ does not assert that the base text is erroneous. Body and Markdown views select 
 supplied reading; Markdown reports the alternative as intentionally omitted.
 
 Canonical `interpretation-problem` notes retain the source interpreter's structured
-facts. Content uncertainty excludes the whole body from certified analysis until
+facts. Content uncertainty excludes the whole body from eligible analysis until
 an influence range in the analysis view is established; a marker's source range
 alone cannot establish that range. Layout-only problems retain text eligibility.
+Eligibility expresses usability under these explicit known-uncertainty masks; it
+does not certify source coverage or prove that no further uncertainty exists.
 These masks are separate from reading identity, so unchanged analyzer text can be
 reused while a layer must still satisfy the current eligibility mask.
 

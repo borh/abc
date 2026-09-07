@@ -37,6 +37,22 @@
         <moduleRef key="textcrit" include="app lem rdg"/>
         <moduleRef key="linking" include="seg anchor standOff"/>
 
+        <elementSpec ident="figDesc" mode="change" module="figures">
+          <content>
+            <alternate minOccurs="0" maxOccurs="unbounded">
+              <textNode/>
+              <classRef key="model.limitedPhrase"/>
+              <classRef key="model.inter"/>
+              <elementRef key="anchor"/>
+            </alternate>
+          </content>
+          <remarks>
+            <p>Figure descriptions participate in the body text view. Anchors
+            locate analysis ranges within that text without asserting a new
+            transcription rendition.</p>
+          </remarks>
+        </elementSpec>
+
         <!-- Schematron constraint declarations -->
         <constraintDecl scheme="schematron" queryBinding="xslt2">
           <sch:ns prefix="abc" uri="https://w3id.org/abc/ns/tei"/>

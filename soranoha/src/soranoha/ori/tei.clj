@@ -577,13 +577,34 @@
        (pos? indent) (assoc :style (str "text-indent: " (+ hanging-offset indent) "em"))
        (pos? indent) (update :rend #(string/join " " (remove string/blank? [% (str "first-line-indent(" indent ")")]))))]))
 
+(defn- layout-block-attrs [block]
+  (let [indent (get block "indent")
+        continuation (get block "continuation_indent")
+        start-padding (or continuation indent)
+        styles (cond-> []
+                 (some? start-padding) (conj (str "padding-inline-start: " start-padding "em"))
+                 (and (some? indent) (some? continuation)) (conj (str "text-indent: " (- indent continuation) "em"))
+                 (contains? block "offset_from_end") (conj (str "padding-inline-end: " (get block "offset_from_end") "em"))
+                 (contains? block "width") (conj (str "inline-size: " (get block "width") "em"))
+                 (get block "column_count") (conj (str "column-count: " (get block "column_count")))
+                 (get block "direction") (conj "writing-mode: horizontal-tb")
+                 (get block "align") (conj (str "text-align: " (get block "align")))
+                 (get block "border") (conj "border-style: solid"))
+        rend (cond-> []
+               (get block "typography") (conj (inline-layout-rend (get block "typography")))
+               (get block "page_placement") (conj "page-center")
+               (get block "line_count") (conj (str "line-count(" (get block "line_count") ")")))]
+    (cond-> {:type (get block "role" "layout")}
+      (source-reference block) (assoc :source (str "#" (source-reference block)))
+      (seq styles) (assoc :style (string/join "; " styles))
+      (seq rend) (assoc :rend (string/join " " rend))
+      (= "warichu" (get block "role")) (assoc :rend "two-line"))))
+
 (defn- wrap-scope-intersections [content scopes]
   (reduce (fn [children scope]
             [(into [(if (get scope "typography") :hi :seg)
-                    (cond-> {:source (str "#" (source-reference scope))}
-                      (get scope "typography") (assoc :rend (inline-layout-rend (get scope "typography")))
-                      (get scope "role") (assoc :type (get scope "role"))
-                      (= "warichu" (get scope "role")) (assoc :rend "two-line"))]
+                    (cond-> (layout-block-attrs scope)
+                      (get scope "typography") (dissoc :type))]
                    children)])
           content (reverse scopes)))
 
@@ -642,7 +663,8 @@
         (when-not (and (integer? start) (integer? end) (<= 0 start) (< start end)
                        (<= end (count nodes))
                        (or (and (boundary? start) (boundary? end))
-                           (and (or (get block "typography") (get block "role"))
+                           (and (or (get block "typography") (get block "role")
+                                    (some #(contains? block %) ["indent" "continuation_indent" "offset_from_end" "width" "line_count" "column_count" "align" "direction" "border"]))
                                 (source-reference block)))
                        (empty? (subseq external-notes >= start < end)))
           (throw (ex-info "Invalid layout block node range" {:block block}))))))
@@ -668,29 +690,6 @@
                           (if (> to start) (update result from (fnil conj []) scope) result))
                         result (take-while (fn [[from _]] (< from end)) (subseq runs >= first-start)))))
             {} (sort-by (juxt #(get-in % ["node_range" "start"]) #(- (get-in % ["node_range" "end"]))) scopes))))
-
-(defn- layout-block-attrs [block]
-  (let [indent (get block "indent")
-        continuation (get block "continuation_indent")
-        start-padding (or continuation indent)
-        styles (cond-> []
-                 (some? start-padding) (conj (str "padding-inline-start: " start-padding "em"))
-                 (and (some? indent) (some? continuation)) (conj (str "text-indent: " (- indent continuation) "em"))
-                 (contains? block "offset_from_end") (conj (str "padding-inline-end: " (get block "offset_from_end") "em"))
-                 (contains? block "width") (conj (str "inline-size: " (get block "width") "em"))
-                 (get block "column_count") (conj (str "column-count: " (get block "column_count")))
-                 (get block "direction") (conj "writing-mode: horizontal-tb")
-                 (get block "align") (conj (str "text-align: " (get block "align")))
-                 (get block "border") (conj "border-style: solid"))
-        rend (cond-> []
-               (get block "typography") (conj (inline-layout-rend (get block "typography")))
-               (get block "page_placement") (conj "page-center")
-               (get block "line_count") (conj (str "line-count(" (get block "line_count") ")")))]
-    (cond-> {:type (get block "role" "layout")}
-      (source-reference block) (assoc :source (str "#" (source-reference block)))
-      (seq styles) (assoc :style (string/join "; " styles))
-      (seq rend) (assoc :rend (string/join " " rend))
-      (= "warichu" (get block "role")) (assoc :rend "two-line"))))
 
 (defn- close-layout-blocks [acc frames node-end]
   (loop [acc acc frames frames]

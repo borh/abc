@@ -572,3 +572,18 @@
       (is (= ["甲" "乙"] (mapv view/visible-text wrappers)))
       (is (= 1 (count (set (map #(attribute % "source") wrappers)))))
       (is (empty? (get-in result [:ir "interpretation_problems"]))))))
+
+(deftest source-line-layout-contains-inline-heading-and-its-following-text
+  (let [result (transcribe (source "［＃１字下げ］［＃同行大見出し］優しき歌［＃同行大見出し終わり］叢書"))
+        scope (first (filter #(= "padding-inline-start: 1em" (attribute % "style")) (elements result "div")))]
+    (is (= "優しき歌叢書" (:plaintext result)))
+    (is (= ["優しき歌叢書"] (texts result "p")))
+    (is (within? scope (first (elements result "p"))))))
+
+(deftest supplied-indentation-can-end-inside-a-source-paragraph
+  (let [result (transcribe (source "［＃ここから４字下げ］\n（どういふ形にするのです？）\n（正方形にやりますか。）［＃ここで字下げ終わり］院長は云った。"))
+        scopes (filterv #(= "padding-inline-start: 4em" (attribute % "style")) (elements result "seg"))]
+    (is (= "（どういふ形にするのです？）\n（正方形にやりますか。）院長は云った。" (:plaintext result)))
+    (is (= ["（どういふ形にするのです？）" "（正方形にやりますか。）院長は云った。"] (texts result "p")))
+    (is (= ["（どういふ形にするのです？）" "（正方形にやりますか。）"] (mapv view/visible-text scopes)))
+    (is (= 1 (count (set (map #(attribute % "source") scopes)))))))

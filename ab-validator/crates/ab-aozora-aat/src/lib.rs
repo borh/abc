@@ -1375,7 +1375,7 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
         {
             let mut inner = content[index + 1..close_index].to_vec();
             if attributes["style"] == "normal" {
-                strip_boundary_newlines(&mut inner);
+                strip_boundary_newlines(&mut inner, source);
             }
             let close = &content[close_index];
             let mut heading = json!({
@@ -1400,7 +1400,7 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
             continue;
         }
         if strip_next_leading_newline {
-            strip_leading_newline(&mut node);
+            strip_leading_newline(&mut node, source);
             strip_next_leading_newline = false;
             if node.get("kind").and_then(Value::as_str) == Some("text")
                 && node
@@ -1438,7 +1438,7 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
             push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
             let mut inner = content[index + 1..close_index].to_vec();
             if marker_starts_source_line(&node, source) {
-                strip_boundary_newlines(&mut inner);
+                strip_boundary_newlines(&mut inner, source);
             }
             let container = json!({
                 "kind":match node["x-formatting"]["kind"].as_str() { Some("caption") => "caption_block", Some("warichu") => "warichu_block", _ => "typography_block" }, "formatting":node["x-formatting"],
@@ -1477,14 +1477,14 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
                 replacement.or_else(|| native_scopes.get(&index).copied())
             } else if content
                 .get(index + 1)
-                .is_some_and(|next| next.get("x-heading").is_some())
+                .is_some_and(|next| next["x-heading"]["style"] == "normal")
             {
                 native_scopes.get(&(index + 1)).map(|close| close + 1)
             } else {
                 Some(
                     content[index + 1..]
                         .iter()
-                        .position(ends_source_line)
+                        .position(|node| ends_source_line(node, source))
                         .map_or(content.len(), |offset| index + offset + 2),
                 )
             };
@@ -1500,7 +1500,7 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
                     .map_or(&node["span"], |first| &first["span"])
                     .clone();
                 inner.extend_from_slice(&content[index + 1..boundary]);
-                strip_boundary_newlines(&mut inner);
+                strip_boundary_newlines(&mut inner, source);
                 let mut block = layout.clone();
                 block["kind"] = json!("layout_block");
                 let mut children = blocks_from_inline_content(inner, source);
@@ -1552,7 +1552,7 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
             index += 1;
             continue;
         }
-        let ends_line = ends_source_line(&node);
+        let ends_line = ends_source_line(&node, source);
         paragraph.push(node);
         if ends_line {
             push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
@@ -1609,13 +1609,9 @@ fn native_scope_pairs(content: &[Value]) -> BTreeMap<usize, usize> {
         .collect()
 }
 
-/// True when this inline node carries the end of a source line: a gap-derived
-/// text or unparsed-source-gap raw node whose value ends with a line
-/// terminator (gap segmentation is terminator-inclusive, see
-/// `paragraph_segments`). The paragraph accumulator flushes after such a
-/// node, so each body paragraph holds exactly one source line plus any blank
-/// run that follows it.
-fn ends_source_line(node: &Value) -> bool {
+/// End a source paragraph only at a physical source terminator. An explicit
+/// break directive also projects to a newline but remains inside that paragraph.
+fn ends_source_line(node: &Value, source: &str) -> bool {
     let value = match node.get("kind").and_then(Value::as_str) {
         Some("text") => node.get("value").and_then(Value::as_str),
         Some("raw")
@@ -1627,6 +1623,7 @@ fn ends_source_line(node: &Value) -> bool {
         _ => None,
     };
     value.is_some_and(|value| value.ends_with(['\n', '\r']))
+        && node["span"]["byte_end"].as_u64().and_then(|end| usize::try_from(end).ok()).and_then(|end| source.get(..end)).is_some_and(|before| before.ends_with(['\n', '\r']))
 }
 
 #[allow(
@@ -1719,12 +1716,12 @@ fn kanji_digit_value(ch: char) -> Option<u64> {
     }
 }
 
-fn strip_boundary_newlines(nodes: &mut [Value]) {
+fn strip_boundary_newlines(nodes: &mut [Value], source: &str) {
     if let Some(first) = nodes.first_mut() {
-        strip_leading_newline(first);
+        strip_leading_newline(first, source);
     }
     if let Some(last) = nodes.last_mut() {
-        strip_trailing_newline(last);
+        strip_trailing_newline(last, source);
     }
 }
 
@@ -1800,20 +1797,29 @@ fn heading_style(source: &str) -> &'static str {
     }
 }
 
-fn strip_leading_newline(node: &mut Value) {
+fn strip_leading_newline(node: &mut Value, source: &str) {
     if node.get("kind").and_then(Value::as_str) != Some("text") {
         return;
     }
     let Some(value) = node.get("value").and_then(Value::as_str) else {
         return;
     };
-    let stripped = value.strip_prefix('\n').unwrap_or(value).to_owned();
-    if let Some(obj) = node.as_object_mut() {
-        obj.insert("value".to_owned(), json!(stripped));
+    let Some(stripped) = value.strip_prefix('\n').map(str::to_owned) else { return; };
+    if let Some(start) = node["span"]["byte_start"].as_u64().and_then(|start| usize::try_from(start).ok())
+        && let Some(tail) = source.get(start..)
+        && let Some(width) = if tail.starts_with("\r\n") { Some(2) } else if tail.starts_with(['\r','\n']) { Some(1) } else { None }
+    {
+        node["span"]["byte_start"] = json!(start + width);
+        if let Some(line) = node["span"]["line_start"].as_u64() {
+            node["span"]["line_start"] = json!(line + 1);
+            if node["span"]["byte_start"] == node["span"]["byte_end"] { node["span"]["line_end"] = json!(line + 1); }
+        }
+        node["value"] = json!(stripped);
     }
 }
 
-fn strip_trailing_newline(node: &mut Value) {
+fn strip_trailing_newline(node: &mut Value, source: &str) {
+    if !ends_source_line(node, source) { return; }
     if node.get("kind").and_then(Value::as_str) != Some("text") {
         return;
     }

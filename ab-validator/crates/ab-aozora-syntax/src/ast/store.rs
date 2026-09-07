@@ -17,11 +17,15 @@ use crate::{ForwardAttr, PartialLayout};
 pub struct PartialLayoutId(NonZeroU32);
 
 use super::intern::{StrId, StrInterner};
-use super::payload::{Content, Illustration, Segment};
+use super::payload::{Content, Illustration, Segment, TranscribedNotes};
 
 /// Document-owned illustration metadata, kept out of the common node payload.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct IllustrationId(NonZeroU32);
+
+/// Document-owned associations between separately transcribed notes and targets.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TranscribedNotesId(NonZeroU32);
 
 /// Half-open run of [`Content`] in [`NodeStore::resolve_content_range`];
 /// `len >= 1` (a content run is never empty).
@@ -86,9 +90,25 @@ pub struct NodeStore {
     forward_attrs: Vec<ForwardAttr>,
     partial_layouts: Vec<PartialLayout>,
     illustrations: Vec<Illustration>,
+    transcribed_notes: Vec<TranscribedNotes>,
 }
 
 impl NodeStore {
+    pub(crate) fn push_transcribed_notes(&mut self, notes: TranscribedNotes) -> TranscribedNotesId {
+        let next = u32::try_from(self.transcribed_notes.len())
+            .expect("note group pool exceeds u32")
+            .checked_add(1)
+            .expect("note group pool exceeds u32");
+        self.transcribed_notes.push(notes);
+        TranscribedNotesId(NonZeroU32::new(next).unwrap())
+    }
+
+    /// Resolve against the document that allocated the note associations.
+    #[must_use]
+    pub fn resolve_transcribed_notes(&self, id: TranscribedNotesId) -> &TranscribedNotes {
+        &self.transcribed_notes[(id.0.get() - 1) as usize]
+    }
+
     pub(crate) fn push_illustration(&mut self, image: Illustration) -> IllustrationId {
         let next = u32::try_from(self.illustrations.len())
             .expect("illustration pool exceeds u32")

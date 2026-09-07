@@ -40,6 +40,7 @@ mod fold;
 pub mod lexer;
 pub mod pipeline;
 pub mod text_variant;
+mod transcribed_notes;
 
 // Re-export the owned lex output + its source-node / node-ref surface so
 // `lex`'s return type is nameable at the crate root (keeps intra-doc links

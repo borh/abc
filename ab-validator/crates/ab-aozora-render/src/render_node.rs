@@ -44,6 +44,8 @@ pub(crate) fn render<W: Write>(node: Node, store: &NodeStore, out: &mut W) -> fm
         Node::Ruby(r) => render_ruby(&r, store, out),
         Node::Format(f) => render_format(&f, store, out),
         Node::MarginNote(s) => render_side_note(&s, store, out),
+        // The source-layout renderer already displays the separately transcribed note lines.
+        Node::TranscribedNotes(_) => Ok(()),
         Node::Gaiji(g) => render_gaiji(&g, store, out),
         // Pure-scalar leaves: render directly through the shared lifetime-free
         // helpers / inline byte spellings (the section-break slug table stays

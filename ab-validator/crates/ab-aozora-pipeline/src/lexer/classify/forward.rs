@@ -29,6 +29,7 @@ use ab_aozora_syntax::{
 };
 
 use crate::text_variant::{formatted_text_variant, formatting_edition_note};
+use crate::transcribed_notes;
 
 use super::super::pair::{PairEvent, PairKind};
 use super::super::token::TriggerKind;
@@ -207,7 +208,8 @@ pub(super) fn install_forward_target_index_from_source(source: &str) {
 impl RecogniseCtx<'_, '_> {
     /// Forward-reference dispatch for a well-formed `［＃…］` bracket.
     ///
-    /// Tries the body-keyword classifier first, then a fixed cascade of
+    /// Resolves complete separately transcribed note groups first. Otherwise
+    /// tries the body-keyword classifier, then a fixed cascade of
     /// forward-reference recognisers, falling through to the
     /// `Directive{Unknown}` catch-all. Cascade order:
     ///
@@ -288,6 +290,20 @@ impl RecogniseCtx<'_, '_> {
         else {
             return None;
         };
+
+        if let Some(node) = transcribed_notes::classify(
+            self.source,
+            Span::new(open_span.start, close_span.end),
+            self.alloc,
+        ) {
+            return Some(AnnotationMatch {
+                emit: EmitKind::Aozora(node),
+                annotation_payload: None,
+                consume_start: open_span.start,
+                consume_end: close_span.end,
+                pending_diagnostic: None,
+            });
+        }
 
         // The next event must be `＃`. `open_idx + 1 < close_idx` is
         // guaranteed whenever the hash exists, and `close_idx > open_idx`

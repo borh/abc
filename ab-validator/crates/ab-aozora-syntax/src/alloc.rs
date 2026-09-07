@@ -36,7 +36,8 @@ use crate::{
 use super::ast::{
     AngleQuote, Content, ContentRange, Directive, ForwardAttrs, ForwardFormat, Gaiji,
     GaijiCanonicalOwned, Heading, HeadingHint, Illustration, IllustrationId, Kunten, KuntenKind,
-    MarginNote, Node, NodeStore, NonEmptySpan, Ruby, Segment, Warichu,
+    MarginNote, Node, NodeStore, NonEmptySpan, Ruby, Segment, TranscribedNote, TranscribedNotes,
+    Warichu,
 };
 
 /// `true` for the canonical empty-content form (an empty segment run).
@@ -68,6 +69,28 @@ impl Allocator {
         self.store
             .push_partial_layout(crate::PartialLayout { body, clauses })
     }
+    /// Retain locally established relations without copying transcribed note text.
+    ///
+    /// # Panics
+    /// Panics if no associations or no complete note lines were established.
+    pub fn transcribed_notes(
+        &mut self,
+        body: &str,
+        notes: Vec<TranscribedNote>,
+        apparatus_lines: Vec<crate::Span>,
+    ) -> Node {
+        assert!(
+            !notes.is_empty() && !apparatus_lines.is_empty(),
+            "source note group is nonempty"
+        );
+        let body = self.store.intern(body);
+        Node::TranscribedNotes(self.store.push_transcribed_notes(TranscribedNotes {
+            body,
+            notes,
+            apparatus_lines,
+        }))
+    }
+
     /// Fill source provenance while constructing an illustration.
     pub fn illustration_mut(&mut self, id: IllustrationId) -> &mut Illustration {
         self.store.illustration_mut(id)

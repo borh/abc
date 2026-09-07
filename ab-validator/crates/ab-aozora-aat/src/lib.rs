@@ -11,7 +11,7 @@ use std::{
     sync::LazyLock,
 };
 
-use ab_aozora_pipeline::lexer::sanitize::{SanitizeMaps, sanitize_mapped};
+use ab_aozora_pipeline::lexer::sanitize::{SanitizeMaps, normalize_line_endings, sanitize_mapped};
 use ab_aozora_pipeline::text_variant::{
     EditionNoteKind, TextVariant, TextVariantTarget, base_edition_concealed_characters,
     concealed_placeholder, edition_note, edition_statement, formatted_text_variant,
@@ -275,6 +275,13 @@ impl From<ab_aozora_facade::Span> for Span {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+struct NoteAssociation {
+    note: Span,
+    target: Span,
+    position: MarginNotePosition,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 enum ProjectedKind {
     Illustration {
         file: String,
@@ -284,6 +291,10 @@ enum ProjectedKind {
         description_span: Option<Span>,
         caption: Option<String>,
         caption_span: Option<Span>,
+    },
+    TranscribedNotes {
+        notes: Vec<NoteAssociation>,
+        apparatus_lines: Vec<Span>,
     },
     MarginNote {
         kind: MarginNoteKind,
@@ -342,7 +353,7 @@ impl ProjectedKind {
             Self::Accent { .. } => "supplied-diacritic",
             Self::AccentReference => "accent-annotation",
             Self::Kunten { .. } => "kunten",
-            Self::MarginNote { .. } => "sideNote",
+            Self::MarginNote { .. } | Self::TranscribedNotes { .. } => "sideNote",
             Self::Node(kind) => kind.as_json_tag(),
             Self::Section(_) => "sectionBreak",
             Self::Line(line) => Node::Line(*line).kind().as_json_tag(),
@@ -502,6 +513,27 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
         .iter()
         .map(|source_node| {
             let mut kind = match source_node.node {
+                NodeRef::Inline(Node::TranscribedNotes(id))
+                | NodeRef::BlockLeaf(Node::TranscribedNotes(id)) => {
+                    let group = tree.store.resolve_transcribed_notes(id);
+                    ProjectedKind::TranscribedNotes {
+                        notes: group
+                            .notes
+                            .iter()
+                            .map(|note| NoteAssociation {
+                                note: note.note.span().into(),
+                                target: note.target.span().into(),
+                                position: note.position,
+                            })
+                            .collect(),
+                        apparatus_lines: group
+                            .apparatus_lines
+                            .iter()
+                            .copied()
+                            .map(Into::into)
+                            .collect(),
+                    }
+                }
                 NodeRef::Inline(Node::Illustration(id))
                 | NodeRef::BlockLeaf(Node::Illustration(id)) => {
                     let image = tree.store.resolve_illustration(id);
@@ -1369,6 +1401,137 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
     facts
 }
 
+fn value_source_span(node: &Value) -> Option<Span> {
+    Some(Span {
+        start: usize::try_from(node["span"]["byte_start"].as_u64()?).ok()?,
+        end: usize::try_from(node["span"]["byte_end"].as_u64()?).ok()?,
+    })
+}
+
+fn remove_apparatus_lines(
+    content: &[Value],
+    lines: &[Span],
+    marker: Span,
+    decoded: &DecodedSource,
+) -> Option<Vec<Value>> {
+    let lines = lines
+        .iter()
+        .map(|span| Span {
+            start: decoded.span_ctx.to_decoded(span.start),
+            end: decoded.span_ctx.to_decoded_end(span.end),
+        })
+        .collect::<Vec<_>>();
+    let marker = Span {
+        start: decoded.span_ctx.to_decoded(marker.start),
+        end: decoded.span_ctx.to_decoded_end(marker.end),
+    };
+    let mut covered = vec![0; lines.len()];
+    let mut output = Vec::with_capacity(content.len());
+    for node in content {
+        let Some(span) = value_source_span(node) else {
+            output.push(node.clone());
+            continue;
+        };
+        let mut cuts = lines
+            .iter()
+            .enumerate()
+            .filter_map(|(index, line)| {
+                let start = span.start.max(line.start);
+                let end = span.end.min(line.end);
+                (start < end).then_some((index, Span { start, end }))
+            })
+            .collect::<Vec<_>>();
+        if cuts.is_empty() {
+            output.push(node.clone());
+            continue;
+        }
+        cuts.sort_unstable_by_key(|(_, span)| span.start);
+        if span == marker && node["kind"] == "raw" {
+            for (index, cut) in cuts {
+                covered[index] += cut.end - cut.start;
+            }
+            continue;
+        }
+        if node["kind"] != "text"
+            || node["value"].as_str()?
+                != normalize_line_endings(decoded.text.get(span.start..span.end)?)
+        {
+            return None;
+        }
+        let mut cursor = span.start;
+        for (index, cut) in cuts {
+            if cut.start < cursor {
+                return None;
+            }
+            if cursor < cut.start {
+                let mut retained = node.clone();
+                retained["value"] = json!(normalize_line_endings(&decoded.text[cursor..cut.start]));
+                retained["span"] = decoded_span_json(
+                    Span {
+                        start: cursor,
+                        end: cut.start,
+                    },
+                    &decoded.span_ctx,
+                );
+                output.push(retained);
+            }
+            covered[index] += cut.end - cut.start;
+            cursor = cut.end;
+        }
+        if cursor < span.end {
+            let mut retained = node.clone();
+            retained["value"] = json!(normalize_line_endings(&decoded.text[cursor..span.end]));
+            retained["span"] = decoded_span_json(
+                Span {
+                    start: cursor,
+                    end: span.end,
+                },
+                &decoded.span_ctx,
+            );
+            output.push(retained);
+        }
+    }
+    covered
+        .iter()
+        .zip(&lines)
+        .all(|(covered, line)| *covered == line.end - line.start)
+        .then_some(output)
+}
+
+fn adopt_transcribed_note_groups(
+    mut content: Vec<Value>,
+    decoded: &DecodedSource,
+    nodes: &[AozoraNode],
+) -> Vec<Value> {
+    for node in nodes {
+        let ProjectedKind::TranscribedNotes {
+            notes,
+            apparatus_lines,
+        } = &node.kind
+        else {
+            continue;
+        };
+        let Some(mut candidate) =
+            remove_apparatus_lines(&content, apparatus_lines, node.span, decoded)
+        else {
+            continue;
+        };
+        let mut complete = true;
+        for note in notes {
+            let annotation = json!([{"kind":"text", "value":source_slice(&decoded.span_text,&note.note), "span":span_json(&note.note,&decoded.span_ctx)}]);
+            let wrapper = |children: &[Value]| json!({"kind":"annotated_text", "content":children,"annotation_content":annotation,"note_kind":"gloss","position":match note.position {MarginNotePosition::Left=>"left",MarginNotePosition::Right=>"right"},"span":span_json(&node.span,&decoded.span_ctx)});
+            if !annotate_source_target(&mut candidate, note.target, decoded, &wrapper) {
+                complete = false;
+                break;
+            }
+        }
+        if complete {
+            content = candidate;
+        }
+    }
+    content
+}
+
 fn build_aat(
     decoded: &DecodedSource,
     nodes: &[AozoraNode],
@@ -1387,7 +1550,11 @@ fn build_aat(
     // Block assembly consumes native scopes across source lines; remaining
     // inline scopes are paired within their resulting paragraph or container.
     let mut blocks = pair_bare_toggles_in_blocks(blocks_from_inline_content(
-        inline_content(decoded, nodes, &gaiji_by_start, &ruby_by_span),
+        adopt_transcribed_note_groups(
+            inline_content(decoded, nodes, &gaiji_by_start, &ruby_by_span),
+            decoded,
+            nodes,
+        ),
         &decoded.text,
     ));
     blocks = resolve_text_variants_in_blocks(blocks, &decoded.text);
@@ -2121,6 +2288,19 @@ fn rebase_variant_spans(kind: &mut ProjectedKind, offset: usize) {
             span.end += offset;
         }
     }
+    if let ProjectedKind::TranscribedNotes {
+        notes,
+        apparatus_lines,
+    } = kind
+    {
+        for note in notes {
+            for span in [&mut note.note, &mut note.target] {
+                span.start += offset;
+                span.end += offset;
+            }
+        }
+        rebase_partial_layout(apparatus_lines, offset);
+    }
     if let ProjectedKind::TextVariant {
         current_span,
         base_span,
@@ -2269,6 +2449,11 @@ fn inline_content_range(
                 );
             }
             ProjectedKind::BaseEditionConcealment { .. } | ProjectedKind::ConcealedPlaceholder { .. } => push_concealment(&mut content, decoded, node),
+            ProjectedKind::TranscribedNotes { .. } => {
+                let mut retained = raw_node(decoded, node, "unresolved-transcribed-note");
+                retained["interpretation_problem"] = json!({"kind":"uninterpreted-notation", "code":"uninterpreted-notation", "aspects":["content", "structure"], "influence":{"kind":"document"}});
+                content.push(retained);
+            }
             ProjectedKind::Illustration { .. } => content.push(illustration_node(decoded, node)),
             ProjectedKind::MarginNote { .. } => push_annotated_text(&mut content, decoded, node),
             ProjectedKind::Format(_) | ProjectedKind::FormatMany(_) => {
@@ -3185,7 +3370,8 @@ fn exact_literal_partition(
     let text = node["value"].as_str()?;
     let start = usize::try_from(node["span"]["byte_start"].as_u64()?).ok()?;
     let end = usize::try_from(node["span"]["byte_end"].as_u64()?).ok()?;
-    if decoded.text.get(start..end)? != text {
+    let source = decoded.text.get(start..end)?;
+    if normalize_line_endings(source) != text {
         return None;
     }
     let span = span_json(&target, &decoded.span_ctx);
@@ -3193,26 +3379,33 @@ fn exact_literal_partition(
     let target_end = usize::try_from(span["byte_end"].as_u64()?).ok()?;
     let from = target_start.checked_sub(start)?;
     let to = target_end.checked_sub(start)?;
-    let selected_text = text.get(from..to)?;
-    let suffix = text.get(to..)?;
-    if suffix.contains(['\n', '\r']) {
-        return None;
-    }
+    let selected_text = normalize_line_endings(source.get(from..to)?);
+    let suffix = normalize_line_endings(source.get(to..)?);
     let mut selected = node.clone();
     selected["value"] = json!(selected_text);
-    selected["span"] = span.clone();
+    selected["span"] = span;
     let before = (from > 0).then(|| {
         let mut prefix = node.clone();
-        prefix["value"] = json!(&text[..from]);
-        prefix["span"]["byte_end"] = json!(target_start);
-        prefix["span"]["line_end"] = span["line_start"].clone();
+        prefix["value"] = json!(normalize_line_endings(&source[..from]));
+        prefix["span"] = decoded_span_json(
+            Span {
+                start,
+                end: target_start,
+            },
+            &decoded.span_ctx,
+        );
         prefix
     });
     let after = (!suffix.is_empty()).then(|| {
         let mut suffix_node = node.clone();
         suffix_node["value"] = json!(suffix);
-        suffix_node["span"]["byte_start"] = json!(target_end);
-        suffix_node["span"]["line_start"] = span["line_end"].clone();
+        suffix_node["span"] = decoded_span_json(
+            Span {
+                start: target_end,
+                end,
+            },
+            &decoded.span_ctx,
+        );
         suffix_node
     });
     Some((before, selected, after))
@@ -4175,8 +4368,18 @@ fn diagnostic_warning(diagnostic: &Diagnostic, ctx: &SpanContext) -> Value {
 }
 
 fn span_json(span: &Span, ctx: &SpanContext) -> Value {
-    let byte_start = ctx.to_decoded(span.start);
-    let byte_end = ctx.to_decoded_end(span.end);
+    decoded_span_json(
+        Span {
+            start: ctx.to_decoded(span.start),
+            end: ctx.to_decoded_end(span.end),
+        },
+        ctx,
+    )
+}
+
+fn decoded_span_json(span: Span, ctx: &SpanContext) -> Value {
+    let byte_start = span.start;
+    let byte_end = span.end;
     let line_start = ctx.line_of(byte_start);
     let line_end = ctx.line_of(if byte_end > byte_start {
         byte_end - 1

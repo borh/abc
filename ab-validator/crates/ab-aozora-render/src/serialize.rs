@@ -207,6 +207,11 @@ fn emit_aozora<W: Write>(
         Node::Directive(a) => emit_annotation(a, store, out, directives),
         Node::AngleQuote(d) => emit_angle_quote(d, store, out),
         Node::MarginNote(s) => emit_side_note(&s, store, out),
+        Node::TranscribedNotes(id) => write!(
+            out,
+            "［＃{}］",
+            store.resolve_str(store.resolve_transcribed_notes(id).body)
+        ),
         Node::PageBreak => out.write_str("［＃改ページ］"),
         Node::BodyEnd => out.write_str("［＃本文終わり］"),
         Node::ForcedBreak => out.write_str("［＃改行］"),

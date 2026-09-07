@@ -715,3 +715,19 @@
       (is (= body (:plaintext result)))
       (is (empty? (get-in result [:ir "interpretation_problems"])))
       (is (= [body] (texts result "p"))))))
+
+(deftest separately-transcribed-notes-become-target-associated-apparatus
+  (doseq [[body principal expected]
+          [["　なごりイ\n飯蛸の手をひろげたる檐端哉\n　り檐の花イ\n［＃「なごりイ」は「檐端哉」の右側に、「り檐の花イ」は左側に、注記するような形で］\n次の句"
+            "飯蛸の手をひろげたる檐端哉\n次の句"
+            #{["なごりイ" "right"] ["り檐の花イ" "left"]}]
+           ["家根の上にどこの哀れぞ揚燈籠\n　よそイ　やイ\n［＃「よそイ」は「どこ」の左側に、「やイ」は「ぞ」の左側に注記するような形で］\n次の句"
+            "家根の上にどこの哀れぞ揚燈籠\n次の句"
+            #{["よそイ" "left"] ["やイ" "left"]}]]]
+    (let [result (transcribe (string/replace (source body) "\n" "\r\n"))
+          notes (filterv #(= "gloss" (attribute % "type")) (elements result "note"))]
+      (is (= principal (:plaintext result)))
+      (is (= 2 (count notes)))
+      (is (= expected (set (map (fn [^Node note] [(.getTextContent note) (attribute note "place")]) notes))))
+      (is (every? #(string/starts-with? (attribute (.getParentNode ^Node %) "source") "#source-") notes))
+      (is (empty? (get-in result [:ir "interpretation_problems"]))))))

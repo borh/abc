@@ -307,6 +307,7 @@ pub(crate) fn classify_node_ref(node: NodeRef) -> (RegionRole, SpliceSafety) {
                 }
             }
             Node::MarginNote(_) => (RegionRole::MarginNote, Coupled(CoupledKind::MarginNote)),
+            Node::TranscribedNotes(_) => (RegionRole::MarginNote, Direct),
             Node::Container(_) => (RegionRole::Container, Coupled(CoupledKind::Container)),
             Node::Ruby(_) => (RegionRole::Ruby, Direct),
             Node::Heading(_) => (RegionRole::Heading, Direct),

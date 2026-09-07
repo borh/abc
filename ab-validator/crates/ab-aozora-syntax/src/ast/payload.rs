@@ -18,7 +18,9 @@ use crate::{
 };
 
 use super::intern::StrId;
-use super::store::{ContentRange, ForwardAttrs, IllustrationId, NodeStore, SegRange};
+use super::store::{
+    ContentRange, ForwardAttrs, IllustrationId, NodeStore, SegRange, TranscribedNotesId,
+};
 
 /// Body content that may carry nested Aozora constructs. Two-tier: a single
 /// plain run or a mixed sequence of segments.
@@ -218,6 +220,28 @@ impl NonEmptySpan {
     }
 }
 
+/// A note already transcribed separately from its explicitly named principal target.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TranscribedNote {
+    /// Exact note payload in sanitized source bytes.
+    pub note: NonEmptySpan,
+    /// Exact principal target in sanitized source bytes.
+    pub target: NonEmptySpan,
+    /// Physical side supplied by the explanatory source marker.
+    pub position: MarginNotePosition,
+}
+
+/// Source-owned associations and complete note-only lines in one local group.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TranscribedNotes {
+    /// Complete explanatory marker body, for source serialization.
+    pub body: StrId,
+    /// Nonempty explicitly supplied associations.
+    pub notes: Vec<TranscribedNote>,
+    /// Complete note and explanatory-marker lines, including formatting whitespace and newline.
+    pub apparatus_lines: Vec<crate::Span>,
+}
+
 /// Margin note (注記 / 傍記).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MarginNote {
@@ -413,6 +437,8 @@ pub enum Node {
     AngleQuote(AngleQuote),
     /// Margin note (注記 / 傍記).
     MarginNote(MarginNote),
+    /// Associations to note text already present on separate source lines.
+    TranscribedNotes(TranscribedNotesId),
     /// Container — `Copy` enum.
     Container(Container),
 }
@@ -450,7 +476,7 @@ impl Node {
             Self::Kunten(_) => NodeKind::Kunten,
             Self::Directive(_) => NodeKind::Directive,
             Self::AngleQuote(_) => NodeKind::AngleQuote,
-            Self::MarginNote(_) => NodeKind::MarginNote,
+            Self::MarginNote(_) | Self::TranscribedNotes(_) => NodeKind::MarginNote,
             Self::Container(_) => NodeKind::Container,
         }
     }
@@ -487,7 +513,7 @@ impl Node {
             Self::IterationMark(_) => "aozora_iteration_mark",
             Self::Directive(_) => "aozora_annotation",
             Self::AngleQuote(_) => "aozora_angle_quote",
-            Self::MarginNote(_) => "aozora_side_note",
+            Self::MarginNote(_) | Self::TranscribedNotes(_) => "aozora_side_note",
             Self::Container(_) => "aozora_container",
         }
     }

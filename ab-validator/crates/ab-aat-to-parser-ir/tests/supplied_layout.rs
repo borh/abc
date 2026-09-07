@@ -104,3 +104,32 @@ fn detached_fraction_keeps_its_source_target_and_intervening_space() {
         "題\n作者\n\nν = 1/n ［＃「1/n」は分数］".len()
     );
 }
+
+#[test]
+fn later_equal_spelling_reference_keeps_its_own_source_outcome() {
+    for later in ["分数", "罫囲み"] {
+        let before = "1/n ［＃「1/n」は分数］";
+        let marker = format!("［＃「1/n」は{later}］");
+        let ir = convert(&format!("{before}{marker}"));
+        let start = "題\n作者\n\n".len() + before.len();
+        let end = start + marker.len();
+        let mut outcomes = ir["interpretation_facts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .chain(ir["interpretation_problems"].as_array().unwrap());
+        assert!(
+            outcomes.any(|outcome| {
+                outcome["source_span"]["start"] == start && outcome["source_span"]["end"] == end
+            }),
+            "the later source assertion must not disappear: {marker}"
+        );
+        let first = ir["interpretation_facts"]
+            .as_array()
+            .unwrap()
+            .first()
+            .unwrap();
+        assert_eq!(first["source_span"]["start"], "題\n作者\n\n1/n ".len());
+        assert_eq!(first["source_span"]["end"], start);
+    }
+}

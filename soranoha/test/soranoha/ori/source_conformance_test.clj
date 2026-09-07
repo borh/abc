@@ -660,3 +660,15 @@
     (is (= "「須佐の男の神」の「穀物の種」" (.getTextContent ^Node note)))
     (is (= "" (attribute note "target"))))
   (is (seq (get-in (transcribe (source "本文［＃「三五頁」は「章」］")) [:ir "interpretation_problems"]))))
+
+(deftest implicit-ruby-retains-cyrillic-and-decimal-source-bases
+  (doseq [[body base reading]
+          [["現代のСССР《エスエスエスエル》" "СССР" "エスエスエスエル"]
+           ["８《エイト》" "８" "エイト"]
+           ["９｜８《はち》" "８" "はち"]]]
+    (let [result (transcribe (source body))]
+      (is (= [base] (texts result "rb")))
+      (is (= [reading] (texts result "rt")))
+      (is (empty? (get-in result [:ir "interpretation_problems"])))
+      (is (some #(= "ruby" (get % "kind"))
+                (get-in result [:ir "interpretation_facts"]))))))

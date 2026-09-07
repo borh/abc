@@ -214,6 +214,10 @@ pub enum RubyBaseClass {
     Latin,
     /// Greek letters.
     Greek,
+    /// Russian Cyrillic letters present in the source encoding.
+    Cyrillic,
+    /// ASCII and fullwidth decimal digits.
+    Decimal,
 }
 
 /// Classify a character for implicit-ruby base attachment, or `None` when
@@ -248,6 +252,8 @@ pub const fn ruby_base_class(ch: char) -> Option<RubyBaseClass> {
         }
         'A'..='Z' | 'a'..='z' | 'Ａ'..='Ｚ' | 'ａ'..='ｚ' => RubyBaseClass::Latin,
         '\u{0391}'..='\u{03A9}' | '\u{03B1}'..='\u{03C9}' => RubyBaseClass::Greek,
+        'А'..='я' | 'Ё' | 'ё' => RubyBaseClass::Cyrillic,
+        '0'..='9' | '０'..='９' => RubyBaseClass::Decimal,
         _ => return None,
     })
 }

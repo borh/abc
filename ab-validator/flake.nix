@@ -1034,6 +1034,7 @@
             "ab-source-inventory"
           ];
           gated = false;
+          extra.src = aozoraSource;
         };
 
         sourceInventorySmokeCheck = mkSmokeCheck {

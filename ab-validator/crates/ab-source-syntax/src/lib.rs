@@ -1141,7 +1141,13 @@ fn count_newlines(value: &str) -> usize {
     value.bytes().filter(|byte| *byte == b'\n').count()
 }
 
-fn quoted_text_end_on_same_line(text: &str, start: usize) -> Option<usize> {
+fn quoted_text_end_on_same_line(text: &str, start: usize, end_marker: char) -> Option<usize> {
+    if let Some(after_open) = text[start..].strip_prefix('「')
+        && let Some(after_marker) = after_open.strip_prefix(end_marker)
+        && after_marker.starts_with('」')
+    {
+        return Some(start + '「'.len_utf8() + end_marker.len_utf8() + '」'.len_utf8());
+    }
     let mut depth = 0_u32;
     for (offset, ch) in text[start..].char_indices() {
         match ch {
@@ -1153,6 +1159,7 @@ fn quoted_text_end_on_same_line(text: &str, start: usize) -> Option<usize> {
                 }
             }
             '\r' | '\n' => return None,
+            ch if ch == end_marker => return None,
             _ => {}
         }
     }
@@ -1166,7 +1173,7 @@ fn command_end(text: &str, content_start: usize, end_marker: char) -> Option<usi
     while offset < text.len() {
         let rest = &text[offset..];
         if rest.starts_with('「')
-            && let Some(end) = quoted_text_end_on_same_line(text, offset)
+            && let Some(end) = quoted_text_end_on_same_line(text, offset, end_marker)
         {
             offset = end;
             continue;
@@ -1819,6 +1826,11 @@ mod tests {
         assert_eq!(markers.len(), 1);
         assert_eq!(markers[0].kind, SourceMarkerKind::CommandFullwidth);
         assert_eq!(markers[0].raw, text);
+        let literal_quote = "「［＃「「」は底本では欠落］本文。」";
+        assert_eq!(
+            source_markers(literal_quote)[0].raw,
+            "［＃「「」は底本では欠落］"
+        );
         let nested = "［＃「※［＃濁点付き片仮名ヱ、1-7-84］」に「］」の注記］";
         assert_eq!(source_markers(nested)[0].raw, nested);
     }

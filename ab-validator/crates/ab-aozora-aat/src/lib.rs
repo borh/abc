@@ -2569,7 +2569,7 @@ fn push_style_node(
             kind: projected_variant(variant, marker.start),
             span: marker,
             marker_span: Some(marker),
-            container_close: None,
+            container_end: None,
         };
         let assertion = raw_node(decoded, &variant_node, "base-text-variant");
         if !attach_formatting_variant(&mut style, &assertion, &decoded.text) {

@@ -66,8 +66,12 @@
              :families #{"decoration.keigakomi" "layout.yokogumi" "glyph.variant_note"} :aspects #{"layout"}}
    "line-layout" {:markers #{"CommandFullwidth" "CommandAscii"}
                   :families #{"indentation.basic" "indentation.jisage_block" "indentation.jisage_oneline"
-                              "indentation.chitsuki" "indentation.jizume" "indentation.burasage" "layout.center_page"}
+                              "indentation.chitsuki" "indentation.jizume" "indentation.burasage" "layout.center_page" "layout.multicolumn"}
                   :aspects #{"layout"}}
+   "table" {:markers #{"CommandFullwidth" "CommandAscii"}
+            :families #{"structure.table"} :aspects #{"structure" "layout"}}
+   "layout-break" {:markers #{"CommandFullwidth" "CommandAscii"}
+                   :families #{"break.page_line"} :aspects #{"structure" "layout"}}
    "warichu" {:markers #{"CommandFullwidth" "CommandAscii"}
               :families #{"warichu.basic"} :aspects #{"structure" "layout"}}})
 
@@ -191,7 +195,7 @@
 (defn coverage-stage
   "Independent lexical oracle + parser IR -> explicit claim accounting."
   [clj-toolchain-id]
-  {:stage-id "interpretation-coverage" :stage-version "5" :toolchain-id clj-toolchain-id
+  {:stage-id "interpretation-coverage" :stage-version "6" :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob]} inputs]
         (let [input-bytes (into {} (map (fn [name] [name (blob (get inputs name))]))
                                 ["source-accountability" "parser-ir"])

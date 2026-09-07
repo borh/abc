@@ -923,42 +923,26 @@ impl EstablishedInterpretation {
         }
     }
 
-    fn aspects(self) -> &'static [&'static str] {
-        match self {
-            Self::Ruby | Self::TextVariant | Self::EditorialNote => &["content", "structure"],
-            Self::Gaiji => &["content"],
-            Self::Emphasis | Self::Layout | Self::LineLayout => &["layout"],
-            Self::Warichu | Self::Heading | Self::Caption => &["structure", "layout"],
-            Self::Kunten => &["content", "structure", "layout"],
-        }
-    }
-}
-
-fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
-    let mut facts = Vec::new();
-    let mut pending = blocks.iter().rev().collect::<Vec<_>>();
-    while let Some(node) = pending.pop() {
+    fn for_node(node: &Value) -> Option<Self> {
         let has_content = node["content"]
             .as_array()
             .is_some_and(|children| !children.is_empty());
-        let interpretation = match node["kind"].as_str() {
-            Some("keigakomi" | "yokogumi" | "fraction") if has_content => {
-                Some(EstablishedInterpretation::Layout)
-            }
+        match node["kind"].as_str() {
+            Some("keigakomi" | "yokogumi" | "fraction") if has_content => Some(Self::Layout),
             Some("ruby")
                 if node["base"].as_str().is_some_and(|text| !text.is_empty())
                     && node["reading"]
                         .as_str()
                         .is_some_and(|text| !text.is_empty()) =>
             {
-                Some(EstablishedInterpretation::Ruby)
+                Some(Self::Ruby)
             }
             Some("gaiji")
                 if node["resolved"]
                     .as_str()
                     .is_some_and(|text| !text.is_empty()) =>
             {
-                Some(EstablishedInterpretation::Gaiji)
+                Some(Self::Gaiji)
             }
             Some("style")
                 if matches!(
@@ -974,28 +958,45 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
                     )
                 ) && has_content =>
             {
-                Some(EstablishedInterpretation::Emphasis)
+                Some(Self::Emphasis)
             }
             Some("typography_block")
                 if node["children"]
                     .as_array()
                     .is_some_and(|children| !children.is_empty()) =>
             {
-                Some(EstablishedInterpretation::Emphasis)
+                Some(Self::Emphasis)
             }
             Some("formatting" | "font_size" | "small_script" | "tcy") if has_content => {
-                Some(EstablishedInterpretation::Emphasis)
+                Some(Self::Emphasis)
             }
-            Some("warichu" | "warichu_block") => Some(EstablishedInterpretation::Warichu),
-            Some("kunten") => Some(EstablishedInterpretation::Kunten),
-            Some("heading") => Some(EstablishedInterpretation::Heading),
-            Some("caption" | "caption_block") => Some(EstablishedInterpretation::Caption),
-            Some("text-variant") => Some(EstablishedInterpretation::TextVariant),
-            Some("editorial_note") => Some(EstablishedInterpretation::EditorialNote),
-            Some("layout_block") => Some(EstablishedInterpretation::LineLayout),
+            Some("warichu" | "warichu_block") => Some(Self::Warichu),
+            Some("kunten") => Some(Self::Kunten),
+            Some("heading") => Some(Self::Heading),
+            Some("caption" | "caption_block") => Some(Self::Caption),
+            Some("text-variant") => Some(Self::TextVariant),
+            Some("editorial_note") => Some(Self::EditorialNote),
+            Some("layout_block") => Some(Self::LineLayout),
             _ => None,
-        };
-        if let Some(interpretation) = interpretation {
+        }
+    }
+
+    fn aspects(self) -> &'static [&'static str] {
+        match self {
+            Self::Ruby | Self::TextVariant | Self::EditorialNote => &["content", "structure"],
+            Self::Gaiji => &["content"],
+            Self::Emphasis | Self::Layout | Self::LineLayout => &["layout"],
+            Self::Warichu | Self::Heading | Self::Caption => &["structure", "layout"],
+            Self::Kunten => &["content", "structure", "layout"],
+        }
+    }
+}
+
+fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
+    let mut facts = Vec::new();
+    let mut pending = blocks.iter().rev().collect::<Vec<_>>();
+    while let Some(node) = pending.pop() {
+        if let Some(interpretation) = EstablishedInterpretation::for_node(node) {
             let spans = if matches!(
                 node["kind"].as_str(),
                 Some("gaiji" | "kunten" | "text-variant" | "editorial_note")
@@ -1682,6 +1683,7 @@ fn heading_block_from_hint(
         "level": level,
         "style": style,
         "content": heading_content,
+        "interpretation_marker_spans": [node["span"]],
         "x-provenance": "source-derived",
     });
     if let Some(indent) = indent {

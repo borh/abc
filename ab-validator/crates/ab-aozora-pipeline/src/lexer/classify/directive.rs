@@ -709,6 +709,10 @@ static BODY_PATTERNS: &[BodyPattern] = &[
         family: BodyFamily::BoutenRange,
     },
     BodyPattern {
+        needle: "黒丸傍点",
+        family: BodyFamily::BoutenRange,
+    },
+    BodyPattern {
         needle: "二重丸傍点",
         family: BodyFamily::BoutenRange,
     },
@@ -2414,7 +2418,8 @@ fn parse_indent_line_layout(after: &str) -> Option<IndentLayout> {
 /// [`BOUTEN_KINDS`] source rather than a hand-maintained second table —
 /// so a mark can never be recognised in the forward direction
 /// (`keyword`) yet silently missed here. `×傍点` is accepted as an input
-/// alias for the canonical ばつ傍点. Only the canonical mark-prefix keywords
+/// alias for ばつ傍点; 黒丸傍点 is the equivalent explicit-color spelling of
+/// 丸傍点. Canonical mark-prefix keywords
 /// (`白丸傍点`, …) are recognised; the non-canonical `傍点（白丸）` /
 /// `傍点◎` marker-suffix spellings decline to `Directive{Unknown}`,
 /// served by a Tier1 lint suggesting the canonical keyword. Unknown suffixes
@@ -2422,8 +2427,10 @@ fn parse_indent_line_layout(after: &str) -> Option<IndentLayout> {
 /// `Directive{Unknown}` catch-all. Lookup is a short linear scan (14 entries,
 /// dominated by the leading-byte mismatch on the first compare).
 pub(super) fn bouten_kind_from_suffix(s: &str) -> Option<BoutenKind> {
-    if s == "×傍点" {
-        return Some(BoutenKind::Cross);
+    match s {
+        "×傍点" => return Some(BoutenKind::Cross),
+        "黒丸傍点" => return Some(BoutenKind::Circle),
+        _ => {}
     }
     BOUTEN_KINDS.iter().copied().find(|k| k.keyword() == s)
 }

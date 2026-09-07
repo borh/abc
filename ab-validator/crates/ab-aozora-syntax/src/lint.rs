@@ -29,7 +29,6 @@ const EXACT: &[(&str, &str)] = &[
     ("文字下げ終わり", "ここで字下げ終わり"),
     ("二字下げ終わり", "ここで字下げ終わり"),
     // Marker / synonym drift.
-    ("黒丸傍点", "丸傍点"),
     ("中央寄せ", "中央揃え"),
     ("斜体字", "斜体"),
     ("中中見出し", "中見出し"),
@@ -152,7 +151,6 @@ fn forward_form(body: &str) -> Option<String> {
     // suffix is distinct and anchored at the body end, so the already-canonical
     // forms (e.g. `は下付き小文字`) cannot re-match (idempotent).
     for (variant_kw, canonical_kw) in [
-        ("に黒丸傍点", "に丸傍点"),
         ("は斜体字", "は斜体"),
         ("は中中見出し", "は中見出し"),
         ("の部分はイタリック体", "は斜体"),
@@ -196,13 +194,10 @@ fn forward_form(body: &str) -> Option<String> {
         return Some(format!("{head}は小文字"));
     }
 
-    // Missing / drifted particle before `傍点` → `に傍点`.
-    for variant_kw in ["は傍点", "の傍点", "傍点"] {
-        if let Some(head) = body.strip_suffix(variant_kw)
-            && head.ends_with('」')
-        {
-            return Some(format!("{head}に傍点"));
-        }
+    if let Some(head) = body.strip_suffix("の傍点")
+        && head.ends_with('」')
+    {
+        return Some(format!("{head}に傍点"));
     }
     None
 }
@@ -218,16 +213,13 @@ pub const CATALOGUE_SAMPLES: &[&str] = &[
     "字下げおわり",
     "文字下げ終わり",
     "二字下げ終わり",
-    "黒丸傍点",
     "中央寄せ",
     "斜体字",
     "中中見出し",
     "３回り大きな文字",
     "ここか２字下げ",
     "２字下げて",
-    "「梅」に黒丸傍点",
     "「梅」は斜体字",
-    "「梅」傍点",
     // Forward keyword / particle drift.
     "「文」の部分はイタリック体",
     "「12」の縦中横",
@@ -236,7 +228,6 @@ pub const CATALOGUE_SAMPLES: &[&str] = &[
     "「幕。」は地付け",
     "「GHQ」の小文字",
     "「強調」ゴシック体",
-    "「語」は傍点",
     "「語」の傍点",
     // the parser declines these; the lint suggests the canonical.
     "ゴチック",
@@ -356,18 +347,13 @@ mod tests {
 
     #[test]
     fn forward_form_preserves_target() {
-        assert_eq!(
-            canonical_directive("「梅」に黒丸傍点").as_deref(),
-            Some("「梅」に丸傍点")
-        );
+        assert_eq!(canonical_directive("「梅」に黒丸傍点"), None);
         assert_eq!(
             canonical_directive("「梅」は斜体字").as_deref(),
             Some("「梅」は斜体")
         );
-        assert_eq!(
-            canonical_directive("「梅」傍点").as_deref(),
-            Some("「梅」に傍点")
-        );
+        assert_eq!(canonical_directive("「梅」傍点"), None);
+        assert_eq!(canonical_directive("「語」は傍点"), None);
     }
 
     #[test]
@@ -380,7 +366,6 @@ mod tests {
             ("「幕。」は地付け", "「幕。」は地付き"),
             ("「GHQ」の小文字", "「GHQ」は小文字"),
             ("「強調」ゴシック体", "「強調」はゴシック体"),
-            ("「語」は傍点", "「語」に傍点"),
             ("「語」の傍点", "「語」に傍点"),
         ] {
             assert_eq!(canonical_directive(v).as_deref(), Some(c), "variant {v:?}");

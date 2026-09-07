@@ -1552,6 +1552,48 @@ fn glyph_shape_statement<'a>(target: &str, suffix: &'a str) -> Option<&'a str> {
         .then_some(statement)
 }
 
+fn side_note_payload<'a>(
+    target: &str,
+    suffix: &'a str,
+) -> Option<(MarginNoteKind, Option<MarginNotePosition>, &'a str)> {
+    Some(if let Some((kind, word)) = note_role_suffix(suffix) {
+        (kind, None, word)
+    } else if let Some(statement) = edition_verified_gloss(suffix) {
+        (MarginNoteKind::Gloss, None, statement)
+    } else if let Some(note) = parenthesized_note_payload(suffix) {
+        (MarginNoteKind::Gloss, None, note)
+    } else if let Some(mark) = supplied_right_mark(suffix) {
+        (
+            MarginNoteKind::SuppliedMark,
+            Some(MarginNotePosition::Right),
+            mark,
+        )
+    } else if let Some(statement) = glyph_shape_statement(target, suffix) {
+        (MarginNoteKind::GlyphShape, None, statement)
+    } else if let Some(location) = page_reference_location(target, suffix) {
+        (MarginNoteKind::CrossReference, None, location)
+    } else {
+        let (kind, inner) = if let Some(inner) = suffix
+            .strip_suffix("」の注記")
+            .or_else(|| suffix.strip_suffix("」注記"))
+        {
+            (MarginNoteKind::Gloss, inner)
+        } else if let Some(inner) = suffix.strip_suffix("」の傍記") {
+            (MarginNoteKind::Marginal, inner)
+        } else {
+            return None;
+        };
+        let (position, note_text) = if let Some(note) = inner.strip_prefix("の左に「") {
+            (Some(MarginNotePosition::Left), note)
+        } else if let Some(note) = inner.strip_prefix("の右に「") {
+            (Some(MarginNotePosition::Right), note)
+        } else {
+            (None, inner.strip_prefix("に「")?)
+        };
+        (kind, position, note_text)
+    })
+}
+
 /// Classify target-associated notes and source roles while preserving supplied
 /// placement. Bare `に` does not establish a side. Native referent extents let
 /// downstream projections attach interior notes without repeating the target.
@@ -1567,44 +1609,7 @@ impl RecogniseCtx<'_, '_> {
         let [target] = extracted.targets.as_slice() else {
             return None;
         };
-        let (kind, position, note_text) =
-            if let Some((kind, word)) = note_role_suffix(extracted.suffix) {
-                (kind, None, word)
-            } else if let Some(statement) = edition_verified_gloss(extracted.suffix) {
-                (MarginNoteKind::Gloss, None, statement)
-            } else if let Some(note) = parenthesized_note_payload(extracted.suffix) {
-                (MarginNoteKind::Gloss, None, note)
-            } else if let Some(mark) = supplied_right_mark(extracted.suffix) {
-                (
-                    MarginNoteKind::SuppliedMark,
-                    Some(MarginNotePosition::Right),
-                    mark,
-                )
-            } else if let Some(statement) = glyph_shape_statement(target, extracted.suffix) {
-                (MarginNoteKind::GlyphShape, None, statement)
-            } else if let Some(location) = page_reference_location(target, extracted.suffix) {
-                (MarginNoteKind::CrossReference, None, location)
-            } else {
-                let (kind, inner) = if let Some(inner) = extracted
-                    .suffix
-                    .strip_suffix("」の注記")
-                    .or_else(|| extracted.suffix.strip_suffix("」注記"))
-                {
-                    (MarginNoteKind::Gloss, inner)
-                } else if let Some(inner) = extracted.suffix.strip_suffix("」の傍記") {
-                    (MarginNoteKind::Marginal, inner)
-                } else {
-                    return None;
-                };
-                let (position, note_text) = if let Some(note) = inner.strip_prefix("の左に「") {
-                    (Some(MarginNotePosition::Left), note)
-                } else if let Some(note) = inner.strip_prefix("の右に「") {
-                    (Some(MarginNotePosition::Right), note)
-                } else {
-                    (None, inner.strip_prefix("に「")?)
-                };
-                (kind, position, note_text)
-            };
+        let (kind, position, note_text) = side_note_payload(target, extracted.suffix)?;
         if note_text.is_empty() {
             return None;
         }

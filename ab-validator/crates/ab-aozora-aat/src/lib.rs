@@ -322,6 +322,10 @@ struct AozoraRubyEntry {
     side: &'static str,
 }
 
+#[allow(
+    clippy::too_many_lines,
+    reason = "source projection keeps node payloads and their owned marker extents together"
+)]
 fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
     let container_closes: BTreeMap<_, _> = tree
         .container_pairs
@@ -839,6 +843,13 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
             {
                 Some(EstablishedInterpretation::Emphasis)
             }
+            Some("typography_block")
+                if node["children"]
+                    .as_array()
+                    .is_some_and(|children| !children.is_empty()) =>
+            {
+                Some(EstablishedInterpretation::Emphasis)
+            }
             Some("formatting" | "font_size" | "small_script")
                 if node["content"]
                     .as_array()
@@ -905,11 +916,8 @@ fn build_aat(
         .iter()
         .map(|entry| ((entry.span.start, entry.span.end), entry.clone()))
         .collect::<BTreeMap<_, _>>();
-    // Bare-toggle pairing runs after block classification:
-    // `blocks_from_inline_content` must see the original node
-    // stream — raw toggle markers included — so paragraph/jizume
-    // segmentation matches the no-pass baseline; adoption then rewrites
-    // only the toggle spans inside the built tree.
+    // Block assembly consumes native scopes across source lines; remaining
+    // inline scopes are paired within their resulting paragraph or container.
     let mut blocks = pair_bare_toggles_in_blocks(blocks_from_inline_content(
         inline_content(decoded, nodes, &gaiji_by_start, &ruby_by_span),
         &decoded.text,
@@ -1140,6 +1148,28 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
             }
         }
 
+        if node.get("x-formatting").is_some()
+            && let Some(close_index) = native_scopes.get(&index).copied()
+            && node["span"]["line_start"] != content[close_index]["span"]["line_start"]
+            && marker_occupies_source_line(&node, source)
+            && marker_occupies_source_line(&content[close_index], source)
+        {
+            push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
+            let mut inner = content[index + 1..close_index].to_vec();
+            strip_boundary_newlines(&mut inner);
+            let container = json!({
+                "kind":"typography_block", "formatting":node["x-formatting"],
+                "span":{"byte_start":node["span"]["byte_start"], "byte_end":content[close_index]["span"]["byte_end"],
+                    "line_start":node["span"]["line_start"], "line_end":content[close_index]["span"]["line_end"]},
+                "interpretation_marker_spans":[node["span"],content[close_index]["span"]],
+                "children":blocks_from_inline_content(inner, source)
+            });
+            blocks.push(container);
+            strip_next_leading_newline = true;
+            index = close_index + 1;
+            continue;
+        }
+
         if let Some(offset) = align_end_offset(&node) {
             let boundary = content[index + 1..]
                 .iter()
@@ -1262,6 +1292,26 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
         blocks.push(json!({"kind": "paragraph", "content": []}));
     }
     blocks
+}
+
+fn marker_occupies_source_line(node: &Value, source: &str) -> bool {
+    let Some(start) = node["span"]["byte_start"]
+        .as_u64()
+        .and_then(|n| usize::try_from(n).ok())
+    else {
+        return false;
+    };
+    let Some(end) = node["span"]["byte_end"]
+        .as_u64()
+        .and_then(|n| usize::try_from(n).ok())
+    else {
+        return false;
+    };
+    let (Some(before), Some(after)) = (source.get(..start), source.get(end..)) else {
+        return false;
+    };
+    before.rsplit('\n').next().unwrap_or("").trim().is_empty()
+        && after.split('\n').next().unwrap_or("").trim().is_empty()
 }
 
 /// Resolve native-established scope extents against this source-node sequence.

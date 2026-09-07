@@ -387,3 +387,12 @@
     (is (= "前１）後。" (:plaintext result)))
     (is (= ["１）"] (texts result "hi")))
     (is (= "text-combine-upright small-script right" (attribute (first spans) "rend")))))
+
+(deftest multiline-typography-preserves-source-paragraph-boundaries
+  (let [result (transcribe (source "前。\n［＃ここから１段階小さな文字］\n第一。\n第二。\n［＃ここで小さな文字終わり］\n後。"))
+        wrapper (first (filter #(= "font-size small(1)" (attribute % "rend")) (elements result "div")))
+        paragraphs (filter #(within? wrapper %) (elements result "p"))]
+    (is (= "前。\n第一。\n第二。\n後。" (:plaintext result)))
+    (is (= ["第一。" "第二。"] (mapv #(.getTextContent ^Node %) paragraphs)))
+    (is (= 2 (count (filter #(= "emphasis" (get % "kind")) (get-in result [:ir "interpretation_facts"])))))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))

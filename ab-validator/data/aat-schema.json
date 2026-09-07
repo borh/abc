@@ -256,10 +256,13 @@
             "keigakomi_block",
             "yokogumi_block",
             "caption_block",
-            "jizume_block"
+            "jizume_block",
+            "typography_block"
           ]
         },
         "span": { "$ref": "#/$defs/span" },
+        "formatting": {"$ref":"#/$defs/formatting_attribute"},
+        "interpretation_marker_spans":{"type":"array","items":{"$ref":"#/$defs/span"}},
         "indent": { "type": "integer", "minimum": 0 },
         "width": { "type": "integer", "minimum": 1 },
         "block_style": {
@@ -275,6 +278,7 @@
         "children": { "type": "array", "items": { "$ref": "#/$defs/block" } }
       },
       "allOf": [
+        {"if":{"properties":{"kind":{"const":"typography_block"}}},"then":{"required":["formatting","span","interpretation_marker_spans"]}},
         {
           "if": { "properties": { "kind": { "const": "jisage_block" } } },
           "then": { "required": ["indent"] }
@@ -409,6 +413,8 @@
     },
     "formatting_attribute": {
       "oneOf": [
+        {"type":"object","additionalProperties":false,"required":["kind","style_type"],"properties":{"kind":{"const":"style"},"style_type":{"enum":["bold","italic","gothic","bouten","bosen"]},"decoration":{"type":"object","additionalProperties":false,"required":["kind","position"],"properties":{"kind":{"type":"string"},"position":{"enum":["right","left","both","unknown"]}}}}},
+        {"type":"object","additionalProperties":false,"required":["kind","size_type","level"],"properties":{"kind":{"const":"font_size"},"size_type":{"enum":["large","small"]},"level":{"type":"integer","minimum":1}}},
         { "type":"object", "additionalProperties":false, "required":["kind"], "properties":{"kind":{"const":"tcy"}} },
         { "type":"object", "additionalProperties":false, "required":["kind","position"], "properties":{"kind":{"const":"small_script"},"position":{"enum":["right","left"]}} }
       ]

@@ -87,6 +87,9 @@
 
 (defn- inline-layout-rend [layout]
   (case (get layout "kind")
+    "emphasis" (string/join " " (remove nil? [(get layout "style")
+                                              (get-in layout ["decoration" "kind"])
+                                              (get-in layout ["decoration" "position"])]))
     "font-size" (if (= "absolute" (get layout "size_type"))
                   (str "font-size absolute(" (get layout "size") ")")
                   (let [size-type (get layout "size_type")
@@ -278,7 +281,7 @@
   (let [kind (get node "kunten_kind")]
     (append-inline acc (sourced node [:note {:type "kunten" :subtype kind
                                              :rend (case kind "return-mark" "subscript" "okurigana" "superscript")}
-                                     (get node "text")]))))
+                                      (get node "text")]))))
 
 (defn- render-base-text-variant-node [acc node depth]
   (let [before (:current-paragraph acc)
@@ -595,12 +598,15 @@
     (throw (ex-info "Crossing layout block ranges" {:blocks [a b]}))))
 
 (defn- layout-block-attrs [block]
-  {:type "layout"
-   :style (string/join "; "
-                       (cond-> [(str "padding-inline-start: " (get block "indent") "em")]
-                         (get block "direction") (conj "writing-mode: horizontal-tb")
-                         (get block "align") (conj "text-align: center")
-                         (get block "border") (conj "border-style: solid")))})
+  (let [styles (cond-> []
+                 (contains? block "indent") (conj (str "padding-inline-start: " (get block "indent") "em"))
+                 (get block "direction") (conj "writing-mode: horizontal-tb")
+                 (get block "align") (conj "text-align: center")
+                 (get block "border") (conj "border-style: solid"))
+        typography (get block "typography")]
+    (cond-> {:type "layout"}
+      (seq styles) (assoc :style (string/join "; " styles))
+      typography (assoc :rend (inline-layout-rend typography)))))
 
 (defn- close-layout-blocks [acc frames paragraph-end]
   (loop [acc acc frames frames]

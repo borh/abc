@@ -46,6 +46,8 @@
 (def ^:private compatible-families
   {"kunten" {:markers #{"CommandFullwidth" "CommandAscii"}
              :families #{"kunten.kaeriten" "kunten.okurigana"} :aspects #{"content" "structure" "layout"}}
+   "heading" {:markers #{"CommandFullwidth" "CommandAscii"}
+              :families #{"heading.basic" "heading.dogyo" "heading.mado"} :aspects #{"structure" "layout"}}
    "ruby" {:markers #{"RubyExplicit" "RubyImplicit"}
            :families #{"ruby.basic"} :aspects #{"content" "structure"}}
    "gaiji" {:markers #{"GaijiFullwidth" "GaijiAscii"}
@@ -53,7 +55,7 @@
             :aspects #{"content"}}
    "emphasis" {:markers #{"CommandFullwidth" "CommandAscii"}
                :families #{"emphasis.basic" "decoration.boten" "decoration.bousen"
-                           "decoration.bold_italic"} :aspects #{"layout"}}
+                           "decoration.bold_italic" "decoration.typeface" "decoration.font_size" "layout.tcy"} :aspects #{"layout"}}
    "warichu" {:markers #{"CommandFullwidth" "CommandAscii"}
               :families #{"warichu.basic"} :aspects #{"structure" "layout"}}})
 
@@ -147,7 +149,7 @@
 (defn coverage-stage
   "Independent lexical oracle + parser IR -> explicit claim accounting."
   [clj-toolchain-id]
-  {:stage-id "interpretation-coverage" :stage-version "2" :toolchain-id clj-toolchain-id
+  {:stage-id "interpretation-coverage" :stage-version "3" :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob]} inputs]
         (let [input-bytes (into {} (map (fn [name] [name (blob (get inputs name))]))
                                 ["source-accountability" "parser-ir"])

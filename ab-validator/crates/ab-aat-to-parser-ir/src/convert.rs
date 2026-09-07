@@ -439,6 +439,34 @@ fn map_block_content(
             outputs.nodes.push(heading);
             current = end;
         }
+        "typography_block" => {
+            let start = outputs.paragraphs.len();
+            for (index, child) in block["children"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .enumerate()
+            {
+                current = map_block(
+                    child,
+                    outputs,
+                    recorder,
+                    current,
+                    &format!("{path}.children[{index}]"),
+                    None,
+                    false,
+                    heuristic_enabled,
+                )?;
+            }
+            if outputs.paragraphs.len() > start {
+                let mut typography = layout_scope(&block["formatting"])?;
+                typography["source"] = json!("aat-block");
+                outputs.layout_blocks.push(
+                    json!({"paragraph_range":{"start":start,"end":outputs.paragraphs.len()},
+                    "typography":typography,"source_pointer":path}),
+                );
+            }
+        }
         "jisage_block" => {
             let children: Vec<&Value> =
                 block["children"].as_array().into_iter().flatten().collect();
@@ -1314,6 +1342,14 @@ fn map_inline_to_nodes(
 
 fn layout_scope(node: &Value) -> Result<Value> {
     match node["kind"].as_str().unwrap_or("") {
+        "style" => {
+            let mut layout =
+                json!({"kind":"emphasis","source":"aat-inline","style":node["style_type"]});
+            if let Some(decoration) = node.get("decoration") {
+                layout["decoration"] = decoration.clone();
+            }
+            Ok(layout)
+        }
         "formatting" => node["attributes"]
             .as_array()
             .context("formatting attributes must be an array")?

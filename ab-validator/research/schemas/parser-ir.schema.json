@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
   "title": "ABC Parser IR",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "type": "object",
   "required": ["schema_id", "schema_hash", "source", "nodes", "warnings", "errors", "interpretation_problems", "interpretation_facts"],
   "additionalProperties": false,
@@ -71,9 +71,11 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["paragraph_range", "indent", "source_pointer"],
+        "required": ["paragraph_range", "source_pointer"],
+        "anyOf":[{"required":["indent"]},{"required":["typography"]}],
         "additionalProperties": false,
         "properties": {
+          "typography": {"$ref":"#/$defs/layoutScope"},
           "paragraph_range": { "$ref": "#/$defs/nodeRange", "description": "Half-open indices into paragraphs, delimiting one enclosing layout block." },
           "indent": { "type": "integer", "minimum": 0 },
           "direction": { "const": "horizontal" },
@@ -316,6 +318,9 @@
     },
     "layoutScope": {
       "oneOf": [
+        {"type":"object","additionalProperties":false,"required":["kind","source","style"],
+         "properties":{"kind":{"const":"emphasis"},"source":{"$ref":"#/$defs/layoutScopeSource"},
+           "style":{"enum":["bold","italic","gothic","bouten","bosen"]},"decoration":{"type":"object","additionalProperties":false,"required":["kind","position"],"properties":{"kind":{"type":"string"},"position":{"enum":["right","left","both","unknown"]}}}}},
         {
           "type": "object",
           "required": ["kind", "source", "size_type"],

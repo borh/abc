@@ -1,4 +1,4 @@
-(ns soranoha.ori.publication-whitespace
+(ns ^:typed.clojure soranoha.ori.publication-whitespace
   (:require [clojure.string :as string]))
 
 (defn- normalize-newlines [text]

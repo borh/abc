@@ -31,7 +31,7 @@
   (let [path (fs/path schema-path)
         cache-key [(str (fs/canonicalize path)) (fs/last-modified-time path)]]
     (or (get @resource-cache cache-key)
-        (let [resource (SchematronResourceSCH/fromFile (fs/file path))]
+        (let [resource (.build (SchematronResourceSCH/builderFromFile (fs/file path)))]
           (when-not (.isValidSchematron resource)
             (throw (ex-info "Invalid Schematron schema"
                             {:schema-path schema-path})))
@@ -39,7 +39,7 @@
           resource))))
 
 (defn- svrl-findings [label ^com.helger.schematron.svrl.jaxb.SchematronOutputType svrl]
-  (loop [items (seq (.getActivePatternAndFiredRuleAndFailedAssert svrl))
+  (loop [items (seq (.getActivePatternOrActiveGroupAndFiredRule svrl))
          rule-id nil
          context nil
          findings []]

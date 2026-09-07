@@ -4076,7 +4076,6 @@ fn push_style_node(
 // Resolve quoted targets after scopes are assembled, while source lines and
 // typed principal/reading contributions remain available in one representation.
 fn resolve_text_variants_in_blocks(nodes: Vec<Value>, decoded: &DecodedSource) -> Vec<Value> {
-    let source = decoded.text.as_str();
     let mut resolved = Vec::with_capacity(nodes.len());
     let mut pending = nodes.into_iter().peekable();
     while let Some(mut node) = pending.next() {
@@ -4140,7 +4139,7 @@ fn resolve_text_variants_in_blocks(nodes: Vec<Value>, decoded: &DecodedSource) -
                     &current_text,
                     base,
                     &base_text,
-                    source,
+                    decoded,
                 )
             }) {
                 continue;
@@ -4462,8 +4461,9 @@ fn attach_reading_variant(
     current_text: &str,
     base: &[Value],
     base_text: &str,
-    source: &str,
+    decoded: &DecodedSource,
 ) -> bool {
+    let source = decoded.text.as_str();
     if ruby["span"]["line_end"].as_u64().is_none()
         || ruby["span"]["line_end"] != note["span"]["line_start"]
     {
@@ -4488,10 +4488,23 @@ fn attach_reading_variant(
         return false;
     }
     if current_text != reading {
-        if note["text_variant"]["target_kind"] != "ruby-reading"
-            || ruby.get("reading_content").is_some()
-        {
+        if note["text_variant"]["target_kind"] != "ruby-reading" {
             return false;
+        }
+        if let Some(children) = ruby
+            .get_mut("reading_content")
+            .and_then(Value::as_array_mut)
+        {
+            let Some(selected) =
+                take_visible_suffix_matching(children, current_text, decoded, Some(current))
+            else {
+                return false;
+            };
+            children.push(json!({"kind":"text-variant", "content":selected,
+                "current_interpretation_facts":established_interpretations(current),
+                "base_text":base_text, "base_content":base, "source":note["source"], "span":note["span"]}));
+            append_variant_statement(children, note);
+            return true;
         }
         let Some(end) = ruby["span"]["byte_end"]
             .as_u64()

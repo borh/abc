@@ -1416,3 +1416,37 @@ fn rich_sic_statements_compose_without_weakening_quoted_identity() {
         );
     }
 }
+
+#[test]
+fn a_reading_variant_selects_only_its_exact_structured_suffix() {
+    let body = "懲々《こり／″＼》［＃ルビの「／″＼」は底本では「こり／＼」］";
+    let ir = convert(body);
+    let all = nodes(&ir);
+    let ruby = all.iter().find(|node| node["type"] == "ruby").unwrap();
+    assert_eq!(ruby["ruby"]["reading"], "こり〲");
+    let variant = all
+        .iter()
+        .find(|node| node["type"] == "base-text-variant")
+        .expect("exact reading suffix");
+    assert_eq!(variant["text"], "〲");
+    assert_eq!(variant["variant"]["base_text"], "こり〱");
+    assert_eq!(
+        variant["span"],
+        json!({"start":6,"end":9,"coordinate_system":"reading_utf8"})
+    );
+    assert_eq!(variant["inline_children"][0]["type"], "iteration-mark");
+    assert_eq!(ir["interpretation_problems"], json!([]));
+    for body in [
+        "懲々《こり／＼》［＃ルビの「／″＼」は底本では「こり／＼」］",
+        "懲々《こり／″＼》別《べつ》［＃ルビの「／″＼」は底本では「こり／＼」］",
+        "懲々《／″＼こり》［＃ルビの「／″＼」は底本では「こり／＼」］",
+    ] {
+        let ir = convert(body);
+        assert!(
+            !nodes(&ir)
+                .iter()
+                .any(|node| node["type"] == "base-text-variant")
+        );
+        assert!(!ir["interpretation_problems"].as_array().unwrap().is_empty());
+    }
+}

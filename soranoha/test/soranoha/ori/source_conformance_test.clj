@@ -1277,6 +1277,7 @@
     (is (= "ママ" (.getTextContent ^Node note)))
     (is (= "」ママ" (.getTextContent (.getParentNode ^Node note))))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
 (deftest external-table-reference-retains-prose-and-reports-the-external-slot
   (let [marker "［＃ここに表組入る、別ファイル（densyanokonzatsu_table.txt）参照］"
         result (transcribe (source (str "前。" marker "後。")))
@@ -1306,3 +1307,12 @@
     (is (= "前。\nW(r,t) = x2\ny = 1\n後。" (:plaintext result)))
     (is (empty? (get-in result [:ir "interpretation_problems"])))
     (is (= 2 (count (filter #(= "formula" (get % "kind")) (get-in result [:ir "interpretation_facts"])))))))
+
+(deftest a-reading-variant-preserves-its-unselected-prefix
+  (let [result (transcribe (source "懲々《こり／″＼》［＃ルビの「／″＼」は底本では「こり／＼」］"))]
+    (is (= "懲々" (:plaintext result)))
+    (is (= ["こり〲"] (texts result "rt")))
+    (is (= ["〲"] (texts result "lem")))
+    (is (= ["こり〱"] (texts result "rdg")))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))
+    (is (every? #(not (string/blank? (attribute % "source"))) (elements result "app")))))

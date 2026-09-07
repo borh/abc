@@ -299,13 +299,13 @@ pub fn sanitize_mapped(source: &str) -> SanitizeMappedOutput<'_> {
     }
 }
 
-/// Rewrite complete, unnested `〔...〕` accent scopes within each source line.
+/// Rewrite source-paired accent scopes. Cross-line scopes require explicit
+/// accent decomposition on every physical line, without an intervening blank line.
 /// Converted spans lose their accent-scope brackets; literal bracket text is preserved.
 #[doc(hidden)]
 #[must_use]
 pub fn rewrite_accent_spans(input: &str) -> String {
-    // Discard the per-span notes; the public, diagnostic-free entry point
-    // keeps its `-> String` shape for existing callers and tests.
+    // The diagnostic-free entry point discards per-site notes.
     let mut sink = Vec::new();
     rewrite_accent_spans_collecting(input, &mut sink)
 }
@@ -362,7 +362,11 @@ pub(super) fn rewrite_accent_spans_collecting_core(
     for scope in &scopes {
         let start = scope.start + TORTOISE_OPEN.len_utf8();
         let end = scope.end - TORTOISE_CLOSE.len_utf8();
-        if input[start..end].contains(['\r', '\n']) {
+        if input[start..end].contains(['\r', '\n'])
+            && input[start..end]
+                .split('\n')
+                .any(|line| decompose_fragment_sites(line).is_empty())
+        {
             continue;
         }
         // Editorial quotations own their delimiters, but unscoped variant
@@ -862,6 +866,54 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn explicitly_encoded_multiline_stanza_preserves_lines_and_source_maps() {
+        for (input, expected) in [
+            (
+                "〔Pardonnez a` mon bavardage\nJ'en suis a` mon premier voyage.〕",
+                "Pardonnez à mon bavardage\nJ'en suis à mon premier voyage.",
+            ),
+            (
+                "\u{feff}〔Pardonnez a` mon bavardage\r\nJ'en suis a` mon premier voyage.〕",
+                "Pardonnez à mon bavardage\nJ'en suis à mon premier voyage.",
+            ),
+        ] {
+            let output = sanitize_mapped(input);
+            assert_eq!(output.text, expected);
+            assert_eq!(sanitize(input).text, expected);
+            assert_eq!(output.diagnostics.len(), 2);
+            for diagnostic in output.diagnostics {
+                let Diagnostic::AccentDecompositionApplied { span, .. } = diagnostic else {
+                    panic!("unexpected diagnostic: {diagnostic:?}")
+                };
+                let start = output
+                    .maps
+                    .to_source_offset(usize::try_from(span.start).unwrap());
+                let end = output
+                    .maps
+                    .to_source_end(usize::try_from(span.end).unwrap());
+                assert_eq!(&input[start..end], "a`");
+            }
+        }
+    }
+
+    #[test]
+    fn incomplete_accent_lines_do_not_borrow_prose_or_later_scope_closers() {
+        for input in [
+            "〔cafe'\n別の注〕",
+            "〔cafe'\n\na`〕",
+            "〔cafe'\n〕",
+            "〔日本語\n付記〕",
+            "〔編者の補い\na`〕",
+        ] {
+            let output = sanitize_mapped(input);
+            assert_eq!(output.text, input);
+            assert!(output.diagnostics.is_empty());
+        }
+        let input = "〔cafe'\n次〔e'〕";
+        assert_eq!(sanitize(input).text, "〔cafe'\n次é");
     }
 
     #[test]

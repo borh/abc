@@ -1121,10 +1121,27 @@ fn marker_end_on_same_line(text: &str, content_start: usize, end_marker: char) -
 }
 
 fn marker_end(text: &str, content_start: usize, end_marker: char) -> Option<usize> {
-    for (offset, ch) in text[content_start..].char_indices() {
-        if ch == end_marker {
-            return Some(content_start + offset);
+    let mut offset = content_start;
+    while offset < text.len() {
+        let rest = &text[offset..];
+        let command = if rest.starts_with("［＃") {
+            Some(("［＃".len(), '］'))
+        } else if rest.starts_with("[#") {
+            Some(("[#".len(), ']'))
+        } else {
+            None
+        };
+        if let Some((prefix_len, close)) = command
+            && let Some(end) = command_end(text, offset + prefix_len, close)
+        {
+            offset = end + close.len_utf8();
+            continue;
         }
+        let ch = rest.chars().next()?;
+        if ch == end_marker {
+            return Some(offset);
+        }
+        offset += ch.len_utf8();
     }
     None
 }
@@ -1909,6 +1926,20 @@ mod tests {
         assert_eq!(markers.len(), 1);
         assert_eq!(markers[0].kind, SourceMarkerKind::AccentNotation);
         assert_eq!(markers[0].raw, "〔e'tude〕");
+    }
+
+    #[test]
+    fn bracket_scope_does_not_end_inside_an_embedded_command() {
+        for command in [
+            "［＃「〔schla:gt〕」は底本では「〔scha:gt〕」］",
+            "[#「〔schla:gt〕」は底本では「〔scha:gt〕」]",
+        ] {
+            let source = format!("〔sein Puls schla:gt{command} ihm noch.〕後");
+            let markers = source_markers(&source);
+            assert_eq!(markers.len(), 1);
+            assert_eq!(markers[0].raw, source.strip_suffix('後').unwrap());
+            assert!(markers[0].body.contains(command));
+        }
     }
 
     #[test]

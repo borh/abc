@@ -54,6 +54,7 @@ pub fn source_accountability(
                     | "ruby.basic"
                     | "accent.dotted_letter"
                     | "glyph.variant_note"
+                    | "annotation.chuuki"
                     | "iteration.kunoji"
                     | "gaiji.marker"
                     | "gaiji.jis_code"
@@ -130,6 +131,7 @@ fn nested_components(
                     "kunten.okurigana",
                     "accent.dotted_letter",
                     "glyph.variant_note",
+                    "annotation.chuuki",
                 ],
                 SourceMarkerKind::GaijiFullwidth | SourceMarkerKind::GaijiAscii => {
                     &["gaiji.marker", "gaiji.jis_code", "gaiji.unicode_codepoint"]
@@ -158,6 +160,35 @@ fn nested_components(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn edition_notes_inside_brackets_keep_their_own_source_extent() {
+        let patterns = vec![SourceInventoryPattern {
+            row_id: "annotation.chuuki".into(),
+            source_patterns: vec!["」は底本では「".into()],
+        }];
+        for (base, command) in [
+            ("Hu:lshoff", "［＃「Hu:lshoff」は底本では「Hu:lshoffs」］"),
+            (
+                "schla:gt",
+                "［＃「〔schla:gt〕」は底本では「〔scha:gt〕」］",
+            ),
+        ] {
+            let source = format!("題\n作者\n\n〔前{base}{command}後〕\n");
+            let report = source_accountability(source.as_bytes(), b"matrix", &patterns);
+            let components = report["occurrences"][0]["components"].as_array().unwrap();
+            let component = components
+                .iter()
+                .find(|node| node["raw"] == command)
+                .unwrap();
+            assert_eq!(component["kind"], "CommandFullwidth");
+            assert_eq!(component["families"], json!(["annotation.chuuki"]));
+            let start = component["source_span"]["start"].as_u64().unwrap() as usize;
+            let end = component["source_span"]["end"].as_u64().unwrap() as usize;
+            assert_eq!(&source[start..end], command);
+            assert_eq!(component["source_span"]["line"], 4);
+        }
+    }
 
     #[test]
     fn iteration_components_keep_original_coordinates_without_expansion() {

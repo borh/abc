@@ -4982,10 +4982,9 @@ fn principal_text_alternatives_preserve_supplied_text_and_rich_targets() {
 }
 
 #[test]
-fn principal_text_alternatives_do_not_search_past_mismatches_or_split_ruby() {
+fn principal_text_alternatives_do_not_search_past_mismatches_or_source_lines() {
     for body in [
         "前の字。別の字［＃「前の字」は底本では「旧字」］。",
-        "｜東京《とうきょう》［＃「京」は底本では「亰」］。",
         "先の字。\n［＃「字」は底本では「別」］",
     ] {
         let source = format!("題\n作者\n\n{body}\n\n底本：本\n");

@@ -375,3 +375,99 @@ fn repeated_principal_target_or_different_reading_cannot_establish_a_subrange() 
         );
     }
 }
+
+#[test]
+fn edition_statements_preserve_attribution_and_never_apply_base_only_formatting() {
+    for (body, kind) in [
+        ("b［＃「b」は底本では上付き小文字］", "base-edition"),
+        ("行。［＃この行は底本では天付き］", "base-edition"),
+        (
+            "かづきぬ［＃「かづきぬ」は初出では「かつぎぬ」］",
+            "first-publication",
+        ),
+        (
+            "臙脂色《えんじいろ》［＃ルビの「えんじいろ」は初出では「ゑんじいろ」］",
+            "first-publication",
+        ),
+    ] {
+        let ir = convert(body);
+        let all = nodes(&ir);
+        let note = all.iter().find(|node| node["note_kind"] == kind).unwrap();
+        assert_eq!(note["span"]["start"], note["span"]["end"]);
+        assert_eq!(
+            note["text"],
+            body.split_once("［＃")
+                .unwrap()
+                .1
+                .strip_suffix('］')
+                .unwrap()
+        );
+        assert!(
+            !all.iter()
+                .any(|node| node["type"] == "layout-span" || node["type"] == "base-text-variant")
+        );
+        assert_eq!(ir["interpretation_problems"], json!([]));
+    }
+}
+
+#[test]
+fn quoted_ruby_delimiters_address_the_existing_reading_axis() {
+    let ir = convert("躓《つまず》［＃「《つまず》」は底本では「《つまづ》」］き");
+    let all = nodes(&ir);
+    let ruby = all.iter().find(|node| node["type"] == "ruby").unwrap();
+    let app = &ruby["reading_children"][0];
+    assert_eq!(app["type"], "base-text-variant");
+    assert_eq!(app["text"], "つまず");
+    assert_eq!(app["variant"]["base_text"], "つまづ");
+    assert_eq!(app["span"]["coordinate_system"], "reading_utf8");
+    assert_eq!(ir["interpretation_problems"], json!([]));
+}
+
+#[test]
+fn target_identity_retains_terminal_kunten_without_giving_it_principal_width() {
+    for (body, text, witness_mark) in [
+        (
+            "厩中［＃一］［＃「厩中［＃一］」は底本では「厩中［＃二］」］",
+            "厩中",
+            "二",
+        ),
+        (
+            "顆一［＃一］［＃「顆一［＃一］」は底本では「顆一」］",
+            "顆一",
+            "",
+        ),
+        (
+            "魂気帰［＃二］於天［＃一］［＃「魂気帰［＃二］於天［＃一］」は底本では「魂気帰［＃レ］於天［＃一］」］",
+            "魂気帰於天",
+            "レ一",
+        ),
+    ] {
+        let ir = convert(body);
+        let all = nodes(&ir);
+        let app = all
+            .iter()
+            .find(|node| node["type"] == "base-text-variant")
+            .unwrap();
+        assert_eq!(app["text"], text);
+        assert_eq!(app["variant"]["base_text"], text);
+        let witness = app["variant"]["base_children"].as_array().unwrap();
+        let marks = witness
+            .iter()
+            .filter(|node| node["type"] == "kunten")
+            .collect::<Vec<_>>();
+        assert_eq!(
+            marks
+                .iter()
+                .map(|node| node["text"].as_str().unwrap())
+                .collect::<String>(),
+            witness_mark
+        );
+        assert!(
+            marks
+                .iter()
+                .all(|node| node["span"]["start"] == node["span"]["end"]
+                    && node["span"]["coordinate_system"] == "witness_utf8")
+        );
+        assert_eq!(ir["interpretation_problems"], json!([]));
+    }
+}

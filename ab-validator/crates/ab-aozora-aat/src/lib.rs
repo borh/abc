@@ -11,7 +11,9 @@ use std::{
 };
 
 use ab_aozora_pipeline::lexer::sanitize::{SanitizeMaps, sanitize_mapped};
-use ab_aozora_pipeline::text_variant::{TextVariantTarget, base_edition_note, text_variant};
+use ab_aozora_pipeline::text_variant::{
+    EditionNoteKind, TextVariantTarget, edition_note, text_variant,
+};
 use ab_aozora_pipeline::{LexOutput, Pipeline};
 use anyhow::Result;
 use encoding_rs::SHIFT_JIS;
@@ -288,6 +290,7 @@ enum ProjectedKind {
         editorial_statement: Option<String>,
     },
     EditorialNote {
+        kind: EditionNoteKind,
         text: String,
     },
     QuoteOpen,
@@ -357,8 +360,9 @@ fn project_text_variant(kind: ProjectedKind, source: &str, span: Span) -> Projec
     ) {
         text_variant(&source[span.start..span.end]).map_or_else(
             || {
-                base_edition_note(&source[span.start..span.end]).map_or(kind, |text| {
+                edition_note(&source[span.start..span.end]).map_or(kind, |(kind, text)| {
                     ProjectedKind::EditorialNote {
+                        kind,
                         text: text.to_owned(),
                     }
                 })
@@ -1887,7 +1891,7 @@ fn inline_content_range(
                 "x-break-kind":"line", "x-break-marker":"forced",
                 "span":span_json(&node.span, &decoded.span_ctx)
             })),
-            ProjectedKind::EditorialNote { ref text } => content.push(json!({"kind":"editorial_note", "note_kind":"base-edition", "text":text, "span":span_json(&node.span, &decoded.span_ctx)})),
+            ProjectedKind::EditorialNote { kind, ref text } => content.push(json!({"kind":"editorial_note", "note_kind":match kind {EditionNoteKind::BaseEdition=>"base-edition", EditionNoteKind::FirstPublication=>"first-publication"}, "text":text, "span":span_json(&node.span, &decoded.span_ctx)})),
             ProjectedKind::Kunten { kind, ref text } => {
                 content.push(kunten_node(decoded, &node.span, kind, text));
             }
@@ -2876,7 +2880,9 @@ fn take_visible_suffix_matching(
         let kind = node["kind"].as_str()?;
         let text = target_text(node)?;
         if text.is_empty() {
-            if kind == "editorial_note" || (kind == "raw" && node.get("text_variant").is_some()) {
+            if matches!(kind, "editorial_note" | "kunten")
+                || (kind == "raw" && node.get("text_variant").is_some())
+            {
                 continue;
             }
             return None;

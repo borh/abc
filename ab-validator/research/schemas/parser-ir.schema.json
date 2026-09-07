@@ -639,7 +639,7 @@
             "span": { "$ref": "#/$defs/span" },
             "source_span": { "$ref": "#/$defs/sourceSpan" },
             "note": { "$ref": "#/$defs/note" },
-            "note_kind": {"enum":["base-edition"]},
+            "note_kind": {"enum":["base-edition","first-publication"]},
             "text": {"type":"string","minLength":1}
           }
         }

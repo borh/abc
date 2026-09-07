@@ -614,3 +614,15 @@
     (is (empty? (elements result "gap")))
     (is (seq (get-in result [:ir "interpretation_problems"])))
     (is (empty? (get-in result [:view :view/eligible-spans])))))
+
+(deftest supplied-rich-image-description-stays-outside-principal-text
+  (let [result (transcribe (source "前［＃漢《かん》の図（fig1.png）入る］後"))
+        description (first (filter #(= "image-description" (attribute % "type")) (elements result "note")))
+        image (first (elements result "graphic"))]
+    (is (= "前後" (:plaintext result)))
+    (is (= ["前後"] (texts result "p")))
+    (is (= "fig1.png" (attribute image "url")))
+    (is (some? description))
+    (is (string/includes? (.getTextContent ^Node description) "漢"))
+    (is (string/includes? (.getTextContent ^Node description) "かん"))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))

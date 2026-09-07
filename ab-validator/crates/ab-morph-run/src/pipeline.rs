@@ -1018,7 +1018,7 @@ pub(crate) fn run_analyze_aat_serial(
                     map,
                     &document.text,
                 ) {
-                    Ok(()) => {
+                    Ok(report) => {
                         // Honor spec invariant #2: byte_span/char_span/surface now in
                         // original-doc coords, so source_text must be the original.
                         analysis.source_text = Arc::clone(
@@ -1026,6 +1026,46 @@ pub(crate) fn run_analyze_aat_serial(
                                 .as_ref()
                                 .expect("offset_map_opt is Some in this arm"),
                         );
+                        // Widened / folded morphemes are a coarsening of this
+                        // analyzer's segmentation, not a failure; record the
+                        // counts so consumers can weigh the comparison
+                        // (Invariant 4: never silent), on every output path.
+                        if report.snapped > 0 {
+                            let message = format!(
+                                "{} morpheme spans widened to the covering original span, {} folded into their predecessor",
+                                report.snapped, report.merged
+                            );
+                            if let Some(writer) = &mut warehouse_writer {
+                                warehouse_error_count += 1;
+                                writer.append_errors(&[warehouse_error_row(
+                                    options
+                                        .warehouse
+                                        .as_ref()
+                                        .expect("warehouse options")
+                                        .paths
+                                        .run_id
+                                        .as_str(),
+                                    Some(source_id.clone()),
+                                    Some(document.text_id.clone()),
+                                    Some(analyzer.analyzer_id().to_owned()),
+                                    "ortho_remap",
+                                    "ortho_remap_snapped",
+                                    &message,
+                                )])?;
+                            } else if let Some(writer) = &mut errors_writer {
+                                write_error_row(
+                                    &mut **writer,
+                                    &RunErrorRow {
+                                        input_path: input_path.clone(),
+                                        source_id: Some(source_id.clone()),
+                                        text_id: Some(document.text_id.clone()),
+                                        analyzer: Some(analyzer.analyzer_id().to_owned()),
+                                        stage: "ortho_remap".to_owned(),
+                                        error: format!("ortho_remap_snapped: {message}"),
+                                    },
+                                )?;
+                            }
+                        }
                     }
                     Err(e) => {
                         // Morphemes remain in normalized coords. Leave source_text as

@@ -85,13 +85,14 @@ fn remap_preserves_identity_region_morpheme() {
 }
 
 #[test]
-fn remap_errors_when_morpheme_spans_annotation_boundary() {
+fn remap_widens_morpheme_that_spans_annotation_boundary() {
     let (normalized_text, offset_map) = vu_case();
     assert_eq!(normalized_text, "今日う゛");
 
     // A morpheme spanning norm bytes 3..9: starts in `日` (entry 0: 0..6) and
-    // ends in `う゛` (entry 1: 6..12). This crosses the boundary where
-    // byte-length changed and cannot be remapped as a single span.
+    // ends inside `う゛` (entry 1: 6..12). The analyzer cut the rewritten span
+    // finer than the rewrite, so the token is widened to the covering original
+    // span `日ヴ` and the analysis carries an ortho_remap warning.
     let morpheme = Morpheme {
         surface: String::new(),
         byte_span: 3..9,
@@ -100,11 +101,65 @@ fn remap_errors_when_morpheme_spans_annotation_boundary() {
     };
     let mut analysis = make_analysis(normalized_text, vec![morpheme]);
 
-    let err = remap_spans(&mut analysis, &offset_map, "今日ヴ").unwrap_err();
-    assert!(
-        matches!(err, ab_ortho_detect::OrthoMapError::CrossesBoundary { .. }),
-        "expected CrossesBoundary, got {err:?}"
+    let report = remap_spans(&mut analysis, &offset_map, "今日ヴ").unwrap();
+    assert_eq!(report.snapped, 1);
+    assert_eq!(report.merged, 0);
+    let m = &analysis.morphemes[0];
+    assert_eq!(m.byte_span, 3..9);
+    assert_eq!(m.surface, "日ヴ");
+    assert_eq!(m.char_span, 1..3);
+    assert_eq!(analysis.warnings.len(), 1);
+    assert_eq!(analysis.warnings[0].stage, "ortho_remap");
+    assert_eq!(analysis.warnings[0].count, 1);
+    assert_eq!(analysis.warnings[0].first_byte_offset, 3);
+}
+
+#[test]
+fn remap_folds_tokens_inside_one_rewritten_span() {
+    let (normalized_text, offset_map) = vu_case();
+
+    // The analyzer split the rewritten `う゛` into `う` (6..9) and `゛` (9..12).
+    // Neither sub-span has an original equivalent; both cover `ヴ`, so they
+    // fold into one morpheme with the first token's features.
+    let mut features_first = FeatureMap::new();
+    let _ = features_first.insert("pos1".into(), Some("感動詞".into()));
+    let morphemes = vec![
+        Morpheme {
+            surface: "今日".to_owned(),
+            byte_span: 0..6,
+            char_span: 0..2,
+            features: FeatureMap::new(),
+        },
+        Morpheme {
+            surface: "う".to_owned(),
+            byte_span: 6..9,
+            char_span: 2..3,
+            features: features_first,
+        },
+        Morpheme {
+            surface: "゛".to_owned(),
+            byte_span: 9..12,
+            char_span: 3..4,
+            features: FeatureMap::new(),
+        },
+    ];
+    let mut analysis = make_analysis(normalized_text, morphemes);
+
+    let report = remap_spans(&mut analysis, &offset_map, "今日ヴ").unwrap();
+    assert_eq!(report.snapped, 2);
+    assert_eq!(report.merged, 1);
+    assert_eq!(analysis.morphemes.len(), 2);
+    let m = &analysis.morphemes[1];
+    assert_eq!(m.byte_span, 6..9);
+    assert_eq!(m.surface, "ヴ");
+    assert_eq!(m.char_span, 2..3);
+    assert_eq!(
+        m.features.get("pos1").and_then(|v| v.as_deref()),
+        Some("感動詞")
     );
+    // Spans stay ordered and disjoint, so the analysis validates against the
+    // original text.
+    assert_eq!(analysis.morphemes[0].byte_span, 0..6);
 }
 
 #[test]

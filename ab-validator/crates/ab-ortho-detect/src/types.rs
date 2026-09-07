@@ -174,6 +174,53 @@ impl OffsetMap {
         })
     }
 
+    /// Smallest original-text byte range that covers `norm_range`, for spans
+    /// [`Self::to_original`] rejects with [`OrthoMapError::CrossesBoundary`].
+    ///
+    /// An endpoint inside an identity entry maps 1:1; an endpoint inside a
+    /// length-changing entry snaps outward to that entry's original bounds
+    /// (an analyzer token cannot be cut finer than the rewrite that produced
+    /// it). The result may therefore be wider than the token, and adjacent
+    /// tokens inside one rewritten span cover the same original range.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`OrthoMapError::UncoveredOffset`] if either endpoint is not
+    /// covered by any entry.
+    pub fn to_original_covering(
+        &self,
+        norm_range: Range<usize>,
+    ) -> Result<Range<usize>, OrthoMapError> {
+        if self.entries.is_empty() {
+            return Ok(norm_range);
+        }
+        let &(s_noff, s_ooff, s_nlen, s_olen) = self
+            .entries
+            .iter()
+            .find(|&&(noff, _, nlen, _)| norm_range.start >= noff && norm_range.start < noff + nlen)
+            .ok_or(OrthoMapError::UncoveredOffset {
+                offset: norm_range.start,
+            })?;
+        let &(e_noff, e_ooff, e_nlen, e_olen) = self
+            .entries
+            .iter()
+            .find(|&&(noff, _, nlen, _)| norm_range.end > noff && norm_range.end <= noff + nlen)
+            .ok_or(OrthoMapError::UncoveredOffset {
+                offset: norm_range.end,
+            })?;
+        let start = if s_nlen == s_olen {
+            s_ooff + (norm_range.start - s_noff)
+        } else {
+            s_ooff
+        };
+        let end = if e_nlen == e_olen {
+            e_ooff + (norm_range.end - e_noff)
+        } else {
+            e_ooff + e_olen
+        };
+        Ok(start..end)
+    }
+
     #[must_use]
     pub fn is_empty(&self) -> bool {
         self.entries.is_empty()
@@ -239,6 +286,12 @@ mod tests {
         };
         let err = map.to_original(3..9).unwrap_err(); // crosses the 0..6 / 6..12 boundary
         assert!(matches!(err, OrthoMapError::CrossesBoundary { .. }));
+        // The covering range keeps the identity side exact and snaps the
+        // length-changing side outward to the whole rewritten span.
+        assert_eq!(map.to_original_covering(3..9).unwrap(), 3..9);
+        assert_eq!(map.to_original_covering(6..9).unwrap(), 6..9);
+        assert_eq!(map.to_original_covering(9..12).unwrap(), 6..9);
+        assert_eq!(map.to_original_covering(0..3).unwrap(), 0..3);
     }
 
     #[test]

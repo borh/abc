@@ -1,7 +1,9 @@
 use std::ops::Range;
 use std::sync::Arc;
 
-use ab_morph_diff::{Analysis, AnalyzerId, CharByteMap, FeatureMap, Morpheme, TextId};
+use ab_morph_diff::{
+    Analysis, AnalyzerId, AnalyzerWarning, CharByteMap, FeatureMap, Morpheme, TextId,
+};
 
 use crate::AnalyzerError;
 
@@ -136,7 +138,20 @@ fn find_sequential_span(
     }
 }
 
-/// Post-process an Analysis to remap morpheme `byte_span`, `char_span`, and
+/// Per-analysis summary of how [`remap_spans`] carried morphemes back to
+/// original-text coordinates.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct RemapReport {
+    /// Morphemes whose normalized span crossed an offset-map boundary and were
+    /// widened to the covering original span (see
+    /// [`OffsetMap::to_original_covering`]).
+    pub snapped: usize,
+    /// Morphemes folded into their predecessor because widening made the two
+    /// original spans overlap (both tokens lay inside one rewritten span).
+    pub merged: usize,
+}
+
+/// Remap each morpheme's `byte_span`, `char_span`, and
 /// `surface` from normalized-text coordinates to original-text coordinates.
 ///
 /// This honors the spec invariant #2: after remapping, `byte_span`,
@@ -144,55 +159,95 @@ fn find_sequential_span(
 /// text (the same text the analyzer's caller will validate against), not the
 /// normalized view that was actually tokenized.
 ///
+/// A morpheme whose normalized span crosses an annotation boundary where the
+/// byte length changed (the analyzer segmented a rewritten span differently
+/// from the rewrite) cannot be mapped exactly. It is widened to the covering
+/// original span; if that overlaps the preceding morpheme's span the two are
+/// folded into one morpheme (surface and spans from the original text, features
+/// of the first). Both cases are counted in the returned [`RemapReport`] and
+/// recorded as an `ortho_remap` warning on the analysis, so the projected
+/// tokenization is never silently coarser than the analyzer's.
+///
 /// # Errors
 ///
-/// Returns [`OrthoMapError::CrossesBoundary`] if a morpheme span crosses an
-/// annotation boundary where byte-length changed. The pipeline routes this to
-/// `errors_writer`; the morpheme is left in normalized coords for that case
-/// (diagnostic, not a crash). Returns [`OrthoMapError::UncoveredOffset`] if a
-/// morpheme byte offset does not map to any entry — this should not happen for
-/// well-formed inputs and is treated as a hard diagnostic.
+/// Returns [`OrthoMapError::UncoveredOffset`] if a morpheme byte offset does
+/// not map to any entry — this should not happen for well-formed inputs and is
+/// treated as a hard diagnostic. In that case the analysis is left untouched
+/// (still in normalized coordinates).
 pub fn remap_spans(
     analysis: &mut Analysis,
     offset_map: &OffsetMap,
     original_source_text: &str,
-) -> Result<(), OrthoMapError> {
+) -> Result<RemapReport, OrthoMapError> {
     if offset_map.is_empty() {
-        return Ok(());
+        return Ok(RemapReport::default());
     }
+    // Pass 1 (fallible, no mutation): the original range of every morpheme.
+    let mut report = RemapReport::default();
+    let mut first_snap_offset = None;
+    let mut remapped = Vec::with_capacity(analysis.morphemes.len());
+    for morpheme in &analysis.morphemes {
+        let range = match offset_map.to_original(morpheme.byte_span.clone()) {
+            Ok(range) => range,
+            Err(OrthoMapError::CrossesBoundary { .. }) => {
+                let range = offset_map.to_original_covering(morpheme.byte_span.clone())?;
+                report.snapped += 1;
+                first_snap_offset.get_or_insert(range.start);
+                range
+            }
+            Err(error) => return Err(error),
+        };
+        remapped.push(range);
+    }
+    // Pass 2: apply, folding overlaps into the predecessor.
     let char_map = CharByteMap::new(original_source_text);
-    let mut first_err: Option<OrthoMapError> = None;
-    for morpheme in &mut analysis.morphemes {
-        match offset_map.to_original(morpheme.byte_span.clone()) {
-            Ok(remapped) => {
-                morpheme.byte_span = remapped.clone();
-                // Rebuild surface from the ORIGINAL text at the remapped range so
-                // the morpheme reports the original-doc substring rather than the
-                // normalized-text substring (e.g. "ヴ" instead of "う゛").
-                if original_source_text.is_char_boundary(remapped.start)
-                    && original_source_text.is_char_boundary(remapped.end)
-                    && remapped.end <= original_source_text.len()
-                {
-                    morpheme.surface = original_source_text[remapped.clone()].to_owned();
-                }
-                // Rebuild char_span from the original text's char map so it is
-                // expressed in original-doc char coordinates.
-                if let Some(cs) = char_byte_to_char_span(&char_map, remapped) {
-                    morpheme.char_span = cs;
-                }
-            }
-            Err(e) => {
-                // Leave this morpheme in normalized coords. Record the first
-                // error so the caller knows the Analysis is partial.
-                if first_err.is_none() {
-                    first_err = Some(e);
-                }
-            }
+    let mut out: Vec<Morpheme> = Vec::with_capacity(analysis.morphemes.len());
+    for (mut morpheme, range) in analysis.morphemes.drain(..).zip(remapped) {
+        if let Some(previous) = out
+            .last_mut()
+            .filter(|previous| range.start < previous.byte_span.end)
+        {
+            previous.byte_span.end = previous.byte_span.end.max(range.end);
+            set_from_original(previous, original_source_text, &char_map);
+            report.merged += 1;
+            continue;
         }
+        morpheme.byte_span = range;
+        set_from_original(&mut morpheme, original_source_text, &char_map);
+        out.push(morpheme);
     }
-    match first_err {
-        Some(e) => Err(e),
-        None => Ok(()),
+    analysis.morphemes = out;
+    if report.snapped > 0 {
+        analysis.warnings.push(AnalyzerWarning {
+            analyzer_id: analysis.analyzer.clone(),
+            text_id: analysis.text_id.clone(),
+            stage: "ortho_remap".to_owned(),
+            message: format!(
+                "{} morpheme spans crossed a normalization boundary and were widened to the covering original span; {} folded into their predecessor",
+                report.snapped, report.merged
+            ),
+            count: report.snapped,
+            first_byte_offset: first_snap_offset.unwrap_or(0),
+            hard_limit_bytes: 0,
+        });
+    }
+    Ok(report)
+}
+
+/// Rebuild `surface` and `char_span` from the ORIGINAL text at the morpheme's
+/// (already remapped) `byte_span`, so the morpheme reports the original-doc
+/// substring rather than the normalized-text substring (e.g. "ヴ" instead of
+/// "う゛"), in original-doc char coordinates.
+fn set_from_original(morpheme: &mut Morpheme, original_source_text: &str, char_map: &CharByteMap) {
+    let range = morpheme.byte_span.clone();
+    if range.end <= original_source_text.len()
+        && original_source_text.is_char_boundary(range.start)
+        && original_source_text.is_char_boundary(range.end)
+    {
+        morpheme.surface = original_source_text[range.clone()].to_owned();
+    }
+    if let Some(char_span) = char_byte_to_char_span(char_map, range) {
+        morpheme.char_span = char_span;
     }
 }
 

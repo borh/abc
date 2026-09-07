@@ -36,6 +36,7 @@ use ab_aozora_facade::{
 use ab_aozora_facade::syntax::{
     AbsoluteSize, BlockStyles, Centering, EnclosureKind, HeadingStyle, IndentLayout, LineFormat,
     MarginNoteKind, MarginNotePosition,
+    accent::{compose_accent, compose_accent_dots},
     ast::{ContainerEnd, Content, IterationMark, KuntenKind, Segment},
 };
 use ab_source_syntax::{RegionError, SourceRegions, aozora_body_range};
@@ -292,6 +293,11 @@ enum ProjectedKind {
         target_span: Option<Span>,
     },
     IterationMark(IterationMark),
+    Accent {
+        text: String,
+        marker: Span,
+    },
+    AccentReference,
     Kunten {
         kind: KuntenKind,
         text: String,
@@ -332,6 +338,8 @@ impl ProjectedKind {
         match self {
             Self::IterationMark(_) => "iteration-mark",
             Self::Illustration { .. } => "illustration",
+            Self::Accent { .. } => "supplied-diacritic",
+            Self::AccentReference => "accent-annotation",
             Self::Kunten { .. } => "kunten",
             Self::MarginNote { .. } => "sideNote",
             Self::Node(kind) => kind.as_json_tag(),
@@ -444,6 +452,35 @@ fn projected_variant(variant: TextVariant<'_>, start: usize) -> ProjectedKind {
     reason = "source projection keeps node payloads and their owned marker extents together"
 )]
 fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
+    // A detached decoration and its reference share one arena target. This
+    // identity preserves the native association without matching quoted text.
+    let accent_references: BTreeMap<_, _> = tree
+        .source_nodes
+        .iter()
+        .filter_map(|node| {
+            let NodeRef::Inline(Node::Format(format)) = node.node else {
+                return None;
+            };
+            (format.origin == ab_aozora_facade::ForwardOrigin::Referenced
+                && matches!(format.attrs.single(), Some(ForwardAttr::Accent(_))))
+            .then_some((
+                (format.target.start, format.target.len),
+                Span::from(node.source_span),
+            ))
+        })
+        .collect();
+    let detached_accents: BTreeSet<_> = tree
+        .source_nodes
+        .iter()
+        .filter_map(|node| {
+            let NodeRef::Inline(Node::Format(format)) = node.node else {
+                return None;
+            };
+            (format.origin == ab_aozora_facade::ForwardOrigin::Detached
+                && matches!(format.attrs.single(), Some(ForwardAttr::Accent(_))))
+            .then_some((format.target.start, format.target.len))
+        })
+        .collect();
     let container_ends: BTreeMap<_, _> = tree
         .container_pairs
         .iter()
@@ -462,7 +499,7 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
     tree.source_nodes
         .iter()
         .map(|source_node| {
-            let kind = match source_node.node {
+            let mut kind = match source_node.node {
                 NodeRef::Inline(Node::Illustration(id))
                 | NodeRef::BlockLeaf(Node::Illustration(id)) => {
                     let image = tree.store.resolve_illustration(id);
@@ -526,6 +563,48 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                 }
                 node => ProjectedKind::Node(node.kind()),
             };
+            if let NodeRef::Inline(Node::Format(format))
+            | NodeRef::BlockLeaf(Node::Format(format)) = source_node.node
+            {
+                let key = (format.target.start, format.target.len);
+                let origin = format.origin;
+                if origin == ab_aozora_facade::ForwardOrigin::Referenced
+                    && detached_accents.contains(&key)
+                {
+                    kind = ProjectedKind::AccentReference;
+                } else if matches!(
+                    origin,
+                    ab_aozora_facade::ForwardOrigin::Reclaimed
+                        | ab_aozora_facade::ForwardOrigin::Detached
+                ) {
+                    let run = tree.store.content_range_as_plain(format.target);
+                    let composed = run.and_then(|run| match format.attrs.single()? {
+                        ForwardAttr::Accent(mark) => run
+                            .chars()
+                            .next()
+                            .and_then(|letter| compose_accent(letter, mark))
+                            .map(|letter| letter.to_string()),
+                        ForwardAttr::AccentDot => compose_accent_dots(
+                            run,
+                            tree.store.resolve_str(format.annotation_body?),
+                        ),
+                        _ => None,
+                    });
+                    let marker = if origin == ab_aozora_facade::ForwardOrigin::Detached {
+                        accent_references.get(&key).copied()
+                    } else {
+                        pairs
+                            .get(&(source_node.source_span.end as usize))
+                            .map(|pair| Span {
+                                start: pair.open.start as usize,
+                                end: pair.close.end as usize,
+                            })
+                    };
+                    if let (Some(text), Some(marker)) = (composed, marker) {
+                        kind = ProjectedKind::Accent { text, marker };
+                    }
+                }
+            }
             let span: Span = source_node.source_span.into();
             let kind = project_text_variant(kind, &tree.sanitized, span);
             // Classifier consume ranges end at their owned delimiter, even when
@@ -1029,6 +1108,7 @@ enum EstablishedInterpretation {
     Gaiji,
     GaijiRuby,
     IterationMark,
+    SuppliedDiacritic,
     Emphasis,
     Warichu,
     Kunten,
@@ -1104,6 +1184,7 @@ impl EstablishedInterpretation {
             Some("warichu" | "warichu_block") => Some(Self::Warichu),
             Some("kunten") => Some(Self::Kunten),
             Some("iteration-mark") => Some(Self::IterationMark),
+            Some("supplied-diacritic") => Some(Self::SuppliedDiacritic),
             Some("heading") => Some(Self::Heading),
             Some("caption" | "caption_block") => Some(Self::Caption),
             Some("text-variant") => Some(Self::TextVariant),
@@ -1135,6 +1216,7 @@ impl EstablishedInterpretation {
             Self::Warichu => "warichu",
             Self::Kunten => "kunten",
             Self::IterationMark => "iteration-mark",
+            Self::SuppliedDiacritic => "supplied-diacritic",
             Self::Heading => "heading",
             Self::Caption => "caption",
             Self::TextVariant => "text-variant",
@@ -1153,7 +1235,7 @@ impl EstablishedInterpretation {
             Self::Ruby | Self::GaijiRuby | Self::TextVariant | Self::EditorialNote => {
                 &["content", "structure"]
             }
-            Self::Gaiji | Self::IterationMark => &["content"],
+            Self::Gaiji | Self::IterationMark | Self::SuppliedDiacritic => &["content"],
             Self::Emphasis | Self::Layout | Self::LineLayout => &["layout"],
             Self::Warichu | Self::Heading | Self::Caption | Self::Table | Self::LayoutBreak => {
                 &["structure", "layout"]
@@ -2062,6 +2144,10 @@ fn parsed_source_fragment(decoded: &DecodedSource, range: Range<usize>) -> Optio
             span.end = span.end.checked_add(offset)?;
         }
         rebase_variant_spans(&mut node.kind, range.start);
+        if let ProjectedKind::Accent { marker, .. } = &mut node.kind {
+            marker.start += range.start;
+            marker.end += range.start;
+        }
         rebase_partial_layout(&mut node.layout_clauses, range.start);
     }
     for entry in &mut gaiji {
@@ -2174,6 +2260,14 @@ fn inline_content_range(
             ProjectedKind::IterationMark(mark) => {
                 content.push(iteration_node(decoded, &node.span, mark));
             }
+            ProjectedKind::Accent { ref text, marker } => {
+                let mut accent = raw_node(decoded, node, "supplied-diacritic");
+                accent["kind"] = json!("supplied-diacritic");
+                accent["text"] = json!(text);
+                accent["interpretation_marker_spans"] = json!([span_json(&marker, &decoded.span_ctx)]);
+                content.push(accent);
+            }
+            ProjectedKind::AccentReference => content.push(raw_node(decoded, node, "accent-annotation")),
             ProjectedKind::Node(NodeKind::Directive)
                 if source_slice(&decoded.span_text, &node.span).contains("返り点") =>
             {
@@ -3404,7 +3498,7 @@ fn target_text(node: &Value) -> Option<Cow<'_, str>> {
         "text" => Some(Cow::Borrowed(node["value"].as_str()?)),
         "ruby" => Some(Cow::Borrowed(node["base"].as_str()?)),
         "gaiji" => Some(Cow::Borrowed(node["resolved"].as_str()?)),
-        "iteration-mark" => Some(Cow::Borrowed(node["text"].as_str()?)),
+        "iteration-mark" | "supplied-diacritic" => Some(Cow::Borrowed(node["text"].as_str()?)),
         "editorial_note" | "kunten" | "figure" => Some(Cow::Borrowed("")),
         "style" | "formatting" | "font_size" | "small_script" | "tcy" | "keigakomi"
         | "yokogumi" | "fraction" | "text-variant" | "annotated_text" => {

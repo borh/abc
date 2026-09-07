@@ -15,7 +15,7 @@
       "type": "object", "additionalProperties": false,
       "required": ["kind", "outcome", "aspects", "source_span"],
       "properties": {
-        "kind": {"enum": ["ruby", "gaiji", "gaiji-ruby", "iteration-mark", "illustration", "emphasis", "warichu", "kunten", "heading", "caption", "text-variant", "annotated-text", "layout", "editorial-note", "line-layout", "table", "layout-break"]},
+        "kind": {"enum": ["ruby", "gaiji", "gaiji-ruby", "iteration-mark", "supplied-diacritic", "illustration", "emphasis", "warichu", "kunten", "heading", "caption", "text-variant", "annotated-text", "layout", "editorial-note", "line-layout", "table", "layout-break"]},
         "outcome": {"const": "established"},
         "aspects": {"type":"array", "minItems":1, "uniqueItems":true, "items":{"enum":["content","structure","layout"]}},
         "source_span": {"type":"object", "additionalProperties":false, "required":["start","end","coordinate_system"],
@@ -220,7 +220,8 @@
         { "$ref": "#/$defs/warichu" },
         { "$ref": "#/$defs/layout_break" },
         { "$ref": "#/$defs/kunten" },
-        { "$ref": "#/$defs/iterationMark" }
+        { "$ref": "#/$defs/iterationMark" },
+        { "$ref": "#/$defs/suppliedDiacritic" }
       ]
     },
     "layout_break":{"type":"object","required":["kind","break_kind","span"],"additionalProperties":false,
@@ -533,6 +534,13 @@
           "then": { "required": ["indent_first", "indent_rest"] }
         }
       ]
+    },
+    "suppliedDiacritic": {
+      "type":"object", "additionalProperties":false, "patternProperties":{"^x-":true},
+      "required":["kind","text","source","span","interpretation_marker_spans"],
+      "properties":{"kind":{"const":"supplied-diacritic"}, "text":{"type":"string","minLength":1},
+        "source":{"type":"string","minLength":1}, "span":{"$ref":"#/$defs/span"},
+        "interpretation_marker_spans":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/span"}}}
     },
     "iterationMark": {
       "type":"object", "additionalProperties":false,

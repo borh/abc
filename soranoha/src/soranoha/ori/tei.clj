@@ -21,6 +21,16 @@
       (into [(first element) {:source (str "#" reference)}] (rest element)))
     element))
 
+(defn- register-source [acc node]
+  (let [reference (source-reference node)
+        span (get node "source_span")
+        existing (get-in acc [:source-spans reference])]
+    (when (and existing (not= existing span))
+      (throw (ex-info "Conflicting metadata for one decoded source extent"
+                      {:reference reference :existing existing :span span})))
+    [(cond-> acc reference (assoc-in [:source-spans reference] span))
+     (assoc node ::source-reference reference)]))
+
 (defn- present-ruby-text? [text]
   (and (string? text)
        (not (string/blank? text))))
@@ -303,10 +313,12 @@
                    (sourced node (conj (into [:seg {:type "annotated-text"}]
                                              (:current-paragraph principal)) note)))))
 
-(defn- render-iteration-mark-node [acc node _depth]
-  (append-inline acc (sourced node [:choice {}
-                                    [:orig (get node "source")]
-                                    [:reg (get node "text")]])))
+(defn- render-source-realization-node [acc node _depth]
+  (let [[acc annotation] (register-source acc {"source_span" (get node "annotation_span")})
+        reference (::source-reference annotation)]
+    (append-inline acc (sourced node [:choice (cond-> {} reference (assoc :corresp (str "#" reference)))
+                                      [:orig (get node "source")]
+                                      [:reg (get node "text")]]))))
 
 (defn- render-base-text-variant-node [acc node depth]
   (let [before (:current-paragraph acc)
@@ -504,21 +516,15 @@
    "quote" render-quote-node
    "source-note" render-source-note-node
    "kunten" render-kunten-node
-   "iteration-mark" render-iteration-mark-node
+   "iteration-mark" render-source-realization-node
+   "supplied-diacritic" render-source-realization-node
    "warichu" render-warichu-node})
 
 (defn- render-node
   ([acc node] (render-node acc node 0))
   ([acc node depth]
    (let [node-type (get node "type")
-         reference (source-reference node)
-         span (get node "source_span")
-         existing (get-in acc [:source-spans reference])
-         _ (when (and existing (not= existing span))
-             (throw (ex-info "Conflicting metadata for one decoded source extent"
-                             {:reference reference :existing existing :span span})))
-         node (assoc node ::source-reference reference)
-         acc (cond-> acc reference (assoc-in [:source-spans reference] (get node "source_span")))]
+         [acc node] (register-source acc node)]
      (if-let [render-node-fn (get node-renderers node-type)]
        (render-node-fn acc node depth)
        (throw (ex-info "Unsupported TEI parser-IR node type"

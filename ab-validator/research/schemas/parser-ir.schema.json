@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
   "title": "ABC Parser IR",
-  "version": "0.32.0",
+  "version": "0.33.0",
   "type": "object",
   "required": ["schema_id", "schema_hash", "source", "nodes", "warnings", "errors", "interpretation_problems", "interpretation_facts"],
   "additionalProperties": false,
@@ -47,7 +47,7 @@
       "type": "object", "additionalProperties": false,
       "required": ["kind", "outcome", "aspects", "source_span"],
       "properties": {
-        "kind": {"enum": ["ruby", "gaiji", "gaiji-ruby", "iteration-mark", "illustration", "emphasis", "warichu", "kunten", "heading", "caption", "text-variant", "annotated-text", "layout", "editorial-note", "line-layout", "table", "layout-break"]},
+        "kind": {"enum": ["ruby", "gaiji", "gaiji-ruby", "iteration-mark", "supplied-diacritic", "illustration", "emphasis", "warichu", "kunten", "heading", "caption", "text-variant", "annotated-text", "layout", "editorial-note", "line-layout", "table", "layout-break"]},
         "outcome": {"const": "established"},
         "aspects": {"type":"array", "minItems":1, "uniqueItems":true, "items":{"enum":["content","structure","layout"]}},
         "source_span": {"type":"object", "additionalProperties":false, "required":["start","end","coordinate_system"],
@@ -160,6 +160,7 @@
         { "$ref": "#/$defs/editorNoteNode" },
         { "$ref": "#/$defs/kuntenNode" },
         { "$ref": "#/$defs/iterationMarkNode" },
+        { "$ref": "#/$defs/suppliedDiacriticNode" },
         { "$ref": "#/$defs/baseTextVariantNode" },
         { "$ref": "#/$defs/annotatedTextNode" },
         { "$ref": "#/$defs/warichuNode" },
@@ -188,6 +189,7 @@
         { "$ref": "#/$defs/editorNoteNode" },
         { "$ref": "#/$defs/kuntenNode" },
         { "$ref": "#/$defs/iterationMarkNode" },
+        { "$ref": "#/$defs/suppliedDiacriticNode" },
         { "$ref": "#/$defs/baseTextVariantNode" },
         { "$ref": "#/$defs/annotatedTextNode" },
         { "$ref": "#/$defs/warichuNode" },
@@ -642,6 +644,15 @@
           }
         }
       ]
+    },
+    "suppliedDiacriticNode": {
+      "allOf":[{"$ref":"#/$defs/baseNode"}, {
+        "type":"object", "additionalProperties":false, "required":["type","span","text","source","annotation_span"],
+        "properties":{"type":{"const":"supplied-diacritic"}, "span":{"$ref":"#/$defs/span"},
+          "annotation_span":{"$ref":"#/$defs/sourceSpan"},
+          "source_span":{"$ref":"#/$defs/sourceSpan"}, "text":{"type":"string","minLength":1},
+          "source":{"type":"string","minLength":1}}
+      }]
     },
     "iterationMarkNode": {
       "allOf":[{"$ref":"#/$defs/baseNode"}, {

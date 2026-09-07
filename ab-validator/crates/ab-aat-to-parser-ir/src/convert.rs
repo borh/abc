@@ -988,7 +988,9 @@ fn content_coordinates(nodes: &mut [Value], axis: &str) {
 fn append_plain_visible_inline_text(node: &Value, out: &mut String) -> Result<()> {
     match node["kind"].as_str().unwrap_or("") {
         "text" => out.push_str(node["value"].as_str().unwrap_or("")),
-        "iteration-mark" => out.push_str(node["text"].as_str().unwrap_or("")),
+        "iteration-mark" | "supplied-diacritic" => {
+            out.push_str(node["text"].as_str().unwrap_or(""))
+        }
         "ruby" => out.push_str(&ruby_component_text(node, "base", "base_content")?),
         "gaiji" => out.push_str(
             node["resolved"]
@@ -1305,7 +1307,7 @@ fn map_inline_to_nodes(
             nodes.push(json!({"type":"kunten", "kunten_kind":node["kunten_kind"], "text":node["text"], "span":synthetic_span(offset, offset)}));
             Ok(offset)
         }
-        "iteration-mark" => map_iteration_mark(node, nodes, offset),
+        "iteration-mark" | "supplied-diacritic" => map_source_realization(node, nodes, offset),
         "editorial_note" => {
             nodes.push(json!({"type":"editor-note", "note_kind":node["note_kind"], "text":node["text"], "span":synthetic_span(offset, offset)}));
             Ok(offset)
@@ -1706,7 +1708,7 @@ fn inline_child_node(
             nodes.push(json!({"type":"kunten", "kunten_kind":node["kunten_kind"], "text":node["text"], "span":synthetic_span(offset, offset)}));
             Ok(offset)
         }
-        "iteration-mark" => map_iteration_mark(node, nodes, offset),
+        "iteration-mark" | "supplied-diacritic" => map_source_realization(node, nodes, offset),
         "editorial_note" => {
             nodes.push(json!({"type":"editor-note", "note_kind":node["note_kind"], "text":node["text"], "span":synthetic_span(offset, offset)}));
             Ok(offset)
@@ -1717,15 +1719,20 @@ fn inline_child_node(
     }
 }
 
-fn map_iteration_mark(node: &Value, nodes: &mut Vec<Value>, offset: u64) -> Result<u64> {
+fn map_source_realization(node: &Value, nodes: &mut Vec<Value>, offset: u64) -> Result<u64> {
     let text = node["text"]
         .as_str()
-        .context("iteration mark text is required")?;
+        .context("source realization text is required")?;
     let end = offset + utf8_len(text);
     nodes.push(
-        json!({"type":"iteration-mark", "text":text, "source":node["source"],
+        json!({"type":node["kind"], "text":text, "source":node["source"],
         "span":synthetic_span(offset,end)}),
     );
+    if node["kind"] == "supplied-diacritic" {
+        nodes.last_mut().expect("realization emitted")["annotation_span"] =
+            source_span(node["interpretation_marker_spans"].get(0))?
+                .context("supplied diacritic requires its source annotation extent")?;
+    }
     Ok(end)
 }
 
@@ -1952,8 +1959,9 @@ fn map_raw_to_nodes(
         }
         RawRecoveryClass::SourceNote => {
             let span = map_node_span(node.get("span"), offset, offset, recorder, path)?;
-            let mut note = json!({"raw": source, "category": "misc"});
-            if node.get("x-source-marker-kind").is_some() {
+            let supplied_diacritic = node["x-source-marker-kind"] == "accent-annotation";
+            let mut note = json!({"raw": source, "category": if supplied_diacritic { "accent-mark" } else { "misc" }});
+            if node.get("x-source-marker-kind").is_some() && !supplied_diacritic {
                 note["resolution"] = json!("unresolved");
             }
             nodes.push(json!({"type": "editor-note", "span": span, "note": note}));
@@ -2227,7 +2235,9 @@ fn append_visible_inline_text(
             append_plain_visible_content_text(node.get("content"), out)?
         }
         "text" => out.push_str(node["value"].as_str().unwrap_or("")),
-        "iteration-mark" => out.push_str(node["text"].as_str().unwrap_or("")),
+        "iteration-mark" | "supplied-diacritic" => {
+            out.push_str(node["text"].as_str().unwrap_or(""))
+        }
         "ruby" => {
             let container_pointer = format!("{path}.ruby");
             record_measured_loss(

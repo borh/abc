@@ -633,12 +633,15 @@ pub fn compose_dotted(base: char, pos: DotPosition) -> Option<char> {
 }
 
 /// Which occurrence of the addressed letter (within the preceding run) a
-/// clause selects. Counting is **case-insensitive** (an uppercase `S` counts
-/// toward a lowercase `s` ordinal); the composed glyph keeps the run char's
-/// actual case.
+/// clause selects. Explicit ordinal counting is case-insensitive (an uppercase
+/// `S` counts toward a lowercase `s` ordinal); literal selectors retain case.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Occ {
-    /// Bare selector (`mは…`) — the first occurrence.
+    /// A bare selector names one matching letter without an occurrence index.
+    Unique,
+    /// `ともに` / `それぞれ` explicitly selects all matching letters.
+    All,
+    /// `前の` — the first occurrence.
     First,
     /// `Nつめの` — the N-th occurrence (1-indexed).
     Nth(usize),
@@ -677,9 +680,9 @@ fn parse_leading_number(s: &str) -> Option<(usize, &str)> {
 ///
 /// `前の` (former) / `後の` (latter) name the earlier / later occurrence of a
 /// letter that appears twice across a `、`-joined clause pair
-/// (`前のn…、後のn…`), so they map to the first / last occurrence — identical to
-/// a bare selector / `最後の`, which is correct for the attested two-occurrence
-/// runs.
+/// (`前のn…、後のn…`), so they map to the first / last occurrence. A bare
+/// selector must identify one literal matching letter; repeated matches do not
+/// imply an occurrence order.
 fn parse_selector(sel: &str) -> Option<(Occ, &str)> {
     if let Some(rest) = sel.strip_prefix("最後の") {
         return Some((Occ::Last, rest));
@@ -696,20 +699,20 @@ fn parse_selector(sel: &str) -> Option<(Occ, &str)> {
         let letters = rest.strip_prefix("つめの")?;
         return Some((Occ::Nth(n), letters));
     }
-    Some((Occ::First, sel))
+    Some((Occ::Unique, sel))
 }
 
 /// Parse one clause `<selector>は[ともに|それぞれ]<上|下>ドット付き` into ops.
 ///
-/// A cluster selector (`stはともに…`) yields one op per letter (each `First`);
-/// the `ともに` / `それぞれ` adverb is spelling-only (preserved via the raw
-/// body) so it is stripped and ignored. Declines any letter/pos pair absent
+/// A cluster selector (`stはともに…`) yields one op per selected letter.
+/// `ともに` / `それぞれ` selects all matching occurrences, including repeated
+/// letters under a single-letter selector. Declines any letter/pos pair absent
 /// from [`ACCENT_DOT_TABLE`], and an ordinal applied to a multi-letter cluster
 /// (not attested).
 fn parse_accent_clause(clause: &str) -> Option<Vec<DotOp>> {
     let after_letters = clause.strip_suffix("ドット付き")?;
     let (selector, tail) = after_letters.split_once('は')?;
-    // Optional set adverb, spelling-only.
+    let all = tail.starts_with("ともに") || tail.starts_with("それぞれ");
     let posword = tail
         .strip_prefix("ともに")
         .or_else(|| tail.strip_prefix("それぞれ"))
@@ -719,13 +722,19 @@ fn parse_accent_clause(clause: &str) -> Option<Vec<DotOp>> {
         "下" => DotPosition::Below,
         _ => return None,
     };
-    let (occ, letters) = parse_selector(selector)?;
+    let (mut occ, letters) = parse_selector(selector)?;
+    if all {
+        if occ != Occ::Unique {
+            return None;
+        }
+        occ = Occ::All;
+    }
     if letters.is_empty() || !letters.bytes().all(|b| b.is_ascii_alphabetic()) {
         return None;
     }
     let chars: Vec<char> = letters.chars().collect();
     // An ordinal names a single occurrence, so it cannot pair with a cluster.
-    if chars.len() > 1 && !matches!(occ, Occ::First) {
+    if chars.len() > 1 && !matches!(occ, Occ::Unique | Occ::All) {
         return None;
     }
     let mut ops = Vec::with_capacity(chars.len());
@@ -759,7 +768,7 @@ fn parse_accent_dot_body(body: &str) -> Option<Vec<DotOp>> {
 ///
 /// Returns the run with each addressed letter replaced by its precomposed
 /// dotted glyph (`Sam` + `mは上ドット付き` → `Saṁ`), or `None` when `body` is
-/// not a recognised single-clause dotted directive or an addressed occurrence
+/// not a recognized dotted directive or an addressed occurrence
 /// is absent / not composable in `run`. This is the single shared entry point:
 /// the classifier calls it to decide whether to claim the directive (a `Some`
 /// result), and the renderer calls it to produce the visible glyphs.
@@ -772,6 +781,19 @@ pub fn compose_accent_dots(run: &str, body: &str) -> Option<String> {
     let ops = parse_accent_dot_body(body)?;
     let mut subs: Vec<(usize, char, usize)> = Vec::with_capacity(ops.len());
     for op in &ops {
+        if op.occ == Occ::All {
+            let before = subs.len();
+            for (index, base) in run
+                .char_indices()
+                .filter(|(_, letter)| *letter == op.letter)
+            {
+                subs.push((index, compose_dotted(base, op.pos)?, base.len_utf8()));
+            }
+            if subs.len() == before {
+                return None;
+            }
+            continue;
+        }
         let idx = resolve_occurrence(run, op.letter, op.pos, op.occ)?;
         let base = run[idx..].chars().next()?;
         let glyph = compose_dotted(base, op.pos)?;
@@ -797,10 +819,8 @@ pub fn compose_accent_dots(run: &str, body: &str) -> Option<String> {
 /// composability. Counting is case-insensitive (`S` counts toward a lowercase
 /// `s`).
 ///
-/// A bare (`First`) / `最後の` (`Last`) selector takes the first / last
-/// occurrence that is actually **composable** at `pos`, so a word-initial
-/// capital with no dotted glyph — the `N` of `Nara-sinha` under `nは上` —
-/// is skipped in favour of the intended lowercase letter. An `Nつめの`
+/// A bare selector requires one case-sensitive occurrence. Explicit first/last
+/// selectors count composable matches; an `Nつめの`
 /// ordinal instead counts *every* case-insensitive occurrence (a capital `S`
 /// is position 1 for `２つめのs` over `Sāraksā`); the counted position must
 /// itself be composable, else the directive declines.
@@ -818,6 +838,14 @@ fn resolve_occurrence(run: &str, letter: char, pos: DotPosition, occ: Occ) -> Op
         .filter(|(_, c)| c.to_ascii_lowercase() == target)
         .map(|(i, _)| i);
     match occ {
+        Occ::All => None,
+        Occ::Unique => {
+            let mut exact = run
+                .char_indices()
+                .filter(|(_, character)| *character == letter);
+            let (index, _) = exact.next()?;
+            (exact.next().is_none() && composable(index)).then_some(index)
+        }
         Occ::First => hits.find(|&i| composable(i)),
         Occ::Last => hits.rfind(|&i| composable(i)),
         Occ::Nth(n) => n

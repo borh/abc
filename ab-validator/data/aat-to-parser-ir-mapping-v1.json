@@ -4,7 +4,7 @@
   "mapping_schema_hash": "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2",
   "source_aat_version": 1,
   "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "target_parser_ir_schema_hash": "sha256:2b8e871438cec94ef89fcaee9dcee082b465caa39d038c28297b726175bdd59b",
+  "target_parser_ir_schema_hash": "sha256:d3565a39520fc204d566ac0890e2f155d30e0c54d67fa75b4fcc472645a71566",
   "transform_rule_descriptions": [
     {
       "rule_id": "A-02",

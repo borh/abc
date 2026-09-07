@@ -217,6 +217,7 @@ fn walk_inline_children(
 fn walk_inline(node: &Value, path: &mut Vec<PathSeg>, sink: &mut impl ProjectionSink) {
     match node.get("kind").and_then(Value::as_str).unwrap_or("") {
         "text" => push_field(node, "value", SpanKind::Text, path, sink),
+        "supplied-diacritic" => push_field(node, "text", SpanKind::Accent, path, sink),
         "ruby" => push_field(node, "base", SpanKind::RubyBase, path, sink),
         "gaiji" => {
             if let Some(resolved) = node.get("resolved").and_then(Value::as_str) {

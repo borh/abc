@@ -48,6 +48,9 @@
              :families #{"kunten.kaeriten" "kunten.okurigana"} :aspects #{"content" "structure" "layout"}}
    "iteration-mark" {:markers #{"IterationNotation"}
                      :families #{"iteration.kunoji"} :aspects #{"content"}}
+   "supplied-diacritic" {:markers #{"CommandFullwidth" "CommandAscii"}
+                         :families #{"accent.dotted_letter" "glyph.variant_note"}
+                         :aspects #{"content"}}
    "heading" {:markers #{"CommandFullwidth" "CommandAscii"}
               :families #{"heading.basic" "heading.dogyo" "heading.mado"} :aspects #{"structure" "layout"}}
    "ruby" {:markers #{"RubyExplicit" "RubyImplicit"}
@@ -204,7 +207,7 @@
 (defn coverage-stage
   "Independent lexical oracle + parser IR -> explicit claim accounting."
   [clj-toolchain-id]
-  {:stage-id "interpretation-coverage" :stage-version "12" :toolchain-id clj-toolchain-id
+  {:stage-id "interpretation-coverage" :stage-version "13" :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob]} inputs]
         (let [input-bytes (into {} (map (fn [name] [name (blob (get inputs name))]))
                                 ["source-accountability" "parser-ir"])

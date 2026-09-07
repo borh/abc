@@ -23,8 +23,8 @@ pub(crate) fn parser_ir_node_visible_text(node: &Value) -> Result<String> {
     }
     let node_type = node_type(node);
     let text = match node_type {
-        "text" | "iteration-mark" | "quote" | "emphasis" | "layout-span" | "heading"
-        | "source-note" => node.get("text").and_then(Value::as_str).unwrap_or(""),
+        "text" | "iteration-mark" | "supplied-diacritic" | "quote" | "emphasis" | "layout-span"
+        | "heading" | "source-note" => node.get("text").and_then(Value::as_str).unwrap_or(""),
         "ruby" => node
             .pointer("/ruby/base")
             .and_then(Value::as_str)

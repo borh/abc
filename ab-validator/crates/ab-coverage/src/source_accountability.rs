@@ -52,6 +52,8 @@ pub fn source_accountability(
                 "kunten.kaeriten"
                     | "kunten.okurigana"
                     | "ruby.basic"
+                    | "accent.dotted_letter"
+                    | "glyph.variant_note"
                     | "iteration.kunoji"
                     | "gaiji.marker"
                     | "gaiji.jis_code"
@@ -123,9 +125,12 @@ fn nested_components(
             let eligible_families: &[&str] = match child.kind {
                 SourceMarkerKind::RubyExplicit | SourceMarkerKind::RubyImplicit => &["ruby.basic"],
                 SourceMarkerKind::IterationNotation => &["iteration.kunoji"],
-                SourceMarkerKind::CommandFullwidth | SourceMarkerKind::CommandAscii => {
-                    &["kunten.kaeriten", "kunten.okurigana"]
-                }
+                SourceMarkerKind::CommandFullwidth | SourceMarkerKind::CommandAscii => &[
+                    "kunten.kaeriten",
+                    "kunten.okurigana",
+                    "accent.dotted_letter",
+                    "glyph.variant_note",
+                ],
                 SourceMarkerKind::GaijiFullwidth | SourceMarkerKind::GaijiAscii => {
                     &["gaiji.marker", "gaiji.jis_code", "gaiji.unicode_codepoint"]
                 }

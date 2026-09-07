@@ -134,7 +134,7 @@
   "parser-IR + metadata record + persons -> TEI XML bytes."
   [clj-toolchain-id]
   {:stage-id "render"
-   :stage-version "21"
+   :stage-version "22"
    :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob]} inputs]
         (let [read-json (fn [name]

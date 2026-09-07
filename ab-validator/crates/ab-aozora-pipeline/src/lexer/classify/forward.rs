@@ -1654,12 +1654,11 @@ impl RecogniseCtx<'_, '_> {
                     .alloc
                     .forward_formats(attrs, text, ForwardOrigin::Detached);
                 self.pending_decoration = Some((deco, Span::new(start, end)));
-                (
-                    self.alloc
-                        .forward_formats(attrs, text, ForwardOrigin::Referenced),
-                    open_span_start,
-                    ForwardDiag::None,
-                )
+                let Node::Format(mut reference) = deco else {
+                    unreachable!("forward format allocation produces a format node");
+                };
+                reference.origin = ForwardOrigin::Referenced;
+                (Node::Format(reference), open_span_start, ForwardDiag::None)
             }
             ForwardReferent::Unresolvable => (
                 self.alloc
@@ -1814,7 +1813,7 @@ impl RecogniseCtx<'_, '_> {
         let run_start = reclaim_accent_run_start(&self.source[..bracket_start])?;
         let run = &self.source[run_start..bracket_start];
         // Validate the body against the run: the shared composer declines any
-        // multi-clause / word-qualified / 段目 form and any unresolvable or
+        // word-qualified / 段目 form and any unresolvable or
         // uncomposable letter, leaving those as `Directive{Unknown}`.
         compose_accent_dots(run, body)?;
         // Store the reclaimed run *uncomposed* — the renderer composes on the

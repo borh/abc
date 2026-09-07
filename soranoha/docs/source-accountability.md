@@ -76,6 +76,13 @@ the repeated reading. A mark inside ruby reading remains part of the ruby
 annotation. Malformed notation and literal Unicode upper/lower halves remain
 literal text; iteration marks are distinct from gaiji.
 
+Supplied diacritic annotations apply to native-resolved target text. Their
+`choice/orig` retains the source spelling and `choice/reg` contains the composed
+Unicode text selected by the body view, plaintext and Markdown. An annotation
+addressing an interior letter retains its original marker separately as source
+apparatus. This is transcription of supplied marks, not an editorial correction
+or an inferred transliteration. Unresolved selectors retain explicit uncertainty.
+
 Supplied block geometry retains indentation, continuation indentation, line width,
 and distance from the line end independently. Hanging indentation uses the
 continuation padding and the difference between first and continuation indents.

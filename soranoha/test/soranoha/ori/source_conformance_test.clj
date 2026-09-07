@@ -1005,3 +1005,20 @@
     (is (= "甲\uFFFC乙" (:plaintext result)))
     (is (empty? (elements result "app")))
     (is (seq (get-in result [:ir "interpretation_problems"])))))
+
+(deftest rich-heading-quotation-retains-both-original-ruby-readings
+  (let [result (transcribe (source "一〇、失せ物は巽《たつみ》の方の栗《マロニエ》の根元を探すべし。［＃「一〇、失せ物は巽《たつみ》の方の栗の根元を探すべし。」は同行中見出し］後。"))
+        heading (first (filter #(= "heading" (attribute % "type")) (elements result "seg")))]
+    (is (= "一〇、失せ物は巽の方の栗の根元を探すべし。後。" (:plaintext result)))
+    (is (= "一〇、失せ物は巽の方の栗の根元を探すべし。" (view/visible-text heading)))
+    (is (= ["たつみ" "マロニエ"] (texts result "rt")))
+    (is (= "dogyo" (attribute heading "rend")))
+    (is (empty? (get-in result [:ir "interpretation_problems"]))))
+  (doseq [[text marker] [["ギリシャの医師たち" "［＃「ギリシヤの医師たち」は同行小見出し］"]
+                         ["キリスト教は愛他主義の第一要因" "［＃「キリスト教は愛他主義の第一要員」は同行小見出し］"]]]
+    (let [result (transcribe (source (str text marker)))
+          problems (get-in result [:ir "interpretation_problems"])]
+      (is (= text (:plaintext result)))
+      (is (not-any? #(= "heading" (attribute % "type")) (elements result "seg")))
+      (is (= [marker] (mapv #(get % "raw") problems)))
+      (is (= [["structure" "layout"]] (mapv #(get % "aspects") problems))))))

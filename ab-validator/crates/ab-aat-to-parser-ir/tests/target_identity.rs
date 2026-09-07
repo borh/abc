@@ -1065,3 +1065,48 @@ fn unresolved_glyph_targets_require_the_same_structured_identity() {
         );
     }
 }
+
+#[test]
+fn rich_heading_quotes_constrain_only_the_ruby_they_supply() {
+    let text = "一〇、失せ物は巽《たつみ》の方の栗《マロニエ》の根元を探すべし。";
+    let quote = "一〇、失せ物は巽《たつみ》の方の栗の根元を探すべし。";
+    let ir = convert(&format!("{text}［＃「{quote}」は同行中見出し］後。"));
+    let all = nodes(&ir);
+    let heading = all
+        .iter()
+        .find(|node| node["type"] == "heading")
+        .expect("source-owned rich heading");
+    assert_eq!(
+        heading["text"],
+        "一〇、失せ物は巽の方の栗の根元を探すべし。"
+    );
+    assert_eq!(heading["style"], "dogyo");
+    assert_eq!(
+        nodes(heading)
+            .iter()
+            .filter(|node| node["type"] == "ruby")
+            .count(),
+        2
+    );
+    assert!(ir["interpretation_problems"].as_array().unwrap().is_empty());
+    for body in [
+        "ギリシャの医師たち［＃「ギリシヤの医師たち」は同行小見出し］",
+        "キリスト教は愛他主義の第一要因［＃「キリスト教は愛他主義の第一要員」は同行小見出し］",
+        "巽《たつみ》［＃「巽《ちがう》」は中見出し］",
+        "前［＃「不在」は大見出し］後",
+    ] {
+        let ir = convert(body);
+        assert!(!nodes(&ir).iter().any(|node| node["type"] == "heading"));
+        assert!(
+            !ir["interpretation_problems"].as_array().unwrap().is_empty(),
+            "{body}"
+        );
+        assert!(
+            ir["interpretation_facts"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .all(|fact| fact["kind"] != "heading")
+        );
+    }
+}

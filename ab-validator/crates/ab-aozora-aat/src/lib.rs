@@ -316,7 +316,6 @@ enum ProjectedKind {
     Heading {
         level: u64,
         style: HeadingStyle,
-        target: String,
     },
     Kunten {
         kind: KuntenKind,
@@ -609,7 +608,6 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                 NodeRef::Inline(Node::HeadingHint(hint)) => ProjectedKind::Heading {
                     level: u64::from(hint.level.outline_level()),
                     style: hint.style,
-                    target: tree.store.resolve_str(hint.target).to_owned(),
                 },
                 NodeRef::Inline(Node::Kunten(k)) | NodeRef::BlockLeaf(Node::Kunten(k)) => {
                     ProjectedKind::Kunten {
@@ -699,7 +697,8 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                 {
                     Some(ab_aozora_facade::PairKind::Bracket)
                 }
-                NodeRef::Inline(Node::MarginNote(_)) | NodeRef::BlockLeaf(Node::MarginNote(_)) => {
+                NodeRef::Inline(Node::MarginNote(_) | Node::HeadingHint(_))
+                | NodeRef::BlockLeaf(Node::MarginNote(_) | Node::HeadingHint(_)) => {
                     Some(ab_aozora_facade::PairKind::Bracket)
                 }
                 NodeRef::Inline(Node::Ruby(_)) | NodeRef::BlockLeaf(Node::Ruby(_)) => {
@@ -751,7 +750,9 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                 .unwrap_or_default();
             let target_quote = matches!(
                 kind,
-                ProjectedKind::Format(_) | ProjectedKind::FormatMany(_)
+                ProjectedKind::Format(_)
+                    | ProjectedKind::FormatMany(_)
+                    | ProjectedKind::Heading { .. }
             )
             .then(|| {
                 let marker = marker_span?;
@@ -2771,12 +2772,7 @@ fn inline_content_range(
 }
 
 fn push_heading(content: &mut Vec<Value>, decoded: &DecodedSource, node: &AozoraNode) {
-    let ProjectedKind::Heading {
-        level,
-        style,
-        target,
-    } = &node.kind
-    else {
+    let ProjectedKind::Heading { level, style } = &node.kind else {
         return;
     };
     let style = match style {
@@ -2788,7 +2784,11 @@ fn push_heading(content: &mut Vec<Value>, decoded: &DecodedSource, node: &Aozora
             return;
         }
     };
-    if let Some(children) = take_visible_suffix(content, target, decoded) {
+    if let Some(target) = node.target_quote
+        && let Some(quoted) = source_fragment(decoded, target.start..target.end)
+        && let Some(text) = content_structured_text(&quoted)
+        && let Some(children) = take_visible_suffix_matching(content, &text, decoded, Some(&quoted))
+    {
         content.push(heading_from_content(
             children,
             &span_json(&node.span, &decoded.span_ctx),
@@ -4981,6 +4981,10 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
     if node.kind == ProjectedKind::Directive(DirectiveKind::BaseTextVariant) {
         value["interpretation_problem"] = json!({"kind":"unresolved-variant", "code":"unresolved-variant",
             "aspects":["content","structure"], "influence":{"kind":"document"}});
+    }
+    if matches!(node.kind, ProjectedKind::Heading { .. }) {
+        value["interpretation_problem"] = json!({"kind":"uninterpreted-notation", "code":"uninterpreted-notation",
+            "aspects":["structure","layout"], "influence":{"kind":"document"}});
     }
     if node.kind == ProjectedKind::Directive(DirectiveKind::Unknown) {
         value["interpretation_problem"] = json!({

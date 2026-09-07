@@ -1032,6 +1032,7 @@ pub(super) fn editorial_note_kind(body: &str) -> Option<DirectiveKind> {
         body,
         "この作品は表題と副題のみで、本文はありません。"
             | "「雲隠れ」の帖は冒頭の晶子詞のみで本文はありません。"
+            | "「Ｏ」は覆面の英字です。"
             | "劇場名"
             | "ホテル名"
             | "お手伝いさん"

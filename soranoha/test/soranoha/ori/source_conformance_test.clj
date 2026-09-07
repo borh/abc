@@ -1250,3 +1250,11 @@
     (is (string/blank? (attribute note "place")))
     (is (string/blank? (attribute note "resp")))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest cryptarithm-letter-clarification-preserves-the-puzzle
+  (let [result (transcribe (source "ＯＯＩＲ\nＲＩＤ\n［＃「Ｏ」は覆面の英字です。］"))
+        note (first (filter #(= "explanation" (attribute % "type")) (elements result "note")))]
+    (is (= "ＯＯＩＲ\nＲＩＤ" (:plaintext result)))
+    (is (= "「Ｏ」は覆面の英字です。" (.getTextContent ^Node note)))
+    (is (string/blank? (attribute note "target")))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))

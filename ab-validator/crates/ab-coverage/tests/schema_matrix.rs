@@ -1202,8 +1202,9 @@ fn source_inventory_classifies_glyph_variant_notes() {
             .row_counts
             .get("glyph.variant_note")
             .map(|count| count.occurrences),
-        Some(42)
+        Some(41)
     );
+    assert_eq!(summary.row_counts["source.note_label"].occurrences, 1);
 }
 
 #[test]
@@ -2905,6 +2906,23 @@ fn unfinished_work_statement_is_not_a_person_or_role_label() {
         let summary = inventory_document("fixture", source, &patterns);
         assert!(!summary.row_counts.contains_key("source.note_label"));
         assert!(!summary.row_counts.contains_key("annotation.chuuki"));
+    }
+}
+
+#[test]
+fn cryptarithm_letter_clarification_is_not_a_glyph_transformation() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).unwrap();
+    let patterns = patterns_from_rows(matrix.rows());
+    let summary = inventory_document("fixture", "［＃「Ｏ」は覆面の英字です。］", &patterns);
+    assert_eq!(summary.row_counts.len(), 1);
+    assert!(summary.row_counts.contains_key("source.note_label"));
+    for source in [
+        "［＃「Ｏ」は覆面の英字ですか。］",
+        "［＃「０」は覆面の英字です。］",
+    ] {
+        let summary = inventory_document("fixture", source, &patterns);
+        assert!(!summary.row_counts.contains_key("source.note_label"));
+        assert!(!summary.unknown_examples.is_empty());
     }
 }
 

@@ -10,6 +10,7 @@ fn source_statements_preserve_assertion_kind_and_exact_marker() {
         ("「註」略", "omission"),
         ("未完", "incompleteness"),
         ("現代語訳「月は明るい。」", "explanation"),
+        ("「Ｏ」は覆面の英字です。", "explanation"),
         (
             "この作品は表題と副題のみで、本文はありません。",
             "explanation",
@@ -89,6 +90,8 @@ fn statement_like_prose_and_unknown_qualifiers_remain_distinct() {
         "［＃父に傍点］",
         "［＃ここから劇場名］",
         "［＃未知の説明］",
+        "［＃「Ｏ」は覆面の英字ですか。］",
+        "［＃「０」は覆面の英字です。］",
         "［＃人物］",
         "［＃本文はありません］",
         "［＃この作品は表題と副題のみで、本文はありませんか。］",

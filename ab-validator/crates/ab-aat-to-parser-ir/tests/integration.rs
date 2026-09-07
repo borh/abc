@@ -776,9 +776,9 @@ fn read_json_accepts_deeply_nested_aat_values() {
 fn mapping_preflight_accepts_checked_in_v1_artifact() {
     let (schemas, mapping) = schemas_and_mapping();
 
-    let index = mapping.preflight(&schemas).unwrap();
+    mapping.preflight(&schemas).unwrap();
 
-    assert_eq!(mapping.mapping_version, "0.7.0");
+    assert_eq!(mapping.mapping_version, "0.8.0");
     assert_eq!(
         mapping.target_parser_ir_schema_hash,
         schema_hash(&schemas.parser_ir_schema).unwrap()
@@ -816,13 +816,6 @@ fn mapping_preflight_accepts_checked_in_v1_artifact() {
                     .is_some_and(|pointer| pointer.contains("paragraph"))),
         "paragraph blocks should be represented by parser-IR paragraphs[], not STRUCTURAL loss"
     );
-    assert!(
-        index
-            .require_rule("UNSUPPORTED", Some("blocks[].content[].warigaki"), None)
-            .unwrap()
-            .description
-            .contains("warigaki")
-    );
 }
 
 #[test]
@@ -831,7 +824,7 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
     let mapping =
         MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2.json"))
             .unwrap();
-    assert_eq!(mapping.mapping_version, "0.8.0");
+    assert_eq!(mapping.mapping_version, "0.9.0");
     assert_eq!(mapping.source_aat_version, 2);
     let schemas = SchemaSet::load_for_aat_version(&repo_root, &research_root, 2).unwrap();
     mapping.preflight(&schemas).unwrap();
@@ -2711,6 +2704,77 @@ fn unknown_source_directive_survives_parser_derived_provenance() {
 }
 
 #[test]
+fn warichu_preserves_distinct_rich_halves_in_body_and_reading() {
+    for reading in [false, true] {
+        let warichu = json!({"kind": "warigaki", "upper": [{"kind":"style", "style_type":"bold",
+            "content":[{"kind":"text","value":"上"}]}],
+            "lower":[{"kind":"gaiji","description":"𠮷","resolved":"𠮷","unresolved_reason":null}]});
+        let content = if reading {
+            json!({"kind":"ruby", "base":"字", "reading":"上𠮷", "reading_content":[warichu]})
+        } else {
+            warichu
+        };
+        let (schemas, mapping) = v2_schemas_and_mapping();
+        let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+            aat: json!({"version":2,"work_id":"warichu","meta":v2_test_meta(),
+                "blocks":[{"kind":"paragraph","content":[content]}]}),
+            mapping,
+            schemas,
+            options: default_test_options(),
+        })
+        .unwrap();
+        let node = if reading {
+            &output.parser_ir["nodes"][0]["reading_children"][0]
+        } else {
+            &output.parser_ir["nodes"][0]
+        };
+        assert_eq!(node["type"], "warichu");
+        assert_eq!(node["text"], "上𠮷");
+        assert_eq!(node["upper_children"][0]["type"], "emphasis");
+        assert_eq!(node["lower_children"][0]["type"], "gaiji");
+        assert_eq!(node["lower_children"][0]["span"]["start"], 3);
+        assert_eq!(node["lower_children"][0]["span"]["end"], 7);
+        assert_eq!(
+            node["upper_children"][0]["inline_children"][0]["span"]["coordinate_system"],
+            if reading {
+                "reading_utf8"
+            } else {
+                "parser_text_utf8"
+            }
+        );
+    }
+}
+
+#[test]
+fn source_warichu_preserves_unsplit_layout_without_invented_halves() {
+    let source = "前［＃割り注］上※［＃「吉」、U+20BB7］［＃割り注終わり］後";
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let aat =
+        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
+            .unwrap();
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas,
+        options: default_test_options(),
+    })
+    .unwrap();
+    let node = output.parser_ir["nodes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|node| node["type"] == "warichu")
+        .unwrap();
+    assert_eq!(node["text"], "上𠮷");
+    assert!(node.get("upper_children").is_none());
+    assert!(node.get("lower_children").is_none());
+    assert_eq!(node["inline_children"][1]["type"], "gaiji");
+    assert_eq!(node["source_span"]["start"], "前".len());
+    assert_eq!(node["source_span"]["end"], source.len() - "後".len());
+    assert_eq!(output.parser_ir["interpretation_problems"], json!([]));
+}
+
+#[test]
 fn projects_measured_figure_inline_to_image_node() {
     let (schemas, mapping) = schemas_and_mapping();
     let aat = json!({
@@ -2827,16 +2891,9 @@ fn measured_policy_projects_style_heading_warning_and_warigaki() {
     assert!(nodes.iter().any(|node| node["type"] == "emphasis"
         && node["style"] == "kaeriten"
         && node["text"] == "K"));
-    assert!(
-        nodes
-            .iter()
-            .any(|node| node["type"] == "text" && node["text"] == "X")
-    );
-    assert!(
-        nodes
-            .iter()
-            .any(|node| node["type"] == "text" && node["text"] == "Y")
-    );
+    let warichu = nodes.iter().find(|node| node["type"] == "warichu").unwrap();
+    assert_eq!(warichu["upper_children"][0]["text"], "X");
+    assert_eq!(warichu["lower_children"][0]["text"], "Y");
     assert_eq!(
         output
             .parser_ir
@@ -2851,7 +2908,7 @@ fn measured_policy_projects_style_heading_warning_and_warigaki() {
             .and_then(Value::as_str),
         Some("AAT_WARNING")
     );
-    assert!(has_divergence_record(
+    assert!(!has_divergence_record(
         &output,
         "UNSUPPORTED",
         "blocks[].children[].heading.content[].warigaki",

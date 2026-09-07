@@ -949,11 +949,10 @@ fn reading_coordinates(nodes: &mut [Value]) {
         if let Some(span) = node.get_mut("span") {
             span["coordinate_system"] = json!("reading_utf8");
         }
-        if let Some(children) = node
-            .get_mut("inline_children")
-            .and_then(Value::as_array_mut)
-        {
-            reading_coordinates(children);
+        for key in ["inline_children", "upper_children", "lower_children"] {
+            if let Some(children) = node.get_mut(key).and_then(Value::as_array_mut) {
+                reading_coordinates(children);
+            }
         }
     }
 }
@@ -969,7 +968,7 @@ fn append_plain_visible_inline_text(node: &Value, out: &mut String) -> Result<()
                 .unwrap_or(""),
         ),
         "accent" => out.push_str(node["resolved"].as_str().unwrap_or("")),
-        "style" | "font_size" | "tcy" | "keigakomi" | "caption" | "yokogumi" => {
+        "style" | "font_size" | "tcy" | "keigakomi" | "caption" | "yokogumi" | "warichu" => {
             append_plain_visible_content_text(node.get("content"), out)?;
         }
         "warigaki" => {
@@ -1258,8 +1257,8 @@ fn map_inline_to_nodes(
             Ok(end)
         }
         "accent" => map_accent_to_node(node, nodes, recorder, offset, path),
-        "warigaki" => {
-            map_warigaki_to_nodes(node, nodes, recorder, synthetic_warnings, offset, path)
+        "warigaki" | "warichu" => {
+            map_warigaki_to_nodes(node, nodes, recorder, synthetic_warnings, offset, path, 0)
         }
         "figure" => map_figure_to_node(node, nodes, recorder, offset, path),
         "raw" => map_raw_to_nodes(node, nodes, recorder, offset, path),
@@ -1553,39 +1552,15 @@ fn inline_child_node(
             }));
             Ok(end)
         }
-        "warigaki" => {
-            let warigaki_pointer = format!("{path}.warigaki");
-            let target = warigaki_target(recorder, &warigaki_pointer)?;
-            recorder.record(
-                "UNSUPPORTED",
-                Some(warigaki_pointer.as_str()),
-                target,
-                Some(json!("warigaki")),
-                None,
-            )?;
-            let upper = inline_children_nodes(
-                node.get("upper"),
-                recorder,
-                synthetic_warnings,
-                offset,
-                &format!("{path}.warigaki.upper"),
-                depth + 1,
-            )?;
-            let upper_text = plain_visible_content_text(node.get("upper"))?;
-            let lower_offset = offset + utf8_len(&upper_text);
-            let lower = inline_children_nodes(
-                node.get("lower"),
-                recorder,
-                synthetic_warnings,
-                lower_offset,
-                &format!("{path}.warigaki.lower"),
-                depth + 1,
-            )?;
-            nodes.extend(upper);
-            nodes.extend(lower);
-            let lower_text = plain_visible_content_text(node.get("lower"))?;
-            Ok(lower_offset + utf8_len(&lower_text))
-        }
+        "warigaki" | "warichu" => map_warigaki_to_nodes(
+            node,
+            nodes,
+            recorder,
+            synthetic_warnings,
+            offset,
+            path,
+            depth,
+        ),
         "figure" => {
             let alt = node["alt"].as_str().unwrap_or("");
             push_unrecorded_text_node(alt, nodes, offset)
@@ -1932,33 +1907,45 @@ fn map_warigaki_to_nodes(
     synthetic_warnings: &mut Vec<Value>,
     offset: u64,
     path: &str,
+    depth: usize,
 ) -> Result<u64> {
-    let warigaki_pointer = format!("{path}.warigaki");
-    let target = warigaki_target(recorder, &warigaki_pointer)?;
-    recorder.record(
-        "UNSUPPORTED",
-        Some(warigaki_pointer.as_str()),
-        target,
-        None,
-        None,
-    )?;
-    let mut current = offset;
-    current = map_inline_content(
+    if let Some(content) = node.get("content") {
+        let text = plain_visible_content_text(Some(content))?;
+        let end = offset + utf8_len(&text);
+        let children = inline_children_nodes(
+            Some(content),
+            recorder,
+            synthetic_warnings,
+            offset,
+            &format!("{path}.content"),
+            depth + 1,
+        )?;
+        nodes.push(json!({"type":"warichu", "text":text, "span":synthetic_span(offset,end), "inline_children":children}));
+        return Ok(end);
+    }
+    let upper_text = plain_visible_content_text(node.get("upper"))?;
+    let lower_text = plain_visible_content_text(node.get("lower"))?;
+    let lower_offset = offset + utf8_len(&upper_text);
+    let end = lower_offset + utf8_len(&lower_text);
+    let upper = inline_children_nodes(
         node.get("upper"),
-        nodes,
         recorder,
         synthetic_warnings,
-        current,
+        offset,
         &format!("{path}.warigaki.upper"),
+        depth + 1,
     )?;
-    map_inline_content(
+    let lower = inline_children_nodes(
         node.get("lower"),
-        nodes,
         recorder,
         synthetic_warnings,
-        current,
+        lower_offset,
         &format!("{path}.warigaki.lower"),
-    )
+        depth + 1,
+    )?;
+    nodes.push(json!({"type": "warichu", "span": synthetic_span(offset, end),
+        "text": format!("{upper_text}{lower_text}"), "upper_children": upper, "lower_children": lower}));
+    Ok(end)
 }
 
 fn inline_children_depth_limit_warning(path: &str) -> Value {
@@ -2087,7 +2074,7 @@ fn append_visible_inline_text(
                 out,
             )?;
         }
-        "font_size" | "tcy" | "keigakomi" | "yokogumi" => append_visible_content_text(
+        "font_size" | "tcy" | "keigakomi" | "yokogumi" | "warichu" => append_visible_content_text(
             node.get("content"),
             recorder,
             &format!("{path}.content"),
@@ -2095,18 +2082,6 @@ fn append_visible_inline_text(
             out,
         )?,
         "warigaki" => {
-            let warigaki_pointer = format!("{path}.warigaki");
-            let target = match warigaki_target(recorder, &warigaki_pointer) {
-                Ok(target) => target,
-                Err(_) => target_pointer,
-            };
-            recorder.record(
-                "UNSUPPORTED",
-                Some(warigaki_pointer.as_str()),
-                target,
-                None,
-                None,
-            )?;
             append_visible_content_text(
                 node.get("upper"),
                 recorder,
@@ -2170,24 +2145,6 @@ fn record_measured_loss(
     Ok(())
 }
 
-fn warigaki_target<'a>(
-    recorder: &DivergenceRecorder,
-    warigaki_pointer: &str,
-) -> Result<Option<&'a str>> {
-    if recorder.has_rule("UNSUPPORTED", Some(warigaki_pointer), None) {
-        Ok(None)
-    } else if recorder.has_rule(
-        "UNSUPPORTED",
-        Some(warigaki_pointer),
-        Some("(emphasis.text)"),
-    ) {
-        Ok(Some("(emphasis.text)"))
-    } else {
-        bail!("unmeasured warigaki divergence at {warigaki_pointer}")
-    }
-}
-
-/// Coordinates in the converter's text projection; source provenance is separate.
 fn map_node_span(
     aat_span: Option<&Value>,
     start: u64,

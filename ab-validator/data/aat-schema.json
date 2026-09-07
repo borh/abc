@@ -184,7 +184,8 @@
         { "$ref": "#/$defs/figure" },
         { "$ref": "#/$defs/raw" },
         { "$ref": "#/$defs/inline_container" },
-        { "$ref": "#/$defs/warigaki" }
+        { "$ref": "#/$defs/warigaki" },
+        { "$ref": "#/$defs/warichu" }
       ]
     },
     "paragraph": {
@@ -397,6 +398,12 @@
           "then": { "required": ["indent_first", "indent_rest"] }
         }
       ]
+    },
+    "warichu": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "content", "span"],
+      "properties": {"kind": {"const": "warichu"}, "span": {"$ref": "#/$defs/span"},
+        "content": {"type": "array", "items": {"$ref": "#/$defs/inline"}}}
     },
     "warigaki": {
       "type": "object",

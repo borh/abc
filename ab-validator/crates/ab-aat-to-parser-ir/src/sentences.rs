@@ -689,6 +689,17 @@ pub(crate) fn parser_ir_node_visible_text(node: &Value) -> Result<String> {
         }
         return Ok(text);
     }
+    if node_type(node) == "warichu" {
+        let mut text = String::new();
+        for key in ["upper_children", "lower_children"] {
+            if let Some(children) = node.get(key).and_then(Value::as_array) {
+                for child in children {
+                    text.push_str(&parser_ir_node_visible_text(child)?);
+                }
+            }
+        }
+        return Ok(text);
+    }
     let node_type = node_type(node);
     let text = match node_type {
         "text" | "quote" | "emphasis" | "layout-span" | "heading" | "source-note" => {

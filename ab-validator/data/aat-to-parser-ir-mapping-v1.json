@@ -1,10 +1,10 @@
 {
   "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
-  "mapping_version": "0.7.0",
+  "mapping_version": "0.8.0",
   "mapping_schema_hash": "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2",
   "source_aat_version": 1,
   "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "target_parser_ir_schema_hash": "sha256:f4b0d8a7c243a05b5a8aafdefb7ade272f0f819e9a666afe661f4135c552c76f",
+  "target_parser_ir_schema_hash": "sha256:073f91d8f43822cda5fd7dbcded17d8cd6c82a606085b455ff4067a85becee39",
   "transform_rule_descriptions": [
     {
       "rule_id": "A-01",
@@ -5031,36 +5031,12 @@
       "description": "Observed 22 occurrences; first_path=blocks[3].children[0].children[0].content[3].raw. parser-IR has no raw node; faithful escape hatch dropped"
     },
     {
-      "rule_id": "U-02",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].children[].children[].content[].warigaki",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 14 occurrences; first_path=blocks[18].children[0].children[0].content[1].warigaki. parser-IR has no warigaki node; upper/lower flattened to text nodes, split-line structure lost"
-    },
-    {
       "rule_id": "U-03",
       "category": "UNSUPPORTED",
       "aat_pointer": "blocks[].children[].content[].caption",
       "parser_ir_pointer": "emphasis(?)",
       "action": "drop",
       "description": "Observed 3 occurrences; first_path=blocks[215].children[2].content[1].caption. inline_container kind 'caption' has no first-class parser-IR node; only emphasis.text/style exist"
-    },
-    {
-      "rule_id": "U-04",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].children[].content[].content[].content[].content[].warigaki",
-      "parser_ir_pointer": "(emphasis.text)",
-      "action": "drop",
-      "description": "Observed 1 occurrence; first_path=blocks[946].children[0].content[1].content[1].content[0].content[0].warigaki. parser-IR has no warigaki node; style text projection flattened upper/lower visible text"
-    },
-    {
-      "rule_id": "U-05",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].children[].content[].content[].content[].warigaki",
-      "parser_ir_pointer": "(emphasis.text)",
-      "action": "drop",
-      "description": "Observed 4 occurrences; first_path=blocks[48].children[0].content[1].content[1].content[5].warigaki. parser-IR has no warigaki node; style text projection flattened upper/lower visible text"
     },
     {
       "rule_id": "U-06",
@@ -5071,14 +5047,6 @@
       "description": "Observed 14 occurrences; first_path=blocks[5].children[0].content[0].content[1].raw. parser-IR has no raw node; faithful escape hatch dropped"
     },
     {
-      "rule_id": "U-07",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].children[].content[].content[].warigaki",
-      "parser_ir_pointer": "(emphasis.text)",
-      "action": "drop",
-      "description": "Observed 34 occurrences; first_path=blocks[1].children[0].content[1].content[23].warigaki. parser-IR has no warigaki node; style text projection flattened upper/lower visible text"
-    },
-    {
       "rule_id": "U-08",
       "category": "UNSUPPORTED",
       "aat_pointer": "blocks[].children[].content[].raw",
@@ -5087,36 +5055,12 @@
       "description": "Observed 1293 occurrences; first_path=blocks[22].children[0].content[5].raw. parser-IR has no raw node; faithful escape hatch dropped"
     },
     {
-      "rule_id": "U-09",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].children[].content[].warigaki",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 955 occurrences; first_path=blocks[13].children[2].content[5].warigaki. parser-IR has no warigaki node; upper/lower flattened to text nodes, split-line structure lost"
-    },
-    {
       "rule_id": "U-10",
       "category": "UNSUPPORTED",
       "aat_pointer": "blocks[].children[].heading.content[].raw",
       "parser_ir_pointer": null,
       "action": "drop",
       "description": "Observed 156 occurrences; first_path=blocks[1081].children[0].heading.content[3].raw. parser-IR has no raw node; faithful escape hatch dropped"
-    },
-    {
-      "rule_id": "U-11",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].children[].heading.content[].warigaki",
-      "parser_ir_pointer": "(emphasis.text)",
-      "action": "drop",
-      "description": "Observed 1 occurrence; first_path=blocks[13].children[0].heading.content[0].warigaki. parser-IR has no warigaki node; style text projection flattened upper/lower visible text"
-    },
-    {
-      "rule_id": "U-12",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].children[].heading.content[].warigaki",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 1 occurrence; first_path=blocks[13].children[0].heading.content[0].warigaki. parser-IR has no warigaki node; upper/lower flattened to text nodes, split-line structure lost"
     },
     {
       "rule_id": "U-13",
@@ -5143,92 +5087,12 @@
       "description": "Observed 61 occurrences; first_path=blocks[61].content[1].caption. inline_container kind 'caption' has no first-class parser-IR node; only emphasis.text/style exist"
     },
     {
-      "rule_id": "U-16",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].warigaki",
-      "parser_ir_pointer": "(emphasis.text)",
-      "action": "drop",
-      "description": "Observed 1 occurrence; first_path=blocks[10].content[0].content[0].content[0].content[0].content[0].content[0].content[0].content[0].content[0].content[2].warigaki. parser-IR has no warigaki node; style text projection flattened upper/lower visible text"
-    },
-    {
-      "rule_id": "U-17",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].content[].content[].content[].content[].content[].content[].content[].content[].content[].warigaki",
-      "parser_ir_pointer": "(emphasis.text)",
-      "action": "drop",
-      "description": "Observed 1 occurrence; first_path=blocks[0].content[0].content[0].content[0].content[0].content[0].content[0].content[0].content[0].content[2].warigaki. parser-IR has no warigaki node; style text projection flattened upper/lower visible text"
-    },
-    {
-      "rule_id": "U-18",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].content[].content[].content[].content[].content[].content[].content[].content[].warigaki",
-      "parser_ir_pointer": "(emphasis.text)",
-      "action": "drop",
-      "description": "Observed 2 occurrences; first_path=blocks[10].content[0].content[0].content[0].content[0].content[0].content[0].content[0].content[4].warigaki. parser-IR has no warigaki node; style text projection flattened upper/lower visible text"
-    },
-    {
-      "rule_id": "U-19",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].content[].content[].content[].content[].content[].content[].content[].warigaki",
-      "parser_ir_pointer": "(emphasis.text)",
-      "action": "drop",
-      "description": "Observed 1 occurrence; first_path=blocks[2].content[0].content[0].content[0].content[0].content[0].content[0].content[62].warigaki. parser-IR has no warigaki node; style text projection flattened upper/lower visible text"
-    },
-    {
-      "rule_id": "U-20",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].content[].content[].content[].content[].content[].content[].warigaki",
-      "parser_ir_pointer": "(emphasis.text)",
-      "action": "drop",
-      "description": "Observed 7 occurrences; first_path=blocks[33].content[0].content[0].content[0].content[0].content[0].content[2].warigaki. parser-IR has no warigaki node; style text projection flattened upper/lower visible text"
-    },
-    {
-      "rule_id": "U-21",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].content[].content[].content[].content[].content[].warigaki",
-      "parser_ir_pointer": "(emphasis.text)",
-      "action": "drop",
-      "description": "Observed 17 occurrences; first_path=blocks[0].content[0].content[0].content[0].content[0].content[4].warigaki. parser-IR has no warigaki node; style text projection flattened upper/lower visible text"
-    },
-    {
-      "rule_id": "U-22",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].content[].content[].content[].content[].warigaki",
-      "parser_ir_pointer": "(emphasis.text)",
-      "action": "drop",
-      "description": "Observed 13 occurrences; first_path=blocks[10].content[0].content[0].content[0].content[35].warigaki. parser-IR has no warigaki node; style text projection flattened upper/lower visible text"
-    },
-    {
-      "rule_id": "U-23",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].content[].content[].content[].warigaki",
-      "parser_ir_pointer": "(emphasis.text)",
-      "action": "drop",
-      "description": "Observed 93 occurrences; first_path=blocks[4].content[1].content[0].content[1].warigaki. parser-IR has no warigaki node; style text projection flattened upper/lower visible text"
-    },
-    {
       "rule_id": "U-24",
       "category": "UNSUPPORTED",
       "aat_pointer": "blocks[].content[].content[].raw",
       "parser_ir_pointer": null,
       "action": "drop",
       "description": "Observed 11143 occurrences; first_path=blocks[0].content[0].content[4].raw. parser-IR has no raw node; faithful escape hatch dropped"
-    },
-    {
-      "rule_id": "U-25",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].content[].content[].warigaki",
-      "parser_ir_pointer": "(emphasis.text)",
-      "action": "drop",
-      "description": "Observed 259 occurrences; first_path=blocks[3].content[1].content[1].warigaki. parser-IR has no warigaki node; style text projection flattened upper/lower visible text"
-    },
-    {
-      "rule_id": "U-26",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].content[].content[].warigaki",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 864 occurrences; first_path=blocks[36].content[0].content[106].warigaki. parser-IR has no warigaki node; upper/lower flattened to text nodes, split-line structure lost"
     },
     {
       "rule_id": "U-27",
@@ -5247,14 +5111,6 @@
       "description": "Observed 4765187 occurrences; first_path=blocks[10].content[4170].raw. parser-IR has no raw node; faithful escape hatch dropped"
     },
     {
-      "rule_id": "U-29",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].content[].warigaki",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 2321 occurrences; first_path=blocks[249].content[1].warigaki. parser-IR has no warigaki node; upper/lower flattened to text nodes, split-line structure lost"
-    },
-    {
       "rule_id": "U-30",
       "category": "UNSUPPORTED",
       "aat_pointer": "blocks[].content[].warigaki.upper[].raw",
@@ -5263,68 +5119,12 @@
       "description": "Observed 9 occurrences; first_path=blocks[53].content[255].warigaki.upper[1].raw. parser-IR has no raw node; faithful escape hatch dropped"
     },
     {
-      "rule_id": "U-31",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].heading.content[].content[].content[].content[].content[].content[].warigaki",
-      "parser_ir_pointer": "(emphasis.text)",
-      "action": "drop",
-      "description": "Observed 2 occurrences; first_path=blocks[71].heading.content[0].content[0].content[0].content[0].content[0].content[6].warigaki. parser-IR has no warigaki node; style text projection flattened upper/lower visible text"
-    },
-    {
-      "rule_id": "U-32",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].heading.content[].content[].content[].content[].content[].warigaki",
-      "parser_ir_pointer": "(emphasis.text)",
-      "action": "drop",
-      "description": "Observed 3 occurrences; first_path=blocks[46].heading.content[0].content[0].content[0].content[0].content[2].warigaki. parser-IR has no warigaki node; style text projection flattened upper/lower visible text"
-    },
-    {
-      "rule_id": "U-33",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].heading.content[].content[].content[].content[].warigaki",
-      "parser_ir_pointer": "(emphasis.text)",
-      "action": "drop",
-      "description": "Observed 1 occurrence; first_path=blocks[16].heading.content[0].content[0].content[0].content[4].warigaki. parser-IR has no warigaki node; style text projection flattened upper/lower visible text"
-    },
-    {
-      "rule_id": "U-34",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].heading.content[].content[].content[].warigaki",
-      "parser_ir_pointer": "(emphasis.text)",
-      "action": "drop",
-      "description": "Observed 7 occurrences; first_path=blocks[107].heading.content[0].content[0].content[36].warigaki. parser-IR has no warigaki node; style text projection flattened upper/lower visible text"
-    },
-    {
-      "rule_id": "U-35",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].heading.content[].content[].warigaki",
-      "parser_ir_pointer": "(emphasis.text)",
-      "action": "drop",
-      "description": "Observed 90 occurrences; first_path=blocks[39].heading.content[0].content[39].warigaki. parser-IR has no warigaki node; style text projection flattened upper/lower visible text"
-    },
-    {
       "rule_id": "U-36",
       "category": "UNSUPPORTED",
       "aat_pointer": "blocks[].heading.content[].raw",
       "parser_ir_pointer": null,
       "action": "drop",
       "description": "Observed 1673 occurrences; first_path=blocks[0].heading.content[1].raw. parser-IR has no raw node; faithful escape hatch dropped"
-    },
-    {
-      "rule_id": "U-37",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].heading.content[].warigaki",
-      "parser_ir_pointer": "(emphasis.text)",
-      "action": "drop",
-      "description": "Observed 47 occurrences; first_path=blocks[36].heading.content[3].warigaki. parser-IR has no warigaki node; style text projection flattened upper/lower visible text"
-    },
-    {
-      "rule_id": "U-38",
-      "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].heading.content[].warigaki",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 47 occurrences; first_path=blocks[36].heading.content[3].warigaki. parser-IR has no warigaki node; upper/lower flattened to text nodes, split-line structure lost"
     },
     {
       "rule_id": "U-39",

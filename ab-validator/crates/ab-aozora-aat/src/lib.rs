@@ -12,8 +12,8 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
 use ab_aozora_facade::{
-    self, Diagnostic, Document, ForwardAttr, Node, NodeKind, NodeRef, Severity, Tree, encoding,
-    json as aozora_json,
+    self, Diagnostic, DirectiveKind, Document, ForwardAttr, Node, NodeKind, NodeRef, Severity,
+    Tree, encoding, json as aozora_json,
 };
 // Body/tail boundary detection is the shared `ab-source-syntax` authority
 // so the checker's comparison source (`ab-check::body_text`) can never
@@ -268,6 +268,7 @@ impl From<ab_aozora_facade::Span> for Span {
 enum ProjectedKind {
     Node(NodeKind),
     Format(ForwardAttr),
+    Directive(DirectiveKind),
     TextVariant {
         target: TextVariantTarget,
         current: String,
@@ -284,7 +285,9 @@ impl ProjectedKind {
             Self::Format(ForwardAttr::Bouten { .. }) => "bouten",
             Self::Format(ForwardAttr::CombineUpright) => "combineUpright",
             Self::Format(_) => "emphasis",
-            Self::TextVariant { .. } => "directive",
+            Self::Directive(DirectiveKind::WarichuOpen) => "warichuOpen",
+            Self::Directive(DirectiveKind::WarichuClose) => "warichuClose",
+            Self::Directive(_) | Self::TextVariant { .. } => "directive",
             Self::QuoteOpen => "angleQuoteOpen",
             Self::QuoteClose => "angleQuoteClose",
         }
@@ -314,10 +317,17 @@ fn node_projection(tree: &Tree<'_>) -> Vec<AozoraNode> {
             let kind = match source_node.node {
                 NodeRef::Inline(Node::Format(format))
                 | NodeRef::BlockLeaf(Node::Format(format)) => ProjectedKind::Format(format.attr),
+                NodeRef::Inline(Node::Directive(directive))
+                | NodeRef::BlockLeaf(Node::Directive(directive)) => {
+                    ProjectedKind::Directive(directive.kind)
+                }
                 node => ProjectedKind::Node(node.kind()),
             };
             let span: Span = source_node.source_span.into();
-            let kind = if kind == ProjectedKind::Node(NodeKind::Directive) {
+            let kind = if matches!(
+                kind,
+                ProjectedKind::Directive(DirectiveKind::BaseTextVariant | DirectiveKind::Unknown)
+            ) {
                 text_variant(&tree.sanitized()[span.start..span.end]).map_or(kind, |variant| {
                     ProjectedKind::TextVariant {
                         target: variant.target,
@@ -1481,7 +1491,9 @@ fn inline_content(
                 "x-break-kind": "page",
                 "span": span_json(&node.span, &decoded.span_ctx)
             })),
-            ProjectedKind::Node(_) | ProjectedKind::TextVariant { .. } => {
+            ProjectedKind::Node(_)
+            | ProjectedKind::Directive(_)
+            | ProjectedKind::TextVariant { .. } => {
                 content.push(raw_node(decoded, node, node.kind.as_str()));
             }
         }
@@ -1510,7 +1522,40 @@ fn inline_content(
     // before `blocks_from_inline_content` scans this stream changes
     // paragraph/jizume segmentation (the markers act as container
     // boundaries during block classification — corpus work 000026_55738).
-    content
+    pair_warichu(content)
+}
+
+fn pair_warichu(content: Vec<Value>) -> Vec<Value> {
+    let mut output = Vec::new();
+    let mut stack: Vec<(Value, Vec<Value>)> = Vec::new();
+    for node in content {
+        if node["x-source-marker-kind"] == "warichuOpen" {
+            stack.push((node, Vec::new()));
+            continue;
+        }
+        let node = if node["x-source-marker-kind"] == "warichuClose" && !stack.is_empty() {
+            let (open, children) = stack.pop().expect("nonempty warichu stack");
+            let mut span = open["span"].clone();
+            span["byte_end"] = node["span"]["byte_end"].clone();
+            span["line_end"] = node["span"]["line_end"].clone();
+            json!({"kind":"warichu", "content":children, "span":span})
+        } else {
+            node
+        };
+        if let Some((_, children)) = stack.last_mut() {
+            children.push(node);
+        } else {
+            output.push(node);
+        }
+    }
+    while let Some((open, children)) = stack.pop() {
+        let target = stack
+            .last_mut()
+            .map_or(&mut output, |(_, children)| children);
+        target.push(open);
+        target.extend(children);
+    }
+    output
 }
 
 /// A same-line bare-toggle marker located in the inline array: its `content`
@@ -2087,7 +2132,7 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
             "current": current, "base_text": base_text
         });
     }
-    if node.kind == ProjectedKind::Node(NodeKind::Directive) {
+    if node.kind == ProjectedKind::Directive(DirectiveKind::Unknown) {
         value["interpretation_problem"] = json!({
             "kind": "unknown-notation", "code": "unknown-notation",
             "aspects": ["content", "structure", "layout"], "influence": {"kind": "document"}

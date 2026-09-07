@@ -120,6 +120,20 @@ impl DivergenceRecorder {
         true
     }
 
+    pub(crate) fn record_raw_source_note(&mut self, occurrence: &str, source: Value) -> Result<()> {
+        let rule = self
+            .index
+            .require_rule("UNSUPPORTED", None, Some("nodes[].note.raw"))?;
+        aggregate_record(
+            &mut self.records,
+            rule,
+            Some(occurrence),
+            Some(source.clone()),
+            Some(source),
+        );
+        Ok(())
+    }
+
     pub fn emitted_rule_ids(&self) -> BTreeSet<String> {
         self.records.keys().cloned().collect()
     }

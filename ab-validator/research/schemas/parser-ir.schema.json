@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
   "title": "ABC Parser IR",
-  "version": "0.16.0",
+  "version": "0.17.0",
   "type": "object",
   "required": ["schema_id", "schema_hash", "source", "nodes", "warnings", "errors", "interpretation_problems", "interpretation_facts"],
   "additionalProperties": false,
@@ -60,7 +60,7 @@
         "type": "object", "additionalProperties": false,
         "required": ["kind", "code", "raw", "source_span", "aspects", "influence"],
         "properties": {
-          "kind": {"enum": ["unknown-notation", "unresolved-variant"]}, "code": {"enum": ["unknown-notation", "unresolved-variant"]},
+          "kind": {"enum": ["unknown-notation", "unresolved-variant", "uninterpreted-notation"]}, "code": {"enum": ["unknown-notation", "unresolved-variant", "uninterpreted-notation"]},
           "raw": {"type": "string"}, "source_span": {"$ref": "#/$defs/sourceSpan"},
           "aspects": {"enum": [["content", "structure", "layout"], ["content", "structure"]]},
           "influence": {"const": {"kind": "document"}}

@@ -1,10 +1,10 @@
 {
   "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
-  "mapping_version": "0.11.0",
+  "mapping_version": "0.12.0",
   "mapping_schema_hash": "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2",
   "source_aat_version": 1,
   "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "target_parser_ir_schema_hash": "sha256:78b1197172b474b43f9e85c64deed7c60210b1f7ede0f2171242f09e82eceee4",
+  "target_parser_ir_schema_hash": "sha256:80fb874fd08ea9fba31f150ffe10814e2183e7898ea6ce1d36e9e69fbdde020c",
   "transform_rule_descriptions": [
     {
       "rule_id": "A-01",
@@ -5141,6 +5141,14 @@
       "parser_ir_pointer": null,
       "action": "drop",
       "description": "Observed 119 occurrences; first_path=blocks[12].yokogumi_block. block_container kind 'yokogumi_block' has no parser-IR equivalent"
+    },
+    {
+      "rule_id": "U-41",
+      "category": "UNSUPPORTED",
+      "aat_pointer": null,
+      "parser_ir_pointer": "nodes[].note.raw",
+      "action": "project",
+      "description": "Retain a typed raw source outcome as unresolved apparatus at any legal inline depth; preserve its exact occurrence path and spelling without claiming semantic support."
     }
   ],
   "synthetic_evidence_descriptions": [

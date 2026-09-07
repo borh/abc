@@ -1722,7 +1722,11 @@ fn map_raw_to_nodes(
         return Ok(offset);
     }
     let raw_pointer = format!("{path}.raw");
-    if !recorder.record_if_measured(
+    let source = node.get("source").and_then(Value::as_str).unwrap_or("");
+    let recovery = raw_recovery_class(node, source);
+    if recovery == RawRecoveryClass::SourceNote {
+        recorder.record_raw_source_note(&raw_pointer, json!(source))?;
+    } else if !recorder.record_if_measured(
         "UNSUPPORTED",
         Some(raw_pointer.as_str()),
         None,
@@ -1732,8 +1736,7 @@ fn map_raw_to_nodes(
         bail!("unmeasured raw divergence at {raw_pointer}");
     }
 
-    let source = node.get("source").and_then(Value::as_str).unwrap_or("");
-    match raw_recovery_class(node, source) {
+    match recovery {
         RawRecoveryClass::PageBreak => {
             let span = map_node_span(node.get("span"), offset, offset, recorder, path)?;
             nodes.push(json!({
@@ -1756,7 +1759,7 @@ fn map_raw_to_nodes(
     Ok(offset)
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum RawRecoveryClass {
     PageBreak,
     SourceNote,

@@ -361,7 +361,7 @@
           "type": "object", "additionalProperties": false,
           "required": ["kind", "code", "aspects", "influence"],
           "properties": {
-            "kind": {"enum": ["unknown-notation", "unresolved-variant"]}, "code": {"enum": ["unknown-notation", "unresolved-variant"]},
+            "kind": {"enum": ["unknown-notation", "unresolved-variant", "uninterpreted-notation"]}, "code": {"enum": ["unknown-notation", "unresolved-variant", "uninterpreted-notation"]},
             "aspects": {"enum": [["content", "structure", "layout"], ["content", "structure"]]},
             "influence": {"const": {"kind": "document"}}
           }

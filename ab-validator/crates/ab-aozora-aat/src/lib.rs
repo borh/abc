@@ -1577,6 +1577,11 @@ fn inline_content(
             ProjectedKind::Format(_) => {
                 push_style_node(&mut content, decoded, node, emphasis_style_type(node));
             }
+            ProjectedKind::Node(NodeKind::ForcedBreak) => content.push(json!({
+                "kind":"text", "value":"\n", "x-provenance":"source-derived",
+                "x-break-kind":"line", "x-break-marker":"forced",
+                "span":span_json(&node.span, &decoded.span_ctx)
+            })),
             ProjectedKind::Node(NodeKind::Kaeriten) => {
                 content.push(raw_node(decoded, node, "kaeriten"));
             }
@@ -2242,6 +2247,12 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
     if node.kind == ProjectedKind::Directive(DirectiveKind::BaseTextVariant) {
         value["interpretation_problem"] = json!({"kind":"unresolved-variant", "code":"unresolved-variant",
             "aspects":["content","structure"], "influence":{"kind":"document"}});
+    }
+    if node.kind == ProjectedKind::Node(NodeKind::Kaeriten) {
+        value["interpretation_problem"] = json!({
+            "kind":"uninterpreted-notation", "code":"uninterpreted-notation",
+            "aspects":["content","structure"], "influence":{"kind":"document"}
+        });
     }
     if node.kind == ProjectedKind::Directive(DirectiveKind::Unknown) {
         value["interpretation_problem"] = json!({

@@ -774,7 +774,7 @@ fn mapping_preflight_accepts_checked_in_v1_artifact() {
 
     mapping.preflight(&schemas).unwrap();
 
-    assert_eq!(mapping.mapping_version, "0.11.0");
+    assert_eq!(mapping.mapping_version, "0.12.0");
     assert_eq!(
         mapping.target_parser_ir_schema_hash,
         schema_hash(&schemas.parser_ir_schema).unwrap()
@@ -817,7 +817,7 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
     let mapping =
         MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v2.json"))
             .unwrap();
-    assert_eq!(mapping.mapping_version, "0.12.0");
+    assert_eq!(mapping.mapping_version, "0.13.0");
     assert_eq!(mapping.source_aat_version, 2);
     let schemas = SchemaSet::load_for_aat_version(&repo_root, &research_root, 2).unwrap();
     mapping.preflight(&schemas).unwrap();
@@ -4838,4 +4838,88 @@ fn corpus_warichu_with_multiple_sentences_preserves_one_source_container() {
     assert!(output.parser_ir.get("sentences").is_none());
     assert!(output.parser_ir.get("sentence_segmentation").is_none());
     validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn raw_source_retention_records_exact_occurrence_independent_of_nesting() {
+    for depth in [0, 1, 3, 7] {
+        let (schemas, mapping) = v2_schemas_and_mapping();
+        let raw = "［＃レ］";
+        let mut node = json!({"kind":"raw", "source":raw,
+            "x-provenance":"parser-derived", "x-source-marker-kind":"kaeriten",
+            "span":{"byte_start":0,"byte_end":raw.len(),"line_start":1,"line_end":1}});
+        for _ in 0..depth {
+            node = json!({"kind":"style", "style_type":"bold", "content":[node]});
+        }
+        let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+            aat: json!({"version":2,"work_id":"nested-raw","meta":v2_test_meta(),
+                "blocks":[{"kind":"paragraph","content":[node]}]}),
+            mapping,
+            schemas,
+            options: default_test_options(),
+        })
+        .unwrap();
+        let mut note = &output.parser_ir["nodes"][0];
+        for _ in 0..depth {
+            note = &note["inline_children"][0];
+        }
+        assert_eq!(note["note"]["raw"], raw);
+        assert_eq!(note["note"]["resolution"], "unresolved");
+        assert_eq!(note["source_span"]["start"], 0);
+        assert_eq!(note["source_span"]["end"], raw.len());
+        let record = output.divergence_bundle["records"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|record| record["parser_ir_pointer"] == "nodes[].note.raw")
+            .unwrap();
+        assert_eq!(record["category"], "UNSUPPORTED");
+        assert_eq!(record["source_value"], raw);
+        assert_eq!(
+            record["first_path"],
+            format!("blocks[0]{}.raw", ".content[0]".repeat(depth + 1))
+        );
+    }
+}
+
+#[test]
+fn native_forced_break_and_uninterpreted_kaeriten_survive_nested_warichu() {
+    let source = "題\n作者\n\n前［＃地から３字上げ］［＃割り注］磯。此云［＃レ］志。［＃改行］次［＃割り注終わり］後。\n\n底本：本\n";
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let aat =
+        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
+            .unwrap();
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas,
+        options: default_test_options(),
+    })
+    .unwrap();
+    let warichu = output.parser_ir["nodes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|node| node["type"] == "warichu")
+        .unwrap();
+    assert_eq!(warichu["type"], "warichu");
+    assert_eq!(warichu["text"], "磯。此云志。\n次");
+    let children = warichu["inline_children"].as_array().unwrap();
+    let line_break = children
+        .iter()
+        .find(|node| node["type"] == "line-break")
+        .unwrap();
+    let start = line_break["source_span"]["start"].as_u64().unwrap() as usize;
+    let end = line_break["source_span"]["end"].as_u64().unwrap() as usize;
+    assert_eq!(&source[start..end], "［＃改行］");
+    let note = children
+        .iter()
+        .find(|node| node["type"] == "editor-note")
+        .unwrap();
+    assert_eq!(note["note"]["raw"], "［＃レ］");
+    let problem = &output.parser_ir["interpretation_problems"][0];
+    assert_eq!(problem["kind"], "uninterpreted-notation");
+    assert_eq!(problem["raw"], "［＃レ］");
+    assert_eq!(problem["source_span"], note["source_span"]);
+    assert_eq!(problem["influence"], json!({"kind":"document"}));
 }

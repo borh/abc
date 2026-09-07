@@ -1030,6 +1030,8 @@ pub(crate) fn is_whole_document_scoped(diagnostic: &Diagnostic) -> bool {
             | Diagnostic::BracketedKaeritenNoPair { .. }
             | Diagnostic::KaeritenOutsideKanbun { .. }
             | Diagnostic::MismatchedContainerClose { .. }
+            | Diagnostic::UnclosedContainer { .. }
+            | Diagnostic::UnmatchedContainerClose { .. }
             | Diagnostic::MismatchedBoutenContainer { .. }
             | Diagnostic::NestedRuby { .. }
     )
@@ -1821,6 +1823,24 @@ mod tests {
             reparse_incremental_diagnostics_only(&base, &new_san.as_str(), edit).is_none(),
             "a broken gaiji must decline to the full-parse fallback",
         );
+    }
+
+    #[test]
+    fn removing_a_container_close_requires_whole_source_recovery() {
+        let cached = output("前の段落\n\n［＃縦中横］29［＃縦中横終わり］\n\n後の段落\n");
+        assert!(!cached.diagnostics.iter().any(is_whole_document_scoped));
+        let start = cached.sanitized.find("［＃縦中横終わり］").unwrap();
+        let edit = start..start + "［＃縦中横終わり］".len();
+        let changed = apply_edit(&cached.sanitized, edit.clone(), "");
+        let full = output(&changed);
+        assert!(
+            full.diagnostics
+                .iter()
+                .any(|diagnostic| matches!(diagnostic, Diagnostic::UnclosedContainer { .. }))
+        );
+        let pieces = pieces_of(&cached);
+        let base = DiagBaseRef::from_cached(&cached, &pieces);
+        assert!(reparse_incremental_diagnostics_only(&base, &changed.as_str(), edit).is_none());
     }
 
     #[test]

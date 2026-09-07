@@ -313,6 +313,7 @@ impl Pipeline<'_, Paired> {
             for span in &lowered {
                 normalizer.emit(span);
             }
+            normalizer.finish();
             // Move the owned products out, ending the normalizer's borrow of
             // `sanitized_text` so it can be moved into the output below.
             let Normalizer {

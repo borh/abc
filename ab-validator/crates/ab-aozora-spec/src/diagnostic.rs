@@ -61,6 +61,10 @@ use crate::Span;
 /// releases; major-release variant additions land new constants here
 /// without touching existing ones.
 pub mod codes {
+    /// A region opener has no matching closer.
+    pub const UNCLOSED_CONTAINER: &str = "aozora::lex::unclosed_container";
+    /// A region closer has no matching opener.
+    pub const UNMATCHED_CONTAINER_CLOSE: &str = "aozora::lex::unmatched_container_close";
     /// Open delimiter reached end-of-input with no matching close.
     pub const UNCLOSED_BRACKET: &str = "aozora::lex::unclosed_bracket";
 
@@ -272,6 +276,38 @@ impl InternalCheckCode {
 #[derive(Debug, Clone, Error, MietteDiagnostic)]
 #[non_exhaustive]
 pub enum Diagnostic {
+    /// A container remains open at the end of its source scope.
+    #[error("container `{kind}` has no matching close")]
+    #[diagnostic(
+        code("aozora::lex::unclosed_container"),
+        url("https://p4suta.github.io/aozora/notation/diagnostics.html#unclosed-container"),
+        help("add the matching closing directive")
+    )]
+    UnclosedContainer {
+        /// Original opening marker location.
+        #[label("unclosed container")]
+        at: miette::SourceSpan,
+        /// Source container family.
+        kind: &'static str,
+        /// Opening marker byte range in sanitized source.
+        span: Span,
+    },
+    /// A closing directive has no open container of its family.
+    #[error("container close `{kind}` has no matching open")]
+    #[diagnostic(
+        code("aozora::lex::unmatched_container_close"),
+        url("https://p4suta.github.io/aozora/notation/diagnostics.html#unmatched-container-close"),
+        help("check the opening directive and nesting order")
+    )]
+    UnmatchedContainerClose {
+        /// Original closing marker location.
+        #[label("unmatched container close")]
+        at: miette::SourceSpan,
+        /// Source container family.
+        kind: &'static str,
+        /// Closing marker byte range in sanitized source.
+        span: Span,
+    },
     /// An open delimiter reached end-of-input with no matching close on
     /// the pairing stack.
     #[error("unclosed Aozora {kind:?} bracket")]
@@ -801,7 +837,19 @@ struct DiagnosticDoc {
 /// order. The single authority for per-code title / reproduction / fixed
 /// prose; a coverage test pins `DOCS.len() == ALL_CODES.len()` and that
 /// every code resolves.
-const DOCS: [DiagnosticDoc; 20] = [
+const DOCS: [DiagnosticDoc; 22] = [
+    DiagnosticDoc {
+        code: codes::UNCLOSED_CONTAINER,
+        title: "閉じ指示のない範囲",
+        repro: "［＃縦中横］29",
+        fixed: "［＃縦中横］29［＃縦中横終わり］",
+    },
+    DiagnosticDoc {
+        code: codes::UNMATCHED_CONTAINER_CLOSE,
+        title: "開き指示のない範囲終わり",
+        repro: "29［＃縦中横終わり］",
+        fixed: "［＃縦中横］29［＃縦中横終わり］",
+    },
     DiagnosticDoc {
         code: codes::UNCLOSED_BRACKET,
         title: "閉じられていない開き括弧",
@@ -945,6 +993,27 @@ fn doc_for(code: &str) -> Option<&'static DiagnosticDoc> {
     reason = "intentional: our inherent severity() / code() return strongly-typed (Severity enum, &'static str) values that mirror miette::Diagnostic's loosely-typed defaults — callers prefer the inherent method"
 )]
 impl Diagnostic {
+    /// Report an opening directive with no established closing marker.
+    #[must_use]
+    pub fn unclosed_container(span: Span, kind: &'static str) -> Self {
+        let (offset, length) = span_to_miette_parts(span);
+        Self::UnclosedContainer {
+            at: miette::SourceSpan::new(offset.into(), length),
+            kind,
+            span,
+        }
+    }
+
+    /// Report a closing directive without a matching opening marker.
+    #[must_use]
+    pub fn unmatched_container_close(span: Span, kind: &'static str) -> Self {
+        let (offset, length) = span_to_miette_parts(span);
+        Self::UnmatchedContainerClose {
+            at: miette::SourceSpan::new(offset.into(), length),
+            kind,
+            span,
+        }
+    }
     /// Constructor for [`Diagnostic::UnclosedBracket`].
     #[must_use]
     pub fn unclosed_bracket(at: Span, kind: PairKind) -> Self {
@@ -1171,7 +1240,9 @@ impl Diagnostic {
                 ..
             } => Severity::Warning,
             Self::AccentDecompositionApplied { .. } => Severity::Note,
-            Self::UnclosedBracket { .. }
+            Self::UnclosedContainer { .. }
+            | Self::UnmatchedContainerClose { .. }
+            | Self::UnclosedBracket { .. }
             | Self::UnmatchedClose { .. }
             | Self::MismatchedContainerClose { .. }
             | Self::EmptyRubyReading { .. }
@@ -1187,7 +1258,9 @@ impl Diagnostic {
     #[must_use]
     pub fn source(&self) -> DiagnosticSource {
         match self {
-            Self::UnclosedBracket { .. }
+            Self::UnclosedContainer { .. }
+            | Self::UnmatchedContainerClose { .. }
+            | Self::UnclosedBracket { .. }
             | Self::UnmatchedClose { .. }
             | Self::AccentDecompositionApplied { .. }
             | Self::UnresolvedGaiji { .. }
@@ -1211,7 +1284,9 @@ impl Diagnostic {
     #[must_use]
     pub fn span(&self) -> Span {
         match self {
-            Self::UnclosedBracket { span, .. }
+            Self::UnclosedContainer { span, .. }
+            | Self::UnmatchedContainerClose { span, .. }
+            | Self::UnclosedBracket { span, .. }
             | Self::UnmatchedClose { span, .. }
             | Self::AccentDecompositionApplied { span, .. }
             | Self::UnresolvedGaiji { span, .. }
@@ -1249,7 +1324,9 @@ impl Diagnostic {
     #[must_use]
     pub fn shifted(mut self, by: i64) -> Self {
         let (at, span): (&mut miette::SourceSpan, &mut Span) = match &mut self {
-            Self::UnclosedBracket { at, span, .. }
+            Self::UnclosedContainer { at, span, .. }
+            | Self::UnmatchedContainerClose { at, span, .. }
+            | Self::UnclosedBracket { at, span, .. }
             | Self::UnmatchedClose { at, span, .. }
             | Self::AccentDecompositionApplied { at, span, .. }
             | Self::UnresolvedGaiji { at, span, .. }
@@ -1280,6 +1357,8 @@ impl Diagnostic {
     #[must_use]
     pub fn code(&self) -> &'static str {
         match self {
+            Self::UnclosedContainer { .. } => codes::UNCLOSED_CONTAINER,
+            Self::UnmatchedContainerClose { .. } => codes::UNMATCHED_CONTAINER_CLOSE,
             Self::UnclosedBracket { .. } => codes::UNCLOSED_BRACKET,
             Self::UnmatchedClose { .. } => codes::UNMATCHED_CLOSE,
             Self::AccentDecompositionApplied { .. } => codes::ACCENT_DECOMPOSITION_APPLIED,
@@ -1332,6 +1411,8 @@ impl Diagnostic {
     )]
     pub fn detail_body(&self) -> String {
         match self {
+            Self::UnclosedContainer { kind, .. } => format!("`{kind}` の開き指示に対応する閉じ指示がありません。描画時の自動補完は、原文に閉じ指示があることを意味しません。"),
+            Self::UnmatchedContainerClose { kind, .. } => format!("`{kind}` の閉じ指示に対応する開き指示がありません。範囲の種別と入れ子の順序を確認してください。"),
             Self::UnclosedBracket { kind, .. } => format!(
                 "閉じられていない `{open}` があります。\n\n\
                  どこかに対応する `{close}` を必ず置いてください。aozora 記法では一行内で閉じるのが基本です。\n\n\
@@ -1468,10 +1549,12 @@ impl Diagnostic {
     }
 
     /// Every stable diagnostic code [`Self::code`] can return, in
-    /// catalogue order: the sixteen source-level codes followed by the
+    /// catalogue order: the eighteen source-level codes followed by the
     /// four pipeline-internal check codes. Backs `aozora explain`'s
     /// catalogue and the round-trip coverage test.
-    pub const ALL_CODES: [&'static str; 20] = [
+    pub const ALL_CODES: [&'static str; 22] = [
+        codes::UNCLOSED_CONTAINER,
+        codes::UNMATCHED_CONTAINER_CLOSE,
         codes::UNCLOSED_BRACKET,
         codes::UNMATCHED_CLOSE,
         codes::ACCENT_DECOMPOSITION_APPLIED,
@@ -1531,6 +1614,10 @@ impl Diagnostic {
     fn sample_for_code(code: &str) -> Option<Self> {
         let at = Span::new(0, 0);
         Some(match code {
+            codes::UNCLOSED_CONTAINER => Self::unclosed_container(at, "combineUpright"),
+            codes::UNMATCHED_CONTAINER_CLOSE => {
+                Self::unmatched_container_close(at, "combineUpright")
+            }
             codes::UNCLOSED_BRACKET => Self::unclosed_bracket(at, PairKind::Bracket),
             codes::UNMATCHED_CLOSE => Self::unmatched_close(at, PairKind::Bracket),
             codes::ACCENT_DECOMPOSITION_APPLIED => Self::accent_decomposition_applied(at),
@@ -1884,7 +1971,7 @@ mod tests {
     fn explain_covers_every_catalogued_code() {
         assert_eq!(
             Diagnostic::ALL_CODES.len(),
-            20,
+            22,
             "ALL_CODES must list every code code() can return"
         );
         for &code in &Diagnostic::ALL_CODES {

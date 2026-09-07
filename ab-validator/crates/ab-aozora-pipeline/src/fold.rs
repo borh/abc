@@ -371,10 +371,9 @@ pub(crate) struct Normalizer<'src> {
     source: &'src str,
     pub(crate) recorder: Recorder,
     /// Stack of in-flight container opens awaiting their matching close. Each
-    /// entry is the (open `NormalizedOffset`, open [`RegionFormat`]) pushed by
-    /// [`SpanKind::BlockOpen`] emission; [`SpanKind::BlockClose`] pops and emits
-    /// a [`ContainerPair`]. The open payload is authoritative.
-    open_stack: Vec<(NormalizedOffset, RegionFormat)>,
+    /// entry retains its normalized position, family and original marker span.
+    /// A mismatched close recovers stack depth but does not establish a pair.
+    open_stack: Vec<(NormalizedOffset, RegionFormat, Span)>,
     /// Resolved container open/close pairs in close order.
     pub(crate) container_pairs: Vec<ContainerPair>,
     /// Diagnostics observed during the fold (post-classify).
@@ -442,7 +441,7 @@ impl<'src> Normalizer<'src> {
                 self.recorder
                     .record_block_open(pos, span.source_span, *container);
                 self.open_stack
-                    .push((NormalizedOffset::new(pos), *container));
+                    .push((NormalizedOffset::new(pos), *container, span.source_span));
             }
             SpanKind::BlockClose(close) => {
                 let inline = close.is_inline();
@@ -456,20 +455,34 @@ impl<'src> Normalizer<'src> {
                 }
                 self.recorder
                     .record_block_close(pos, span.source_span, *close);
-                if let Some((open_pos, open_kind)) = self.open_stack.pop() {
-                    self.push_container_mismatch(open_kind, *close, span.source_span);
-                    self.container_pairs.push(ContainerPair {
-                        kind: open_kind,
-                        open: open_pos,
-                        close: NormalizedOffset::new(pos),
-                    });
+                if let Some((open_pos, open_kind, _)) = self.open_stack.pop() {
+                    if self.container_matches(open_kind, *close, span.source_span) {
+                        self.container_pairs.push(ContainerPair {
+                            kind: open_kind,
+                            open: open_pos,
+                            close: NormalizedOffset::new(pos),
+                        });
+                    }
+                } else {
+                    self.diagnostics.push(Diagnostic::unmatched_container_close(
+                        span.source_span,
+                        close.kind_str(),
+                    ));
                 }
             }
         }
     }
 
-    /// Flag a container close whose family differs from its matched open.
-    fn push_container_mismatch(&mut self, open: RegionFormat, close: RegionClose, span: Span) {
+    /// Report every remaining opening marker before discarding recovery state.
+    pub(crate) fn finish(&mut self) {
+        for (_, kind, span) in self.open_stack.drain(..) {
+            self.diagnostics
+                .push(Diagnostic::unclosed_container(span, kind.kind_str()));
+        }
+    }
+
+    /// Establish matching families or report the recovered mismatch.
+    fn container_matches(&mut self, open: RegionFormat, close: RegionClose, span: Span) -> bool {
         let expected = RegionClose::of(open);
         if discriminant(&expected) != discriminant(&close) {
             self.diagnostics
@@ -478,6 +491,7 @@ impl<'src> Normalizer<'src> {
                     open.kind_str(),
                     close.kind_str(),
                 ));
+            false
         } else if let (
             RegionClose::Bouten {
                 kind: open_kind, ..
@@ -494,6 +508,9 @@ impl<'src> Normalizer<'src> {
                     open_kind.family_str(),
                     close_kind.family_str(),
                 ));
+            false
+        } else {
+            true
         }
     }
 

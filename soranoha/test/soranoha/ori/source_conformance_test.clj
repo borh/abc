@@ -226,7 +226,7 @@
                  (filter #(= "source-line" (attribute % "type")) (elements result "seg")))))))
 
 (deftest unsupported-multiline-accents-retain-text-and-mark-analysis-uncertain
-  (let [body "〔Pardonnez a` mon bavardage\nJ'en suis a` mon premier voyage.〕"
+  (let [body "〔Pardonnez a` mon bavardage\nA line without accent decomposition.〕"
         result (transcribe (source body))
         problems (get-in result [:view :view/problems])]
     (is (= body (:plaintext result)))

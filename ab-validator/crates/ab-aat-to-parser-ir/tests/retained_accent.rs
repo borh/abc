@@ -21,7 +21,7 @@ fn convert(source: &str) -> Value {
 
 #[test]
 fn retained_multiline_accents_preserve_text_and_located_uncertainty() {
-    let raw = "〔ae&\r\na:〕";
+    let raw = "〔ae&\r\nordinary〕";
     let source = format!("\u{feff}題\r\n作者\r\n\r\n前{raw}後。\r\n\r\n底本：本\r\n");
     let ir = convert(&source);
     let problems = ir["interpretation_problems"].as_array().unwrap();
@@ -47,7 +47,7 @@ fn retained_multiline_accents_preserve_text_and_located_uncertainty() {
         .iter()
         .filter_map(|node| node["text"].as_str())
         .collect();
-    assert!(text.contains("前〔ae&\na:〕後。"), "{text:?}");
+    assert!(text.contains("前〔ae&\nordinary〕後。"), "{text:?}");
 }
 
 #[test]

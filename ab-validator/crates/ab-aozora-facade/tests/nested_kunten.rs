@@ -19,3 +19,21 @@ fn ruby_reading_kunten_roundtrips_and_uses_annotation_layout() {
         assert!(tree.to_html().contains(expected), "{}", tree.to_html());
     }
 }
+
+#[test]
+fn explicit_mixed_base_replays_source_when_no_reading_adopts_it() {
+    for source in [
+        "前｜漢［＃レ］字後",
+        "前｜漢［＃レ］字《》後",
+        "前｜漢［＃レ］字\n次《つぎ》",
+        "前｜漢［＃レ］字《かんじ》後",
+        "｜遊［＃二］松島［＃一］記《まつしまにあそぶき》",
+        "｜a［＃レ］ b《よみ》",
+        "｜漢［＃未知の注］字《よみ》",
+        "前｜漢［＃レ］字［＃「字」に傍点］後",
+    ] {
+        let document = Document::new(source);
+        let tree = document.parse();
+        assert_eq!(tree.to_source(), source, "{}", tree.to_html());
+    }
+}

@@ -94,7 +94,7 @@ use std::collections::VecDeque;
 // inherent methods (single intern, no arena); the produced `Node`s thread
 // straight into the lex output's `NodeStore`.
 use ab_aozora_syntax::alloc::Allocator;
-use ab_aozora_syntax::ast::{Content, Directive, Gaiji, Node, Segment};
+use ab_aozora_syntax::ast::{Content, Directive, Node, Segment};
 use ab_aozora_syntax::{
     DirectiveKind, RegionClose, RegionFormat, Span, is_ruby_base_char, ruby_base_class,
 };
@@ -347,36 +347,30 @@ enum FrameStep {
     Abandoned,
 }
 
-/// One deferred gaiji: its ready-to-yield standalone span (used when no
-/// ruby follows) and the payload that rebuilds the glyph as a
-/// `Segment::Gaiji` inside a ruby base when one does.
-struct PendingGaiji {
+/// A deferred native construct and its original standalone source span.
+/// A following ruby adopts the segment; otherwise the span is replayed.
+struct PendingBaseSegment {
     span: ClassifiedSpan,
-    payload: Gaiji,
+    payload: Segment,
 }
 
-/// A source-contiguous run of deferred gaiji and intervening kanji, held so
-/// a following `《…》` ruby can adopt the whole run as its base. A single
-/// gaiji is the common `※［＃…］《みは》` case; a run of adjacent gaiji is an
-/// ateji whose reading spans several glyphs (`※［＃…］※［＃…］《かいがい》`).
+/// A contiguous ruby base containing native constructs and intervening text.
+/// Gaiji can establish an implicit base; other annotations require an explicit
+/// `｜` so ordinary annotations cannot manufacture ruby attachment.
 ///
-/// `prefix` holds contiguous kanji before the first gaiji. `bar` holds an
-/// explicit `｜` before that prefix or gaiji, outside the preceding plain run so
-/// that, if a ruby adopts the run, the redundant base-marker `｜` is dropped
-/// instead of leaking (the gaiji run is unambiguously the base) while the
-/// ruby's source span still covers it for the tiling invariant. If no ruby
-/// follows, the `｜` and every gaiji are re-emitted in source order
-/// (`emit_pending_gaiji`).
+/// `prefix` holds leading base text; `bar` holds its explicit marker outside
+/// the preceding plain run. Adoption consumes the marker while retaining its
+/// source span. Without a reading, every held span is replayed in source order.
 struct PendingRubyBase {
-    segs: smallvec::SmallVec<[PendingGaiji; 2]>,
+    segs: smallvec::SmallVec<[PendingBaseSegment; 2]>,
     bar: Option<Span>,
     prefix: Option<Span>,
 }
 
 impl PendingRubyBase {
-    fn single(gaiji: PendingGaiji, bar: Option<Span>, prefix: Option<Span>) -> Self {
+    fn single(segment: PendingBaseSegment, bar: Option<Span>, prefix: Option<Span>) -> Self {
         Self {
-            segs: smallvec::smallvec![gaiji],
+            segs: smallvec::smallvec![segment],
             bar,
             prefix,
         }
@@ -389,26 +383,24 @@ impl PendingRubyBase {
             .map_or(self.segs[0].span.source_span.start, |b| b.start)
     }
 
-    /// Source offset just past the last gaiji — the adjacency anchor for the
-    /// next continuation gaiji or the adopting `《…》`.
+    /// End of the last construct, anchoring adjacent text and annotations.
     fn end(&self) -> u32 {
         self.segs
             .last()
-            .expect("a PendingRubyBase always holds ≥1 gaiji")
+            .expect("a deferred ruby base contains a native construct")
             .span
             .source_span
             .end
     }
 }
 
-/// Outcome of [`ClassifyStream::try_ruby_over_gaiji_base`].
-enum GaijiBaseRuby {
-    /// No adjacent deferred gaiji — continue to the plain-base path.
+/// Outcome of [`ClassifyStream::try_ruby_over_pending_base`].
+enum PendingBaseRuby {
+    /// No adjacent deferred base — continue to the plain-base path.
     NotApplicable,
-    /// A ruby over the gaiji base was formed.
+    /// A ruby adopted the deferred base.
     Emitted(ClassifiedSpan),
-    /// The reading was empty (or the pair malformed); the gaiji was
-    /// flushed standalone and the `《》` falls through to plain replay.
+    /// The empty or malformed reading left the base as standalone spans.
     Declined,
 }
 
@@ -977,7 +969,7 @@ where
                                 .push(gaiji);
                         } else {
                             if let Some(old) = self.pending_ruby_base.take() {
-                                self.emit_pending_gaiji(old);
+                                self.emit_pending_base(old);
                             }
                             self.pending_ruby_base =
                                 Some(PendingRubyBase::single(gaiji, bar, prefix));
@@ -991,11 +983,10 @@ where
                     // the refmark bytes into the pending plain run and attempt
                     // a normal bracket annotation on the original body.
                     if let Some(pending) = self.pending_ruby_base.take() {
-                        self.emit_pending_gaiji(pending);
+                        self.emit_pending_base(pending);
                     }
                     self.push_plain(rm_span, PlainProvenance::RecoveredVerbatim);
-                    if let Some(span) = self.try_bracket_emit(view, open_idx, close_idx) {
-                        self.push_output(span);
+                    if self.try_bracket_emit(view, open_idx, close_idx).is_some() {
                         return;
                     }
                     // Both gaiji and bracket annotation declined: replay
@@ -1003,8 +994,7 @@ where
                     self.replay_unrecognised_body(body, None);
                     return;
                 }
-                if let Some(span) = self.try_bracket_emit(view, open_idx, close_idx) {
-                    self.push_output(span);
+                if self.try_bracket_emit(view, open_idx, close_idx).is_some() {
                     return;
                 }
             }
@@ -1045,7 +1035,7 @@ where
         #[cfg(feature = "classify-instrument")]
         record_replay_body_size(body.len() as u64);
         if let Some(pending) = self.pending_ruby_base.take() {
-            self.emit_pending_gaiji(pending);
+            self.emit_pending_base(pending);
         }
         let start = refmark.or_else(|| body.first().and_then(PairEvent::span));
         let end = body
@@ -1234,7 +1224,7 @@ where
             // shape); Ruby / AngleQuote never do. Routing an in-quote gaiji
             // through this Bracket sub-frame lets `try_gaiji_emit` null
             // `pending_plain_start`, which is exactly the invariant
-            // `try_ruby_over_gaiji_base` needs to adopt an adjacent `《…》`.
+            // `try_ruby_over_pending_base` needs to adopt an adjacent `《…》`.
             let gaiji_refmark = if matches!(kind, PairKind::Bracket) {
                 self.pending_refmark.take()
             } else {
@@ -1323,48 +1313,43 @@ where
         }
     }
 
-    /// Form a ruby whose base is a deferred gaiji held in
-    /// `pending_ruby_base` (`※［＃…］《みは》`) — the gaiji resolves to a glyph
-    /// distinct from its source and was emitted as its own node, so there
-    /// is no plain run to walk back over. Adopts the gaiji as a
-    /// structured base, including preceding and following kanji runs; the
-    /// reading is built from the `《…》` body as
-    /// for a plain-base ruby. See [`GaijiBaseRuby`] for the outcomes.
-    fn try_ruby_over_gaiji_base(
+    /// Adopt the deferred native segments and adjacent text as a ruby base.
+    /// Its reading uses the same native body recognizers as a plain-base ruby.
+    fn try_ruby_over_pending_base(
         &mut self,
         body: BodyView<'_>,
         open_idx: usize,
         close_idx: usize,
-    ) -> GaijiBaseRuby {
+    ) -> PendingBaseRuby {
         let PairEvent::PairOpen {
             span: open_span, ..
         } = body.events[open_idx]
         else {
-            return GaijiBaseRuby::NotApplicable;
+            return PendingBaseRuby::NotApplicable;
         };
-        let gaiji_base = self.pending_ruby_base.as_ref().is_some_and(|p| {
+        let adjacent_base = self.pending_ruby_base.as_ref().is_some_and(|p| {
             p.end() == open_span.start
                 || (self.pending_plain_start() == Some(p.end())
-                    && self.source[p.end() as usize..open_span.start as usize]
-                        .chars()
-                        .all(is_ruby_base_char))
+                    && (p.bar.is_some()
+                        || self.source[p.end() as usize..open_span.start as usize]
+                            .chars()
+                            .all(is_ruby_base_char)))
         });
-        if !gaiji_base {
-            return GaijiBaseRuby::NotApplicable;
+        if !adjacent_base {
+            return PendingBaseRuby::NotApplicable;
         }
         let pending = self.pending_ruby_base.take().expect("checked Some");
         let PairEvent::PairClose {
             span: close_span, ..
         } = body.events[close_idx]
         else {
-            self.emit_pending_gaiji(pending);
-            return GaijiBaseRuby::Declined;
+            self.emit_pending_base(pending);
+            return PendingBaseRuby::Declined;
         };
         if open_span.end >= close_span.start {
-            // Empty `《》` reading — not a ruby. The gaiji stands alone and
-            // the empty pair falls through to plain replay.
-            self.emit_pending_gaiji(pending);
-            return GaijiBaseRuby::Declined;
+            // An empty reading cannot adopt a base; replay the original spans.
+            self.emit_pending_base(pending);
+            return PendingBaseRuby::Declined;
         }
         let reading = {
             let mut ctx = RecogniseCtx {
@@ -1396,7 +1381,7 @@ where
                     ),
                 );
             }
-            segs.push(self.alloc.seg_gaiji(gaiji.payload));
+            segs.push(gaiji.payload);
             previous_end = Some(gaiji.span.source_span.end);
         }
         if let Some(prefix) = pending.prefix {
@@ -1415,11 +1400,9 @@ where
         }
         let base = self.alloc.content_segments(&segs);
         let node = self.alloc.ruby(base, reading);
-        GaijiBaseRuby::Emitted(ClassifiedSpan {
+        PendingBaseRuby::Emitted(ClassifiedSpan {
             kind: SpanKind::Aozora(node),
-            // Cover the whole gaiji run and a dropped `｜` base-marker so the
-            // ruby region still tiles the source gap-free (the marker is
-            // consumed, not rendered).
+            // The consumed base marker remains part of the ruby's source span.
             source_span: Span::new(base_start, close_span.end),
         })
     }
@@ -1459,13 +1442,11 @@ where
             self.diagnostics.push(Diagnostic::nested_ruby(inner_open));
         }
 
-        // Gaiji-base ruby: the immediately-preceding construct is a
-        // deferred gaiji (`※［＃…］《みは》`) rather than a plain run. Fall
-        // through to the plain-base path only when not applicable.
-        match self.try_ruby_over_gaiji_base(body, open_idx, close_idx) {
-            GaijiBaseRuby::Emitted(span) => return Some(span),
-            GaijiBaseRuby::Declined => return None,
-            GaijiBaseRuby::NotApplicable => {}
+        // A structured base takes precedence over the trailing plain fragment.
+        match self.try_ruby_over_pending_base(body, open_idx, close_idx) {
+            PendingBaseRuby::Emitted(span) => return Some(span),
+            PendingBaseRuby::Declined => return None,
+            PendingBaseRuby::NotApplicable => {}
         }
 
         // Determine the preceding plain run (the ruby base lives here) and
@@ -1593,7 +1574,7 @@ where
         body: BodyView<'_>,
         open_idx: usize,
         close_idx: usize,
-    ) -> Option<ClassifiedSpan> {
+    ) -> Option<()> {
         #[cfg(feature = "classify-instrument")]
         let _classify_guard = SubsystemGuard::new(Subsystem::TryBracketEmit);
         let pending_plain_start = self.pending_plain_start();
@@ -1614,6 +1595,13 @@ where
         // `self.alloc` ends here (NLL) and the splice below gets full `self`.
         self.diagnostics.append(&mut ctx.diagnostics);
         let decoration = ctx.pending_decoration.take();
+        if !matches!(
+            m.emit,
+            EmitKind::Aozora(Node::Kunten(_) | Node::Directive(_))
+        ) && let Some(pending) = self.pending_ruby_base.take()
+        {
+            self.emit_pending_base(pending);
+        }
         // if the recognizer resolved a non-adjacent interior referent,
         // splice a styled decoration leaf into the pending plain run *before*
         // flushing the tail up to the bracket. The window invariant is
@@ -1628,13 +1616,11 @@ where
         {
             self.splice_plain_around(deco, deco_span);
         }
-        self.flush_plain_up_to(m.consume_start);
         let kind = match m.emit {
             EmitKind::Aozora(node) => SpanKind::Aozora(node),
             EmitKind::BlockOpen(container) => SpanKind::BlockOpen(container),
             EmitKind::BlockClose(container) => SpanKind::BlockClose(container),
         };
-        self.pending_plain.clear();
         // Surface any non-fatal warning the recogniser attached
         // (unrecognised container directive / 縦中横 target not found /
         // ambiguous bouten target). The emitted node is unaffected — for
@@ -1661,10 +1647,75 @@ where
                 span,
             });
         }
-        Some(ClassifiedSpan {
+        let span = ClassifiedSpan {
             kind,
             source_span: Span::new(m.consume_start, m.consume_end),
-        })
+        };
+        if !self.defer_explicit_base_annotation(&span) {
+            if let Some(pending) = self.pending_ruby_base.take() {
+                self.emit_pending_base(pending);
+            }
+            self.flush_plain_up_to(m.consume_start);
+            self.pending_plain.clear();
+            self.push_output(span);
+        }
+        Some(())
+    }
+
+    fn defer_explicit_base_annotation(&mut self, span: &ClassifiedSpan) -> bool {
+        let payload = match span.kind {
+            SpanKind::Aozora(Node::Kunten(value)) => Segment::Kunten {
+                value,
+                source_span: span.source_span,
+            },
+            SpanKind::Aozora(Node::Directive(value)) => Segment::Directive {
+                value,
+                source_span: span.source_span,
+            },
+            _ => return false,
+        };
+        let adjacent = self.pending_ruby_base.as_ref().is_some_and(|pending| {
+            pending.bar.is_some()
+                && (pending.end() == span.source_span.start
+                    || self.pending_plain_start() == Some(pending.end()))
+        });
+        if adjacent {
+            self.pending_plain.clear();
+            self.pending_ruby_base
+                .as_mut()
+                .expect("adjacent base exists")
+                .segs
+                .push(PendingBaseSegment {
+                    span: span.clone(),
+                    payload,
+                });
+            return true;
+        }
+        let Some(start) = self.pending_plain_start() else {
+            return false;
+        };
+        let before = &self.source[start as usize..span.source_span.start as usize];
+        let Some(offset) = before.rfind('｜') else {
+            return false;
+        };
+        if before[offset..].contains('\n') {
+            return false;
+        }
+        let bar_start = start + u32::try_from(offset).expect("source offset fits u32");
+        let bar = Span::new(bar_start, bar_start + 3);
+        let prefix = (bar.end < span.source_span.start)
+            .then_some(Span::new(bar.end, span.source_span.start));
+        self.flush_plain_up_to(bar.start);
+        self.pending_plain.clear();
+        self.pending_ruby_base = Some(PendingRubyBase::single(
+            PendingBaseSegment {
+                span: span.clone(),
+                payload,
+            },
+            Some(bar),
+            prefix,
+        ));
+        true
     }
 
     fn try_gaiji_emit(
@@ -1672,7 +1723,7 @@ where
         body: BodyView<'_>,
         bracket_open_idx: usize,
         refmark_span: Span,
-    ) -> Option<(PendingGaiji, Option<Span>, Option<Span>)> {
+    ) -> Option<(PendingBaseSegment, Option<Span>, Option<Span>)> {
         let mut ctx = RecogniseCtx {
             alloc: self.alloc,
             source: self.source,
@@ -1683,8 +1734,8 @@ where
         let m = ctx.recognize_gaiji(body, refmark_span, bracket_open_idx)?;
         // An explicit `｜` (U+FF5C) before the kanji prefix or gaiji is a
         // base-start marker for a following ruby. Hold it out of the plain
-        // run so `try_ruby_over_gaiji_base` can drop the redundant marker on
-        // adoption (the gaiji is unambiguously the base), or `emit_pending_gaiji`
+        // run so `try_ruby_over_pending_base` can drop the redundant marker on
+        // adoption (the gaiji is unambiguously the base), or `emit_pending_base`
         // can re-emit it as plain when the gaiji stands alone. Consume the
         // WHOLE trailing `｜` run, not just the last bar: dropping only one
         // per parse would leave the next `｜` adjacent to the gaiji, so
@@ -1692,6 +1743,13 @@ where
         // and never reach a fixed point (fmt-idempotence).
         let prefix = self.pending_plain_start().and_then(|start| {
             let before = &self.source[start as usize..m.consume_start as usize];
+            if self
+                .pending_ruby_base
+                .as_ref()
+                .is_some_and(|base| base.bar.is_some())
+            {
+                return Some(Span::new(start, m.consume_start));
+            }
             before
                 .char_indices()
                 .rev()
@@ -1734,22 +1792,20 @@ where
                 )));
         }
         Some((
-            PendingGaiji {
+            PendingBaseSegment {
                 span: ClassifiedSpan {
                     kind: SpanKind::Aozora(node),
                     source_span: Span::new(m.consume_start, m.consume_end),
                 },
-                payload: m.payload,
+                payload: Segment::Gaiji(m.payload),
             },
             bar,
             prefix,
         ))
     }
 
-    /// Emit a deferred gaiji run that no ruby adopted: re-emit its held `｜`
-    /// base-marker (if any) as plain first — restoring the `元｜※［＃…］`
-    /// shape — then the held kanji prefix and gaiji spans in source order.
-    fn emit_pending_gaiji(&mut self, pending: PendingRubyBase) {
+    /// Replay an unadopted base, including its marker and intervening text.
+    fn emit_pending_base(&mut self, pending: PendingRubyBase) {
         if let Some(bar) = pending.bar {
             self.push_output(ClassifiedSpan {
                 kind: SpanKind::Plain(PlainSpan {
@@ -1824,7 +1880,7 @@ where
                 // to plain; a gaiji-mode refmark also falls into plain),
                 // then run final flush.
                 if let Some(pending) = self.pending_ruby_base.take() {
-                    self.emit_pending_gaiji(pending);
+                    self.emit_pending_base(pending);
                 }
                 if let Some(frame) = self.frame.take() {
                     let refmark = frame.gaiji_refmark;
@@ -1886,15 +1942,9 @@ where
             return;
         }
 
-        // A deferred gaiji run (`pending_ruby_base`) is HELD when the next
-        // event continues or adopts it — an adjacent `《…》` ruby adopts it as
-        // a base, and an adjacent `※` refmark (or its Bracket, once the
-        // refmark is held) starts a continuation gaiji that extends the run.
-        // A contiguous kanji text run may complete a mixed gaiji/text base.
-        // Any other event flushes the run as standalone spans first,
-        // preserving source order. Checked after the frame guard so the
-        // ruby's own body events (while its sub-frame buffers) never flush it
-        // early.
+        // Only adjacent events continue a deferred base. Explicit bases admit
+        // text and annotations; implicit gaiji bases retain their kanji boundary.
+        // Check after the frame guard so a buffered reading cannot flush its base.
         let flush_gaiji = if let Some(pending) = self.pending_ruby_base.as_ref() {
             let end = pending.end();
             let continues = match &event {
@@ -1915,9 +1965,13 @@ where
                             .pending_plain
                             .back()
                             .is_some_and(|p| p.source_span.end == range.start))
-                        && self.source[range.start as usize..range.end as usize]
-                            .chars()
-                            .all(is_ruby_base_char)
+                        && if pending.bar.is_some() {
+                            !self.source[range.start as usize..range.end as usize].contains('\n')
+                        } else {
+                            self.source[range.start as usize..range.end as usize]
+                                .chars()
+                                .all(is_ruby_base_char)
+                        }
                 }
                 PairEvent::Solo {
                     kind: TriggerKind::RefMark,
@@ -1933,14 +1987,17 @@ where
                 PairEvent::PairOpen {
                     kind: PairKind::Bracket,
                     ..
-                } => self.pending_refmark.is_some_and(|rm| {
-                    rm.start == end
-                        || (self.pending_plain_start() == Some(end)
-                            && self
-                                .pending_plain
-                                .back()
-                                .is_some_and(|p| p.source_span.end == rm.start))
-                }),
+                } => {
+                    pending.bar.is_some()
+                        || self.pending_refmark.is_some_and(|rm| {
+                            rm.start == end
+                                || (self.pending_plain_start() == Some(end)
+                                    && self
+                                        .pending_plain
+                                        .back()
+                                        .is_some_and(|p| p.source_span.end == rm.start))
+                        })
+                }
                 _ => false,
             };
             !continues
@@ -1949,7 +2006,7 @@ where
         };
         if flush_gaiji {
             let pending = self.pending_ruby_base.take().expect("checked Some");
-            self.emit_pending_gaiji(pending);
+            self.emit_pending_base(pending);
         }
 
         // Stream-through path for top-level Quote / Tortoise — see

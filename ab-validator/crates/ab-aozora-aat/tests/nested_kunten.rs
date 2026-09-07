@@ -72,3 +72,32 @@ fn quote_and_newline_mapping_preserve_nested_marker_coordinates() {
         assert!(found, "{aat}");
     }
 }
+
+#[test]
+fn explicit_base_contains_native_annotations_until_reading() {
+    for (source, expected) in [
+        ("｜漢［＃レ］字《かん［＃（ノ）］じ》", "漢字"),
+        (
+            "｜a［＃レ］ b※［＃「えんにょう＋囘」、第４水準2-12-11］字《よみ》",
+            "a b𢌞字",
+        ),
+        (
+            "｜遊［＃二］松島［＃一］記《まつしまにあそぶき》",
+            "遊松島記",
+        ),
+    ] {
+        let aat: Value =
+            serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
+        let nodes = aat["blocks"][0]["content"].as_array().unwrap();
+        assert_eq!(nodes.len(), 1, "{aat}");
+        assert_eq!(nodes[0]["kind"], "ruby");
+        assert_eq!(nodes[0]["base"], expected);
+        assert!(
+            nodes[0]["base_content"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|node| node["kind"] == "kunten")
+        );
+    }
+}

@@ -284,7 +284,7 @@ where
     pending_outputs: VecDeque<ClassifiedSpan>,
     frame: Option<Frame>,
     /// Stream-through state for top-level pair kinds that have no
-    /// recogniser (Quote, Tortoise). `None` in normal operation. When
+    /// recogniser (Quote, Tortoise, or a bracket without `＃`). When
     /// `Some((kind, depth))`, `process_event` bypasses frame buffering
     /// — events stream directly through `handle_stream_event` so we
     /// don't waste an O(N) `SmallVec` push per event followed by an
@@ -1077,13 +1077,12 @@ where
                 self.pending_refmark = Some(span);
             }
             PairEvent::PairOpen { kind, span, .. } if !replay => {
-                // Stream-through: Quote and Tortoise have no
-                // top-level recogniser. Buffering their body events
-                // for an inevitable replay would burn O(N) work for
-                // nothing — instead enter `streaming` mode and let
-                // body events flow straight through. The open's bytes
-                // become the seed of a fresh pending plain run.
-                if matches!(kind, PairKind::Quote | PairKind::Tortoise) {
+                // Literal delimiters remain text, while notation inside them
+                // still reaches its recognizer. Replaying a whole literal
+                // bracket as plain would hide nested gaiji and annotations.
+                if matches!(kind, PairKind::Quote | PairKind::Tortoise)
+                    || self.is_literal_bracket(kind, span)
+                {
                     // Fold any pending refmark into plain first, then
                     // start the new plain run at the open's first byte.
                     let pre_open = self
@@ -1148,6 +1147,10 @@ where
         }
     }
 
+    fn is_literal_bracket(&self, kind: PairKind, span: Span) -> bool {
+        kind == PairKind::Bracket && !self.source[span.end as usize..].starts_with('＃')
+    }
+
     /// Handle one event while in stream-through mode (top-level
     /// Quote / Tortoise pair, no recogniser candidate). Mirrors the
     /// `replay = true` behaviour of [`Self::handle_top_level`] but
@@ -1197,6 +1200,7 @@ where
                 kind,
                 PairKind::Ruby | PairKind::AngleQuote | PairKind::Bracket
             )
+            && !self.is_literal_bracket(*kind, *span)
         {
             // None of the three flush `pending_plain_start`, so the
             // recogniser can pull `consume_start` back over the preceding

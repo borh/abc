@@ -184,7 +184,7 @@
   remaining-visible-node-payloads-and-missing-payloads
   (is
    (=
-    "D\n\nALT\nCAP\nQ"
+    "D\n\nALT\nCAPQ"
     (:text
      (render
       {"nodes"

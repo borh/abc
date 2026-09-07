@@ -10,8 +10,8 @@
 
 (defn- indent [^Element element]
   (when element
-    (when-let [[_ width] (re-find #"(?:^|;)\s*text-indent:\s*(\d+)em(?:;|$)"
-                                  (.getAttribute element "style"))]
+    (when-let [[_ width] (or (re-find #"(?:^| )first-line-indent\((\d+)\)(?: |$)" (.getAttribute element "rend"))
+                             (re-find #"(?:^|;)\s*text-indent:\s*(\d+)em(?:;|$)" (.getAttribute element "style")))]
       (apply str (repeat (Long/parseLong width) "　")))))
 
 (defn plaintext

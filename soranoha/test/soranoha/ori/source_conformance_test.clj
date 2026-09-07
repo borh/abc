@@ -51,6 +51,12 @@
     (mapv #(.item nodes %) (range (.getLength nodes)))))
 
 (defn- attribute [^Element node ^String name] (.getAttribute node name))
+
+(defn- enclosing-style [^Node node style]
+  (when node
+    (if (and (instance? Element node) (= style (attribute node "style")))
+      node
+      (recur (.getParentNode node) style))))
 (defn- texts [result tag] (mapv view/visible-text (elements result tag)))
 
 (deftest supplied-inline-layout-retains-visible-target-without-invented-reading
@@ -122,7 +128,7 @@
       (is (= ["犍"] (texts result "g")))
       (is (some #{"犍"} (texts result "mapping")))
       (is (= "2" (attribute (first (elements result "head")) "n")))
-      (is (= "padding-inline-start: 8em" (attribute (first (elements result "head")) "style")))
+      (is (some? (enclosing-style (first (elements result "head")) "padding-inline-start: 8em")))
       (is (= "text-indent: 1em" (attribute (first (filter #(string/starts-with? (view/visible-text %) "池") (elements result "p"))) "style")))
       (let [lines (filter #(= "source-line" (attribute % "type")) (elements result "seg"))]
         (is (= ["底本：本" "初刷" "入力：人"] (mapv #(.getTextContent ^Node %) lines)))
@@ -227,16 +233,15 @@
                                  (elements result "div")))]
     (is (= "前。\n附記。\n（大正四年八月）\n後。" (:plaintext result)))
     (is (= "附記。\n（大正四年八月）" (view/visible-text enclosure)))
-    (is (= ["chitsuki align(right) offset-from-end(2)"]
-           (into [] (keep #(let [rend (attribute % "rend")] (when (string/includes? rend "chitsuki") rend)))
-                 (elements result "p"))))))
+    (let [date (first (filter #(= "（大正四年八月）" (view/visible-text %)) (elements result "p")))]
+      (is (some? (enclosing-style date "padding-inline-end: 2em; text-align: right"))))))
 
 (deftest inline-scopes-preserve-enclosing-paragraph-layout
   (doseq [[opening rendition body expected]
-          [["［＃ここから１字下げ］" "jisage indent(1)"
+          [["［＃ここから１字下げ］" "padding-inline-start: 1em"
             "ビタミン［＃縦中横］B1［＃「1」は下付き小文字］［＃縦中横終わり］　二ミリグラム"
             "ビタミンB1　二ミリグラム"]
-           ["［＃ここから改行天付き、折り返して１字下げ］" "burasage first(0) rest(1)"
+           ["［＃ここから改行天付き、折り返して１字下げ］" "padding-inline-start: 1em; text-indent: -1em"
             "（［＃縦中横］10［＃縦中横終わり］）注。" "（10）注。"]]]
     (let [result (transcribe (source (str opening "\n" body "\n次の行。\n［＃ここで字下げ終わり］")))
           paragraph (first (filter #(= expected (view/visible-text %)) (elements result "p")))
@@ -245,11 +250,11 @@
       (is (= (str expected "\n次の行。") (:plaintext result)))
       (is (some? paragraph))
       (when paragraph
-        (is (= rendition (attribute paragraph "rend")))
+        (is (some? (enclosing-style paragraph rendition)))
         (is (within? paragraph tcy)))
       (is (some? following))
       (when following
-        (is (= rendition (attribute following "rend")))))))
+        (is (some? (enclosing-style following rendition)))))))
 
 (deftest inline-font-scope-retains-leading-indentation
   (let [result (transcribe (source (str "［＃ここから改行天付き、折り返して１字下げ］\n"
@@ -261,8 +266,8 @@
     (is (some? paragraph))
     (is (some? font))
     (when paragraph
-      (is (= "burasage first(0) rest(1)" (attribute paragraph "rend")))
-      (is (string/includes? (attribute paragraph "style") "text-indent: 1em"))
+      (is (= "first-line-indent(1)" (attribute paragraph "rend")))
+      (is (= "text-indent: 0em" (attribute paragraph "style")))
       (is (within? paragraph font)))))
 
 (deftest supplied-ruby-variant-is-not-an-asserted-source-error
@@ -337,7 +342,7 @@
     (is (= "上。〽下。" (view/visible-text wrapper)))
     (is (= "two-line" (attribute wrapper "rend")))
     (is (empty? (elements result "s")))
-    (is (some #(= "jisage indent(2)" (attribute % "rend")) (elements result "p")))
+    (is (some? (enclosing-style wrapper "padding-inline-start: 2em")))
     (is (empty? (filter #(#{"upper" "lower"} (attribute % "type")) (elements result "seg"))))
     (is (empty? (get-in result [:view :view/problems])))))
 
@@ -521,3 +526,10 @@
     (is (= "ノ" (.getTextContent ^Node note)))
     (is (within? emphasis note))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest source-indentation-survives-hanging-layout-and-its-end
+  (let [result (transcribe (source "［＃ここから改行天付き、折り返して１字下げ］\n　内。\n［＃ここで字下げ終わり］\n　外。"))
+        paragraphs (elements result "p")]
+    (is (= "　内。\n　外。" (:plaintext result)))
+    (is (= ["text-indent: 0em" "text-indent: 1em"] (mapv #(attribute % "style") paragraphs)))
+    (is (= ["first-line-indent(1)" "first-line-indent(1)"] (mapv #(attribute % "rend") paragraphs)))))

@@ -553,7 +553,7 @@
                            :prior-end prior-end})))
         (recur (rest remaining) end)))))
 
-(defn- paragraph-render-inputs [nodes paragraph]
+(defn- paragraph-render-inputs [nodes paragraph hanging-offset]
   (let [{start "start" end "end"} (paragraph-range paragraph)
         first-index (first (drop-while
                             (fn [index]
@@ -571,7 +571,8 @@
        (update-in nodes [first-index "text"] subs indent)
        nodes)
      (cond-> (paragraph-attrs paragraph)
-       (pos? indent) (assoc :style (str "text-indent: " indent "em")))]))
+       (pos? indent) (assoc :style (str "text-indent: " (+ hanging-offset indent) "em"))
+       (pos? indent) (update :rend #(string/join " " (remove string/blank? [% (str "first-line-indent(" indent ")")]))))]))
 
 (defn- wrap-scope-intersections [content scopes]
   (reduce (fn [children scope]
@@ -597,8 +598,12 @@
                        (into prefix (wrap-scope-intersections (:current-paragraph rendered) active)))))
             acc (partition 2 1 boundaries))))
 
-(defn- render-paragraph-row [nodes acc paragraph scopes]
-  (let [[nodes attrs] (paragraph-render-inputs nodes paragraph)
+(defn- render-paragraph-row [nodes acc paragraph scopes frames]
+  (let [hanging-offset (or (some (fn [{:keys [block]}]
+                                   (when (and (contains? block "indent") (contains? block "continuation_indent"))
+                                     (- (get block "indent") (get block "continuation_indent"))))
+                                 (rseq frames)) 0)
+        [nodes attrs] (paragraph-render-inputs nodes paragraph hanging-offset)
         {start "start" end "end"} (paragraph-range paragraph)
         node-slice (subvec nodes start end)]
     (case (get paragraph "role")
@@ -726,7 +731,7 @@
                               (sort-by #(get-in % ["node_range" "end"]) > (get starts index)))
                 paragraph (get paragraph-starts index)]
             (if paragraph
-              (recur (render-paragraph-row nodes (flush-paragraph acc) paragraph (get intersections index))
+              (recur (render-paragraph-row nodes (flush-paragraph acc) paragraph (get intersections index) frames)
                      (get-in paragraph ["node_range" "end"]) frames)
               (let [rendered (render-node-seq acc [(nth nodes index)])
                     scopes (get intersections index)

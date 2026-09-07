@@ -33,7 +33,7 @@ use crate::text_variant::formatted_text_variant;
 use super::super::pair::{PairEvent, PairKind};
 use super::super::token::TriggerKind;
 use super::directive::{
-    bouten_kind_from_suffix, classify_annotation_body, classify_general_image_body,
+    AnnotationBody, bouten_kind_from_suffix, classify_annotation_body, classify_general_image_body,
     editorial_note_kind, parse_decimal_u8_prefix, parse_heading_keyword,
 };
 use super::{AnnotationMatch, BodyView, EmitKind, RecogniseCtx};
@@ -309,7 +309,22 @@ impl RecogniseCtx<'_, '_> {
         // Body-keyword classifier. Cannot be `or_else`d with the forward
         // ones because each step needs the same `&mut alloc` borrow; we
         // run them sequentially with explicit early returns instead.
-        if let Some((emit, annotation_payload)) = classify_annotation_body(body, self.alloc) {
+        let body_start = hash_end
+            + u32::try_from(
+                self.source[hash_end as usize..close_span.start as usize].len()
+                    - self.source[hash_end as usize..close_span.start as usize]
+                        .trim_start()
+                        .len(),
+            )
+            .expect("source fits native span");
+        if let Some((emit, annotation_payload)) = classify_annotation_body(
+            &AnnotationBody {
+                text: body,
+                start: body_start,
+                view,
+            },
+            self.alloc,
+        ) {
             return Some(AnnotationMatch {
                 emit,
                 // For Warichu open / close the body classifier hands back

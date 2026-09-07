@@ -58,6 +58,16 @@ pub struct Allocator {
     reason = "every builder takes &(mut) self even when it is a pure wrapper, so call sites have a uniform shape."
 )]
 impl Allocator {
+    /// Retain original source and the unresolved extent of one layout instruction.
+    pub fn partial_layout(
+        &mut self,
+        body: &str,
+        unresolved: crate::Span,
+    ) -> super::ast::PartialLayoutId {
+        let body = self.store.intern(body);
+        self.store
+            .push_partial_layout(crate::PartialLayout { body, unresolved })
+    }
     /// New allocator backed by an empty [`NodeStore`].
     #[must_use]
     pub fn new() -> Self {

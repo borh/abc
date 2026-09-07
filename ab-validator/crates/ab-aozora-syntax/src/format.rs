@@ -21,6 +21,7 @@
 
 use core::num::{NonZeroI8, NonZeroU8};
 
+use crate::ast::{PartialLayoutId, StrId};
 use crate::{BoutenKind, BoutenPosition, HeadingKind, HeadingStyle};
 
 // ----------------------------------------------------------------------
@@ -276,6 +277,16 @@ pub enum Centering {
     Line,
 }
 
+/// Source retained when a compound layout instruction is only partly understood.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct PartialLayout {
+    /// Original annotation body in the owning node store.
+    pub body: StrId,
+    /// Unresolved clauses in sanitized-source coordinates.
+    pub unresolved: crate::Span,
+}
+
 /// The block-only payload of an indent region.
 ///
 /// `wrap` / `layout` / `styles` live here rather than on the single-line
@@ -283,6 +294,10 @@ pub enum Centering {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct IndentBlock {
+    /// Original clauses and their unresolved extent, when present.
+    pub partial: Option<PartialLayoutId>,
+    /// Supplied column count, independent of character indentation.
+    pub column_count: Option<ColumnCount>,
     /// Full-width characters the block is indented by.
     pub amount: u8,
     /// Hanging-indent continuation width: `Some(M)` for `折り返して M字下げ`.
@@ -882,6 +897,8 @@ impl RegionFormat {
     /// list without a hand-maintained parallel.
     pub const ALL: [Self; 17] = [
         Self::Indent(IndentBlock {
+            partial: None,
+            column_count: None,
             amount: 0,
             wrap: None,
             center: None,
@@ -1107,6 +1124,7 @@ impl RegionClose {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ast::{Node, NodeRef};
 
     /// `RegionFormat` stays small and `Copy` — pinned so a payload that bloats
     /// the registry's per-node footprint trips here.
@@ -1118,7 +1136,9 @@ mod tests {
         assert_copy::<ForwardAttr>();
         assert_copy::<LineFormat>();
         assert_copy::<RegionClose>();
-        assert!(size_of::<RegionFormat>() <= 12);
+        assert!(size_of::<RegionFormat>() <= 16);
+        assert!(size_of::<Node>() <= 40);
+        assert!(size_of::<NodeRef>() <= 44);
     }
 
     /// The container-pairs wire tags distinguish region scopes from attributes.
@@ -1178,6 +1198,8 @@ mod tests {
     #[test]
     fn region_close_indent_keeps_kumi_width() {
         let kumi = RegionFormat::Indent(IndentBlock {
+            partial: None,
+            column_count: None,
             amount: 2,
             wrap: None,
             center: None,
@@ -1194,6 +1216,8 @@ mod tests {
             }
         );
         let plain = RegionFormat::Indent(IndentBlock {
+            partial: None,
+            column_count: None,
             amount: 2,
             wrap: None,
             center: None,

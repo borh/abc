@@ -1,14 +1,8 @@
-//! Lifetime-free Aozora-source serialize helpers.
-//!
-//! The shared, AST-payload-free marker emitters the owned serializer
-//! (`serialize`) and the source splice) reuse: the
-//! container open/close marker spellers, the single-line layout-directive
-//! emitter, the heading keyword helpers, the `TrackingWriter` (tracks the last
-//! emitted char for the bare-`｜` decision), and the `NewlineCappedWriter`
-//! (caps the block-padding blank-line run so `serialize ∘ parse` is a fixed
-//! point). Every function takes only `Copy` scalar payloads, so the byte
-//! spelling is single-source.
+//! Aozora source spelling shared by serialization and source edits.
+//! Complete instructions use their typed values; partial instructions resolve
+//! the retained original body through the owning node store.
 
+use ab_aozora_syntax::ast::NodeStore;
 use core::fmt::{self, Write};
 
 use ab_aozora_syntax::{
@@ -30,9 +24,9 @@ use ab_aozora_syntax::{
 ///
 /// Does not panic in normal use: `String` cannot fail as a [`Write`] sink.
 #[must_use]
-pub fn container_open_source(open: RegionFormat) -> String {
+pub fn container_open_source(open: RegionFormat, store: &NodeStore) -> String {
     let mut s = String::new();
-    emit_container_open(open, &mut s).expect("String write is infallible");
+    emit_container_open(open, store, &mut s).expect("String write is infallible");
     s
 }
 
@@ -170,7 +164,11 @@ const fn bouten_left_prefix(position: BoutenPosition) -> &'static str {
 /// ranges reconstruct `［＃<左に?><variant>］`; every other family spells its
 /// own opener (preserving every payload — dropping N / width / offset / the
 /// 字組み clause would be a §7.6 fixed-point violation).
-pub(crate) fn emit_container_open<W: Write>(open: RegionFormat, out: &mut W) -> fmt::Result {
+pub(crate) fn emit_container_open<W: Write>(
+    open: RegionFormat,
+    store: &NodeStore,
+    out: &mut W,
+) -> fmt::Result {
     match open {
         RegionFormat::Bouten { kind, position } => write!(
             out,
@@ -178,7 +176,7 @@ pub(crate) fn emit_container_open<W: Write>(open: RegionFormat, out: &mut W) -> 
             bouten_left_prefix(position),
             kind.keyword()
         ),
-        RegionFormat::Indent(block) => emit_indent_open(block, out),
+        RegionFormat::Indent(block) => emit_indent_open(block, store, out),
         RegionFormat::Bold { padded: false } => out.write_str("［＃太字］"),
         RegionFormat::Bold { padded: true } => out.write_str("［＃ここから太字］"),
         RegionFormat::Gothic { padded: false } => out.write_str("［＃ゴシック体］"),
@@ -235,14 +233,20 @@ pub(crate) fn emit_container_open<W: Write>(open: RegionFormat, out: &mut W) -> 
 /// The `..`-free destructure means a new [`IndentBlock`] / [`BlockStyles`]
 /// field is compiler-flagged here rather than silently dropped from the marker
 /// (the §7.6 param-drop bug class).
-fn emit_indent_open<W: Write>(block: IndentBlock, out: &mut W) -> fmt::Result {
+fn emit_indent_open<W: Write>(block: IndentBlock, store: &NodeStore, out: &mut W) -> fmt::Result {
     let IndentBlock {
+        partial,
+        column_count,
         amount,
         wrap,
         center,
         layout,
         styles,
     } = block;
+    if let Some(partial) = partial {
+        let partial = store.resolve_partial_layout(partial);
+        return write!(out, "［＃{}］", store.resolve_str(partial.body));
+    }
     let BlockStyles {
         gothic,
         horizontal,
@@ -252,7 +256,8 @@ fn emit_indent_open<W: Write>(block: IndentBlock, out: &mut W) -> fmt::Result {
 
     // The idiomatic no-number `［＃ここから字下げ］` form is reserved for a bare
     // single-char indent with no clauses; anything else takes the numbered form.
-    let bare = wrap.is_none()
+    let bare = column_count.is_none()
+        && wrap.is_none()
         && center.is_none()
         && matches!(layout, IndentLayout::None)
         && !gothic
@@ -276,6 +281,9 @@ fn emit_indent_open<W: Write>(block: IndentBlock, out: &mut W) -> fmt::Result {
         IndentLayout::Kumi(kumi) => write!(out, "、{}行{}字組みで", kumi.lines, kumi.width)?,
         IndentLayout::LineWidth(width) => write!(out, "、{}字詰め", width.0)?,
         IndentLayout::None => {}
+    }
+    if let Some(columns) = column_count {
+        write!(out, "、{}段組み", columns.0)?;
     }
     if gothic {
         out.write_str("、ゴシック体")?;

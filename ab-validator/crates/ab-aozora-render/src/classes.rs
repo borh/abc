@@ -497,6 +497,8 @@ mod tests {
         // --- containers (open + close) ---
         let mut containers = vec![
             RegionFormat::Indent(IndentBlock {
+                partial: None,
+                column_count: None,
                 amount: 2,
                 wrap: None,
                 center: None,
@@ -504,6 +506,8 @@ mod tests {
                 styles: BlockStyles::EMPTY,
             }),
             RegionFormat::Indent(IndentBlock {
+                partial: None,
+                column_count: None,
                 amount: 2,
                 wrap: Some(4),
                 center: Some(ab_aozora_syntax::Centering::Page),
@@ -513,6 +517,8 @@ mod tests {
             // line-layout compounds — exercise the new line-kumi class
             // (字詰め reuses the standalone line-width class).
             RegionFormat::Indent(IndentBlock {
+                partial: None,
+                column_count: None,
                 amount: 3,
                 wrap: None,
                 center: None,
@@ -520,6 +526,8 @@ mod tests {
                 styles: BlockStyles::EMPTY,
             }),
             RegionFormat::Indent(IndentBlock {
+                partial: None,
+                column_count: None,
                 amount: 8,
                 wrap: None,
                 center: None,
@@ -530,6 +538,8 @@ mod tests {
             // classes (futoji / yokogumi / keigakomi / font-smaller) on one
             // indent `<div>`.
             RegionFormat::Indent(IndentBlock {
+                partial: None,
+                column_count: None,
                 amount: 4,
                 wrap: None,
                 center: None,

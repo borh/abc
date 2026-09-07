@@ -44,7 +44,9 @@ pub use payload::{
     HeadingHint, Illustration, Kunten, KuntenKind, MarginNote, Node, Ruby, Segment, Warichu,
 };
 pub use registry::{ContainerEnd, ContainerPair, NodeRef, Registry};
-pub use store::{ContentRange, ForwardAttrRange, ForwardAttrs, NodeStore, SegRange};
+pub use store::{
+    ContentRange, ForwardAttrRange, ForwardAttrs, NodeStore, PartialLayoutId, SegRange,
+};
 
 #[cfg(test)]
 mod tests {

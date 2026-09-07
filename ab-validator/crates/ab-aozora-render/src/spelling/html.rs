@@ -322,6 +322,8 @@ pub(crate) fn render_container<W: Write>(
 fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::Result {
     match kind {
         RegionFormat::Indent(IndentBlock {
+            partial,
+            column_count,
             amount,
             wrap,
             center,
@@ -379,6 +381,12 @@ fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::R
                 })?;
             }
             write!(writer, r#"" data-amount="{amount}""#)?;
+            if partial.is_some() {
+                writer.write_str(r#" data-layout-partial="true""#)?;
+            }
+            if let Some(columns) = column_count {
+                write!(writer, r#" data-columns="{}""#, columns.0)?;
+            }
             if let Some(w) = wrap {
                 write!(writer, r#" data-wrap="{w}""#)?;
             }

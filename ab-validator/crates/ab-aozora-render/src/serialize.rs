@@ -179,7 +179,7 @@ impl<W: Write> WalkSink for SerializeSink<'_, W> {
                 emit_aozora(n, self.store, self.out, self.directives)
             }
             (SentinelKind::BlockOpen, NodeRef::BlockOpen(open)) => {
-                emit_container_open(open, self.out)
+                emit_container_open(open, self.store, self.out)
             }
             (SentinelKind::BlockClose, NodeRef::BlockClose(close)) => {
                 emit_container_close(close, self.out)

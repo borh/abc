@@ -330,6 +330,7 @@ struct AozoraNode {
     span: Span,
     marker_span: Option<Span>,
     container_end: Option<ContainerEnd>,
+    unresolved_layout: Option<Span>,
 }
 
 type AozoraGaiji = encoding::gaiji::GaijiResolution;
@@ -477,11 +478,18 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
             {
                 marker_span = Some(span);
             }
+            let unresolved_layout = match &kind {
+                ProjectedKind::Region(RegionFormat::Indent(block)) => block
+                    .partial
+                    .map(|id| tree.store.resolve_partial_layout(id).unresolved.into()),
+                _ => None,
+            };
             AozoraNode {
                 kind,
                 span,
                 marker_span,
                 container_end: container_ends.get(&source_node.source_span.start).copied(),
+                unresolved_layout,
             }
         })
         .chain(tree.classified_source_facts.iter().filter_map(|fact| {
@@ -493,6 +501,7 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                 span,
                 marker_span: None,
                 container_end: None,
+                unresolved_layout: None,
             })
         }))
         .collect()
@@ -736,6 +745,7 @@ fn projections(
             kind: ProjectedKind::QuoteOpen,
             marker_span: None,
             container_end: None,
+            unresolved_layout: None,
             span: Span {
                 start: node.span.start,
                 end: start,
@@ -745,6 +755,7 @@ fn projections(
             kind: ProjectedKind::QuoteClose,
             marker_span: None,
             container_end: None,
+            unresolved_layout: None,
             span: Span {
                 start: end,
                 end: node.span.end,
@@ -770,6 +781,7 @@ fn projections(
                 span.end += offset;
             }
             rebase_variant_spans(&mut inner.kind, start);
+            rebase_partial_layout(&mut inner.unresolved_layout, start);
             pending.push(inner);
         }
         let inner_ruby = ruby_projection(&inner_tree)?;
@@ -1422,10 +1434,20 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
                 strip_boundary_newlines(&mut inner);
                 let mut block = layout.clone();
                 block["kind"] = json!("layout_block");
-                block["children"] = json!(blocks_from_inline_content(inner, source));
+                let mut children = blocks_from_inline_content(inner, source);
+                if let Some(unresolved) = node.get("x-unresolved-clause") {
+                    children.insert(0, json!({"kind":"paragraph", "content":[unresolved]}));
+                    if explicit_close {
+                        children.push(json!({"kind":"paragraph", "content":[content[boundary]]}));
+                    }
+                }
+                block["children"] = json!(children);
                 let mut markers = vec![node["span"].clone()];
                 if explicit_close {
                     markers.push(content[boundary]["span"].clone());
+                }
+                if node.get("x-unresolved-clause").is_some() {
+                    markers.clear();
                 }
                 block["interpretation_marker_spans"] = json!(markers);
                 let end = if explicit_close {
@@ -1809,6 +1831,7 @@ fn source_fragment(decoded: &DecodedSource, range: Range<usize>) -> Option<Vec<V
             span.end = span.end.checked_add(offset)?;
         }
         rebase_variant_spans(&mut node.kind, range.start);
+        rebase_partial_layout(&mut node.unresolved_layout, range.start);
     }
     for entry in &mut gaiji {
         entry.start += range.start;
@@ -3120,10 +3143,20 @@ fn layout_break_kind(kind: &ProjectedKind) -> Option<&'static str> {
     }
 }
 
+fn rebase_partial_layout(span: &mut Option<Span>, offset: usize) {
+    if let Some(span) = span {
+        span.start += offset;
+        span.end += offset;
+    }
+}
+
 fn layout_fields(kind: &ProjectedKind) -> Option<Value> {
     let mut fields = json!({});
     match kind {
         ProjectedKind::Region(RegionFormat::Indent(block)) => {
+            if let Some(columns) = block.column_count {
+                fields["column_count"] = json!(columns.0.get());
+            }
             fields["indent"] = json!(block.amount);
             if let Some(wrap) = block.wrap {
                 fields["continuation_indent"] = json!(wrap);
@@ -3281,6 +3314,15 @@ fn marker_target(source: &str) -> Option<&str> {
     Some(&rest[..end])
 }
 
+fn unresolved_layout_clause(decoded: &DecodedSource, span: Span) -> Value {
+    let start = decoded.span_ctx.to_decoded(span.start);
+    let end = decoded.span_ctx.to_decoded_end(span.end);
+    json!({"kind":"raw", "source": &decoded.text[start..end],
+        "span":span_json(&span, &decoded.span_ctx),
+        "interpretation_problem":{"kind":"uninterpreted-notation", "code":"uninterpreted-notation",
+            "aspects":["structure","layout"], "influence":{"kind":"document"}}})
+}
+
 fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Value {
     let source_start = decoded.span_ctx.to_decoded(node.span.start);
     let source_end = decoded.span_ctx.to_decoded_end(node.span.end);
@@ -3291,6 +3333,9 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
     });
     if let Some(layout) = layout_fields(&node.kind) {
         value["x-layout"] = layout;
+    }
+    if let Some(span) = node.unresolved_layout {
+        value["x-unresolved-clause"] = unresolved_layout_clause(decoded, span);
     }
     if let ProjectedKind::TextVariant {
         target,

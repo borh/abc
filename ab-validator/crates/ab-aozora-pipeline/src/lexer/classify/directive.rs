@@ -21,10 +21,85 @@ use ab_aozora_syntax::ast::Directive;
 use ab_aozora_syntax::{
     AbsoluteSize, BOUTEN_KINDS, BlockStyles, BoutenKind, BoutenPosition, ColumnCount,
     DirectiveKind, EnclosureKind, FontShift, HeadingKind, HeadingStyle, IndentBlock, IndentLayout,
-    Kumi, LineFormat, LineWidth, RegionClose, RegionFormat, SectionKind,
+    Kumi, LineFormat, LineWidth, RegionClose, RegionFormat, SectionKind, Span,
 };
 
-use super::EmitKind;
+use super::super::pair::PairEvent;
+use super::{BodyView, EmitKind};
+
+/// Annotation text and the native delimiter ownership enclosing its clauses.
+pub(super) struct AnnotationBody<'a> {
+    pub text: &'a str,
+    pub start: u32,
+    pub view: BodyView<'a>,
+}
+
+impl<'a> AnnotationBody<'a> {
+    fn clauses(&self, after: &'a str) -> Vec<(&'a str, Span)> {
+        let body_end =
+            self.start + u32::try_from(self.text.len()).expect("source fits native span");
+        let mut nested = Vec::new();
+        for (index, event) in self.view.events.iter().enumerate() {
+            let range = match *event {
+                PairEvent::PairOpen { span, .. } if span.start >= self.start => {
+                    let end = self
+                        .view
+                        .links
+                        .get(index)
+                        .and_then(|index| self.view.events.get(*index as usize))
+                        .and_then(|event| match event {
+                            PairEvent::PairClose { span, .. } => Some(span.end),
+                            _ => None,
+                        })
+                        .unwrap_or(body_end);
+                    Some(Span::new(span.start, end.min(body_end)))
+                }
+                PairEvent::Unclosed { span, .. } | PairEvent::Unmatched { span, .. }
+                    if span.start >= self.start =>
+                {
+                    Some(Span::new(span.start, body_end))
+                }
+                _ => None,
+            };
+            if let Some(range) = range.filter(|range| range.start < body_end) {
+                nested.push(range);
+            }
+        }
+        nested.sort_unstable_by_key(|range| range.start);
+        let after_start = self.start
+            + u32::try_from(self.text.len() - after.len()).expect("source fits native span");
+        let mut next_nested = 0;
+        let mut covered_until = 0;
+        let mut start = 0;
+        let mut clauses = Vec::new();
+        for (offset, _) in after.match_indices('、') {
+            let position = after_start + u32::try_from(offset).expect("source fits native span");
+            while next_nested < nested.len() && nested[next_nested].start <= position {
+                covered_until = covered_until.max(nested[next_nested].end);
+                next_nested += 1;
+            }
+            if position < covered_until {
+                continue;
+            }
+            clauses.push((
+                &after[start..offset],
+                Span::new(
+                    after_start + u32::try_from(start).expect("source fits native span"),
+                    position,
+                ),
+            ));
+            start = offset + '、'.len_utf8();
+        }
+        clauses.push((
+            &after[start..],
+            Span::new(
+                after_start + u32::try_from(start).expect("source fits native span"),
+                body_end,
+            ),
+        ));
+        clauses
+    }
+}
 
 /// One row of [`BODY_PATTERNS`]: the byte sequence the DFA matches at
 /// `body[0..match_end]`, and the family that decides what to emit.
@@ -952,9 +1027,10 @@ fn is_editor_note_body(body: &str) -> bool {
               the dispatch logic and obscure the intentional 1:1 mapping"
 )]
 pub(super) fn classify_annotation_body(
-    body: &str,
+    source: &AnnotationBody<'_>,
     alloc: &mut Allocator,
 ) -> Option<(EmitKind, Option<Directive>)> {
+    let body = source.text;
     #[cfg(feature = "classify-instrument")]
     let _classify_guard = SubsystemGuard::new(Subsystem::BodyDispatcher);
     if body.is_empty() {
@@ -1028,6 +1104,8 @@ pub(super) fn classify_annotation_body(
         BodyFamily::WarichuBlockEnd => Some((EmitKind::BlockClose(RegionClose::Warichu), None)),
         BodyFamily::IndentBlock1 => Some((
             EmitKind::BlockOpen(RegionFormat::Indent(IndentBlock {
+                partial: None,
+                column_count: None,
                 amount: 1,
                 wrap: None,
                 center: None,
@@ -1174,6 +1252,8 @@ pub(super) fn classify_annotation_body(
             let (m, tail) = parse_decimal_u8_prefix(after)?;
             (tail == "字下げ").then_some((
                 EmitKind::BlockOpen(RegionFormat::Indent(IndentBlock {
+                    partial: None,
+                    column_count: None,
                     amount: 0,
                     wrap: Some(m),
                     center: None,
@@ -1201,6 +1281,8 @@ pub(super) fn classify_annotation_body(
                 let (m, tail2) = parse_decimal_u8_prefix(after)?;
                 return (tail2 == "字下げ").then_some((
                     EmitKind::BlockOpen(RegionFormat::Indent(IndentBlock {
+                        partial: None,
+                        column_count: None,
                         amount: 0,
                         wrap: Some(m),
                         center: None,
@@ -1214,6 +1296,8 @@ pub(super) fn classify_annotation_body(
             if tail == "字下げ" {
                 Some((
                     EmitKind::BlockOpen(RegionFormat::Indent(IndentBlock {
+                        partial: None,
+                        column_count: None,
                         amount: n,
                         wrap: None,
                         center: None,
@@ -1223,16 +1307,9 @@ pub(super) fn classify_annotation_body(
                     None,
                 ))
             } else if let Some(after) = tail.strip_prefix("字下げ、") {
-                // ここから{N}字下げ、… compound: the indent opener carries
-                // a trailing `、`-separated stack of clauses — `折り返して{M}字下げ`
-                // (wrap), `ページの左右中央`/`中央揃え` (center), `{W}字詰め` /
-                // `{L}行{W}字組み[で]` (line layout), and the decorative styles
-                // `ゴシック体` / `小さい活字` / `横書き` / `罫囲み`. Resolved as a
-                // set in canonical-order-independent fashion; the whole compound
-                // is declined to a generic Unknown if ANY clause is unrecognised
-                // (lossless — e.g. `横組み右揃えで`, `数式`, embedded `「」は返り点`).
-                // All forms still close with the shared 字下げ終わり (by family).
-                parse_indent_compound(n, after)
+                // Independent clauses share the supplied indentation scope;
+                // unresolved clauses retain their source rather than erasing it.
+                parse_indent_compound(n, after, source, alloc)
                     .map(|block| (EmitKind::BlockOpen(RegionFormat::Indent(block)), None))
             } else if tail == "字詰め" {
                 // ここから{N}字詰め — line-width container (字詰め): N
@@ -1661,42 +1738,134 @@ fn font_size_block_open_steps(tail: &str, magnitude: u8) -> Option<i8> {
     }
 }
 
-/// Parse the line-layout clause after `ここから{N}字下げ、`.
-///
-/// `after` is the text following `字下げ、` in the opener body. Two
-/// corpus-attested forms:
-///   * `{W}字詰め`          → [`IndentLayout::LineWidth`] (`W` chars per line)
-///   * `{L}行{W}字組み[で]`  → [`IndentLayout::Kumi`] (`L` lines of `W` chars)
-///
-/// Returns `None` for anything else, so the bracket falls through to
-/// `Directive{Unknown}` (round-trips byte-identical) instead of being
-/// claimed in error.
-/// Parse the `、`-separated clause stack following `ここから{N}字下げ、` into a
-/// fully-resolved [`IndentBlock`] (compound indent).
-///
-/// Each clause is resolved by [`resolve_indent_segment`]; the whole compound is
-/// declined (`None` → generic `Unknown`, lossless) if any clause is unknown or
-/// a clause repeats / conflicts. Clause order in the source is irrelevant — the
-/// serializer re-emits a canonical order — so the same set always round-trips.
-fn parse_indent_compound(amount: u8, after: &str) -> Option<IndentBlock> {
+/// One independently supplied axis; disagreement never selects a value by order.
+#[derive(Clone, Copy)]
+enum ClauseAxis<T> {
+    Absent,
+    Value(T, Span),
+    Conflict(Span),
+}
+
+impl<T: Copy + PartialEq> ClauseAxis<T> {
+    fn observe(&mut self, value: T, span: Span) -> Option<Span> {
+        match *self {
+            Self::Absent => {
+                *self = Self::Value(value, span);
+                None
+            }
+            Self::Value(previous, _) if previous == value => None,
+            Self::Value(_, previous) | Self::Conflict(previous) => {
+                let conflict =
+                    Span::new(previous.start.min(span.start), previous.end.max(span.end));
+                *self = Self::Conflict(conflict);
+                Some(conflict)
+            }
+        }
+    }
+
+    fn value(self) -> Option<T> {
+        match self {
+            Self::Value(value, _) => Some(value),
+            Self::Absent | Self::Conflict(_) => None,
+        }
+    }
+}
+
+/// Keep independent axes while retaining unsupported or contradictory clauses.
+fn parse_indent_compound(
+    amount: u8,
+    after: &str,
+    source: &AnnotationBody<'_>,
+    alloc: &mut Allocator,
+) -> Option<IndentBlock> {
     let mut block = IndentBlock {
+        partial: None,
+        column_count: None,
         amount,
         wrap: None,
         center: None,
         layout: IndentLayout::None,
         styles: BlockStyles::EMPTY,
     };
-    for segment in after.split('、') {
-        resolve_indent_segment(segment, &mut block)?;
+    let mut wrap = ClauseAxis::Absent;
+    let mut center = ClauseAxis::Absent;
+    let mut layout = ClauseAxis::Absent;
+    let mut font = ClauseAxis::Absent;
+    let mut columns = ClauseAxis::Absent;
+    let mut unresolved: Option<Span> = None;
+    for (segment, span) in source.clauses(after) {
+        let mut candidate = IndentBlock {
+            partial: None,
+            column_count: None,
+            amount,
+            wrap: None,
+            center: None,
+            layout: IndentLayout::None,
+            styles: BlockStyles::EMPTY,
+        };
+        let problem = if resolve_indent_segment(segment, &mut candidate).is_none() {
+            // A second primary indentation value makes the container's own scope uncertain.
+            if parse_decimal_u8_prefix(segment).is_some_and(|(_, tail)| tail == "字下げ") {
+                return None;
+            }
+            Some(span)
+        } else {
+            let mut problem = None;
+            let conflicts = [
+                candidate.wrap.and_then(|value| wrap.observe(value, span)),
+                candidate
+                    .center
+                    .and_then(|value| center.observe(value, span)),
+                (!matches!(candidate.layout, IndentLayout::None))
+                    .then(|| layout.observe(candidate.layout, span))
+                    .flatten(),
+                candidate
+                    .styles
+                    .font
+                    .and_then(|value| font.observe(value, span)),
+                candidate
+                    .column_count
+                    .and_then(|value| columns.observe(value, span)),
+            ];
+            for conflict in conflicts.into_iter().flatten() {
+                problem = Some(problem.map_or(conflict, |previous: Span| {
+                    Span::new(
+                        previous.start.min(conflict.start),
+                        previous.end.max(conflict.end),
+                    )
+                }));
+            }
+            block.styles.gothic |= candidate.styles.gothic;
+            block.styles.horizontal |= candidate.styles.horizontal;
+            block.styles.framed |= candidate.styles.framed;
+            problem
+        };
+        if let Some(problem) = problem {
+            unresolved = Some(unresolved.map_or(problem, |previous| {
+                Span::new(
+                    previous.start.min(problem.start),
+                    previous.end.max(problem.end),
+                )
+            }));
+        }
+    }
+    block.wrap = wrap.value();
+    block.center = center.value();
+    block.layout = layout.value().unwrap_or(IndentLayout::None);
+    block.styles.font = font.value();
+    block.column_count = columns.value();
+    if let Some(unresolved) = unresolved {
+        block.partial = Some(alloc.partial_layout(source.text, unresolved));
     }
     Some(block)
 }
 
-/// Fold one `字下げ、`-tail clause into `block`. Returns `None` (declining the
-/// whole compound) for an unknown clause or one that conflicts with an already
-/// resolved clause (a repeated wrap / layout / style — an ambiguous re-emission
-/// must never arise).
+/// Interpret one independent `字下げ、` clause into a fresh candidate payload.
 fn resolve_indent_segment(segment: &str, block: &mut IndentBlock) -> Option<()> {
+    if let Some((count, "段組" | "段組み")) = parse_decimal_u8_prefix(segment) {
+        block.column_count = Some(ColumnCount(NonZeroU8::new(count)?));
+        return Some(());
+    }
     // 折り返して{M}字下げ — hanging-indent continuation width.
     if let Some(rest) = segment.strip_prefix("折り返して") {
         let (m, tail) = parse_decimal_u8_prefix(rest)?;

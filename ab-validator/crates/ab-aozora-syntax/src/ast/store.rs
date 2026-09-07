@@ -6,9 +6,15 @@
 //! owns every interned string. `StrId` / range payloads on the owned nodes
 //! resolve against this store.
 
+use std::num::NonZeroU32;
 use std::slice;
 
-use crate::ForwardAttr;
+use crate::{ForwardAttr, PartialLayout};
+
+/// Handle to source evidence for one partially interpreted layout instruction.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct PartialLayoutId(NonZeroU32);
 
 use super::intern::{StrId, StrInterner};
 use super::payload::{Content, Segment};
@@ -74,9 +80,33 @@ pub struct NodeStore {
     /// Flat pool of [`Segment`] entries; [`SegRange`]s index here.
     segments: Vec<Segment>,
     forward_attrs: Vec<ForwardAttr>,
+    partial_layouts: Vec<PartialLayout>,
 }
 
 impl NodeStore {
+    /// Retain one partial instruction without enlarging every complete payload.
+    ///
+    /// # Panics
+    /// Panics if the document exhausts the native handle space.
+    pub fn push_partial_layout(&mut self, partial: PartialLayout) -> PartialLayoutId {
+        let index =
+            u32::try_from(self.partial_layouts.len()).expect("partial layout pool exceeds u32");
+        self.partial_layouts.push(partial);
+        PartialLayoutId(
+            NonZeroU32::new(
+                index
+                    .checked_add(1)
+                    .expect("partial layout pool exceeds u32"),
+            )
+            .unwrap(),
+        )
+    }
+
+    /// Resolve evidence against the document that allocated its handle.
+    #[must_use]
+    pub fn resolve_partial_layout(&self, id: PartialLayoutId) -> PartialLayout {
+        self.partial_layouts[(id.0.get() - 1) as usize]
+    }
     /// Empty store.
     #[must_use]
     pub fn new() -> Self {

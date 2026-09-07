@@ -41,7 +41,7 @@ pub mod node_kind;
 pub use format::{
     AbsoluteSize, AccentMark, BlockStyles, Centering, ColumnCount, EnclosureKind, FontShift,
     Format, ForwardAttr, ForwardOrigin, IndentBlock, IndentLayout, Kumi, LineFormat, LineWidth,
-    RegionClose, RegionFormat,
+    PartialLayout, RegionClose, RegionFormat,
 };
 pub use node_kind::NodeKind;
 

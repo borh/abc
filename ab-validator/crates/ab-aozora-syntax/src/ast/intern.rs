@@ -82,6 +82,7 @@ const INITIAL_CAPACITY: usize = 256;
 /// `Hash`/`Ord` are derived so a `StrId` can key the owned node store's
 /// auxiliary maps and sort deterministically; both are zero-cost on a `u32`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct StrId(pub u32);
 
 /// Owned, lifetime-free string interner.

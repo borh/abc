@@ -5,7 +5,7 @@ use serde_json::Value;
 
 #[test]
 fn nested_columns_and_frame_share_the_actual_close_marker() {
-    for suffix in ["", "、段間に罫"] {
+    for suffix in ["", "、段間に未知の罫"] {
         let close = "［＃ここで２段組み、罫囲み終わり］";
         let source = format!("［＃ここから罫囲み］\n［＃ここから２段組み{suffix}］\n本文\n{close}");
         let aat: Value =
@@ -29,7 +29,7 @@ fn nested_columns_and_frame_share_the_actual_close_marker() {
             );
             assert!(!aat["blocks"].to_string().contains("interpretation_problem"));
         } else {
-            assert!(columns.to_string().contains("段間に罫"));
+            assert!(columns.to_string().contains("段間に未知の罫"));
             assert_eq!(
                 columns["interpretation_marker_spans"]
                     .as_array()

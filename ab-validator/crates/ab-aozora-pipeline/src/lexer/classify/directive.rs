@@ -1963,6 +1963,7 @@ fn parse_column_compound(
     alloc: &mut Allocator,
 ) -> Option<ColumnBlock> {
     let mut block = ColumnBlock {
+        column_rule: false,
         count,
         styles: BlockStyles::EMPTY,
         partial: None,
@@ -1974,6 +1975,10 @@ fn parse_column_compound(
     let mut clauses = Vec::new();
     let mut font = ClauseAxis::Absent;
     for (segment, span) in source.clauses(after) {
+        if segment == "段間に罫" {
+            block.column_rule = true;
+            continue;
+        }
         let mut candidate = BlockStyles::EMPTY;
         if resolve_block_style(segment, &mut candidate).is_none() {
             clauses.push(span);

@@ -855,7 +855,7 @@
 
 (deftest unresolved-opening-clause-does-not-invalidate-established-shared-close
   (let [closer "［＃ここで２段組み、罫囲み終わり］"
-        input (source (str "［＃ここから罫囲み］\n［＃ここから２段組み、段間に罫］\n本文\n" closer))
+        input (source (str "［＃ここから罫囲み］\n［＃ここから２段組み、段間に未知の罫］\n本文\n" closer))
         result (transcribe input)
         start (.indexOf ^String input closer)
         start-bytes (alength (.getBytes (subs input 0 start) java.nio.charset.StandardCharsets/UTF_8))
@@ -863,4 +863,15 @@
                             (get-in result [:ir "interpretation_facts"]))]
     (is (= "本文" (:plaintext result)))
     (is (= #{"layout" "line-layout"} (set (map #(get % "kind") close-facts))))
-    (is (= ["段間に罫"] (mapv #(get % "raw") (get-in result [:ir "interpretation_problems"]))))))
+    (is (= ["段間に未知の罫"] (mapv #(get % "raw") (get-in result [:ir "interpretation_problems"]))))))
+
+(deftest column-rule-records-only-supplied-layout
+  (let [result (transcribe (source "［＃ここから罫囲み］\n［＃ここから２段組み、段間に罫］\n甲［＃改段］乙\n［＃ここで２段組み、罫囲み終わり］"))
+        columns (first (filter #(= "column-count: 2" (attribute % "style")) (elements result "div")))]
+    (is (= "甲\n乙" (:plaintext result)))
+    (is (= "column-rule" (attribute columns "rend")))
+    (is (= 1 (count (elements result "cb"))))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))
+    (is (= {"layout" 2 "line-layout" 2}
+           (frequencies (filter #{"layout" "line-layout"}
+                                (map #(get % "kind") (get-in result [:ir "interpretation_facts"]))))))))

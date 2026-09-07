@@ -222,6 +222,9 @@ pub(crate) fn emit_container_open<W: Write>(
             }
             write!(out, "［＃ここから{}段組み", block.count.0)?;
             emit_block_styles(block.styles, out)?;
+            if block.column_rule {
+                out.write_str("、段間に罫")?;
+            }
             out.write_str("］")
         }
         RegionFormat::Table => out.write_str("［＃ここから表］"),

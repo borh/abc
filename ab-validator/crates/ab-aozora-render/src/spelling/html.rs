@@ -484,6 +484,9 @@ fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::R
             writer.write_str(r#"<div class="aozora-container aozora-container-columns"#)?;
             render_block_style_classes(block.styles, writer)?;
             write!(writer, r#"" data-columns="{}""#, block.count.0)?;
+            if block.column_rule {
+                writer.write_str(r#" data-column-rule="true""#)?;
+            }
             if block.partial.is_some() {
                 writer.write_str(r#" data-layout-partial="true""#)?;
             }

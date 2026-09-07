@@ -290,6 +290,8 @@ pub struct PartialLayout {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ColumnBlock {
+    /// The source supplies a rule between columns; no stroke dimensions are implied.
+    pub column_rule: bool,
     /// Number of columns supplied by the source.
     pub count: ColumnCount,
     /// Co-applied presentation, independent of column count.
@@ -939,6 +941,7 @@ impl RegionFormat {
             padded: false,
         },
         Self::Columns(ColumnBlock {
+            column_rule: false,
             count: ColumnCount(NonZeroU8::MIN),
             styles: BlockStyles::EMPTY,
             partial: None,

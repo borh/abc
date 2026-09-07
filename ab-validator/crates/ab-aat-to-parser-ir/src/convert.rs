@@ -524,6 +524,7 @@ fn map_block_content(
                     "width",
                     "line_count",
                     "column_count",
+                    "column_rule",
                     "role",
                     "page_placement",
                     "direction",

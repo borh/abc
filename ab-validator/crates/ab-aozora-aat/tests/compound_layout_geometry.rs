@@ -47,12 +47,15 @@ fn conflicting_line_alignment_does_not_erase_page_placement() {
         assert_eq!(block["page_placement"], "horizontal-center", "{aat}");
         assert!(block.get("align").is_none(), "{aat}");
         assert!(block.to_string().contains(alignments), "{aat}");
-        assert!(
-            aat["meta"]["interpretation_facts"]
-                .as_array()
-                .is_none_or(|facts| facts.iter().all(|fact| fact["source_span"]["start"] != 0)),
-            "{aat}"
+        let facts = aat["meta"]["interpretation_facts"].as_array().unwrap();
+        let close = "［＃ここで字下げ終わり］";
+        assert_eq!(facts.len(), 1, "{aat}");
+        assert_eq!(facts[0]["kind"], "line-layout");
+        assert_eq!(
+            facts[0]["source_span"]["start"],
+            source.rfind(close).unwrap()
         );
+        assert_eq!(facts[0]["source_span"]["end"], source.len());
     }
 }
 

@@ -4459,6 +4459,9 @@ fn layout_fields(kind: &ProjectedKind) -> Option<Value> {
         ProjectedKind::Region(RegionFormat::Table) => fields["role"] = json!("table"),
         ProjectedKind::Region(RegionFormat::Columns(block)) => {
             fields["column_count"] = json!(block.count.0.get());
+            if block.column_rule {
+                fields["column_rule"] = json!(true);
+            }
             apply_block_styles(&mut fields, block.styles)?;
         }
         ProjectedKind::Region(RegionFormat::LineWidth(width)) => {

@@ -575,6 +575,7 @@ mod tests {
             RegionFormat::Italic { padded: false },
             RegionFormat::Italic { padded: true },
             RegionFormat::Columns(ColumnBlock {
+                column_rule: false,
                 count: cc(2),
                 styles: BlockStyles::EMPTY,
                 partial: None,

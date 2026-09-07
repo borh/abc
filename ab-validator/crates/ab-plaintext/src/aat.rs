@@ -422,7 +422,11 @@ mod tests {
         assert_eq!(visible_text_projection(&aat), "本文。\n");
         let (text, spans) = visible_text_projection_with_spans(&aat);
         assert_eq!(text, "本文。\n");
-        assert!(spans.iter().all(|span| span.aat_pointer.starts_with("/blocks/0/")));
+        assert!(
+            spans
+                .iter()
+                .all(|span| span.aat_pointer.starts_with("/blocks/0/"))
+        );
     }
 
     #[test]

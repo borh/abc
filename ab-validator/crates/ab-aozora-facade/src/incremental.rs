@@ -215,7 +215,7 @@ impl<'a> DiagBaseRef<'a> {
 ///   (`RegionIndex::diag_straddles`).
 ///
 /// (The whole-document-scoped / unbalanced-delimiter / coupling guards are no
-/// longer RegionIndex's: they moved to per-piece `PieceFlags`, because a split
+/// longer `RegionIndex`'s: they moved to per-piece `PieceFlags`, because a split
 /// piece needs the OR over its *live range*, not the whole backing table.)
 ///
 /// Every recurrence mirrors its linear oracle exactly; the

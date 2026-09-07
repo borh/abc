@@ -56,7 +56,7 @@
 use core::ops::Range;
 
 /// Crate version, re-exported for identity strings (ab-aozora-aat's
-/// adapter_version embeds it as the `facade` coordinate).
+/// `adapter_version` embeds it as the `facade` coordinate).
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub use ab_aozora_pipeline::{LexOutput, NodeRef, SourceNode, lex};

@@ -35,7 +35,6 @@ pub struct AuditSummary {
     totals: AuditTotals,
     by_corpus: BTreeMap<String, CorpusTotals>,
     raw_nodes: RawNodeSummary,
-    sentence_projection_failures: SentenceProjectionFailureSummary,
     categories: BTreeMap<String, u64>,
     rule_coverage: RuleCoverage,
     compatibility_candidates: Vec<CompatibilityCandidate>,
@@ -90,24 +89,6 @@ struct RawNodeSample {
     source_class: String,
     source_marker_kind: Option<String>,
     source_preview: String,
-}
-
-#[derive(Debug, Default, Serialize)]
-struct SentenceProjectionFailureSummary {
-    files_failed: u64,
-    atomic_boundary_failures_by_node_type: BTreeMap<String, u64>,
-    other_sentence_projection_failures: u64,
-    samples: Vec<SentenceProjectionFailureSample>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-struct SentenceProjectionFailureSample {
-    corpus: String,
-    path: String,
-    class: String,
-    node_type: Option<String>,
-    byte_offset: Option<u64>,
-    message: String,
 }
 
 #[derive(Debug, Default, Serialize)]
@@ -210,12 +191,6 @@ struct FailureSample {
     corpus: String,
     path: String,
     message: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-enum SentenceProjectionFailureClass {
-    AtomicBoundary { node_type: String, byte_offset: u64 },
-    Other,
 }
 
 #[derive(Debug, Default)]
@@ -783,7 +758,6 @@ fn summarize(
         .collect::<BTreeMap<_, _>>();
     let mut error_groups = BTreeMap::<String, (u64, Vec<FileSample>)>::new();
     let mut failure_samples = Vec::new();
-    let mut sentence_projection_failures = SentenceProjectionFailureSummary::default();
     let mut evidence_by_identity =
         BTreeMap::<CompatibilityIdentity, CompatibilityEvidenceScope>::new();
     let mut rule_ids_by_identity = BTreeMap::<CompatibilityIdentity, BTreeSet<String>>::new();
@@ -859,41 +833,6 @@ fn summarize(
             FileOutcome::Failure { message } => {
                 totals.files_failed += 1;
                 corpus_totals.files_failed += 1;
-                if let Some(class) = classify_sentence_projection_failure(&message) {
-                    sentence_projection_failures.files_failed += 1;
-                    let (class_name, node_type, byte_offset) = match class {
-                        SentenceProjectionFailureClass::AtomicBoundary {
-                            node_type,
-                            byte_offset,
-                        } => {
-                            *sentence_projection_failures
-                                .atomic_boundary_failures_by_node_type
-                                .entry(node_type.clone())
-                                .or_default() += 1;
-                            (
-                                "atomic_boundary".to_owned(),
-                                Some(node_type),
-                                Some(byte_offset),
-                            )
-                        }
-                        SentenceProjectionFailureClass::Other => {
-                            sentence_projection_failures.other_sentence_projection_failures += 1;
-                            ("other_sentence_projection".to_owned(), None, None)
-                        }
-                    };
-                    if sentence_projection_failures.samples.len() < 20 {
-                        sentence_projection_failures.samples.push(
-                            SentenceProjectionFailureSample {
-                                corpus: result.corpus.clone(),
-                                path: result.relative_path.clone(),
-                                class: class_name,
-                                node_type,
-                                byte_offset,
-                                message: message.clone(),
-                            },
-                        );
-                    }
-                }
                 if message == "unsupported inline kind: raw" {
                     raw_nodes.fatal_direct_failures += 1;
                     raw_nodes
@@ -1015,7 +954,6 @@ fn summarize(
         totals,
         by_corpus,
         raw_nodes,
-        sentence_projection_failures,
         categories,
         rule_coverage: RuleCoverage {
             rules_total: rules_by_id.len() as u64,
@@ -1176,27 +1114,6 @@ fn render_report(summary: &AuditSummary) -> String {
         }
         out.push('\n');
     }
-
-    out.push_str("## Sentence Projection Failures\n\n");
-    out.push_str(&format!(
-        "Files failed during sentence projection: {}\n\n",
-        summary.sentence_projection_failures.files_failed
-    ));
-    out.push_str("| Atomic Node Type | Failures |\n");
-    out.push_str("|---|---:|\n");
-    for (node_type, count) in &summary
-        .sentence_projection_failures
-        .atomic_boundary_failures_by_node_type
-    {
-        out.push_str(&format!("| {} | {} |\n", table_cell(node_type), count));
-    }
-    out.push('\n');
-    out.push_str(&format!(
-        "Other sentence projection failures: {}\n\n",
-        summary
-            .sentence_projection_failures
-            .other_sentence_projection_failures
-    ));
 
     out.push_str("## Divergence Categories\n\n");
     out.push_str("| category | occurrences |\n|---|---:|\n");
@@ -1359,61 +1276,9 @@ fn round_seconds(seconds: f64) -> f64 {
     (seconds * 1000.0).round() / 1000.0
 }
 
-fn classify_sentence_projection_failure(message: &str) -> Option<SentenceProjectionFailureClass> {
-    let marker = "sentence boundary falls inside atomic node ";
-    if let Some(rest) = message.strip_prefix(marker)
-        && let Some((node_type, byte_text)) = rest.split_once(" at byte ")
-        && let Ok(byte_offset) = byte_text.parse::<u64>()
-    {
-        return Some(SentenceProjectionFailureClass::AtomicBoundary {
-            node_type: node_type.to_owned(),
-            byte_offset,
-        });
-    }
-    if message.contains("sentence boundary")
-        || message.contains("sentence spans")
-        || message.contains("sentence node ranges")
-        || message.contains("body paragraph has no sentence spans")
-    {
-        Some(SentenceProjectionFailureClass::Other)
-    } else {
-        None
-    }
-}
-
 #[cfg(test)]
-mod sentence_projection_audit_tests {
+mod audit_tests {
     use super::*;
-
-    #[test]
-    fn classifies_atomic_boundary_projection_failure() {
-        let classified = classify_sentence_projection_failure(
-            "sentence boundary falls inside atomic node ruby at byte 24",
-        );
-        assert_eq!(
-            classified,
-            Some(SentenceProjectionFailureClass::AtomicBoundary {
-                node_type: "ruby".to_owned(),
-                byte_offset: 24,
-            })
-        );
-    }
-
-    #[test]
-    fn classifies_other_sentence_projection_failure() {
-        let classified = classify_sentence_projection_failure(
-            "sentence spans end at 24, expected paragraph end 30",
-        );
-        assert_eq!(classified, Some(SentenceProjectionFailureClass::Other));
-    }
-
-    #[test]
-    fn ignores_non_sentence_failures() {
-        assert_eq!(
-            classify_sentence_projection_failure("mapping schema hash mismatch"),
-            None
-        );
-    }
 
     #[test]
     fn collect_json_files_follows_symlinked_entries() {

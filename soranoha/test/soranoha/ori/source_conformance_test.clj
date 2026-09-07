@@ -216,3 +216,17 @@
     (is (some #{explanation} (map #(.getTextContent ^Node %) lines)))
     (is (some #{"入力：人"} (map #(.getTextContent ^Node %) lines)))
     (is (= "padding-inline-start: 3em" (attribute accent "style")))))
+
+(deftest nested-warichu-preserves-forced-break-and-uninterpreted-kaeriten
+  (let [result (transcribe (source "［＃地から３字上げ］［＃割り注］磯。此云［＃レ］志。［＃改行］次［＃割り注終わり］後。"))
+        wrapper (first (filter #(= "warichu" (attribute % "type")) (elements result "seg")))
+        note (first (filter #(= "［＃レ］" (.getTextContent ^Node %)) (elements result "note")))
+        problems (get-in result [:view :view/problems])]
+    (is (= "磯。此云志。\n次後。" (:plaintext result)))
+    (is (= "磯。此云志。  \n次後。" (projection/markdown (:view result))))
+    (is (= "磯。此云志。\n次" (view/visible-text wrapper)))
+    (is (= 1 (count (filter #(within? wrapper %) (elements result "lb")))))
+    (is (within? wrapper note))
+    (is (= "unresolved" (attribute note "subtype")))
+    (is (= ["［＃レ］"] (mapv #(get-in % [:view/evidence "raw"]) problems)))
+    (is (= [] (get-in result [:view :view/eligible-spans])))))

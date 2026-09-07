@@ -262,9 +262,9 @@ mod tests {
         let tree = doc.parse();
         // Canonical right-side ruby is the bare form — the redundant `｜`
         // (all-kanji base at line start) is dropped;
-        // `to_source_verbatim` preserves the author's `｜`.
+        // `sanitized` preserves the author's `｜`.
         assert_eq!(tree.to_source(), "青梅《おうめ》");
-        assert_eq!(tree.to_source_verbatim(), "｜青梅《おうめ》");
+        assert_eq!(tree.sanitized(), "｜青梅《おうめ》");
     }
 
     #[test]

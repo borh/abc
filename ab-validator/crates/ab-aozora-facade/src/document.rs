@@ -385,15 +385,14 @@ impl<'a> Tree<'a> {
 
     /// The sanitized source buffer — the exact bytes the lexer
     /// classified, after the sanitize stage (BOM-strip, CRLF→LF,
-    /// `〔...〕` accent decomposition, decorative-rule isolation, PUA
-    /// neutralization).
+    /// `〔...〕` accent decomposition, and decorative-rule isolation).
     ///
     /// This is the coordinate space every `source_span` on
     /// [`Self::source_nodes`] / [`Self::pairs`] / [`Self::diagnostics`]
     /// indexes — equal to [`Self::source`] byte-for-byte on inputs that
-    /// triggered no sanitize rewrite. It carries no PUA sentinels and no
-    /// synthesized block padding, so it is the verbatim round-trip basis
-    /// returned by [`Self::to_source_verbatim`].
+    /// triggered no sanitize rewrite. The original decoded input remains
+    /// available through [`Self::source`]. This buffer has no injected
+    /// sentinels or synthesized block padding.
     #[must_use]
     pub fn sanitized(&self) -> &str {
         &self.inner().sanitized
@@ -474,33 +473,6 @@ impl<'a> Tree<'a> {
                 Document::new(first).parse().to_source()
             }
         }
-    }
-
-    /// Recover the source text **verbatim** — byte-for-byte equal to
-    /// `sanitize(source)`, the input the lexer actually classified.
-    ///
-    /// Distinct from [`Self::to_source`], which *re-serializes* the
-    /// parsed tree (walking the normalized stream and synthesizing block
-    /// padding around sentinels — a canonical, not byte-preserving,
-    /// form). `to_source_verbatim` instead returns the retained
-    /// sanitized buffer unchanged, so the contract is the strongest
-    /// fixed point the pipeline can offer:
-    ///
-    /// ```text
-    /// to_source_verbatim(parse(doc)) == sanitize(doc)
-    /// ```
-    ///
-    /// It is **not** equal to the original `doc` whenever sanitation
-    /// fired (BOM-strip and PUA neutralization are lossy/irreversible),
-    /// which is why the basis is `sanitize(doc)` rather than `doc`.
-    ///
-    /// The buffer is returned directly from the side table populated at
-    /// parse time; no tree walk and no re-sanitation runs. Allocates one
-    /// owned `String` (matching [`Self::to_source`]'s signature); callers
-    /// that want a borrow can use [`Self::sanitized`] instead.
-    #[must_use]
-    pub fn to_source_verbatim(&self) -> String {
-        self.inner().sanitized.clone()
     }
 }
 
@@ -718,131 +690,109 @@ mod tests {
             "policy is a no-op when no Internal diagnostics exist"
         );
     }
-    // ---- to_source_verbatim / sanitized contract ----
-    //
-    // Contract: `to_source_verbatim(parse(doc)) == sanitize(doc).text`,
-    // byte-for-byte (NOT `== doc` — sanitation is lossy). The accessor
-    // `sanitized()` returns the same held buffer, so the two must agree
-    // for every input regardless of node shape or sanitize rewrite.
-
-    /// The independent oracle: run the real sanitize stage on `doc` and
-    /// assert the parsed tree reproduces it verbatim through both
-    /// surfaces. `sanitize` is reached via the unconditional
-    /// `crate::pipeline` re-export (same path `cst::from_tree` uses).
-    fn assert_verbatim_equals_sanitize(doc: &str) {
+    fn assert_source_and_sanitized_buffers(doc: &str) {
         use crate::pipeline::lexer::sanitize::sanitize;
         let expected = sanitize(doc).text;
         let d = Document::new(doc);
         let t = d.parse();
-        assert_eq!(
-            t.to_source_verbatim(),
-            *expected,
-            "to_source_verbatim must equal sanitize(doc).text"
-        );
-        // The borrowing accessor exposes the identical buffer.
+        assert_eq!(t.source(), doc, "source() must retain the decoded input");
         assert_eq!(
             t.sanitized(),
             &*expected,
             "sanitized() must equal sanitize(doc).text"
         );
-        // Internal self-consistency: the owned and borrowed surfaces agree.
-        assert_eq!(t.to_source_verbatim(), t.sanitized());
     }
 
     #[test]
-    fn verbatim_plain_only() {
+    fn sanitized_plain_only() {
         // A plain run with no Aozora construct: source_nodes is empty,
         // so the buffer must still be recovered intact.
-        assert_verbatim_equals_sanitize("ただの平文です。\n二行目。\n");
+        assert_source_and_sanitized_buffers("ただの平文です。\n二行目。\n");
     }
 
     #[test]
-    fn verbatim_plain_construct_ruby() {
+    fn sanitized_plain_construct_ruby() {
         // ｜青梅《おうめ》 — one inline ruby node surrounded by plain runs
         // (leading-gap + trailing-gap + the node itself).
-        assert_verbatim_equals_sanitize("前置き｜青梅《おうめ》後置き");
+        assert_source_and_sanitized_buffers("前置き｜青梅《おうめ》後置き");
     }
 
     #[test]
-    fn verbatim_block_container() {
+    fn sanitized_block_container() {
         // ［＃ここから２字下げ］ … ［＃ここで字下げ終わり］ — a block
         // container open/close pair plus body text.
-        assert_verbatim_equals_sanitize(
+        assert_source_and_sanitized_buffers(
             "序\n［＃ここから２字下げ］\n本文の段落。\n［＃ここで字下げ終わり］\n了\n",
         );
     }
 
     #[test]
-    fn verbatim_consecutive_nodes_no_gap() {
+    fn sanitized_consecutive_nodes_no_gap() {
         // Two ruby runs back-to-back: adjacent source spans with no
         // intervening plain text. Locks that touching nodes round-trip.
-        assert_verbatim_equals_sanitize("｜青梅《おうめ》｜街道《かいどう》");
+        assert_source_and_sanitized_buffers("｜青梅《おうめ》｜街道《かいどう》");
     }
 
     #[test]
-    fn verbatim_leading_node_no_head_gap() {
+    fn sanitized_leading_node_no_head_gap() {
         // Construct at byte 0 (no leading plain run) followed by a tail
         // gap. Exercises the head-of-buffer boundary.
-        assert_verbatim_equals_sanitize("｜青梅《おうめ》のち平文");
+        assert_source_and_sanitized_buffers("｜青梅《おうめ》のち平文");
     }
 
     #[test]
-    fn verbatim_trailing_node_no_tail_gap() {
+    fn sanitized_trailing_node_no_tail_gap() {
         // Construct flush against the end of the buffer (no trailing
         // plain run). Exercises the tail-of-buffer boundary.
-        assert_verbatim_equals_sanitize("平文のち｜青梅《おうめ》");
+        assert_source_and_sanitized_buffers("平文のち｜青梅《おうめ》");
     }
 
     #[test]
-    fn verbatim_basis_is_sanitize_not_raw_doc_bom() {
-        // BOM strip is lossy: verbatim must equal the POST-sanitize text
-        // (BOM gone), not the raw doc. Stacked BOMs collapse to nothing.
+    fn sanitized_basis_is_sanitize_not_raw_doc_bom() {
+        // Stacked BOMs are removed from the parser coordinate basis.
         let doc = "\u{FEFF}\u{FEFF}｜青梅《おうめ》";
-        assert_verbatim_equals_sanitize(doc);
+        assert_source_and_sanitized_buffers(doc);
         let t_doc = Document::new(doc);
         assert_ne!(
-            t_doc.parse().to_source_verbatim(),
+            t_doc.parse().sanitized(),
             doc,
-            "verbatim must NOT equal the raw doc once a BOM was stripped"
+            "sanitized buffer must NOT equal the raw doc once a BOM was stripped"
         );
         assert!(
-            !t_doc.parse().to_source_verbatim().starts_with('\u{FEFF}'),
-            "stacked BOMs must be gone from the verbatim text"
+            !t_doc.parse().sanitized().starts_with('\u{FEFF}'),
+            "stacked BOMs must be gone from the sanitized buffer text"
         );
     }
 
     #[test]
-    fn verbatim_basis_is_sanitize_crlf() {
-        // CRLF → LF is applied by sanitize; verbatim reflects the LF form.
+    fn sanitized_basis_is_sanitize_crlf() {
+        // CRLF → LF is applied by sanitize; sanitized buffer reflects the LF form.
         let doc = "一行目\r\n二行目\r\n｜青梅《おうめ》\r\n";
-        assert_verbatim_equals_sanitize(doc);
+        assert_source_and_sanitized_buffers(doc);
         assert!(
-            !Document::new(doc)
-                .parse()
-                .to_source_verbatim()
-                .contains('\r'),
-            "CR must be normalized out of the verbatim text"
+            !Document::new(doc).parse().sanitized().contains('\r'),
+            "CR must be normalized out of the sanitized buffer text"
         );
     }
 
     #[test]
-    fn verbatim_basis_is_sanitize_accent_span() {
+    fn sanitized_basis_is_sanitize_accent_span() {
         // 〔...〕 accent decomposition rewrites the bytes inside the
-        // tortoiseshell brackets; verbatim must carry the rewritten form.
-        assert_verbatim_equals_sanitize("カフェ〔cafe'〕で待つ");
+        // tortoiseshell brackets; sanitized buffer must carry the rewritten form.
+        assert_source_and_sanitized_buffers("カフェ〔cafe'〕で待つ");
     }
 
     #[test]
-    fn verbatim_basis_is_sanitize_decorative_rule() {
+    fn sanitized_basis_is_sanitize_decorative_rule() {
         // A ≥10-char decorative rule line gets a blank line inserted
-        // before it by sanitize; verbatim reflects that insertion.
-        assert_verbatim_equals_sanitize("段落の文\n----------\nつづき\n");
+        // before it by sanitize; sanitized buffer reflects that insertion.
+        assert_source_and_sanitized_buffers("段落の文\n----------\nつづき\n");
     }
 
     #[test]
-    fn verbatim_preserves_literal_private_use_characters() {
+    fn sanitized_preserves_literal_private_use_characters() {
         let source = "before\u{E001}mid\u{E004}after";
-        assert_verbatim_equals_sanitize(source);
-        assert_eq!(Document::new(source).parse().to_source_verbatim(), source);
+        assert_source_and_sanitized_buffers(source);
+        assert_eq!(Document::new(source).parse().sanitized(), source);
     }
 }

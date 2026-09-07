@@ -14,7 +14,7 @@ let tree = document.parse();
 
 // A kanji base at the start of a line needs no explicit ruby-base marker.
 assert_eq!(tree.to_source(), "青梅《おうめ》");
-assert_eq!(tree.to_source_verbatim(), "｜青梅《おうめ》");
+assert_eq!(tree.sanitized(), "｜青梅《おうめ》");
 assert!(tree.to_html().contains("<ruby>"));
 ```
 

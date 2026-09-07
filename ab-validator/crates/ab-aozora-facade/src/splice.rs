@@ -9,7 +9,7 @@
 //!    source-node table into a *total, non-overlapping, ordered* tiling: one
 //!    [`Region`] per classified node plus the interstitial plain runs
 //!    between them. Concatenating every region's bytes reproduces
-//!    [`Tree::to_source_verbatim`] exactly.
+//!    [`Tree::sanitized`] exactly.
 //!
 //! 2. **How is this region edited coherently?** Each region carries a
 //!    terminal [`SpliceSafety`]:
@@ -191,7 +191,7 @@ pub enum SpliceSafety {
 ///
 /// Yielded by [`Tree::regions`] / [`Tree::region_at`]. The
 /// [`span`](Self::span) indexes the **sanitized** source — the same coordinate
-/// space as [`Tree::to_source_verbatim`] and every `source_span` on
+/// space as [`Tree::sanitized`] and every `source_span` on
 /// [`Tree::source_nodes`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Region {
@@ -378,7 +378,7 @@ impl Tree<'_> {
     /// The regions are contiguous, non-overlapping, and ordered by start
     /// offset; the first starts at `0`, the last ends at the sanitized length,
     /// and concatenating each region's bytes reproduces
-    /// [`Tree::to_source_verbatim`] exactly. A truly empty source yields no
+    /// [`Tree::sanitized`] exactly. A truly empty source yields no
     /// regions.
     #[must_use]
     pub fn regions(&self) -> Vec<Region> {
@@ -883,16 +883,16 @@ mod tests {
     use super::*;
     use crate::Document;
 
-    /// Concatenating every owned region's bytes reproduces the verbatim
-    /// (sanitized) source, and the regions form a gap-free, ordered,
+    /// Concatenating every owned region's bytes reproduces the sanitized
+    /// source, and the regions form a gap-free, ordered,
     /// non-overlapping cover.
     fn assert_tiling(src: &str) {
         let doc = Document::new(src);
         let tree = doc.parse();
-        let verbatim = tree.to_source_verbatim();
+        let sanitized = tree.sanitized();
         let regions = tree.regions();
 
-        if verbatim.is_empty() {
+        if sanitized.is_empty() {
             assert!(regions.is_empty(), "empty source must yield no regions");
             return;
         }
@@ -900,7 +900,7 @@ mod tests {
         assert_eq!(regions[0].span.start, 0, "tiling must start at 0");
         assert_eq!(
             regions.last().unwrap().span.end as usize,
-            verbatim.len(),
+            sanitized.len(),
             "tiling must end at the source length",
         );
         for pair in regions.windows(2) {
@@ -915,20 +915,20 @@ mod tests {
         }
         let rebuilt: String = regions
             .iter()
-            .map(|r| &verbatim[r.span.start as usize..r.span.end as usize])
+            .map(|r| &sanitized[r.span.start as usize..r.span.end as usize])
             .collect();
         assert_eq!(
-            rebuilt, verbatim,
-            "region concatenation must equal verbatim"
+            rebuilt, sanitized,
+            "region concatenation must equal sanitized"
         );
 
-        // Identity splice of every region reproduces the verbatim source.
+        // Identity splice of every region reproduces the sanitized source.
         for r in &regions {
-            let same = &verbatim[r.span.start as usize..r.span.end as usize];
+            let same = &sanitized[r.span.start as usize..r.span.end as usize];
             assert_eq!(
                 tree.splice(*r, same).unwrap(),
-                verbatim,
-                "identity splice of {:?} must be the verbatim source",
+                sanitized,
+                "identity splice of {:?} must be the sanitized source",
                 r.role,
             );
         }

@@ -2,10 +2,10 @@
 //! tiling and minimal-diff splice hold for every real document:
 //!
 //! * [`ab_aozora_facade::Tree::regions`] is a complete, gap-free, ordered,
-//!   non-overlapping cover of the verbatim (sanitized) source — the
+//!   non-overlapping cover of the sanitized source — the
 //!   region byte-slices concatenate back to it exactly.
 //! * No region is unclassified (`Opaque`) — every real construct is editable.
-//! * The **identity splice** reproduces the verbatim source. `check_tiling`
+//! * The **identity splice** reproduces the sanitized source. `check_tiling`
 //!   already proves the byte-level tiling for *every* region; this additionally
 //!   runs the real `Tree::splice` machinery (a `Direct` byte replacement, or a
 //!   `Coupled` partner-derivation + scoped verification) on a representative
@@ -45,12 +45,12 @@ fn corpus_regions_tile_the_source() {
 
         let doc = Document::new(utf8);
         let tree = doc.parse();
-        let verbatim = tree.to_source_verbatim();
+        let sanitized = tree.sanitized();
         let regions = tree.regions();
 
-        if let Err(why) = check_tiling(&verbatim, &regions) {
+        if let Err(why) = check_tiling(sanitized, &regions) {
             failures.push(format!("{}: {why}", item.label));
-        } else if let Err(why) = check_splice_sampled(&tree, &verbatim, &regions) {
+        } else if let Err(why) = check_splice_sampled(&tree, sanitized, &regions) {
             failures.push(format!("{}: {why}", item.label));
         }
 
@@ -71,9 +71,9 @@ fn corpus_regions_tile_the_source() {
 }
 
 /// Verify the regions form a complete, ordered, gap-free, non-overlapping
-/// cover whose byte-slices concatenate back to `verbatim`.
-fn check_tiling(verbatim: &str, regions: &[Region]) -> Result<(), String> {
-    if verbatim.is_empty() {
+/// cover whose byte-slices concatenate back to `sanitized`.
+fn check_tiling(sanitized: &str, regions: &[Region]) -> Result<(), String> {
+    if sanitized.is_empty() {
         return if regions.is_empty() {
             Ok(())
         } else {
@@ -87,8 +87,8 @@ fn check_tiling(verbatim: &str, regions: &[Region]) -> Result<(), String> {
         return Err(format!("tiling starts at {} not 0", first.span.start));
     }
     let end = regions[regions.len() - 1].span.end as usize;
-    if end != verbatim.len() {
-        return Err(format!("tiling ends at {end} not {}", verbatim.len()));
+    if end != sanitized.len() {
+        return Err(format!("tiling ends at {end} not {}", sanitized.len()));
     }
     for pair in regions.windows(2) {
         if pair[0].span.end != pair[1].span.start {
@@ -100,10 +100,10 @@ fn check_tiling(verbatim: &str, regions: &[Region]) -> Result<(), String> {
     }
     let rebuilt: String = regions
         .iter()
-        .map(|r| &verbatim[r.span.start as usize..r.span.end as usize])
+        .map(|r| &sanitized[r.span.start as usize..r.span.end as usize])
         .collect();
-    if rebuilt != verbatim {
-        return Err("region concatenation != verbatim source".to_owned());
+    if rebuilt != sanitized {
+        return Err("region concatenation != sanitized source".to_owned());
     }
     Ok(())
 }
@@ -139,13 +139,13 @@ fn sample_of(r: &Region) -> Option<Sample> {
 }
 
 /// No region is `Opaque` (checked for *every* region), and the identity splice
-/// of one representative region per safety class reproduces the verbatim source
+/// of one representative region per safety class reproduces the sanitized source
 /// through the real `Tree::splice` machinery. `check_tiling` already proves the
 /// byte-level tiling for all regions; this proves the *machinery* is sound on
 /// real constructs while bounding the number of `splice` calls (≤ 6 per doc).
 fn check_splice_sampled(
     tree: &ab_aozora_facade::Tree<'_>,
-    verbatim: &str,
+    sanitized: &str,
     regions: &[Region],
 ) -> Result<(), String> {
     let mut sampled: Vec<Sample> = Vec::with_capacity(6);
@@ -159,9 +159,9 @@ fn check_splice_sampled(
         }
         sampled.push(bucket);
 
-        let same = &verbatim[r.span.start as usize..r.span.end as usize];
+        let same = &sanitized[r.span.start as usize..r.span.end as usize];
         match tree.splice(*r, same) {
-            Ok(out) if out == verbatim => {}
+            Ok(out) if out == sanitized => {}
             Ok(_) => return Err(format!("identity splice of {:?} changed bytes", r.role)),
             Err(e) => return Err(format!("identity splice of {:?} failed: {e}", r.role)),
         }

@@ -10,17 +10,17 @@ fn regions_cover_the_whole_source() {
     let src = "序章\n｜青梅《おうめ》の実、青空［＃「青空」に傍点］。";
     let doc = Document::new(src);
     let tree = doc.parse();
-    let verbatim = tree.to_source_verbatim();
+    let sanitized = tree.sanitized();
 
     let regions = tree.regions();
     // Complete, contiguous cover.
     assert_eq!(regions.first().unwrap().span.start, 0);
-    assert_eq!(regions.last().unwrap().span.end as usize, verbatim.len());
+    assert_eq!(regions.last().unwrap().span.end as usize, sanitized.len());
     let rebuilt: String = regions
         .iter()
-        .map(|r| &verbatim[r.span.start as usize..r.span.end as usize])
+        .map(|r| &sanitized[r.span.start as usize..r.span.end as usize])
         .collect();
-    assert_eq!(rebuilt, verbatim);
+    assert_eq!(rebuilt, sanitized);
 
     // At least the ruby and the reclaimed forward surface as classified roles.
     assert!(regions.iter().any(|r| r.role == RegionRole::Ruby));
@@ -122,7 +122,7 @@ fn ruby_base_forward_attribute_change_is_coherent() {
     let spliced = tree
         .splice(region, "［＃「我」に傍線］")
         .expect("attribute-only change on a ruby-base forward is coherent");
-    // Only the bracket changed; the ruby reading and base survive verbatim.
+    // Only the bracket changed; the ruby reading and base survive sanitized.
     assert!(spliced.contains("われ"));
     assert!(spliced.contains("傍線"));
     assert!(!spliced.contains("傍点"));
@@ -138,7 +138,7 @@ fn multi_target_forward_is_coupled_and_identity_safe() {
     let src = "AとB［＃「A」「B」に傍点］";
     let doc = Document::new(src);
     let tree = doc.parse();
-    let verbatim = tree.to_source_verbatim();
+    let sanitized = tree.sanitized();
     let region = tree
         .regions()
         .into_iter()
@@ -148,10 +148,10 @@ fn multi_target_forward_is_coupled_and_identity_safe() {
         region.safety,
         SpliceSafety::Coupled(CoupledKind::ForwardReference)
     );
-    let own = &verbatim[region.span.start as usize..region.span.end as usize];
+    let own = &sanitized[region.span.start as usize..region.span.end as usize];
     assert_eq!(
         tree.splice(region, own).expect("identity is a no-op"),
-        verbatim
+        sanitized
     );
     // A target change is irreducible (the rendered `A、B` is not a source
     // substring), so it is honestly declined.
@@ -169,7 +169,7 @@ fn heading_hint_target_change_syncs() {
     let src = "第一篇［＃「第一篇」は大見出し］";
     let doc = Document::new(src);
     let tree = doc.parse();
-    let verbatim = tree.to_source_verbatim();
+    let sanitized = tree.sanitized();
     let region = tree
         .regions()
         .into_iter()
@@ -180,10 +180,10 @@ fn heading_hint_target_change_syncs() {
         SpliceSafety::Coupled(CoupledKind::HeadingHint)
     );
     // Identity is a no-op; deleting the directive is coherent.
-    let own = &verbatim[region.span.start as usize..region.span.end as usize];
+    let own = &sanitized[region.span.start as usize..region.span.end as usize];
     assert_eq!(
         tree.splice(region, own).expect("identity is a no-op"),
-        verbatim
+        sanitized
     );
     tree.splice(region, "")
         .expect("deleting the directive is coherent");
@@ -203,7 +203,7 @@ fn margin_note_base_change_is_coherent() {
     let src = "未来［＃「未来」の左に「みらい」の注記］を見る。";
     let doc = Document::new(src);
     let tree = doc.parse();
-    let verbatim = tree.to_source_verbatim();
+    let sanitized = tree.sanitized();
     let region = tree
         .regions()
         .into_iter()
@@ -213,10 +213,10 @@ fn margin_note_base_change_is_coherent() {
         region.safety,
         SpliceSafety::Coupled(CoupledKind::MarginNote)
     );
-    let own = &verbatim[region.span.start as usize..region.span.end as usize];
+    let own = &sanitized[region.span.start as usize..region.span.end as usize];
     assert_eq!(
         tree.splice(region, own).expect("identity is a no-op"),
-        verbatim
+        sanitized
     );
     let spliced = tree
         .splice(region, "過去［＃「過去」の左に「みらい」の注記］")

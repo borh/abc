@@ -62,6 +62,7 @@ pub(crate) fn render<W: Write>(node: Node, store: &NodeStore, out: &mut W) -> fm
         }
         Node::Directive(a) => render_annotation(a, store, out),
         Node::Kunten(k) => render_kunten(k, store, out),
+        Node::IterationMark(mark) => out.write_char(mark.character()),
         Node::AngleQuote(d) => render_angle_quote(d, store, out),
         Node::Illustration(s) => render_sashie(&s, store, out),
         Node::Heading(h) => render_aozora_heading(&h, store, out),
@@ -104,6 +105,7 @@ fn render_content_one<W: Write>(c: Content, store: &NodeStore, out: &mut W) -> f
                     Segment::Gaiji(g) => render_gaiji(&g, store, out)?,
                     Segment::Directive { value, .. } => render_annotation(value, store, out)?,
                     Segment::Kunten { value, .. } => render_kunten(value, store, out)?,
+                    Segment::IterationMark { value, .. } => out.write_char(value.character())?,
                     // `Segment` is `#[non_exhaustive]`; forward-compat skip.
                     _ => {}
                 }

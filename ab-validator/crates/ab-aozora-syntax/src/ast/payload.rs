@@ -36,6 +36,13 @@ pub enum Content {
 pub enum Segment {
     /// Plain-text run between nested constructs.
     Text(StrId),
+    /// Supplied iteration notation at its sanitized source extent.
+    IterationMark {
+        /// Whole unvoiced or voiced repeat mark.
+        value: IterationMark,
+        /// Original notation extent in sanitized UTF-8 bytes.
+        source_span: crate::Span,
+    },
     /// Nested 外字 reference.
     Gaiji(Gaiji),
     /// Nested generic annotation.
@@ -52,6 +59,47 @@ pub enum Segment {
         /// Annotation extent in sanitized UTF-8 source bytes.
         source_span: crate::Span,
     },
+}
+
+/// Aozora's two spellings for the whole double-height kana repeat mark.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum IterationMark {
+    /// `／＼`, transcribed as U+3031.
+    Unvoiced,
+    /// `／″＼`, transcribed as U+3032.
+    Voiced,
+}
+
+impl IterationMark {
+    /// Exact source spelling, without expanding the repeated text.
+    #[must_use]
+    pub const fn source(self) -> &'static str {
+        match self {
+            Self::Unvoiced => "／＼",
+            Self::Voiced => "／″＼",
+        }
+    }
+
+    /// Whole Unicode mark; top and bottom halves are separate characters.
+    #[must_use]
+    pub const fn character(self) -> char {
+        match self {
+            Self::Unvoiced => '〱',
+            Self::Voiced => '〲',
+        }
+    }
+
+    /// Recognize only a complete supplied notation at the start of a text run.
+    #[must_use]
+    pub fn at_start(text: &str) -> Option<Self> {
+        if text.starts_with("／＼") {
+            Some(Self::Unvoiced)
+        } else if text.starts_with("／″＼") {
+            Some(Self::Voiced)
+        } else {
+            None
+        }
+    }
 }
 
 impl GaijiCanonicalOwned {
@@ -293,6 +341,8 @@ pub struct AngleQuote {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum Node {
+    /// Supplied double-height kana iteration mark.
+    IterationMark(IterationMark),
     /// Ruby (furigana) annotation.
     Ruby(Ruby),
     /// Forward-reference emphasis.
@@ -335,6 +385,7 @@ impl Node {
     pub const fn kind(self) -> crate::NodeKind {
         use crate::NodeKind;
         match self {
+            Self::IterationMark(_) => NodeKind::IterationMark,
             Self::Ruby(_) => NodeKind::Ruby,
             Self::Format(f) => match f.attrs.single() {
                 Some(ForwardAttr::Bouten { .. }) => NodeKind::Bouten,
@@ -395,6 +446,7 @@ impl Node {
             Self::HeadingHint(_) => "aozora_heading_hint",
             Self::Illustration(_) => "aozora_sashie",
             Self::Kunten(_) => "aozora_kaeriten",
+            Self::IterationMark(_) => "aozora_iteration_mark",
             Self::Directive(_) => "aozora_annotation",
             Self::AngleQuote(_) => "aozora_angle_quote",
             Self::MarginNote(_) => "aozora_side_note",

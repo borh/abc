@@ -33,7 +33,7 @@ use ab_aozora_facade::{
 use ab_aozora_facade::syntax::{
     AbsoluteSize, Centering, EnclosureKind, HeadingStyle, IndentLayout, LineFormat, MarginNoteKind,
     MarginNotePosition,
-    ast::{ContainerEnd, Content, KuntenKind, Segment},
+    ast::{ContainerEnd, Content, IterationMark, KuntenKind, Segment},
 };
 use ab_source_syntax::{RegionError, SourceRegions, aozora_body_range};
 
@@ -279,6 +279,7 @@ enum ProjectedKind {
         note_span: Option<Span>,
         target_span: Option<Span>,
     },
+    IterationMark(IterationMark),
     Kunten {
         kind: KuntenKind,
         text: String,
@@ -311,6 +312,7 @@ enum ProjectedKind {
 impl ProjectedKind {
     fn as_str(&self) -> &'static str {
         match self {
+            Self::IterationMark(_) => "iteration-mark",
             Self::Kunten { .. } => "kunten",
             Self::MarginNote { .. } => "sideNote",
             Self::Node(kind) => kind.as_json_tag(),
@@ -362,6 +364,7 @@ struct LocatedAnnotation {
 
 #[derive(Debug, Clone)]
 enum NestedAnnotation {
+    IterationMark(IterationMark),
     Kunten { kind: KuntenKind, text: String },
     Directive(DirectiveKind),
 }
@@ -436,6 +439,7 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                     note_span: note.note_span.map(Into::into),
                     target_span: note.target_span.map(Into::into),
                 },
+                NodeRef::Inline(Node::IterationMark(mark)) => ProjectedKind::IterationMark(mark),
                 NodeRef::Inline(Node::Kunten(k)) | NodeRef::BlockLeaf(Node::Kunten(k)) => {
                     ProjectedKind::Kunten {
                         kind: k.kind,
@@ -555,6 +559,10 @@ fn ruby_projection(tree: &LexOutput) -> Result<Vec<AozoraRubyEntry>> {
             })
             .flatten()
             .filter_map(|segment| match segment {
+                Segment::IterationMark { value, source_span } => Some(LocatedAnnotation {
+                    span: (*source_span).into(),
+                    payload: NestedAnnotation::IterationMark(*value),
+                }),
                 Segment::Kunten { value, source_span } => Some(LocatedAnnotation {
                     span: (*source_span).into(),
                     payload: NestedAnnotation::Kunten {
@@ -2057,6 +2065,9 @@ fn inline_content_range(
             ProjectedKind::Kunten { kind, ref text } => {
                 content.push(kunten_node(decoded, &node.span, kind, text));
             }
+            ProjectedKind::IterationMark(mark) => {
+                content.push(iteration_node(decoded, &node.span, mark));
+            }
             ProjectedKind::Node(NodeKind::Directive)
                 if source_slice(&decoded.span_text, &node.span).contains("返り点") =>
             {
@@ -2388,6 +2399,13 @@ fn contains_aozora_markup(source: &str) -> bool {
         || source.contains('》')
 }
 
+fn iteration_node(decoded: &DecodedSource, span: &Span, mark: IterationMark) -> Value {
+    let start = decoded.span_ctx.to_decoded(span.start);
+    let end = decoded.span_ctx.to_decoded_end(span.end);
+    json!({"kind":"iteration-mark", "text":mark.character().to_string(),
+        "source":&decoded.text[start..end], "span":span_json(span, &decoded.span_ctx)})
+}
+
 fn kunten_node(decoded: &DecodedSource, span: &Span, kind: KuntenKind, text: &str) -> Value {
     json!({"kind":"kunten", "kunten_kind":match kind {
         KuntenKind::ReturnMark => "return-mark",
@@ -2548,6 +2566,12 @@ fn source_segments(
                 return None;
             }
             content.push(match &mark.payload {
+                NestedAnnotation::IterationMark(value) => {
+                    if let Some(text) = &mut resolved_text {
+                        text.push(value.character());
+                    }
+                    iteration_node(decoded, &mark.span, *value)
+                }
                 NestedAnnotation::Kunten { kind, text } => kunten_node(decoded, &mark.span, *kind, text),
                 NestedAnnotation::Directive(kind) => {
                     let start = decoded.span_ctx.to_decoded(mark.span.start);

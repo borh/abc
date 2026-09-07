@@ -70,6 +70,8 @@ pub enum NodeKind {
     Illustration,
     /// Supplied return mark or kunten okurigana.
     Kunten,
+    /// Supplied whole kana iteration mark.
+    IterationMark,
     /// Generic annotation that no specific recogniser claimed.
     Directive,
     /// Double-angle quotation (input `≪…≫`, display `《…》`).
@@ -94,7 +96,7 @@ impl NodeKind {
     /// Used by `aozora kinds` (CLI introspection) and the
     /// TypeScript / JSON-Schema codegen so the artefact list
     /// tracks the enum without a hand-maintained parallel.
-    pub const ALL: [Self; 26] = [
+    pub const ALL: [Self; 27] = [
         Self::Ruby,
         Self::Bouten,
         Self::CombineUpright,
@@ -114,6 +116,7 @@ impl NodeKind {
         Self::HeadingHint,
         Self::Illustration,
         Self::Kunten,
+        Self::IterationMark,
         Self::Directive,
         Self::AngleQuote,
         Self::Emphasis,
@@ -151,6 +154,7 @@ impl NodeKind {
             Self::HeadingHint => "headingHint",
             Self::Illustration => "illustration",
             Self::Kunten => "kunten",
+            Self::IterationMark => "iteration-mark",
             Self::Directive => "directive",
             Self::AngleQuote => "angleQuote",
             Self::Emphasis => "emphasis",

@@ -203,6 +203,7 @@ fn emit_aozora<W: Write>(
         Node::Format(f) => emit_format(&f, store, out),
         Node::Gaiji(g) => emit_gaiji(&g, store, out),
         Node::Kunten(k) => emit_kunten(k, store, out),
+        Node::IterationMark(mark) => out.write_str(mark.source()),
         Node::Directive(a) => emit_annotation(a, store, out, directives),
         Node::AngleQuote(d) => emit_angle_quote(d, store, out),
         Node::MarginNote(s) => emit_side_note(&s, store, out),
@@ -244,6 +245,7 @@ fn emit_content_one<W: Write>(c: Content, store: &NodeStore, out: &mut W) -> fmt
                         out.write_str(store.resolve_str(value.raw))?;
                     }
                     Segment::Kunten { value, .. } => emit_kunten(value, store, out)?,
+                    Segment::IterationMark { value, .. } => out.write_str(value.source())?,
                     // `Segment` is `#[non_exhaustive]`; forward-compat skip.
                     _ => {}
                 }
@@ -282,6 +284,7 @@ fn emit_content_as_plain_one<W: Write>(c: Content, store: &NodeStore, out: &mut 
                         out.write_str(store.resolve_str(value.raw))?;
                     }
                     Segment::Kunten { value, .. } => emit_kunten(value, store, out)?,
+                    Segment::IterationMark { value, .. } => out.write_str(value.source())?,
                     // `Segment` is `#[non_exhaustive]`; forward-compat skip.
                     _ => {}
                 }

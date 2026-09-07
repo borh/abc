@@ -94,7 +94,7 @@ use std::collections::VecDeque;
 // inherent methods (single intern, no arena); the produced `Node`s thread
 // straight into the lex output's `NodeStore`.
 use ab_aozora_syntax::alloc::Allocator;
-use ab_aozora_syntax::ast::{Content, Directive, Node, Segment};
+use ab_aozora_syntax::ast::{Content, Directive, IterationMark, Node, Segment};
 use ab_aozora_syntax::{
     DirectiveKind, RegionClose, RegionFormat, Span, is_ruby_base_char, ruby_base_class,
 };
@@ -724,17 +724,44 @@ where
         {
             let mut plain = self.pending_plain.pop_front().expect("checked Some");
             let emitted_end = plain.source_span.end.min(end);
-            self.push_output(ClassifiedSpan {
-                kind: SpanKind::Plain(PlainSpan {
-                    provenance: plain.provenance,
-                }),
-                source_span: Span::new(plain.source_span.start, emitted_end),
-            });
+            self.emit_plain_run(
+                Span::new(plain.source_span.start, emitted_end),
+                plain.provenance,
+            );
             if emitted_end < plain.source_span.end {
                 plain.source_span.start = emitted_end;
                 self.pending_plain.push_front(plain);
                 break;
             }
+        }
+    }
+
+    fn emit_plain_run(&mut self, span: Span, provenance: PlainProvenance) {
+        let mut start = span.start;
+        if provenance == PlainProvenance::Text {
+            for (offset, _) in self.source[span.start as usize..span.end as usize].match_indices('／') {
+                let position = span.start + u32::try_from(offset).expect("source fits native span");
+                let Some(mark) = IterationMark::at_start(&self.source[position as usize..span.end as usize]) else {
+                    continue;
+                };
+                if start < position {
+                    self.push_output(ClassifiedSpan {
+                        kind: SpanKind::Plain(PlainSpan { provenance }),
+                        source_span: Span::new(start, position),
+                    });
+                }
+                start = position + u32::try_from(mark.source().len()).expect("notation fits native span");
+                self.push_output(ClassifiedSpan {
+                    kind: SpanKind::Aozora(Node::IterationMark(mark)),
+                    source_span: Span::new(position, start),
+                });
+            }
+        }
+        if start < span.end {
+            self.push_output(ClassifiedSpan {
+                kind: SpanKind::Plain(PlainSpan { provenance }),
+                source_span: Span::new(start, span.end),
+            });
         }
     }
 
@@ -1509,7 +1536,10 @@ where
         // Truncate any in-progress plain run to end exactly where the ruby
         // takes over.
         self.flush_plain_up_to(m.consume_start);
-        let base_content = self.alloc.content_plain(m.base);
+        let base_start = open_span.start - u32::try_from(m.base.len()).expect("base fits native span");
+        let mut base_segments = Vec::new();
+        push_text_segment(&mut base_segments, self.source, base_start..open_span.start, self.alloc);
+        let base_content = self.alloc.content_segments(&base_segments);
         let node = self.alloc.ruby(base_content, m.reading);
         self.pending_plain.clear();
         Some(ClassifiedSpan {
@@ -2278,7 +2308,9 @@ impl RecogniseCtx<'_, '_> {
         );
 
         let body_events = &view.events[window.events.start..window.events.end];
-        if !has_nested_candidate(body_events) {
+        if !has_nested_candidate(body_events)
+            && !self.source[window.bytes.start as usize..window.bytes.end as usize].contains('／')
+        {
             // Fast path: no `※` and no `［` in the body; bytes pass
             // through verbatim. `content_plain("")` canonicalises to
             // empty `Segments(&[])` to match the legacy
@@ -2498,8 +2530,20 @@ fn push_text_segment(
     bytes: Range<u32>,
     alloc: &mut Allocator,
 ) {
-    if !bytes.is_empty() {
-        segments.push(alloc.seg_text(&source[bytes.start as usize..bytes.end as usize]));
+    let mut start = bytes.start;
+    for (offset, _) in source[bytes.start as usize..bytes.end as usize].match_indices('／') {
+        let position = bytes.start + u32::try_from(offset).expect("source fits native span");
+        let Some(value) = IterationMark::at_start(&source[position as usize..bytes.end as usize]) else {
+            continue;
+        };
+        if start < position {
+            segments.push(alloc.seg_text(&source[start as usize..position as usize]));
+        }
+        start = position + u32::try_from(value.source().len()).expect("notation fits native span");
+        segments.push(Segment::IterationMark { value, source_span: Span::new(position, start) });
+    }
+    if start < bytes.end {
+        segments.push(alloc.seg_text(&source[start as usize..bytes.end as usize]));
     }
 }
 

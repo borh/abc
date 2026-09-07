@@ -1119,7 +1119,14 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
             let spans = if matches!(interpretation, EstablishedInterpretation::LayoutBreak)
                 || matches!(
                     node["kind"].as_str(),
-                    Some("gaiji" | "kunten" | "text-variant" | "annotated_text" | "editorial_note" | "layout_break")
+                    Some(
+                        "gaiji"
+                            | "kunten"
+                            | "text-variant"
+                            | "annotated_text"
+                            | "editorial_note"
+                            | "layout_break"
+                    )
                 ) {
                 node.get("span").into_iter().collect::<Vec<_>>()
             } else {

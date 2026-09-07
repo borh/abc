@@ -419,7 +419,7 @@
     "editorial_note": {
       "type":"object", "additionalProperties":false,
       "required":["kind","note_kind","text","span"],
-      "properties": {"interpretation_marker_spans":{"type":"array","items":{"$ref":"#/$defs/span"}}, "kind":{"const":"editorial_note"}, "note_kind":{"enum":["base-edition","first-publication"]}, "text":{"type":"string","minLength":1}, "span":{"$ref":"#/$defs/span"}}
+      "properties": {"interpretation_marker_spans":{"type":"array","items":{"$ref":"#/$defs/span"}}, "kind":{"const":"editorial_note"}, "note_kind":{"enum":["base-edition","first-publication","transcription"]}, "text":{"type":"string","minLength":1}, "span":{"$ref":"#/$defs/span"}}
     },
     "gap": {
       "type":"object", "additionalProperties":false,

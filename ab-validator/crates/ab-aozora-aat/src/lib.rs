@@ -2598,6 +2598,20 @@ fn inline_content(
     )
 }
 
+fn transcription_note(decoded: &DecodedSource, node: &AozoraNode) -> Value {
+    let raw = source_slice(&decoded.span_text, &node.span);
+    let text = raw
+        .strip_prefix("［＃")
+        .and_then(|body| body.strip_suffix('］'))
+        .or_else(|| {
+            raw.strip_prefix("[#")
+                .and_then(|body| body.strip_suffix(']'))
+        })
+        .expect("classified transcription note retains its delimiters");
+    json!({"kind":"editorial_note", "note_kind":"transcription", "text":text.trim(),
+        "span":span_json(&node.span, &decoded.span_ctx)})
+}
+
 fn inline_content_range(
     decoded: &DecodedSource,
     nodes: &[AozoraNode],
@@ -2666,6 +2680,7 @@ fn inline_content_range(
                 "span":span_json(&node.span, &decoded.span_ctx)
             })),
             ProjectedKind::EditorialNote { kind, ref text } => content.push(json!({"kind":"editorial_note", "note_kind":match kind {EditionNoteKind::BaseEdition=>"base-edition", EditionNoteKind::FirstPublication=>"first-publication"}, "text":text, "span":span_json(&node.span, &decoded.span_ctx)})),
+            ProjectedKind::Directive(DirectiveKind::TranscriptionNote) => content.push(transcription_note(decoded, node)),
             ProjectedKind::Kunten { kind, ref text } => {
                 content.push(kunten_node(decoded, &node.span, kind, text));
             }

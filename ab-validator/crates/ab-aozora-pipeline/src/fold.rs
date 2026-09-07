@@ -255,6 +255,12 @@ fn node_policy(node: Node) -> Option<(ConstructId, Role, Disposition, EvidenceCl
                 semantic,
                 typed,
             ),
+            DirectiveKind::TranscriptionNote => (
+                ConstructId::TranscriptionNote,
+                Role::SourceAnnotation,
+                semantic,
+                typed,
+            ),
             DirectiveKind::RubyAttached => (
                 ConstructId::RubyAttached,
                 Role::SourceAnnotation,

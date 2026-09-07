@@ -89,6 +89,7 @@ pub enum ConstructId {
     WarichuClose,
     EmptyDirective,
     EditorNote,
+    TranscriptionNote,
     RubyAttached,
     RubyRetarget,
     RubyPairOpen,

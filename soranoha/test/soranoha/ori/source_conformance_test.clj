@@ -434,11 +434,23 @@
 
 (deftest sign-layout-retains-content-and-property-scope
   (let [result (transcribe (source "［＃ここから４字下げ、横書き、中央揃え、罫囲み］\nRESTAURANT\n西洋料理店\n［＃ここで字下げ終わり］\nといふ札。"))
-        sign (first (elements result "floatingText"))]
+        sign (first (filter #(= "keigakomi border(rule)" (attribute % "rend")) (elements result "div")))]
     (is (= "RESTAURANT\n西洋料理店\nといふ札。" (:plaintext result)))
     (is (= "RESTAURANT\n西洋料理店" (view/visible-text sign)))
     (is (= "padding-inline-start: 4em; writing-mode: horizontal-tb; text-align: center; border-style: solid"
            (attribute sign "style")))))
+
+(deftest transcription-statements-do-not-insert-additional-line-breaks
+  (doseq [separator ["\n" "\r\n" ""]]
+    (let [result (transcribe (source (str "甲［＃改行を挿入］" separator "乙")))
+          note (first (filter #(= "transcription" (attribute % "type")) (elements result "note")))]
+      (is (= (if (empty? separator) "甲乙" "甲\n乙") (:plaintext result)))
+      (is (= (if (empty? separator) "甲乙" "甲\n\n乙") (projection/markdown (:view result))))
+      (is (= "改行を挿入" (.getTextContent ^Node note)))
+      (is (= 1 (count (filter #(= "editorial-note" (get % "kind"))
+                              (get-in result [:ir "interpretation_facts"])))))
+      (is (empty? (filter #(= "layout-break" (get % "kind"))
+                          (get-in result [:ir "interpretation_facts"])))))))
 
 (deftest quoted-variants-do-not-create-body-ruby-or-gaiji
   (doseq [[body plain expected-ruby raw]

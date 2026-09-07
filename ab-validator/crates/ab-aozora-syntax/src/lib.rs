@@ -479,6 +479,8 @@ pub enum DirectiveKind {
     /// numbered note listed in the file's 凡例. Rendered as a visible `注N`
     /// superscript; typed distinctly so it leaves the `Unknown` bucket.
     EditorNote,
+    /// A source statement about an intervention made during transcription.
+    TranscriptionNote,
     /// Ruby-presence editorial note (`［＃「X」にルビ］`) — records that the run
     /// `X` carries a ruby gloss in the source. The gloss text itself is not in
     /// the directive; this is a proofreading marker, not renderable ruby.

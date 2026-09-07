@@ -192,3 +192,45 @@ fn font_size_schema_rejects_mixed_absolute_and_relative_payloads() {
         );
     }
 }
+
+#[test]
+fn inline_tcy_does_not_terminate_enclosing_indentation() {
+    for (open, layout) in [
+        (
+            "ここから１字下げ",
+            json!({"kind":"jisage", "source":"aat-block", "indent":1}),
+        ),
+        (
+            "ここから１字下げ、折り返して２字下げ",
+            json!({"kind":"burasage", "source":"aat-style", "first_line_indent":1, "continuation_indent":2}),
+        ),
+    ] {
+        let ir = convert(&format!(
+            "［＃{open}］\nビタミン［＃縦中横］B1［＃「1」は下付き小文字］［＃縦中横終わり］　二ミリグラム\n［＃ここで字下げ終わり］"
+        ));
+        let tcy_index = ir["nodes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .position(|node| node["layout"]["kind"] == "tcy")
+            .unwrap();
+        let paragraph = ir["paragraphs"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|paragraph| {
+                paragraph["node_range"]["start"].as_u64().unwrap() <= tcy_index as u64
+                    && paragraph["node_range"]["end"].as_u64().unwrap() > tcy_index as u64
+            })
+            .unwrap();
+        assert_eq!(paragraph["layout"], layout, "{ir}");
+        let start = usize::try_from(paragraph["node_range"]["start"].as_u64().unwrap()).unwrap();
+        let end = usize::try_from(paragraph["node_range"]["end"].as_u64().unwrap()).unwrap();
+        let text: String = ir["nodes"].as_array().unwrap()[start..end]
+            .iter()
+            .filter_map(|node| node["text"].as_str())
+            .collect();
+        assert_eq!(text.trim_matches('\n'), "ビタミンB1　二ミリグラム");
+        assert_eq!(ir["interpretation_problems"], json!([]));
+    }
+}

@@ -1417,7 +1417,8 @@ fn find_matching_container_close(content: &[Value], start: usize, needle: &str) 
 }
 
 fn is_container_close_with(node: &Value, needle: &str) -> bool {
-    node.get("kind").and_then(Value::as_str) == Some("raw")
+    node["x-source-flow"] != "inline"
+        && node.get("kind").and_then(Value::as_str) == Some("raw")
         && node.get("x-source-marker-kind").and_then(Value::as_str) == Some("containerClose")
         && node
             .get("source")
@@ -1442,7 +1443,8 @@ fn find_next_container_boundary(content: &[Value], start: usize) -> usize {
 
 fn is_container_marker_raw(node: &Value) -> bool {
     is_container_open_raw(node)
-        || node.get("kind").and_then(Value::as_str) == Some("raw")
+        || node["x-source-flow"] != "inline"
+            && node.get("kind").and_then(Value::as_str) == Some("raw")
             && node
                 .get("x-source-marker-kind")
                 .and_then(Value::as_str)
@@ -1450,7 +1452,8 @@ fn is_container_marker_raw(node: &Value) -> bool {
 }
 
 fn is_container_open_raw(node: &Value) -> bool {
-    node.get("kind").and_then(Value::as_str) == Some("raw")
+    node["x-source-flow"] != "inline"
+        && node.get("kind").and_then(Value::as_str) == Some("raw")
         && node.get("x-source-marker-kind").and_then(Value::as_str) == Some("containerOpen")
 }
 
@@ -1723,13 +1726,8 @@ fn inline_content(
             "x-break-kind": "page"
         }));
     }
-    // NOTE: the bare-toggle
-    // pairing pass does NOT run here. It must run AFTER block
-    // classification (`pair_bare_toggles_in_blocks` in `build_aat`):
-    // consuming the raw `containerOpen`/`containerClose` marker nodes
-    // before `blocks_from_inline_content` scans this stream changes
-    // paragraph/jizume segmentation (the markers act as container
-    // boundaries during block classification).
+    // Assemble source paragraphs and enclosing block layouts before consuming
+    // same-line formatting markers in pair_bare_toggles_in_blocks.
     pair_warichu(content)
 }
 
@@ -1811,11 +1809,8 @@ fn bare_toggle_marker(node: &Value) -> Option<(&'static str, bool)> {
 /// per-line grammar already ruled on (adopted-into or declined-in-place), and
 /// re-running the pass inside it could re-adopt a pair the full line
 /// declined (e.g. a rolled-back same-construct pair sitting inside the other
-/// construct's adopted container). Running AFTER `blocks_from_inline_content`
-/// keeps block segmentation identical to the no-pass baseline: the raw
-/// bare-toggle `containerOpen`/`containerClose` marker nodes act as container
-/// boundaries during block classification, so consuming them earlier changed
-/// paragraph/jizume segmentation.
+/// construct's adopted container). Block assembly runs first so source paragraph
+/// boundaries and enclosing layouts are established before inline markers vanish.
 fn pair_bare_toggles_in_blocks(nodes: Vec<Value>) -> Vec<Value> {
     let mut nodes = nodes;
     for node in &mut nodes {
@@ -2462,6 +2457,9 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
     }
     match node.kind {
         ProjectedKind::Region(region) => {
+            if region.is_inline() {
+                value["x-source-flow"] = json!("inline");
+            }
             if let Some((key, fields)) = region_formatting(region) {
                 value["x-format-key"] = json!(key);
                 value["x-format-open"] = json!(true);
@@ -2471,6 +2469,9 @@ fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Va
                 "aspects":["structure","layout"], "influence":{"kind":"document"}});
         }
         ProjectedKind::RegionClose(close) => {
+            if close.is_inline() {
+                value["x-source-flow"] = json!("inline");
+            }
             if let Some(key) = region_formatting_close(close) {
                 value["x-format-key"] = json!(key);
                 value["x-format-open"] = json!(false);

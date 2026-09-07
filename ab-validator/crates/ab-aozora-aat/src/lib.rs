@@ -2681,7 +2681,7 @@ fn source_segments(
                     span: mark.span,
                     marker_span: *marker,
                     container_end: None,
-                    unresolved_layout: None,
+                    layout_clauses: Vec::new(),
                 };
                 push_style_node(&mut content, decoded, &node, "emphasis");
                 resolved_text = content_target_text(&content);

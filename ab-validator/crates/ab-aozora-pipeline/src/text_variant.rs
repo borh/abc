@@ -156,7 +156,7 @@ pub fn formatting_edition_note(source: &str) -> Option<(&str, &str)> {
     Some((formatting, statement))
 }
 
-fn witness_statement_tail(witness: &str) -> Option<&str> {
+fn witness_statement_tail<'s>(witness: &'s str, current: &str) -> Option<&'s str> {
     if let Some((quoted, reference)) = witness.rsplit_once('、')
         && (is_page_line_shaped(reference) || reference == "正誤表による訂正")
     {
@@ -169,6 +169,18 @@ fn witness_statement_tail(witness: &str) -> Option<&str> {
     {
         return Some(&witness[..quoted.len() + '」'.len_utf8()]);
     }
+    if let Some((quoted, explanation)) = witness.rsplit_once("」。")
+        && explanation.starts_with('【')
+        && explanation.ends_with("に合わせました。")
+        && !explanation.contains("［＃")
+    {
+        return Some(&witness[..quoted.len() + '」'.len_utf8()]);
+    }
+    if let Some((quoted, supplied)) = witness.rsplit_once("（本文は「")
+        && supplied.strip_suffix("」）") == Some(current)
+    {
+        return Some(quoted);
+    }
     None
 }
 
@@ -180,7 +192,7 @@ fn variant_parts<'s>(
     witness: &'s str,
     witness_start: usize,
 ) -> Option<TextVariant<'s>> {
-    let with_statement_tail = witness_statement_tail(witness);
+    let with_statement_tail = witness_statement_tail(witness, current);
     let witness = with_statement_tail.unwrap_or(witness);
     let asserted = [
         "と誤記",
@@ -306,8 +318,26 @@ fn quoted_spatial_description(description: &str) -> bool {
 /// Interpret one source-owned edition statement, including a clause within a layout marker.
 #[must_use]
 pub fn edition_statement(body: &str) -> Option<(EditionNoteKind, &str)> {
+    if let Some(statement) = body.strip_prefix("入力者註：")
+        && statement.starts_with("底本では")
+        && statement.len() > "底本では".len()
+    {
+        return Some((EditionNoteKind::BaseEdition, body));
+    }
+    if let Some((context, statement)) = body.split_once("。底本では")
+        && !context.is_empty()
+        && !context.contains("［＃")
+        && !context.starts_with(['「', '［'])
+        && !["ルビの", "ここから", "ここまで", "ここで"]
+            .iter()
+            .any(|prefix| context.starts_with(prefix))
+        && !statement.is_empty()
+    {
+        return Some((EditionNoteKind::BaseEdition, body));
+    }
     if body
         .strip_prefix("底本では")
+        .or_else(|| body.strip_prefix("底本で"))
         .is_some_and(|text| !text.is_empty())
     {
         return Some((EditionNoteKind::BaseEdition, body));
@@ -498,6 +528,30 @@ mod tests {
             assert!(text_variant(source).is_none());
         }
         assert!(super::edition_note("［＃「字」は底本では「他字］").is_none());
+        assert!(super::edition_note("［＃「字」は底本では「他字。底本ではそうだ。］").is_none());
+    }
+
+    #[test]
+    fn editorial_explanations_retain_witnesses_and_complete_assertions() {
+        for source in [
+            "［＃「１７５９２」は底本では「１７３９２」。【例題一】と同一と考えられるため、【例題一】に合わせました。］",
+            "［＃「幽明の交通」は底本では「幽明交通」（本文は「幽明の交通」）］",
+        ] {
+            let variant = text_variant(source).unwrap_or_else(|| panic!("{source}"));
+            assert_eq!(&source[variant.base_span.unwrap()], variant.base_text);
+            assert!(variant.editorial_statement.is_some());
+        }
+        for source in [
+            "［＃底本で第二十四頁にあるのは、例題七（底本では例題八）です。］",
+            "［＃次の手紙は「遺書」として書かれ投函されなかった。底本では第十九巻の巻末に収録］",
+            "［＃入力者註：底本では「中国」「支那」が共に使われているが、「中国」に統一した。］",
+        ] {
+            let (_, statement) = super::edition_note(source).unwrap_or_else(|| panic!("{source}"));
+            assert_eq!(
+                statement,
+                &source["［＃".len()..source.len() - '］'.len_utf8()]
+            );
+        }
     }
 
     #[test]

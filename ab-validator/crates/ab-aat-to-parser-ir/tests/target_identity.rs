@@ -937,3 +937,33 @@ fn base_edition_geometry_does_not_format_or_retarget_principal_text() {
     );
     assert!(!ir["interpretation_problems"].as_array().unwrap().is_empty());
 }
+
+#[test]
+fn editorial_explanations_keep_variants_and_standalone_source_statements() {
+    let statement = "「１７５９２」は底本では「１７３９２」。【例題一】と同一と考えられるため、【例題一】に合わせました。";
+    let ir = convert(&format!("１７５９２［＃{statement}］"));
+    let all = nodes(&ir);
+    let app = all
+        .iter()
+        .find(|node| node["type"] == "base-text-variant")
+        .unwrap();
+    assert_eq!(app["variant"]["base_text"], "１７３９２");
+    assert!(
+        all.iter()
+            .any(|node| node["note_kind"] == "base-edition" && node["text"] == statement)
+    );
+    assert_eq!(ir["interpretation_problems"], json!([]));
+    for statement in [
+        "底本で第二十四頁にあるのは、例題七（底本では例題八）です。",
+        "次の手紙は「遺書」として書かれ投函されなかった。底本では第十九巻の巻末に収録",
+        "入力者註：底本では「中国」「支那」が共に使われているが、「中国」に統一した。",
+    ] {
+        let ir = convert(&format!("本文［＃{statement}］"));
+        assert!(
+            nodes(&ir)
+                .iter()
+                .any(|node| node["note_kind"] == "base-edition" && node["text"] == statement)
+        );
+        assert_eq!(ir["interpretation_problems"], json!([]));
+    }
+}

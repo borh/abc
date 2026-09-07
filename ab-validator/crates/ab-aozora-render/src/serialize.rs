@@ -212,7 +212,7 @@ fn emit_aozora<W: Write>(
         Node::ForcedBreak => out.write_str("［＃改行］"),
         Node::SectionBreak(kind) => emit_section_break(kind, out),
         Node::Line(lf) => emit_line(lf, out),
-        Node::Illustration(s) => emit_sashie(&s, store, out),
+        Node::Illustration(id) => emit_sashie(&store.resolve_illustration(id), store, out),
         Node::HeadingHint(h) => emit_heading_hint(h, store, out),
         Node::Heading(h) => emit_aozora_heading(&h, store, out),
         // Variants not covered inline: Container is routed through the

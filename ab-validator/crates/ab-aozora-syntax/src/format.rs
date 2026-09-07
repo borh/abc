@@ -1124,7 +1124,7 @@ impl RegionClose {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::{Node, NodeRef};
+    use crate::ast::{Illustration, MarginNote, Node, NodeRef};
 
     /// `RegionFormat` stays small and `Copy` — pinned so a payload that bloats
     /// the registry's per-node footprint trips here.
@@ -1137,7 +1137,13 @@ mod tests {
         assert_copy::<LineFormat>();
         assert_copy::<RegionClose>();
         assert!(size_of::<RegionFormat>() <= 16);
-        assert!(size_of::<Node>() <= 40);
+        assert!(
+            size_of::<Node>() <= 40,
+            "Node={}, MarginNote={}, Illustration={}",
+            size_of::<Node>(),
+            size_of::<MarginNote>(),
+            size_of::<Illustration>()
+        );
         assert!(size_of::<NodeRef>() <= 44);
     }
 

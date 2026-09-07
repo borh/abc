@@ -462,23 +462,26 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
         .iter()
         .map(|source_node| {
             let kind = match source_node.node {
-                NodeRef::Inline(Node::Illustration(image))
-                | NodeRef::BlockLeaf(Node::Illustration(image)) => ProjectedKind::Illustration {
-                    file: tree.store.resolve_str(image.file).to_owned(),
-                    number: image.number.map(|id| tree.store.resolve_str(id).to_owned()),
-                    dimensions: image
-                        .dimensions
-                        .map(|id| tree.store.resolve_str(id).to_owned()),
-                    description: image
-                        .description
-                        .map(|id| tree.store.resolve_str(id).to_owned()),
-                    caption: image.caption.and_then(|content| match content {
-                        Content::Plain(id) => Some(tree.store.resolve_str(id).to_owned()),
-                        _ => None,
-                    }),
-                    caption_span: image.caption_span.map(Into::into),
-                    description_span: image.description_span.map(Into::into),
-                },
+                NodeRef::Inline(Node::Illustration(id))
+                | NodeRef::BlockLeaf(Node::Illustration(id)) => {
+                    let image = tree.store.resolve_illustration(id);
+                    ProjectedKind::Illustration {
+                        file: tree.store.resolve_str(image.file).to_owned(),
+                        number: image.number.map(|id| tree.store.resolve_str(id).to_owned()),
+                        dimensions: image
+                            .dimensions
+                            .map(|id| tree.store.resolve_str(id).to_owned()),
+                        description: image
+                            .description
+                            .map(|id| tree.store.resolve_str(id).to_owned()),
+                        caption: image.caption.and_then(|content| match content {
+                            Content::Plain(id) => Some(tree.store.resolve_str(id).to_owned()),
+                            _ => None,
+                        }),
+                        caption_span: image.caption_span.map(Into::into),
+                        description_span: image.description_span.map(Into::into),
+                    }
+                }
                 NodeRef::Inline(Node::MarginNote(note))
                 | NodeRef::BlockLeaf(Node::MarginNote(note)) => ProjectedKind::MarginNote {
                     kind: note.kind,
@@ -488,8 +491,8 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                         .content_range_as_plain(note.base)
                         .unwrap_or_default()
                         .to_owned(),
-                    note_span: note.note_span.map(Into::into),
-                    target_span: note.target_span.map(Into::into),
+                    note_span: note.note_span.map(|span| span.span().into()),
+                    target_span: note.target_span.map(|span| span.span().into()),
                 },
                 NodeRef::Inline(Node::IterationMark(mark)) => ProjectedKind::IterationMark(mark),
                 NodeRef::Inline(Node::Kunten(k)) | NodeRef::BlockLeaf(Node::Kunten(k)) => {

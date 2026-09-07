@@ -20,7 +20,7 @@ use core::num::NonZeroI8;
 use ab_aozora_spec::Diagnostic;
 use ab_aozora_syntax::accent::{compose_accent, compose_accent_dots};
 use ab_aozora_syntax::alloc::Allocator;
-use ab_aozora_syntax::ast::{Content, Node, Segment};
+use ab_aozora_syntax::ast::{Content, Node, NonEmptySpan, Segment};
 use ab_aozora_syntax::format::ForwardOrigin;
 use ab_aozora_syntax::lint::canonical_directive;
 use ab_aozora_syntax::{
@@ -1456,7 +1456,8 @@ impl RecogniseCtx<'_, '_> {
             .alloc
             .side_note(kind, position, base, note, Some(note_span));
         if let Node::MarginNote(note) = &mut result {
-            note.target_span = target_span;
+            note.target_span = target_span
+                .map(|span| NonEmptySpan::new(span).expect("resolved target is nonempty"));
             note.origin = origin;
         }
         Some((result, consume_start))
@@ -1491,10 +1492,11 @@ impl RecogniseCtx<'_, '_> {
             return None;
         }
         let caption_content = self.alloc.content_plain(caption);
-        let mut result = self
+        let result = self
             .alloc
             .sashie(file, None, dimensions, Some(caption_content));
-        if let Node::Illustration(image) = &mut result {
+        if let Node::Illustration(id) = result {
+            let image = self.alloc.illustration_mut(id);
             let start = caption.as_ptr().addr() - self.source.as_ptr().addr();
             image.caption_span = Some(Span::new(
                 u32::try_from(start).expect("source offset fits u32"),

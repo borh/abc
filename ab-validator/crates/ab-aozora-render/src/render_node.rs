@@ -63,7 +63,7 @@ pub(crate) fn render<W: Write>(node: Node, store: &NodeStore, out: &mut W) -> fm
         Node::Kunten(k) => render_kunten(k, store, out),
         Node::IterationMark(mark) => out.write_char(mark.character()),
         Node::AngleQuote(d) => render_angle_quote(d, store, out),
-        Node::Illustration(s) => render_sashie(&s, store, out),
+        Node::Illustration(id) => render_sashie(&store.resolve_illustration(id), store, out),
         Node::Heading(h) => render_aozora_heading(&h, store, out),
         Node::HeadingHint(h) => render_heading_hint(h, store, out),
         // Other variants (`Warichu`, `Container`, future non-exhaustive

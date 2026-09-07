@@ -3,10 +3,11 @@
 //!
 //! Every text slice is a [`StrId`]; a non-empty content run is a
 //! [`ContentRange`]; a segment run is a [`SegRange`]; a bare `Content` field
-//! is an inline [`Content`]. Each scalar payload is held inline
-//! (no `Box`/`Id`), so the whole cluster stays `Copy`.
+//! is an inline [`Content`]. Large illustration payloads use a store handle
+//! so ordinary nodes retain their compact `Copy` representation.
 
 use core::fmt;
+use core::num::NonZeroU32;
 
 use ab_aozora_encoding::gaiji::{GaijiCanonical, MenKuTen, Resolved};
 
@@ -17,7 +18,7 @@ use crate::{
 };
 
 use super::intern::StrId;
-use super::store::{ContentRange, ForwardAttrs, NodeStore, SegRange};
+use super::store::{ContentRange, ForwardAttrs, IllustrationId, NodeStore, SegRange};
 
 /// Body content that may carry nested Aozora constructs. Two-tier: a single
 /// plain run or a mixed sequence of segments.
@@ -193,6 +194,30 @@ pub struct Ruby {
     pub base_emphasis: Option<ForwardAttr>,
 }
 
+/// Nonempty source extent. The nonzero end keeps optional extents compact.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct NonEmptySpan {
+    start: u32,
+    end: NonZeroU32,
+}
+
+impl NonEmptySpan {
+    /// Accept only forward, nonempty source ranges.
+    #[must_use]
+    pub fn new(span: crate::Span) -> Option<Self> {
+        (span.start < span.end).then_some(Self {
+            start: span.start,
+            end: NonZeroU32::new(span.end)?,
+        })
+    }
+
+    /// Recover the native source coordinates.
+    #[must_use]
+    pub const fn span(self) -> crate::Span {
+        crate::Span::new(self.start, self.end.get())
+    }
+}
+
 /// Margin note (注記 / 傍記).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MarginNote {
@@ -201,9 +226,9 @@ pub struct MarginNote {
     /// Physical side explicitly supplied by the source; bare に supplies none.
     pub position: Option<MarginNotePosition>,
     /// Exact annotation-text extent in native source coordinates, when sourced.
-    pub note_span: Option<crate::Span>,
+    pub note_span: Option<NonEmptySpan>,
     /// Exact literal target extent when the native resolver established one.
-    pub target_span: Option<crate::Span>,
+    pub target_span: Option<NonEmptySpan>,
     /// Whether this node owns the principal target or only references it.
     pub origin: ForwardOrigin,
     /// Preceding run the note attaches to.
@@ -377,7 +402,7 @@ pub enum Node {
     /// Heading hint (見出し指定).
     HeadingHint(HeadingHint),
     /// Illustration (挿絵).
-    Illustration(Illustration),
+    Illustration(IllustrationId),
     /// Kanbun reading-order mark (返り点).
     Kunten(Kunten),
     /// Generic annotation (注記).
@@ -469,6 +494,18 @@ impl Node {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn optional_source_extents_are_compact_and_nonempty() {
+        assert_eq!(size_of::<Option<NonEmptySpan>>(), 8);
+        for (start, end) in [(0, 0), (1, 1), (2, 1)] {
+            assert!(NonEmptySpan::new(crate::Span::new(start, end)).is_none());
+        }
+        for (start, end) in [(0, 1), (4, 20), (u32::MAX - 1, u32::MAX)] {
+            let span = crate::Span::new(start, end);
+            assert_eq!(NonEmptySpan::new(span).unwrap().span(), span);
+        }
+    }
 
     #[test]
     fn payloads_are_copy() {

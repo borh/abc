@@ -17,7 +17,11 @@ use crate::{ForwardAttr, PartialLayout};
 pub struct PartialLayoutId(NonZeroU32);
 
 use super::intern::{StrId, StrInterner};
-use super::payload::{Content, Segment};
+use super::payload::{Content, Illustration, Segment};
+
+/// Document-owned illustration metadata, kept out of the common node payload.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct IllustrationId(NonZeroU32);
 
 /// Half-open run of [`Content`] in [`NodeStore::resolve_content_range`];
 /// `len >= 1` (a content run is never empty).
@@ -81,9 +85,29 @@ pub struct NodeStore {
     segments: Vec<Segment>,
     forward_attrs: Vec<ForwardAttr>,
     partial_layouts: Vec<PartialLayout>,
+    illustrations: Vec<Illustration>,
 }
 
 impl NodeStore {
+    pub(crate) fn push_illustration(&mut self, image: Illustration) -> IllustrationId {
+        let next = u32::try_from(self.illustrations.len())
+            .expect("illustration pool exceeds u32")
+            .checked_add(1)
+            .expect("illustration pool exceeds u32");
+        self.illustrations.push(image);
+        IllustrationId(NonZeroU32::new(next).unwrap())
+    }
+
+    /// Resolve against the document that allocated the illustration.
+    #[must_use]
+    pub fn resolve_illustration(&self, id: IllustrationId) -> Illustration {
+        self.illustrations[(id.0.get() - 1) as usize]
+    }
+
+    pub(crate) fn illustration_mut(&mut self, id: IllustrationId) -> &mut Illustration {
+        &mut self.illustrations[(id.0.get() - 1) as usize]
+    }
+
     /// Retain one partial instruction without enlarging every complete payload.
     ///
     /// # Panics

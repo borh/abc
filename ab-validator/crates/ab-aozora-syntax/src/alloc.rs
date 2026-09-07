@@ -35,8 +35,8 @@ use crate::{
 
 use super::ast::{
     AngleQuote, Content, ContentRange, Directive, ForwardAttrs, ForwardFormat, Gaiji,
-    GaijiCanonicalOwned, Heading, HeadingHint, Illustration, Kunten, KuntenKind, MarginNote, Node,
-    NodeStore, Ruby, Segment, Warichu,
+    GaijiCanonicalOwned, Heading, HeadingHint, Illustration, IllustrationId, Kunten, KuntenKind,
+    MarginNote, Node, NodeStore, NonEmptySpan, Ruby, Segment, Warichu,
 };
 
 /// `true` for the canonical empty-content form (an empty segment run).
@@ -68,6 +68,11 @@ impl Allocator {
         self.store
             .push_partial_layout(crate::PartialLayout { body, unresolved })
     }
+    /// Fill source provenance while constructing an illustration.
+    pub fn illustration_mut(&mut self, id: IllustrationId) -> &mut Illustration {
+        self.store.illustration_mut(id)
+    }
+
     /// New allocator backed by an empty [`NodeStore`].
     #[must_use]
     pub fn new() -> Self {
@@ -251,11 +256,11 @@ impl Allocator {
         })
     }
 
-    /// a target-associated note with optional source provenance.
+    /// A target-associated note with optional source provenance.
     ///
     /// # Panics
     ///
-    /// Panics if `base` or `note` is empty.
+    /// Panics if `base`, `note`, or a supplied source extent is empty.
     pub fn side_note(
         &mut self,
         kind: MarginNoteKind,
@@ -275,7 +280,8 @@ impl Allocator {
         Node::MarginNote(MarginNote {
             kind,
             position,
-            note_span,
+            note_span: note_span
+                .map(|span| NonEmptySpan::new(span).expect("annotation source extent is nonempty")),
             target_span: None,
             origin: ForwardOrigin::Reclaimed,
             base,
@@ -492,7 +498,7 @@ impl Allocator {
             .filter(|n| !n.is_empty())
             .map(|n| self.store.intern(n));
         let dimensions = dimensions.map(|d| self.store.intern(d));
-        Node::Illustration(Illustration {
+        Node::Illustration(self.store.push_illustration(Illustration {
             file,
             number,
             dimensions,
@@ -500,7 +506,7 @@ impl Allocator {
             caption_span: None,
             description: None,
             description_span: None,
-        })
+        }))
     }
 
     /// `Node::Illustration` — general image form (leading description, no
@@ -526,7 +532,7 @@ impl Allocator {
         let file = self.store.intern(file);
         let description = self.store.intern(description);
         let dimensions = dimensions.map(|d| self.store.intern(d));
-        Node::Illustration(Illustration {
+        Node::Illustration(self.store.push_illustration(Illustration {
             file,
             number: None,
             dimensions,
@@ -534,7 +540,7 @@ impl Allocator {
             caption_span: None,
             description: Some(description),
             description_span: None,
-        })
+        }))
     }
 
     /// Allocate a supplied annotation with its source-established category.
@@ -788,6 +794,7 @@ mod tests {
         else {
             panic!("expected Illustration");
         };
+        let s = a.store().resolve_illustration(s);
         assert_eq!(a.store().resolve_str(s.file), "cover.png");
         assert_eq!(s.number.map(|id| a.store().resolve_str(id)), Some("1"));
         assert_eq!(
@@ -808,6 +815,7 @@ mod tests {
         else {
             panic!("expected Illustration");
         };
+        let s = a.store().resolve_illustration(s);
         assert_eq!(a.store().resolve_str(s.file), "fig.png");
         assert_eq!(
             s.description.map(|id| a.store().resolve_str(id)),

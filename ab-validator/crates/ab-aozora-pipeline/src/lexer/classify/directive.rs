@@ -1572,10 +1572,11 @@ fn classify_sashie_body(source: &AnnotationBody<'_>, alloc: &mut Allocator) -> O
     } else {
         return None;
     };
-    let mut result = alloc.sashie(file, number, dimensions, caption);
-    if let Node::Illustration(image) = &mut result
+    let result = alloc.sashie(file, number, dimensions, caption);
+    if let Node::Illustration(id) = result
         && caption.is_some()
     {
+        let image = alloc.illustration_mut(id);
         let start = source.start
             + u32::try_from(tail.as_ptr().addr() - body.as_ptr().addr() + '「'.len_utf8())
                 .expect("source offset fits u32");
@@ -1624,8 +1625,9 @@ pub(super) fn classify_general_image_body(
     }
     let inside = &rest[..close_off];
     let (file, dimensions) = illustration_file_spec(inside)?;
-    let mut result = alloc.sashie_general(file, description, dimensions);
-    if let Node::Illustration(image) = &mut result {
+    let result = alloc.sashie_general(file, description, dimensions);
+    if let Node::Illustration(id) = result {
+        let image = alloc.illustration_mut(id);
         image.description_span = Some(Span::new(
             source_start,
             source_start + u32::try_from(description.len()).expect("source offset fits u32"),

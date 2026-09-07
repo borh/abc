@@ -79,9 +79,11 @@ fn multiline_roles_preserve_two_source_paragraphs() {
             .find(|s| s["role"] == role)
             .expect("typed block role");
         assert_eq!(
-            scope["node_range"]["end"].as_u64().unwrap()
-                - scope["node_range"]["start"].as_u64().unwrap(),
-            2
+            scope["node_range"],
+            serde_json::json!({
+                "start":ir["paragraphs"][1]["node_range"]["start"],
+                "end":ir["paragraphs"][2]["node_range"]["end"]
+            })
         );
         assert_eq!(ir["interpretation_problems"], serde_json::json!([]));
     }
@@ -98,4 +100,22 @@ fn retrospective_caption_retains_whole_rich_target() {
         .expect("typed caption");
     assert_eq!(caption["text"], "漢字");
     assert_eq!(caption["inline_children"][0]["type"], "ruby");
+}
+
+#[test]
+fn caption_markers_at_line_edges_preserve_content_and_indentation() {
+    let ir = convert(
+        "前。\n［＃ここからキャプション］図３　患者。\n　説明。［＃ここでキャプション終わり］\n後。",
+    );
+    assert_eq!(ir["interpretation_problems"], serde_json::json!([]));
+    assert_eq!(ir["layout_blocks"][0]["role"], "caption");
+    assert_eq!(
+        ir["paragraphs"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|p| p["role"] == "body")
+            .count(),
+        4
+    );
 }

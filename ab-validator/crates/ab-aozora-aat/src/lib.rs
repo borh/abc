@@ -1271,11 +1271,11 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
             Some("style" | "font_size" | "small_script" | "tcy" | "caption" | "warichu")
         ) && let Some(close_index) = native_scopes.get(&index).copied()
             && node["span"]["line_start"] != content[close_index]["span"]["line_start"]
-            && marker_occupies_source_line(&node, source)
-            && marker_occupies_source_line(&content[close_index], source)
+            && marker_starts_source_line(&node, source)
+            && marker_ends_source_line(&content[close_index], source)
         {
-            push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
-            let mut inner = content[index + 1..close_index].to_vec();
+            let mut inner = mem::take(&mut paragraph);
+            inner.extend_from_slice(&content[index + 1..close_index]);
             strip_boundary_newlines(&mut inner);
             let container = json!({
                 "kind":match node["x-formatting"]["kind"].as_str() { Some("caption") => "caption_block", Some("warichu") => "warichu_block", _ => "typography_block" }, "formatting":node["x-formatting"],
@@ -1418,24 +1418,20 @@ fn blocks_from_inline_content(content: Vec<Value>, source: &str) -> Vec<Value> {
     blocks
 }
 
-fn marker_occupies_source_line(node: &Value, source: &str) -> bool {
-    let Some(start) = node["span"]["byte_start"]
+fn marker_starts_source_line(node: &Value, source: &str) -> bool {
+    node["span"]["byte_start"]
         .as_u64()
         .and_then(|n| usize::try_from(n).ok())
-    else {
-        return false;
-    };
-    let Some(end) = node["span"]["byte_end"]
+        .and_then(|start| source.get(..start))
+        .is_some_and(|before| before.rsplit('\n').next().unwrap_or("").trim().is_empty())
+}
+
+fn marker_ends_source_line(node: &Value, source: &str) -> bool {
+    node["span"]["byte_end"]
         .as_u64()
         .and_then(|n| usize::try_from(n).ok())
-    else {
-        return false;
-    };
-    let (Some(before), Some(after)) = (source.get(..start), source.get(end..)) else {
-        return false;
-    };
-    before.rsplit('\n').next().unwrap_or("").trim().is_empty()
-        && after.split('\n').next().unwrap_or("").trim().is_empty()
+        .and_then(|end| source.get(end..))
+        .is_some_and(|after| after.split('\n').next().unwrap_or("").trim().is_empty())
 }
 
 /// Resolve native-established scope extents against this source-node sequence.

@@ -446,3 +446,12 @@
       (is (= ["第一。" "第二。"]
              (mapv #(.getTextContent ^Node %) (filter #(within? wrapper %) (elements result "p")))))
       (is (empty? (get-in result [:ir "interpretation_problems"]))))))
+
+(deftest caption-markers-can-share-the-first-and-last-source-lines
+  (let [result (transcribe (source "前。\n［＃ここからキャプション］図３　患者。\n　説明。［＃ここでキャプション終わり］\n後。"))
+        wrapper (first (filter #(= "caption" (attribute % "type")) (elements result "div")))
+        paragraphs (filter #(within? wrapper %) (elements result "p"))]
+    (is (= "前。\n図３　患者。\n　説明。\n後。" (:plaintext result)))
+    (is (= 2 (count paragraphs)))
+    (is (= "説明。" (.getTextContent ^Node (second paragraphs))))
+    (is (= "text-indent: 1em" (attribute (second paragraphs) "style")))))

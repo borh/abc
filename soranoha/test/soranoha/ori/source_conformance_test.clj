@@ -380,3 +380,10 @@
     (is (= ["本文"] (texts result "hi")))
     (is (= "italic" (attribute (first (elements result "hi")) "rend")))
     (is (= 2 (count facts)))))
+
+(deftest compound-formatting-applies-independent-attributes-to-one-target
+  (let [result (transcribe (source "前１）［＃「１）」は縦中横、行右小書き］後。"))
+        spans (elements result "hi")]
+    (is (= "前１）後。" (:plaintext result)))
+    (is (= ["１）"] (texts result "hi")))
+    (is (= "text-combine-upright small-script right" (attribute (first spans) "rend")))))

@@ -696,3 +696,15 @@
   (let [result (transcribe (source "〔Pardonnez a` mon bavardage\nJ'en suis a` mon premier voyage.〕"))]
     (is (= "Pardonnez à mon bavardage\nJ'en suis à mon premier voyage." (:plaintext result)))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest source-encoded-latin-accents-retain-the-whole-ruby-base
+  (doseq [[body base reading]
+          [["〔e'galite'〕《エガリテエ》" "égalité" "エガリテエ"]
+           ["〔Charite'〕《シヤリテエ》" "Charité" "シヤリテエ"]
+           ["〔Ske^ne^〕《スケーネ》" "Skênê" "スケーネ"]
+           ["〔Orche^stra〕《オルケストラ》" "Orchêstra" "オルケストラ"]]]
+    (let [result (transcribe (source (str "前" body "後")))]
+      (is (= (str "前" base "後") (:plaintext result)))
+      (is (= [base] (texts result "rb")))
+      (is (= [reading] (texts result "rt")))
+      (is (empty? (get-in result [:ir "interpretation_problems"]))))))

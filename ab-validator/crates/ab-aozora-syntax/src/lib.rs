@@ -210,7 +210,7 @@ pub enum RubyBaseClass {
     /// Katakana (letters + `ー` / `ヽ` / `ヾ`), excluding the small `ヵ` /
     /// `ヶ` (see [`ruby_base_class`]).
     Katakana,
-    /// Basic + fullwidth Latin letters.
+    /// Basic and fullwidth Latin letters plus source-encoded accent-table letters.
     Latin,
     /// Greek letters.
     Greek,
@@ -254,6 +254,7 @@ pub const fn ruby_base_class(ch: char) -> Option<RubyBaseClass> {
         '\u{0391}'..='\u{03A9}' | '\u{03B1}'..='\u{03C9}' => RubyBaseClass::Greek,
         'А'..='я' | 'Ё' | 'ё' => RubyBaseClass::Cyrillic,
         '0'..='9' | '０'..='９' => RubyBaseClass::Decimal,
+        ch if accent::is_composed_letter(ch) => RubyBaseClass::Latin,
         _ => return None,
     })
 }

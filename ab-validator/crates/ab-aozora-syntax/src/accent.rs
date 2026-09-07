@@ -199,6 +199,36 @@ pub const ACCENT_TABLE: &[(&str, char)] = &[
     ("Z'", 'Ź'),
 ];
 
+const COMPOSED_LETTER_BOUNDS: (char, char) = {
+    let mut bounds = (char::MAX, '\0');
+    let mut i = 0;
+    while i < ACCENT_TABLE.len() {
+        let ch = ACCENT_TABLE[i].1;
+        if ch < bounds.0 {
+            bounds.0 = ch;
+        }
+        if ch > bounds.1 {
+            bounds.1 = ch;
+        }
+        i += 1;
+    }
+    bounds
+};
+
+pub(crate) const fn is_composed_letter(ch: char) -> bool {
+    if ch < COMPOSED_LETTER_BOUNDS.0 || ch > COMPOSED_LETTER_BOUNDS.1 {
+        return false;
+    }
+    let mut i = 0;
+    while i < ACCENT_TABLE.len() {
+        if ACCENT_TABLE[i].1 == ch {
+            return true;
+        }
+        i += 1;
+    }
+    false
+}
+
 /// ASCII characters that act as accent markers in the spec.
 ///
 /// Kept as a `&[u8]` slice for downstream consumers that want to

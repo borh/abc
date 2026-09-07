@@ -33,3 +33,32 @@
     (is (contains? counts {"family" "hi" "disposition" "unsupported"}))
     (is (contains? counts {"family" "alternative-reading" "disposition" "omitted"}))
     (is (thrown? clojure.lang.ExceptionInfo (projection/report :assessment/plaintext input)))))
+
+(deftest commonmark-preserves-corpus-rendition-shapes-and-source-side
+  (doseq [[rend css]
+          [["bouten 傍点 right" "text-emphasis-style: filled sesame; text-emphasis-position: over right"]
+           ["bouten 白ゴマ傍点 right" "text-emphasis-style: open sesame; text-emphasis-position: over right"]
+           ["bouten 丸傍点 right" "text-emphasis-style: filled circle; text-emphasis-position: over right"]
+           ["bouten 白丸傍点 left" "text-emphasis-style: open circle; text-emphasis-position: under left"]
+           ["bouten 白三角傍点 right" "text-emphasis-style: open triangle; text-emphasis-position: over right"]
+           ["bouten 黒三角傍点 right" "text-emphasis-style: filled triangle; text-emphasis-position: over right"]
+           ["bouten 二重丸傍点 right" "text-emphasis-style: '◎'; text-emphasis-position: over right"]
+           ["bouten 蛇の目傍点 right" "text-emphasis-style: '◉'; text-emphasis-position: over right"]
+           ["bouten ばつ傍点 right" "text-emphasis-style: '×'; text-emphasis-position: over right"]
+           ["bosen 傍線 right" "text-decoration-line: underline; text-decoration-style: solid"]
+           ["bosen 傍線 left" "text-decoration-line: overline; text-decoration-style: solid"]
+           ["bosen 傍線 both" "text-decoration-line: underline overline; text-decoration-style: solid"]
+           ["bosen 二重傍線 right" "text-decoration-line: underline; text-decoration-style: double"]
+           ["bosen 波線 right" "text-decoration-line: underline; text-decoration-style: wavy"]
+           ["text-combine-upright" "text-combine-upright: all"]
+           ["yokogumi horizontal" "writing-mode: horizontal-tb"]
+           ["keigakomi" "border: 1px solid"]]]
+    (let [input (reading (str "<p>前<hi rend='" rend "'><ruby><rb>字*</rb><rt>じ_</rt></ruby>"
+                              "<lb/>[後]</hi>。</p>"))
+          {:keys [exit out err]} @(process/process ["cmark" "--unsafe"]
+                                                   {:in (projection/markdown input) :out :string :err :string})]
+      (is (zero? exit) err)
+      (is (= (str "<p>前<span data-tei-rend=\"" rend "\" style=\"" css "\">"
+                  "<ruby><rb>字*</rb><rt>じ_</rt></ruby><br>[後]</span>。</p>\n") out) rend)
+      (is (= "前字*\n[後]。" (projection/plaintext input)))
+      (is (= "complete-for-profile" (get (projection/report :projection/markdown input) "status"))))))

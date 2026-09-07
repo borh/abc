@@ -48,18 +48,40 @@ to overwrite an existing output.
 
 ## Markdown consumer
 
-The Markdown projection is tested with the flake-pinned CommonMark reference
-consumer, cmark, with HTML enabled (`--unsafe`). This permits the writer's ruby,
-emphasis and line-break elements; it is not a claim about a hosting service's
-sanitizer. Source text is escaped for both HTML and CommonMark, including text
-inside inline HTML elements.
+The `markdown/2` profile targets horizontal CommonMark with inline HTML. The
+flake-pinned reference consumer, cmark, runs with HTML enabled (`--unsafe`). Tests
+verify that text, ruby nesting, line breaks and generated `span` attributes survive
+that consumer. They do not qualify a browser's typography or a hosting service's
+sanitizer. Readers must permit `ruby`, `rb`, `rt`, `strong`, `em`, `br`, and `span`
+with its generated `style` and `data-tei-rend` attributes. Source text is escaped for
+both HTML and CommonMark, including text inside inline HTML.
 
-The profile keeps ruby readings, bold and italic emphasis and visible body text.
-It intentionally omits source apparatus, alternative readings in `choice`, and
-layout such as exact pagination. Unsupported ruby placement, other emphasis
-renditions and unresolved glyphs remain visible in projection reports. A report's
-`complete-for-profile` result applies to that declared projection, not to correctness
-of the source parser or complete editorial fidelity.
+The profile retains visible body text and ruby readings. Explicit TEI renditions
+have these transformations:
+
+| Rendition | Horizontal projection |
+| --- | --- |
+| Bold and italic | `strong` and `em` |
+| Named sesame, circle, triangle, double-circle, bullseye and cross dots | CSS text emphasis preserving the named shape; source-right marks above, source-left below |
+| Solid, double and wavy side lines | CSS text decoration; source-right below, source-left above, both on both sides |
+| Inline horizontal text and vertical text combination | `writing-mode: horizontal-tb` and `text-combine-upright: all`; already horizontal text stays horizontal |
+| An unqualified inline box | A solid one-pixel border; no claim of the source's exact stroke width |
+
+Dot shapes and side-line distinctions follow the
+[Aozora emphasis notation](https://www.aozora.gr.jp/annotation/emphasis.html).
+Its horizontal XHTML examples use underlines for default side lines and overlines
+for left-side lines. Dot placement follows the separate
+[CSS text-emphasis convention](https://www.w3.org/TR/css-text-decor-3/#text-emphasis-position-property).
+These are explicit horizontal projection choices, not a rotation or a facsimile of
+vertical source typography. Generated spans retain the original `rend` in
+`data-tei-rend`; projection reports classify these cases as `transformed`.
+
+The profile intentionally omits source apparatus, alternative readings and layout
+such as exact pagination. Generic `emphasis` does not identify a visual style and
+remains unsupported. Unknown rendition tokens, additional TEI inline styles,
+unsupported ruby placement, and unresolved glyphs also remain explicit in reports;
+their text is retained. A `complete-for-profile` result applies to this declared
+projection, not source-parser correctness or complete editorial fidelity.
 
 ## Source correspondence and reading variants
 

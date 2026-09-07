@@ -33,6 +33,33 @@
 (defn- markdown-text [text]
   (string/replace (html-text text) #"([\\`*_{}\[\]()#+.!|>~-])" (fn [[_ token]] (str "\\" token))))
 
+(def ^:private dot-styles
+  {"傍点" "filled sesame"
+   "白ゴマ傍点" "open sesame"
+   "丸傍点" "filled circle"
+   "白丸傍点" "open circle"
+   "白三角傍点" "open triangle"
+   "黒三角傍点" "filled triangle"
+   "二重丸傍点" "'◎'"
+   "蛇の目傍点" "'◉'"
+   "ばつ傍点" "'×'"})
+
+(defn- rendition-style [^Element node]
+  (when-not (.hasAttribute node "style")
+    (let [rend (.getAttribute node "rend")]
+      (or ({"text-combine-upright" "text-combine-upright: all"
+            "yokogumi horizontal" "writing-mode: horizontal-tb"
+            "keigakomi" "border: 1px solid"} rend)
+          (when-let [[_ family shape side] (re-matches #"(bouten|bosen) ([^ ]+) (right|left|both)" rend)]
+            (case family
+              "bouten" (when-let [style (dot-styles shape)]
+                         (when-let [position ({"right" "over right" "left" "under left"} side)]
+                           (str "text-emphasis-style: " style "; text-emphasis-position: " position)))
+              "bosen" (when-let [style ({"傍線" "solid" "二重傍線" "double" "波線" "wavy"} shape)]
+                        (str "text-decoration-line: " ({"right" "underline" "left" "overline"
+                                                        "both" "underline overline"} side)
+                             "; text-decoration-style: " style))))))))
+
 (declare inline)
 
 (defn- inline-children [node html?]
@@ -59,7 +86,10 @@
                      (case rend
                        "bold" (str "<strong>" (inline-children node true) "</strong>")
                        "italic" (str "<em>" (inline-children node true) "</em>")
-                       (content)))
+                       (if-let [style (rendition-style node)]
+                         (str "<span data-tei-rend=\"" (html-text rend) "\" style=\"" (html-text style) "\">"
+                              (inline-children node true) "</span>")
+                         (content))))
       (#{Node/COMMENT_NODE Node/PROCESSING_INSTRUCTION_NODE} (.getNodeType node)) ""
       :else (content))))
 
@@ -72,7 +102,7 @@
     :else (into [] (mapcat blocks) (view/selected-children node))))
 
 (defn markdown
-  "Markdown with HTML ruby; readers must permit ruby, rb, rt, strong, em and br elements."
+  "Horizontal CommonMark with HTML ruby and generated inline rendition CSS."
   [reading]
   (let [^org.w3c.dom.Document document (:view/document reading)
         body (.item (.getElementsByTagNameNS document view/tei-namespace "body") 0)]
@@ -98,7 +128,9 @@
       (#{"note" "fw"} tag) :projection/omitted
       (= "graphic" tag) (if (= :projection/plaintext profile) :projection/omitted :projection/unsupported)
       (= "hi" tag) (if (or (= :projection/plaintext profile)
-                           (#{"bold" "italic"} (.getAttribute node "rend")))
+                           (and (not (.hasAttribute node "style"))
+                                (#{"bold" "italic"} (.getAttribute node "rend")))
+                           (rendition-style node))
                      :projection/transformed :projection/unsupported)
       (#{"ruby" "choice" "app" "head" "lb"} tag) :projection/transformed
       (= "pb" tag) (if (= :projection/plaintext profile) :projection/transformed :projection/omitted)
@@ -134,7 +166,7 @@
                              (node-outcomes profile node)))
                          (tree-seq #(seq (descend %)) descend body))
         counts (frequencies outcomes)]
-    {"profile" (str (name profile) "/1")
+    {"profile" (str (name profile) (if (= :projection/markdown profile) "/2" "/1"))
      "view" (:view/id reading)
      "status" (if (some (fn [[[_ disposition] _]]
                           (#{:projection/unresolved :projection/unsupported} disposition)) counts)

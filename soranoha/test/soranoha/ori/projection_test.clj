@@ -39,3 +39,16 @@
       (is (false? (:cached? (engine/run-stage! store (assoc markdown :stage-version "next-policy") inputs))))
       (is (:cached? (engine/run-stage! store plain inputs)))
       (finally (engine/close-store! store) (fs/delete-tree dir)))))
+
+(deftest unspecified-or-conflicting-renditions-remain-explicitly-unsupported
+  (doseq [attributes ["rend='emphasis'" "rend='bouten unknown right'"
+                      "rend='bouten 傍点 both'" "rend='bouten 傍点 left extra'"
+                      "rend='keigakomi border(double)'"
+                      "rend='bosen 傍線 right' style='color:red'"
+                      "rend='bold' style='font-style:italic'"]]
+    (let [reading (view/from-tei (tei (str "<p><hi " attributes ">本文</hi></p>")))
+          report (projection/report :projection/markdown reading)]
+      (is (= "limited" (get report "status")))
+      (is (some #(= {"family" "hi" "disposition" "unsupported" "count" 1} %) (get report "counts")))
+      (is (= "本文" (projection/plaintext reading)))
+      (is (= "markdown/2" (get report "profile"))))))

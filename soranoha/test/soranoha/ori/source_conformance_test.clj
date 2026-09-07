@@ -1433,6 +1433,19 @@
     (is (every? #(string/blank? (attribute % "style")) scopes))
     (is (empty? (get-in result [:ir "interpretation_problems"])))))
 
+(deftest compound-line-typeface-and-end-spacing-preserve-enclosing-indent
+  (let [result (transcribe (source "［＃ここから１字下げ］\n前の行。\n段原興行王　談［＃ゴシック体、地付き、地より２字あげ］\n次の行。\n［＃ここで字下げ終わり］"))
+        gothic (filterv #(= "gothic" (attribute % "rend")) (elements result "div"))
+        aligned (filterv #(string/includes? (attribute % "style") "padding-inline-end: 2em")
+                         (concat (elements result "div") (elements result "seg")))]
+    (is (= "前の行。\n段原興行王　談\n次の行。" (:plaintext result)))
+    (is (= ["段原興行王　談"] (mapv view/visible-text gothic)))
+    (is (= ["段原興行王　談"] (mapv view/visible-text aligned)))
+    (is (some #(string/includes? (attribute % "style") "padding-inline-start: 1em")
+              (elements result "div")))
+    (is (not-any? #(string/includes? (attribute % "rend") "bold") (elements result "hi")))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
 (deftest reading-variants-verify-the-shared-principal-continuation
   (let [original (transcribe (source "零《こぼ》す"))
         result (transcribe (source "零《こぼ》す［＃ルビの「こぼ（す）」は底本では「にぼ（す）」］"))]

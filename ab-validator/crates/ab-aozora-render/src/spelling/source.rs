@@ -73,8 +73,22 @@ pub(crate) fn emit_line<W: Write>(lf: LineFormat, out: &mut W) -> fmt::Result {
             amount,
             end_offset: None,
         } => write!(out, "［＃{amount}字下げ］"),
-        LineFormat::AlignEnd { offset: 0 } => out.write_str("［＃地付き］"),
-        LineFormat::AlignEnd { offset } => write!(out, "［＃地から{offset}字上げ］"),
+        LineFormat::AlignEnd {
+            offset: 0,
+            gothic: false,
+        } => out.write_str("［＃地付き］"),
+        LineFormat::AlignEnd {
+            offset,
+            gothic: false,
+        } => write!(out, "［＃地から{offset}字上げ］"),
+        LineFormat::AlignEnd {
+            offset: 0,
+            gothic: true,
+        } => out.write_str("［＃ゴシック体、地付き］"),
+        LineFormat::AlignEnd {
+            offset,
+            gothic: true,
+        } => write!(out, "［＃ゴシック体、地付き、地より{offset}字あげ］"),
         LineFormat::Center { page: true } => out.write_str("［＃ページの左右中央］"),
         LineFormat::Center { page: false } => out.write_str("［＃中央揃え］"),
         LineFormat::Framed(_) => out.write_str("［＃罫囲み］"),

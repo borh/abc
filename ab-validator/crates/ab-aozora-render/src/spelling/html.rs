@@ -672,13 +672,16 @@ pub(crate) fn render_line<W: Write>(lf: LineFormat, writer: &mut W) -> fmt::Resu
             writer,
             r#"<span class="aozora-indent aozora-indent-{amount} aozora-align-end aozora-align-end-{offset}" data-amount="{amount}" data-offset="{offset}"></span>"#,
         ),
-        LineFormat::AlignEnd { offset: 0 } => {
-            writer.write_str(r#"<span class="aozora-align-end" data-offset="0"></span>"#)
+        LineFormat::AlignEnd { offset, gothic } => {
+            writer.write_str(r#"<span class="aozora-align-end"#)?;
+            if offset != 0 {
+                write!(writer, " aozora-align-end-{offset}")?;
+            }
+            if gothic {
+                writer.write_str(" aozora-line-goshikku")?;
+            }
+            write!(writer, r#"" data-offset="{offset}"></span>"#)
         }
-        LineFormat::AlignEnd { offset } => write!(
-            writer,
-            r#"<span class="aozora-align-end aozora-align-end-{offset}" data-offset="{offset}"></span>"#,
-        ),
         LineFormat::Center { .. } => writer.write_str(r#"<span class="aozora-center"></span>"#),
         // 罫囲み (line) routes through the paired 罫囲み container in practice,
         // so this hook is classifier-unreachable (corpus render-correctness

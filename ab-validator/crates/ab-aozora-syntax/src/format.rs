@@ -707,6 +707,8 @@ pub enum LineFormat {
     AlignEnd {
         /// Chars lifted off the foot edge. `0` = 地付き, `n` = 地から n 字上げ.
         offset: u8,
+        /// A supplied Gothic typeface co-applied to the same line target.
+        gothic: bool,
     },
     /// `中央揃え` / `ページの左右中央` — centring.
     Center {

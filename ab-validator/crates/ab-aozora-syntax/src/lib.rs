@@ -742,8 +742,14 @@ mod tests {
             }
         );
         assert!(matches!(
-            LineFormat::AlignEnd { offset: 0 },
-            LineFormat::AlignEnd { offset: 0 }
+            LineFormat::AlignEnd {
+                offset: 0,
+                gothic: false
+            },
+            LineFormat::AlignEnd {
+                offset: 0,
+                gothic: false
+            }
         ));
         assert!(matches!(
             LineFormat::Center { page: true },

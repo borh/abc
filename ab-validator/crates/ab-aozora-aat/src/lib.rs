@@ -1578,6 +1578,10 @@ impl EstablishedInterpretation {
             .is_some_and(|aspects| aspects.len() == 1 && aspects[0] == "layout")
     }
 
+    fn is_font_formatting(node: &Value) -> bool {
+        node["kind"] == "font_size" || Self::is_emphasis_style(node)
+    }
+
     fn is_emphasis_style(node: &Value) -> bool {
         matches!(
             node["style_type"].as_str(),
@@ -1709,7 +1713,7 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
             for attribute in iter::once(&node["formatting"])
                 .chain(node["formatting"].as_array().into_iter().flatten())
             {
-                font_formatting |= attribute["kind"] == "font_size";
+                font_formatting |= EstablishedInterpretation::is_font_formatting(attribute);
                 layout_formatting |= attribute["kind"] == "keigakomi";
             }
         }
@@ -5534,10 +5538,16 @@ fn layout_fields(kind: &ProjectedKind) -> Option<Value> {
         ProjectedKind::Region(RegionFormat::LineWidth(width)) => {
             fields["width"] = json!(width.0.get());
         }
-        ProjectedKind::Region(RegionFormat::AlignEnd { offset })
-        | ProjectedKind::Line(LineFormat::AlignEnd { offset }) => {
+        ProjectedKind::Region(RegionFormat::AlignEnd { offset }) => {
             fields["align"] = json!("right");
             fields["offset_from_end"] = json!(offset);
+        }
+        ProjectedKind::Line(LineFormat::AlignEnd { offset, gothic }) => {
+            fields["align"] = json!("right");
+            fields["offset_from_end"] = json!(offset);
+            if *gothic {
+                fields["formatting"] = formatting_fields(ForwardAttr::Gothic)?;
+            }
         }
         ProjectedKind::Line(LineFormat::Center { page }) => {
             fields[if *page { "page_placement" } else { "align" }] =

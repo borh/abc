@@ -295,8 +295,20 @@ mod tests {
             }),
             &mut nodes,
         );
-        render_into(a.line(LineFormat::AlignEnd { offset: 0 }), &mut nodes);
-        render_into(a.line(LineFormat::AlignEnd { offset: 2 }), &mut nodes);
+        render_into(
+            a.line(LineFormat::AlignEnd {
+                offset: 0,
+                gothic: false,
+            }),
+            &mut nodes,
+        );
+        render_into(
+            a.line(LineFormat::AlignEnd {
+                offset: 2,
+                gothic: false,
+            }),
+            &mut nodes,
+        );
         render_into(a.line(LineFormat::Gothic), &mut nodes);
         for size in [
             AbsoluteSize::ExtraLarge,

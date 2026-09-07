@@ -3026,3 +3026,14 @@ fn formula_scope_markers_are_distinct_from_illustration_descriptions() {
         );
     }
 }
+
+#[test]
+fn gothic_end_spacing_retains_both_source_families() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = "段原興行王　談［＃ゴシック体、地付き、地より２字あげ］";
+    let summary = inventory_document("fixture", source, &patterns);
+    assert_eq!(summary.row_counts["indentation.chitsuki"].occurrences, 1);
+    assert_eq!(summary.row_counts["decoration.typeface"].occurrences, 1);
+    assert!(summary.unknown_examples.is_empty());
+}

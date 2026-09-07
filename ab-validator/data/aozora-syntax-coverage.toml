@@ -2303,8 +2303,8 @@ priority = 2
 category = "inline_annotation"
 feature_keys = ["typeface", "handwritten", "kyokashotai"]
 reference_sources = ["docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
-source_examples = ["［＃ここから手書き文字］", "［＃ここから教科書体］", "［＃「text」は手書き文字］"]
-source_patterns = ['［＃ここから(手書き文字|教科書体)］', '［＃ここで(手書き文字|教科書体)終わり］', '［＃「[^\n]+」は手書き文字］']
+source_examples = ["［＃ここから手書き文字］", "［＃ここから教科書体］", "［＃「text」は手書き文字］", "［＃ゴシック体、地付き、地より２字あげ］"]
+source_patterns = ['［＃ここから(手書き文字|教科書体)］', '［＃ここで(手書き文字|教科書体)終わり］', '［＃「[^\n]+」は手書き文字］', '［＃ゴシック体、地付き(、地より[０-９0-9一二三四五六七八九十]+字(あげ|上げ))?］']
 ir_nodes = ["Inline::Style", "Block::Style"]
 aat_nodes = ["style", "raw"]
 tei_projection = "hi rend=typeface"
@@ -2314,7 +2314,7 @@ validation_properties = ["style_scope_balance"]
 adapter_expectations = ["preserve typeface/style scope or raw marker"]
 oracle_cases = []
 status = "needs_research"
-status_reason = "Aozora source carries typeface style markers beyond bold/italic, including handwritten and textbook face; v1 keeps them reviewed and raw-preserved until typed style vocabulary is expanded."
+status_reason = "Supplied typefaces, including handwritten, textbook and Gothic, are distinct from bold/italic; interpretation is assessed for each source occurrence."
 
 [syntax.representability]
 source_inventory_row = "decoration.typeface"

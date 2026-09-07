@@ -153,6 +153,7 @@ enum BodyFamily {
     // === Prefix-with-parameter (parse body[match_end..]) ===
     AlignEndParamPrefix, // 地から → 地から{N}字上げ
     AlignEndSpacingPrefix,
+    GothicAlignEndPrefix,
     SashiePrefix,             // 挿絵（ → 挿絵（X）入る
     IndentBlockParamPrefix,   // ここから → ここから{N}字下げ
     AlignEndBlockParamPrefix, // ここから地から → ここから地から{N}字上げ
@@ -264,6 +265,7 @@ const fn body_family_mode(family: BodyFamily) -> MatchMode {
         | BodyFamily::KaeritenCompound => MatchMode::Exact,
         BodyFamily::AlignEndParamPrefix
         | BodyFamily::AlignEndSpacingPrefix
+        | BodyFamily::GothicAlignEndPrefix
         | BodyFamily::SashiePrefix
         | BodyFamily::IndentBlockParamPrefix
         | BodyFamily::AlignEndBlockParamPrefix
@@ -617,6 +619,10 @@ static BODY_PATTERNS: &[BodyPattern] = &[
     BodyPattern {
         needle: "地付き、地より",
         family: BodyFamily::AlignEndSpacingPrefix,
+    },
+    BodyPattern {
+        needle: "ゴシック体、地付き",
+        family: BodyFamily::GothicAlignEndPrefix,
     },
     BodyPattern {
         needle: "地付きで",
@@ -1252,7 +1258,10 @@ pub(super) fn classify_annotation_body(
             None,
         )),
         BodyFamily::AlignEnd0 => Some((
-            EmitKind::Aozora(alloc.line(LineFormat::AlignEnd { offset: 0 })),
+            EmitKind::Aozora(alloc.line(LineFormat::AlignEnd {
+                offset: 0,
+                gothic: false,
+            })),
             None,
         )),
         BodyFamily::CenterMarker => {
@@ -1459,7 +1468,10 @@ pub(super) fn classify_annotation_body(
             (matches!(tail, "字上げ" | "字上がり" | "字上げ揃え" | "字上がり揃え") && n >= 1).then(
                 || {
                     (
-                        EmitKind::Aozora(alloc.line(LineFormat::AlignEnd { offset: n })),
+                        EmitKind::Aozora(alloc.line(LineFormat::AlignEnd {
+                            offset: n,
+                            gothic: false,
+                        })),
                         None,
                     )
                 },
@@ -1468,7 +1480,29 @@ pub(super) fn classify_annotation_body(
         BodyFamily::AlignEndSpacingPrefix => {
             let offset = parse_end_spacing(&body[match_end..])?;
             Some((
-                EmitKind::Aozora(alloc.line(LineFormat::AlignEnd { offset })),
+                EmitKind::Aozora(alloc.line(LineFormat::AlignEnd {
+                    offset,
+                    gothic: false,
+                })),
+                None,
+            ))
+        }
+        BodyFamily::GothicAlignEndPrefix => {
+            let rest = &body[match_end..];
+            let offset = if rest.is_empty() {
+                0
+            } else {
+                let (offset, tail) = parse_layout_count_prefix(rest.strip_prefix("、地より")?)?;
+                if offset == 0 || !matches!(tail, "字あげ" | "字上げ") {
+                    return None;
+                }
+                offset
+            };
+            Some((
+                EmitKind::Aozora(alloc.line(LineFormat::AlignEnd {
+                    offset,
+                    gothic: true,
+                })),
                 None,
             ))
         }

@@ -101,9 +101,9 @@ pub fn decode_sjis_into(input: &[u8], dst: &mut String) -> Result<(), DecodeErro
 /// - Otherwise the bytes are decoded as `Shift_JIS` (owned).
 ///
 /// UTF-8 is tried first. Valid UTF-8 is an unambiguous signal
-/// (Shift_JIS Japanese text rarely forms valid UTF-8), whereas a UTF-8
+/// (`Shift_JIS` Japanese text rarely forms valid UTF-8), whereas a UTF-8
 /// document can contain byte sequences that happen to decode as valid
-/// Shift_JIS.
+/// `Shift_JIS`.
 ///
 /// BOM stripping, CRLF folding, and NFC normalization belong to parser
 /// sanitization and are not applied here.

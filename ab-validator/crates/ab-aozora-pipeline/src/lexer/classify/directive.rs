@@ -1200,10 +1200,7 @@ pub(super) fn is_return_mark(body: &str) -> bool {
 /// families. Returns `None` if the body matches no body-only family;
 /// the caller then falls through to forward classifiers and finally
 /// the `Directive{Unknown}` catch-all.
-#[allow(
-    clippy::too_many_lines,
-    reason = "Single match arm per BodyFamily."
-)]
+#[allow(clippy::too_many_lines, reason = "Single match arm per BodyFamily.")]
 pub(super) fn classify_annotation_body(
     source: &AnnotationBody<'_>,
     alloc: &mut Allocator,

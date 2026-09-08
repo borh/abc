@@ -89,9 +89,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             t, r, p, f1
         );
     } else {
-        eprintln!(
-            "WARN: no threshold cleared recall >= 0.85; see threshold calibration"
-        );
+        eprintln!("WARN: no threshold cleared recall >= 0.85; see threshold calibration");
     }
     Ok(())
 }

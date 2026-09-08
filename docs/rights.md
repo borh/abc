@@ -63,8 +63,8 @@ what makes that invitation credible.
 The Rust parser core under `ab-validator/crates/ab-aozora-*` is an independent
 fork of [P4suta/aozora](https://github.com/P4suta/aozora) at revision
 `1a4f864603970983719655aa4af4525958ac2d38`, dual-licensed **MIT OR
-Apache-2.0**. Its licence files, `NOTICE`, and per-file upstream headers are
-retained in the fork, and each crate root carries an upstream header. Only
+Apache-2.0**. Its licence files and `NOTICE` are retained in the fork, and
+each crate root carries a header naming the upstream crate and revision. Only
 names with the trailing hyphen are forked:
 `ab-aozora` without a suffix is a locally authored harness binary, contains no
 lifted code, and carries no upstream attribution obligation. This matters to

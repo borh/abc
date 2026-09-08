@@ -81,6 +81,12 @@ or display. All of it comes from Aozora's catalog, and is kept as the catalog
 has it rather than silently normalised — note that the given name is 竜之介
 here while the printed edition on the next block names 龍之介.
 
+The person `<idno>` names whoever issued the identifier, the same way the
+publication identifiers below do. `aozora-person-id` is Aozora's six-digit
+人物ID. A person Soranoha has to identify without one gets a locally minted
+id under `soranoha-person-id`, so no identifier claims a provenance Aozora
+did not grant.
+
 ### publicationStmt — who published this file, under what terms
 
 ```xml

@@ -133,6 +133,47 @@
     :metadata-record {"work" fully-described-work "contributors" []}
     :persons-by-id {}}))
 
+(defn- render-with-contributors [contributors persons]
+  (render/render-work
+   {:rights @fixture/grant
+    :slug "000092_000879"
+    :parser-ir {"nodes" [{"type" "text" "text" "　本文。"}]
+                "paragraphs" [{"id" "p1" "role" "body" "node_range" {"start" 0 "end" 1}}]}
+    :metadata-record {"work" fully-described-work "contributors" contributors}
+    :persons-by-id persons}))
+
+(deftest a-person-idno-names-whoever-issued-the-identifier
+  ;; The record schemas admit a locally minted person id beside Aozora's
+  ;; six-digit 人物ID. Publishing both as `aozora-person-id` would claim a
+  ;; provenance Aozora did not grant.
+  (let [tei (:tei (render-with-contributors
+                   [{"person_id" "000879" "relation_to_work" "著者"}
+                    {"person_id" "abc-000000000001" "relation_to_work" "校訂者"}]
+                   {"000879" {"person_id" "000879"
+                              "family_name" "芥川" "given_name" "龍之介"}
+                    "abc-000000000001" {"person_id" "abc-000000000001"
+                                        "family_name" "校" "given_name" "訂"}}))]
+    (testing "a six-digit id is Aozora's, and says so"
+      (is (string/includes? tei "<idno type=\"aozora-person-id\">000879</idno>")))
+
+    (testing "a locally minted id is not attributed to Aozora"
+      (is (string/includes?
+           tei "<idno type=\"soranoha-person-id\">abc-000000000001</idno>"))
+      (is (not (string/includes? tei "\"aozora-person-id\">abc-"))))))
+
+(deftest a-header-naming-both-kinds-of-person-still-validates
+  (let [dir (fs/create-temp-dir {:prefix "tei-person-idno"})
+        xml-path (str (fs/path dir "tei.xml"))]
+    (try
+      (spit xml-path (:tei (render-with-contributors
+                            [{"person_id" "abc-000000000001" "relation_to_work" "著者"}]
+                            {"abc-000000000001" {"person_id" "abc-000000000001"
+                                                 "family_name" "校" "given_name" "訂"}})))
+      (is (empty? (:violations (rng/validate! {:schema-path "schemas/tei-profile.rng"
+                                               :xml-path xml-path
+                                               :label "person idno"}))))
+      (finally (fs/delete-tree dir)))))
+
 (deftest the-header-carries-what-distinguishes-one-work-from-another
   (let [tei (:tei (render-fully-described))
         has? (fn [fragment] (string/includes? tei fragment))]

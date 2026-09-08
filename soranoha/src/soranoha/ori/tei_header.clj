@@ -43,8 +43,21 @@
 
 ;; Hiccup builder (pure data, no XML library coupling beyond keyword names)
 
+(defn- person-idno-type
+  "Who issued this person identifier.
+
+  A six-digit id is Aozora's 人物ID, taken from the catalog's 人物ID column.
+  Anything else is minted locally, and the record schemas permit one such
+  form. Publishing a locally minted id as `aozora-person-id` would claim a
+  provenance Aozora did not grant, which is the one thing an idno type
+  exists to state."
+  [person-id]
+  (if (re-matches #"[0-9]{6}" (str person-id))
+    "aozora-person-id"
+    "soranoha-person-id"))
+
 (defn- person-name-block
-  "Kanji name with the Aozora person ID; reading and romaji names when supplied."
+  "Kanji name with the person ID; reading and romaji names when supplied."
   [person]
   (let [pid (get person "person_id")
         pers-name (fn [lang surname forename & extras]
@@ -54,7 +67,7 @@
     (cond-> [(pers-name "ja"
                         (get person "family_name")
                         (get person "given_name")
-                        [:idno {:type "aozora-person-id"} pid])]
+                        [:idno {:type (person-idno-type pid)} pid])]
       (get person "family_name_reading")
       (conj (pers-name "ja-Hira"
                        (get person "family_name_reading")

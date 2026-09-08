@@ -7,6 +7,8 @@
             [clojure.java.io :as io]
             [soranoha.core.canonical :as canonical]
             [soranoha.core.hash :as hash]
+            [soranoha.ori.fixture :as ori-fixture]
+            [soranoha.ori.render :as render]
             [soranoha.snh.decode :as decode]
             [soranoha.snh.admission :as admission]
             [soranoha.snh.repo :as repo]
@@ -59,8 +61,24 @@
    "contributions" [(assoc (fact (str "author:" slug)) "contribution_id"
                            (str "author:" slug))]})
 
-(defn work-blob-bytes [kind slug variant]
-  (.getBytes (str "fixture:" kind ":" slug ":" variant) "UTF-8"))
+(defn work-blob-bytes
+  "Artifact bytes for one work in one release. The variant distinguishes
+  releases, so the same slug published twice carries different bytes.
+
+  The TEI artifact is real TEI, rendered by the publication path rather than
+  spelled out here, because the serving layer reads it: an export renders
+  every published work for its reading view, so a marker string would no
+  longer be a stand-in for a TEI artifact."
+  [kind slug variant]
+  (if (= "tei" kind)
+    (.getBytes ^String (:tei (render/render-work
+                              {:rights @ori-fixture/grant
+                               :parser-ir {"nodes" [{"type" "text"
+                                                     "text" (str "fixture:" slug ":" variant)}]}
+                               :metadata-record {"work" {"title" slug} "contributors" []}
+                               :persons-by-id {}}))
+               "UTF-8")
+    (.getBytes (str "fixture:" kind ":" slug ":" variant) "UTF-8")))
 
 (defn validation-blob-bytes
   "A representative tei-validation record carrying the consumed projection:

@@ -6,6 +6,8 @@
   (:require [charred.api :as json]
             [clojure.string :as string]
             [clojure.test :refer [deftest is testing]]
+            [soranoha.ori.fixture :as fixture]
+            [soranoha.ori.render :as render]
             [soranoha.za.browse :as browse]
             [soranoha.za.html :as html]))
 
@@ -43,10 +45,27 @@
    "encoding" "CC0-1.0"
    "statement_url" "https://soranoha.org/rights"})
 
+(defn- tei-for
+  "Published TEI for a fixture work, rendered by the same path that produces
+  the artifact a manifest names, so the reading pages under test are built
+  from the shape the release actually carries."
+  [slug]
+  (.getBytes
+   ^String (:tei (render/render-work
+                  {:rights @fixture/grant
+                   :parser-ir {"nodes" [{"type" "text" "text" (str "本文 " slug)}
+                                        {"type" "ruby"
+                                         "ruby" {"base" "池" "reading" "いけ"
+                                                 "scope" "explicit"}}]}
+                   :metadata-record {"work" {"title" "試験"} "contributors" []}
+                   :persons-by-id {}}))
+   "UTF-8"))
+
 (defn- inputs
   ([works] (inputs works []))
   ([works withdrawn]
    {:head-hex head-hex
+    :tei tei-for
     :manifests [[head-hex {"works" (mapv #(select-keys % ["slug"]) works)
                            "withdrawn" withdrawn
                            "rights" rights}]
@@ -60,13 +79,20 @@
                                     "reason_code" "rights"
                                     "statement" "Rights holder came forward."}]}}}))
 
+(defn- pages
+  "`browse/pages` yields `[path bytes]` pairs lazily, because one reading page
+  per work is more than a map should hold at once. Tests want random access,
+  so they realize the sequence they asked for."
+  [inputs]
+  (into {} (browse/pages inputs)))
+
 (defn- page [pages path]
   (String. ^bytes (get pages path) "UTF-8"))
 
 (deftest every-work-is-reachable-without-scripting-test
   (let [works [(work "000092_000879" "蜘蛛の糸" "くものいと")
                (work "000035_001567" "走れメロス" "はしれめろす")]
-        pages (browse/pages (inputs works))]
+        pages (pages (inputs works))]
     (testing "the entry point and each index exist as ordinary files"
       (doseq [path ["index.html" "authors/index.html" "titles/index.html"
                     "ndc/index.html" "rights.html" "citation.html"
@@ -101,42 +127,64 @@
           (is (string/includes? work-page (str "/works/000092_000879/" artifact))
               artifact))))))
 
+(deftest a-work-can-be-read-in-the-browser-without-scripting-test
+  (let [slug "000092_000879"
+        pages (pages (inputs [(work slug "蜘蛛の糸" "くものいと")]))
+        read-page (page pages (str "works/" slug "/read.html"))]
+    (testing "the work page sends a reader to the reading view"
+      (is (string/includes? (page pages (str "works/" slug "/index.html"))
+                            (str "/works/" slug "/read"))))
+
+    (testing "and the reading view renders the work's own published TEI"
+      (is (string/includes? read-page (str "本文 " slug)))
+      (is (string/includes? read-page "<rt>いけ</rt>")))
+
+    (testing "the orientation toggle is a checkbox, so it works with scripting off"
+      (is (string/includes? read-page "type=\"checkbox\""))
+      (is (string/includes? read-page "id=\"tategaki\""))
+      (is (not (string/includes? read-page "<script"))))
+
+    (testing "and the page says which release it renders and how to cite it"
+      (is (string/includes? read-page head-hex))
+      (is (string/includes? read-page (str "/works/" slug "/tei")))
+      (is (string/includes? read-page "/citation")))))
+
 (deftest an-unclassified-or-k-coded-work-still-has-a-class-page-test
-  (let [pages (browse/pages (inputs [(work "000001_000001" "無分類" "むぶんるい" :ndc nil)
-                                     (work "000002_000002" "児童書" "じどうしょ" :ndc "NDC K913")]))]
+  (let [pages (pages (inputs [(work "000001_000001" "無分類" "むぶんるい" :ndc nil)
+                              (work "000002_000002" "児童書" "じどうしょ" :ndc "NDC K913")]))]
     (is (string/includes? (page pages "ndc/other.html") "無分類"))
     (is (string/includes? (page pages "ndc/other.html") "児童書")
         "Aozora's K-prefixed children's codes are not a main class and are not invented into one")))
 
 (deftest a-work-with-no-recorded-reading-is-still-listed-test
-  (let [pages (browse/pages (inputs [(work "000003_000003" "読みなし" nil)]))]
+  (let [pages (pages (inputs [(work "000003_000003" "読みなし" nil)]))]
     (is (string/includes? (page pages "titles/other.html") "読みなし"))
     (is (string/includes? (page pages "titles/index.html") "/titles/other"))))
 
 (deftest a-katakana-reading-files-under-the-same-row-as-hiragana-test
-  (let [pages (browse/pages (inputs [(work "000004_000004" "カタカナ" "カタカナ")]))]
+  (let [pages (pages (inputs [(work "000004_000004" "カタカナ" "カタカナ")]))]
     (is (string/includes? (page pages "titles/ka.html") "カタカナ"))))
 
 (deftest corpus-metadata-reaches-the-page-as-text-test
   (testing "a title carrying markup characters is escaped, not interpreted"
     (let [hostile "<script>&\"'"
-          pages (browse/pages (inputs [(work "000005_000005" hostile "あ")]))
+          pages (pages (inputs [(work "000005_000005" hostile "あ")]))
           work-page (page pages "works/000005_000005/index.html")]
       (is (string/includes? work-page "&lt;script&gt;&amp;"))
       (is (not (string/includes? work-page "<script>&\"")))
       (is (string/includes? (page pages "titles/a.html") "&lt;script&gt;"))))
 
   (testing "and reaches the search index as JSON string content"
-    (let [pages (browse/pages (inputs [(work "000005_000005" "引用\"符" "あ")]))
+    (let [pages (pages (inputs [(work "000005_000005" "引用\"符" "あ")]))
           index (json/read-json (page pages "search-index.json"))]
       (is (= [["000005_000005" "引用\"符" "あ" "芥川 龍之介"]]
              (get index "works")))
       (is (= head-hex (get index "release"))))))
 
 (deftest a-withdrawn-work-explains-itself-and-names-its-last-release-test
-  (let [pages (browse/pages (inputs [(work "000035_001567" "走れメロス" "はしれめろす")]
-                                    [{"slug" "000092_000879"
-                                      "event" (str "snh:1:governance-event:" event-hex)}]))
+  (let [pages (pages (inputs [(work "000035_001567" "走れメロス" "はしれめろす")]
+                             [{"slug" "000092_000879"
+                               "event" (str "snh:1:governance-event:" event-hex)}]))
         withdrawn (page pages "works/000092_000879/index.html")]
     (is (string/includes? withdrawn "rights"))
     (is (string/includes? withdrawn "Rights holder came forward."))
@@ -149,17 +197,17 @@
 (deftest the-same-release-produces-the-same-bytes-test
   (let [works [(work "000092_000879" "蜘蛛の糸" "くものいと")
                (work "000035_001567" "走れメロス" "はしれめろす")]
-        once (browse/pages (inputs works))
-        twice (browse/pages (inputs works))]
-    (is (= (keys once) (keys twice)))
-    (is (every? (fn [[path bytes]]
-                  (java.util.Arrays/equals ^bytes bytes ^bytes (get twice path)))
-                once)
+        once (vec (browse/pages (inputs works)))
+        twice (vec (browse/pages (inputs works)))]
+    (is (= (mapv first once) (mapv first twice))
+        "the same release yields the same paths in the same order")
+    (is (every? (fn [[[_ a] [_ b]]] (java.util.Arrays/equals ^bytes a ^bytes b))
+                (map vector once twice))
         "generation is a pure function of the release, which is what lets the
          exporter's reuse check treat these files like chain content")))
 
 (deftest the-pages-point-at-the-signed-record-rather-than-standing-in-for-it-test
-  (let [pages (browse/pages (inputs [(work "000092_000879" "蜘蛛の糸" "くものいと")]))]
+  (let [pages (pages (inputs [(work "000092_000879" "蜘蛛の糸" "くものいと")]))]
     (doseq [path ["index.html" "works/000092_000879/index.html"]]
       (is (string/includes? (page pages path) "/catalog.json") path)
       (is (string/includes? (page pages path) (str "/releases/" head-hex ".json")) path))

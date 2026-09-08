@@ -57,13 +57,27 @@ An export holds two kinds of file, and the distinction is the boundary that keep
 presentation out of verification. Chain content — manifests, signatures, blobs,
 governance events, the head pointer — is copied byte for byte, and the work-facing
 routes are names over it. The browse layer is generated: a landing page, author,
-title and NDC indexes, one page per work, and a page for each withdrawn work.
-Nothing in it is named by a manifest, hashed into the chain, or checked by a
-verifier; it exists so the corpus has an entry point that is not a 64-character
-hex string. Because generation is a pure function of the release being exported,
-the exporter's reuse check covers those pages exactly as it covers chain content,
-and the same commit re-exports byte-identically. Serving stays one static tree
-with no application runtime. Private experimental lineages may be explicitly reset; a public
+title and NDC indexes, one page per work, a reading view per work, and a page for
+each withdrawn work. Nothing in it is named by a manifest, hashed into the chain,
+or checked by a verifier; it exists so the corpus has an entry point that is not
+a 64-character hex string. Because generation is a pure function of the release
+being exported, the exporter's reuse check covers those pages exactly as it
+covers chain content, and the same commit re-exports byte-identically. Serving
+stays one static tree with no application runtime.
+
+The reading view renders each work's published TEI into HTML at export time,
+from that work's own artifact bytes. It is deliberately not a stylesheet
+reference inside the published file. An `<?xml-stylesheet?>` processing
+instruction would change every TEI artifact's bytes, and so would move
+presentation into the artifact ids, into the conformance vectors and into
+genesis — leaving the one part of the system most certain to need correction as
+the one part that cannot be corrected without republishing. A rendering that
+lives in the serving layer is replaced at the next activation. It states the
+release it was rendered from and links the artifact it was rendered out of, so
+a reader who doubts the rendering can check it against the bytes, and it selects
+the same text the published plaintext projection selects — one lemma from an
+apparatus, the first supported branch of a choice — so the two projections of a
+work cannot disagree about what the work says. Private experimental lineages may be explicitly reset; a public
 lineage requires a fresh reviewed genesis and the independent authorship checkpoint
 described in the [deployment guide](../private-publication.md).
 

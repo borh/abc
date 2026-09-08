@@ -11,10 +11,12 @@
 # estate's soranoha-serve.nix, which is what keeps serving policy immutable
 # system state rather than release data.
 #
-# try_files gives the browse pages extensionless URLs (/rights -> rights.html)
-# without rewriting any body. It is tried after the literal path, so it can
-# never shadow a chain file: /works/<id>/tei resolves to the symlink, and only
-# a path with no file behind it falls through to its .html page.
+# try_files gives the browse pages extensionless URLs (/rights -> rights.html,
+# /works/<id>/read -> read.html) without rewriting any body. It is tried after
+# the literal path, so it can never shadow a chain file: /works/<id>/tei
+# resolves to the symlink, and only a path with no file behind it falls through
+# to its .html page. The reading view therefore needs no route of its own — it
+# lives under the work's existing short-cache prefix.
 {
 	admin off
 	auto_https off

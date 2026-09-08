@@ -9,11 +9,12 @@
   An export holds two kinds of file. Chain content — manifests, signatures,
   blobs, governance events, the head pointer — is copied byte for byte, and
   the work-facing routes are names over it. The browse layer is generated:
-  static pages that make the corpus reachable without a runtime. It is a pure
-  function of this release, so the reuse check covers it exactly as it covers
-  chain content, but nothing in it is named by a manifest or checked by a
-  verifier, and a reader who wants the published record follows its links to
-  the catalog, the manifests and the blobs.
+  static pages that make the corpus reachable without a runtime, including a
+  reading view rendered from each work's own published TEI bytes. It is a
+  pure function of this release, so the reuse check covers it exactly as it
+  covers chain content, but nothing in it is named by a manifest or checked
+  by a verifier, and a reader who wants the published record follows its
+  links to the catalog, the manifests and the blobs.
 
   Deployment provisions publisher-owned parents with the serving group.
   Activation serializes cooperating writers and switches current last; the
@@ -43,6 +44,17 @@
            (get-in manifest ["admission" "admission_report"])
            (get manifest "catalog")]
           (some-> (get manifest "governance_event") vector)))
+
+(defn- tei-blob-paths
+  "slug -> blob path of that work's published TEI. The browse layer's reading
+  view renders from these bytes rather than from a copy of its own, so what a
+  reader sees is a projection of the artifact the manifest names."
+  [manifest]
+  (into {}
+        (for [work (get manifest "works")
+              artifact (get work "artifacts")
+              :when (= "tei" (get artifact "type"))]
+          [(get work "slug") (verify/blob-path (verify/id->hex (get artifact "id")))])))
 
 (defn- tree-paths [root]
   (with-open [paths (Files/walk (fs/path root) (make-array java.nio.file.FileVisitOption 0))]
@@ -168,23 +180,34 @@
                              ;; which it can, because generation is a pure
                              ;; function of this release. Nothing generated here
                              ;; is named by a manifest or checked by a verifier.
-                             (let [pages (browse/pages
-                                          {:head-hex (:head chain-result)
-                                           :manifests manifests
-                                           :catalog (:value (decode/decode
-                                                             "catalog"
-                                                             (read! (verify/blob-path
-                                                                     (verify/id->hex
-                                                                      (get head-manifest "catalog"))))))
-                                           :events (into {}
-                                                         (map (fn [hex]
-                                                                [hex (:value (decode/decode
-                                                                              "governance-event"
-                                                                              (read! (verify/event-path hex))))]))
-                                                         event-hexes)})]
-                               (doseq [[path bytes] pages]
-                                 (write! path bytes))
-                               (vreset! page-count (count pages))))
+                             ;; the reading pages hold a whole rendered work
+                             ;; each, so the sequence is consumed one page at a
+                             ;; time and counted here rather than measured
+                             ;; afterwards — naming the whole sequence would
+                             ;; hold every page it has already produced
+                             (doseq [[path bytes]
+                                     (browse/pages
+                                      {:head-hex (:head chain-result)
+                                       :manifests manifests
+                                       :catalog (:value (decode/decode
+                                                         "catalog"
+                                                         (read! (verify/blob-path
+                                                                 (verify/id->hex
+                                                                  (get head-manifest "catalog"))))))
+                                       :events (into {}
+                                                     (map (fn [hex]
+                                                            [hex (:value (decode/decode
+                                                                          "governance-event"
+                                                                          (read! (verify/event-path hex))))]))
+                                                     event-hexes)
+                                       :tei (let [blob (tei-blob-paths head-manifest)]
+                                              (fn [slug]
+                                                (read! (or (get blob slug)
+                                                           (throw (ex-info "release work has no TEI artifact"
+                                                                           {:reason :missing-tei-artifact
+                                                                            :slug slug}))))))})]
+                               (write! path bytes)
+                               (vswap! page-count inc)))
                            {:head (:head chain-result)
                             :releases (count chain)
                             :blobs (count blob-hexes)

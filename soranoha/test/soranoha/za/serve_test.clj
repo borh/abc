@@ -107,9 +107,9 @@
     (testing "the work-facing layer names only the current corpus"
       (is (fs/sym-link? (fs/path out "releases/latest")))
       (is (fs/sym-link? (fs/path out "catalog.json")))
-      (is (= #{"tei" "plaintext" "markdown" "tei-validation" "index.html"}
+      (is (= #{"tei" "plaintext" "markdown" "tei-validation" "index.html" "read.html"}
              (set (map fs/file-name (fs/list-dir (fs/path out "works" slug-a)))))
-          "artifact routes are symlinks; index.html is the generated page")
+          "artifact routes are symlinks; index.html and read.html are generated")
       (is (= ["index.html"]
              (mapv fs/file-name (fs/list-dir (fs/path out "works" slug-b))))
           "a withdrawn work keeps an explanation and loses every artifact route")

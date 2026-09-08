@@ -199,6 +199,17 @@
           (is (string-body? response (str "/works/" slug-a "/tei"))
               "a work page links its own artifacts")))
 
+      (testing "a live work is readable at an extensionless URL beside its artifacts"
+        (let [response (http-get port (str "/works/" slug-a "/read"))]
+          (is (= 200 (:status response)))
+          (is (= "public, max-age=60" (:cache-control response)))
+          (is (string-body? response "id=\"tategaki\"")
+              "the vertical toggle is markup, not script")
+          (is (string-body? response (:head result))
+              "the reading names the release it was rendered from"))
+        (is (= 404 (:status (http-get port (str "/works/" slug-b "/read"))))
+            "a withdrawn work has no reading page"))
+
       (testing "a withdrawn work explains itself instead of returning a bare 404"
         (let [response (http-get port (str "/works/" slug-b "/"))]
           (is (= 200 (:status response)))

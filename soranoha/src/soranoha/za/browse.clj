@@ -20,7 +20,8 @@
   (:require [clojure.string :as string]
             [soranoha.core.rights :as rights]
             [soranoha.snh.verify :as verify]
-            [soranoha.za.html :as html]))
+            [soranoha.za.html :as html]
+            [soranoha.za.reading :as reading]))
 
 ;; ---------------------------------------------------------------- chrome
 
@@ -62,7 +63,77 @@
     "#q { width: 100%; padding: .6rem .8rem; font-size: 1rem; font-family: inherit;"
     "  border: 1px solid var(--rule); background: #fff; }"
     "#results:empty { display: none; }"
-    "@media (max-width: 32rem) { dl.facts { grid-template-columns: 1fr; } ul.cols { columns: 1; } }"]))
+    "@media (max-width: 32rem) { dl.facts { grid-template-columns: 1fr; } ul.cols { columns: 1; } }"
+
+    ;; the reading view. Everything below styles TEI that has been projected
+    ;; into HTML by soranoha.za.reading; the class names are that projection's
+    ;; vocabulary, and a class with no rule here renders as ordinary text
+    ;; rather than disappearing.
+    "p.controls { margin: 1rem 0 2rem; font-size: .9rem; }"
+    "p.controls label { cursor: pointer; }"
+    "details.front { margin: 0 0 2rem; font-size: .9rem; color: var(--muted); }"
+    "details.front summary { cursor: pointer; }"
+    ".colophon, .provenance { font-size: .9rem; }"
+    ".tei { line-height: 2; }"
+    ".tei section { margin: 0 0 1.5rem; }"
+    ".tei p { margin: 0 0 1em; }"
+    ;; a source heading is part of the work, not part of the site's chrome, so
+    ;; it takes none of the section-heading rule above
+    ".tei h2, .tei h3, .tei h4 { border: none; padding: 0; margin: 2rem 0 1rem; }"
+    ".tei h2 { font-size: 1.3rem; }"
+    ".tei h3 { font-size: 1.15rem; }"
+    ".tei h4 { font-size: 1.05rem; }"
+    ".tei ruby { ruby-align: center; }"
+    ".tei rt { font-size: .5em; font-weight: normal; }"
+    ".tei .gaiji { border-bottom: 1px dotted var(--muted); }"
+    ".tei .gaiji-unmapped { color: var(--muted); }"
+    ".tei .app, .tei .choice { border-bottom: 1px dotted var(--rule); }"
+    ".tei .note { font-size: .85em; color: var(--muted); }"
+    ".tei .gap { color: var(--muted); }"
+    ".tei .pb { display: block; block-size: 1px; background: var(--rule); margin: 1.5rem 0; }"
+    ".tei figure { margin: 1.5rem 0; padding: .75rem; border: 1px dashed var(--rule);"
+    "  color: var(--muted); font-size: .9em; }"
+    ".tei .graphic-url { font-size: .8em; }"
+    ".tei .rend-bold { font-weight: bold; }"
+    ".tei .rend-italic { font-style: italic; }"
+    ".tei .rend-gothic, .tei .rend-textbook {"
+    "  font-family: \"Hiragino Kaku Gothic ProN\", \"Yu Gothic\", \"Noto Sans JP\", sans-serif; }"
+    ".tei .rend-dots { text-emphasis: filled sesame; }"
+    ".tei .rend-dots-open { text-emphasis: open sesame; }"
+    ".tei .rend-dots-circle { text-emphasis: filled circle; }"
+    ".tei .rend-dots-circle-open { text-emphasis: open circle; }"
+    ".tei .rend-dots-double-circle { text-emphasis: open double-circle; }"
+    ".tei .rend-dots-cross { text-emphasis: filled \"\\00d7\"; }"
+    ".tei .rend-dots-triangle { text-emphasis: filled triangle; }"
+    ".tei .rend-dots-triangle-open { text-emphasis: open triangle; }"
+    ".tei .rend-line { text-decoration: underline; }"
+    ".tei .rend-line-double { text-decoration: underline double; }"
+    ".tei .rend-line-wavy { text-decoration: underline wavy; }"
+    ".tei .rend-line-dashed { text-decoration: underline dashed; }"
+    ".tei .rend-left { text-emphasis-position: under left; text-underline-position: left; }"
+    ".tei .layout-chitsuki { display: block; text-align: end; }"
+    ".tei .layout-jizume { display: block; }"
+    ".tei .layout-exponent { vertical-align: super; font-size: .75em; }"
+    ".tei .layout-baseline-position { vertical-align: sub; font-size: .85em; }"
+    ".tei .layout-small-script { font-size: .75em; }"
+    ".tei .layout-tcy { text-combine-upright: all; }"
+    ".tei .layout-keigakomi { border: 1px solid var(--muted); padding: 0 .2em; }"
+    ".tei .layout-yokogumi { writing-mode: horizontal-tb; display: inline-block; }"
+    ".tei .layout-fraction { font-size: .85em; }"
+    ".tei .type-warichu { font-size: .7em; }"
+    ".tei .type-upper, .tei .type-lower { display: block; line-height: 1.2; }"
+    ".tei .type-heading { font-weight: bold; }"
+
+    ;; Vertical is a checkbox rather than a script. Horizontal is the default
+    ;; because it is what a browser lays out correctly without help and what a
+    ;; narrow screen can show; vertical is what the source was set in, so it
+    ;; is one click away rather than unavailable. Logical properties carry the
+    ;; indents across: padding-inline-start is a left margin horizontally and
+    ;; a top margin vertically, which is what 字下げ means in each direction.
+    "body:has(#tategaki:checked) main { max-width: none; }"
+    "body:has(#tategaki:checked) #reading { writing-mode: vertical-rl;"
+    "  text-orientation: mixed; height: 78vh; overflow-x: auto; overflow-y: hidden;"
+    "  border-block: 1px solid var(--rule); padding-block: 1rem; }"]))
 
 (def ^:private search-js
   ;; Progressive enhancement only. Every work is reachable through the
@@ -124,26 +195,28 @@
    [:title (str title " — " site-name)]
    [:link {:rel "stylesheet" :href "/style.css"}]])
 
-(defn- chrome [title body]
-  (html/document
-   {:lang "ja"}
-   (head-nodes title)
-   [[:header
-     [:a {:class "site" :href "/"} site-name]
-     [:nav
-      [:a {:href "/authors/"} (bilingual "著者" "Authors")]
-      [:a {:href "/titles/"} (bilingual "作品名" "Titles")]
-      [:a {:href "/ndc/"} (bilingual "分類" "NDC")]
-      [:a {:href "/rights"} (bilingual "権利" "Rights")]
-      [:a {:href "/citation"} (bilingual "引用" "Citation")]]]
-    (into [:main] body)
-    [:footer
-     [:p (bilingual
-          "本文は青空文庫の公有作品、符号化は CC0 1.0。表示は署名された記録の投影であり、記録そのものではありません。"
-          "Texts are public-domain works from Aozora Bunko; the encoding is CC0 1.0. These pages are a projection of the signed record, not the record itself.")]
-     [:p [:a {:href "/catalog.json"} "/catalog.json"] " · "
-      [:a {:href "/releases/HEAD"} "/releases/HEAD"] " · "
-      [:a {:href "https://www.aozora.gr.jp/"} "青空文庫"]]]]))
+(defn- chrome
+  ([title body] (chrome title {} body))
+  ([title {:keys [main-class]} body]
+   (html/document
+    {:lang "ja"}
+    (head-nodes title)
+    [[:header
+      [:a {:class "site" :href "/"} site-name]
+      [:nav
+       [:a {:href "/authors/"} (bilingual "著者" "Authors")]
+       [:a {:href "/titles/"} (bilingual "作品名" "Titles")]
+       [:a {:href "/ndc/"} (bilingual "分類" "NDC")]
+       [:a {:href "/rights"} (bilingual "権利" "Rights")]
+       [:a {:href "/citation"} (bilingual "引用" "Citation")]]]
+     (into [:main (cond-> {} main-class (assoc :class main-class))] body)
+     [:footer
+      [:p (bilingual
+           "本文は青空文庫の公有作品、符号化は CC0 1.0。表示は署名された記録の投影であり、記録そのものではありません。"
+           "Texts are public-domain works from Aozora Bunko; the encoding is CC0 1.0. These pages are a projection of the signed record, not the record itself.")]
+      [:p [:a {:href "/catalog.json"} "/catalog.json"] " · "
+       [:a {:href "/releases/HEAD"} "/releases/HEAD"] " · "
+       [:a {:href "https://www.aozora.gr.jp/"} "青空文庫"]]]])))
 
 ;; -------------------------------------------------------------- metadata
 
@@ -378,6 +451,19 @@
                             (when-not (string/blank? first_edition_year)
                               (str first_edition_year "年"))])))
 
+(defn- citation-line
+  "The citation a reader should copy: author, title, orthography, identifier
+  and release. Title and author alone do not identify a work — 1966 works in
+  the Aozora catalog share an author-and-title pair — so the identifier is
+  not optional and neither is the release."
+  [head-hex work]
+  (let [{:strs [slug title orthographic_style]} work]
+    (str (or (byline work) "") "「" title "」"
+         (when-not (string/blank? orthographic_style)
+           (str "（" orthographic_style "）"))
+         "。" site-name " Aozora TEI Corpus, " slug ", release "
+         (subs head-hex 0 12) "…")))
+
 (defn- work-page [head-hex work]
   (let [{:strs [slug title title_reading subtitle original_title first_published
                 orthographic_style ndc card_url source_content_hash
@@ -417,6 +503,14 @@
        [:dd [:code (str "sha256:" source_content_hash)]]]
 
       [:section
+       [:h2 (bilingual "本文を読む" "Read the text")]
+       [:p [:a {:class "read-link" :href (str "/works/" slug "/read")}
+            (bilingual "この作品を読む" "Read this work")]]
+       [:p (bilingual
+            "ルビ、外字、傍点、字下げを表示したまま読めます。縦書きにも切り替えられます。表示は下の TEI ファイルの投影であり、記録そのものではありません。"
+            "Ruby, gaiji, emphasis marks and indentation are shown as encoded, and the text can be switched to vertical. The page is a rendering of the TEI file below, not the record itself.")]]
+
+      [:section
        [:h2 (bilingual "ダウンロード" "Downloads")]
        [:ul {:class "plain"}
         [:li [:a {:href (str "/works/" slug "/tei")} "TEI XML"]
@@ -436,14 +530,62 @@
        [:p (bilingual
             "引用には識別子と版を含めてください。作品名と著者名だけでは一意に定まりません。"
             "Cite the identifier and the release: title and author alone do not identify a work.")]
-       [:p [:code (str (or (byline work) "") "「" title "」"
-                       (when-not (string/blank? orthographic_style)
-                         (str "（" orthographic_style "）"))
-                       "。" site-name " Aozora TEI Corpus, " slug ", release "
-                       (subs head-hex 0 12) "…")]]
+       [:p [:code (citation-line head-hex work)]]
        [:p [:a {:href "/citation"} (bilingual "引用のしかた" "How to cite")]]]
 
       (release-note head-hex nil)])))
+
+(defn- reading-page
+  "One work rendered for reading. The page is a projection: it says so, names
+  the release it was rendered from, and links the TEI file it was rendered
+  out of, because a reader who thinks the rendering is wrong needs the bytes
+  to check it against."
+  [head-hex work {:keys [front body back]}]
+  (let [{:strs [slug title title_reading]} work]
+    (chrome
+     title
+     {:main-class "read"}
+     [[:h1 title]
+      (when-not (string/blank? title_reading)
+        [:p {:class "reading"} title_reading])
+      (when-let [by (byline work)]
+        [:p {:class "reading"} by])
+
+      ;; a checkbox, not a script: the toggle has to keep working with
+      ;; scripting off, like every other way into this site
+      [:p {:class "controls"}
+       [:input {:type "checkbox" :id "tategaki"}]
+       " "
+       [:label {:for "tategaki"} (bilingual "縦書きで読む" "Read vertically")]]
+
+      (when front
+        [:details {:class "front"}
+         [:summary (bilingual "テキストについての注記" "Notes on the text")]
+         (into [:div {:class "tei"}] front)])
+
+      (into [:article {:id "reading" :class "tei" :lang "ja"}] body)
+
+      (when back
+        [:section {:class "colophon"}
+         [:h2 (bilingual "底本" "Source edition")]
+         (into [:div {:class "tei"}] back)])
+
+      [:section {:class "provenance"}
+       [:h2 (bilingual "この表示について" "About this rendering")]
+       [:p (bilingual
+            "この頁は署名された TEI ファイルを読みやすく表示したものです。記録は TEI ファイルであって、この頁ではありません。校異は一つの読みを選んで示し、退けられた読みは要素の title に残しています。"
+            "This page renders the signed TEI file. The file is the record; this page is a projection of it. Where the encoding carries an apparatus, one reading is shown and the rejected witness stays available as the element's title.")]
+       [:dl {:class "facts"}
+        [:dt (bilingual "版" "Release")]
+        [:dd [:a {:href (str "/releases/" head-hex ".json")} [:code head-hex]]]
+        [:dt "TEI"]
+        [:dd [:a {:href (str "/works/" slug "/tei")} (str "/works/" slug "/tei")]]
+        [:dt (bilingual "プレーンテキスト" "Plain text")]
+        [:dd [:a {:href (str "/works/" slug "/plaintext")} (str "/works/" slug "/plaintext")]]
+        [:dt (bilingual "書誌" "Bibliography")]
+        [:dd [:a {:href (str "/works/" slug "/")} (str "/works/" slug "/")]]]
+       [:p [:code (citation-line head-hex work)]]
+       [:p [:a {:href "/citation"} (bilingual "引用のしかた" "How to cite")]]]])))
 
 (defn- withdrawn-page [slug {:strs [reason_code statement]} last-release]
   (chrome
@@ -596,11 +738,23 @@
    works))
 
 (defn pages
-  "Every browse file for one release, as a sorted map of tree-relative path
-  to bytes. Deterministic: same manifest, catalog and events in, same bytes
-  out, which is what lets the exporter's reuse check treat these files
-  exactly like chain content."
-  [{:keys [head-hex manifests catalog events]}]
+  "Every browse file for one release, as a sequence of `[path bytes]` pairs.
+
+  Deterministic: the same manifest, catalog, events and TEI bytes in, the
+  same pairs out in the same order, which is what lets the exporter's reuse
+  check treat these files exactly like chain content.
+
+  A sequence rather than a map because of the reading pages. There is one per
+  work, each holding a whole rendered text, and the corpus is large enough
+  that materialising them together would cost more memory than the whole
+  serving tree costs on disk. The caller consumes them one at a time and
+  writes each out; nothing here holds a page after it has been handed over.
+
+  `tei` is a function from slug to that work's published TEI bytes. It is
+  what makes a reading page possible without a second copy of the text: the
+  bytes it returns are the artifact the manifest names and the export has
+  already written."
+  [{:keys [head-hex manifests catalog events tei]}]
   (let [head (second (first manifests))
         works (get catalog "works")
         by-slug (into {} (map (juxt #(get % "slug") identity)) works)
@@ -608,72 +762,81 @@
         people-index (people works)
         reading-key (fn [work] [(or (some-> (get work "title_reading") hiragana) "")
                                 (get work "slug")])
-        out (volatile! [])
-        add! (fn [path ^String content] (vswap! out conj [path (utf8 content)]))]
+        page (fn [path ^String content] [path (utf8 content)])
+        by-kana (group-by kana-row-key works)
+        by-ndc (group-by ndc-class-key works)]
+    (concat
+     [(page "style.css" stylesheet)
+      (page "search.js" search-js)
+      (page "search-index.json" (search-index head-hex works))
+      (page "index.html" (landing head-hex works (count withdrawn)))
+      (page "rights.html" (rights-page (get head "rights")))
+      (page "citation.html" (citation-page head-hex))
 
-    (add! "style.css" stylesheet)
-    (add! "search.js" search-js)
-    (add! "search-index.json" (search-index head-hex works))
-    (add! "index.html" (landing head-hex works (count withdrawn)))
-    (add! "rights.html" (rights-page (get head "rights")))
-    (add! "citation.html" (citation-page head-hex))
+      (page "authors/index.html"
+            (author-index (mapv (fn [[id {:keys [person by-relation]}]]
+                                  {:person-id id
+                                   :label (person-label person)
+                                   :count* (count (distinct (mapcat val by-relation)))})
+                                (sort-by (fn [[id {:keys [person]}]]
+                                           [(or (person-name-romaji person) "￿")
+                                            (or (person-name-ja person) "")
+                                            id])
+                                         people-index))))
 
-    ;; people
-    (add! "authors/index.html"
-          (author-index (mapv (fn [[id {:keys [person by-relation]}]]
-                                {:person-id id
-                                 :label (person-label person)
-                                 :count* (count (distinct (mapcat val by-relation)))})
-                              (sort-by (fn [[id {:keys [person]}]]
-                                         [(or (person-name-romaji person) "￿")
-                                          (or (person-name-ja person) "")
-                                          id])
-                                       people-index))))
-    (doseq [[id {:keys [person by-relation]}] people-index]
-      (add! (str "authors/" id ".html")
-            (author-page {:label (person-label person)
-                          :romaji (person-name-romaji person)
-                          :person-id id}
-                         (sort-by key
-                                  (update-vals by-relation
-                                               #(vec (sort-by reading-key %)))))))
-
-    ;; titles by kana row
-    (let [grouped (group-by kana-row-key works)]
-      (add! "titles/index.html"
+      (page "titles/index.html"
             (title-index (mapv (fn [[key label _]]
-                                 {:key key :label label
-                                  :count* (count (get grouped key))})
+                                 {:key key :label label :count* (count (get by-kana key))})
                                kana-rows)))
-      (doseq [[key label _] kana-rows]
-        (add! (str "titles/" key ".html")
-              (title-row-page label (vec (sort-by reading-key (get grouped key)))))))
 
-    ;; NDC main classes
-    (let [grouped (group-by ndc-class-key works)]
-      (add! "ndc/index.html"
+      (page "ndc/index.html"
             (ndc-index (mapv (fn [[key ja en]]
-                               {:key key :ja ja :en en :count* (count (get grouped key))})
-                             ndc-classes)))
-      (doseq [[key ja en] ndc-classes]
-        (add! (str "ndc/" key ".html")
-              (ndc-class-page {:key key :ja ja :en en}
-                              (vec (sort-by reading-key (get grouped key)))))))
+                               {:key key :ja ja :en en :count* (count (get by-ndc key))})
+                             ndc-classes)))]
 
-    ;; works, then the withdrawn works that no longer have one
-    (doseq [work works]
-      (add! (str "works/" (get work "slug") "/index.html")
-            (work-page head-hex work)))
-    (doseq [{:strs [slug event]} withdrawn
-            :when (not (contains? by-slug slug))]
-      (let [entry (->> (get (get events (verify/id->hex event)) "entries")
-                       (filter #(= slug (get % "slug")))
-                       first)
-            last-release (some (fn [[hex manifest]]
-                                 (when (some #(= slug (get % "slug")) (get manifest "works"))
-                                   hex))
-                               manifests)]
-        (add! (str "works/" slug "/index.html")
-              (withdrawn-page slug entry last-release))))
+     (map (fn [[id {:keys [person by-relation]}]]
+            (page (str "authors/" id ".html")
+                  (author-page {:label (person-label person)
+                                :romaji (person-name-romaji person)
+                                :person-id id}
+                               (sort-by key
+                                        (update-vals by-relation
+                                                     #(vec (sort-by reading-key %)))))))
+          people-index)
 
-    (into (sorted-map) @out)))
+     (map (fn [[key label _]]
+            (page (str "titles/" key ".html")
+                  (title-row-page label (vec (sort-by reading-key (get by-kana key))))))
+          kana-rows)
+
+     (map (fn [[key ja en]]
+            (page (str "ndc/" key ".html")
+                  (ndc-class-page {:key key :ja ja :en en}
+                                  (vec (sort-by reading-key (get by-ndc key))))))
+          ndc-classes)
+
+     ;; the works, each with its bibliography page and its reading page. This
+     ;; is the part that must stay lazy.
+     (mapcat (fn [work]
+               (let [slug (get work "slug")]
+                 [(page (str "works/" slug "/index.html") (work-page head-hex work))
+                  (page (str "works/" slug "/read.html")
+                        (reading-page
+                         head-hex work
+                         (reading/render (String. ^bytes (tei slug) "UTF-8"))))]))
+             works)
+
+     ;; then the withdrawn works, which no longer have one
+     (keep (fn [{:strs [slug event]}]
+             (when-not (contains? by-slug slug)
+               (let [entry (->> (get (get events (verify/id->hex event)) "entries")
+                                (filter #(= slug (get % "slug")))
+                                first)
+                     last-release (some (fn [[hex manifest]]
+                                          (when (some #(= slug (get % "slug"))
+                                                      (get manifest "works"))
+                                            hex))
+                                        manifests)]
+                 (page (str "works/" slug "/index.html")
+                       (withdrawn-page slug entry last-release)))))
+           withdrawn))))

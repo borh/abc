@@ -75,11 +75,14 @@ release-parser-reproducible:
 	{{nix_eval}} build ./ab-validator#ab-aat-to-parser-ir --rebuild --no-link --print-build-logs
 	@echo "release parser binaries rebuild reproducibly"
 
-# Authenticate instrument policies against their declared source closure.
-# This requires building the identity suite; flake evaluation alone cannot run it.
+# Authenticate instrument policies against their declared source closure, and
+# establish that capture generation is deterministic, which is what makes a
+# capture worth retaining as evidence. Both require building their suites;
+# check-no-build's `flake check --no-build` evaluates them without running them.
 parser-rq-instrument-identity:
 	@system="$({{nix_eval}} eval --impure --raw --expr builtins.currentSystem)"; \
 	{{nix_eval}} build "./ab-validator#checks.$system.parser-rq-publication-pytest" \
+		"./ab-validator#checks.$system.parser-rq-predicate-hardening-capture-smoke" \
 		--no-link --print-build-logs
 
 validate: check-no-build evidence-gate parser-rq-instrument-identity release-parser-reproducible

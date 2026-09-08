@@ -51,7 +51,19 @@ history. The private CAS and a serving directory do not establish that authority
 Serving activation verifies the chain and exports the selected commit before
 atomically changing its active pointer. A failed verification leaves the previous
 export active. Storage paths, backup and retention are server configuration, not
-wire protocol. Private experimental lineages may be explicitly reset; a public
+wire protocol.
+
+An export holds two kinds of file, and the distinction is the boundary that keeps
+presentation out of verification. Chain content — manifests, signatures, blobs,
+governance events, the head pointer — is copied byte for byte, and the work-facing
+routes are names over it. The browse layer is generated: a landing page, author,
+title and NDC indexes, one page per work, and a page for each withdrawn work.
+Nothing in it is named by a manifest, hashed into the chain, or checked by a
+verifier; it exists so the corpus has an entry point that is not a 64-character
+hex string. Because generation is a pure function of the release being exported,
+the exporter's reuse check covers those pages exactly as it covers chain content,
+and the same commit re-exports byte-identically. Serving stays one static tree
+with no application runtime. Private experimental lineages may be explicitly reset; a public
 lineage requires a fresh reviewed genesis and the independent authorship checkpoint
 described in the [deployment guide](../private-publication.md).
 

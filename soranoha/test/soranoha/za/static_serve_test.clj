@@ -10,6 +10,7 @@
   the published checker's concern, not this test's."
   (:require [babashka.fs :as fs]
             [charred.api :as json]
+            [clojure.string :as string]
             [clojure.test :refer [deftest is testing]]
             [soranoha.core.hash :as hash]
             [soranoha.snh.fixture :as fx]
@@ -86,6 +87,9 @@
 
 (defn- json-body [response]
   (json/read-json (String. ^bytes (:body response) "UTF-8")))
+
+(defn- string-body? [response ^String needle]
+  (string/includes? (String. ^bytes (:body response) "UTF-8") needle))
 
 (deftest the-static-server-serves-the-generated-tree-under-withdrawal
   (let [{:keys [clone withdrawal]} (chain-with-withdrawal!)
@@ -184,8 +188,30 @@
           (is (= 200 (:status response)))
           (is (= (:head result) (sign/parse-hex64-lf (:body response))))))
 
+      (testing "the browse layer answers at the front door and at readable URLs"
+        (doseq [path ["/" "/authors/" "/titles/" "/ndc/" "/rights" "/citation"
+                      "/style.css" "/search.js" "/search-index.json"]]
+          (let [response (http-get port path)]
+            (is (= 200 (:status response)) path)
+            (is (= "public, max-age=60" (:cache-control response)) path)))
+        (let [response (http-get port (str "/works/" slug-a "/"))]
+          (is (= 200 (:status response)))
+          (is (string-body? response (str "/works/" slug-a "/tei"))
+              "a work page links its own artifacts")))
+
+      (testing "a withdrawn work explains itself instead of returning a bare 404"
+        (let [response (http-get port (str "/works/" slug-b "/"))]
+          (is (= 200 (:status response)))
+          (is (string-body? response "takedown-request"))
+          (is (string-body? response (str "/withdrawn/" slug-b ".json")))))
+
+      (testing "generated pages never shadow chain content"
+        (doseq [[type hex] current-artifacts]
+          (is (= hex (hash/sha256-bytes
+                      (:body (http-get port (str "/works/" slug-a "/" type)))))))
+        (is (= 404 (:status (http-get port "/works/no_such_work/")))))
+
       (testing "nothing outside the tree is servable"
-        (is (not= 200 (:status (http-get port "/"))))
         (is (not= 200 (:status (http-get port "/works/"))))
         (is (not= 200 (:status (http-get port "/%2e%2e/outside-the-tree.txt"))))
         (is (not= 200 (:status (http-get

@@ -3,12 +3,24 @@
   beside their destination and installed by rename; existing trees are reused
   only after checking every expected byte, link and path. Work-facing routes
   are relative symlinks into the verified chain content. Withdrawn works have
-  no current work route, but remain available through historical manifests.
+  no current work route, but remain available through historical manifests
+  and through a generated page explaining the withdrawal.
+
+  An export holds two kinds of file. Chain content — manifests, signatures,
+  blobs, governance events, the head pointer — is copied byte for byte, and
+  the work-facing routes are names over it. The browse layer is generated:
+  static pages that make the corpus reachable without a runtime. It is a pure
+  function of this release, so the reuse check covers it exactly as it covers
+  chain content, but nothing in it is named by a manifest or checked by a
+  verifier, and a reader who wants the published record follows its links to
+  the catalog, the manifests and the blobs.
+
   Deployment provisions publisher-owned parents with the serving group.
   Activation serializes cooperating writers and switches current last; the
   filesystem is trusted against mutation by other processes with that owner."
   (:require [babashka.fs :as fs]
             [soranoha.snh.decode :as decode]
+            [soranoha.za.browse :as browse]
             [soranoha.snh.repo :as repo]
             [soranoha.snh.sign :as sign]
             [soranoha.snh.verify :as verify]
@@ -83,7 +95,8 @@
                                    (= target (str (fs/read-link path))))
                       (mismatch! path))
                     (fs/create-sym-link path target)))
-          chain (:chain chain-result)]
+          chain (:chain chain-result)
+          page-count (volatile! 0)]
       (try
         (let [result (view/with-batch
                        v
@@ -93,16 +106,18 @@
                                            (throw (ex-info "verified chain path unreadable"
                                                            {:reason :path-unreadable :path path}))))
                                manifests (mapv (fn [hex]
-                                                 (:value (decode/decode
-                                                          "release-manifest"
-                                                          (read! (verify/manifest-path hex)))))
+                                                 [hex
+                                                  (:value (decode/decode
+                                                           "release-manifest"
+                                                           (read! (verify/manifest-path hex))))])
                                                chain)
                                blob-hexes (into (sorted-set)
-                                                (comp (mapcat referenced-ids)
+                                                (comp (map second)
+                                                      (mapcat referenced-ids)
                                                       (map verify/id->hex))
                                                 manifests)
                                event-hexes (into (sorted-set)
-                                                 (keep #(some-> (get % "governance_event")
+                                                 (keep #(some-> (get (second %) "governance_event")
                                                                 verify/id->hex))
                                                  manifests)]
                            (doseq [hex chain]
@@ -120,8 +135,9 @@
                            ;; the work-facing layer is relative symlinks into chain content
                            ;; — human URLs for the current corpus, slug-addressed withdrawal
                            ;; statements, and the short-cache head pointer — so it adds
-                           ;; names, never bytes
-                           (let [head-manifest (first manifests)]
+                           ;; names, never bytes. Generated presentation follows it, and is
+                           ;; the one place this export writes bytes of its own.
+                           (let [head-manifest (second (first manifests))]
                              (link! (fs/path staging "releases" "latest")
                                     (str (:head chain-result) ".json"))
                              ;; the catalog is the one artifact a reader needs
@@ -141,10 +157,38 @@
                                (link!
                                 (fs/path staging "withdrawn" (str (get entry "slug") ".json"))
                                 (str "../" (verify/event-path
-                                            (verify/id->hex (get entry "event")))))))
+                                            (verify/id->hex (get entry "event"))))))
+                             ;; the browse layer: presentation over bytes this
+                             ;; export has already verified, written as ordinary
+                             ;; files so serving stays one static tree with no
+                             ;; runtime. Generated here rather than beside the
+                             ;; tree so that `current` remains the single
+                             ;; readiness token, and so the reuse check covers
+                             ;; the pages exactly as it covers chain content —
+                             ;; which it can, because generation is a pure
+                             ;; function of this release. Nothing generated here
+                             ;; is named by a manifest or checked by a verifier.
+                             (let [pages (browse/pages
+                                          {:head-hex (:head chain-result)
+                                           :manifests manifests
+                                           :catalog (:value (decode/decode
+                                                             "catalog"
+                                                             (read! (verify/blob-path
+                                                                     (verify/id->hex
+                                                                      (get head-manifest "catalog"))))))
+                                           :events (into {}
+                                                         (map (fn [hex]
+                                                                [hex (:value (decode/decode
+                                                                              "governance-event"
+                                                                              (read! (verify/event-path hex))))]))
+                                                         event-hexes)})]
+                               (doseq [[path bytes] pages]
+                                 (write! path bytes))
+                               (vreset! page-count (count pages))))
                            {:head (:head chain-result)
                             :releases (count chain)
-                            :blobs (count blob-hexes)})))]
+                            :blobs (count blob-hexes)
+                            :pages @page-count})))]
           ;; the rename targets the exact destination path, never a
           ;; directory to nest under; atomicity here is atomic namespace
           ;; visibility — not no-clobber or crash durability — and the

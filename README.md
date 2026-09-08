@@ -81,6 +81,22 @@ directory, as in `000092_000879`. See
 [work identifiers](soranoha/docs/work-identifiers.md) for the form, what it
 promises across releases, and where exact edition identity lives instead.
 
+## The published site
+
+An exported serving tree holds two kinds of file. Chain content — manifests,
+signatures, blobs, governance events — is copied byte for byte, and the
+work-facing routes are names over it. The browse layer is generated from that
+release: a landing page at `/`, author, title and NDC indexes, one page per
+work at `/works/<identifier>/`, and an explanation for each withdrawn work.
+Nothing generated is named by a manifest or checked by a verifier; the signed
+discovery record is `/catalog.json`. Site text is bilingual, Japanese first.
+
+Serving is a static tree with no application runtime, configured entirely by
+[the checked-in Caddyfile](soranoha/config/caddy/Caddyfile). Changing it
+requires bumping the revision and hash pin in the estate's `soranoha-serve.nix`,
+which is what keeps serving policy immutable system state rather than release
+data.
+
 ## Rights and citation
 
 | Scope | Licence |

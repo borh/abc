@@ -5,11 +5,16 @@
 # Every response is a file from the tree — static file serving only, no
 # directory listings, no body rewriting. Digest-addressed paths (blobs,
 # manifests, signatures, governance events) are immutable; the pointer
-# layer (releases/latest, releases/HEAD, catalog.json, works/, withdrawn/) is
-# short-cache, since it moves with each release. Updating this file requires
-# bumping the rev + hash pin in the estate's soranoha-serve.nix, which is what
-# keeps serving policy immutable system state rather than release data.
-
+# layer (releases/latest, releases/HEAD, catalog.json, works/, withdrawn/) and
+# the generated browse pages are short-cache, since they move with each
+# release. Updating this file requires bumping the rev + hash pin in the
+# estate's soranoha-serve.nix, which is what keeps serving policy immutable
+# system state rather than release data.
+#
+# try_files gives the browse pages extensionless URLs (/rights -> rights.html)
+# without rewriting any body. It is tried after the literal path, so it can
+# never shadow a chain file: /works/<id>/tei resolves to the symlink, and only
+# a path with no file behind it falls through to its .html page.
 {
 	admin off
 	auto_https off
@@ -30,6 +35,14 @@ http://{$SORANOHA_SERVE_LISTEN} {
 
 	@pointer path /releases/latest /releases/HEAD /catalog.json /works/* /withdrawn/*
 	header @pointer Cache-Control "public, max-age=60"
+
+	# generated presentation: a projection of this release, replaced whole at
+	# the next activation, so it is cached like the pointer layer and never
+	# like a digest-addressed file
+	@browse path / /index.html /style.css /search.js /search-index.json /authors /authors/* /titles /titles/* /ndc /ndc/* /rights /citation
+	header @browse Cache-Control "public, max-age=60"
+
+	try_files {path} {path}.html
 
 	file_server
 }

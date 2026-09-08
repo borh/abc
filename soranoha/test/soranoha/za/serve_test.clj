@@ -107,9 +107,35 @@
     (testing "the work-facing layer names only the current corpus"
       (is (fs/sym-link? (fs/path out "releases/latest")))
       (is (fs/sym-link? (fs/path out "catalog.json")))
-      (is (= [slug-a]
-             (mapv fs/file-name (fs/list-dir (fs/path out "works")))))
+      (is (= #{"tei" "plaintext" "markdown" "tei-validation" "index.html"}
+             (set (map fs/file-name (fs/list-dir (fs/path out "works" slug-a)))))
+          "artifact routes are symlinks; index.html is the generated page")
+      (is (= ["index.html"]
+             (mapv fs/file-name (fs/list-dir (fs/path out "works" slug-b))))
+          "a withdrawn work keeps an explanation and loses every artifact route")
       (is (fs/sym-link? (fs/path out "withdrawn" (str slug-b ".json")))))
+
+    (testing "the browse layer is generated presentation over the same release"
+      (is (pos? (:pages result)))
+      (doseq [rel ["index.html" "style.css" "search.js" "search-index.json"
+                   "authors/index.html" "titles/index.html" "ndc/index.html"
+                   "rights.html" "citation.html"]]
+        (is (fs/regular-file? (fs/path out rel)) rel))
+      (let [landing (String. (tree-bytes out "index.html") "UTF-8")]
+        (is (str/includes? landing (:head result))
+            "the landing page names the release it was generated from")
+        (is (str/includes? landing "/catalog.json")
+            "and points at the signed record rather than standing in for it"))
+      (let [page (String. (tree-bytes out (str "works/" slug-a "/index.html")) "UTF-8")]
+        (is (str/includes? page slug-a))
+        (is (str/includes? page (str "/works/" slug-a "/tei"))))
+      (let [page (String. (tree-bytes out (str "works/" slug-b "/index.html")) "UTF-8")]
+        (is (str/includes? page "takedown-request"))
+        (is (str/includes? page "Documented request."))
+        (is (str/includes? page (str "/withdrawn/" slug-b ".json"))))
+      (let [index (json/read-json (String. (tree-bytes out "search-index.json") "UTF-8"))]
+        (is (= (:head result) (get index "release")))
+        (is (= [slug-a] (mapv first (get index "works"))))))
 
     (testing "the governing event and its signature are served"
       (let [event-hex (verify/id->hex (:event withdrawal))]

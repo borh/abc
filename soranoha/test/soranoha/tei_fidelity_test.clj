@@ -1,9 +1,11 @@
 (ns soranoha.tei-fidelity-test
   (:require [babashka.fs :as fs]
+            [clojure.string :as string]
             [soranoha.ori.fixture :as fixture]
             [soranoha.ori.render :as render]
             [soranoha.ori.relaxng :as rng]
-            [clojure.test :refer [deftest is]]
+            [soranoha.ori.schematron :as schematron]
+            [clojure.test :refer [deftest is testing]]
             [soranoha.ori.tei :as tei]))
 
 (defn- elements [tree tag]
@@ -100,4 +102,90 @@
       (spit xml-path (:tei result))
       (is (empty? (:violations (rng/validate! {:schema-path "schemas/tei-profile.rng"
                                                :xml-path xml-path :label "source layout"}))))
+      (finally (fs/delete-tree dir)))))
+
+(def ^:private fully-described-work
+  "A work carrying every catalog field the header can express. Measured over
+  the Aozora catalog, these are what make a work identifiable: author plus
+  title leaves 1966 works ambiguous, and 副題, 文字遣い種別, 底本名 and 初出
+  narrow that to 16."
+  {"work_id" "000092"
+   "title" "蜘蛛の糸"
+   "title_reading" "くものいと"
+   "subtitle" "副題"
+   "subtitle_reading" "ふくだい"
+   "original_title" "The Spider's Thread"
+   "first_published" "「赤い鳥」1918(大正7)年7月"
+   "ndc" "NDC 913"
+   "orthographic_style" "新字新仮名"
+   "aozora_modified" "2026-09-06"
+   "card_url" "https://www.aozora.gr.jp/cards/000879/card92.html"
+   "source_editions" [{"title" "芥川龍之介全集　第三巻"
+                       "publisher" "筑摩書房"
+                       "first_edition_year" "1971"}]})
+
+(defn- render-fully-described []
+  (render/render-work
+   {:rights @fixture/grant
+    :slug "000092_000879"
+    :parser-ir {"nodes" [{"type" "text" "text" "　本文。"}]
+                "paragraphs" [{"id" "p1" "role" "body" "node_range" {"start" 0 "end" 1}}]}
+    :metadata-record {"work" fully-described-work "contributors" []}
+    :persons-by-id {}}))
+
+(deftest the-header-carries-what-distinguishes-one-work-from-another
+  (let [tei (:tei (render-fully-described))
+        has? (fn [fragment] (string/includes? tei fragment))]
+    (testing "the titles that separate same-titled works"
+      (is (has? "<title type=\"main\" xml:lang=\"ja\">蜘蛛の糸</title>"))
+      (is (has? "<title type=\"sub\" xml:lang=\"ja\">副題</title>"))
+      (is (has? "<title type=\"sub-reading\" xml:lang=\"ja-Hira\">ふくだい</title>"))
+      (is (has? "<title type=\"original\">The Spider's Thread</title>")
+          "no xml:lang: the catalog records no source language to assert"))
+
+    (testing "the identifier a downloaded file has to be citable by"
+      (is (has? "<idno type=\"soranoha-work-identifier\">000092_000879</idno>"))
+      (is (has? "<idno type=\"aozora-work-id\">000092</idno>"))
+      (is (not (string/includes? tei "aozora-work-identifier"))
+          "Aozora issues the work id and the card, not the pair"))
+
+    (testing "the Aozora card, on every work rather than only the fallback path"
+      (is (has? "<idno type=\"aozora-card-url\">https://www.aozora.gr.jp/cards/000879/card92.html</idno>")))
+
+    (testing "where the text first appeared, kept apart from what was keyed"
+      (is (has? "<bibl type=\"first-publication\">「赤い鳥」1918(大正7)年7月</bibl>")))
+
+    (testing "both classifications point at a declared taxonomy"
+      (is (has? "<taxonomy xml:id=\"aozora-orthography\">"))
+      (is (has? "<classCode scheme=\"#ndc\">913</classCode>"))
+      (is (has? "<classCode scheme=\"#aozora-orthography\">新字新仮名</classCode>")))))
+
+(deftest a-fully-described-header-validates-against-the-publication-profile
+  (let [dir (fs/create-temp-dir {:prefix "tei-header-profile"})
+        xml-path (str (fs/path dir "tei.xml"))]
+    (try
+      (spit xml-path (:tei (render-fully-described)))
+      (is (empty? (:violations (rng/validate! {:schema-path "schemas/tei-profile.rng"
+                                               :xml-path xml-path :label "full header"}))))
+      (is (empty? (remove #(= :warning (:severity %))
+                          (:findings (schematron/validate!
+                                      {:schema-path "schemas/tei-profile.sch"
+                                       :xml-path xml-path :label "full header"})))))
+      (finally (fs/delete-tree dir)))))
+
+(deftest a-header-with-only-subordinate-titles-is-refused
+  ;; the main-title rule has to exclude every subordinate form, or a file
+  ;; carrying only a reading or only a subtitle satisfies it
+  (let [dir (fs/create-temp-dir {:prefix "tei-header-subordinate"})
+        xml-path (str (fs/path dir "tei.xml"))
+        tei (string/replace (:tei (render-fully-described))
+                            #"<title type=\"main\"[^>]*>[^<]*</title>" "")]
+    (try
+      (spit xml-path tei)
+      (is (= ["snh-tei-header-title"]
+             (mapv :rule-id
+                   (remove #(= :warning (:severity %))
+                           (:findings (schematron/validate!
+                                       {:schema-path "schemas/tei-profile.sch"
+                                        :xml-path xml-path :label "no main title"}))))))
       (finally (fs/delete-tree dir)))))

@@ -68,7 +68,7 @@ Constraint violations are published in each work's `tei-validation.json` as
 
 | Rule ID | Severity | Requires |
 |---|---|---|
-| `snh-tei-header-title` | error | A main title in `teiHeader/fileDesc/titleStmt`. |
+| `snh-tei-header-title` | error | A main title in `teiHeader/fileDesc/titleStmt` — a `title` that is not one of the subordinate forms `sub`, `sub-reading`, `reading` or `original`. |
 | `snh-tei-header-source-work-id` | error | An Aozora work ID or source work identifier in the header. |
 | `snh-header-language-declared` | error | At least one `profileDesc/langUsage/language` with a non-empty `@ident`. |
 | `snh-publication-licence` | error | A rights grant in `publicationStmt/availability/licence` with a non-empty `@target`. |

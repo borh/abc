@@ -14,19 +14,23 @@
       [:fileDesc
         [:titleStmt
           [:title {:type \"main\" :xml/lang \"ja\"} \"...\"]
-          [:title {:type \"reading\" :xml/lang \"ja-Hira\"} \"...\"]
+          [:title {:type \"reading\" :xml/lang \"ja-Hira\"} \"...\"]?
+          [:title {:type \"sub\" :xml/lang \"ja\"} \"...\"]?
+          [:title {:type \"sub-reading\" :xml/lang \"ja-Hira\"} \"...\"]?
+          [:title {:type \"original\"} \"...\"]?
           [:author <persName>+ <idno>]
           [:respStmt [:resp \"...\"] <persName>+]?]
-        [:publicationStmt [:idno {:type \"...\"} \"...\"] [:publisher \"...\"] [:date {:when \"...\"} \"...\"]]
+        [:publicationStmt [:publisher \"...\"] [:idno {:type \"...\"} \"...\"]+ [:date {:when \"...\"} \"...\"] <availability>?]
         [:sourceDesc [:bibl ...]+]]
       [:encodingDesc
         [:styleDefDecl {:scheme \"css\"}]
+        [:classDecl [:taxonomy {:xml/id \"...\"} [:bibl ...]]+]
         [:charDecl [:char {:xml/id \"...\"} ...]?]
         [:editorialDecl
           [:normalization {:method \"markup\"} ...]]?]
       [:profileDesc
         [:langUsage [:language {:ident \"ja\"} \"...\"]]
-        [:textClass [:classCode {:scheme \"NDC\"} \"...\"]]]]
+        [:textClass [:classCode {:scheme \"#...\"} \"...\"]+]]]
 
   Tag keywords with no namespace are TEI elements. :xml/lang and
   :xml/id route to the XML namespace. Strings are text content."
@@ -72,16 +76,32 @@
 
 (defn- title-stmt
   "Build <titleStmt>. `contributors` is a vector of
-  {:relation-to-work <role-string> :person <person-body-map>}."
+  {:relation-to-work <role-string> :person <person-body-map>}.
+
+  Four title forms where the catalog carries them. The subtitle matters for
+  identification, not decoration: author and title alone leave 1966 works in
+  the Aozora catalog ambiguous, and adding 副題 cuts that to 562. The original
+  title of a translated work carries no language attribute because the catalog
+  records no source language, and guessing one from the string would be an
+  assertion this project cannot support."
   [work contributors]
   (let [authors (filter #(= "著者" (:relation-to-work %)) contributors)
         others (remove #(= "著者" (:relation-to-work %)) contributors)
         title (get work "title")
-        title-r (get work "title_reading")]
+        title-r (get work "title_reading")
+        subtitle (get work "subtitle")
+        subtitle-r (get work "subtitle_reading")
+        original (get work "original_title")]
     (-> [:titleStmt
          [:title {:type "main" :xml/lang "ja"} title]]
         (cond-> title-r
           (conj [:title {:type "reading" :xml/lang "ja-Hira"} title-r]))
+        (cond-> subtitle
+          (conj [:title {:type "sub" :xml/lang "ja"} subtitle]))
+        (cond-> subtitle-r
+          (conj [:title {:type "sub-reading" :xml/lang "ja-Hira"} subtitle-r]))
+        (cond-> original
+          (conj [:title {:type "original"} original]))
         (into (mapv #(author-block (:person %)) authors))
         (into (mapv #(resp-stmt (:relation-to-work %) (:person %)) others)))))
 
@@ -103,11 +123,26 @@
     " Full rights statement: "
     [:ptr {:target statement_url}]]])
 
-(defn- publication-stmt [work rights-grant]
+(defn- publication-stmt
+  "Who published these bytes, under what identifier, and on what terms.
+
+  Three identifiers, and the type names say who issued which. Soranoha issues
+  the publication identifier — the `<work-id>_<card-directory>` form the site
+  serves works under — so it is not labelled `aozora-*`: Aozora issues the
+  work id and the card, not the pair. Without it a downloaded file cannot say
+  what to cite it as, which is the property the citation projections rest on.
+
+  The card URL moves here from the source description. It identifies Aozora's
+  record for the work, which is what the other two identifiers beside it do;
+  the source description is about the printed edition transcribed, which is a
+  different thing and is often not the one the card links."
+  [work slug rights-grant]
   (cond-> [:publicationStmt
-           [:publisher "ABC"]
-           [:idno {:type "aozora-work-id"} (get work "work_id")]
-           [:date {:when (get work "aozora_modified")} (get work "aozora_modified")]]
+           [:publisher "ABC"]]
+    slug (conj [:idno {:type "soranoha-work-identifier"} slug])
+    true (conj [:idno {:type "aozora-work-id"} (get work "work_id")])
+    (get work "card_url") (conj [:idno {:type "aozora-card-url"} (get work "card_url")])
+    true (conj [:date {:when (get work "aozora_modified")} (get work "aozora_modified")])
     rights-grant (conj (availability rights-grant))))
 
 (defn- bibl-edition [edition]
@@ -121,27 +156,38 @@
     (get edition "proof_edition")
     (conj [:note {:type "proof-edition"} (get edition "proof_edition")])))
 
-(defn- fallback-source-bibl [work]
-  (if-let [card-url (get work "card_url")]
-    (cond-> [:bibl]
-      (get work "title")
-      (conj [:title (get work "title")])
-      true
-      (conj [:idno {:type "aozora-card-url"} card-url]))
+(defn- fallback-source-bibl
+  "What can be said about the source when the catalog records no edition. The
+  Aozora card URL is no longer part of this: it is published unconditionally
+  in the publication statement, so a work with no edition metadata keeps the
+  link back to Aozora instead of being the only kind of work that has one."
+  [work]
+  (if-let [title (get work "title")]
+    [:bibl [:title title]]
     [:bibl [:note "Aozora Bunko source edition metadata is not available."]]))
 
-(defn- source-desc [work source-content-hash primary-text-hash]
+(defn- source-desc
+  "The editions this text was transcribed from, plus where it first appeared.
+
+  初出 is a `bibl` rather than a `note` because `sourceDesc` does not admit
+  notes — its content is bibliographic — and because a first-publication
+  statement is a reference to another appearance of the work, which is what a
+  `bibl` is for. It is distinguished from the transcribed editions by its
+  type: it describes where the text was first printed, not what was keyed."
+  [work source-content-hash primary-text-hash]
   (let [editions (get work "source_editions")]
     (cond-> (if (seq editions)
               (into [:sourceDesc] (mapv bibl-edition editions))
               [:sourceDesc (fallback-source-bibl work)])
+      (get work "first_published")
+      (conj [:bibl {:type "first-publication"} (get work "first_published")])
       source-content-hash (conj [:bibl [:idno {:type "source-content-hash"} source-content-hash]])
       primary-text-hash (conj [:bibl [:idno {:type "primary-text-hash"} primary-text-hash]]))))
 
-(defn- file-desc [work contributors source-content-hash primary-text-hash rights-grant]
+(defn- file-desc [work contributors slug source-content-hash primary-text-hash rights-grant]
   [:fileDesc
    (title-stmt work contributors)
-   (publication-stmt work rights-grant)
+   (publication-stmt work slug rights-grant)
    (source-desc work source-content-hash primary-text-hash)])
 
 (defn- declaration->char [declaration]
@@ -165,15 +211,43 @@
     (into [:charDecl]
           (map declaration->char declarations))))
 
+(def ^:private class-decl
+  "The taxonomies the text classification points at, declared rather than
+  named by a bare string, so a reader can tell who classified the work.
+
+  Both are upstream assertions recorded as such. Aozora assigns the NDC code
+  and the orthographic style; neither is a Soranoha judgement, and the
+  distinction matters most for 文字遣い種別, which is populated for every work
+  and partitions the corpus into 新字新仮名, 新字旧仮名, 旧字旧仮名,
+  旧字新仮名 and その他. A historical-kana study that silently mixes those is
+  invalid, and the value varies within one series — 銭形平次捕物控 001 to 004
+  are 旧字旧仮名 while 005 is 新字新仮名."
+  [:classDecl
+   [:taxonomy {:xml/id "ndc"}
+    [:bibl "日本十進分類法 (Nippon Decimal Classification), as recorded by "
+     [:title "青空文庫"] " in its 分類番号 field."]]
+   [:taxonomy {:xml/id "aozora-orthography"}
+    [:bibl [:title "青空文庫"]
+     " 文字遣い種別: the orthographic style Aozora Bunko records for the "
+     "transcription. An upstream classification, not a Soranoha judgement."]]])
+
 (defn- encoding-desc [declarations]
-  (cond-> [:encodingDesc [:styleDefDecl {:scheme "css"}]]
+  (cond-> [:encodingDesc [:styleDefDecl {:scheme "css"}] class-decl]
     (seq declarations) (conj (char-decl declarations))))
 
-(defn- text-class [work]
-  (when-let [ndc (get work "ndc")]
-    [:textClass
-     [:classCode {:scheme "NDC"}
-      (string/replace ndc #"^NDC " "")]]))
+(defn- text-class
+  "NDC class and orthographic style, each pointing at its declared taxonomy."
+  [work]
+  ;; `ndc` is already nil unless it matched the catalog's documented form.
+  ;; `orthographic_style` is not run through the same nullable guard upstream,
+  ;; so a row that carries the column empty would otherwise publish an empty
+  ;; classification, which claims less than nothing.
+  (let [ndc (get work "ndc")
+        orthography (not-empty (some-> (get work "orthographic_style") string/trim))]
+    (when (or ndc orthography)
+      (cond-> [:textClass]
+        ndc (conj [:classCode {:scheme "#ndc"} (string/replace ndc #"^NDC " "")])
+        orthography (conj [:classCode {:scheme "#aozora-orthography"} orthography])))))
 
 (defn- profile-desc [work]
   (let [classification (text-class work)]
@@ -189,6 +263,7 @@
   Input shape:
     {:work         <work map, string keys>
      :contributors [{:relation-to-work \"...\" :person <person map, string keys>} ...]
+     :slug          <the publication identifier, when the caller has one>
      :rights        <the release rights grant, manifest key spelling>}
 
   Role and person are kept separate at every level inside this builder;
@@ -198,10 +273,10 @@
   policy in hand; the render stage supplies it for every published work and
   the profile's snh-publication-licence rule rejects a published file without
   it."
-  [{:keys [work contributors char-declarations source-content-hash primary-text-hash
-           rights]}]
+  [{:keys [work contributors slug char-declarations source-content-hash
+           primary-text-hash rights]}]
   [:teiHeader
-   (file-desc work contributors source-content-hash primary-text-hash rights)
+   (file-desc work contributors slug source-content-hash primary-text-hash rights)
    (encoding-desc char-declarations)
    (profile-desc work)])
 

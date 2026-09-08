@@ -134,7 +134,11 @@
                                      "metadata-record" (get (:outputs metadata-r)
                                                             "metadata-record")
                                      "persons" (get (:outputs metadata-r)
-                                                    "persons")})
+                                                    "persons")
+                                     ;; a scalar, so the identifier a work was
+                                     ;; rendered under is part of its derivation
+                                     ;; key rather than invisible to the cache
+                                     "slug" slug})
         plaintext-r (engine/run-stage! store plaintext
                                        {"tei" (get (:outputs render-r) "tei")})
         markdown-r (engine/run-stage! store markdown

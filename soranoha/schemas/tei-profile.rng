@@ -14003,7 +14003,7 @@ Sample values include: 1] homeoteleuton; 2] homeoarchy; 3] paleographicConfusion
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 xmlns:snh="https://w3id.org/soranoha/ns/tei"
                 context="tei:teiHeader">
-         <sch:assert test="tei:fileDesc/tei:titleStmt/tei:title[not(@type = 'sub')]">
+         <sch:assert test="tei:fileDesc/tei:titleStmt/tei:title[not(@type = ('sub', 'sub-reading', 'reading', 'original'))]">
                 Soranoha TEI requires a main title in teiHeader/fileDesc/titleStmt.
               </sch:assert>
       </sch:rule>

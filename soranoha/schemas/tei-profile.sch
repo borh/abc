@@ -17,7 +17,7 @@
    <!-- ******************************************************* -->
    <pattern id="snh-tei-header-title">
       <rule context="tei:teiHeader">
-         <assert test="tei:fileDesc/tei:titleStmt/tei:title[not(@type = 'sub')]"> Soranoha TEI requires a main title in teiHeader/fileDesc/titleStmt.</assert>
+         <assert test="tei:fileDesc/tei:titleStmt/tei:title[not(@type = ('sub', 'sub-reading', 'reading', 'original'))]"> Soranoha TEI requires a main title in teiHeader/fileDesc/titleStmt.</assert>
       </rule>
    </pattern>
    <pattern id="snh-tei-header-source-work-id">

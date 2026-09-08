@@ -86,7 +86,9 @@ here while the printed edition on the next block names 龍之介.
 ```xml
 <publicationStmt>
   <publisher>ABC</publisher>
+  <idno type="soranoha-work-identifier">000092_000879</idno>
   <idno type="aozora-work-id">000092</idno>
+  <idno type="aozora-card-url">https://www.aozora.gr.jp/cards/000879/card92.html</idno>
   <date when="2014-09-17">2014-09-17</date>
   <availability status="free">
     <licence target="https://creativecommons.org/publicdomain/mark/1.0/">The underlying work is in the public domain; Soranoha asserts no rights over it.</licence>
@@ -94,6 +96,13 @@ here while the printed edition on the next block names 龍之介.
   </availability>
 </publicationStmt>
 ```
+
+Three identifiers, and the `type` says who issued each. Soranoha issues the
+publication identifier — the same `000092_000879` that appears in every URL
+for this work — which is why it is not labelled `aozora-*`: Aozora issues the
+work id and the card, not the pair. It is in the file so that a downloaded
+`.xml`, read years later with no site around it, can still say what to cite it
+as.
 
 The date is Aozora's last-modified date for the catalog entry, not a date of
 composition or of Soranoha's own processing.
@@ -112,14 +121,18 @@ carries its own terms. See [rights](rights.md).
 <sourceDesc>
   <bibl><title>芥川龍之介全集2</title><publisher>ちくま文庫、筑摩書房</publisher><date>1986（昭和61）年10月28日</date><note type="input-edition">1996（平成8）年7月15日第11刷</note></bibl>
   <bibl><idno type="source-content-hash">sha256:3c686946ec0a7f31f9de7a9a7231d93fe97c7323a5172c268a48f180fdb7bcac</idno></bibl>
+  <bibl type="first-publication">「赤い鳥」1918（大正7）年7月</bibl>
   <bibl><idno type="primary-text-hash">sha256:3c686946ec0a7f31f9de7a9a7231d93fe97c7323a5172c268a48f180fdb7bcac</idno></bibl>
 </sourceDesc>
 ```
 
-Three separate statements of source, at three levels:
+Four separate statements of source, at four levels:
 
 - the **printed edition** the volunteer transcribed from, including which
   printing was used for input;
+- **where the text first appeared** — a magazine issue, here 「赤い鳥」 of July
+  1918 — which is a different claim from the edition that was keyed, and is
+  marked `type="first-publication"` so the two are not confused;
 - `source-content-hash`, the canonical identity of the Aozora source bundle —
   this is what changes when Aozora reissues the text;
 - `primary-text-hash`, the hash of the text member itself.
@@ -128,11 +141,15 @@ The identifier `000092_000879` denotes the work and stays put across releases;
 these hashes are how you say *which text under that identifier*. If you need a
 result to be exactly reproducible, cite both.
 
-### encodingDesc — the gaiji declarations
+### encodingDesc — the taxonomies and the gaiji declarations
 
 ```xml
 <encodingDesc>
   <styleDefDecl scheme="css"/>
+  <classDecl>
+    <taxonomy xml:id="ndc"><bibl>日本十進分類法 (Nippon Decimal Classification), as recorded by <title>青空文庫</title> in its 分類番号 field.</bibl></taxonomy>
+    <taxonomy xml:id="aozora-orthography"><bibl><title>青空文庫</title> 文字遣い種別: the orthographic style Aozora Bunko records for the transcription. An upstream classification, not a Soranoha judgement.</bibl></taxonomy>
+  </classDecl>
   <charDecl>
     <char xml:id="gaiji-3-1-87-71">
       <mapping type="unicode">犍</mapping>
@@ -164,13 +181,29 @@ for — indents in character widths, measures, alignment.
 ```xml
 <profileDesc>
   <langUsage><language ident="ja">日本語</language></langUsage>
-  <textClass><classCode scheme="NDC">K913</classCode></textClass>
+  <textClass>
+    <classCode scheme="#ndc">K913</classCode>
+    <classCode scheme="#aozora-orthography">新字新仮名</classCode>
+  </textClass>
 </profileDesc>
 ```
 
 `K913` is Aozora's own NDC-style class. The `K` prefix marks children's
 material and is not an NDC main class, which is why works like this one appear
 under その他 rather than under 9 文学 in the site's NDC index.
+
+`新字新仮名` is the orthography of the transcription: modern characters,
+modern kana. This is the single most consequential field for anyone studying
+the language rather than the story. It is populated for every work, and the
+corpus divides into 新字新仮名 (8812), 新字旧仮名 (3817), 旧字旧仮名 (1783),
+旧字新仮名 (23) and その他 (17). A historical-kana study that mixes them is
+not measuring what it thinks it is measuring, and the value varies inside a
+single series: 銭形平次捕物控 001 through 004 are 旧字旧仮名 while 005 is
+新字新仮名.
+
+Both `scheme` attributes point at a taxonomy declared in `encodingDesc`
+rather than naming a scheme in a bare string, so a reader can see who did the
+classifying — Aozora Bunko, in both cases, not Soranoha.
 
 ## The body
 

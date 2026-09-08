@@ -131,29 +131,40 @@
                "divergence" (fs/read-all-bytes divergence-file)}))))})
 
 (defn render-stage
-  "parser-IR + metadata record + persons -> TEI XML bytes.
+  "parser-IR + metadata record + persons + publication identifier -> TEI bytes.
 
   `rights` is the grant read from the publication policy. It is fail-closed
   and part of the stage's toolchain identity: the terms are published inside
   every TEI file, so a policy change has to invalidate the cached TEI rather
-  than leave works stating superseded terms."
+  than leave works stating superseded terms.
+
+  The `slug` input is fail-closed for the same reason. It is published as the
+  header's own identifier, and it is a scalar stage input rather than a blob
+  so that it enters the derivation key: a work rendered under one identifier
+  must not be served from cache under another."
   [clj-toolchain-id rights]
   (when-not (map? rights)
     (throw (ex-info "render stage requires the publication rights grant"
                     {:reason :missing-rights-grant})))
   {:stage-id "render"
-   :stage-version "38"
+   :stage-version "39"
    :toolchain-id (core-hash/sha256-canonical-json
                   {"clj" clj-toolchain-id "rights" rights})
    :f (fn [{:keys [blob]} inputs]
         (let [read-json (fn [name]
                           (json/read-json
                            (String. ^bytes (blob (get inputs name)) "UTF-8")))
-              rendered (render/render-work
-                        {:parser-ir (read-json "parser-ir")
-                         :metadata-record (read-json "metadata-record")
-                         :persons-by-id (read-json "persons")
-                         :rights rights})]
+              slug (get inputs "slug")
+              rendered (do
+                         (when (string/blank? slug)
+                           (throw (ex-info "render stage requires the publication identifier"
+                                           {:reason :missing-publication-identifier})))
+                         (render/render-work
+                          {:parser-ir (read-json "parser-ir")
+                           :metadata-record (read-json "metadata-record")
+                           :persons-by-id (read-json "persons")
+                           :slug slug
+                           :rights rights}))]
           {"tei" (utf8 (:tei rendered))}))})
 
 (defn plaintext-stage [clj-toolchain-id]

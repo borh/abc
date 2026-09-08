@@ -65,7 +65,7 @@
         person (files/read-json
                 (str root "/persons/abc-000000000001.json"))]
     (is (= :ok (person-record/validate! (files/read-json "../../soranoha/schemas/person-record.schema.json") person)))
-    (is (= "sha256:43a86aff2b6be08f4dbb0fec89691207c420a59f742ab123d63dd2a2b5b81ead"
+    (is (= "sha256:407f3a6948033ef5f4a5d2dcb52b8510bf610a19db02d4c6fa31b28829209b28"
            (person-record/record-hash person)))
     (doseq [work-id ["000001_1" "000002_2" "000003_3"]]
       (is (= :ok (if (seq (schema/validation-errors

@@ -5,7 +5,7 @@
    <!-- ********************* -->
    <!-- namespaces, declared: -->
    <!-- ********************* -->
-   <ns prefix="abc" uri="https://w3id.org/abc/ns/tei"/>
+   <ns prefix="snh" uri="https://w3id.org/soranoha/ns/tei"/>
    <ns prefix="tei" uri="http://www.tei-c.org/ns/1.0"/>
    <ns prefix="xs" uri="http://www.w3.org/2001/XMLSchema"/>
    <ns prefix="rng" uri="http://relaxng.org/ns/structure/1.0"/>
@@ -15,86 +15,86 @@
    <!-- ******************************************************* -->
    <!-- constraints in en, und, mul, zxx, of which there are 89 -->
    <!-- ******************************************************* -->
-   <pattern id="abc-tei-header-title">
+   <pattern id="snh-tei-header-title">
       <rule context="tei:teiHeader">
-         <assert test="tei:fileDesc/tei:titleStmt/tei:title[not(@type = 'sub')]"> ABC TEI requires a main title in teiHeader/fileDesc/titleStmt.</assert>
+         <assert test="tei:fileDesc/tei:titleStmt/tei:title[not(@type = 'sub')]"> Soranoha TEI requires a main title in teiHeader/fileDesc/titleStmt.</assert>
       </rule>
    </pattern>
-   <pattern id="abc-tei-header-source-work-id">
+   <pattern id="snh-tei-header-source-work-id">
       <rule context="tei:teiHeader">
-         <assert test=".//tei:idno[@type = ('aozora-work-id', 'source-work-id')]"> ABC TEI requires an Aozora work ID or source work identifier.</assert>
+         <assert test=".//tei:idno[@type = ('aozora-work-id', 'source-work-id')]"> Soranoha TEI requires an Aozora work ID or source work identifier.</assert>
       </rule>
    </pattern>
-   <pattern id="abc-header-language-declared">
+   <pattern id="snh-header-language-declared">
       <rule context="tei:TEI">
-         <assert test="tei:teiHeader/tei:profileDesc/tei:langUsage/tei:language[@ident and normalize-space(@ident) != '']"> teiHeader must declare at least one tei:profileDesc/tei:langUsage/tei:language with non-empty @ident (abc-header-language-declared)</assert>
+         <assert test="tei:teiHeader/tei:profileDesc/tei:langUsage/tei:language[@ident and normalize-space(@ident) != '']"> teiHeader must declare at least one tei:profileDesc/tei:langUsage/tei:language with non-empty @ident (snh-header-language-declared)</assert>
       </rule>
    </pattern>
-   <pattern id="abc-ruby-complete">
+   <pattern id="snh-ruby-complete">
       <rule context="tei:ruby">
-         <assert test="tei:rb and tei:rt"> ABC TEI ruby requires both rb and rt components.</assert>
+         <assert test="tei:rb and tei:rt"> Soranoha TEI ruby requires both rb and rt components.</assert>
       </rule>
    </pattern>
-   <pattern id="abc-ruby-base-non-empty">
+   <pattern id="snh-ruby-base-non-empty">
       <rule context="tei:ruby/tei:rb">
-         <assert test="normalize-space(string(.)) != '' or .//tei:g[starts-with(@ref, '#')]"> ABC TEI ruby base must contain source text or a declared character.</assert>
+         <assert test="normalize-space(string(.)) != '' or .//tei:g[starts-with(@ref, '#')]"> Soranoha TEI ruby base must contain source text or a declared character.</assert>
       </rule>
    </pattern>
-   <pattern id="abc-ruby-reading-non-empty">
+   <pattern id="snh-ruby-reading-non-empty">
       <rule context="tei:ruby/tei:rt">
-         <assert test="normalize-space(string(.)) != '' or .//tei:g[starts-with(@ref, '#')]"> ABC TEI ruby reading must contain source text or a declared character.</assert>
+         <assert test="normalize-space(string(.)) != '' or .//tei:g[starts-with(@ref, '#')]"> Soranoha TEI ruby reading must contain source text or a declared character.</assert>
       </rule>
    </pattern>
-   <pattern id="abc-gaiji-reference">
+   <pattern id="snh-gaiji-reference">
       <rule context="tei:g">
-         <assert test="@ref or @corresp or @ana"> ABC TEI gaiji requires a declaration reference, source marker reference, or resolution status.</assert>
+         <assert test="@ref or @corresp or @ana"> Soranoha TEI gaiji requires a declaration reference, source marker reference, or resolution status.</assert>
       </rule>
    </pattern>
-   <pattern id="abc-gaiji-chardecl-resolution">
+   <pattern id="snh-gaiji-chardecl-resolution">
       <rule context="tei:g[starts-with(@ref, '#')]">
-         <assert test="/tei:TEI/tei:teiHeader//tei:charDecl/tei:char/@xml:id = substring-after(@ref, '#')"> ABC TEI gaiji local @ref must point to a charDecl/char declaration in this document.</assert>
+         <assert test="/tei:TEI/tei:teiHeader//tei:charDecl/tei:char/@xml:id = substring-after(@ref, '#')"> Soranoha TEI gaiji local @ref must point to a charDecl/char declaration in this document.</assert>
       </rule>
    </pattern>
-   <pattern id="abc-char-resolution-form">
+   <pattern id="snh-char-resolution-form">
       <rule context="tei:charDecl/tei:char">
-         <assert test="(some $m in tei:mapping satisfies normalize-space(string($m)) != '') or (some $u in tei:unicodeProp satisfies normalize-space(string($u/@value)) != '') or (some $l in tei:localProp satisfies normalize-space(string($l/@value)) != '') or (some $d in tei:desc satisfies normalize-space(string($d)) != '')"> tei:charDecl/tei:char must declare at least one non-empty resolution form: tei:mapping, tei:unicodeProp/@value, tei:localProp/@value, or tei:desc (abc-char-resolution-form)</assert>
+         <assert test="(some $m in tei:mapping satisfies normalize-space(string($m)) != '') or (some $u in tei:unicodeProp satisfies normalize-space(string($u/@value)) != '') or (some $l in tei:localProp satisfies normalize-space(string($l/@value)) != '') or (some $d in tei:desc satisfies normalize-space(string($d)) != '')"> tei:charDecl/tei:char must declare at least one non-empty resolution form: tei:mapping, tei:unicodeProp/@value, tei:localProp/@value, or tei:desc (snh-char-resolution-form)</assert>
       </rule>
    </pattern>
-   <pattern id="abc-figure-accessibility">
+   <pattern id="snh-figure-accessibility">
       <rule context="tei:figure">
          <report role="warning"
-                 test="not((tei:figDesc | tei:head | tei:p | tei:note[@type = ('image-description', 'caption-reference')])[normalize-space(.) != ''])"> ABC TEI figure should preserve a nonempty source description or caption reference when available.</report>
+                 test="not((tei:figDesc | tei:head | tei:p | tei:note[@type = ('image-description', 'caption-reference')])[normalize-space(.) != ''])"> Soranoha TEI figure should preserve a nonempty source description or caption reference when available.</report>
       </rule>
    </pattern>
-   <pattern id="abc-source-span-reference">
+   <pattern id="snh-source-span-reference">
       <rule context="*[@source]">
-         <assert test="every $s in tokenize(normalize-space(@source), '\s+') satisfies starts-with($s, '#')"> ABC TEI source span references must point to local span identifiers.</assert>
+         <assert test="every $s in tokenize(normalize-space(@source), '\s+') satisfies starts-with($s, '#')"> Soranoha TEI source span references must point to local span identifiers.</assert>
       </rule>
    </pattern>
-   <pattern id="abc-source-span-target-exists">
+   <pattern id="snh-source-span-target-exists">
       <rule context="*[@source]">
-         <assert test="every $s in tokenize(normalize-space(@source), '\s+') satisfies exists(id(substring-after($s, '#'))[@xml:id = substring-after($s, '#')])"> ABC TEI source span fragments must resolve to an existing @xml:id in this document.</assert>
+         <assert test="every $s in tokenize(normalize-space(@source), '\s+') satisfies exists(id(substring-after($s, '#'))[@xml:id = substring-after($s, '#')])"> Soranoha TEI source span fragments must resolve to an existing @xml:id in this document.</assert>
       </rule>
    </pattern>
-   <pattern id="abc-transcription-vs-annotation">
+   <pattern id="snh-transcription-vs-annotation">
       <rule context="tei:text//tei:w | tei:text//tei:m | tei:text//tei:pc">
          <assert role="warning"
-                 test="ancestor::tei:TEI/tei:teiHeader//tei:encodingDesc//tei:tagsDecl//tei:namespace[@name = 'http://www.tei-c.org/ns/1.0']/tei:tagUsage/@gi = local-name()"> ABC TEI linguistic enrichment in the transcription layer must be declared in the header.</assert>
+                 test="ancestor::tei:TEI/tei:teiHeader//tei:encodingDesc//tei:tagsDecl//tei:namespace[@name = 'http://www.tei-c.org/ns/1.0']/tei:tagUsage/@gi = local-name()"> Soranoha TEI linguistic enrichment in the transcription layer must be declared in the header.</assert>
       </rule>
    </pattern>
-   <pattern id="abc-vocab-version-declared">
-      <rule context="tei:TEI[@abc:* or .//@abc:*]">
-         <assert test="@abc:vocab-version"> TEI roots using ABC extension attributes must declare abc:vocab-version.</assert>
+   <pattern id="snh-vocab-version-declared">
+      <rule context="tei:TEI[@snh:* or .//@snh:*]">
+         <assert test="@snh:vocab-version"> TEI roots using Soranoha extension attributes must declare snh:vocab-version.</assert>
       </rule>
    </pattern>
-   <pattern id="abc-preservation-record-shape">
-      <rule context="*[@abc:preservation-record]">
-         <assert test="matches(@abc:preservation-record, '^r[0-9]{6}$')"> abc:preservation-record must be a deterministic preservation sidecar record id such as r000042.</assert>
+   <pattern id="snh-preservation-record-shape">
+      <rule context="*[@snh:preservation-record]">
+         <assert test="matches(@snh:preservation-record, '^r[0-9]{6}$')"> snh:preservation-record must be a deterministic preservation sidecar record id such as r000042.</assert>
       </rule>
    </pattern>
-   <pattern id="abc-layout-params-shape">
-      <rule context="*[@abc:layout-params]">
-         <assert test="matches(@abc:layout-params, '^[A-Za-z0-9_.:-]+=[^\s;]+(;[A-Za-z0-9_.:-]+=[^\s;]+)*$')"> abc:layout-params must use semicolon-delimited key=value pairs.</assert>
+   <pattern id="snh-layout-params-shape">
+      <rule context="*[@snh:layout-params]">
+         <assert test="matches(@snh:layout-params, '^[A-Za-z0-9_.:-]+=[^\s;]+(;[A-Za-z0-9_.:-]+=[^\s;]+)*$')"> snh:layout-params must use semicolon-delimited key=value pairs.</assert>
       </rule>
    </pattern>
 </schema>

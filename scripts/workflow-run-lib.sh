@@ -62,7 +62,7 @@ with open(steps_file, encoding="utf-8") as handle:
 failed = sum(1 for step in steps if step["status"] == "failed")
 passed = sum(1 for step in steps if step["status"] == "passed")
 run = {
-    "schema_id": "https://w3id.org/abc/schemas/workflow-run.schema.json",
+    "schema_id": "https://w3id.org/soranoha/schemas/workflow-run.schema.json",
     "schema_version": "soranoha-workflow-run-v1",
     "workflow_id": workflow_id,
     "run_id": run_id,

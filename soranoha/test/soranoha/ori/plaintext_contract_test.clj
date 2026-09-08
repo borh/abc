@@ -9,7 +9,7 @@
 (defn render [parser-ir]
   {:text (projection/plaintext
           (view/from-tei
-           (header/hiccup->pretty-xml-string [:TEI {:xmlns/abc "https://w3id.org/abc/ns/tei"}
+           (header/hiccup->pretty-xml-string [:TEI {:xmlns/snh "https://w3id.org/soranoha/ns/tei"}
                                               (:body (tei/render parser-ir))])))})
 
 (deftest

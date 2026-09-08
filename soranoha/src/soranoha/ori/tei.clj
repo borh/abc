@@ -137,10 +137,10 @@
         (assoc :rend rend)
 
         (get layout "kind")
-        (assoc :abc/layout-kind (get layout "kind"))
+        (assoc :snh/layout-kind (get layout "kind"))
 
         params
-        (assoc :abc/layout-params params)))))
+        (assoc :snh/layout-params params)))))
 
 (defn- leading-indent [text]
   (count (re-find #"^　+" (or text ""))))
@@ -425,10 +425,10 @@
                                 depth
                                 (sourced node [(if geometry? :seg :hi) (cond-> {:rend rend}
                                                                          (seq layouts)
-                                                                         (assoc :abc/layout-kind (string/join " " (map #(get % "kind") layouts)))
+                                                                         (assoc :snh/layout-kind (string/join " " (map #(get % "kind") layouts)))
 
                                                                          params
-                                                                         (assoc :abc/layout-params params))])))
+                                                                         (assoc :snh/layout-params params))])))
        (mark-omitted acc "layout-span")))))
 
 (defn- heading-attrs [node]
@@ -712,8 +712,8 @@
                       (cond-> attrs
                         (get scope "typography") (dissoc :type)
                         alignment (assoc :rend (string/join " " (remove nil? [(:rend attrs) (layout-rend alignment)]))
-                                         :abc/layout-kind "chitsuki"
-                                         :abc/layout-params (layout-params alignment)))]
+                                         :snh/layout-kind "chitsuki"
+                                         :snh/layout-params (layout-params alignment)))]
                      children)]))
           content (reverse scopes)))
 

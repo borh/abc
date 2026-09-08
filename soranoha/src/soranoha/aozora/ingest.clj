@@ -22,7 +22,7 @@
 
 (defn- build-person-record [body person-schema]
   (merge (zipmap person-body-keys (map #(get body %) person-body-keys))
-         {"person_record_schema_id" "https://w3id.org/abc/schemas/person-record.schema.json"
+         {"person_record_schema_id" "https://w3id.org/soranoha/schemas/person-record.schema.json"
           "person_record_schema_hash" (hash/format-sha256 (hash/sha256-canonical-json person-schema))
           "external_links" (or (get body "external_links") [])}))
 
@@ -50,7 +50,7 @@
                   "person_record_hash" (person-record/record-hash
                                         (get person-records pid))
                   "relation_to_work" (get c "relation_to_work")}))
-          metadata-rec {"metadata_record_schema_id" "https://w3id.org/abc/schemas/metadata-record.schema.json"
+          metadata-rec {"metadata_record_schema_id" "https://w3id.org/soranoha/schemas/metadata-record.schema.json"
                         "metadata_record_schema_hash" (hash/format-sha256 (hash/sha256-canonical-json (:metadata schemas)))
                         "work" work
                         "contributors" (vec (sort-by #(get % "person_id")

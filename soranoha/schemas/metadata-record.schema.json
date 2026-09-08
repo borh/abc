@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://w3id.org/abc/schemas/metadata-record.schema.json",
+  "$id": "https://w3id.org/soranoha/schemas/metadata-record.schema.json",
   "title": "ABC Metadata Record",
   "description": "Bibliographic record for one Aozora work plus contributor references. Identity (record-hash) is SHA-256 over the deterministic record JSON encoding of this object with source_csv_provenance dropped and contributors[] sorted by person_id (lexicographic ASCII compare). Person bodies live in separate person-record.schema.json files referenced by contributors[i].person_record_hash. Nullable fields are explicit JSON null, not key-omission. Defaults are documentation only; canonicalization hashes the literal record.",
   "type": "object",
@@ -13,7 +13,7 @@
   ],
   "properties": {
     "metadata_record_schema_id": {
-      "const": "https://w3id.org/abc/schemas/metadata-record.schema.json"
+      "const": "https://w3id.org/soranoha/schemas/metadata-record.schema.json"
     },
     "metadata_record_schema_hash": { "$ref": "#/$defs/hash" },
     "work": { "$ref": "#/$defs/work" },

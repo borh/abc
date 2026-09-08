@@ -51,7 +51,7 @@
       (spit path tei)
       (let [validated (validation/tei-validation-result (validation/profile-paths ".") path)]
         (is (= "warning" (get validated "status")))
-        (is (= ["abc-figure-accessibility"] (mapv #(get % "rule_id") (get validated "findings")))))
+        (is (= ["snh-figure-accessibility"] (mapv #(get % "rule_id") (get validated "findings")))))
       (finally (fs/delete-tree dir)))))
 
 (deftest figure-edition-statement-does-not-supply-an-image-description
@@ -76,5 +76,5 @@
       (spit path tei)
       (let [validated (validation/tei-validation-result (validation/profile-paths ".") path)]
         (is (= "warning" (get validated "status")))
-        (is (= ["abc-figure-accessibility"] (mapv #(get % "rule_id") (get validated "findings")))))
+        (is (= ["snh-figure-accessibility"] (mapv #(get % "rule_id") (get validated "findings")))))
       (finally (fs/delete-tree dir)))))

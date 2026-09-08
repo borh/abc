@@ -67,3 +67,8 @@ cache, assessment, publication and serving boundaries, and the
 
 The [key ceremony](docs/key-ceremony.md) establishes the two pinned signing roles
 and the offline governance signing path used to withdraw or amend a published work.
+
+Published TEI carries a small extension vocabulary in the namespace
+`https://w3id.org/soranoha/ns/tei`, conventionally bound to `snh:`. See the
+[TEI extension vocabulary](soranoha/docs/tei-vocabulary.md) for its attributes
+and validation rule identifiers.

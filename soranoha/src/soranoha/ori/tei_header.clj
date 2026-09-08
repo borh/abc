@@ -188,8 +188,8 @@
     (and (keyword? k) (= "xml" (namespace k)))
     (xml/qname xml-ns (name k))
 
-    (and (keyword? k) (= "abc" (namespace k)))
-    (str "abc:" (name k))
+    (and (keyword? k) (= "snh" (namespace k)))
+    (str "snh:" (name k))
 
     (and (keyword? k) (= "xmlns" (namespace k)))
     (str "xmlns:" (name k))

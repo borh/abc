@@ -18,6 +18,11 @@
             UnicodePathExtraField ZipArchiveEntry ZipArchiveEntry$NameSource
             ZipFile]))
 
+;; Frozen construction identity, not a name: it is hashed into every bundle
+;; identity and so into each work's published `source_content_hash`. The
+;; extension vocabulary moved from `abc` to `snh` in the pre-genesis IRI
+;; migration; this string did not, because changing it would mint a second
+;; construction claiming the same v1 and rewrite every work's source hash.
 (def construction "abc-source-bundle-v1")
 (def default-limits {:max-members 1024
                      :max-member-bytes 16777216

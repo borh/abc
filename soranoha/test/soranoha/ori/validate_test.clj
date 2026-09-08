@@ -77,5 +77,5 @@
                     (string/replace-first source "source='#source-0'" "source='#source-0 #missing'")]]
         (let [result (check text)]
           (is (= "failed" (get result "status")))
-          (is (some #(= "abc-source-span-target-exists" (get % "rule_id")) (get result "findings")))))
+          (is (some #(= "snh-source-span-target-exists" (get % "rule_id")) (get result "findings")))))
       (finally (fs/delete-tree dir)))))

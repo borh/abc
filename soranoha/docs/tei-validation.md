@@ -31,5 +31,6 @@ just soranoha-tests
 
 The drift check compares generated artifacts and their provenance with the
 checked-in profile. Runtime validation uses Jing for Relax NG and ph-schematron's
-XSLT backend for Schematron. Existing `abc-*` rule IDs and schema vocabulary IRIs
-identify formats consumed by artifacts; they do not imply an ABC runtime component.
+XSLT backend for Schematron. Rule IDs are `snh-*` and are published in each
+work's `tei-validation.json`; the [extension vocabulary](tei-vocabulary.md)
+documents them alongside the `snh:` attributes they constrain.

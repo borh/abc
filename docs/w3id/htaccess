@@ -1,0 +1,23 @@
+# # /soranoha/
+#
+# Permanent identifiers for Soranoha, a conversion and signed-publication
+# system for Aozora Bunko texts as TEI P5.
+#
+# https://w3id.org/soranoha/ns/...       TEI extension vocabulary namespaces
+# https://w3id.org/soranoha/schemas/...  record schema identifiers
+# https://w3id.org/soranoha/works/...    published work landing pages
+#
+# 302 rather than 301 throughout: the redirect target is a current location,
+# and permanent client-side caching would defeat the purpose of the service.
+#
+# ## Contact
+# Bor Hodošček
+# GitHub username: borh
+# ORCID: https://orcid.org/0000-0003-2246-8774
+
+RewriteEngine on
+
+RewriteRule ^ns/(.*)$      https://soranoha.org/ns/$1      [R=302,L]
+RewriteRule ^schemas/(.*)$ https://soranoha.org/schemas/$1 [R=302,L]
+RewriteRule ^works/(.*)$   https://soranoha.org/works/$1   [R=302,L]
+RewriteRule ^$             https://soranoha.org/           [R=302,L]

@@ -16,8 +16,8 @@
                        (get metadata-record "contributors"))})
 
 (defn- tei-document [header body]
-  [:TEI {:xmlns/abc "https://w3id.org/abc/ns/tei"
-         :abc/vocab-version "0"}
+  [:TEI {:xmlns/snh "https://w3id.org/soranoha/ns/tei"
+         :snh/vocab-version "0"}
    header
    body])
 

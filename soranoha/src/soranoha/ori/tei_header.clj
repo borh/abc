@@ -135,10 +135,19 @@
   The card URL moves here from the source description. It identifies Aozora's
   record for the work, which is what the other two identifiers beside it do;
   the source description is about the printed edition transcribed, which is a
-  different thing and is often not the one the card links."
+  different thing and is often not the one the card links.
+
+  The publisher is `Soranoha`, the entity, not `Soranoha Aozora TEI Corpus`,
+  which is the corpus title and is already carried by `titleStmt`. `abc`
+  survives in the w3id schema namespaces and the source-bundle construction
+  id, where it identifies a schema rather than naming a publisher.
+
+  `@ref` rather than a `pubPlace`: a downloaded file should resolve to its
+  publisher without a lookup, and a corpus published only on the web has no
+  place of publication that would not be invented."
   [work slug rights-grant]
   (cond-> [:publicationStmt
-           [:publisher "ABC"]]
+           [:publisher {:ref "https://soranoha.org"} "Soranoha"]]
     slug (conj [:idno {:type "soranoha-work-identifier"} slug])
     true (conj [:idno {:type "aozora-work-id"} (get work "work_id")])
     (get work "card_url") (conj [:idno {:type "aozora-card-url"} (get work "card_url")])

@@ -85,7 +85,7 @@ here while the printed edition on the next block names 龍之介.
 
 ```xml
 <publicationStmt>
-  <publisher>ABC</publisher>
+  <publisher ref="https://soranoha.org">Soranoha</publisher>
   <idno type="soranoha-work-identifier">000092_000879</idno>
   <idno type="aozora-work-id">000092</idno>
   <idno type="aozora-card-url">https://www.aozora.gr.jp/cards/000879/card92.html</idno>
@@ -112,8 +112,12 @@ different: the underlying work is out of copyright and not Soranoha's to
 license, and Soranoha's encoding is CC0. A file detached from this site still
 carries its own terms. See [rights](rights.md).
 
-> `<publisher>` names the publishing entity. `ABC` is an internal placeholder
-> and is replaced with the corpus's published name before the first release.
+`<publisher>` names the publishing entity, so it is `Soranoha` rather than
+`Soranoha Aozora TEI Corpus`: the latter is the corpus title, and `titleStmt`
+already carries the title. The `@ref` lets a downloaded file resolve to its
+publisher without a lookup. There is no `<pubPlace>`, because a corpus
+published only on the web has no place of publication that would not be
+invented.
 
 ### sourceDesc — which printed edition, and which exact bytes
 

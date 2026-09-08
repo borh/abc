@@ -97,7 +97,17 @@
     (into #{} (iterator-seq (.iterator paths)))))
 
 (defn- export-at!
-  [{:keys [clone pinned-keys out-dir]} commit reuse?]
+  "`release-doi` is the release's Zenodo version DOI. It is deployment
+  configuration rather than chain content: Zenodo mints it after the release
+  exists, so nothing signed can carry it, and before the first deposit there
+  is none. Every citation this export renders names it when it is known.
+
+  It is therefore part of what the generated pages are a function of, and the
+  reuse check compares those pages byte for byte. Setting or changing a DOI
+  for a commit that has already been exported makes reuse fail closed with
+  :serving-tree-mismatch rather than serve two different citations for one
+  tree; the operator removes that tree and re-exports."
+  [{:keys [clone pinned-keys out-dir release-doi]} commit reuse?]
   (let [v (view/git-view clone)
         chain-result (verify/verify-repository-at v commit pinned-keys)]
     (when (:empty chain-result)
@@ -262,13 +272,16 @@
                                                                           "governance-event"
                                                                           (read! (verify/event-path hex))))]))
                                                      event-hexes)
-                                       :tei (fn [slug] (artifact! slug "tei"))})]
+                                       :tei (fn [slug] (artifact! slug "tei"))
+                                       :doi release-doi})]
                                (write! path bytes)
                                (vswap! page-count inc))
                              ;; Stream bulk archives into destination or compare stream on reuse path.
                              (doseq [[path produce] (bundle/archives
                                                      {:catalog head-catalog
-                                                      :artifact artifact!})]
+                                                      :artifact artifact!
+                                                      :release {:head-hex (:head chain-result)
+                                                                :doi release-doi}})]
                                (stream! path produce)
                                (vswap! archive-count inc)))
                            {:head (:head chain-result)

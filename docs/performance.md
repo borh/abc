@@ -118,6 +118,18 @@ with the corpus.
 The readable filenames add four symlinks per work — about 69,000 more entries,
 roughly doubling the work-facing layer — and no bytes.
 
+The per-work citation records add two small files per work, about 35,000 more
+entries and roughly 25 MiB, against a serving tree measured in gigabytes. They
+are generated rather than deflated, so they cost no measurable CPU. Both are
+pure functions of the release and its DOI, which is what lets the reuse check
+compare them byte for byte like everything else the browse layer writes.
+
+That DOI is the one input to an activation that is not chain content. Setting
+or changing it for a commit already exported makes the reuse check fail with
+`serving-tree-mismatch`, because the citations in the existing tree name a
+different release DOI. The failure is intended: the alternative is one tree
+serving two answers. Remove that tree and re-export.
+
 Deflating each work once and reusing the compressed member across the three
 archives that hold it would cut the CPU by about two thirds, at the cost of
 writing the ZIP container by hand rather than through `ZipOutputStream`, which

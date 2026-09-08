@@ -105,11 +105,26 @@ that class. All of them are pre-built, because the site is a static tree with
 no application behind it, so what you can download is exactly what is listed.
 
 Each archive contains the readable filenames plus `catalog.csv` at its root,
-with five columns: identifier, title, author, filename and
-`source_content_hash`. Open it in a spreadsheet to map any file back to its
-work; the identifier and the source hash are the columns to cite. From a
-script, read it with `encoding="utf-8-sig"` — it carries a byte-order mark so
-that Excel does not mangle the Japanese titles.
+carrying the structured citation fields for exactly the works inside it:
+
+    identifier, title, subtitle, title_reading, author,
+    orthographic_style, ndc, first_published,
+    source_edition_title, source_edition_publisher, source_edition_year,
+    filename, source_content_hash, url, release, doi
+
+That is enough to turn a whole selection into a bibliography in a spreadsheet
+without opening a single TEI file, and enough to get back to the record:
+`identifier` and `release` together name the bytes, and `url` resolves to the
+page that serves them. The filename is a convenience; the citable columns are
+`identifier`, `source_content_hash` and `release`. From a script, read it with
+`encoding="utf-8-sig"` — it carries a byte-order mark so that Excel does not
+mangle the Japanese titles.
+
+`source_edition_year` is the Gregorian year of the 底本's first edition,
+taken from Aozora's 初版発行年. That field is a free-form publication history
+rather than a year, as in `1981（昭和56）年3月20日`, sometimes with a
+printing history after it. The year is extracted for the machine-readable
+columns, while the work page shows the recorded string in full.
 
 To fetch works one at a time instead — a filtered subset, say:
 

@@ -228,6 +228,18 @@
           (is (string-body? response (str "/works/" slug-a "/tei"))
               "a work page links its own artifacts")))
 
+      (testing "the citation records answer under the work's own prefix"
+        ;; no route of their own: /works/* already carries the pointer layer's
+        ;; cache policy, and neither name collides with an artifact type
+        (doseq [name ["citation.json" "citation.bib"]]
+          (let [response (http-get port (str "/works/" slug-a "/" name))]
+            (is (= 200 (:status response)) name)
+            (is (= "public, max-age=60" (:cache-control response)) name)))
+        (is (string-body? (http-get port (str "/works/" slug-a "/citation.bib"))
+                          "@incollection{soranoha-"))
+        (is (= 404 (:status (http-get port (str "/works/" slug-b "/citation.json"))))
+            "a withdrawn work has no citation record either"))
+
       (testing "a live work is readable at an extensionless URL beside its artifacts"
         (let [response (http-get port (str "/works/" slug-a "/read"))]
           (is (= 200 (:status response)))

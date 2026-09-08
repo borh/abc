@@ -114,10 +114,12 @@
             readable (into {} (map (juxt identity #(naming/filename entry %)))
                            ["tei" "plaintext" "markdown" "tei-validation"])]
         (is (= (into #{"tei" "plaintext" "markdown" "tei-validation"
-                       "index.html" "read.html"}
+                       "index.html" "read.html"
+                       "citation.json" "citation.bib"}
                      (vals readable))
                (set (map fs/file-name (fs/list-dir (fs/path out "works" slug-a)))))
-            "each artifact has both a type route and a readable name; the two html pages are generated")
+            (str "each artifact has both a type route and a readable name; the two html "
+                 "pages and the two citation records are generated"))
 
         (testing "a readable name is a second name over the same blob, not a copy"
           (doseq [[type name] readable]
@@ -146,7 +148,23 @@
             "and points at the signed record rather than standing in for it"))
       (let [page (String. (tree-bytes out (str "works/" slug-a "/index.html")) "UTF-8")]
         (is (str/includes? page slug-a))
-        (is (str/includes? page (str "/works/" slug-a "/tei"))))
+        (is (str/includes? page (str "/works/" slug-a "/tei")))
+        (is (str/includes? page "class=\"Z3988\"")
+            "a connector can save a typed record without being told this site exists"))
+
+      (testing "each work ships the two records a reference manager imports"
+        (let [record (first (json/read-json
+                             (String. (tree-bytes out (str "works/" slug-a "/citation.json"))
+                                      "UTF-8")))
+              entry (String. (tree-bytes out (str "works/" slug-a "/citation.bib")) "UTF-8")]
+          (is (= "chapter" (get record "type"))
+              "CSL-JSON is an array of records, which is what Zotero and Pandoc read")
+          (is (= slug-a (get record "archive_location")))
+          (is (str/includes? (get record "note") (:head result))
+              "every rendered citation names the release it came from")
+          (is (str/starts-with? entry (str "@incollection{soranoha-" slug-a ",")))
+          (is (str/includes? entry (str "version = {" (:head result) "},")))))
+
       (let [page (String. (tree-bytes out (str "works/" slug-b "/index.html")) "UTF-8")]
         (is (str/includes? page "takedown-request"))
         (is (str/includes? page "Documented request."))

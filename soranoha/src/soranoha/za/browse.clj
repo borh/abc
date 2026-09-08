@@ -18,8 +18,10 @@
   an international digital-humanities audience. Titles, personal names and
   source editions are never translated."
   (:require [clojure.string :as string]
+            [soranoha.core.json :as json]
             [soranoha.core.rights :as rights]
             [soranoha.snh.verify :as verify]
+            [soranoha.za.citation :as citation]
             [soranoha.za.html :as html]
             [soranoha.za.naming :as naming]
             [soranoha.za.reading :as reading]))
@@ -55,6 +57,8 @@
     "ul.works li { padding: .35rem 0; border-bottom: 1px solid var(--rule); }"
     "ul.works .by { color: var(--muted); font-size: .9rem; }"
     "ul.cols { list-style: none; padding: 0; columns: 2; }"
+    "code.citation { display: block; white-space: pre-wrap; overflow-wrap: anywhere;"
+    "  padding: .6em .8em; background: #f2efe8; border-radius: 3px; }"
     "code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .85em;"
     "  overflow-wrap: anywhere; }"
     "footer { border-top: 1px solid var(--rule); padding-top: 1rem; padding-bottom: 3rem;"
@@ -311,11 +315,15 @@
                  [:span {:class "by"} " ZIP"]])
               paths))
    [:p (bilingual
-        (str "各書庫の直下に catalog.csv があります。識別子、作品名、著者、ファイル名、底本ハッシュの五列で、"
-             "表計算ソフトでそのまま開けます。引用に使うのは識別子と底本ハッシュであって、ファイル名ではありません。")
-        (str "Every archive carries catalog.csv at its root, with five columns: identifier, title, "
-             "author, filename and source hash. It opens directly in a spreadsheet. The identifier "
-             "and the source hash are the citable columns; the filename is a convenience."))]])
+        (str "各書庫の直下に catalog.csv があります。識別子、作品名、著者、底本、初出、分類、版など、"
+             "引用に必要な項目が構造化された列として入っており、表計算ソフトでそのまま開けます。"
+             "TEI を一件も開かずに、選択範囲全体の文献表を組めます。"
+             "引用に使うのは識別子・底本ハッシュ・版であって、ファイル名ではありません。")
+        (str "Every archive carries catalog.csv at its root, holding the structured citation "
+             "fields (identifier, title, author, source edition, first publication, class and "
+             "release among them), so a whole selection becomes a bibliography without opening a "
+             "single TEI file. It opens directly in a spreadsheet. The identifier, source hash and "
+             "release are the citable columns; the filename is a convenience."))]])
 
 (defn- corpus-archives []
   (map (juxt naming/corpus-bundle-path identity) naming/bulk-artifact-types))
@@ -468,28 +476,24 @@
      (map (juxt #(naming/ndc-bundle-path key %) identity)
           naming/bulk-artifact-types))]))
 
-(defn- source-edition-line [{:strs [title publisher first_edition_year]}]
+(defn- source-edition-line
+  "One 底本, shown the way Aozora recorded it. 初版発行年 is a free-form
+  publication history rather than a year — `1981（昭和56）年3月20日`, and 914
+  values carry a printing history after that — so it is shown verbatim and
+  nothing is appended to it. Every recorded value already ends in its own
+  年, 月 or 日."
+  [{:strs [title publisher first_edition_year]}]
   (string/join "、" (remove string/blank?
                            [(when-not (string/blank? title) (str "『" title "』"))
                             publisher
-                            (when-not (string/blank? first_edition_year)
-                              (str first_edition_year "年"))])))
+                            first_edition_year])))
 
-(defn- citation-line
-  "The citation a reader should copy: author, title, orthography, identifier
-  and release. Title and author alone do not identify a work — 1966 works in
-  the Aozora catalog share an author-and-title pair — so the identifier is
-  not optional and neither is the release."
-  [head-hex work]
-  (let [{:strs [slug title orthographic_style]} work]
-    (str (or (byline work) "") "「" title "」"
-         (when-not (string/blank? orthographic_style)
-           (str "（" orthographic_style "）"))
-         "。" site-name " Aozora TEI Corpus, " slug ", release "
-         (subs head-hex 0 12) "…")))
-
-(defn- work-page [head-hex work]
-  (let [{:strs [slug title title_reading subtitle original_title first_published
+(defn- work-page
+  "One work's bibliography page. `release` carries the head hex and the
+  release DOI, which every citation form on the page has to name."
+  [release work]
+  (let [{:keys [head-hex]} release
+        {:strs [slug title title_reading subtitle original_title first_published
                 orthographic_style ndc card_url source_content_hash
                 contributors source_editions]} work]
     (chrome
@@ -561,7 +565,24 @@
        [:p (bilingual
             "引用には識別子と版を含めてください。作品名と著者名だけでは一意に定まりません。"
             "Cite the identifier and the release: title and author alone do not identify a work.")]
-       [:p [:code (citation-line head-hex work)]]
+       [:p [:code {:class "citation" :lang "ja"} (citation/rendered release work)]]
+       [:p [:code {:class "citation"} (citation/rendered-en release work)]]
+       [:p {:class "by"}
+        (bilingual
+         "上が日本語の文献表用、下が英語の文献表用です。作品名はどちらも日本語のままです。読みには語の切れ目がないため、機械的な翻字は正しいヘボン式になりません。翻字は投稿先の様式に従ってください。"
+         "The first form is for a Japanese bibliography, the second for an English one. Titles stay in Japanese in both: the reading carries no word boundaries, so a mechanical transliteration is not correct Hepburn. Romanize to your journal's style.")]
+       [:p (bilingual "文献管理ソフト向け:" "For reference managers:")
+        " "
+        [:a {:href (str "/works/" slug "/citation.json") :download (str slug ".json")}
+         "CSL-JSON"]
+        " · "
+        [:a {:href (str "/works/" slug "/citation.bib") :download (str slug ".bib")}
+         "BibLaTeX"]]
+       ;; COinS: an empty span whose title is an OpenURL context object. This
+       ;; is the one metadata form a browser connector reads without being
+       ;; told the site exists, and `genre=bookitem` is what makes it save the
+       ;; work as a section of its 底本 rather than as a book of its own.
+       [:span {:class "Z3988" :title (citation/coins release work)}]
        [:p [:a {:href "/citation"} (bilingual "引用のしかた" "How to cite")]]]
 
       (release-note head-hex nil)])))
@@ -571,8 +592,9 @@
   the release it was rendered from, and links the TEI file it was rendered
   out of, because a reader who thinks the rendering is wrong needs the bytes
   to check it against."
-  [head-hex work {:keys [front body back]}]
-  (let [{:strs [slug title title_reading]} work]
+  [release work {:keys [front body back]}]
+  (let [{:keys [head-hex]} release
+        {:strs [slug title title_reading]} work]
     (chrome
      title
      {:main-class "read"}
@@ -615,7 +637,11 @@
         [:dd [:a {:href (str "/works/" slug "/plaintext")} (str "/works/" slug "/plaintext")]]
         [:dt (bilingual "書誌" "Bibliography")]
         [:dd [:a {:href (str "/works/" slug "/")} (str "/works/" slug "/")]]]
-       [:p [:code (citation-line head-hex work)]]
+       [:p [:code {:class "citation"} (citation/rendered release work)]]
+       ;; the same OpenURL record the bibliography page carries, because this
+       ;; is the page a reader is on when they reach for their reference
+       ;; manager
+       [:span {:class "Z3988" :title (citation/coins release work)}]
        [:p [:a {:href "/citation"} (bilingual "引用のしかた" "How to cite")]]]])))
 
 (defn- withdrawn-page [slug {:strs [reason_code statement]} last-release]
@@ -681,7 +707,25 @@
           "取り下げは署名された記録として公開されます。作品は現在の版から外れ、目録からも消え、取り下げ記録が /withdrawn/<識別子>.json に残ります。追記のみの記録なので、過去の版は書き換えません。"
           "A withdrawal is published as a signed record: the work leaves the current release and its catalog, and the governing statement stays at /withdrawn/<identifier>.json. The record is append-only, so earlier releases are not rewritten.")]]]))
 
-(defn- citation-page [head-hex]
+(def ^:private example-work
+  "The work the how-to-cite page is worked through. A literal rather than a
+  lookup into the release: the page has to render the same example on every
+  activation, and a real catalog entry would change when that work's record
+  is corrected. The facts are 蜘蛛の糸's own, so the example matches the page
+  a reader reaches by following it."
+  {"slug" "000092_000879"
+   "title" "蜘蛛の糸"
+   "title_reading" "くものいと"
+   "orthographic_style" "新字新仮名"
+   "source_editions" [{"title" "芥川龍之介全集　第三巻"
+                       "publisher" "筑摩書房"
+                       "first_edition_year" "1971（昭和46）年8月10日改版"}]
+   "contributors" [{"person_id" "000879"
+                    "family_name" "芥川" "given_name" "龍之介"
+                    "family_name_romaji" "Akutagawa" "given_name_romaji" "Ryunosuke"
+                    "relation_to_work" "著者"}]})
+
+(defn- citation-page [{:keys [head-hex doi] :as release}]
   (chrome
    "引用のしかた"
    [[:h1 (bilingual "引用のしかた" "How to cite")]
@@ -694,17 +738,33 @@
      [:p (bilingual
           "コーパスは版ごとに変わります。作品が加わり、符号化が改良され、取り下げも起こります。「Soranoha」とだけ書いた引用は、読んだバイト列を特定しません。"
           "The corpus changes between releases: works are added, the encoding improves, and a work can be withdrawn. A citation naming only the corpus does not identify the bytes you read.")]
-     [:p [:code (str site-name " Aozora TEI Corpus. Release " head-hex ".")]]]
+     [:p [:code {:class "citation"}
+          (str site-name " Aozora TEI Corpus. Release " head-hex "."
+               (when doi (str " https://doi.org/" doi)))]]]
 
     [:section
      [:h2 (bilingual "作品を引く" "Cite one work")]
      [:p (bilingual
-          "作品名と著者名だけでは足りません。青空文庫の目録では、著者名と作品名が一致する作品が 1966 件あります。識別子を必ず含めてください。"
-          "Title and author are not enough: 1966 works in the Aozora catalog share an author-and-title pair. Always include the identifier.")]
-     [:p [:code "芥川龍之介「蜘蛛の糸」（新字新仮名）、底本『芥川龍之介全集　第三巻』筑摩書房、1971年。Soranoha Aozora TEI Corpus, 000092_000879, release …"]]
+          "作品名と著者名だけでは足りません。青空文庫の目録では、著者名と作品名が一致する作品が 1966 件あります。識別子と版を必ず含めてください。各作品の頁に、そのまま貼り付けられる引用が日本語用と英語用の両方あります。"
+          "Title and author are not enough: 1966 works in the Aozora catalog share an author-and-title pair. Always include the identifier and the release. Every work page carries both forms, ready to copy: one for a Japanese bibliography and one for an English one.")]
+     [:p [:code {:class "citation" :lang "ja"}
+          (citation/rendered release example-work)]]
+     [:p [:code {:class "citation"}
+          (citation/rendered-en release example-work)]]
      [:p (bilingual
-          "作品名のローマ字表記は提供していません。読みには語の切れ目がなく、機械的な変換では正しいヘボン式になりません。日本語の作品名と読みをそのまま示し、翻字は投稿先の様式に従ってください。"
-          "Romanized titles are not published: the reading carries no word boundaries, so a mechanical transliteration is not correct Hepburn. Take the Japanese title and its reading, and follow your journal's style.")]]
+          "作品名のローマ字表記は提供していません。読みには語の切れ目がなく、機械的な変換では正しいヘボン式になりません。日本語の作品名と読みをそのまま示し、翻字は投稿先の様式に従ってください。英語用の形でも作品名は日本語のままです。"
+          "Romanized titles are not published: the reading carries no word boundaries, so a mechanical transliteration is not correct Hepburn. Take the Japanese title and its reading, and follow your journal's style. The English form leaves the titles in Japanese for the same reason.")]]
+
+    [:section
+     [:h2 (bilingual "文献管理ソフトで読む" "For reference managers")]
+     [:p (bilingual
+          "各作品は同じ記録を CSL-JSON と BibLaTeX でも配信しています。作品頁には COinS を埋め込んであるので、Zotero の拡張機能はこの site を知らなくても正しい種別で保存します。"
+          "Each work serves the same record as CSL-JSON and as BibLaTeX. Work pages embed COinS, so the Zotero browser connector saves a correctly typed record in one click without being told this site exists.")]
+     [:p [:code "/works/<識別子>/citation.json"] " · "
+      [:code "/works/<識別子>/citation.bib"]]
+     [:p (bilingual
+          "どちらも作品を底本の一部（CSL の chapter、BibLaTeX の @incollection）として記述します。単独の書物として記述すると底本が失われるためです。まとめて必要な場合は、各 ZIP の catalog.csv に同じ項目が列として入っています。"
+          "Both describe a work as an item inside its 底本 (CSL chapter, BibLaTeX @incollection) rather than as a book of its own, which would lose the source edition. For many works at once, every bulk archive's catalog.csv carries the same fields as columns.")]]
 
     [:section
      [:h2 (bilingual "バイト列を引く" "Cite exact bytes")]
@@ -783,8 +843,9 @@
   what makes a reading page possible without a second copy of the text: the
   bytes it returns are the artifact the manifest names and the export has
   already written."
-  [{:keys [head-hex manifests catalog events tei]}]
-  (let [head (second (first manifests))
+  [{:keys [head-hex manifests catalog events tei doi]}]
+  (let [release {:head-hex head-hex :doi doi}
+        head (second (first manifests))
         works (get catalog "works")
         by-slug (into {} (map (juxt #(get % "slug") identity)) works)
         withdrawn (get head "withdrawn")
@@ -800,7 +861,7 @@
       (page "search-index.json" (search-index head-hex works))
       (page "index.html" (landing head-hex works (count withdrawn)))
       (page "rights.html" (rights-page (get head "rights")))
-      (page "citation.html" (citation-page head-hex))
+      (page "citation.html" (citation-page release))
 
       (page "authors/index.html"
             (author-index (mapv (fn [[id {:keys [person by-relation]}]]
@@ -849,10 +910,19 @@
      ;; is the part that must stay lazy.
      (mapcat (fn [work]
                (let [slug (get work "slug")]
-                 [(page (str "works/" slug "/index.html") (work-page head-hex work))
+                 [(page (str "works/" slug "/index.html") (work-page release work))
+                  ;; the two records a reference manager imports. Files rather
+                  ;; than a service because there is no runtime here, and they
+                  ;; cost about a kilobyte each against a corpus whose texts
+                  ;; are three orders of magnitude larger.
+                  (page (str "works/" slug "/citation.json")
+                        (json/write-deterministic-json-str
+                         [(citation/csl-json-value release work)]))
+                  (page (str "works/" slug "/citation.bib")
+                        (citation/biblatex release work))
                   (page (str "works/" slug "/read.html")
                         (reading-page
-                         head-hex work
+                         release work
                          (reading/render (String. ^bytes (tei slug) "UTF-8"))))]))
              works)
 

@@ -108,7 +108,9 @@ an explanation for each withdrawn work, and pre-built bulk archives under
 `/bulk/` for the whole corpus, one person, or one NDC class. Each artifact
 carries two names over one blob: `/works/<identifier>/<type>`, which a
 citation points at, and a readable filename, which is what a browser save
-writes to disk.
+writes to disk. Each work also serves its own citation record at
+`/works/<identifier>/citation.json` and `.bib`, and its page embeds COinS so a
+reference manager saves it in one click.
 Nothing generated is named by a manifest or checked by a verifier; the signed
 discovery record is `/catalog.json`. Site text is bilingual, Japanese first.
 
@@ -132,4 +134,5 @@ Attribution is requested, not required, mirroring Aozora Bunko's own posture.
 layers, the toolchain's licence position, where the grant appears in published
 bytes, and how a rights holder requests withdrawal. [docs/citation.md](docs/citation.md)
 gives the citation forms for a release, a single work, and an exact byte
-sequence; `CITATION.cff` carries the corpus record in machine-readable form.
+sequence, in Japanese and English, with what each component is for;
+`CITATION.cff` carries the corpus record in machine-readable form.

@@ -11,12 +11,13 @@
   Two artifact types are bulk-published; `soranoha.za.naming` says which and
   why, because the browse layer links the same archives.
 
-  Each archive carries `catalog.csv` at its root: identifier, title, author,
-  filename and source content hash for exactly the works inside it. The CSV
-  is what removes the need for a mapping program — it opens in a spreadsheet,
-  and the identifier and source hash columns, not the filename, are the
-  citable ones. It is a serving-time projection of the signed
-  `/catalog.json`, not a second record.
+  Each archive carries `catalog.csv` at its root: the structured citation
+  fields, from `soranoha.za.citation`, for exactly the works inside it. The
+  CSV is what removes the need for a mapping program: it opens in a
+  spreadsheet, and a whole selection can be turned into a bibliography
+  without opening a single TEI file. The identifier, source hash and release
+  columns, not the filename, are the citable ones. It is a serving-time
+  projection of the signed `/catalog.json`, not a second record.
 
   Deterministic, like everything else the browse layer generates: fixed entry
   order, fixed modification time, fixed compression level, no environment and
@@ -26,6 +27,7 @@
   archive is far larger than any byte array this process should allocate."
   (:require [clojure.string :as string]
             [soranoha.za.browse :as browse]
+            [soranoha.za.citation :as citation]
             [soranoha.za.naming :as naming])
   (:import (java.io OutputStream)
            (java.nio.charset StandardCharsets)
@@ -54,9 +56,6 @@
 
 ;; --------------------------------------------------------------- catalog.csv
 
-(def ^:private csv-columns
-  ["identifier" "title" "author" "filename" "source_content_hash"])
-
 (defn- csv-field
   "Every field is quoted, which RFC 4180 permits and which keeps a title
   containing a comma or a quotation mark from depending on the reader's
@@ -73,16 +72,14 @@
 
 (defn catalog-csv
   "The bundled works as a spreadsheet, in the archive's own order."
-  ^String [works artifact-type]
+  ^String [release works artifact-type]
   (str "\ufeff"
-       (csv-row csv-columns)
+       (csv-row citation/csv-columns)
        (apply str
               (map (fn [work]
-                     (csv-row [(get work "slug")
-                               (get work "title")
-                               (or (naming/byline work) "")
-                               (naming/filename work artifact-type)
-                               (str "sha256:" (get work "source_content_hash"))]))
+                     (csv-row (citation/csv-values
+                               release work
+                               (naming/filename work artifact-type))))
                    works))))
 
 ;; ------------------------------------------------------------------ archives
@@ -99,11 +96,12 @@
   work's published bytes, so an archive holds the artifacts the manifest
   names rather than a copy made for it. The stream is finished but not
   closed: the caller opened it and decides what happens to it."
-  [^OutputStream out {:keys [works artifact-type artifact]}]
+  [^OutputStream out {:keys [release works artifact-type artifact]}]
   (let [zip (ZipOutputStream. out StandardCharsets/UTF_8)]
     (.setLevel zip compression-level)
     (put-entry! zip "catalog.csv"
-                (.getBytes (catalog-csv works artifact-type) StandardCharsets/UTF_8))
+                (.getBytes (catalog-csv release works artifact-type)
+                           StandardCharsets/UTF_8))
     (doseq [work works]
       (put-entry! zip
                   (naming/filename work artifact-type)
@@ -165,10 +163,11 @@
   "Every bulk archive for one release as `[path produce]` pairs, where
   `produce` writes that archive into an OutputStream. Lazy, and nothing here
   holds an archive after it has been written."
-  [{:keys [catalog artifact]}]
+  [{:keys [catalog artifact release]}]
   (map (fn [{:keys [path works artifact-type]}]
          [path (fn [^OutputStream out]
-                 (write-archive! out {:works works
+                 (write-archive! out {:release release
+                                      :works works
                                       :artifact-type artifact-type
                                       :artifact artifact}))])
        (selections catalog)))

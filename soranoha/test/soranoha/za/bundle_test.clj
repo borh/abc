@@ -6,6 +6,7 @@
   (:require [clojure.string :as string]
             [clojure.test :refer [deftest is testing]]
             [soranoha.za.bundle :as bundle]
+            [soranoha.za.citation :as citation]
             [soranoha.za.naming :as naming])
   (:import (java.io ByteArrayInputStream ByteArrayOutputStream)
            (java.nio.charset StandardCharsets)
@@ -22,8 +23,18 @@
    "archive_stem" stem
    "title" title
    "ndc" ndc
+   "orthographic_style" "新字新仮名"
+   "first_published" "「赤い鳥」1918（大正7）年7月"
+   ;; Aozora's 初版発行年 is a publication history, not a year, and every
+   ;; recorded value looks like this one
+   "source_editions" [{"title" "芥川龍之介全集　第三巻"
+                       "publisher" "筑摩書房"
+                       "first_edition_year" "1971（昭和46）年8月10日改版"}]
    "source_content_hash" (apply str (repeat 64 "1"))
    "contributors" (vec contributors)})
+
+(def ^:private release
+  {:head-hex (apply str (repeat 64 "d")) :doi "10.5281/zenodo.1234567"})
 
 (def ^:private akutagawa (person "000879" "芥川" "龍之介" "Akutagawa" "Ryunosuke"))
 (def ^:private dazai (person "000035" "太宰" "治" "Dazai" "Osamu"))
@@ -42,7 +53,8 @@
   "One archive's bytes, by the path the export would write it to."
   ^bytes [path]
   (let [produce (some (fn [[p produce]] (when (= p path) produce))
-                      (bundle/archives {:catalog catalog :artifact artifact}))
+                      (bundle/archives {:catalog catalog :artifact artifact
+                                        :release release}))
         out (ByteArrayOutputStream.)]
     (is (some? produce) (str "no archive at " path))
     (produce out)
@@ -84,12 +96,12 @@
     (testing "it opens as a spreadsheet: a UTF-8 mark, CRLF rows, quoted fields"
       (is (string/starts-with? csv "﻿"))
       (is (string/includes? csv "\r\n"))
-      (is (= "﻿\"identifier\",\"title\",\"author\",\"filename\",\"source_content_hash\""
+      (is (= (str "﻿" (string/join "," (map #(str "\"" % "\"") citation/csv-columns)))
              (first lines))))
 
     (testing "one row per work, in the archive's own order"
       (is (= 4 (count lines)))
-      (is (string/starts-with? (second lines) "\"000092_000879\",\"蜘蛛の糸\",\"芥川 龍之介\",")))
+      (is (string/starts-with? (second lines) "\"000092_000879\",\"蜘蛛の糸\",")))
 
     (testing "the filename column names the file that is actually in the archive"
       (is (string/includes? csv "\"Dazai_Osamu-hashire_merosu-000035_001567.txt\"")))
@@ -98,7 +110,23 @@
       (is (string/includes? csv "\"論文, 「一」\"")))
 
     (testing "and the citable columns are there, hash prefix included"
-      (is (string/includes? csv (str "\"sha256:" (apply str (repeat 64 "1")) "\""))))))
+      (is (string/includes? csv (str "\"sha256:" (apply str (repeat 64 "1")) "\"")))
+      (is (string/includes? csv (str "\"" (:head-hex release) "\"")))
+      (is (string/includes? csv "\"10.5281/zenodo.1234567\"")))
+
+    (testing "a whole selection becomes a bibliography without opening a TEI file"
+      (let [row (zipmap citation/csv-columns
+                        (map #(subs % 1 (dec (count %)))
+                             (re-seq #"\"[^\"]*\"" (second lines))))]
+        (is (= {"author" "芥川 龍之介"
+                "source_edition_title" "芥川龍之介全集　第三巻"
+                "source_edition_publisher" "筑摩書房"
+                "orthographic_style" "新字新仮名"
+                "url" "https://soranoha.org/works/000092_000879/"}
+               (select-keys row ["author" "source_edition_title"
+                                 "source_edition_publisher" "orthographic_style" "url"])))
+        (is (= "1971" (get row "source_edition_year"))
+            "the Gregorian year is extracted; 底本初版発行年 is a publication history")))))
 
 (deftest the-same-release-produces-the-same-archive
   (let [default (TimeZone/getDefault)]
@@ -141,7 +169,8 @@
           produce (some (fn [[p produce]]
                           (when (= p "bulk/authors/soranoha-Akutagawa_Ryunosuke-000879-tei.zip")
                             produce))
-                        (bundle/archives {:catalog twice :artifact artifact}))
+                        (bundle/archives {:catalog twice :artifact artifact
+                                          :release release}))
           out (ByteArrayOutputStream.)]
       (produce out)
       (is (= 3 (count (:order (entries (.toByteArray out)))))

@@ -740,11 +740,27 @@
                      "reason" (some-> (:reason outcome) name)})))
     outcome))
 
+(defn- release-doi!
+  "The release's Zenodo version DOI, checked for shape before it reaches
+  every citation of the release. Optional: there is none until the release
+  has been deposited, and the first release is exported before it has been.
+
+  Checked rather than trusted because a malformed DOI is not a partial
+  failure. It is rendered into the citation record of every work, and a
+  reader who follows it lands nowhere; refusing at activation costs one
+  corrected flag, and the alternative costs a release."
+  [value]
+  (when-let [doi (some-> value string/trim not-empty)]
+    (when-not (re-matches #"10\.\d{4,9}/[^\s]+" doi)
+      (throw (ex-info "Invalid release DOI"
+                      {:reason :invalid-release-doi :release-doi doi})))
+    doi))
+
 (defn serving-tree!
   "Export the serving tree (blobs/, releases/, governance/, plus the
   work-facing symlink layer works/, withdrawn/, releases/latest) from
   the verified chain into --out, which must not yet exist."
-  [{:keys [chain-clone branch out release-pub governance-pub]}]
+  [{:keys [chain-clone branch out release-pub governance-pub release-doi]}]
   (require-flags! "serving-tree"
                   {"--chain-clone" chain-clone
                    "--out" out
@@ -755,6 +771,7 @@
                  :branch branch
                  :pinned-keys (pinned-keys-from-files release-pub
                                                       governance-pub)
+                 :release-doi (release-doi! release-doi)
                  :out-dir (str out)})]
     (println (record-json/write-deterministic-json-str
               {"head" (:head result)
@@ -764,12 +781,13 @@
 
 (defn serving-activate!
   "Activate a verified export under the deployment's provisioned serving root."
-  [{:keys [chain-clone branch serve-root release-pub governance-pub]}]
+  [{:keys [chain-clone branch serve-root release-pub governance-pub release-doi]}]
   (require-flags! "serving-activate"
                   {"--chain-clone" chain-clone "--serve-root" serve-root
                    "--release-pub" release-pub "--governance-pub" governance-pub})
   (let [result (serve/activate!
                 {:clone chain-clone :branch branch :serve-root serve-root
+                 :release-doi (release-doi! release-doi)
                  :pinned-keys (pinned-keys-from-files release-pub governance-pub)})]
     (println (record-json/write-deterministic-json-str
               {"head" (:head result) "commit" (:commit result)
@@ -783,7 +801,8 @@
   [opts]
   (if-let [path (:deployment opts)]
     (let [allowed #{"root" "aozora-root" "chain-clone" "branch" "upstream-origin"
-                    "evidence-root" "serve-root" "release-pub" "governance-pub"}
+                    "evidence-root" "serve-root" "release-pub" "governance-pub"
+                    "release-doi"}
           values (json/read-json (slurp path))]
       (when-not (and (map? values)
                      (every? (fn [[k v]] (and (contains? allowed k)
@@ -872,6 +891,7 @@
    :event-sig {:coerce :string}
    :out {:coerce :string}
    :serve-root {:coerce :string}
+   :release-doi {:coerce :string}
    :deployment {:coerce :string}
    :archive {:coerce :string}
    :commit {:coerce :string}

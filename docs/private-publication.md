@@ -68,8 +68,20 @@ Follow `/catalog.json` for the signed discovery record.
 The NixOS publisher profile provisions the source and chain clones, shared serving
 directories, SSH transport, and `/etc/soranoha/publisher.json`. The workflow reads
 that configuration through `--deployment`; explicit CLI flags override configured
-values. Configuration contains paths and repository coordinates, never signing
-keys. Apply the NixOS configuration before dispatching a workflow that consumes it.
+values. Configuration contains paths, repository coordinates and the release DOI,
+never signing keys. Apply the NixOS configuration before dispatching a workflow
+that consumes it.
+
+`release-doi` (equivalently `--release-doi`) is the release's Zenodo version DOI,
+and it is optional. Zenodo mints it after the release exists, so no signed record
+can carry it, and before the first deposit there is none; serving injects it into
+every citation it renders. A malformed value is refused at activation rather than
+written into every work's citation record.
+
+Because the citations are generated files, the DOI is part of what an activation
+produces. Setting or changing it for a commit already exported makes the reuse
+check fail with `serving-tree-mismatch`: the existing tree's citations name a
+different DOI. Remove that tree and re-export.
 
 To verify and activate the existing publication again, as the publisher with its
 configured SSH transport:

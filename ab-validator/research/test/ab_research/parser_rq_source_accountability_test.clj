@@ -281,13 +281,18 @@
          identity-ref)))
 
 (deftest production-recognition-fixture-drives-the-real-envelope-and-gate
+  ;; Recognition is recognized bytes over the body-region eligible denominator:
+  ;; 29 of 54 across the fixture's four works. The malformed `［＃tail` work
+  ;; contributes all ten of its bytes as an unparsed source gap and claims no
+  ;; recognition, which is what separates this from the 33/54 the fixture
+  ;; reported while a recovered annotation still counted four bytes recognized.
   (let [{:keys [root store manifest identity aggregate]}
         (staged-production-recognition)]
     (try
       (let [envelope (rq-source/derive-source-recognition-envelope
                       store manifest aggregate identity)]
         (is (= recognition-identity-ref (:identity_ref envelope)))
-        (is (= 0.611M (:value envelope)))
+        (is (= 0.537M (:value envelope)))
         (is (= :not-qualified
                (qualification/gate-status
                 true

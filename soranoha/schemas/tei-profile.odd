@@ -82,13 +82,39 @@
           <p>
             ABC profile extensions use the namespace
             `https://w3id.org/abc/ns/tei` and require
-            `abc:vocab-version="0"` on generated TEI roots that carry ABC
-            extension attributes. The v0 extension is attributes-only. It
+            `abc:vocab-version` on generated TEI roots that carry ABC
+            extension attributes; the current vocabulary is `0`. The v0
+            extension is attributes-only. It
             permits derived audit projections such as `abc:preservation-record`,
             `abc:accent-code`, `abc:style-source`, `abc:layout-kind`,
             `abc:layout-params`, and `abc:figure-class` on ordinary TEI
             elements. These attributes project parser-IR evidence; they do not
             replace the source records from which they were derived.
+          </p>
+          <p>
+            The namespace IRI identifies the extension and never changes. The
+            vocabulary's major version is not implied by that IRI, which is why
+            `abc:vocab-version` carries it separately: a breaking vocabulary
+            change increments it, while an additive non-breaking attribute may
+            keep the same major version when compatibility is documented.
+          </p>
+          <p>
+            The profile hashes answer a different question. `odd_hash`,
+            `rng_hash` and `schematron_hash` in the validation report change on
+            any profile edit, additive ones included, so they record which
+            profile validated a document but cannot tell a consumer whether an
+            existing `abc:*` reader is still correct. That is what the
+            vocabulary version is for, and it is why the two are not
+            interchangeable.
+          </p>
+          <p>
+            Permitted versions are declared once, as the values of the
+            `abc:vocab-version` attribute below, and the generated Relax NG
+            enforces them. The Schematron rule therefore checks only that the
+            attribute is present when extension attributes are used. Admitting
+            a new vocabulary version is a single addition to that value list,
+            and older documents stay valid because the list grows rather than
+            being replaced.
           </p>
         </remarks>
 
@@ -107,7 +133,7 @@
           <item><label>abc-source-span-reference</label> error: elements claiming source spans must point to valid span identifiers.</item>
           <item><label>abc-source-span-target-exists</label> error: each fragment id in `@source` must resolve to an `@xml:id` defined in this document.</item>
           <item><label>abc-transcription-vs-annotation</label> warning: linguistic enrichment must not be mixed into transcription unless declared.</item>
-          <item><label>abc-vocab-version-declared</label> error: TEI roots using ABC extension attributes must declare `abc:vocab-version="0"`.</item>
+          <item><label>abc-vocab-version-declared</label> error: TEI roots using ABC extension attributes must declare `abc:vocab-version`; the permitted values are those declared for the attribute in this profile.</item>
           <item><label>abc-preservation-record-shape</label> error: `abc:preservation-record` values must be deterministic sidecar record ids of the form `r000000`.</item>
           <item><label>abc-layout-params-shape</label> error: `abc:layout-params` values must use the key=value grammar checked by this profile.</item>
         </list>
@@ -131,7 +157,7 @@
         <classSpec ident="att.global" mode="change" module="tei" type="atts">
           <attList>
             <attDef ident="vocab-version" mode="add" ns="https://w3id.org/abc/ns/tei" usage="opt">
-              <desc>ABC TEI namespace vocabulary major version.</desc>
+              <desc>ABC TEI namespace vocabulary major version. This value list declares the permitted versions; add to it rather than replacing it.</desc>
               <valList type="closed">
                 <valItem ident="0"/>
               </valList>
@@ -340,11 +366,11 @@
         </constraintSpec>
 
         <constraintSpec ident="abc-vocab-version-declared" scheme="schematron">
-          <desc>Require generated TEI with ABC extension attributes to declare the ABC vocabulary version.</desc>
+          <desc>Require generated TEI with ABC extension attributes to declare the ABC vocabulary version. The permitted values are declared once, for the attribute itself.</desc>
           <constraint>
             <sch:rule context="tei:TEI[@abc:* or .//@abc:*]">
-              <sch:assert test="@abc:vocab-version = '0'">
-                TEI roots using ABC extension attributes must declare abc:vocab-version="0".
+              <sch:assert test="@abc:vocab-version">
+                TEI roots using ABC extension attributes must declare abc:vocab-version.
               </sch:assert>
             </sch:rule>
           </constraint>

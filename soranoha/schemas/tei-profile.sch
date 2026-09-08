@@ -84,7 +84,7 @@
    </pattern>
    <pattern id="abc-vocab-version-declared">
       <rule context="tei:TEI[@abc:* or .//@abc:*]">
-         <assert test="@abc:vocab-version = '0'"> TEI roots using ABC extension attributes must declare abc:vocab-version="0".</assert>
+         <assert test="@abc:vocab-version"> TEI roots using ABC extension attributes must declare abc:vocab-version.</assert>
       </rule>
    </pattern>
    <pattern id="abc-preservation-record-shape">

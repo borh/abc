@@ -41,7 +41,7 @@ fn literal_brackets_preserve_body_and_nested_notation() {
         ),
     ] {
         let aat: Value =
-            serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
+            serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
                 .unwrap();
         assert_eq!(
             ab_plaintext::visible_text_projection(&aat),
@@ -86,7 +86,7 @@ fn residual_source_gaps_have_explicit_interpretation_uncertainty() {
         ("前［＃未閉\n後", false, "前\n後", "［＃未閉"),
     ] {
         let aat: Value =
-            serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
+            serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
                 .unwrap();
         assert_eq!(aat["meta"]["parse_complete"], complete);
         assert_eq!(ab_plaintext::visible_text_projection(&aat), expected);

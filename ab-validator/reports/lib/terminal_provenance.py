@@ -10,7 +10,7 @@ written here.
 **The tail.** Every Aozora Bunko work ends (after the visible body) with a
 "tail": editorial apparatus that starts at the first line whose content,
 after stripping leading whitespace, starts with `底本：`. This mirrors
-`aozora_body_range` in `crates/ab-aozora-aat/src/lib.rs`, which uses the
+`aozora_body_range` in `crates/ab-aat/src/lib.rs`, which uses the
 exact same `line.trim_start().starts_with("底本：")` check to end the
 parser's body span. A work with no such line has no tail at all.
 
@@ -57,7 +57,7 @@ BLANK_CLASS: Class = "blank"
 
 # The tail-start marker: mirrors `aozora_body_range`'s
 # `line.trim_start().starts_with("底本：")` check in
-# crates/ab-aozora-aat/src/lib.rs. This is NOT a head in the state-machine
+# crates/ab-aat/src/lib.rs. This is NOT a head in the state-machine
 # sense below (it always also matches the first PROVENANCE_HEADS entry);
 # it is what defines where the tail begins in the first place.
 TAIL_START_MARKER = "底本："
@@ -158,7 +158,7 @@ BOUNDARY_RULE: dict[str, object] = {
         "the tail is every line from the first line whose content, after "
         "stripping leading whitespace, starts with 底本： -- mirrors "
         'aozora_body_range\'s `line.trim_start().starts_with("底本：")` '
-        "check in crates/ab-aozora-aat/src/lib.rs"
+        "check in crates/ab-aat/src/lib.rs"
     ),
     "provenance_heads": list(PROVENANCE_HEADS),
     "colophon_heads": list(COLOPHON_HEADS),

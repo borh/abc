@@ -9,8 +9,7 @@ use serde_json::Value;
 fn supplied_diacritics_preserve_composition_and_source() {
     let source = "題\n作者\n\nVenus［＃「e」はアクサン（´）付き］と〔ru_pam［＃mは上ドット付き］〕\n\n底本：本\n";
     let aat: Value =
-        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
-            .unwrap();
+        serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
     let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let result = ab_aat_to_parser_ir::convert(ConversionRequest {
         aat,

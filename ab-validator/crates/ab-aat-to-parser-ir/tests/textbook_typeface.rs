@@ -11,10 +11,8 @@ fn convert(body: &str) -> Value {
         MappingDocument::from_path(&repo.join("data/aat-to-parser-ir-mapping-v2.json")).unwrap();
     let schemas = SchemaSet::for_aat_version(&repo, None, 2).unwrap();
     ab_aat_to_parser_ir::convert(ConversionRequest {
-        aat: serde_json::from_slice(
-            &ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap(),
-        )
-        .unwrap(),
+        aat: serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
+            .unwrap(),
         mapping,
         schemas,
         options: ConversionOptions::default(),

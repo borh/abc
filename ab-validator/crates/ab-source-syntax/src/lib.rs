@@ -218,7 +218,7 @@ impl SourceRegions {
 
 /// Returns the Aozora BODY range and TAIL start of a source text — the one
 /// authority for "where does the body start/end", shared by the parser
-/// (`ab-aozora-aat` sanitize stage) and the checker (`ab-check::body_text`)
+/// (`ab-aat` sanitize stage) and the checker (`ab-check::body_text`)
 /// so the two sides of any source↔AAT comparison cannot drift.
 ///
 /// Head: the header is cut ONLY when the region between the first two

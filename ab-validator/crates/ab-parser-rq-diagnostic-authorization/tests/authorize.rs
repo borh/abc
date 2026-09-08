@@ -192,7 +192,7 @@ fn native_tcy_does_not_change_the_diagnostic_contract() {
             "{\"data\":[{\"code\":\"unclosed-bracket\",\"kind\":\"unclosed_bracket\",\"severity\":\"error\",\"source\":\"source\",\"span\":{\"end\":3,\"start\":0}}],\"schemaVersion\":3}\n",
         ),
     ] {
-        let capture = ab_aozora_capture::capture_generation_from_bytes(source.as_bytes()).unwrap();
+        let capture = ab_capture::capture_generation_from_bytes(source.as_bytes()).unwrap();
         assert_eq!(capture.raw_diagnostics, expected.as_bytes());
         let raw = &capture.raw_diagnostics;
         assert!(validate_diagnostic_capture(raw, &hash(raw), raw.len() as u64).is_ok());

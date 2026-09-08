@@ -213,7 +213,7 @@ pub fn gaiji_entries(source: &str) -> Vec<GaijiResolution> {
 /// The structured ruby (furigana) records projected from an [`Tree`]'s nodes.
 ///
 /// Prefer this to re-parsing JSON when a caller needs the values directly
-/// (e.g. the `ab-aozora-aat` adapter, which retired its `RUBY_RE` regex
+/// (e.g. the `ab-aat` adapter, which retired its `RUBY_RE` regex
 /// reparse in favor of this typed projection).
 ///
 /// Each entry has the shape `{ span: { start, end }, base, reading, side }`

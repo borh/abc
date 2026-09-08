@@ -261,7 +261,7 @@ def test_projection_ignores_workspace_packages_the_subject_does_not_use(module, 
     """An unrelated sibling package must not rotate this instrument's identity.
 
     This is the observed regression, not a hypothetical: adding
-    `ab-aozora-capture` to the workspace moved the whole-lockfile hash while
+    `ab-capture` to the workspace moved the whole-lockfile hash while
     `ab-aat-to-parser-ir`'s own lock entry stayed byte-identical and no resolved
     third-party version changed. Binding the lockfile wholesale made every
     workspace edit look like a semantic change to this instrument.
@@ -311,7 +311,7 @@ def test_projection_marks_workspace_local_members_as_uncovered(module):
     """
     projection = module.locked_dependency_projection(REPO_ROOT, "ab-aat-to-parser-ir")
     local = {entry["name"] for entry in projection if entry.get("origin") == "workspace-local"}
-    assert "ab-aozora-aat" in local
+    assert "ab-aat" in local
     assert all("checksum" not in entry for entry in projection if entry["name"] in local)
 
 

@@ -27,8 +27,7 @@ fn objects(value: &Value) -> Vec<&Value> {
 fn real_page_break_does_not_create_a_spanless_terminal_duplicate() {
     let source = "題\n作者\n\n［＃改ページ］\n本文。［＃地から２字上げ］（日付）\n\n底本：本\n";
     let aat: Value =
-        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
-            .unwrap();
+        serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
     let all = objects(&aat);
     let breaks: Vec<_> = all
         .iter()
@@ -63,8 +62,7 @@ fn real_page_break_does_not_create_a_spanless_terminal_duplicate() {
 fn page_placement_ends_at_the_real_page_boundary_not_a_column_break() {
     let source = "題\n作者\n\n［＃ここからページの左右中央］\n甲\n［＃改段］\n乙\n［＃改丁］\n後\n\n底本：本\n";
     let aat: Value =
-        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
-            .unwrap();
+        serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
     let all = objects(&aat);
     let layout = all
         .iter()

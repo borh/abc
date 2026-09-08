@@ -4,7 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use ab_aozora_capture::capture_generation_from_bytes_for_identity;
+use ab_capture::capture_generation_from_bytes_for_identity;
 use ab_parser_rq_diagnostic_authorization::{
     BoundaryInput, DiagnosticGapAggregateInput, DiagnosticGapExpectedWork, DiagnosticGapWorkInput,
     aggregate_gap_partitions, authorize_boundary, derive_gap_partition,

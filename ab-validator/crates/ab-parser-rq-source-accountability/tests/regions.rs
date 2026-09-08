@@ -11,7 +11,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use ab_aozora_capture::capture_generation_from_bytes_for_identity_and_work;
+use ab_capture::capture_generation_from_bytes_for_identity_and_work;
 use ab_parser_rq_source_accountability::{
     RecognitionInput, RecognitionStatus, analyze_recognition,
 };

@@ -84,7 +84,7 @@ fn mode_diagnostics_emits_schema3_envelope() {
 
 #[test]
 fn production_diagnostics_accept_literal_private_use_source() {
-    let actual = ab_aozora_aat::diagnostics_json_from_bytes("本文\u{e001}終わり".as_bytes())
+    let actual = ab_aat::diagnostics_json_from_bytes("本文\u{e001}終わり".as_bytes())
         .expect("diagnostics capture");
     let diagnostic: serde_json::Value = serde_json::from_slice(&actual).unwrap();
     assert_eq!(diagnostic["schemaVersion"], 3);

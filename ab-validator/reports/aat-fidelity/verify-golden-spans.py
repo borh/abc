@@ -18,7 +18,7 @@ result: `value` (sanitized/normalized text) legitimately differs from
 `decoded[byte_start:byte_end]` (raw span slice) by exactly the CRLF
 collapse, while `line_start`/`line_end` (computed by counting raw `\\n`
 bytes, unaffected by normalization) already match. See
-`crates/ab-aozora-aat/tests/goldens.rs` for the confirmed real-golden
+`crates/ab-aat/tests/goldens.rs` for the confirmed real-golden
 occurrences (`full-markup-{utf8,shift_jis}.txt`).
 
 This is the ONLY mismatch shape suppressed here. It is recognized by an

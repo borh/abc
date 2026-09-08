@@ -6,8 +6,8 @@ license.workspace = true
 publish = false
 
 [dependencies]
-ab-aozora-aat = { path = "../ab-aozora-aat" }
-ab-aozora-capture = { path = "../ab-aozora-capture" }
+ab-aat = { path = "../ab-aat" }
+ab-capture = { path = "../ab-capture" }
 ab-diff-utils = { path = "../ab-diff-utils" }
 ab-rq-artifact-store = { path = "../ab-rq-artifact-store" }
 anyhow.workspace = true

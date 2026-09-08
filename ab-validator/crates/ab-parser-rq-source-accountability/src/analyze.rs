@@ -1,4 +1,4 @@
-use ab_aozora_aat::{decode_source_bytes, diagnostics_json_from_bytes};
+use ab_aat::{decode_source_bytes, diagnostics_json_from_bytes};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
@@ -166,7 +166,7 @@ mod tests {
             "schema_hash": schema_hash,
             "derived_from": {
                 "aat_version": 2,
-                "aat_adapter": "ab-aozora-aat",
+                "aat_adapter": "ab-aat",
                 "aat_adapter_version": "0.1.0",
                 "mapping_id": "https://example.test/mapping",
                 "mapping_version": "1",
@@ -189,7 +189,7 @@ mod tests {
             qualification_identity: QualificationIdentity {
                 parser_git_rev: "abc123".into(),
                 aat_version: 2,
-                aat_adapter: "ab-aozora-aat".into(),
+                aat_adapter: "ab-aat".into(),
                 aat_adapter_version: "0.1.0".into(),
                 mapping_id: "https://example.test/mapping".into(),
                 mapping_version: "1".into(),

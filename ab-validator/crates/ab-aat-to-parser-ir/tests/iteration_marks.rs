@@ -35,7 +35,7 @@ fn native_marks_survive_conversion_with_exact_source_spans() {
     ] {
         let source = format!("題\n作者\n\n{body}\n\n底本：本\n");
         let aat: Value =
-            serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
+            serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
                 .unwrap();
         let mut marks = Vec::new();
         nodes(&aat["blocks"], "kind", "iteration-mark", &mut marks);

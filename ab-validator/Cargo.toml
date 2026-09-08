@@ -15,6 +15,9 @@ members = [
     "crates/ab-morph-run",
     "crates/ab-warehouse",
     "crates/ab-aat-to-parser-ir",
+    # Lifted from P4suta/aozora; each carries its own NOTICE. The prefix marks
+    # that lineage, so a locally authored crate does not take it. `ab-aozora`
+    # below is the harness-edge binary and is not part of the lift.
     "crates/ab-aozora-spec",
     "crates/ab-aozora-veb",
     "crates/ab-aozora-encoding",
@@ -25,8 +28,8 @@ members = [
     "crates/ab-aozora-facade",
     "crates/ab-aozora-proptest",
     "crates/ab-aozora-corpus",
-    "crates/ab-aozora-aat",
-    "crates/ab-aozora-capture",
+    "crates/ab-aat",
+    "crates/ab-capture",
     "crates/ab-aozora",
     "crates/ab-parser-rq-source-accountability",
     "crates/ab-parser-rq-diagnostic-authorization",

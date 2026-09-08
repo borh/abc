@@ -27,7 +27,7 @@ serde_stacker = { workspace = true }
 sha2 = { workspace = true }
 
 [dev-dependencies]
-ab-aozora-aat = { path = "../ab-aozora-aat" }
+ab-aat = { path = "../ab-aat" }
 criterion = { workspace = true }
 hegeltest = "0.28"
 tempfile = { workspace = true }

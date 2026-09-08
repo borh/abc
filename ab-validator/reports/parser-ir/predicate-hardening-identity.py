@@ -141,7 +141,7 @@ def locked_dependency_projection(repo_root: pathlib.Path, package: str) -> list[
 
     The lockfile is workspace-wide, so binding its bytes made this instrument's
     identity rotate whenever any unrelated workspace package moved. That is not
-    hypothetical: adding `ab-aozora-capture` rotated the parser-IR identity
+    hypothetical: adding `ab-capture` rotated the parser-IR identity
     while `ab-aat-to-parser-ir`'s own lock entry stayed byte-identical and no
     resolved third-party version changed anywhere. This projection keeps the
     claim worth making — the resolved graph the instrument actually compiles

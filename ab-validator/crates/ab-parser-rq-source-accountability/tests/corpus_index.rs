@@ -29,7 +29,7 @@ fn qualification() -> QualificationIdentity {
     QualificationIdentity {
         parser_git_rev: "abc123".into(),
         aat_version: 2,
-        aat_adapter: "ab-aozora-aat".into(),
+        aat_adapter: "ab-aat".into(),
         aat_adapter_version: "0.1.0".into(),
         mapping_id: "https://example.test/mapping".into(),
         mapping_version: "1".into(),

@@ -9,10 +9,8 @@ fn convert(body: &str) -> Value {
     let source = format!("題\n作者\n\n{body}\n\n底本：本\n");
     let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     ab_aat_to_parser_ir::convert(ConversionRequest {
-        aat: serde_json::from_slice(
-            &ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap(),
-        )
-        .unwrap(),
+        aat: serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
+            .unwrap(),
         mapping: MappingDocument::from_path(&repo.join("data/aat-to-parser-ir-mapping-v2.json"))
             .unwrap(),
         schemas: SchemaSet::for_aat_version(&repo, None, 2).unwrap(),

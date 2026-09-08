@@ -2162,8 +2162,7 @@ fn emitted_colophon_note_converts_to_transcriber_note() {
     let source =
         "本文。\n\n底本：「作品集」\n※「□」には、底本では「◆」が内接しています。\n入力：入力者\n";
     let aat =
-        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
-            .unwrap();
+        serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
     let output = ab_aat_to_parser_ir::convert(ConversionRequest {
         aat,
         mapping,
@@ -2232,8 +2231,7 @@ fn preserves_source_diagnostics_and_parse_completion() {
 fn malformed_source_retains_parser_error_through_conversion() {
     let source = "本文\nstray］";
     let aat =
-        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
-            .unwrap();
+        serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
     let (schemas, mapping) = v2_schemas_and_mapping();
     let output = ab_aat_to_parser_ir::convert(ConversionRequest {
         aat,
@@ -2292,8 +2290,7 @@ fn ruby_reading_preserves_nested_inline_semantics_and_local_coordinates() {
 #[test]
 fn source_decoding_outcome_survives_normalized_encoding_label() {
     let (schemas, mapping) = v2_schemas_and_mapping();
-    let aat =
-        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(&[0x81]).unwrap()).unwrap();
+    let aat = serde_json::from_slice(&ab_aat::aat_json_from_bytes(&[0x81]).unwrap()).unwrap();
     let output = ab_aat_to_parser_ir::convert(ConversionRequest {
         aat,
         mapping,
@@ -2312,8 +2309,7 @@ fn source_decoding_outcome_survives_normalized_encoding_label() {
 fn quoted_base_text_variant_targets_supplied_ruby_reading() {
     let source = "私は籠《ざる》［＃ルビの「ざる」は底本では「さる」］をさげ";
     let aat =
-        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
-            .unwrap();
+        serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
     let (schemas, mapping) = v2_schemas_and_mapping();
     let output = ab_aat_to_parser_ir::convert(ConversionRequest {
         aat,
@@ -2343,9 +2339,8 @@ fn line_crossing_or_mismatched_reading_variants_remain_unresolved() {
         "籠《ざる》［＃ルビの「さる」は底本では「ざる」］",
     ] {
         let (schemas, mapping) = v2_schemas_and_mapping();
-        let aat =
-            serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
-                .unwrap();
+        let aat = serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
+            .unwrap();
         let output = ab_aat_to_parser_ir::convert(ConversionRequest {
             aat,
             mapping,
@@ -2374,8 +2369,7 @@ fn unknown_source_directive_survives_parser_derived_provenance() {
     let source = "前［＃未定義の範囲指定開始］後";
     let (schemas, mapping) = v2_schemas_and_mapping();
     let aat =
-        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
-            .unwrap();
+        serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
     let output = ab_aat_to_parser_ir::convert(ConversionRequest {
         aat,
         mapping,
@@ -2453,8 +2447,7 @@ fn source_warichu_preserves_unsplit_layout_without_invented_halves() {
     let source = "前［＃割り注］上※［＃「吉」、U+20BB7］［＃割り注終わり］後";
     let (schemas, mapping) = v2_schemas_and_mapping();
     let aat =
-        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
-            .unwrap();
+        serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
     let output = ab_aat_to_parser_ir::convert(ConversionRequest {
         aat,
         mapping,
@@ -2482,8 +2475,7 @@ fn source_left_underline_preserves_native_mark_and_ruby_target() {
     let source = "東京《とうきょう》［＃「東京」の左に傍線］";
     let (schemas, mapping) = v2_schemas_and_mapping();
     let aat =
-        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
-            .unwrap();
+        serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
     let output = ab_aat_to_parser_ir::convert(ConversionRequest {
         aat,
         mapping,
@@ -2504,8 +2496,7 @@ fn established_source_facts_survive_without_claiming_raw_markers() {
     let source = "東京《とうきょう》［＃「東京」の左に傍線］［＃割り注］※［＃「吉」、U+20BB7］［＃割り注終わり］［＃未知の指定］";
     let (schemas, mapping) = v2_schemas_and_mapping();
     let aat: Value =
-        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
-            .unwrap();
+        serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
     let expected = aat["meta"]["interpretation_facts"].clone();
     let output = ab_aat_to_parser_ir::convert(ConversionRequest {
         aat,
@@ -2545,8 +2536,7 @@ fn nested_base_text_alternative_retains_explicit_unresolved_influence() {
     let source = format!("目{directive}後。");
     let (schemas, mapping) = v2_schemas_and_mapping();
     let aat =
-        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
-            .unwrap();
+        serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
     let output = ab_aat_to_parser_ir::convert(ConversionRequest {
         aat,
         mapping,
@@ -4397,12 +4387,11 @@ fn ruby_node_spans_distinguish_parser_text_and_source_markup() {
 fn adapter_conversion_spans_address_full_source_across_body_and_terminal_provenance() {
     let source = "\u{feff}作品名\r\n著者名\r\n\r\n本\u{e001}文です。\r\n\r\n底本：テスト本\r\n";
     let bytes = source.as_bytes();
-    let decoded = ab_aozora_aat::decode_source_bytes(bytes).unwrap();
+    let decoded = ab_aat::decode_source_bytes(bytes).unwrap();
     assert!(decoded.span_text.len() < decoded.text.len());
     assert!(decoded.tail_offset > decoded.span_text.len());
 
-    let aat: Value =
-        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(bytes).unwrap()).unwrap();
+    let aat: Value = serde_json::from_slice(&ab_aat::aat_json_from_bytes(bytes).unwrap()).unwrap();
     let version = aat["version"].as_u64().unwrap();
     let (repo_root, research_root) = roots();
     let mapping = MappingDocument::from_path(
@@ -4568,8 +4557,7 @@ fn source_corrections_and_one_compound_sign_survive_validated_conversion() {
     let source = "題\n作者\n\n甍《いらか》［＃「甍の」は底本では「薨の」］先。\n［＃ここから４字下げ、横書き、中央揃え、罫囲み］\nRESTAURANT\n西洋料理店\nWILDCAT HOUSE\n山猫軒\n［＃ここで字下げ終わり］\nといふ札。\n\n底本：本\n";
     let (schemas, mapping) = v2_schemas_and_mapping();
     let aat: Value =
-        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
-            .unwrap();
+        serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
     let mut wrong_owner = aat.clone();
     wrong_owner["blocks"][1]["kind"] = json!("quote_block");
     assert!(validate_value(&schemas.aat_schema, &wrong_owner, "AAT").is_err());
@@ -4612,11 +4600,10 @@ fn source_corrections_and_one_compound_sign_survive_validated_conversion() {
 #[test]
 fn source_markup_gaps_and_gaiji_have_independent_projection_and_source_extents() {
     let source = "\u{feff}作品名\r\n著者名\r\n\r\n前※［＃「てへん＋劣」、第3水準1-84-77］後。\r\n\r\n底本：テスト本\r\n";
-    let decoded = ab_aozora_aat::decode_source_bytes(source.as_bytes()).unwrap();
+    let decoded = ab_aat::decode_source_bytes(source.as_bytes()).unwrap();
     let (schemas, mapping) = v2_schemas_and_mapping();
     let aat =
-        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
-            .unwrap();
+        serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
     let output = ab_aat_to_parser_ir::convert(ConversionRequest {
         aat,
         mapping,
@@ -4656,10 +4643,8 @@ fn enclosing_indent_survives_line_local_closing_alignment() {
     let (schemas, mapping) = v2_schemas_and_mapping();
     for date_offset in [2, 3] {
         let changed = source.replace("地から２字上げ", &format!("地から{date_offset}字上げ"));
-        let aat = serde_json::from_slice(
-            &ab_aozora_aat::aat_json_from_bytes(changed.as_bytes()).unwrap(),
-        )
-        .unwrap();
+        let aat = serde_json::from_slice(&ab_aat::aat_json_from_bytes(changed.as_bytes()).unwrap())
+            .unwrap();
         let output = ab_aat_to_parser_ir::convert(ConversionRequest {
             aat,
             mapping: mapping.clone(),
@@ -4774,8 +4759,7 @@ fn corpus_warichu_with_multiple_sentences_preserves_one_source_container() {
     let text = "宇宙にはあらゆる象徴瀰漫す。しかして、その神秘的な法則と配列の妙義は、隠れたる事象を人に告げ、あるいは予め告げ知らしむ。";
     let source = format!("題\n作者\n\n前［＃割り注］{text}［＃割り注終わり］後。\n\n底本：本\n");
     let aat: Value =
-        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
-            .unwrap();
+        serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
     let (schemas, mapping) = v2_schemas_and_mapping();
     let output = ab_aat_to_parser_ir::convert(ConversionRequest {
         aat,
@@ -4852,8 +4836,7 @@ fn native_forced_break_and_supplied_kunten_survive_nested_warichu() {
     let source = "題\n作者\n\n前［＃地から３字上げ］［＃割り注］磯。此云［＃レ］志。［＃改行］次［＃割り注終わり］後。\n\n底本：本\n";
     let (schemas, mapping) = v2_schemas_and_mapping();
     let aat =
-        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
-            .unwrap();
+        serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
     let output = ab_aat_to_parser_ir::convert(ConversionRequest {
         aat,
         mapping,
@@ -4908,9 +4891,8 @@ fn principal_text_alternatives_preserve_supplied_text_and_rich_targets() {
     ] {
         let source = format!("題\n作者\n\n{body}\n\n底本：本\n");
         let (schemas, mapping) = v2_schemas_and_mapping();
-        let aat =
-            serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
-                .unwrap();
+        let aat = serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
+            .unwrap();
         let output = ab_aat_to_parser_ir::convert(ConversionRequest {
             aat,
             mapping,
@@ -4956,9 +4938,8 @@ fn principal_text_alternatives_do_not_search_past_mismatches_or_source_lines() {
     ] {
         let source = format!("題\n作者\n\n{body}\n\n底本：本\n");
         let (schemas, mapping) = v2_schemas_and_mapping();
-        let aat =
-            serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
-                .unwrap();
+        let aat = serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
+            .unwrap();
         let output = ab_aat_to_parser_ir::convert(ConversionRequest {
             aat,
             mapping,

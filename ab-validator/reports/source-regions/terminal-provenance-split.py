@@ -353,7 +353,7 @@ def process_entry(corpus_root_str: str, entry_str: str) -> dict[str, Any]:
     # str.splitlines() treats \n, \r\n, and bare \r uniformly as boundaries
     # (matching the effect of the Rust pipeline's sanitize step, which
     # normalizes all three to \n before aozora_body_range ever runs) --
-    # see crates/ab-aozora-aat/src/lib.rs line 229 and its `sanitize`
+    # see crates/ab-aat/src/lib.rs line 229 and its `sanitize`
     # normalization comments.
     lines = text.splitlines()
     tail_start = find_tail_start(lines)

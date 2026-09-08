@@ -55,7 +55,7 @@
 
 use core::ops::Range;
 
-/// Crate version, re-exported for identity strings (ab-aozora-aat's
+/// Crate version, re-exported for identity strings (ab-aat's
 /// `adapter_version` embeds it as the `facade` coordinate).
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 

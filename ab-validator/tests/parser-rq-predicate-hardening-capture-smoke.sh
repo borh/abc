@@ -21,8 +21,8 @@ generate() {
   local mapping="$ab_root/data/aat-to-parser-ir-mapping-v2.json"
   local policy="$research_root/data/parser-rq-parser-ir-conformance-policy-v1.json"
   local identity_ref="sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-  local plain="$ab_root/crates/ab-aozora-aat/tests/data/plain-ascii.txt"
-  local diagnostic="$ab_root/crates/ab-aozora-aat/tests/data/broken-ruby-utf8.txt"
+  local plain="$ab_root/crates/ab-aat/tests/data/plain-ascii.txt"
+  local diagnostic="$ab_root/crates/ab-aat/tests/data/broken-ruby-utf8.txt"
 
   for spec in "000001_1:$plain" "000002_2:$plain" "000003_3:$diagnostic"; do
     local work_id="${spec%%:*}"

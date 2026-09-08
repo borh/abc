@@ -1,0 +1,36 @@
+[package]
+name = "ab-aat"
+description = "AAT (Adapter Abstract Tree) emission from typed Aozora Bunko parser values"
+version = "0.6.0"
+edition.workspace = true
+license = "MIT OR Apache-2.0"
+publish = false
+
+[lints]
+workspace = true
+
+[build-dependencies]
+# build.rs only reads env / emits cargo directives; no deps needed.
+
+[dependencies]
+# Never enable `json` here: it turns on serde_json/preserve_order via
+# ab-aozora-facade's feature graph (see the exclude-list comment in the
+# root Cargo.toml). The entries feature is used only by the external diagnostics envelope.
+ab-aozora-facade = { path = "../ab-aozora-facade", features = ["entries"] }
+anyhow = "1.0"
+regex = "1.12"
+encoding_rs = "0.8"
+ab-aozora-pipeline = { path = "../ab-aozora-pipeline" }
+# Shared body/tail boundary authority (aozora_body_range) — one cut for
+# parser and checker.
+ab-source-syntax = { path = "../ab-source-syntax" }
+ab-rq-artifact-store = { path = "../ab-rq-artifact-store" }
+serde_json = "1.0"
+sha2 = "0.10"
+jsonschema.workspace = true
+
+[dev-dependencies]
+serde = { version = "1.0", features = ["derive"] }
+proptest.workspace = true
+hegeltest = "0.28"
+tempfile.workspace = true

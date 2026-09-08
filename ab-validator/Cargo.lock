@@ -6,7 +6,7 @@ version = 4
 name = "ab-aat-to-parser-ir"
 version = "0.1.0"
 dependencies = [
- "ab-aozora-aat",
+ "ab-aat",
  "ab-check",
  "ab-diff-utils",
  "ab-morph-analyzers",
@@ -31,12 +31,12 @@ dependencies = [
 name = "ab-aozora"
 version = "0.5.0"
 dependencies = [
- "ab-aozora-aat",
+ "ab-aat",
  "serde_json",
 ]
 
 [[package]]
-name = "ab-aozora-aat"
+name = "ab-aat"
 version = "0.6.0"
 dependencies = [
  "ab-aozora-facade",
@@ -56,10 +56,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "ab-aozora-capture"
+name = "ab-capture"
 version = "0.6.0"
 dependencies = [
- "ab-aozora-aat",
+ "ab-aat",
  "ab-aozora-pipeline",
  "ab-rq-artifact-store",
  "anyhow",
@@ -377,7 +377,7 @@ dependencies = [
 name = "ab-parser-rq-diagnostic-authorization"
 version = "0.1.0"
 dependencies = [
- "ab-aozora-capture",
+ "ab-capture",
  "ab-diff-utils",
  "ab-parser-rq-source-accountability",
  "anyhow",
@@ -394,8 +394,8 @@ dependencies = [
 name = "ab-parser-rq-source-accountability"
 version = "0.1.0"
 dependencies = [
- "ab-aozora-aat",
- "ab-aozora-capture",
+ "ab-aat",
+ "ab-capture",
  "ab-diff-utils",
  "ab-rq-artifact-store",
  "anyhow",

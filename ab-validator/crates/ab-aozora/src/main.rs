@@ -23,7 +23,7 @@ fn main() -> ExitCode {
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--version" => {
-                println!("{}", ab_aozora_aat::adapter_version());
+                println!("{}", ab_aat::adapter_version());
                 return ExitCode::SUCCESS;
             }
             "--mode" => match args.next().as_deref() {
@@ -51,8 +51,8 @@ fn main() -> ExitCode {
     // Both functions build the full document in memory: on Err nothing has
     // been written to stdout (no-partial-output contract).
     let result = match mode {
-        Mode::Aat => ab_aozora_aat::aat_json_from_bytes(&bytes),
-        Mode::Diagnostics => ab_aozora_aat::diagnostics_json_from_bytes(&bytes),
+        Mode::Aat => ab_aat::aat_json_from_bytes(&bytes),
+        Mode::Diagnostics => ab_aat::diagnostics_json_from_bytes(&bytes),
     };
     match result {
         Ok(out) => {

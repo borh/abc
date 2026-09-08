@@ -13,7 +13,7 @@ fn qualification() -> QualificationIdentity {
     QualificationIdentity {
         parser_git_rev: "abc123".into(),
         aat_version: 2,
-        aat_adapter: "ab-aozora-aat".into(),
+        aat_adapter: "ab-aat".into(),
         aat_adapter_version: "0.1.0".into(),
         mapping_id: "https://example.test/mapping".into(),
         mapping_version: "1".into(),
@@ -189,7 +189,7 @@ fn a_v1_record_cannot_be_read_as_v2() {
 fn bom_crlf_and_sanitizer_coordinates_address_full_decoded_text() {
     let mut original = vec![0xef, 0xbb, 0xbf];
     original.extend_from_slice("見出し\r\nあ\u{e001}い\r\n底本：本\r\n".as_bytes());
-    let decoded = ab_aozora_aat::decode_source_bytes(&original).unwrap();
+    let decoded = ab_aat::decode_source_bytes(&original).unwrap();
     let post_collision_start = decoded.text.find('\u{e001}').unwrap() + '\u{e001}'.len_utf8();
     let post_collision_end = post_collision_start + "い".len();
     let tail_start = decoded.text.find("底本：").unwrap();

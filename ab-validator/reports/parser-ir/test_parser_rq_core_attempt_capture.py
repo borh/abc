@@ -156,7 +156,7 @@ def test_capture_repetitions_is_serial_closed_and_lock_retaining(tmp_path):
             (report_dir / f"{work_id}-pathhash.json").write_text(
                 json.dumps(
                     {
-                        "adapter": "ab-aozora-aat",
+                        "adapter": "ab-aat",
                         "adapter_version": "1.0.0",
                         "work_id": work_id,
                         "results": {"parse_completeness": {"pass": True}},

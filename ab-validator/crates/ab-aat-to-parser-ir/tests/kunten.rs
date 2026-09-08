@@ -8,8 +8,7 @@ fn supplied_kunten_preserves_category_text_and_source() {
     let source = "題\n作者\n\n漢［＃レ］字［＃（レ）］給［＃（弖）］［＃一レ］。\n\n底本：本\n";
     let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let aat =
-        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
-            .unwrap();
+        serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
     let ir = ab_aat_to_parser_ir::convert(ConversionRequest {
         aat,
         mapping: MappingDocument::from_path(&repo.join("data/aat-to-parser-ir-mapping-v2.json"))

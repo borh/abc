@@ -6,8 +6,7 @@ fn convert(body: &str) -> Value {
     let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let source = format!("題\n作者\n\n{body}\n\n底本：本\n");
     let aat =
-        serde_json::from_slice(&ab_aozora_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
-            .unwrap();
+        serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
     ab_aat_to_parser_ir::convert(ConversionRequest {
         aat,
         mapping: MappingDocument::from_path(&repo.join("data/aat-to-parser-ir-mapping-v2.json"))

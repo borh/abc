@@ -6,7 +6,7 @@ three-class taxonomy —
   1. identity pointers (/meta/adapter_version),
   2. works whose baseline carries well-paired keigakomi/yokogumi container
      markers, checked by FORWARD REWRITE + DEEP EQUALITY: an independent
-     reimplementation of ab-aozora-aat's classification over the baseline
+     reimplementation of ab-aat's classification over the baseline
      JSON must reproduce the candidate exactly,
   3. everything else byte-identical after identity substitution.
 
@@ -20,7 +20,7 @@ v2-migration: forward-rewrites a schema-v1 baseline
 document to its expected schema-v2 form — layout key renames, left-ruby
 typing, jizume_block formation (paired + compound), a warnings-shape
 projection, and the root version bump — and requires deep equality with
-the v2 candidate. Mirrors ab-aozora-aat/src/lib.rs's emission
+the v2 candidate. Mirrors ab-aat/src/lib.rs's emission
 semantics ONLY (never corpus-fitted); a mismatch on real corpus data is a
 controller escalation, same discipline as container-rewrite.
 
@@ -551,7 +551,7 @@ WARNING_REQUIRED_KEYS = {"code", "severity", "message"}
 # `※［＃「漸／耳」、第4水準2-85-15］`). The parser resolves such a base via
 # `alloc.content_plain(target)`, so `ruby_entries`
 # (ab-aozora-facade/src/json.rs:255) yields a plain-run base and the AAT
-# `ruby_node` (crates/ab-aozora-aat/src/lib.rs:1156) emits a typed
+# `ruby_node` (crates/ab-aat/src/lib.rs:1156) emits a typed
 # `direction:"left"` node verbatim — the embedded `」`/`］` are literal base
 # text, NOT structural. A char-class regex mis-anchors on those inner
 # brackets, so we split structurally on the fixed marker delimiters instead.
@@ -719,7 +719,7 @@ def is_burasage_paragraph(node):
 #
 # The 地付き (align-end / chitsuki) block assembler collects the inline run
 # from just after its marker up to `find_next_raw_boundary`
-# (crates/ab-aozora-aat/src/lib.rs:516-522, 862-867) — the FIRST node of
+# (crates/ab-aat/src/lib.rs:516-522, 862-867) — the FIRST node of
 # `kind:"raw"`. In v1 an unrecognised left-ruby marker was such a raw node, so
 # it TERMINATED the chitsuki line: the marker (plus the rest of that physical
 # line) fell out into a following plain paragraph. In v2 the same marker is a

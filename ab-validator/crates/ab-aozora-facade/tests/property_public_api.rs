@@ -20,8 +20,8 @@
 //!    inconsistent arena).
 
 use ab_aozora_facade::Document;
-use ab_proptest::config::default_config;
-use ab_proptest::generators::*;
+use ab_notation_strategies::config::default_config;
+use ab_notation_strategies::generators::*;
 use proptest::prelude::*;
 
 fn parse_serialise_parse(source: &str) -> (String, String) {

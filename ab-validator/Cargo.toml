@@ -15,11 +15,11 @@ members = [
     "crates/ab-morph-run",
     "crates/ab-warehouse",
     "crates/ab-aat-to-parser-ir",
-    "crates/ab-proptest",
+    "crates/ab-notation-strategies",
     # Lifted from P4suta/aozora; each carries its own NOTICE. The prefix marks
     # that lineage, so a locally authored crate does not take it. `ab-aozora`
     # below is the harness-edge binary and is not part of the lift, and
-    # `ab-proptest` above replaced the lifted generator crate.
+    # `ab-notation-strategies` above replaced the lifted generator crate.
     "crates/ab-aozora-spec",
     "crates/ab-aozora-encoding",
     "crates/ab-aozora-syntax",

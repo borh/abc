@@ -95,8 +95,10 @@ pub fn naive_scan_offsets(source: &str) -> Vec<u32> {
 
 #[cfg(test)]
 mod tests {
-    use ab_proptest::config::default_config;
-    use ab_proptest::generators::{aozora_fragment, pathological_aozora, unicode_adversarial};
+    use ab_notation_strategies::config::default_config;
+    use ab_notation_strategies::generators::{
+        aozora_fragment, pathological_aozora, unicode_adversarial,
+    };
     use proptest::prelude::*;
 
     use super::{naive_scan_offsets, scan_offsets};

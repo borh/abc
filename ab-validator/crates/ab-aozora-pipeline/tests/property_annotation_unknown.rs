@@ -29,8 +29,8 @@
 use ab_aozora_pipeline::lex;
 use ab_aozora_render::serialize;
 use ab_aozora_syntax::ast::{Node, NodeRef};
-use ab_proptest::config::default_config;
-use ab_proptest::generators::*;
+use ab_notation_strategies::config::default_config;
+use ab_notation_strategies::generators::*;
 use proptest::prelude::*;
 
 /// Walk every registry hit and pull out the `Directive` nodes.

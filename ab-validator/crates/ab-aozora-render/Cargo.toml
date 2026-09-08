@@ -18,7 +18,7 @@ memchr = "2.8"
 [dev-dependencies]
 pretty_assertions = "1.4.1"
 proptest = "1.11"
-ab-proptest = { path = "../ab-proptest" }
+ab-notation-strategies = { path = "../ab-notation-strategies" }
 insta = { version = "1.47", features = ["yaml", "json", "filters"] }
 
 [package.metadata.docs.rs]

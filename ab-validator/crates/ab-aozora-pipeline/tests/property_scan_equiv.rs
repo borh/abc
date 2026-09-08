@@ -36,8 +36,8 @@
 
 use ab_aozora_pipeline::lex;
 use ab_aozora_pipeline::lexer::trigger_scan::naive_scan_offsets;
-use ab_proptest::config::default_config;
-use ab_proptest::generators::*;
+use ab_notation_strategies::config::default_config;
+use ab_notation_strategies::generators::*;
 use proptest::prelude::*;
 
 fn scan_count(source: &str) -> usize {

@@ -230,8 +230,8 @@ pub mod encoding {
 /// Aozora-shaped `proptest` strategies.
 ///
 /// Downstream renderer / visitor authors writing their own property
-/// tests reach through this module instead of pulling `ab-proptest`
-/// directly. Enabled by the `proptest` Cargo feature on the `aozora`
+/// tests reach through this module instead of pulling
+/// `ab-notation-strategies` directly. Enabled by the `proptest` Cargo feature on the `aozora`
 /// crate; both `ab_aozora_facade::proptest::*` and the `proptest` crate
 /// itself are then in scope for the consumer.
 ///
@@ -242,7 +242,7 @@ pub mod encoding {
 #[cfg(feature = "proptest")]
 #[cfg_attr(docsrs, doc(cfg(feature = "proptest")))]
 pub mod proptest {
-    pub use ab_proptest::*;
+    pub use ab_notation_strategies::*;
 }
 
 #[cfg(test)]

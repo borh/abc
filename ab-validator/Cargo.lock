@@ -90,7 +90,7 @@ dependencies = [
  "ab-aozora-render",
  "ab-aozora-spec",
  "ab-aozora-syntax",
- "ab-proptest",
+ "ab-notation-strategies",
  "proptest",
  "schemars",
  "serde",
@@ -105,7 +105,7 @@ dependencies = [
  "ab-aozora-render",
  "ab-aozora-spec",
  "ab-aozora-syntax",
- "ab-proptest",
+ "ab-notation-strategies",
  "aho-corasick",
  "hegeltest",
  "insta",
@@ -121,7 +121,7 @@ dependencies = [
  "ab-aozora-pipeline",
  "ab-aozora-spec",
  "ab-aozora-syntax",
- "ab-proptest",
+ "ab-notation-strategies",
  "insta",
  "memchr",
  "pretty_assertions",
@@ -132,7 +132,7 @@ dependencies = [
 name = "ab-aozora-spec"
 version = "0.1.0"
 dependencies = [
- "ab-proptest",
+ "ab-notation-strategies",
  "miette",
  "proptest",
  "serde",
@@ -316,6 +316,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "ab-notation-strategies"
+version = "0.1.0"
+dependencies = [
+ "ab-aozora-spec",
+ "proptest",
+]
+
+[[package]]
 name = "ab-ortho-detect"
 version = "0.1.0"
 dependencies = [
@@ -388,14 +396,6 @@ dependencies = [
  "proptest",
  "serde",
  "serde_json",
-]
-
-[[package]]
-name = "ab-proptest"
-version = "0.1.0"
-dependencies = [
- "ab-aozora-spec",
- "proptest",
 ]
 
 [[package]]

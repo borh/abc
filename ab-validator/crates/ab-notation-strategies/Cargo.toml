@@ -1,6 +1,6 @@
 [package]
-name = "ab-proptest"
-description = "Aozora-shaped proptest input generators and shared proptest configuration for the workspace's property suites. Dev-only; never linked into a released binary."
+name = "ab-notation-strategies"
+description = "Proptest strategies generating Aozora notation input, plus the shared proptest configuration the workspace's property suites run under. Dev-only; never linked into a released binary."
 version = "0.1.0"
 edition.workspace = true
 license = "MIT OR Apache-2.0"

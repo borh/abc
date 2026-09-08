@@ -31,8 +31,8 @@
 #![cfg(feature = "json")]
 
 use ab_aozora_facade::{Document, json};
-use ab_proptest::config::default_config;
-use ab_proptest::generators::*;
+use ab_notation_strategies::config::default_config;
+use ab_notation_strategies::generators::*;
 use proptest::prelude::*;
 
 fn assert_envelope_is_well_formed_json(label: &str, expected: u32, source: &str, json: &str) {

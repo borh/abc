@@ -74,4 +74,4 @@ without a suffix is locally authored, and is marked below.
 | --- | --- |
 | `ab-index` | Feature-index builder and query CLI. |
 | `ab-diff-utils` | Shared first-difference, frequency-table, and hash helpers. |
-| `ab-proptest` | Aozora-shaped proptest generators and the shared proptest configuration. Dev-only. |
+| `ab-notation-strategies` | Proptest strategies generating Aozora notation input, plus the shared proptest configuration. Dev-only. |

@@ -11,8 +11,8 @@
 
 use ab_aozora_spec::Sentinel;
 use ab_aozora_syntax::ast::NodeRef;
-use ab_proptest::config::default_config;
-use ab_proptest::generators::*;
+use ab_notation_strategies::config::default_config;
+use ab_notation_strategies::generators::*;
 use proptest::prelude::*;
 
 #[allow(

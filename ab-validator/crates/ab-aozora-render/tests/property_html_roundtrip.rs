@@ -18,8 +18,8 @@
 
 use ab_aozora_pipeline::lex;
 use ab_aozora_render::render_html;
-use ab_proptest::config::default_config;
-use ab_proptest::generators::*;
+use ab_notation_strategies::config::default_config;
+use ab_notation_strategies::generators::*;
 use proptest::prelude::*;
 
 /// Count occurrences of a literal substring without allocating.

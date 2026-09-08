@@ -61,6 +61,11 @@ INSTRUMENTS = {
             pathlib.Path("ab-validator/crates/ab-aat-to-parser-ir/src/divergence.rs"),
             pathlib.Path("ab-validator/crates/ab-aat-to-parser-ir/src/mapping.rs"),
             pathlib.Path("ab-validator/crates/ab-aat-to-parser-ir/src/ortho_annotations.rs"),
+            # `convert` imports `unicode_or_placeholder` for unresolved gaiji, and
+            # two of its four call sites derive a node's end offset from the
+            # placeholder's UTF-8 length. The constant therefore decides emitted
+            # parser-IR spans, not only its visible text.
+            pathlib.Path("ab-validator/crates/ab-aat-to-parser-ir/src/content.rs"),
         ),
         artifacts=(pathlib.Path("ab-validator/research/schemas/parser-ir.schema.json"),),
         validator_id="ab-validator/parser-ir-schema-conformance/v1",

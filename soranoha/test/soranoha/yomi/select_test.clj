@@ -44,8 +44,8 @@
       (is (= ["cards/000001/files/100_ruby_200.zip"
               "cards/000002/files/300_ruby_400.zip"]
              (mapv :relpath candidates)))
-      (is (= ["000100_000001_000001_100_ruby_200"
-              "000300_000002_000002_300_ruby_400"]
+      (is (= ["000100_000001"
+              "000300_000002"]
              (mapv :slug candidates))))
     (testing "non-catalog and non-work-shape zips are rejected with reasons"
       (is (= {"cards/000003/files/999_ruby_999.zip" "not-catalog-text-zip"
@@ -54,10 +54,17 @@
                    rejected))))))
 
 (deftest slug-function-test
-  (is (= "000100_000001_000123_100_ruby_200"
-         (select/slug "000100" "000001" "cards/000123/files/100_ruby_200.zip")))
-  (is (thrown-with-msg? clojure.lang.ExceptionInfo #"names no card directory"
-                        (select/slug "1" "2" "elsewhere/100.zip"))))
+  (testing "work id and card directory only; the archive stem is not identity"
+    (is (= "000100_000123"
+           (select/slug "000100" "cards/000123/files/100_ruby_200.zip")))
+    (testing "two format variants of one work under one card are one identifier"
+      (is (= (select/slug "000100" "cards/000123/files/100_ruby_200.zip")
+             (select/slug "000100" "cards/000123/files/100_txt_201.zip")))))
+  (testing "both components fail closed rather than being guessed"
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo #"names no card directory"
+                          (select/slug "000100" "elsewhere/100.zip")))
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo #"not the six-digit form"
+                          (select/slug "100" "cards/000123/files/100_ruby_200.zip")))))
 
 (deftest injectivity-assert-test
   (let [claim {:row {"作品ID" "000100" "人物ID" "000001"}

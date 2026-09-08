@@ -2,7 +2,6 @@
   "Join work ZIPs against catalog text-file basenames. Reject slug collisions
   before producing any slug-addressed result."
   (:require [babashka.fs :as fs]
-            [clojure.java.io :as io]
             [clojure.string :as string]
             [soranoha.yomi.catalog :as catalog]))
 
@@ -43,22 +42,42 @@
                       {:code "unslugifiable-source-relpath"
                        :text_zip_relpath relpath}))))
 
+(defn work-identifier
+  "The catalog work id in the six-digit form Aozora files works under. Fails
+  closed rather than padding a short value: this is half of a permanent public
+  identifier, so a row that does not carry the documented shape must stop the
+  build instead of having a shape guessed for it."
+  [work-id]
+  (or (re-matches #"[0-9]{6}" (str work-id))
+      (throw (ex-info "catalog work id is not the six-digit form"
+                      {:code "unslugifiable-work-id"
+                       :work_id work-id}))))
+
 (defn slug
   "Publication identity for one source: a function of that source's own
-  coordinates alone, so unrelated corpus changes can never move it."
-  [work-id person-id relpath]
-  (let [basename (.getName (io/file relpath))
-        stem (subs basename 0 (- (count basename) (count ".zip")))]
-    (str work-id "_" person-id "_" (card-directory relpath) "_" stem)))
+  coordinates alone, so unrelated corpus changes can never move it.
+
+  `<work-id>_<card-directory>`, six digits each. Both components identify the
+  work; neither describes how the build reached it. The archive filename stem
+  and its `ruby`/`txt` format variant were deliberately dropped, because they
+  record which download the build fetched — a change in edition handling would
+  otherwise either move the identifier of an unchanged text or freeze a stale
+  one. Exact edition identity is carried per work by `source_content_hash` in
+  the manifest, which is where it belongs.
+
+  The card directory is retained even though work id alone is unique across
+  the present corpus: it is the documented disambiguator for one work_id filed
+  under several contributor cards, so keeping it makes the scheme collision-
+  safe by construction rather than by observation."
+  [work-id relpath]
+  (str (work-identifier work-id) "_" (card-directory relpath)))
 
 (defn candidate-slug-collisions
   "Pure: slugs claimed by more than one candidate, with their sources."
   [candidates]
   (->> candidates
        (map (fn [{:keys [row relpath]}]
-              {"slug" (slug (catalog/row-work-id row)
-                            (catalog/row-person-id row)
-                            relpath)
+              {"slug" (slug (catalog/row-work-id row) relpath)
                "text_zip_relpath" relpath}))
        (group-by #(get % "slug"))
        (filter (fn [[_ claims]] (< 1 (count claims))))
@@ -100,9 +119,7 @@
         _ (assert-candidate-slugs-unique! selected)
         selected (mapv (fn [{:keys [row relpath] :as candidate}]
                          (assoc candidate
-                                :slug (slug (catalog/row-work-id row)
-                                            (catalog/row-person-id row)
-                                            relpath)))
+                                :slug (slug (catalog/row-work-id row) relpath)))
                        selected)
         selected-relpaths (set (map :relpath selected))
         rejected (->> candidates

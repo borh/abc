@@ -56,8 +56,8 @@
 (defn delete-work! [root work]
   (fs/delete (work-zip-path root work)))
 
-(defn work-slug [{:keys [work-id person-id card] :as work}]
-  (select/slug work-id person-id
+(defn work-slug [{:keys [work-id card] :as work}]
+  (select/slug work-id
                (str "cards/" card "/files/" (work-basename work) ".zip")))
 
 (defn write-catalog!
@@ -67,7 +67,7 @@
   repeats that work's URL, so a multi-contributor work has several rows
   sharing one basename. Each work's own :person-id 著者 row is emitted
   LAST, so the basename index (later rows win) resolves to it and the
-  work's slug is independent of its other contributors; any
+  work's metadata names that contributor as its author; any
   :contributors entries ({:person-id :role}) precede it."
   [root works]
   (write-zip! (fs/path root "index_pages" "list_person_all_extended_utf8.zip")

@@ -72,3 +72,8 @@ Published TEI carries a small extension vocabulary in the namespace
 `https://w3id.org/soranoha/ns/tei`, conventionally bound to `snh:`. See the
 [TEI extension vocabulary](soranoha/docs/tei-vocabulary.md) for its attributes
 and validation rule identifiers.
+
+Each published work is identified by its Aozora work id and contributor card
+directory, as in `000092_000879`. See
+[work identifiers](soranoha/docs/work-identifiers.md) for the form, what it
+promises across releases, and where exact edition identity lives instead.

@@ -19,10 +19,10 @@
                   "basis" "Synthetic official assertion for preparation coverage."
                   "catalog_sha256" digest "card_sha256" digest
                   "file_sha256" digest "rules_sha256" digest "exception" nil})
-        protected (assoc (record "000092_000879_000879_92_ruby_164")
+        protected (assoc (record "000092_000879")
                          "exception" "Specific unresolved restriction.")
-        unavailable (record "000472_000081_000081_472_ruby_654")
-        acquired (record "001567_000035_000035_1567_ruby_4948")
+        unavailable (record "000472_000081")
+        acquired (record "001567_000035")
         options {:aozora-root "unused" :evidence-root "unused" :all true
                  :assessment-source input :out output}]
     (try

@@ -14,7 +14,7 @@ Set these paths to absolute paths, then capture a draft for 蜘蛛の糸:
 nix run .#soranoha-kernel -- aozora-reliance-prepare \
   --aozora-root "$CORPUS_CHECKOUT" \
   --evidence-root "$EVIDENCE_ROOT" \
-  --slug 000092_000879_000879_92_ruby_164 \
+  --slug 000092_000879 \
   --out "$DRAFT_SOURCE"
 ```
 

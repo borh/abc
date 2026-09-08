@@ -64,3 +64,6 @@ revisions with the production stages and delta oracle. See
 See [publication architecture](docs/design/publication-architecture.md) for the
 cache, assessment, publication and serving boundaries, and the
 [snh specification](docs/design/snh-protocol-v1.md) for the wire contract.
+
+The [key ceremony](docs/key-ceremony.md) establishes the two pinned signing roles
+and the offline governance signing path used to withdraw or amend a published work.

@@ -37,19 +37,26 @@ the contract and should not be treated as version-stable adapter APIs.
 
 ## Parser core and facade
 
-| Crate | Purpose |
-| --- | --- |
-| `ab-aozora` | Harness CLI and executable entry point for the parser engine. |
-| `ab-aozora-spec` | Core domain types, diagnostic codes, and slug definitions. |
-| `ab-aozora-veb` | Fast integer-set and bit-vector data structures. |
-| `ab-aozora-encoding` | Encoding detection, Shift-JIS conversion, and gaiji mapping. |
-| `ab-aozora-scan` | Linear lexical trigger and delimiter scanner. |
-| `ab-aozora-syntax` | Syntax grammar nodes, accent decomposition, and layout rules. |
-| `ab-aozora-pipeline` | Linear lexing, pairing, classification, and normalization pipeline. |
-| `ab-aozora-render` | Structured AST render target and HTML emission. |
-| `ab-aozora-facade` | High-level parser facade, AST document container, and incremental splice engine. |
-| `ab-aozora-proptest` | Proptest generators and invariant verification strategies. |
-| `ab-aozora-corpus` | Archive indexing and parallel corpus processing helpers. |
+The `ab-aozora-` prefix means forked: these ten crates are lifted from
+[P4suta/aozora](https://github.com/P4suta/aozora) at revision
+`1a4f864603970983719655aa4af4525958ac2d38`, dual-licensed MIT or Apache-2.0,
+and each carries `LICENSE-MIT`, `LICENSE-APACHE` and `NOTICE` beside its
+sources. The prefix is a reliable signal in one direction only: `ab-aozora`
+without a suffix is locally authored, and is marked below.
+
+| Crate | Origin | Purpose |
+| --- | --- | --- |
+| `ab-aozora` | local | Harness CLI and executable entry point for the parser engine. |
+| `ab-aozora-spec` | fork | Core domain types, diagnostic codes, and slug definitions. |
+| `ab-aozora-veb` | fork | Fast integer-set and bit-vector data structures. |
+| `ab-aozora-encoding` | fork | Encoding detection, Shift-JIS conversion, and gaiji mapping. |
+| `ab-aozora-scan` | fork | Linear lexical trigger and delimiter scanner. |
+| `ab-aozora-syntax` | fork | Syntax grammar nodes, accent decomposition, and layout rules. |
+| `ab-aozora-pipeline` | fork | Linear lexing, pairing, classification, and normalization pipeline. |
+| `ab-aozora-render` | fork | Structured AST render target and HTML emission. |
+| `ab-aozora-facade` | fork | High-level parser facade, AST document container, and incremental splice engine. |
+| `ab-aozora-proptest` | fork | Proptest generators and invariant verification strategies. |
+| `ab-aozora-corpus` | fork | Archive indexing and parallel corpus processing helpers. |
 
 ## Evaluation, conversion, and research harness
 

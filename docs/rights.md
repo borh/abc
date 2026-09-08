@@ -64,10 +64,12 @@ The Rust parser core under `ab-validator/crates/ab-aozora-*` is an independent
 fork of [P4suta/aozora](https://github.com/P4suta/aozora) at revision
 `1a4f864603970983719655aa4af4525958ac2d38`, dual-licensed **MIT OR
 Apache-2.0**. Its licence files, `NOTICE`, and per-file upstream headers are
-retained in the fork. This matters to two kinds of reader: anyone assessing
-licence obligations before redistributing the tooling, and anyone assessing
-how the transcriptions were produced, for whom the parser's lineage is a
-methodological fact.
+retained in the fork. Only names with the trailing hyphen are forked:
+`ab-aozora` without a suffix is a locally authored harness binary, contains no
+lifted code, and carries no upstream attribution obligation. This matters to
+two kinds of reader: anyone assessing licence obligations before
+redistributing the tooling, and anyone assessing how the transcriptions were
+produced, for whom the parser's lineage is a methodological fact.
 
 Redistributing the *published corpus* does not carry the toolchain's
 obligations. Redistributing the *tooling* does.

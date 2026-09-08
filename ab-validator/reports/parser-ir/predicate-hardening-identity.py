@@ -1,5 +1,26 @@
 #!/usr/bin/env python3
-"""Generate reviewed semantic closures and bounded P4B policies."""
+"""Generate reviewed semantic closures and bounded P4B policies.
+
+The manifests and policies committed under `ab-validator/data/` and
+`ab-validator/research/data/` are historical records of the instrument that
+produced a retained capture. They are not claims about the current sources, and
+a difference between one of them and a freshly generated manifest is expected
+rather than drift.
+
+`parser-rq-parser-ir-conformance-validator-v1.json` is the clearest case. It
+lists `sentences.rs`, deleted in 7618e7e6, and names its artifact at
+`abc/schemas/parser-ir.schema.json`, a path that no longer exists; its artifact
+hash matches `parser-ir-0.7.0.schema.json`, retained beside the capture in
+`ab-validator/research/test/fixtures/parser-rq/predicate-hardening-capture/`,
+not the live schema. That retained schema is what keeps the historical policy
+reproducible, and
+`parser_rq_predicate_hardening_capture_test.clj` pins both its hash and the
+policy against it.
+
+Regenerating these files therefore invalidates the retained evidence. Generate a
+new manifest under a new validator id when a new instrument is reviewed; leave
+the recorded ones alone.
+"""
 
 from __future__ import annotations
 

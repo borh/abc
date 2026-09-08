@@ -1,6 +1,12 @@
-# Invariant Glossary
+# Parser and rendering invariants
 
-Names for parser and rendering invariants shared across modules.
+Names for parser and rendering invariants shared across modules. These are
+internal terms: they name behaviour the converter must preserve, and they are
+used in code comments and commit messages so one invariant has one name.
+
+Looking for the vocabulary of the published corpus — admission, assessment,
+manifest, chain, fidelity, work and edition? That is the
+[glossary for readers of the corpus](user-glossary.md).
 
 ## double-render invariant
 

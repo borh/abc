@@ -1,7 +1,18 @@
 # Soranoha
 
-Soranoha is the canonical monorepo for the Aozora Bunko conversion and
-validation system. It contains:
+Soranoha is a TEI edition of Aozora Bunko: it converts the copyright-expired
+Japanese texts that Aozora Bunko distributes as annotated plain text into TEI
+P5, and publishes each work as TEI, plaintext, Markdown and a validation
+report, with a signed record of exactly which bytes were published.
+
+**Reading or using the corpus?** Start with [start here](docs/start-here.md),
+which needs no Nix, Clojure or TEI, then
+[a worked example](docs/worked-example.md) and the
+[glossary](docs/user-glossary.md). The rest of this file is for working on the
+system.
+
+This is the canonical monorepo for the conversion and validation system. It
+contains:
 
 - `ab-validator/`: Rust adapters, parser/IR validation, corpus measurement, and
   report tooling. Its parser core, the `ab-aozora-*` crates, is an independent
@@ -81,13 +92,19 @@ directory, as in `000092_000879`. See
 [work identifiers](soranoha/docs/work-identifiers.md) for the form, what it
 promises across releases, and where exact edition identity lives instead.
 
+[Parser and rendering invariants](docs/parser-invariants.md) names the
+behaviour the converter must preserve, for use in code comments and commit
+messages; the [glossary](docs/user-glossary.md) covers the vocabulary of the
+published corpus.
+
 ## The published site
 
 An exported serving tree holds two kinds of file. Chain content — manifests,
 signatures, blobs, governance events — is copied byte for byte, and the
 work-facing routes are names over it. The browse layer is generated from that
 release: a landing page at `/`, author, title and NDC indexes, one page per
-work at `/works/<identifier>/`, and an explanation for each withdrawn work.
+work at `/works/<identifier>/`, a reading view at `/works/<identifier>/read`,
+and an explanation for each withdrawn work.
 Nothing generated is named by a manifest or checked by a verifier; the signed
 discovery record is `/catalog.json`. Site text is bilingual, Japanese first.
 

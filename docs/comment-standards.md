@@ -11,7 +11,7 @@ promise future work. Describe an actual limitation where a caller needs to know
 it. Document public behavior at the API boundary and implementation rationale
 beside the relevant operation.
 
-Use descriptive invariant names, including those in [the glossary](glossary.md).
+Use descriptive invariant names, including those in [the parser invariants](parser-invariants.md).
 Do not reference issues, review findings, numbered project tasks or deleted plans.
 References to code symbols, permanent architecture documents and external
 specifications such as Unicode, JIS and TEI are useful when they identify the

@@ -8,25 +8,32 @@
 
   An export holds two kinds of file. Chain content — manifests, signatures,
   blobs, governance events, the head pointer — is copied byte for byte, and
-  the work-facing routes are names over it. The browse layer is generated:
-  static pages that make the corpus reachable without a runtime, including a
-  reading view rendered from each work's own published TEI bytes. It is a
-  pure function of this release, so the reuse check covers it exactly as it
-  covers chain content, but nothing in it is named by a manifest or checked
-  by a verifier, and a reader who wants the published record follows its
-  links to the catalog, the manifests and the blobs.
+  the work-facing routes are names over it. Each artifact gets two of those
+  names: the type-named route a citation points at, and a readable filename
+  so that saving one is not saving a file called `tei`. The browse layer is
+  generated: static pages that make the corpus reachable without a runtime,
+  including a reading view rendered from each work's own published TEI bytes,
+  and pre-built ZIP archives for the bulk selections a static tree cannot
+  assemble on request. It is a pure function of this release, so the reuse
+  check covers it exactly as it covers chain content, but nothing in it is
+  named by a manifest or checked by a verifier, and a reader who wants the
+  published record follows its links to the catalog, the manifests and the
+  blobs.
 
   Deployment provisions publisher-owned parents with the serving group.
   Activation serializes cooperating writers and switches current last; the
   filesystem is trusted against mutation by other processes with that owner."
   (:require [babashka.fs :as fs]
             [soranoha.snh.decode :as decode]
-            [soranoha.za.browse :as browse]
             [soranoha.snh.repo :as repo]
             [soranoha.snh.sign :as sign]
             [soranoha.snh.verify :as verify]
-            [soranoha.snh.view :as view])
-  (:import (java.nio.channels FileChannel)
+            [soranoha.snh.view :as view]
+            [soranoha.za.browse :as browse]
+            [soranoha.za.bundle :as bundle]
+            [soranoha.za.naming :as naming])
+  (:import (java.io BufferedInputStream BufferedOutputStream InputStream OutputStream)
+           (java.nio.channels FileChannel)
            (java.nio.file CopyOption Files OpenOption StandardOpenOption StandardCopyOption)
            (java.util Arrays)
            (java.nio.file.attribute PosixFilePermissions)
@@ -45,16 +52,45 @@
            (get manifest "catalog")]
           (some-> (get manifest "governance_event") vector)))
 
-(defn- tei-blob-paths
-  "slug -> blob path of that work's published TEI. The browse layer's reading
-  view renders from these bytes rather than from a copy of its own, so what a
-  reader sees is a projection of the artifact the manifest names."
+(defn- artifact-blob-paths
+  "slug -> artifact type -> blob path, for the head release. The reading view
+  and the bulk archives both render from these bytes rather than from a copy
+  of their own, so what a reader sees or unzips is the artifact the manifest
+  names."
   [manifest]
   (into {}
-        (for [work (get manifest "works")
-              artifact (get work "artifacts")
-              :when (= "tei" (get artifact "type"))]
-          [(get work "slug") (verify/blob-path (verify/id->hex (get artifact "id")))])))
+        (for [work (get manifest "works")]
+          [(get work "slug")
+           (into {}
+                 (for [artifact (get work "artifacts")]
+                   [(get artifact "type")
+                    (verify/blob-path (verify/id->hex (get artifact "id")))]))])))
+
+(defn- verifying-stream
+  "An OutputStream that checks what is written against `in` instead of
+  writing it. The bulk archives are larger than any byte array this process
+  should hold, so the reuse check compares them a buffer at a time; the
+  guarantee is the same one `write!` gives, byte for byte."
+  ^OutputStream [^InputStream in mismatch!]
+  (let [buffer (byte-array 65536)
+        check! (fn [^bytes source offset length]
+                 (loop [offset offset remaining length]
+                   (when (pos? remaining)
+                     (let [want (int (min remaining (alength buffer)))
+                           got (.readNBytes in buffer 0 want)
+                           from (int offset)]
+                       (when (or (not= got want)
+                                 (not (Arrays/equals buffer (int 0) want
+                                                     source from (int (+ from want)))))
+                         (mismatch!))
+                       (recur (+ offset want) (- remaining want))))))]
+    (proxy [OutputStream] []
+      (write
+        ([b]
+         (if (bytes? b)
+           (check! b 0 (alength ^bytes b))
+           (check! (byte-array 1 (unchecked-byte b)) 0 1)))
+        ([b offset length] (check! b offset length))))))
 
 (defn- tree-paths [root]
   (with-open [paths (Files/walk (fs/path root) (make-array java.nio.file.FileVisitOption 0))]
@@ -107,8 +143,30 @@
                                    (= target (str (fs/read-link path))))
                       (mismatch! path))
                     (fs/create-sym-link path target)))
+          stream! (fn [rel produce]
+                    (let [path (fs/path staging rel)]
+                      (directory! (fs/parent path))
+                      (when reuse? (vswap! expected conj! path))
+                      (if reuse?
+                        (do
+                          (when (or (fs/sym-link? path) (not (fs/regular-file? path)))
+                            (mismatch! path))
+                          (with-open [in (BufferedInputStream.
+                                          (Files/newInputStream path (make-array OpenOption 0)))]
+                            (produce (verifying-stream in #(mismatch! path)))
+                            ;; a prefix match is not a match: the existing file
+                            ;; must also end where the produced bytes end
+                            (when-not (neg? (.read in)) (mismatch! path))))
+                        (with-open [out (BufferedOutputStream.
+                                         (Files/newOutputStream
+                                          path
+                                          (into-array OpenOption
+                                                      [StandardOpenOption/CREATE_NEW
+                                                       StandardOpenOption/WRITE])))]
+                          (produce out)))))
           chain (:chain chain-result)
-          page-count (volatile! 0)]
+          page-count (volatile! 0)
+          archive-count (volatile! 0)]
       (try
         (let [result (view/with-batch
                        v
@@ -149,7 +207,19 @@
                            ;; statements, and the short-cache head pointer — so it adds
                            ;; names, never bytes. Generated presentation follows it, and is
                            ;; the one place this export writes bytes of its own.
-                           (let [head-manifest (second (first manifests))]
+                           (let [head-manifest (second (first manifests))
+                                 head-catalog (:value
+                                               (decode/decode
+                                                "catalog"
+                                                (read! (verify/blob-path
+                                                        (verify/id->hex
+                                                         (get head-manifest "catalog"))))))
+                                 blobs (artifact-blob-paths head-manifest)
+                                 artifact! (fn [slug type]
+                                             (read! (or (get-in blobs [slug type])
+                                                        (throw (ex-info "release work has no artifact of this type"
+                                                                        {:reason :missing-artifact
+                                                                         :slug slug :type type})))))]
                              (link! (fs/path staging "releases" "latest")
                                     (str (:head chain-result) ".json"))
                              ;; the catalog is the one artifact a reader needs
@@ -158,13 +228,28 @@
                              (link! (fs/path staging "catalog.json")
                                     (verify/blob-path
                                      (verify/id->hex (get head-manifest "catalog"))))
-                             (doseq [work (get head-manifest "works")
-                                     :let [dir (fs/path staging "works" (get work "slug"))]
-                                     artifact (get work "artifacts")]
-                               (link!
-                                (fs/path dir (get artifact "type"))
-                                (str "../../" (verify/blob-path
-                                               (verify/id->hex (get artifact "id"))))))
+                             ;; two names over one blob. The type-named route is
+                             ;; constructible from the identifier and is what a
+                             ;; citation points at; the readable name is what a
+                             ;; browser save or `curl -O` writes to disk, which
+                             ;; without it is a file called `tei`.
+                             (let [catalog-by-slug
+                                   (into {} (map (juxt #(get % "slug") identity))
+                                         (get head-catalog "works"))]
+                               (doseq [work (get head-manifest "works")
+                                       :let [slug (get work "slug")
+                                             dir (fs/path staging "works" slug)
+                                             entry (or (get catalog-by-slug slug)
+                                                       (throw (ex-info "release work is not in the catalog"
+                                                                       {:reason :work-not-in-catalog
+                                                                        :slug slug})))]
+                                       artifact (get work "artifacts")
+                                       :let [type (get artifact "type")
+                                             target (str "../../"
+                                                         (verify/blob-path
+                                                          (verify/id->hex (get artifact "id"))))]]
+                                 (link! (fs/path dir type) target)
+                                 (link! (fs/path dir (naming/filename entry type)) target)))
                              (doseq [entry (get head-manifest "withdrawn")]
                                (link!
                                 (fs/path staging "withdrawn" (str (get entry "slug") ".json"))
@@ -189,29 +274,32 @@
                                      (browse/pages
                                       {:head-hex (:head chain-result)
                                        :manifests manifests
-                                       :catalog (:value (decode/decode
-                                                         "catalog"
-                                                         (read! (verify/blob-path
-                                                                 (verify/id->hex
-                                                                  (get head-manifest "catalog"))))))
+                                       :catalog head-catalog
                                        :events (into {}
                                                      (map (fn [hex]
                                                             [hex (:value (decode/decode
                                                                           "governance-event"
                                                                           (read! (verify/event-path hex))))]))
                                                      event-hexes)
-                                       :tei (let [blob (tei-blob-paths head-manifest)]
-                                              (fn [slug]
-                                                (read! (or (get blob slug)
-                                                           (throw (ex-info "release work has no TEI artifact"
-                                                                           {:reason :missing-tei-artifact
-                                                                            :slug slug}))))))})]
+                                       :tei (fn [slug] (artifact! slug "tei"))})]
                                (write! path bytes)
-                               (vswap! page-count inc)))
+                               (vswap! page-count inc))
+                             ;; the bulk archives, last because they are the
+                             ;; largest thing this export writes and the only
+                             ;; thing it streams. A whole-corpus archive cannot
+                             ;; be held as a byte array, so each is produced
+                             ;; into the destination — or, on the reuse path,
+                             ;; into a stream that compares rather than writes
+                             (doseq [[path produce] (bundle/archives
+                                                     {:catalog head-catalog
+                                                      :artifact artifact!})]
+                               (stream! path produce)
+                               (vswap! archive-count inc)))
                            {:head (:head chain-result)
                             :releases (count chain)
                             :blobs (count blob-hexes)
-                            :pages @page-count})))]
+                            :pages @page-count
+                            :archives @archive-count})))]
           ;; the rename targets the exact destination path, never a
           ;; directory to nest under; atomicity here is atomic namespace
           ;; visibility — not no-clobber or crash durability — and the

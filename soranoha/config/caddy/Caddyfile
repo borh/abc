@@ -6,8 +6,11 @@
 # directory listings, no body rewriting. Digest-addressed paths (blobs,
 # manifests, signatures, governance events) are immutable; the pointer
 # layer (releases/latest, releases/HEAD, catalog.json, works/, withdrawn/) and
-# the generated browse pages are short-cache, since they move with each
-# release. Updating this file requires bumping the rev + hash pin in the
+# the generated browse layer — pages and the pre-built bulk archives under
+# bulk/ — are short-cache, since they move with each release. A bulk archive
+# is large but not immutable: the same URL holds different bytes at the next
+# release, so it takes the pointer layer's cache policy and not the blob
+# layer's. Updating this file requires bumping the rev + hash pin in the
 # estate's soranoha-serve.nix, which is what keeps serving policy immutable
 # system state rather than release data.
 #
@@ -41,7 +44,7 @@ http://{$SORANOHA_SERVE_LISTEN} {
 	# generated presentation: a projection of this release, replaced whole at
 	# the next activation, so it is cached like the pointer layer and never
 	# like a digest-addressed file
-	@browse path / /index.html /style.css /search.js /search-index.json /authors /authors/* /titles /titles/* /ndc /ndc/* /rights /citation
+	@browse path / /index.html /style.css /search.js /search-index.json /authors /authors/* /titles /titles/* /ndc /ndc/* /bulk/* /rights /citation
 	header @browse Cache-Control "public, max-age=60"
 
 	try_files {path} {path}.html

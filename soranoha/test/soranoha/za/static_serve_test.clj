@@ -16,6 +16,7 @@
             [soranoha.snh.fixture :as fx]
             [soranoha.snh.sign :as sign]
             [soranoha.snh.verify :as verify]
+            [soranoha.za.naming :as naming]
             [soranoha.za.serve :as serve])
   (:import (java.net ServerSocket URI)
            (java.net.http HttpClient HttpRequest HttpResponse$BodyHandlers)))
@@ -120,6 +121,13 @@
                                  [(get artifact "type")
                                   (verify/id->hex (get artifact "id"))])))
         current-artifacts (artifact-hexes (manifest-at (:head result)) slug-a)
+        catalog-entry (->> (fs/path tree "catalog.json")
+                           fs/read-all-bytes
+                           (#(String. ^bytes % "UTF-8"))
+                           json/read-json
+                           (#(get % "works"))
+                           (filter #(= slug-a (get % "slug")))
+                           first)
         withdrawn-artifacts (artifact-hexes (manifest-at genesis-hex) slug-b)
         port (free-port)
         process (start-caddy! tree port)]
@@ -139,6 +147,27 @@
             (is (= 200 (:status response)))
             (is (= "public, max-age=60" (:cache-control response)))
             (is (= hex (hash/sha256-bytes (:body response)))))))
+
+      (testing "current corpus: the same bytes also answer under a readable name"
+        ;; saving from a browser, curl -O or wget writes the last path segment,
+        ;; so the type routes above all produce a file called `tei`
+        (doseq [[type hex] current-artifacts]
+          (let [name (naming/filename catalog-entry type)
+                response (http-get port (str "/works/" slug-a "/" name))]
+            (is (= 200 (:status response)) name)
+            (is (= "public, max-age=60" (:cache-control response)) name)
+            (is (= hex (hash/sha256-bytes (:body response))) name))))
+
+      (testing "bulk: a pre-built selection downloads as one archive"
+        (doseq [path [(naming/corpus-bundle-path "tei")
+                      (naming/corpus-bundle-path "plaintext")
+                      (naming/ndc-bundle-path "other" "tei")]]
+          (let [response (http-get port (str "/" path))]
+            (is (= 200 (:status response)) path)
+            (is (= "public, max-age=60" (:cache-control response)) path)
+            (is (= [0x50 0x4b 0x03 0x04]
+                   (mapv #(bit-and (int %) 0xff) (take 4 (:body response))))
+                (str path " is a ZIP")))))
 
       (testing "current corpus: the withdrawn work is absent from every surface"
         (doseq [type (keys withdrawn-artifacts)]

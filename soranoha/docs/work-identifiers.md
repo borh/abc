@@ -72,3 +72,27 @@ is the only component that distinguishes one work id filed under several
 contributor cards, and seven work ids in the current selection are filed under
 two cards each. Work id alone, and work id with person id, both collide on
 those.
+
+## The identifier and the download filename
+
+Every artifact is served twice: once at `/works/<identifier>/<type>`, which is
+constructible from the identifier and is what a citation points at, and once
+at `/works/<identifier>/<author>-<stem>-<identifier>.<ext>`, which is what a
+browser save or `curl -O` writes to disk. The two names resolve to the same
+blob.
+
+The filename is a convenience and the identifier is the citable thing. The
+filename is a serving-layer rendering: it can be corrected in a later release,
+its author component picks one contributor out of a work that may record
+several, and its middle component is Aozora Bunko's own archive stem rather
+than anything this project assigns. The signed catalog carries the inputs —
+`archive_stem` and the romanized name parts — and deliberately not the
+assembled name, because a derived value stored beside its own inputs can
+disagree with them and the chain is append-only.
+
+The identifier is a component of the filename rather than an alternative to
+it. 372 author-and-title pairs are shared by 1966 works, so a name built from
+author and title alone would collide for about one work in seven of any bulk
+extraction, silently. Splitting a filename on its hyphens recovers the
+identifier as the last component; the bulk archives also carry it in
+`catalog.csv`.

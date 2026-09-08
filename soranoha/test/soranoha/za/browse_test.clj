@@ -127,6 +127,42 @@
           (is (string/includes? work-page (str "/works/000092_000879/" artifact))
               artifact))))))
 
+(deftest a-download-is-offered-under-a-name-that-identifies-the-work
+  (let [works [(work "000092_000879" "蜘蛛の糸" "くものいと")]
+        pages (pages (inputs works))
+        work-page (page pages "works/000092_000879/index.html")]
+    (testing "each artifact links its readable name, which is what gets saved"
+      (doseq [[artifact extension] [["tei" "xml"] ["plaintext" "txt"]
+                                    ["markdown" "md"] ["tei-validation" "validation.json"]]]
+        (is (string/includes?
+             work-page
+             (str "/works/000092_000879/Akutagawa_Ryunosuke-92_ruby_164-000092_000879."
+                  extension))
+            artifact)))
+
+    (testing "and the type route stays on the page as the citable one"
+      (is (string/includes? work-page "/works/000092_000879/tei"))
+      (is (string/includes? work-page "識別子であって、ファイル名ではありません")))))
+
+(deftest bulk-selections-are-linked-from-the-pages-they-mirror
+  (let [works [(work "000092_000879" "蜘蛛の糸" "くものいと")]
+        pages (pages (inputs works))]
+    (testing "the whole corpus, from the front door"
+      (let [landing (page pages "index.html")]
+        (is (string/includes? landing "/bulk/soranoha-tei.zip"))
+        (is (string/includes? landing "/bulk/soranoha-plaintext.zip"))))
+
+    (testing "one person's works, from their own page"
+      (let [author (page pages "authors/000879.html")]
+        (is (string/includes?
+             author "/bulk/authors/soranoha-Akutagawa_Ryunosuke-000879-tei.zip"))))
+
+    (testing "one NDC class, from that class's page"
+      (is (string/includes? (page pages "ndc/9.html") "/bulk/ndc/soranoha-ndc-9-tei.zip")))
+
+    (testing "and every archive says what catalog.csv is for"
+      (is (string/includes? (page pages "index.html") "catalog.csv")))))
+
 (deftest a-work-can-be-read-in-the-browser-without-scripting-test
   (let [slug "000092_000879"
         pages (pages (inputs [(work slug "蜘蛛の糸" "くものいと")]))

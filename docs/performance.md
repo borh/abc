@@ -92,6 +92,38 @@ byte-identical output on every activation for the reuse check to hold, and that
 property is easier to keep obviously true in one thread than to re-establish
 across a pool. Measure before changing it.
 
+### What the bulk archives cost an activation
+
+Serving is a static tree with no runtime, so a bulk selection cannot be
+assembled when it is requested: every selection is built at export time, on
+both the fresh-export path and the reuse path, for the same reason the reading
+pages are.
+
+Each work is deflated once per archive it appears in — the whole-corpus
+archive, its author's, and its NDC class's — for each of the two bulk-published
+types, so six times per activation. Measured on this machine at level 6, the
+published TEI of 蜘蛛の糸 deflates at 66 MiB/s and to 14.1% of its size; its
+plain text to 35.3%. At the corpus's rough mean TEI size of 42 KiB that is
+about 0.6 ms per work per TEI archive, and small inputs are dominated by
+per-entry setup rather than by throughput.
+
+Extrapolated over 17,308 works: roughly 40 seconds of added CPU and roughly
+0.4 GiB of added tree, against a measured activation baseline of about 52
+seconds elapsed and the reading view's own estimated 65 seconds and 0.5 GiB.
+Extrapolation from one document is an order-of-magnitude estimate: works vary
+by more than an order of magnitude in size, and a work whose author has many
+works still appears in exactly three archives, so the multiplier does not grow
+with the corpus.
+
+The readable filenames add four symlinks per work — about 69,000 more entries,
+roughly doubling the work-facing layer — and no bytes.
+
+Deflating each work once and reusing the compressed member across the three
+archives that hold it would cut the CPU by about two thirds, at the cost of
+writing the ZIP container by hand rather than through `ZipOutputStream`, which
+is also what handles ZIP64 when an archive outgrows the 32-bit fields. That
+trade is not worth taking until activation latency is a measured problem.
+
 Run the complete publication path with recorded observations:
 
 ```sh

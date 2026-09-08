@@ -14,6 +14,7 @@
             [soranoha.core.hash :as hash]
             [soranoha.snh.fixture :as fx]
             [soranoha.snh.verify :as verify]
+            [soranoha.za.naming :as naming]
             [soranoha.za.serve :as serve]))
 
 (def ^:private slug-a "hashire_merosu_000035_1567")
@@ -107,9 +108,26 @@
     (testing "the work-facing layer names only the current corpus"
       (is (fs/sym-link? (fs/path out "releases/latest")))
       (is (fs/sym-link? (fs/path out "catalog.json")))
-      (is (= #{"tei" "plaintext" "markdown" "tei-validation" "index.html" "read.html"}
-             (set (map fs/file-name (fs/list-dir (fs/path out "works" slug-a)))))
-          "artifact routes are symlinks; index.html and read.html are generated")
+      (let [catalog (json/read-json
+                     (String. (tree-bytes out "catalog.json") "UTF-8"))
+            entry (first (filter #(= slug-a (get % "slug")) (get catalog "works")))
+            readable (into {} (map (juxt identity #(naming/filename entry %)))
+                           ["tei" "plaintext" "markdown" "tei-validation"])]
+        (is (= (into #{"tei" "plaintext" "markdown" "tei-validation"
+                       "index.html" "read.html"}
+                     (vals readable))
+               (set (map fs/file-name (fs/list-dir (fs/path out "works" slug-a)))))
+            "each artifact has both a type route and a readable name; the two html pages are generated")
+
+        (testing "a readable name is a second name over the same blob, not a copy"
+          (doseq [[type name] readable]
+            (is (= (str (fs/read-link (fs/path out "works" slug-a type)))
+                   (str (fs/read-link (fs/path out "works" slug-a name))))
+                type)))
+
+        (testing "and it identifies the work rather than the artifact type"
+          (is (str/includes? (get readable "tei") slug-a))
+          (is (str/ends-with? (get readable "tei") ".xml"))))
       (is (= ["index.html"]
              (mapv fs/file-name (fs/list-dir (fs/path out "works" slug-b))))
           "a withdrawn work keeps an explanation and loses every artifact route")
@@ -136,6 +154,28 @@
       (let [index (json/read-json (String. (tree-bytes out "search-index.json") "UTF-8"))]
         (is (= (:head result) (get index "release")))
         (is (= [slug-a] (mapv first (get index "works"))))))
+
+    (testing "the bulk selections are pre-built, because a static tree has no runtime"
+      (is (pos? (:archives result)))
+      (let [catalog (json/read-json (String. (tree-bytes out "catalog.json") "UTF-8"))
+            entry (first (filter #(= slug-a (get % "slug")) (get catalog "works")))
+            corpus (fs/path out (naming/corpus-bundle-path "tei"))]
+        (is (fs/regular-file? corpus))
+        (is (fs/regular-file? (fs/path out (naming/author-bundle-path
+                                            (first (get entry "contributors"))
+                                            "000001" "plaintext"))))
+        (is (fs/regular-file? (fs/path out (naming/ndc-bundle-path "other" "tei"))))
+
+        (testing "and a whole-corpus archive holds the readable names plus catalog.csv"
+          (with-open [zip (java.util.zip.ZipInputStream.
+                           (java.io.ByteArrayInputStream. (fs/read-all-bytes corpus)))]
+            (let [names (loop [acc []]
+                          (if-let [next (.getNextEntry zip)]
+                            (recur (conj acc (.getName next)))
+                            acc))]
+              (is (= ["catalog.csv" (naming/filename entry "tei")] names))
+              (is (not-any? #(= slug-b %) names)
+                  "a withdrawn work is in no current selection"))))))
 
     (testing "the governing event and its signature are served"
       (let [event-hex (verify/id->hex (:event withdrawal))]
@@ -284,7 +324,10 @@
         first-result (serve/activate! opts)
         current (fs/path (:serve-root opts) "current")
         tree (fs/real-path current)
-        before (tree-map tree)]
+        before (tree-map tree)
+        archive (fs/path tree (naming/corpus-bundle-path "tei"))
+        archive-bytes (fs/read-all-bytes archive)
+        restore-archive! #(fs/write-bytes archive archive-bytes)]
     (is (false? (:reused? first-result)))
     (is (= (str "trees/" (:commit first-result)) (str (fs/read-link current))))
     (is (= (assoc first-result :reused? true) (serve/activate! opts)))
@@ -301,7 +344,22 @@
                    (fs/create-sym-link (fs/path tree "releases/latest") "HEAD"))
               #(do (fs/delete (fs/path tree "releases/latest"))
                    (fs/create-sym-link (fs/path tree "releases/latest")
-                                       (str (:head first-result) ".json")))]]]
+                                       (str (:head first-result) ".json")))]
+             ;; a bulk archive is streamed rather than held in memory, so its
+             ;; three ways of differing — content, short, long — are checked
+             ;; separately from the byte-array comparison every other file gets
+             ["changed archive bytes"
+              #(fs/write-bytes archive (doto (aclone ^bytes archive-bytes)
+                                         (aset 40 (unchecked-byte
+                                                   (bit-not (aget ^bytes archive-bytes 40))))))
+              restore-archive!]
+             ["truncated archive"
+              #(fs/write-bytes archive (java.util.Arrays/copyOf ^bytes archive-bytes
+                                                                (- (alength ^bytes archive-bytes) 8)))
+              restore-archive!]
+             ["archive with bytes appended"
+              #(fs/write-bytes archive (byte-array (concat archive-bytes (.getBytes "extra" "UTF-8"))))
+              restore-archive!]]]
       (testing label
         (damage!)
         (is (= :serving-tree-mismatch

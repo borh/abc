@@ -41,7 +41,20 @@ curl -o 000092_000879.txt https://soranoha.org/works/000092_000879/plaintext
 ```
 
 The URL has no extension because it names the artifact type, not a file; give
-`curl` the name you want.
+`curl` the name you want. Every work also serves the same bytes under a
+readable name, which is what a browser save or `curl -O` writes to disk:
+
+```sh
+curl -O https://soranoha.org/works/000092_000879/Akutagawa_Ryunosuke-kumono_ito-000092_000879.xml
+```
+
+The name is `<author>-<Aozora stem>-<identifier>.<ext>`. The middle part is
+Aozora Bunko's own filename for the text, which its volunteers wrote with word
+boundaries by hand. **The filename is a convenience; the identifier is the
+citable thing.** It is inside every filename because title and author alone do
+not identify a work — about one work in seven of the corpus shares an
+author-and-title pair with another — so a name without it would silently
+overwrite files in a bulk extraction. Every work page shows both forms.
 
 To read it rather than download it, open
 `https://soranoha.org/works/000092_000879/` for the bibliography and
@@ -81,6 +94,25 @@ for work in catalog["works"][:5]:
 
 ## Get all of them
 
+The whole corpus is two files:
+
+- `https://soranoha.org/bulk/soranoha-tei.zip`
+- `https://soranoha.org/bulk/soranoha-plaintext.zip`
+
+Smaller selections are linked from the pages they match: every author page
+offers that person's works as one archive, and every NDC class page offers
+that class. All of them are pre-built, because the site is a static tree with
+no application behind it, so what you can download is exactly what is listed.
+
+Each archive contains the readable filenames plus `catalog.csv` at its root,
+with five columns: identifier, title, author, filename and
+`source_content_hash`. Open it in a spreadsheet to map any file back to its
+work; the identifier and the source hash are the columns to cite. From a
+script, read it with `encoding="utf-8-sig"` — it carries a byte-order mark so
+that Excel does not mangle the Japanese titles.
+
+To fetch works one at a time instead — a filtered subset, say:
+
 ```python
 import json, urllib.request, pathlib
 
@@ -98,9 +130,9 @@ for work in catalog["works"]:
 ```
 
 Be polite about rate: this is one small server, and the corpus is tens of
-thousands of files. If you want the whole corpus, prefer the release
-archive on Zenodo once it exists — it is one download and it is the same
-bytes.
+thousands of files. If you want everything, take the archive above instead —
+it is one request and the same bytes. The release archive on Zenodo, once it
+exists, is another one-download route to the same thing.
 
 ## Scale and coverage
 

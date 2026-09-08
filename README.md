@@ -104,7 +104,11 @@ signatures, blobs, governance events — is copied byte for byte, and the
 work-facing routes are names over it. The browse layer is generated from that
 release: a landing page at `/`, author, title and NDC indexes, one page per
 work at `/works/<identifier>/`, a reading view at `/works/<identifier>/read`,
-and an explanation for each withdrawn work.
+an explanation for each withdrawn work, and pre-built bulk archives under
+`/bulk/` for the whole corpus, one person, or one NDC class. Each artifact
+carries two names over one blob: `/works/<identifier>/<type>`, which a
+citation points at, and a readable filename, which is what a browser save
+writes to disk.
 Nothing generated is named by a manifest or checked by a verifier; the signed
 discovery record is `/catalog.json`. Site text is bilingual, Japanese first.
 

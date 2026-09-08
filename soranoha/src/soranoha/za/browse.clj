@@ -21,6 +21,7 @@
             [soranoha.core.rights :as rights]
             [soranoha.snh.verify :as verify]
             [soranoha.za.html :as html]
+            [soranoha.za.naming :as naming]
             [soranoha.za.reading :as reading]))
 
 ;; ---------------------------------------------------------------- chrome
@@ -220,28 +221,13 @@
 
 ;; -------------------------------------------------------------- metadata
 
-(defn- person-name-ja [{:strs [family_name given_name]}]
-  (let [parts (remove string/blank? [family_name given_name])]
-    (when (seq parts) (string/join " " parts))))
-
-(defn- person-name-romaji [{:strs [family_name_romaji given_name_romaji]}]
-  (let [parts (remove string/blank? [family_name_romaji given_name_romaji])]
-    (when (seq parts) (string/join " " parts))))
-
-(defn- person-label
-  "Japanese name where there is one, romaji otherwise. A catalog entry can
-  carry either alone — 105 works have no given-name romaji, and some
-  contributors are recorded only in one script — so neither is required."
-  [person]
-  (or (person-name-ja person) (person-name-romaji person) "—"))
-
-(defn- authors-of [work]
-  (filterv #(= "著者" (get % "relation_to_work")) (get work "contributors")))
-
-(defn- byline [work]
-  (let [authors (authors-of work)]
-    (when (seq authors)
-      (string/join "、" (map person-label authors)))))
+;; Personal names, bylines and download filenames are rendered by
+;; soranoha.za.naming, which the bulk archives share: a name on a page and
+;; the name inside a ZIP have to agree, and one renderer is how they do.
+(def ^:private person-name-ja naming/person-name-ja)
+(def ^:private person-name-romaji naming/person-name-romaji)
+(def ^:private person-label naming/person-label)
+(def ^:private byline naming/byline)
 
 (def ^:private kana-rows
   [["a" "あ行" "あいうえおぁぃぅぇぉゔ"]
@@ -272,7 +258,7 @@
               kana-rows)
         "other")))
 
-(def ^:private ndc-classes
+(def ndc-classes
   [["0" "総記" "General works"]
    ["1" "哲学" "Philosophy"]
    ["2" "歴史" "History"]
@@ -285,7 +271,7 @@
    ["9" "文学" "Literature"]
    ["other" "その他・分類なし" "Other or unclassified"]])
 
-(defn- ndc-class-key
+(defn ndc-class-key
   "First character of the first NDC code. Aozora records children's material
   as K-prefixed codes and leaves some works unclassified, so anything that is
   not a main-class digit collects under one key rather than inventing a
@@ -308,6 +294,35 @@
   (if (seq works)
     (into [:ul {:class "works"}] (map work-link works))
     [:p (bilingual "該当する作品はありません。" "No works here.")]))
+
+(defn- archive-label [artifact-type]
+  (case artifact-type
+    "tei" "TEI XML"
+    "plaintext" (bilingual "プレーンテキスト" "Plain text")
+    artifact-type))
+
+(defn- bulk-section
+  "The pre-built archives for one selection. Serving is a static tree with no
+  runtime, so a selection cannot be assembled on request: these are the
+  selections, and they mirror the axis of the page they appear on."
+  [scope-ja scope-en paths]
+  [:section
+   [:h2 (bilingual "まとめてダウンロード" "Download in bulk")]
+   [:p (bilingual scope-ja scope-en)]
+   (into [:ul {:class "plain"}]
+         (map (fn [[path artifact-type]]
+                [:li [:a {:href (str "/" path)} (archive-label artifact-type)]
+                 [:span {:class "by"} " ZIP"]])
+              paths))
+   [:p (bilingual
+        (str "各書庫の直下に catalog.csv があります。識別子、作品名、著者、ファイル名、底本ハッシュの五列で、"
+             "表計算ソフトでそのまま開けます。引用に使うのは識別子と底本ハッシュであって、ファイル名ではありません。")
+        (str "Every archive carries catalog.csv at its root, with five columns: identifier, title, "
+             "author, filename and source hash. It opens directly in a spreadsheet. The identifier "
+             "and the source hash are the citable columns; the filename is a convenience."))]])
+
+(defn- corpus-archives []
+  (map (juxt naming/corpus-bundle-path identity) naming/bulk-artifact-types))
 
 (defn- release-note [head-hex work-count]
   [:section
@@ -366,6 +381,11 @@
       [:dd (bilingual "作品ごとの成果物。plaintext・markdown・tei-validation も同様。"
                       "Per-work artifacts; likewise plaintext, markdown and tei-validation.")]]]
 
+    (bulk-section
+     "この版の全作品を一つの ZIP にまとめてあります。著者ごと・分類ごとの ZIP は、それぞれの頁にあります。"
+     "Every work in this release, in one archive. Per-author and per-class archives are on the author and NDC pages."
+     (corpus-archives))
+
     [:section
      [:h2 (bilingual "権利と引用" "Rights and citation")]
      [:p (bilingual
@@ -390,7 +410,7 @@
                   [:span {:class "by"} (str " (" count* ")")]])
                people))]))
 
-(defn- author-page [{:keys [label romaji person-id]} entries]
+(defn- author-page [{:keys [label romaji person-id person]} entries]
   (chrome
    label
    [[:h1 label]
@@ -401,7 +421,12 @@
     (mapcat (fn [[relation works]]
               [[:h2 (str relation " (" (count works) ")")]
                (work-list works)])
-            entries)]))
+            entries)
+    (bulk-section
+     "この人物が関わった作品をまとめて取得できます。役割は問いません。"
+     "Every work this person contributed to, in any role, in one archive."
+     (map (juxt #(naming/author-bundle-path person person-id %) identity)
+          naming/bulk-artifact-types))]))
 
 (defn- title-index [rows]
   (chrome
@@ -442,7 +467,12 @@
    (str "NDC " key " " ja)
    [[:h1 (bilingual (str key " " ja) en)]
     [:p (bilingual (str (count works) " 作品。") (str (count works) " works."))]
-    (work-list works)]))
+    (work-list works)
+    (bulk-section
+     (str "この分類の " (count works) " 作品をまとめて取得できます。")
+     (str "All " (count works) " works in this class, in one archive.")
+     (map (juxt #(naming/ndc-bundle-path key %) identity)
+          naming/bulk-artifact-types))]))
 
 (defn- source-edition-line [{:strs [title publisher first_edition_year]}]
   (string/join "、" (remove string/blank?
@@ -512,18 +542,25 @@
 
       [:section
        [:h2 (bilingual "ダウンロード" "Downloads")]
-       [:ul {:class "plain"}
-        [:li [:a {:href (str "/works/" slug "/tei")} "TEI XML"]
-         [:span {:class "by"} " — "]
-         (bilingual "本文と符号化の全体。" "The full encoding.")]
-        [:li [:a {:href (str "/works/" slug "/plaintext")} (bilingual "プレーンテキスト" "Plain text")]]
-        [:li [:a {:href (str "/works/" slug "/markdown")} "Markdown"]]
-        [:li [:a {:href (str "/works/" slug "/tei-validation")}
-              (bilingual "検証レポート" "Validation report")]
-         [:span {:class "by"} " JSON"]]]
+       (into [:ul {:class "plain"}]
+             (map (fn [[artifact-type label]]
+                    (let [name (naming/filename work artifact-type)]
+                      [:li [:a {:href (str "/works/" slug "/" name) :download name} label]
+                       [:span {:class "by"} " " [:code name]]]))
+                  [["tei" "TEI XML"]
+                   ["plaintext" (bilingual "プレーンテキスト" "Plain text")]
+                   ["markdown" "Markdown"]
+                   ["tei-validation" (bilingual "検証レポート" "Validation report")]]))
        [:p (bilingual
-            "これらの URL は識別子から組み立てられ、版をまたいで変わりません。"
-            "These URLs are constructible from the identifier and do not move between releases.")]]
+            (str "ファイル名は便宜のためのものです。引用に使うのは識別子であって、ファイル名ではありません。"
+                 "同じバイト列は種別を名前にした URL でも取得でき、そちらは識別子から組み立てられ、版をまたいで変わりません。")
+            (str "The filename is a convenience; the citable thing is the identifier, not the name. "
+                 "The same bytes are also served at URLs named after the artifact type, which are "
+                 "constructible from the identifier and do not move between releases."))]
+       [:p (->> ["tei" "plaintext" "markdown" "tei-validation"]
+                (map (fn [artifact-type]
+                       [:code (str "/works/" slug "/" artifact-type)]))
+                (interpose " · "))]]
 
       [:section
        [:h2 (bilingual "引用" "Citation")]
@@ -798,7 +835,8 @@
             (page (str "authors/" id ".html")
                   (author-page {:label (person-label person)
                                 :romaji (person-name-romaji person)
-                                :person-id id}
+                                :person-id id
+                                :person person}
                                (sort-by key
                                         (update-vals by-relation
                                                      #(vec (sort-by reading-key %)))))))

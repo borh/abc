@@ -9,6 +9,7 @@
             [soranoha.kura.engine :as engine]
             [soranoha.ori.accountability :as accountability]
             [soranoha.ori.projection :as projection]
+            [soranoha.ori.fixture :as fixture]
             [soranoha.ori.render :as render]
             [soranoha.ori.stages :as stages]
             [soranoha.ori.validate :as validation])
@@ -38,7 +39,8 @@
               ir (read-output store converted "parser-ir")
               oracle (engine/run-stage! store (accountability/source-stage tool) {"source" source-id})
               coverage (accountability/coverage-report (read-output store oracle "source-accountability") ir)
-              tei (:tei (render/render-work {:parser-ir ir
+              tei (:tei (render/render-work {:rights @fixture/grant
+                                             :parser-ir ir
                                              :metadata-record {"work" {"work_id" "1" "title" "題" "aozora_modified" "2026-09-07"}
                                                                "contributors" []}
                                              :persons-by-id {}}))

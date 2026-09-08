@@ -131,11 +131,20 @@
                "divergence" (fs/read-all-bytes divergence-file)}))))})
 
 (defn render-stage
-  "parser-IR + metadata record + persons -> TEI XML bytes."
-  [clj-toolchain-id]
+  "parser-IR + metadata record + persons -> TEI XML bytes.
+
+  `rights` is the grant read from the publication policy. It is fail-closed
+  and part of the stage's toolchain identity: the terms are published inside
+  every TEI file, so a policy change has to invalidate the cached TEI rather
+  than leave works stating superseded terms."
+  [clj-toolchain-id rights]
+  (when-not (map? rights)
+    (throw (ex-info "render stage requires the publication rights grant"
+                    {:reason :missing-rights-grant})))
   {:stage-id "render"
-   :stage-version "37"
-   :toolchain-id clj-toolchain-id
+   :stage-version "38"
+   :toolchain-id (core-hash/sha256-canonical-json
+                  {"clj" clj-toolchain-id "rights" rights})
    :f (fn [{:keys [blob]} inputs]
         (let [read-json (fn [name]
                           (json/read-json
@@ -143,7 +152,8 @@
               rendered (render/render-work
                         {:parser-ir (read-json "parser-ir")
                          :metadata-record (read-json "metadata-record")
-                         :persons-by-id (read-json "persons")})]
+                         :persons-by-id (read-json "persons")
+                         :rights rights})]
           {"tei" (utf8 (:tei rendered))}))})
 
 (defn plaintext-stage [clj-toolchain-id]

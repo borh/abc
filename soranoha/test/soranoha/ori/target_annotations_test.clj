@@ -3,6 +3,7 @@
             [clojure.test :refer [deftest is]]
             [soranoha.annotations.view :as view]
             [soranoha.ori.projection :as projection]
+            [soranoha.ori.fixture :as fixture]
             [soranoha.ori.render :as render]
             [soranoha.ori.validate :as validation])
   (:import [org.w3c.dom Document Element]))
@@ -16,7 +17,8 @@
                         "annotation_children" [{"type" "ruby" "ruby" {"base" "字" "reading" "じ"}}]}
                  position (assoc "position" position))
           result (render/render-work
-                  {:parser-ir {"nodes" [node {"type" "text" "text" "後"}]}
+                  {:rights @fixture/grant
+                   :parser-ir {"nodes" [node {"type" "text" "text" "後"}]}
                    :metadata-record {"work" {"title" "試験" "work_id" "1" "aozora_modified" "2026-09-07"} "contributors" []}
                    :persons-by-id {}})
           reading (view/from-tei (:tei result))

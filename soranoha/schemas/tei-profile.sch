@@ -13,7 +13,7 @@
    <ns prefix="sch" uri="http://purl.oclc.org/dsdl/schematron"/>
    <ns prefix="sch1x" uri="http://www.ascc.net/xml/schematron"/>
    <!-- ******************************************************* -->
-   <!-- constraints in en, und, mul, zxx, of which there are 89 -->
+   <!-- constraints in en, und, mul, zxx, of which there are 90 -->
    <!-- ******************************************************* -->
    <pattern id="snh-tei-header-title">
       <rule context="tei:teiHeader">
@@ -23,6 +23,11 @@
    <pattern id="snh-tei-header-source-work-id">
       <rule context="tei:teiHeader">
          <assert test=".//tei:idno[@type = ('aozora-work-id', 'source-work-id')]"> Soranoha TEI requires an Aozora work ID or source work identifier.</assert>
+      </rule>
+   </pattern>
+   <pattern id="snh-publication-licence">
+      <rule context="tei:teiHeader">
+         <assert test="tei:fileDesc/tei:publicationStmt/tei:availability/tei:licence[@target and normalize-space(@target) != '']"> Soranoha TEI requires a rights grant in teiHeader/fileDesc/publicationStmt/availability/licence with a non-empty @target (snh-publication-licence)</assert>
       </rule>
    </pattern>
    <pattern id="snh-header-language-declared">

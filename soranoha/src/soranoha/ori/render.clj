@@ -55,13 +55,16 @@
           (conj text (into [:back] notes))))))
 
 (defn render-work
-  "Render one work's canonical TEI transcription."
-  [{:keys [parser-ir metadata-record persons-by-id]}]
+  "Render one work's canonical TEI transcription. `rights` is the release
+  rights grant; it is embedded in the header so a TEI file carries its own
+  terms once detached from the site that served it."
+  [{:keys [parser-ir metadata-record persons-by-id rights]}]
   (let [tei-result (parser-ir-tei/render parser-ir)
         header (tei-header/build
                 (assoc (header-input metadata-record persons-by-id)
                        :char-declarations (:char_declarations tei-result)
                        :source-content-hash (get-in parser-ir ["source" "work_content_hash"])
-                       :primary-text-hash (get-in parser-ir ["source" "primary_text_hash"])))]
+                       :primary-text-hash (get-in parser-ir ["source" "primary_text_hash"])
+                       :rights rights))]
     {:tei (tei-header/hiccup->pretty-xml-string
            (tei-document header (with-interpretation (:body tei-result) parser-ir)))}))

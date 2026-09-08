@@ -55,7 +55,7 @@
                           (#'validate/validation-layer status "fixture" "fixture")))))
 
 (defn source-reference-document [n]
-  (str "<TEI xmlns='http://www.tei-c.org/ns/1.0'><teiHeader><fileDesc><titleStmt><title>試験</title></titleStmt><publicationStmt><p>試験</p></publicationStmt><sourceDesc><p><idno type='aozora-work-id'>1</idno></p></sourceDesc></fileDesc><profileDesc><langUsage><language ident='ja'>Japanese</language></langUsage></profileDesc></teiHeader><text><body><p>"
+  (str "<TEI xmlns='http://www.tei-c.org/ns/1.0'><teiHeader><fileDesc><titleStmt><title>試験</title></titleStmt><publicationStmt><publisher>試験</publisher><availability status='free'><licence target='https://creativecommons.org/publicdomain/zero/1.0/'>CC0-1.0</licence></availability></publicationStmt><sourceDesc><p><idno type='aozora-work-id'>1</idno></p></sourceDesc></fileDesc><profileDesc><langUsage><language ident='ja'>Japanese</language></langUsage></profileDesc></teiHeader><text><body><p>"
        (apply str (map #(str "<seg source='#source-" % "'>本文</seg>") (range n)))
        "</p></body><back><div>"
        (apply str (map #(str "<note xml:id='source-" % "' type='source-span'>{}</note>") (range n)))

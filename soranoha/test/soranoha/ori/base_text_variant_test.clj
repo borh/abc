@@ -5,6 +5,7 @@
             [soranoha.annotations.view :as view]
             [soranoha.core.hash :as hash]
             [soranoha.ori.projection :as projection]
+            [soranoha.ori.fixture :as fixture]
             [soranoha.ori.render :as render]
             [soranoha.ori.validate :as validation])
   (:import [org.w3c.dom Document Element]))
@@ -19,7 +20,8 @@
                      {"type" "ruby" "ruby" {"base" "籠" "reading" "ざる"}
                       "reading_children" [variant]}
                      {"type" "text" "text" "をさげ"}]}
-        result (render/render-work {:parser-ir ir
+        result (render/render-work {:rights @fixture/grant
+                                    :parser-ir ir
                                     :metadata-record {"work" {"title" "試験" "work_id" "1" "aozora_modified" "2026-09-07"} "contributors" []}
                                     :persons-by-id {}})
         reading (view/from-tei (:tei result))
@@ -50,7 +52,8 @@
         ir {"source" {"primary_text_hash" source-hash}
             "nodes" [supplied (assoc supplied "text" "続き")
                      {"type" "text" "text" "未知" "span" {"coordinate_system" "parser_text_utf8" "start" 12 "end" 18}}]}
-        render-ir #(render/render-work {:parser-ir %
+        render-ir #(render/render-work {:rights @fixture/grant
+                                        :parser-ir %
                                         :metadata-record {"work" {"title" "試験" "work_id" "1"} "contributors" []}
                                         :persons-by-id {}})
         output (render-ir ir)
@@ -78,7 +81,8 @@
                                      [{"upper_children" [{"type" "text" "text" "上"}]
                                        "lower_children" [{"type" "text" "text" "下"}]} 2]]]
     (let [result (render/render-work
-                  {:parser-ir {"nodes" [(merge {"type" "warichu" "text" "上下"} content)]}
+                  {:rights @fixture/grant
+                   :parser-ir {"nodes" [(merge {"type" "warichu" "text" "上下"} content)]}
                    :metadata-record {"work" {"title" "試験" "work_id" "1"} "contributors" []}
                    :persons-by-id {}})
           reading (view/from-tei (:tei result))
@@ -93,7 +97,8 @@
 (deftest witness-ruby-is-apparatus-with-its-own-source-reference
   (let [span {"coordinate_system" "decoded_utf8" "start" 60 "end" 84}
         result (render/render-work
-                {:parser-ir {"nodes" [{"type" "base-text-variant" "text" "狼狽てて"
+                {:rights @fixture/grant
+                 :parser-ir {"nodes" [{"type" "base-text-variant" "text" "狼狽てて"
                                        "inline_children" [{"type" "ruby" "ruby" {"base" "狼狽" "reading" "あわ"}}
                                                           {"type" "text" "text" "てて"}]
                                        "variant" {"base_text" "狼狙てて"
@@ -121,7 +126,8 @@
 
 (deftest base-edition-prose-is-visible-apparatus-without-changing-principal-text
   (let [result (render/render-work
-                {:parser-ir {"nodes" [{"type" "text" "text" "本文"}
+                {:rights @fixture/grant
+                 :parser-ir {"nodes" [{"type" "text" "text" "本文"}
                                       {"type" "editor-note" "note_kind" "base-edition" "text" "底本では４字下げ"}
                                       {"type" "text" "text" "続き。"}]}
                  :metadata-record {"work" {"title" "試験" "work_id" "1"} "contributors" []}

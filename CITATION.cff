@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: >-
+  If you use Soranoha in research, please cite the release you used. A release
+  is identified by its head, and each release is archived with its own version
+  DOI; see docs/citation.md for the citation forms and worked examples.
+title: "Soranoha Aozora TEI Corpus"
+abstract: >-
+  Soranoha converts Aozora Bunko's public-domain Japanese texts to TEI P5,
+  with plaintext and Markdown projections and a validation report for every
+  work, and publishes them as a signed, append-only chain of content-addressed
+  releases. Corpus artifacts are dedicated to the public domain under CC0-1.0;
+  the conversion and publication tooling is licensed Apache-2.0.
+type: dataset
+license: CC0-1.0
+authors:
+  - family-names: "Hodošček"
+    given-names: "Bor"
+    orcid: "https://orcid.org/0000-0003-2246-8774"
+    affiliation: "Osaka University"
+url: "https://soranoha.org"
+keywords:
+  - Aozora Bunko
+  - TEI
+  - Japanese literature
+  - digital humanities
+  - corpus
+  - collections as data

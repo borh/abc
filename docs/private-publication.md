@@ -47,6 +47,11 @@ projection and fidelity reports, including works whose assessment does not permi
 Markdown is now a published per-work artifact alongside TEI and plaintext
 (`snh-manifest/2`); its projection report remains an experimental review
 artifact outside the signed set.
+Each TEI header carries the rights grant read from
+`soranoha/data/publication-policy.edn` under `--assets-root`, which is the same
+document the release hashes as `admission.policy_hash`, so a review export shows
+the terms a release would publish. A policy without a stated grant fails the
+build rather than exporting works with no terms.
 Use a new export directory for subsequent iterations; the build cache is reused.
 Review the resulting admission partition and export measurements, then commit
 the accepted source and snapshot together at their repository paths.

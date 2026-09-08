@@ -4,7 +4,10 @@ Soranoha is the canonical monorepo for the Aozora Bunko conversion and
 validation system. It contains:
 
 - `ab-validator/`: Rust adapters, parser/IR validation, corpus measurement, and
-  report tooling.
+  report tooling. Its parser core, the `ab-aozora-*` crates, is an independent
+  fork of [P4suta/aozora](https://github.com/P4suta/aozora) at revision
+  `1a4f864603970983719655aa4af4525958ac2d38`, dual-licensed MIT or Apache-2.0,
+  and it determines the transcription of every work in the corpus.
 - `soranoha/`: publication, TEI/plaintext conversion, schemas, validation, and the snh protocol, including
   [assessment evaluation and experimental RDF](soranoha/docs/assessment-evaluation.md).
 
@@ -77,3 +80,19 @@ Each published work is identified by its Aozora work id and contributor card
 directory, as in `000092_000879`. See
 [work identifiers](soranoha/docs/work-identifiers.md) for the form, what it
 promises across releases, and where exact edition identity lives instead.
+
+## Rights and citation
+
+| Scope | Licence |
+|---|---|
+| Underlying Aozora Bunko works | Public domain — not Soranoha's to license |
+| Published corpus artifacts: TEI, plaintext, Markdown, validation reports, catalog, manifests | [CC0-1.0](LICENSE-CC0) |
+| TEI customisation and protocol JSON Schemas | [CC0-1.0](LICENSE-CC0) |
+| All source code | [Apache-2.0](LICENSE) |
+
+Attribution is requested, not required, mirroring Aozora Bunko's own posture.
+[docs/rights.md](docs/rights.md) is the full public statement — the two rights
+layers, the toolchain's licence position, where the grant appears in published
+bytes, and how a rights holder requests withdrawal. [docs/citation.md](docs/citation.md)
+gives the citation forms for a release, a single work, and an exact byte
+sequence; `CITATION.cff` carries the corpus record in machine-readable form.

@@ -244,6 +244,17 @@
           </constraint>
         </constraintSpec>
 
+        <constraintSpec ident="snh-publication-licence" scheme="schematron">
+          <desc>Require the published rights grant in generated Soranoha TEI headers.</desc>
+          <constraint>
+            <sch:rule context="tei:teiHeader">
+              <sch:assert test="tei:fileDesc/tei:publicationStmt/tei:availability/tei:licence[@target and normalize-space(@target) != '']">
+                Soranoha TEI requires a rights grant in teiHeader/fileDesc/publicationStmt/availability/licence with a non-empty @target (snh-publication-licence)
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
         <constraintSpec ident="snh-header-language-declared" scheme="schematron">
           <desc>Require a declared document language in generated headers.</desc>
           <constraint>

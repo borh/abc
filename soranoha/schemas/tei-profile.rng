@@ -14021,6 +14021,18 @@ Sample values include: 1] homeoteleuton; 2] homeoarchy; 3] paleographicConfusion
       </sch:rule>
    </pattern>
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
+            id="snh-publication-licence">
+      <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:rng="http://relaxng.org/ns/structure/1.0"
+                xmlns:sch="http://purl.oclc.org/dsdl/schematron"
+                xmlns:snh="https://w3id.org/soranoha/ns/tei"
+                context="tei:teiHeader">
+         <sch:assert test="tei:fileDesc/tei:publicationStmt/tei:availability/tei:licence[@target and normalize-space(@target) != '']">
+                Soranoha TEI requires a rights grant in teiHeader/fileDesc/publicationStmt/availability/licence with a non-empty @target (snh-publication-licence)
+              </sch:assert>
+      </sch:rule>
+   </pattern>
+   <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
             id="snh-header-language-declared">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
                 xmlns:rng="http://relaxng.org/ns/structure/1.0"

@@ -71,6 +71,7 @@ Constraint violations are published in each work's `tei-validation.json` as
 | `snh-tei-header-title` | error | A main title in `teiHeader/fileDesc/titleStmt`. |
 | `snh-tei-header-source-work-id` | error | An Aozora work ID or source work identifier in the header. |
 | `snh-header-language-declared` | error | At least one `profileDesc/langUsage/language` with a non-empty `@ident`. |
+| `snh-publication-licence` | error | A rights grant in `publicationStmt/availability/licence` with a non-empty `@target`. |
 | `snh-ruby-complete` | error | Ruby structures contain both base and reading components. |
 | `snh-ruby-base-non-empty` | error | A ruby base contains text or a declared character. |
 | `snh-ruby-reading-non-empty` | error | A ruby reading is not empty. |
@@ -84,6 +85,17 @@ Constraint violations are published in each work's `tei-validation.json` as
 | `snh-vocab-version-declared` | error | A root carrying `snh:*` attributes declares `snh:vocab-version`. |
 | `snh-preservation-record-shape` | error | `snh:preservation-record` values have the form `r000000`. |
 | `snh-layout-params-shape` | error | `snh:layout-params` uses the `key=value` grammar above. |
+
+## Rights in the header
+
+Every published work states its own terms in
+`fileDesc/publicationStmt/availability`, one `licence` element per rights
+layer: the underlying work's public-domain standing, and Soranoha's CC0 grant
+over the encoding, which also carries a `ptr` to the full statement. Both are
+rendered from the one publication policy the release manifest hashes, so a
+detached TEI file and the signed release record cannot state different terms.
+`snh-publication-licence` makes their absence a validation failure. See
+[rights and licensing](../../docs/rights.md).
 
 A schema pass does not establish source fidelity or publication rights. See
 [TEI validation](tei-validation.md) for how the two validation layers run, and

@@ -1,5 +1,6 @@
 (ns soranoha.tei-fidelity-test
   (:require [babashka.fs :as fs]
+            [soranoha.ori.fixture :as fixture]
             [soranoha.ori.render :as render]
             [soranoha.ori.relaxng :as rng]
             [clojure.test :refer [deftest is]]
@@ -87,7 +88,8 @@
   (let [dir (fs/create-temp-dir {:prefix "tei-layout-profile"})
         xml-path (str (fs/path dir "tei.xml"))
         result (render/render-work
-                {:parser-ir {"nodes" [{"type" "heading" "level" 2 "indent" 8 "text" "一"}
+                {:rights @fixture/grant
+                 :parser-ir {"nodes" [{"type" "heading" "level" 2 "indent" 8 "text" "一"}
                                       {"type" "text" "text" "　本文。"}
                                       {"type" "source-note" "placement" "back"
                                        "note_type" "source-attribution" "text" "底本：書名\n　　　刊行日\n"}]

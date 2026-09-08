@@ -30,6 +30,7 @@
             [soranoha.assessment.source :as assessment-source]
             [soranoha.core.config :as config]
             [soranoha.core.hash :as hash]
+            [soranoha.core.rights :as rights]
             [soranoha.core.canonical :as canonical]
             [soranoha.kura.engine :as engine]
             [soranoha.kura.cas :as cas]
@@ -74,14 +75,26 @@
                       {:aozora-root (str aozora-root) :status status})))
     commit))
 
-(defn- publication-stages [{:keys [clj-toolchain-id assets-root]}]
+(defn- build-rights-grant
+  "The rights grant the build embeds in every TEI header. Release supplies the
+  grant it already read for the manifest, so one policy read serves both and
+  the two published statements cannot diverge. Other build paths read the same
+  document, by default the one under --assets-root, so a private export shows
+  the terms a release would publish rather than none."
+  [{:keys [rights assets-root policy]}]
+  (or rights
+      (rights/grant-from-bytes
+       (fs/read-all-bytes (str (or policy
+                                   (fs/path assets-root "data/publication-policy.edn")))))))
+
+(defn- publication-stages [{:keys [clj-toolchain-id assets-root] :as opts}]
   (let [adapter (stages/resolve-adapter)
         profile (validate/profile-paths assets-root)]
     {:extract (stages/extract-stage clj-toolchain-id)
      :metadata (stages/metadata-stage clj-toolchain-id assets-root)
      :parse (stages/parse-stage adapter)
      :convert (stages/convert-stage adapter)
-     :render (stages/render-stage clj-toolchain-id)
+     :render (stages/render-stage clj-toolchain-id (build-rights-grant opts))
      :plaintext (stages/plaintext-stage clj-toolchain-id)
      :markdown (stages/markdown-stage clj-toolchain-id)
      :validate (stages/validate-tei-stage clj-toolchain-id profile)}))
@@ -654,7 +667,10 @@
             (let [requested (set slugs)
                   inputs (update captured :candidates #(filterv (comp requested :slug) %))
                   _ (selected-metadata! inputs)
-                  stage-set (if (seq requested) (dissoc (publication-stages opts) :accountability :coverage) {})
+                  stage-set (if (seq requested)
+                              (dissoc (publication-stages (assoc opts :rights rights))
+                                      :accountability :coverage)
+                              {})
                   report (execute-build! (dissoc opts :out) inputs stage-set)]
               (when-not (and (= source-commit (get report "aozora_git_commit")
                                 (source-provenance! (:aozora-root opts)))

@@ -19,7 +19,7 @@
 
 (defn document [body]
   (str "<TEI xmlns='http://www.tei-c.org/ns/1.0'><teiHeader><fileDesc>"
-       "<titleStmt><title>試験</title></titleStmt><publicationStmt><p>試験</p></publicationStmt>"
+       "<titleStmt><title>試験</title></titleStmt><publicationStmt><publisher>試験</publisher><availability status='free'><licence target='https://creativecommons.org/publicdomain/zero/1.0/'>CC0-1.0</licence></availability></publicationStmt>"
        "<sourceDesc><p><idno type='aozora-work-id'>1</idno></p></sourceDesc></fileDesc>"
        "<encodingDesc><charDecl><char xml:id='g1'><desc>外字</desc>"
        "<mapping type='unicode'>犍</mapping></char></charDecl></encodingDesc>"
@@ -164,7 +164,11 @@
         inputs {"parser-ir" (put-json {"nodes" [{"type" "text" "text" "本文"}]})
                 "metadata-record" (put-json {"work" {"title" "試験" "work_id" "1" "aozora_modified" "2026-09-07"} "contributors" []})
                 "persons" (put-json {})}
-        render-stage (publication-stages/render-stage "test-runtime")
+        render-stage (publication-stages/render-stage
+                      "test-runtime"
+                      {"works" "public-domain"
+                       "encoding" "CC0-1.0"
+                       "statement_url" "https://soranoha.org/rights"})
         plain-stage (publication-stages/plaintext-stage "test-runtime")
         enrich-stage (stages/enrichment-stage "test-runtime")]
     (try

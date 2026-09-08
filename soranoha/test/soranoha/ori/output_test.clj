@@ -5,6 +5,7 @@
             [soranoha.kura.engine :as engine]
             [soranoha.main :as main]
             [soranoha.ori.accountability :as accountability]
+            [soranoha.ori.fixture :as fixture]
             [soranoha.ori.render :as render]
             [soranoha.ori.tei-header :as header]
             [soranoha.annotations.view :as text-view]
@@ -20,7 +21,8 @@
         diagnostic {"code" "unclosed_inline" "severity" "error" "message" "閉じられていない"
                     "span" {"start" 3 "end" 9 "coordinate_system" "decoded_utf8"}}
         result (render/render-work
-                {:parser-ir {"source" {"work_content_hash" source-id "primary_text_hash" source-id}
+                {:rights @fixture/grant
+                 :parser-ir {"source" {"work_content_hash" source-id "primary_text_hash" source-id}
                              "derived_from" {"parse_complete" false}
                              "nodes" [{"type" "text" "text" "本文"}]
                              "errors" [diagnostic]}
@@ -40,7 +42,8 @@
 
 (deftest publication-serialization-does-not-invent-mixed-content-whitespace
   (let [result (render/render-work
-                {:parser-ir {"nodes" [{"type" "text" "text" "前"}
+                {:rights @fixture/grant
+                 :parser-ir {"nodes" [{"type" "text" "text" "前"}
                                       {"type" "ruby" "ruby" {"base" "池" "reading" "いけ" "scope" "explicit"}}
                                       {"type" "text" "text" "後"}]}
                  :metadata-record {"work" {"title" "試験"} "contributors" []}

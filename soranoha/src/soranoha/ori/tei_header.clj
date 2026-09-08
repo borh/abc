@@ -31,7 +31,8 @@
   Tag keywords with no namespace are TEI elements. :xml/lang and
   :xml/id route to the XML namespace. Strings are text content."
   (:require [clojure.data.xml :as xml]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [soranoha.core.rights :as rights]))
 
 (def ^:private tei-ns "http://www.tei-c.org/ns/1.0")
 (def ^:private xml-ns "http://www.w3.org/XML/1998/namespace")
@@ -84,11 +85,30 @@
         (into (mapv #(author-block (:person %)) authors))
         (into (mapv #(resp-stmt (:relation-to-work %) (:person %)) others)))))
 
-(defn- publication-stmt [work]
-  [:publicationStmt
-   [:publisher "ABC"]
-   [:idno {:type "aozora-work-id"} (get work "work_id")]
-   [:date {:when (get work "aozora_modified")} (get work "aozora_modified")]])
+(defn- availability
+  "TEI <availability> for the release's rights grant. Two layers, stated
+  separately because they differ: the underlying work's standing, which
+  Soranoha inherits and does not create, and the licence over Soranoha's own
+  encoding. A TEI file is normally read detached from the site it came from,
+  so the terms have to travel inside it."
+  [{:strs [works encoding statement_url]}]
+  ;; Two <licence> elements rather than <licence> plus <p>: a <p> here would
+  ;; be a paragraph of the document, and the reading view and its projections
+  ;; select paragraphs, so header prose would surface as body text.
+  [:availability {:status "free"}
+   [:licence {:target (rights/works-uri works)}
+    (rights/works-statement works)]
+   [:licence {:target (rights/licence-uri encoding)}
+    (rights/licence-statement encoding)
+    " Full rights statement: "
+    [:ptr {:target statement_url}]]])
+
+(defn- publication-stmt [work rights-grant]
+  (cond-> [:publicationStmt
+           [:publisher "ABC"]
+           [:idno {:type "aozora-work-id"} (get work "work_id")]
+           [:date {:when (get work "aozora_modified")} (get work "aozora_modified")]]
+    rights-grant (conj (availability rights-grant))))
 
 (defn- bibl-edition [edition]
   (cond-> [:bibl
@@ -118,10 +138,10 @@
       source-content-hash (conj [:bibl [:idno {:type "source-content-hash"} source-content-hash]])
       primary-text-hash (conj [:bibl [:idno {:type "primary-text-hash"} primary-text-hash]]))))
 
-(defn- file-desc [work contributors source-content-hash primary-text-hash]
+(defn- file-desc [work contributors source-content-hash primary-text-hash rights-grant]
   [:fileDesc
    (title-stmt work contributors)
-   (publication-stmt work)
+   (publication-stmt work rights-grant)
    (source-desc work source-content-hash primary-text-hash)])
 
 (defn- declaration->char [declaration]
@@ -168,13 +188,20 @@
 
   Input shape:
     {:work         <work map, string keys>
-     :contributors [{:relation-to-work \"...\" :person <person map, string keys>} ...]}
+     :contributors [{:relation-to-work \"...\" :person <person map, string keys>} ...]
+     :rights        <the release rights grant, manifest key spelling>}
 
   Role and person are kept separate at every level inside this builder;
-  the relation_to_work value never enters the person body."
-  [{:keys [work contributors char-declarations source-content-hash primary-text-hash]}]
+  the relation_to_work value never enters the person body.
+
+  :rights is optional here so a header can be built for inspection without a
+  policy in hand; the render stage supplies it for every published work and
+  the profile's snh-publication-licence rule rejects a published file without
+  it."
+  [{:keys [work contributors char-declarations source-content-hash primary-text-hash
+           rights]}]
   [:teiHeader
-   (file-desc work contributors source-content-hash primary-text-hash)
+   (file-desc work contributors source-content-hash primary-text-hash rights)
    (encoding-desc char-declarations)
    (profile-desc work)])
 
@@ -242,7 +269,7 @@
   (xml/emit-str (with-default-tei-ns (->xml-element hiccup))))
 
 (def ^:private element-only-containers
-  #{"TEI" "teiHeader" "fileDesc" "titleStmt" "publicationStmt" "sourceDesc"
+  #{"TEI" "teiHeader" "fileDesc" "titleStmt" "publicationStmt" "availability" "sourceDesc"
     "encodingDesc" "profileDesc" "langUsage" "textClass" "keywords" "revisionDesc"
     "charDecl" "char" "biblStruct" "analytic" "monogr" "imprint"
     "text" "front" "body" "back" "div"})

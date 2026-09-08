@@ -7,78 +7,30 @@
   are the transaction's — :published, :already-published (the scheduled
   no-op), :requeue (the next scheduled invocation retries against the
   new head), :determinism-halt."
-  (:require [clojure.edn :as edn]
-            [soranoha.core.hash :as hash]
+  (:require [soranoha.core.hash :as hash]
+            [soranoha.core.rights :as rights]
             [soranoha.snh.decode :as decode]
             [soranoha.snh.admission :as admission]
             [soranoha.snh.transact :as transact]
-            [soranoha.za.assemble :as assemble])
-  (:import (java.nio ByteBuffer)
-           (java.nio.charset CodingErrorAction StandardCharsets)))
+            [soranoha.za.assemble :as assemble]))
 
 ;; The one rights-publication state that authorizes release publication.
 ;; Every other, missing, or malformed state is fail-closed. Moving this
 ;; value is a deliberate governance change, not an implementation detail.
 (def ^:private authorizing-rights-state :assessment-required)
 
-(defn- strict-utf8
-  "Decode bytes as UTF-8, failing (rather than substituting) on malformed
-  or unmappable byte sequences."
-  [^bytes bytes]
-  (let [decoder (doto (.newDecoder StandardCharsets/UTF_8)
-                  (.onMalformedInput CodingErrorAction/REPORT)
-                  (.onUnmappableCharacter CodingErrorAction/REPORT))]
-    (str (.decode decoder (ByteBuffer/wrap bytes)))))
-
-(defn- read-one-edn
-  "Read exactly one EDN value spanning the whole of `text`: an empty
-  document, a second form, or trailing garbage after the value all fail —
-  a reader that stops at the first value would hash bytes it never
-  evaluated."
-  [^String text]
-  (with-open [reader (java.io.PushbackReader. (java.io.StringReader. text))]
-    (let [eof (Object.)
-          value (edn/read {:eof eof} reader)]
-      (when (identical? value eof)
-        (throw (ex-info "empty policy document" {})))
-      (when-not (identical? eof (try (edn/read {:eof eof} reader)
-                                     (catch Exception _ nil)))
-        (throw (ex-info "trailing input after the policy value" {})))
-      value)))
-
-(defn- rights-grant!
-  "The published rights grant, read from the same policy document that
-  authorizes publication at all. Carrying it here rather than as a constant
-  binds the grant in the manifest to the policy hash the manifest already
-  records: the terms published and the terms signed off cannot diverge.
-  Fail-closed — a policy that authorizes release without stating terms
-  publishes nothing."
-  [value]
-  (let [{:keys [works encoding statement-url]} (:rights-statement value)]
-    (when-not (and (string? works) (seq works)
-                   (string? encoding) (seq encoding)
-                   (string? statement-url) (seq statement-url))
-      (throw (ex-info "rights policy states no publishable rights grant"
-                      {:reason :missing-rights-statement})))
-    {"works" works
-     "encoding" encoding
-     "statement_url" statement-url}))
-
 (defn rights-authority!
   "Fail-closed value-plus-hash rights authority over the policy bytes:
   strict UTF-8 + EDN decode, then only the authorizing rights-publication
   state releases — the value evaluated and the manifest policy hash
   derive from the same byte array, so the recorded hash can never
-  disagree with what was evaluated. The policy id is fixed here, by the
+  disagree with what was evaluated. The grant travels back to the caller so
+  the build embeds the same terms in each work's TEI that the manifest
+  publishes, from this one read. The policy id is fixed here, by the
   authority, never supplied by the caller. Returns
   {:policy-id :policy-hash :rights}; throws on anything else."
   [^bytes policy-bytes]
-  (let [value (try
-                (read-one-edn (strict-utf8 policy-bytes))
-                (catch Exception e
-                  (throw (ex-info "rights policy unreadable"
-                                  {:reason :policy-unreadable
-                                   :cause (ex-message e)}))))
+  (let [value (rights/read-policy policy-bytes)
         state (when (map? value) (:rights-publication value))]
     (when-not (= authorizing-rights-state state)
       (throw (ex-info (str "release publication blocked by rights policy: "
@@ -87,7 +39,7 @@
                        :state (or state :missing-rights-publication-policy)})))
     {:policy-id "rights-publication-policy-v1"
      :policy-hash (hash/sha256-bytes policy-bytes)
-     :rights (rights-grant! value)}))
+     :rights (rights/grant value)}))
 
 (defn- report-works
   "The assembler's works map projected from a build run report. Published

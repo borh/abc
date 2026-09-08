@@ -8,6 +8,7 @@
             [soranoha.kura.cas :as cas]
             [soranoha.kura.engine :as engine]
             [soranoha.ori.projection :as projection]
+            [soranoha.ori.fixture :as fixture]
             [soranoha.ori.render :as render]
             [soranoha.ori.stages :as stages])
   (:import [org.w3c.dom Document Element Node]))
@@ -38,7 +39,8 @@
                                       {"aat" (get-in parsed [:outputs "aat"])
                                        "work_content_hash" (hash/format-sha256 source-id)})
          ir (json/read-json (String. ^bytes (cas/get-bytes (:cas-dir *store*) (get-in converted [:outputs "parser-ir"])) "UTF-8"))
-         tei (:tei (render/render-work {:parser-ir ir
+         tei (:tei (render/render-work {:rights @fixture/grant
+                                        :parser-ir ir
                                         :metadata-record {"work" {"work_id" "1" "title" "題" "aozora_modified" "2026-09-07"}
                                                           "contributors" []}
                                         :persons-by-id {}}))

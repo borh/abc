@@ -3,13 +3,15 @@
             [clojure.test :refer [deftest is]]
             [soranoha.annotations.view :as view]
             [soranoha.ori.projection :as projection]
+            [soranoha.ori.fixture :as fixture]
             [soranoha.ori.render :as render]
             [soranoha.ori.validate :as validation])
   (:import [org.w3c.dom Document Element]))
 
 (deftest image-description-is-apparatus-and-separate-caption-is-principal-text
   (let [result (render/render-work
-                {:parser-ir {"nodes" [{"type" "text" "text" "前"}
+                {:rights @fixture/grant
+                 :parser-ir {"nodes" [{"type" "text" "text" "前"}
                                       {"type" "image" "src" "fig1.png" "alt" "図の説明"
                                        "width" 320 "height" 322 "number" "１"
                                        "description_children" [{"type" "ruby" "ruby" {"base" "図" "reading" "ず"}}]
@@ -42,7 +44,8 @@
 
 (deftest bare-image-retains-the-accessibility-warning
   (let [tei (:tei (render/render-work
-                   {:parser-ir {"nodes" [{"type" "image" "src" "fig.png"}]}
+                   {:rights @fixture/grant
+                    :parser-ir {"nodes" [{"type" "image" "src" "fig.png"}]}
                     :metadata-record {"work" {"title" "試験" "work_id" "1" "aozora_modified" "2026-09-07"} "contributors" []}
                     :persons-by-id {}}))
         dir (fs/create-temp-dir {:prefix "bare-illustration"})
@@ -56,7 +59,8 @@
 
 (deftest figure-edition-statement-does-not-supply-an-image-description
   (let [tei (:tei (render/render-work
-                   {:parser-ir {"nodes" [{"type" "text" "text" "前"}
+                   {:rights @fixture/grant
+                    :parser-ir {"nodes" [{"type" "text" "text" "前"}
                                          {"type" "image" "src" "fig.png"
                                           "annotation_children" [{"type" "editor-note" "note_kind" "base-edition" "text" "底本では異なる寸法"}]}
                                          {"type" "text" "text" "後"}]}

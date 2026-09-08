@@ -222,11 +222,24 @@
     (nil? v) nil
     :else (str v)))
 
+(defn- with-default-tei-ns
+  "Declare the TEI namespace as the document default on the root element.
+
+  Without a declaration clojure.data.xml invents a prefix for the namespace
+  and emits `<a:TEI xmlns:a=\"...\">`. That is namespace-correct and every
+  namespace-aware processor reads it, but it is not the shape TEI corpora are
+  published in, and researcher-written XPath — copied from teaching material,
+  or run through tooling that ignores namespaces — is written against
+  unprefixed element names. A prefixed serialisation returns empty node sets
+  there rather than failing visibly."
+  [element]
+  (update element :attrs assoc :xmlns tei-ns))
+
 (defn hiccup->xml-string
   "Serialise TEI hiccup to an XML string. The TEI namespace is the
   default; xml: prefix is bound to the XML namespace."
   [hiccup]
-  (xml/emit-str (->xml-element hiccup)))
+  (xml/emit-str (with-default-tei-ns (->xml-element hiccup))))
 
 (def ^:private element-only-containers
   #{"TEI" "teiHeader" "fileDesc" "titleStmt" "publicationStmt" "sourceDesc"
@@ -254,4 +267,4 @@
   "Indent structural TEI containers while leaving mixed content and preserved
   whitespace unchanged. Unknown content models remain unformatted."
   [hiccup]
-  (xml/emit-str (indent-structural-elements (->xml-element hiccup) 0)))
+  (xml/emit-str (indent-structural-elements (with-default-tei-ns (->xml-element hiccup)) 0)))

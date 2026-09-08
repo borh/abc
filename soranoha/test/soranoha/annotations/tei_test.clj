@@ -18,22 +18,22 @@
            [org.w3c.dom Document Node NodeList]))
 
 (defn document [body]
-  (str "<a:TEI xmlns:a='http://www.tei-c.org/ns/1.0'><a:teiHeader><a:fileDesc>"
-       "<a:titleStmt><a:title>試験</a:title></a:titleStmt><a:publicationStmt><a:p>試験</a:p></a:publicationStmt>"
-       "<a:sourceDesc><a:p><a:idno type='aozora-work-id'>1</a:idno></a:p></a:sourceDesc></a:fileDesc>"
-       "<a:encodingDesc><a:charDecl><a:char xml:id='g1'><a:desc>外字</a:desc>"
-       "<a:mapping type='unicode'>犍</a:mapping></a:char></a:charDecl></a:encodingDesc>"
-       "<a:profileDesc><a:langUsage><a:language ident='ja'>Japanese</a:language></a:langUsage></a:profileDesc>"
-       "</a:teiHeader><a:text><a:body>" body "</a:body></a:text></a:TEI>"))
+  (str "<TEI xmlns='http://www.tei-c.org/ns/1.0'><teiHeader><fileDesc>"
+       "<titleStmt><title>試験</title></titleStmt><publicationStmt><p>試験</p></publicationStmt>"
+       "<sourceDesc><p><idno type='aozora-work-id'>1</idno></p></sourceDesc></fileDesc>"
+       "<encodingDesc><charDecl><char xml:id='g1'><desc>外字</desc>"
+       "<mapping type='unicode'>犍</mapping></char></charDecl></encodingDesc>"
+       "<profileDesc><langUsage><language ident='ja'>Japanese</language></langUsage></profileDesc>"
+       "</teiHeader><text><body>" body "</body></text></TEI>"))
 
 (def rich-body
-  (str "\n<a:p xml:id='original'><a:ruby><a:rb><a:g ref='#g1'>犍</a:g>陀多</a:rb><a:rt>かんだた</a:rt></a:ruby>は"
-       "<a:ruby><a:rb>籠</a:rb><a:rt><a:choice><a:sic>さる</a:sic><a:corr>ざる</a:corr></a:choice></a:rt></a:ruby>をさげ"
-       "<a:note type='source-span'>原文の位置</a:note></a:p>\n"
-       "<a:p>前　後𠮷<a:lb/>続<a:pb/>末</a:p>\n"
-       "<a:floatingText><a:body>\n<a:p>看板</a:p>\n</a:body></a:floatingText>\n"
-       "<a:figure><a:graphic url='image.png'/><a:figDesc>挿絵</a:figDesc></a:figure>\n"
-       "<a:note type='interpretation-uncertainty' subtype='layout' n='document'>未確定</a:note>"))
+  (str "\n<p xml:id='original'><ruby><rb><g ref='#g1'>犍</g>陀多</rb><rt>かんだた</rt></ruby>は"
+       "<ruby><rb>籠</rb><rt><choice><sic>さる</sic><corr>ざる</corr></choice></rt></ruby>をさげ"
+       "<note type='source-span'>原文の位置</note></p>\n"
+       "<p>前　後𠮷<lb/>続<pb/>末</p>\n"
+       "<floatingText><body>\n<p>看板</p>\n</body></floatingText>\n"
+       "<figure><graphic url='image.png'/><figDesc>挿絵</figDesc></figure>\n"
+       "<note type='interpretation-uncertainty' subtype='layout' n='document'>未確定</note>"))
 
 (defn content-id [value]
   (hash/format-sha256 (hash/sha256-string value)))
@@ -57,13 +57,13 @@
            (:view/id (view/from-tei (document (str/replace rich-body "\n" "\n    "))))))
     (is (= "ざる" (view/visible-text (-> ^Document (:view/document text-view)
                                        (.getElementsByTagNameNS view/tei-namespace "rt") (.item 1)))))
-    (is (= "正形" (:view/text (view/from-tei (document "<a:p><a:choice><a:orig>原形</a:orig><a:reg>正形</a:reg></a:choice></a:p>"))))))
+    (is (= "正形" (:view/text (view/from-tei (document "<p><choice><orig>原形</orig><reg>正形</reg></choice></p>"))))))
   (is (= "D\n\nCAP\nQ"
-         (:view/text (view/from-tei (document "<a:p>D</a:p><a:pb/><a:p><a:lb/></a:p><a:figure><a:figDesc>ALT</a:figDesc></a:figure><a:p><a:seg type='caption'>CAP</a:seg></a:p><a:p>Q</a:p>")))))
+         (:view/text (view/from-tei (document "<p>D</p><pb/><p><lb/></p><figure><figDesc>ALT</figDesc></figure><p><seg type='caption'>CAP</seg></p><p>Q</p>")))))
   (is (thrown? clojure.lang.ExceptionInfo (view/from-tei "<TEI><text><body/></text></TEI>"))))
 
 (deftest unresolved-glyphs-are-present-and-ineligible
-  (let [text-view (view/from-tei (document "<a:p>前<a:g ref='#g1'/>後</a:p>"))
+  (let [text-view (view/from-tei (document "<p>前<g ref='#g1'/>後</p>"))
         successful (analysis text-view "empty" [])]
     (is (= "前\uFFFC後" (:view/text text-view)))
     (is (= [[0 3] [6 9]] (:view/eligible-spans text-view)))
@@ -72,7 +72,7 @@
                  (layer/validate-layer text-view (assoc successful :layer/eligible-spans [[0 9]]))))))
 
 (deftest layers-bind-inputs-and-reject-invalid-ranges-and-domains
-  (let [text-view (view/from-tei (document "<a:p>犍𠮷陀多</a:p>"))
+  (let [text-view (view/from-tei (document "<p>犍𠮷陀多</p>"))
         original (analysis text-view "tokenizer" [["t1" 0 7 "token"]])]
     (is (= original (layer/read-layer text-view (layer/write-layer text-view original))))
     (doseq [[name changed] [["view" (assoc original :layer/view-id (content-id "wrong"))]
@@ -131,7 +131,7 @@
       (is (= (transcription (.item groups i))
              (transcription (-> (view/read-document replacement)
                                 (.getElementsByTagNameNS view/tei-namespace "spanGrp") (.item i))))))
-    (is (thrown? clojure.lang.ExceptionInfo (tei/enrich (document "<a:p>別の本文</a:p>") [entities])))
+    (is (thrown? clojure.lang.ExceptionInfo (tei/enrich (document "<p>別の本文</p>") [entities])))
     (let [dir (fs/create-temp-dir {:prefix "analysis-tei"})
           file (str (fs/path dir "tei.xml"))]
       (try
@@ -143,7 +143,7 @@
 (deftest file-boundary-validates-layers-and-refuses-overwrite
   (let [dir (fs/create-temp-dir {:prefix "analysis-files"})
         path #(str (fs/path dir %))
-        base (document "<a:p>本文</a:p>")
+        base (document "<p>本文</p>")
         text-view (view/from-tei base)]
     (try
       (spit (path "base.xml") base)
@@ -187,15 +187,15 @@
       (finally (engine/close-store! store) (fs/delete-tree dir)))))
 
 (deftest interpretation-influence-controls-eligibility-without-changing-reading
-  (let [base (document "<a:p>本文</a:p>")
+  (let [base (document "<p>本文</p>")
         with-problem (fn [aspects influence]
                        (let [problem {"kind" "unknown-notation" "code" "unknown-notation"
                                       "raw" "［＃未知］" "aspects" aspects "influence" influence
                                       "source_span" {"coordinate_system" "decoded_utf8" "start" 100 "end" 115}}]
-                         (str/replace base "</a:text>"
-                                      (str "<a:back><a:div><a:note type='interpretation-problem'>"
+                         (str/replace base "</text>"
+                                      (str "<back><div><note type='interpretation-problem'>"
                                            (json/write-json-str problem)
-                                           "</a:note></a:div></a:back></a:text>"))))
+                                           "</note></div></back></text>"))))
         ordinary (view/from-tei base)
         unknown (view/from-tei (with-problem ["content" "structure" "layout"] {"kind" "document"}))
         layout (view/from-tei (with-problem ["layout"] {"kind" "document"}))]
@@ -208,17 +208,17 @@
                  (layer/validate-layer unknown (analysis ordinary "tokens" [["t" 0 6 "token"]]))))))
 
 (deftest external-content-slot-limits-projections-without-invalidating-retained-prose
-  (let [base (document "<a:p>本文</a:p>")
+  (let [base (document "<p>本文</p>")
         problem {"kind" "content-outside-primary-input" "code" "content-outside-primary-input"
                  "raw" "［＃ここに表組入る、別ファイル（table.txt）参照］"
                  "aspects" ["content"] "influence" {"kind" "source-location"}
                  "source_span" {"coordinate_system" "decoded_utf8" "start" 100 "end" 175}}
         reading (fn [problem]
                   (view/from-tei
-                   (str/replace base "</a:text>"
-                                (str "<a:back><a:div><a:note type='interpretation-problem'>"
+                   (str/replace base "</text>"
+                                (str "<back><div><note type='interpretation-problem'>"
                                      (json/write-json-str problem)
-                                     "</a:note></a:div></a:back></a:text>"))))
+                                     "</note></div></back></text>"))))
         external (reading problem)]
     (is (= (:view/id (view/from-tei base)) (:view/id external)))
     (is (= [[0 6]] (:view/eligible-spans external)))

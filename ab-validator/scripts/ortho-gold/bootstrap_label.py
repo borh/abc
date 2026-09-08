@@ -50,7 +50,7 @@ def is_katakana_sentence_branch_b(text: str) -> bool:
     if not (cmap["hiragana"] == 0 and katakana_ratio > 0.5):
         return False
     # Branch B: oov_count = 0, so the proper-noun branch (oov_count==0 AND ratio>0.3) never fires.
-    # oov_ratio = 0/len(tokens) — but we stub tokens, so skip (0 > 0.2 is False).
+    # oov_ratio = 0/len(tokens); tokens are stubbed here, so skip (0 > 0.2 is False).
     # Character cascade:
     if (
         len(text) < 8

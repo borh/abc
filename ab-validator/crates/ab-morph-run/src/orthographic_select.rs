@@ -19,9 +19,9 @@ use arrow_array::{Array, StringArray};
 
 use crate::compact::source_id_from_aat_path;
 
-/// The old-**kana** `orthographic_style` values — those written in historical
-/// kana orthography (歴史的仮名遣い). Deliberately **excludes** `旧字新仮名`
-/// (old kanji but already-modern kana — a separate axis) and `その他`.
+/// The old-**kana** `orthographic_style` values: those written in historical
+/// kana orthography (歴史的仮名遣い). Excludes `旧字新仮名`
+/// (old kanji but modern kana, a separate axis) and `その他`.
 pub(crate) const OLD_KANA_STYLES: [&str; 2] = ["新字旧仮名", "旧字旧仮名"];
 
 /// The set of old-kana styles as owned strings, for use as an eligibility filter.

@@ -132,7 +132,7 @@ impl GaijiCanonicalOwned {
     }
 
     /// `true` when the source carried a mencode tail. Owned counterpart of
-    /// [`GaijiCanonical::has_mencode`] — store-free (only the variant matters).
+    /// [`GaijiCanonical::has_mencode`]: store-free (only the variant matters).
     #[must_use]
     pub fn has_mencode(self) -> bool {
         !matches!(self, Self::Unresolved { mencode: None })
@@ -185,13 +185,13 @@ pub struct Ruby {
     /// Render-only forward emphasis applied to the base. Set by the
     /// lowering pass when a declined forward directive `［＃「X」に傍点/罫囲み/
     /// 行右小書き/…］` (a [`ForwardOrigin::Referenced`](crate::ForwardOrigin)
-    /// leaf) names this ruby's base as its *unique* preceding referent — the
+    /// leaf) names this ruby's base as its *unique* preceding referent: the
     /// classic `｜X《y》…［＃「X」は罫囲み］` where the target is a ruby base and
     /// so cannot be pulled into a plain forward leaf (bouten-over-ruby is not
     /// representable). The renderer wraps the base in the attribute's emphasis
     /// element; the directive leaf stays `Referenced` (serializes the bracket
     /// verbatim, renders nothing), so `base_emphasis` is never read by
-    /// `to_source` — it is a render decoration, not a serialized field. As a
+    /// `to_source`; it is a render decoration, not a serialized field. As a
     /// `Copy` `Option<ForwardAttr>` it keeps `Ruby` `Copy` and inline.
     pub base_emphasis: Option<ForwardAttr>,
 }
@@ -404,17 +404,17 @@ pub enum Node {
     Format(ForwardFormat),
     /// Out-of-range glyph (外字).
     Gaiji(Gaiji),
-    /// Line-level format — `Copy` enum.
+    /// Line-level format: `Copy` enum.
     Line(LineFormat),
     /// Split annotation (割注).
     Warichu(Warichu),
-    /// Page break — unit.
+    /// Page break: unit.
     PageBreak,
-    /// Section break — `Copy` enum.
+    /// Section break: `Copy` enum.
     SectionBreak(SectionKind),
-    /// End of body — unit.
+    /// End of body: unit.
     BodyEnd,
-    /// Forced line break — unit.
+    /// Forced line break: unit.
     ForcedBreak,
     /// Heading (見出し).
     Heading(Heading),
@@ -432,7 +432,7 @@ pub enum Node {
     MarginNote(MarginNote),
     /// Associations to note text already present on separate source lines.
     TranscribedNotes(TranscribedNotesId),
-    /// Container — `Copy` enum.
+    /// Container: `Copy` enum.
     Container(Container),
 }
 
@@ -530,7 +530,7 @@ mod tests {
 
     #[test]
     fn payloads_are_copy() {
-        // Pin the Copy chain — every owned payload must stay Copy. If a future
+        // Pin the Copy chain: every owned payload must stay Copy. If a future
         // field breaks Copy, this fails to compile.
         const fn assert_copy<T: Copy>() {}
         assert_copy::<Content>();

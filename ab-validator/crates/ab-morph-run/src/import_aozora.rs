@@ -30,7 +30,7 @@ pub const ABC_METADATA_RECORD_SCHEMA_HASH: &str =
 /// `work_id` (`000731`). The person prefix is not part of work identity:
 /// the same card can appear under two person pages (author + translator).
 /// Returns `None` for non-conforming ids (e.g. `000025_kantou-…`), which
-/// the importer skips — the rarity reader falls back to per-source keys.
+/// the importer skips; the rarity reader falls back to per-source keys.
 fn parse_source_id(source_id: &str) -> Option<String> {
     let (person, rest) = source_id.split_once('_')?;
     let (card, hash) = rest.rsplit_once('-')?;

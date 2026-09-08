@@ -2,16 +2,9 @@
   "The release-level bibliographic catalog: one entry per published work,
   built from the same kura CAS blobs the release publishes from.
 
-  Why it is a signed protocol object rather than a serving-layer index: a
-  release manifest that cannot name its own contents is a weak archival
-  object, and soranoha-lv9 deposits manifests in Zenodo. Discovery data that
-  sits outside the verified chain cannot be cited as part of a release.
-
-  Facts only. The catalog carries `archive_stem` and the romanized name
-  parts, NOT the readable download filename those render into. A derived
-  value stored beside its own inputs can disagree with them, and this record
-  is append-only — the rendering rule belongs to the serving layer, which can
-  be corrected."
+  Carries bibliographic facts only (such as `archive_stem` and romanized name
+  parts) without rendered presentation strings. Filename rules and citation
+  formatting belong to the serving layer."
   (:require [charred.api :as json]
             [clojure.string :as string]
             [soranoha.kura.cas :as cas]))
@@ -28,7 +21,7 @@
 
 (defn- archive-stem
   "The Aozora archive's own name for the work's primary text member, without
-  its extension — `92_ruby_164.txt` becomes `92_ruby_164`. Aozora volunteers
+  its extension (`92_ruby_164.txt` becomes `92_ruby_164`). Aozora volunteers
   hand-curated these names with word boundaries, which is why the serving
   layer renders download filenames from this rather than from a mechanical
   romanization of the title reading. Every published work has exactly one

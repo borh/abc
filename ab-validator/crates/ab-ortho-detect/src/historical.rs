@@ -1,21 +1,19 @@
 //! Historical-kana → modern-kana surface modernizer
 //!
-//! Rewrites 歴史的仮名遣い to 現代仮名遣い at the **surface** level — keep the kanji,
-//! rewrite only the historical *kana* — so an analyzer with no historical
-//! dictionary (sudachi) can be fed modernized input, and every analyzer sees the
-//! identical modernized text for cross-analyzer comparability.
+//! Rewrites 歴史的仮名遣い to 現代仮名遣い at the **surface** level (keeping kanji and
+//! rewriting historical kana only) so analyzers without historical dictionaries
+//! see identical modernized text for cross-analyzer comparability.
 //!
 //! ## Modernization rules
 //!
-//! 1. **POS particle guard** — a 助詞 は/へ/を keeps its historical spelling
+//! 1. **POS particle guard**: a 助詞 は/へ/を keeps its historical spelling
 //!    (現代仮名遣い keeps the particles). Requires the segmentation oracle's POS.
-//! 2. **Digraph / long-vowel tokens** (`pron` carries a `ー`) — reconstruct from
-//!    the modern reading: `expand_long_vowel(kata_to_hira(pron))`. `pron` is the
-//!    only field that resolves けふ→きょう, てふ→ちょう, かう→こう. This carries
-//!    sokuon (ッ→っ) and yōon (ャ→ゃ) for free.
-//! 3. **Everything else** — per-char surface rewrite over the token's kana (kanji
-//!    pass through unchanged): the context-free obsolete-kana swaps (ゐ→い, ゑ→え,
-//!    yotsugana づ→ず, ぢ→じ) plus the word-medial は/ひ/ふ/へ/ほ → わ/い/う/え/お
+//! 2. **Digraph / long-vowel tokens** (`pron` carries a `ー`): reconstruct from
+//!    the modern reading: `expand_long_vowel(kata_to_hira(pron))`. `pron` resolves
+//!    けふ→きょう, てふ→ちょう, かう→こう, carrying sokuon (ッ→っ) and yōon (ャ→ゃ).
+//! 3. **Everything else**: per-char surface rewrite over the token's kana (kanji
+//!    pass through unchanged): context-free obsolete-kana swaps (ゐ→い, ゑ→え,
+//!    yotsugana づ→ず, ぢ→じ) plus word-medial は/ひ/ふ/へ/ほ → わ/い/う/え/お
 //!    (medial = not the token-initial char) and っ-before-て/た.
 //!
 //! No lexical exception table is applied. Segmentation boundaries and modern
@@ -67,7 +65,7 @@ fn modernize(surface: &str, pron: &str, pos1: &str) -> String {
     if pos1 == "助詞" && matches!(surface, "は" | "へ" | "を") {
         return surface.to_owned();
     }
-    // 2. Digraph / long vowel: reconstruct from the modern reading — but ONLY for
+    // 2. Digraph / long vowel: reconstruct from the modern reading, but only for
     //    all-kana tokens. `pron` is the reading of the WHOLE token, so applying it
     //    to a kanji-bearing token (日曜, pron ニチヨー) would replace the kanji with
     //    kana (→にちよう). The ground-truth harness measured this path on all-kana
@@ -135,8 +133,8 @@ fn is_kana(c: char) -> bool {
     ('\u{3041}'..='\u{3096}').contains(&c) || ('\u{30A1}'..='\u{30FA}').contains(&c) || c == 'ー'
 }
 
-/// `true` if `surface` is non-empty and entirely kana — the gate on the
-/// `pron`-reconstruction path, which would otherwise erase a token's kanji.
+/// `true` if `surface` is non-empty and entirely kana (gates the
+/// `pron`-reconstruction path to avoid erasing a token's kanji).
 fn all_kana(surface: &str) -> bool {
     !surface.is_empty() && surface.chars().all(is_kana)
 }
@@ -161,10 +159,10 @@ fn vowel_of(c: char) -> char {
 
 /// A stable content hash of the modernization rule set. Bound into
 /// [`OrthoDetectorId::HistoricalRewriteV1`](crate::types::OrthoDetectorId) so a
-/// rule edit changes the detector (and thus policy) identity — I2-D17's "detector
-/// id binds a rules hash" requirement. Computed over a canonical dump of the rule
-/// tables (below), so editing the tables here moves the hash; the version tag
-/// guards against an accidental table-order permutation hashing the same.
+/// rule edit changes the detector and policy identity.
+/// Computed over a canonical dump of the rule tables (below), so editing the
+/// tables here moves the hash; the version tag guards against an accidental
+/// table-order permutation hashing the same.
 #[must_use]
 pub fn rules_hash() -> String {
     use sha2::{Digest, Sha256};
@@ -409,7 +407,7 @@ mod tests {
     #[test]
     fn kanji_token_with_long_vowel_reading_is_not_replaced_by_reading() {
         // Regression: 日曜 (pron ニチヨー) and 蝶々 (pron チョーチョー) must NOT take
-        // the pron path — that would erase the kanji (→にちよう / ちょうちょ).
+        // the pron path; that would erase the kanji (→にちよう / ちょうちょ).
         // Not all-kana ⇒ kana-run rewrite ⇒ no historical kana ⇒ unchanged.
         assert_eq!(modernize_token(&tok("日曜", "ニチヨー", "名詞")), None);
         assert_eq!(modernize_token(&tok("蝶々", "チョーチョー", "名詞")), None);

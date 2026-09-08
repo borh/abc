@@ -1,8 +1,8 @@
 //! Tier2 degraded-form matcher for the notation-hygiene layers.
 //!
 //! [`degraded_directive`] maps a `［＃…］` directive body that the parser keeps
-//! as `DirectiveKind::Unknown` — and that Tier1 ([`crate::lint::canonical_directive`])
-//! deliberately declines — to a directly parser-recognized spelling. Where
+//! as `DirectiveKind::Unknown` (and that Tier1, [`crate::lint::canonical_directive`],
+//! excludes) to a directly parser-recognized spelling. Where
 //! Tier1 is a *zero-false-positive* map of verified near-misses that lose no
 //! meaning, Tier2 is the opt-in home for the reductions Tier1 must refuse
 //! because they are **lossy** (a spelling or scope the parser preserves is
@@ -11,7 +11,7 @@
 //!
 //! Contract (looser input, identical output rigor to Tier1):
 //! - Input: a degraded body Tier1's map refuses (`canonical_directive` is `None`).
-//! - Output: a **directly** parser-recognized spelling — never a Tier1 *key*,
+//! - Output: a **directly** parser-recognized spelling, never a Tier1 *key*,
 //!   because the opt-in renderer does a single serialize→lex pass
 //!   ([`crate::lint`] doc), so a Tier1-key output would re-lex to Unknown and
 //!   render inert.
@@ -20,7 +20,7 @@
 //!   for every Tier2 key.
 //!
 //! Invoked **only** by the opt-in renderer/interpreter
-//! (`RenderOptions::directives == Degraded` / `aozora render --degraded`) — never
+//! (`RenderOptions::directives == Degraded` / `aozora render --degraded`), never
 //! by the parser, the default lint, the default `fmt`, or `fmt --fix`.
 //! Because `DirectiveNormalization::Degraded` is constructed at a single
 //! ephemeral render site, a Tier2 misfire can reach only `--degraded` render
@@ -42,11 +42,11 @@ pub fn degraded_directive(body: &str) -> Option<Cow<'static, str>> {
     // ゴシック体 is distinct from 太字; folding it to bold would lose meaning.
     // The size+gothic compound 中文字、ゴシック体 remains verbatim Unknown.
 
-    // D2 — ここから最後まで{N}字下げ → ここから{N}字下げ. LOSSY: 最後まで marks an
+    // D2: ここから最後まで{N}字下げ → ここから{N}字下げ. LOSSY: 最後まで marks an
     // indent that auto-closes at document/section end; the parser has no
-    // until-end concept. As a render-only reduction this is faithful — the
+    // until-end concept. As a render-only reduction this is faithful: the
     // EOF-drain closes the open block at document end, which is what 最後まで
-    // means — but as a *source* rewrite it would strand an unclosed block, so
+    // means, but as a *source* rewrite it would strand an unclosed block, so
     // it must never reach fmt.
     if let Some(n) = body
         .strip_prefix("ここから最後まで")
@@ -56,7 +56,7 @@ pub fn degraded_directive(body: &str) -> Option<Cow<'static, str>> {
         return Some(Cow::Owned(format!("ここから{n}字下げ")));
     }
 
-    // D5 — 行末から{N}字上で地付き → 地から{N}字上げ. JUDGMENT: re-projects a
+    // D5: 行末から{N}字上で地付き → 地から{N}字上げ. JUDGMENT: re-projects a
     // line-end + up + geochi description onto the bottom-anchored raise leaf.
     if let Some(n) = body
         .strip_prefix("行末から")
@@ -66,12 +66,12 @@ pub fn degraded_directive(body: &str) -> Option<Cow<'static, str>> {
         return Some(Cow::Owned(format!("地から{n}字上げ")));
     }
 
-    // D6 — 下げて[、]地より{N}字あきで / 字アキで → 地から{N}字上げ. JUDGMENT/LOSSY,
+    // D6: 下げて[、]地より{N}字あきで / 字アキで → 地から{N}字上げ. JUDGMENT/LOSSY,
     // because the both-margin parser only anchors when a leading 字下げ
     // *count* is present, so the count-less 下げて head-indent has no needle and the
     // whole body falls to Unknown. The trailing 地より{N}字あきで supplies the
     // gap-from-bottom, folded onto the bottom-anchored raise leaf via the same
-    // アキ≡上げ identity; the unquantified head-indent is dropped — lossy, hence
+    // アキ≡上げ identity; the unquantified head-indent is dropped (lossy, hence
     // render-only. Both the comma'd (下げて、地より) and bare (下げて地より) corpus
     // spellings resolve.
     for prefix in ["下げて、地より", "下げて地より"] {
@@ -116,7 +116,7 @@ mod tests {
             degraded_directive("行末から2字上で地付き").as_deref(),
             Some("地から2字上げ")
         );
-        // D6 — both the comma'd and bare 下げて…字あきで spellings.
+        // D6: both the comma'd and bare 下げて…字あきで spellings.
         assert_eq!(
             degraded_directive("下げて、地より2字あきで").as_deref(),
             Some("地から2字上げ")

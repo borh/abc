@@ -1,6 +1,6 @@
 (ns soranoha.za.oracle-test
   "The run-report boundary decode: external evidence is rejected before
-  the oracle can consume it — duplicate keys, malformed coordinate
+  the oracle can consume it: duplicate keys, malformed coordinate
   values, non-hex trace keys, and stages the coordinate table does not
   cover all refuse decoding."
   (:require [clojure.string :as str]
@@ -83,7 +83,7 @@
     (is (= :malformed-work-evidence
            (reject-reason (report-json :replace-from "\"cached\":{\"parse\":false}"
                                        :replace-to "\"cached\":{\"ghost\":false}")))))
-  (testing "work evidence omitting a declared stage — an execution silently
+  (testing "work evidence omitting a declared stage: an execution silently
     erased from both maps must refuse decoding, not pass as a subset"
     (is (= :malformed-work-evidence
            (reject-reason (report-json :replace-from "\"cached\":{\"parse\":false}"

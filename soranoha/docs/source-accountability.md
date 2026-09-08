@@ -14,7 +14,7 @@ The native command is `ab-source-inventory --source source.txt --matrix matrix.t
 `AB_SOURCE_INVENTORY_BIN` and `AB_AOZORA_SYNTAX_MATRIX`.
 
 Lexical recognition does not establish a correct interpretation. Interpreter
-claims describe what the parser believes it understood; missing claims remain
+claims describe what the parser recognized; missing claims remain
 unaccounted. Neither source preservation nor an empty problem list proves semantic
 coverage. Source conformance tests exercise expected values and annotation
 placement for specific examples. TEI profile validation checks the exported

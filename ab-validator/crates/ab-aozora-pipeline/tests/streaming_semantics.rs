@@ -8,7 +8,7 @@
 //!
 //! * Iterators may be dropped at any point with no side-effect leakage
 //!   (no panics, accumulated diagnostics still readable).
-//! * Iteration is *lazy* — `.next()` does not silently drain its
+//! * Iteration is *lazy*: `.next()` does not silently drain its
 //!   upstream past the byte position it actually emits.
 //! * `.take(N)` and `.collect().into_iter().take(N)` agree.
 //! * EOF-time `Unclosed` synthesis is observable on the public stream.
@@ -35,7 +35,7 @@ use ab_aozora_syntax::alloc::Allocator;
 #[test]
 fn pair_stream_drop_partway_does_not_panic_and_diagnostics_remain_readable() {
     // 3 simple bracket pairs produce 9 events (Open, Solo(Hash), Text,
-    // Close) ×3 minus the missing Solo(Hash) bodies — but here we don't
+    // Close) ×3 minus the missing Solo(Hash) bodies; here we don't
     // care about the exact shape, only that early drop is clean.
     let src = "[X][Y][Z]";
     let mut stream = pair(tokenize(src));
@@ -64,7 +64,7 @@ fn classify_stream_drop_partway_does_not_corrupt_global_state() {
         let mut pair_stream = pair(tokenize(src));
         let mut classify_stream = classify(&mut pair_stream, src, &mut alloc);
         let _s0 = classify_stream.next();
-        // Drop both streams here — `classify_stream` first (last
+        // Drop both streams here: `classify_stream` first (last
         // declared), then `pair_stream`.
     }
 
@@ -90,7 +90,7 @@ fn classify_stream_drop_partway_does_not_corrupt_global_state() {
 ///
 /// Concretely: take the first 10 events from a long input and check
 /// the maximum source byte position observed stays well below the
-/// full input length — proves the stream did not silently drain its
+/// full input length; proves the stream did not silently drain its
 /// upstream all the way to EOF on the first `next()`.
 #[test]
 fn pair_stream_take_n_does_not_exhaust_underlying_source() {

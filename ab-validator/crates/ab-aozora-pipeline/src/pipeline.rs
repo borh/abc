@@ -8,10 +8,10 @@
 //!
 //! # Two entry shapes
 //!
-//! - [`Pipeline::run_to_completion`] — one-shot, equivalent to [`crate::lex`].
+//! - [`Pipeline::run_to_completion`]: one-shot, equivalent to [`crate::lex`].
 //!   Used by `Document::parse` and the FFI / WASM / Python drivers.
 //! - [`Pipeline::new`] → `.sanitize()` → `.tokenize()` → `.pair()` →
-//!   `.build()` — explicit chain. Use for inspection / instrumentation: each
+//!   `.build()`: explicit chain. Use for inspection / instrumentation: each
 //!   intermediate state exposes accessors (`.sanitized_text()`, `.tokens()`,
 //!   `.events()`, `.diagnostics()`) so callers can probe the partial output
 //!   without re-running the pipeline.
@@ -21,7 +21,7 @@
 //! Each state marker is a field-bound struct holding exactly the stage outputs
 //! it has produced (`Sanitized` carries the sanitized `String`; `Tokenized`
 //! adds the token `Vec`; …). Reading `.sanitized_text()` from
-//! `Pipeline<'_, Sanitized>` is a field projection on the state struct — no
+//! `Pipeline<'_, Sanitized>` is a field projection on the state struct; no
 //! `Option::expect` lives in production code.
 //!
 //! # Owned, arena-free
@@ -36,7 +36,7 @@
 //! # Why `build` is the terminal transition
 //!
 //! The classify stage requires `&mut Allocator`. We collapse the classify
-//! stage + the normalize fold into a single terminal `.build()` call —
+//! stage + the normalize fold into a single terminal `.build()` call;
 //! inspection up through `Paired` works freely; the final pass is atomic.
 
 use std::collections::BTreeSet;
@@ -57,11 +57,11 @@ use std::collections::BTreeMap;
 use crate::fold::{Normalizer, scope_closer_matches};
 
 // =====================================================================
-// State markers (field-bound — each state carries the stage output it is
+// State markers (field-bound: each state carries the stage output it is
 // responsible for).
 // =====================================================================
 
-/// Initial state — no stage has run yet.
+/// Initial state: no stage has run yet.
 #[derive(Debug, Clone, Copy)]
 pub struct Source;
 
@@ -322,7 +322,7 @@ impl Pipeline<'_, Paired> {
             // Ruby-base forward emphasis: a directive the lowering pass
             // decorated onto a preceding ruby base is no longer an unstyled
             // decline, so drop its `forward_referent_not_stylable` warning. Only
-            // the decorated directive spans are suppressed — cross-line /
+            // the decorated directive spans are suppressed; cross-line /
             // multi-target / prior-construct declines keep their warning.
             if !ruby_base_decorated.is_empty() {
                 classify_diagnostics.retain(|d| {
@@ -386,16 +386,16 @@ impl Pipeline<'_, Paired> {
 ///
 /// This is the seam the normalization waist is built on. It performs the
 /// source-byte **drop-superset** the streaming window did: when a later span's
-/// source span is a proper superset of an earlier one — a backward pull-back,
+/// source span is a proper superset of an earlier one (a backward pull-back,
 /// e.g. a promoted 大/中/小 heading reclaiming its referent line `序章\n`, or a
-/// forward node reclaiming its predecessor literal — the subsumed earlier span
+/// forward node reclaiming its predecessor literal), the subsumed earlier span
 /// is dropped, so the normalizer (which appends in source order) does not emit
 /// the reclaimed text twice. This overlap-truncate cured the round-trip
 /// pathology; the surviving [`ForwardOrigin`] on each forward leaf is necessary
 /// provenance.
 ///
 /// Returns the lowered spans and the set of forward-directive spans the
-/// ruby-base emphasis phase decorated — the builder suppresses those
+/// ruby-base emphasis phase decorated; the builder suppresses those
 /// directives' `forward_referent_not_stylable` warnings.
 fn lower_spans(
     spans: Vec<ClassifiedSpan>,
@@ -417,7 +417,7 @@ fn lower_spans(
                 out.pop();
             } else if back_is_plain && bs < ss && ss < be {
                 // Partial overlap: `span` (a `Reclaimed` forward node) pulled its
-                // source region back into the *tail* of a committed plain run —
+                // source region back into the *tail* of a committed plain run:
                 // truncate the plain so the literal is emitted once, by the node
                 // (issue, unbounded growth).
                 if let Some(last) = out.last_mut() {
@@ -749,10 +749,10 @@ fn resolve_adjacent_note_targets(
 
 /// Whether a forward attribute decorates a whole run as a single emphasis
 /// wrapper, so it can style a ruby base. Excludes the sub-character /
-/// target-splitting attributes — [`ForwardAttr::AccentDot`] (addresses letters
+/// target-splitting attributes: [`ForwardAttr::AccentDot`] (addresses letters
 /// via an interned directive body the ruby cannot carry),
 /// [`ForwardAttr::Accent`] (composes a single Latin letter), and
-/// [`ForwardAttr::Fraction`] (splits the target on a slash) — which are never
+/// [`ForwardAttr::Fraction`] (splits the target on a slash), which are never
 /// meaningful over a kanji base and stay declined.
 const fn attr_decorates_ruby_base(attr: ForwardAttr) -> bool {
     !matches!(
@@ -772,7 +772,7 @@ const fn attr_decorates_ruby_base(attr: ForwardAttr) -> bool {
 ///
 /// Uniqueness is load-bearing, not "nearest ruby wins": the target must match
 /// **exactly one** preceding ruby base and **no** preceding plain-text run
-/// anywhere in the look-back — a plain copy that precedes the ruby (cross-line
+/// anywhere in the look-back (a plain copy that precedes the ruby (cross-line
 /// or same-line, out of the classifier's reset window) is a competing referent,
 /// so we decline and keep the honest `forward_referent_not_stylable` warning.
 /// Returns the directive spans decorated, so the builder can suppress exactly
@@ -819,8 +819,8 @@ fn decorate_ruby_bases(out: &mut [ClassifiedSpan], source: &str, store: &NodeSto
                         ruby_match = Some(j);
                     }
                 }
-                // Any preceding plain run that carries the target text — before
-                // the ruby, so invisible to the classifier's reset window — is a
+                // Any preceding plain run that carries the target text (before
+                // the ruby, so invisible to the classifier's reset window) is a
                 // competing referent that forces a decline.
                 SpanKind::Plain(_) => {
                     let s =

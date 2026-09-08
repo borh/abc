@@ -1,7 +1,7 @@
 """Shared fresh/stale decision rule for the batch-run skip gates.
 
-Both skip gates — AAT dumps (reports/aat-fidelity/generator_skip.py) and
-morph-warehouse runs (reports/morph-warehouse/warehouse_index.py) — reuse the
+Both skip gates (AAT dumps in reports/aat-fidelity/generator_skip.py and
+morph-warehouse runs in reports/morph-warehouse/warehouse_index.py) reuse the
 same rule: an existing output is FRESH iff its recorded input-set hash equals the
 current inputs' hash AND its outputs still re-hash to the recorded output hash. An
 absent/unreadable output is never fresh (fail toward recompute). This module holds

@@ -4,7 +4,7 @@
 
 (defn root
   "Resolve SORANOHA_ROOT. `explicit` (a CLI --root value) wins over the
-  environment; there is no default — an unconfigured root is an error, never a
+  environment; there is no default: an unconfigured root is an error, never a
   guessed location."
   ([] (root nil))
   ([explicit]

@@ -120,7 +120,7 @@ assert "LANE-PROOF" in metadata["adapter_version"], metadata["adapter_version"]
 PY
 
 # Test 3: a differing override binary moves recorded identity (a stale dump
-# against a NEW override must never be served as fresh) — proves renderer_dir
+# against a NEW override must never be served as fresh); proves renderer_dir
 # standing in for the override's containing directory actually participates
 # in input_set_hash, not merely adapter_binary_hash.
 stub2="$tmp/stub2-ab-aozora"

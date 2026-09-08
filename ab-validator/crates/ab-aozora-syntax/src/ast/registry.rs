@@ -1,4 +1,4 @@
-//! Whole-document sentinel registry — single Eytzinger-keyed table.
+//! Whole-document sentinel registry: single Eytzinger-keyed table.
 //!
 //! [`NodeRef`] is the unified registry-hit view: inline payloads carry an
 //! owned [`Node`]; container discriminants carry `RegionFormat` /
@@ -59,7 +59,7 @@ impl NodeRef {
     }
 }
 
-/// Whole-document owned registry — single Eytzinger-keyed table.
+/// Whole-document owned registry: single Eytzinger-keyed table.
 ///
 /// `node_at` is one binary search; every entry's sentinel kind is encoded by
 /// the [`NodeRef`] variant. Not `Copy` (the map owns a `Vec`).

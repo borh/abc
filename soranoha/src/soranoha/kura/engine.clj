@@ -36,7 +36,7 @@
 
 (defn run-stage!
   "Run one derivation. `inputs` is a map of string names to blob hashes or
-  plain JSON param values — it is hashed as-is into the derivation key, so a
+  plain JSON param values; it is hashed as-is into the derivation key, so a
   caller must pass content hashes (not paths) for anything file-like.
   Returns {:outputs {name hex} :trace-key k :cached? bool}.
 

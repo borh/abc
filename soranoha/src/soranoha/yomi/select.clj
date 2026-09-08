@@ -59,11 +59,10 @@
 
   `<work-id>_<card-directory>`, six digits each. Both components identify the
   work; neither describes how the build reached it. The archive filename stem
-  and its `ruby`/`txt` format variant were deliberately dropped, because they
-  record which download the build fetched — a change in edition handling would
-  otherwise either move the identifier of an unchanged text or freeze a stale
-  one. Exact edition identity is carried per work by `source_content_hash` in
-  the manifest, which is where it belongs.
+  and format variants are omitted because they record fetch details rather than
+  text identity: changing edition handling would otherwise move the identifier
+  of an unchanged text or freeze a stale one. Exact edition identity is carried
+  per work by `source_content_hash` in the manifest.
 
   The card directory is retained even though work id alone is unique across
   the present corpus: it is the documented disambiguator for one work_id filed

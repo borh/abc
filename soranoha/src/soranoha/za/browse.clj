@@ -3,7 +3,7 @@
   bytes.
 
   Presentation, not publication. Nothing here is named by a manifest, hashed
-  into the chain, or checked by a verifier — a reader who wants the published
+  into the chain, or checked by a verifier: a reader who wants the published
   record follows the links these pages carry to `/catalog.json`, the
   manifests and the blobs. What the pages add is a way in: without them the
   only documented entry point is a 64-character hex string.
@@ -23,8 +23,6 @@
             [soranoha.za.html :as html]
             [soranoha.za.naming :as naming]
             [soranoha.za.reading :as reading]))
-
-;; ---------------------------------------------------------------- chrome
 
 (def ^:private site-name "Soranoha")
 
@@ -223,7 +221,7 @@
 
 ;; Personal names, bylines and download filenames are rendered by
 ;; soranoha.za.naming, which the bulk archives share: a name on a page and
-;; the name inside a ZIP have to agree, and one renderer is how they do.
+;; the name inside a ZIP must agree.
 (def ^:private person-name-ja naming/person-name-ja)
 (def ^:private person-name-romaji naming/person-name-romaji)
 (def ^:private person-label naming/person-label)
@@ -281,8 +279,6 @@
         head (when-not (string/blank? code) (str (first code)))]
     (if (some #(= head (first %)) (butlast ndc-classes)) head "other")))
 
-;; ----------------------------------------------------------------- parts
-
 (defn- work-link [work]
   (let [slug (get work "slug")]
     [:li
@@ -334,8 +330,6 @@
       (list [:dt (bilingual "作品数" "Works")] [:dd (str work-count)]))
     [:dt (bilingual "目録" "Catalog")]
     [:dd [:a {:href "/catalog.json"} "/catalog.json"]]]])
-
-;; ----------------------------------------------------------------- pages
 
 (defn- landing [head-hex works withdrawn-count]
   (chrome
@@ -681,7 +675,7 @@
      [:h2 (bilingual "権利者の方へ" "If you hold rights in a work")]
      [:p (bilingual
           "公開しているのは権利が消滅したと判断した作品のみですが、この規模では判断を誤ることがあります。作品の識別子（URL に現れる 000092_000879 の形）または青空文庫のカードと、主張の根拠をお知らせください。正式な法的通知である必要はありません。"
-          "Only works assessed as free of subsisting rights are published, but a corpus this size will eventually be wrong about one. Send the work identifier — the 000092_000879 form visible in the URL — or the Aozora card, together with the basis of the claim. It does not need to be a formal legal notice.")]
+          "Only works assessed as free of subsisting rights are published, but a corpus this size will eventually be wrong about one. Send the work identifier (the 000092_000879 form visible in the URL) or the Aozora card, together with the basis of the claim. It does not need to be a formal legal notice.")]
      [:p [:a {:href "https://orcid.org/0000-0003-2246-8774"} "https://orcid.org/0000-0003-2246-8774"]]
      [:p (bilingual
           "取り下げは署名された記録として公開されます。作品は現在の版から外れ、目録からも消え、取り下げ記録が /withdrawn/<識別子>.json に残ります。追記のみの記録なので、過去の版は書き換えません。"
@@ -719,8 +713,6 @@
           "For work that must be reproducible, cite the artifact by content address: every artifact has an id of the form snh:1:<type>:<sha256>, and the manifest naming it is signed.")]
      [:p [:a {:href "/catalog.json"} "/catalog.json"] " · "
       [:a {:href (str "/releases/" head-hex ".json")} (str "/releases/" head-hex ".json")]]]]))
-
-;; ------------------------------------------------------------- assembly
 
 (defn- utf8 ^bytes [^String s] (.getBytes s "UTF-8"))
 

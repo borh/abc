@@ -121,7 +121,7 @@ fn check(source: &str) {
 }
 
 // ----------------------------------------------------------------------
-// Hand-curated regression anchors — same shapes as the prior arena
+// Hand-curated regression anchors: same shapes as the prior arena
 // equivalence test. Each anchor exercises one variant family.
 // ----------------------------------------------------------------------
 

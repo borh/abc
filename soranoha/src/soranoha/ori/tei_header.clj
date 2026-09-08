@@ -330,8 +330,8 @@
   Without a declaration clojure.data.xml invents a prefix for the namespace
   and emits `<a:TEI xmlns:a=\"...\">`. That is namespace-correct and every
   namespace-aware processor reads it, but it is not the shape TEI corpora are
-  published in, and researcher-written XPath — copied from teaching material,
-  or run through tooling that ignores namespaces — is written against
+  published in, and researcher-written XPath (copied from teaching material,
+  or run through tooling that ignores namespaces) is written against
   unprefixed element names. A prefixed serialisation returns empty node sets
   there rather than failing visibly."
   [element]

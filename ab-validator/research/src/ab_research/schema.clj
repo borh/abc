@@ -34,7 +34,7 @@
           v))))
 
 ;; ---------------------------------------------------------------------------
-;; SchemaRegistry — created once at namespace load; thread-safe and caches
+;; SchemaRegistry: created once at namespace load; thread-safe and caches
 ;; Schema objects keyed by $id / content. Draft 2020-12 is the default dialect
 ;; when $schema is absent from the schema data.
 ;; ---------------------------------------------------------------------------

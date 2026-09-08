@@ -2,7 +2,7 @@
 """Fail-closed AAT delta audit between two dumps.
 
 container-rewrite (rotation A): every difference must be explained by the
-three-class taxonomy —
+three-class taxonomy:
   1. identity pointers (/meta/adapter_version),
   2. works whose baseline carries well-paired keigakomi/yokogumi container
      markers, checked by FORWARD REWRITE + DEEP EQUALITY: an independent
@@ -17,9 +17,9 @@ deeply equal; candidate spans must satisfy field invariants; the
 line-synthesis tripline flags wholesale line=1 output.
 
 v2-migration: forward-rewrites a schema-v1 baseline
-document to its expected schema-v2 form — layout key renames, left-ruby
+document to its expected schema-v2 form (layout key renames, left-ruby
 typing, jizume_block formation (paired + compound), a warnings-shape
-projection, and the root version bump — and requires deep equality with
+projection, and the root version bump) and requires deep equality with
 the v2 candidate. Mirrors ab-aat/src/lib.rs's emission
 semantics ONLY (never corpus-fitted); a mismatch on real corpus data is a
 controller escalation, same discipline as container-rewrite.
@@ -36,7 +36,7 @@ and every other meta key (besides adapter_version) must stay byte-equal.
 
 Exit 0 = PASS. Exit 2 = ANY unclassified difference or reference error
 (fail-closed; there is no exit 1). A container-rewrite mismatch on real
-corpus data is an ESCALATION per the spec — do not weaken the grammar to
+corpus data is an ESCALATION per the spec; do not weaken the grammar to
 invariants.
 """
 
@@ -58,7 +58,7 @@ _bare_toggle_spec.loader.exec_module(_bare_toggle_placement)
 # Normative Contract 1 grammar (reports/aat-fidelity/bare-toggle-placement.py):
 # classify_tokens is the two-pass model, TOKEN_KIND maps a marker string to
 # its (construct, open/close) pair. bare-toggle-adoption mode derives its
-# expectations from these — never from the placement report.
+# expectations from these, never from the placement report.
 classify_tokens = _bare_toggle_placement.classify_tokens
 TOKEN_KIND = _bare_toggle_placement.TOKEN_KIND
 
@@ -110,7 +110,7 @@ def open_kind(node):
     `［＃ここからN字詰め］` is the `line-width` container family (upstream
     notation spec §6.6, `line-width-open`), NOT a typed `jizume_block`; it
     stays a raw containerOpen/containerClose pair. No pure-jizume open is
-    admitted here — jizume width is only ever adopted from the compound
+    admitted here; jizume width is only ever adopted from the compound
     indent wrap in `adopt_compound_jizume`.
     """
     if is_raw(node, "containerOpen"):
@@ -186,12 +186,12 @@ def parse_aozora_number_before(source, needle):
 
 def jizume_open_width(source):
     """Python transcription of `jizume_open_chars`: the width of a `字詰め`
-    open marker — the standalone line-width form or the FINAL clause of a
+    open marker: the standalone line-width form or the final clause of a
     compound indent container. `None` if `source` isn't a jizume-open marker.
 
     C3 gate fix: the standalone `［＃ここからN字詰め］` is the `line-width`
     container family (spec §6.6, `line-width-open`) and stays a raw
-    containerOpen/containerClose pair — it is never formed into a
+    containerOpen/containerClose pair; it is never formed into a
     `jizume_block` by the forward rewrite (mirror of the Rust recognizer,
     whose standalone emission arm was likewise removed). This predicate is
     retained as the documented mirror of the retained `jizume_open_chars`."""
@@ -224,7 +224,7 @@ def strip_trailing_newline(node):
 
 def make_para(content):
     # Mirrors push_paragraph_if_not_empty: only an EMPTY content list is
-    # dropped. Empty text nodes produced by boundary stripping stay —
+    # dropped. Empty text nodes produced by boundary stripping stay;
     # the Rust strip helpers mutate values without removing nodes.
     return {"kind": "paragraph", "content": list(content)} if content else None
 
@@ -236,7 +236,7 @@ def is_empty_text(node):
 def is_wrapper_style(node):
     # Block-assembly style wrapper (chitsuki/burasage): assembled AROUND
     # flat stream nodes and carries NO span field. Inline styles built in
-    # inline_content carry a span and existed whole in the flat stream —
+    # inline_content carry a span and existed whole in the flat stream;
     # Rust's boundary strip saw them as non-text nodes and no-op'd.
     return (
         isinstance(node, dict)
@@ -249,12 +249,12 @@ def is_wrapper_style(node):
 def is_container_derived_block(block):
     # Blocks assembled FROM a containerOpen marker: in Rust's flat close
     # scan (find_matching_container_close) that marker was still inline
-    # and ABORTED the scan — jisage_block from ［＃ここから…字下げ］,
+    # and aborted the scan: jisage_block from ［＃ここから…字下げ］,
     # burasage-style paragraphs from ［＃ここから…折り返して…］. keigakomi_block
     # / yokogumi_block / jizume_block are the SAME abort source for
     # v2-migration mode, whose baseline already has them pre-classified
     # (unlike container-rewrite mode, where they're this pass's OWN
-    # output and never appear pre-formed in `blocks[j]` for j>i — so this
+    # output and never appear pre-formed in `blocks[j]` for j>i, so this
     # is a harmless no-op there). Chitsuki paragraphs (alignEnd) and
     # headings (headingHint) come from non-containerOpen markers and do
     # not abort.
@@ -273,7 +273,7 @@ def is_container_derived_block(block):
 def strip_trailing_leaf(node):
     # Flat-stream trailing strip when the flat-last node was consumed into
     # a no-span style wrapper: descend to the last leaf and strip if it is
-    # text. Never descend into span-carrying nodes — Rust saw those whole
+    # text. Never descend into span-carrying nodes: Rust saw those whole
     # in the stream and no-op'd on them.
     if isinstance(node, dict) and node.get("kind") == "text":
         return strip_trailing_newline(node)
@@ -292,7 +292,7 @@ def strip_trailing_in_block(block):
     Rust strips the flat inner stream's LAST node BEFORE assembly
     (strip_boundary_newlines). When the close marker starts its own
     paragraph (tail empty), that node is the last stream node consumed by
-    the last middle block — only paragraph-kind blocks (plain, or
+    the last middle block: only paragraph-kind blocks (plain, or
     chitsuki/burasage no-span style wrappers) end on a stream node.
     jisage_block ends on its consumed close marker and heading on its
     consumed hint: Rust no-op'd on those raws, so we never descend there.
@@ -347,7 +347,7 @@ def rewrite_blocks(blocks):
 
     Admits only the fixed-marker container constructs (CONSTRUCTS). The
     standalone `字詰め` line-width form is deliberately NOT admitted (C3 gate
-    fix) — it stays a raw containerOpen/containerClose pair per spec §6.6.
+    fix); it stays a raw containerOpen/containerClose pair per spec §6.6.
     """
     out, count, i = [], 0, 0
     while i < len(blocks):
@@ -363,7 +363,7 @@ def rewrite_blocks(blocks):
         content = block.get("content", [])
         # Rust dispatches arms PER NODE in stream order: an open whose
         # close scan fails (abort or exhaustion) is pushed raw and the
-        # linear scan continues — a LATER open in the same paragraph can
+        # linear scan continues; a later open in the same paragraph can
         # still be admitted (e.g. an inner keigakomi pair nested inside an
         # unadmitted yokogumi pair). Mirror by trying each open in order.
         admitted = None
@@ -376,7 +376,7 @@ def rewrite_blocks(blocks):
             # Scan forward through the flat stream for the matching close;
             # any containerOpen aborts. First the open paragraph's
             # remainder, then each following block (paragraph content is
-            # scanned; container-derived blocks abort — their containerOpen
+            # scanned; container-derived blocks abort: their containerOpen
             # was inline at Rust's scan time).
             close_block_index = ci = None
             state, k = scan_segment(content, oi + 1, needle)
@@ -447,7 +447,7 @@ def rewrite_blocks(blocks):
         count += 1
         # strip_next_leading_newline after close: strip post[0]'s leading
         # newline; if that empties the text node, DROP it (the Rust
-        # post-close path removes emptied nodes — asymmetric with
+        # post-close path removes emptied nodes; asymmetric with
         # strip_boundary_newlines, which keeps them).
         rest = blocks[close_block_index + 1 :]
         if post:
@@ -480,7 +480,7 @@ def container_rewrite_mode(base_doc, cand_doc, name, summary):
     if rewritten != cand:
         die(
             f"{name}: candidate is not exactly the grammar's rewrite "
-            f"({count} container(s) rewritten) — escalate per spec"
+            f"({count} container(s) rewritten); escalate per spec"
         )
     summary["classes"]["rewritten"] += 1
 
@@ -533,7 +533,7 @@ def span_confinement_mode(base_doc, cand_doc, name, summary):
         if span["line_start"] != 1 or span["line_end"] != 1:
             all_line1 = False
     if len(cand_spans) >= 10 and all_line1:
-        die(f"{name}: {len(cand_spans)} spans all line 1/1 — synthesis tripline")
+        die(f"{name}: {len(cand_spans)} spans all line 1/1: synthesis tripline")
     summary["classes"]["span_confined"] += 1
 
 
@@ -545,14 +545,14 @@ WARNING_REQUIRED_KEYS = {"code", "severity", "message"}
 
 # Structural mirror of `classify_forward_left_ruby`
 # (ab-aozora-pipeline/src/lexer/classify/forward.rs:1313) rather than a
-# `[^」]`/`[^］]` character-class regex: a left-ruby BASE may itself be — or
-# contain — an embedded gaiji reference `※［＃「…」、…］` (corpus works
+# `[^」]`/`[^］]` character-class regex: a left-ruby BASE may itself be, or
+# contain, an embedded gaiji reference `※［＃「…」、…］` (corpus works
 # 001395_49891 `銅※［＃「金＋拔のつくり」、第3水準1-93-6］子` and 001395_49905
 # `※［＃「漸／耳」、第4水準2-85-15］`). The parser resolves such a base via
 # `alloc.content_plain(target)`, so `ruby_entries`
 # (ab-aozora-facade/src/json.rs:255) yields a plain-run base and the AAT
 # `ruby_node` (crates/ab-aat/src/lib.rs:1156) emits a typed
-# `direction:"left"` node verbatim — the embedded `」`/`］` are literal base
+# `direction:"left"` node verbatim: the embedded `」`/`］` are literal base
 # text, NOT structural. A char-class regex mis-anchors on those inner
 # brackets, so we split structurally on the fixed marker delimiters instead.
 LEFT_RUBY_OPEN = "［＃「"
@@ -566,7 +566,7 @@ def parse_left_ruby_marker(source):
     Returns `(pre, base, reading)` or `None`. Mirrors the Rust classifier's
     fixed-delimiter split (`strip_prefix("の左に「")` / `strip_suffix("」のルビ")`
     on the suffix, target pulled from the leading quote) so that a `base`
-    carrying an embedded gaiji reference — whose own `」`/`］` are literal —
+    carrying an embedded gaiji reference (whose own `」`/`］` are literal)
     is captured whole. `pre` captures any echoed base text preceding the
     marker (e.g. "名［＃「名」の左に…"); a `pre` that is neither empty nor an
     exact echo of `base` means this is NOT an admissible marker (arbitrary
@@ -578,7 +578,7 @@ def parse_left_ruby_marker(source):
     if sep_idx == -1:
         return None
     # reading is the final clause, anchored between the separator and the
-    # trailing `」のルビ］` — like the Rust `strip_suffix("」のルビ")`; a plain
+    # trailing `」のルビ］`: like the Rust `strip_suffix("」のルビ")`; a plain
     # kana run that never contains the separator or an unescaped `」`.
     reading = source[sep_idx + len(LEFT_RUBY_SEP) : -len(LEFT_RUBY_END)]
     if not reading:
@@ -586,12 +586,12 @@ def parse_left_ruby_marker(source):
     head = source[:sep_idx]  # <pre>［＃「<base>
     # No echo: the marker opens at the very start, base is everything after
     # the opening `［＃「` (which may itself contain further `［＃「` from an
-    # embedded gaiji — that is literal base text).
+    # embedded gaiji; that is literal base text).
     if head.startswith(LEFT_RUBY_OPEN):
         base = head[len(LEFT_RUBY_OPEN) :]
         if base:
             return "", base, reading
-    # Echoed base: `<base>［＃「<base>` — the echo prefix must equal base.
+    # Echoed base: `<base>［＃「<base>`: the echo prefix must equal base.
     open_idx = head.find(LEFT_RUBY_OPEN)
     if open_idx > 0:
         pre = head[:open_idx]
@@ -664,7 +664,7 @@ def rename_layout_keys(node):
 def rewrite_left_ruby(node):
     """Contract item 4: a raw ruby marker whose source is the left-ruby
     form ［＃「base」の左に「reading」のルビ］ upgrades to a typed ruby node
-    (base/reading pulled from the marker's OWN 「」-quoted segments — the
+    (base/reading pulled from the marker's own 「」-quoted segments: the
     marker's echoed base prefix, if any, is not consulted); anything else
     survives unchanged (broken/non-left ruby stays raw). Parsed structurally
     (see `parse_left_ruby_marker`) against the TRIMMED source so an embedded
@@ -719,7 +719,7 @@ def is_burasage_paragraph(node):
 #
 # The 地付き (align-end / chitsuki) block assembler collects the inline run
 # from just after its marker up to `find_next_raw_boundary`
-# (crates/ab-aat/src/lib.rs:516-522, 862-867) — the FIRST node of
+# (crates/ab-aat/src/lib.rs:516-522, 862-867): the first node of
 # `kind:"raw"`. In v1 an unrecognised left-ruby marker was such a raw node, so
 # it TERMINATED the chitsuki line: the marker (plus the rest of that physical
 # line) fell out into a following plain paragraph. In v2 the same marker is a
@@ -733,8 +733,8 @@ def is_burasage_paragraph(node):
 # lib.rs:826-876), which a ruby marker is not. So the forward rewrite mirrors
 # exactly that one boundary shift: a chitsuki paragraph immediately followed by
 # a plain paragraph whose first node is a typed left-ruby (which, in v1, was the
-# raw node that ended the chitsuki line) re-absorbs that paragraph's leading run
-# — up to its own next raw node — into the chitsuki style content. chitsuki
+# raw node that ended the chitsuki line) re-absorbs that paragraph's leading run,
+# up to its own next raw node, into the chitsuki style content. chitsuki
 # assembly applies NO boundary-newline stripping (`push_chitsuki_paragraph`
 # copies the run verbatim), so nothing is trimmed on re-merge.
 
@@ -823,17 +823,17 @@ def _is_raw_any(node):
 
 def adopt_compound_jizume(base_node, cand_node, name):
     """Contract item 5, compound form: a compound container's 字詰め clause
-    is discarded by v1's burasage classification (`burasage_container_indent`)
-    — so its width is NOT derivable from baseline output alone, unlike the
+    is discarded by v1's burasage classification (`burasage_container_indent`),
+    so its width is not derivable from baseline output alone, unlike the
     pure/standalone form. Wherever baseline already classified a burasage
     paragraph, ADOPT candidate's jizume_block wrapper when present,
     verifying every invariant a forward rewrite CAN check (width a
     positive int, wrapped content byte-identical to what v1 classified,
-    no stray keys) — mirroring the inline-container wrap rule structurally. Anything
+    no stray keys), mirroring the inline-container wrap rule structurally. Anything
     else about candidate's shape is left to the caller's final deep-equality
     check. Returns (adopted_node, adopted_count): the count of DISTINCT
     compound wraps accepted in this subtree (0 if none), which the caller
-    tallies into summary["details"]["compound_jizume_adopted"] — a
+    tallies into summary["details"]["compound_jizume_adopted"], a
     magnitude signal, not just a presence flag."""
     if is_burasage_paragraph(base_node):
         if isinstance(cand_node, dict) and cand_node.get("kind") == "jizume_block":
@@ -917,7 +917,7 @@ def check_meta_confinement(base, cand, name):
     """Contract item 4: `meta.warnings` byte-equal; any other differing
     `meta` key (adapter_version already stripped by `strip_identity`) is a
     reference error. Split into two checks purely for a clearer die()
-    message — together they are exactly full-`meta` equality."""
+    message; together they are exactly full-`meta` equality."""
     base_meta = base.get("meta", {})
     cand_meta = cand.get("meta", {})
     if base_meta.get("warnings") != cand_meta.get("warnings"):
@@ -949,7 +949,7 @@ def check_appended_source_note_block(block, name):
         value = node.get("value")
         if not isinstance(value, str) or value == "":
             die(f"{name}: appended source_note content value invalid: {value!r}")
-        # Terminator preservation: values never concatenate lines — every
+        # Terminator preservation: values never concatenate lines; every
         # NON-FINAL value must end with the line terminator it carried in
         # source. The tail's final line may lack one (nothing follows it).
         if idx < last and not value.endswith(("\n", "\r")):
@@ -1006,7 +1006,7 @@ def source_note_append_mode(base_doc, cand_doc, name, summary):
 
 # --- bare-toggle-adoption ----------------------------
 #
-# Two checks in one pass per work: (1) diff-grammar — any difference between
+# Two checks in one pass per work: (1) diff-grammar: any difference between
 # baseline and candidate must consist EXACTLY of bare-toggle adoption
 # rewrites (raw containerOpen/content/containerClose -> a typed
 # yokogumi/keigakomi inline_container), verified by re-expanding the
@@ -1070,8 +1070,8 @@ def normalize_adoption(node, name):
 
 def recover_markers(base_doc, container_span, open_token, close_token, name):
     """Locate the single baseline raw open/close marker pair a candidate's
-    toggle-container span was adopted from — spans are RECOVERED FROM THE
-    BASELINE verbatim, never re-derived by the audit."""
+    toggle-container span was adopted from: spans are recovered from the
+    baseline verbatim, never re-derived by the audit."""
     bs, be = container_span.get("byte_start"), container_span.get("byte_end")
     opens, closes = [], []
     for _, node in collect_bare_toggle_raws(base_doc):
@@ -1112,7 +1112,7 @@ def expand_adoptions(node, base_doc, name, adopted, adopted_by_line):
     Each adoption is additionally BOUND TO ITS LINE via the recovered
     baseline open marker's span line_start into `adopted_by_line`
     ({line: {construct: count}}), so the caller can compare observed vs
-    expected adoptions PER marker-carrying line rather than per work —
+    expected adoptions per marker-carrying line rather than per work:
     per-work totals alone admit a compensating false-pass where a missed
     valid adoption on one line offsets a wrong adoption on another."""
     if isinstance(node, list):
@@ -1143,7 +1143,7 @@ def expand_adoptions(node, base_doc, name, adopted, adopted_by_line):
 
 def derive_expected(base_doc):
     """Independent expectation derivation: classify_tokens over the BASELINE's own bare-toggle raw
-    markers, grouped by physical line — never the placement report, never
+    markers, grouped by physical line: never the placement report, never
     the candidate.
 
     Returns (expected_adopted, expected_reasons, expected_by_line):
@@ -1186,7 +1186,7 @@ def derive_expected(base_doc):
 
 def count_declined(doc):
     """Number of bare-toggle raw markers still physically present (i.e.
-    declined — never adopted) in `doc`."""
+    declined: never adopted) in `doc`."""
     return len(collect_bare_toggle_raws(doc))
 
 
@@ -1218,9 +1218,9 @@ def bare_toggle_adoption_mode(base_doc, cand_doc, name, summary):
 
     # Independence check, bound per line: every marker-carrying line's OBSERVED adoptions must equal
     # that line's baseline-derived EXPECTATION. This catches both
-    # directions — a candidate that failed to adopt a pair the derivation
+    # directions: a candidate that failed to adopt a pair the derivation
     # says is valid (observed 0, expected >0) AND a candidate that adopted
-    # a pair the derivation says is invalid — even when the rewrite is
+    # a pair the derivation says is invalid, even when the rewrite is
     # structurally recoverable, and even when the two errors would cancel
     # in the per-work totals (the compensating false-pass).
     for line in sorted(set(expected_by_line) | set(observed_by_line)):
@@ -1324,8 +1324,8 @@ def main() -> int:
     for name in sorted(base_files):
         # Fail-closed: ANY per-work exception (unreadable file, valid JSON
         # of the wrong shape, unexpected structure deep in a handler) exits
-        # 2 via die(). die() raises SystemExit, which is a BaseException —
-        # not caught by the `except Exception` below — so handler verdicts
+        # 2 via die(). die() raises SystemExit, which is a BaseException,
+        # not caught by the `except Exception` below, so handler verdicts
         # pass through unchanged.
         try:
             base_doc = json.loads(base_files[name].read_bytes())

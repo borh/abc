@@ -4,8 +4,8 @@
 //!
 //!   sanitize → pair → classify
 //!
-//! Downstream tooling — IDE diagnostics, the CLI's miette renderer,
-//! property tests that grep for diagnostic positions — relies on this
+//! Downstream tooling (IDE diagnostics, the CLI's miette renderer,
+//! property tests that grep for diagnostic positions) relies on this
 //! order being stable, so any change to the pipeline that re-orders
 //! diagnostic emission lights up here.
 //!
@@ -24,11 +24,11 @@ use ab_aozora_spec::{Diagnostic, DiagnosticSource, codes};
 ///
 ///  the four legacy `Registry*` / `Unregistered*` /
 /// `ResidualAnnotationMarker` variants are folded into
-/// [`Diagnostic::Internal`] with a stable `code` payload — they
+/// [`Diagnostic::Internal`] with a stable `code` payload: they
 /// remain post-classify validators and still sort last.
 fn phase_ordinal(d: &Diagnostic) -> u8 {
     match d.source() {
-        // Source-side diagnostics — match by stable code.
+        // Source-side diagnostics: match by stable code.
         DiagnosticSource::Source => match d.code() {
             // sanitize stage.
             codes::ACCENT_DECOMPOSITION_APPLIED => 0,

@@ -6,12 +6,12 @@
 //!
 //! A [`Diagnostic`] is non-fatal: the lexer always produces a
 //! best-effort output and never aborts mid-stream. Callers decide how
-//! to surface the diagnostics — the CLI can render them via
+//! to surface the diagnostics: the CLI can render them via
 //! [`miette::Report`], tests can assert on the variants, library
 //! consumers can ignore them.
 //!
 //! Every variant carries a byte-range [`Span`] in the *sanitized* source
-//! — the sanitize-stage output (BOM stripped, CRLF→LF, 〔…〕 accents decomposed),
+//! (the sanitize-stage output: BOM stripped, CRLF→LF, 〔…〕 accents decomposed),
 //! which is the text the later stages tokenize. To render a snippet,
 //! attach that sanitized text (e.g. via `ab_aozora_facade::pipeline::lexer::sanitize`)
 //! so miette's caret lands on the right character; for input with no BOM /
@@ -21,12 +21,12 @@
 //!
 //! Diagnostics split along two orthogonal axes:
 //!
-//! - **[`Severity`]** — `Error` / `Warning` / `Note`. Determines how
+//! - **[`Severity`]**: `Error` / `Warning` / `Note`. Determines how
 //!   strictly a host (CLI, LSP, editor decorator) should treat the
 //!   observation. Defaults to `Error` for genuine syntax issues and
 //!   `Warning` for input that the parser can carry around but the
 //!   user should be told about.
-//! - **[`DiagnosticSource`]** — `Source` (problem traces back to
+//! - **[`DiagnosticSource`]**: `Source` (problem traces back to
 //!   user input) vs. `Internal` (a pipeline-invariant violation;
 //!   appearance indicates a library bug). Hosts that filter by
 //!   `Internal` get a clear "library bug" channel without having to
@@ -158,7 +158,7 @@ pub mod codes {
 /// Hosts route diagnostics by severity: `Error` blocks downstream
 /// rendering or fails CI, `Warning` decorates the editor surface,
 /// `Note` is informational. The `aozora` library never panics on a
-/// `Diagnostic` — the parser produces a best-effort output and
+/// `Diagnostic`: the parser produces a best-effort output and
 /// surfaces this enum as the host's policy hook.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
@@ -192,7 +192,7 @@ impl Severity {
     }
 }
 
-/// Origin of a [`Diagnostic`] — distinguishes user-input issues from
+/// Origin of a [`Diagnostic`], distinguishing user-input issues from
 /// library-internal sanity-check failures.
 ///
 /// Production parses on well-formed input never emit `Internal`
@@ -315,14 +315,12 @@ pub enum Diagnostic {
         code("aozora::lex::unclosed_bracket"),
         url("https://p4suta.github.io/aozora/notation/diagnostics.html#unclosed-bracket"),
         help(
-            "the opener has no matching close delimiter — either the close \
+            "the opener has no matching close delimiter: either the close \
              was omitted or an earlier close matched a nested opener"
         )
     )]
     UnclosedBracket {
-        /// Caret location for miette rendering — the same byte-range as
-        /// the `span` field below, as the `(offset, length)` pair miette
-        /// wants.
+        /// Caret location for miette rendering, matching the byte range of `span`.
         #[label("opened here")]
         at: miette::SourceSpan,
         /// Delimiter family of the unmatched opener.
@@ -339,14 +337,12 @@ pub enum Diagnostic {
         code("aozora::lex::unmatched_close"),
         url("https://p4suta.github.io/aozora/notation/diagnostics.html#unmatched-close"),
         help(
-            "no matching open on the pairing stack — either the open was \
+            "no matching open on the pairing stack: either the open was \
              omitted or an inner unmatched close consumed it"
         )
     )]
     UnmatchedClose {
-        /// Caret location for miette rendering — the same byte-range as
-        /// the `span` field below, as the `(offset, length)` pair miette
-        /// wants.
+        /// Caret location for miette rendering, matching the byte range of `span`.
         #[label("close here")]
         at: miette::SourceSpan,
         /// Delimiter family of the stray closer.
@@ -375,9 +371,7 @@ pub enum Diagnostic {
         )
     )]
     AccentDecompositionApplied {
-        /// Caret location for miette rendering — the same byte-range as
-        /// the `span` field below, as the `(offset, length)` pair miette
-        /// wants.
+        /// Caret location for miette rendering, matching the byte range of `span`.
         #[label("decomposed here")]
         at: miette::SourceSpan,
         /// Byte-range of the `〔…〕` span in the sanitized (post-decomposition)
@@ -385,7 +379,7 @@ pub enum Diagnostic {
         span: Span,
     },
 
-    /// A 外字 (gaiji) reference — `※［＃…］` — resolved to neither a Unicode
+    /// A 外字 (gaiji) reference (`※［＃…］`) resolved to neither a Unicode
     /// scalar nor a JIS X 0213 cell, so the renderer falls back to the
     /// description text rather than the intended glyph.
     #[error("gaiji reference resolved to neither Unicode nor JIS X 0213")]
@@ -395,14 +389,12 @@ pub enum Diagnostic {
         severity(Warning),
         help(
             "no JIS X 0213 men-ku-ten or U+XXXX reference matched and the \
-             description is not a single resolvable character — the glyph \
+             description is not a single resolvable character: the glyph \
              renders as its description text only"
         )
     )]
     UnresolvedGaiji {
-        /// Caret location for miette rendering — the same byte-range as
-        /// the `span` field below, as the `(offset, length)` pair miette
-        /// wants.
+        /// Caret location for miette rendering, matching the byte range of `span`.
         #[label("unresolved gaiji")]
         at: miette::SourceSpan,
         /// Byte-range of the `※［＃…］` reference in the sanitized source.
@@ -425,14 +417,12 @@ pub enum Diagnostic {
         ),
         help(
             "the close directive names a different container family than the \
-             open — pair `ここから字下げ` with `ここで字下げ終わり`, `ここから地付き` \
+             open: pair `ここから字下げ` with `ここで字下げ終わり`, `ここから地付き` \
              with `ここで地付き終わり`, etc."
         )
     )]
     MismatchedContainerClose {
-        /// Caret location for miette rendering — the same byte-range as
-        /// the `span` field below, as the `(offset, length)` pair miette
-        /// wants.
+        /// Caret location for miette rendering, matching the byte range of `span`.
         #[label("mismatched close")]
         at: miette::SourceSpan,
         /// Container family of the *open* marker on the pairing stack.
@@ -444,7 +434,7 @@ pub enum Diagnostic {
     },
 
     /// A `［＃…］` body spelled as a verified near-miss of a recognized
-    /// directive — kept as `DirectiveKind::Unknown`; the canonical spelling
+    /// directive, kept as `DirectiveKind::Unknown`; the canonical spelling
     /// is offered as a fix. Advisory only, so it never blocks (exit 0 unless
     /// `--strict`). See [`codes::NON_CANONICAL_DIRECTIVE`].
     #[error("non-canonical directive; the canonical form is `{canonical}`")]
@@ -459,7 +449,7 @@ pub enum Diagnostic {
         )
     )]
     NonCanonicalDirective {
-        /// Caret location for miette — the same byte-range as `span`.
+        /// Caret location for miette rendering, matching the byte range of `span`.
         #[label("non-canonical directive")]
         at: miette::SourceSpan,
         /// The catalogue canonical spelling. Owned for the parameterized /
@@ -469,7 +459,7 @@ pub enum Diagnostic {
         span: Span,
     },
 
-    /// An explicit-base ruby — `｜base《》` — supplied a base but an empty
+    /// An explicit-base ruby (`｜base《》`) supplied a base but an empty
     /// reading. The base is present (a `｜` precedes the `《`), so this is
     /// a genuine authoring slip, not a bare `《》` literal run. The
     /// construct degrades to plain text. The label spans the whole
@@ -479,14 +469,12 @@ pub enum Diagnostic {
         code("aozora::lex::empty_ruby_reading"),
         url("https://p4suta.github.io/aozora/notation/diagnostics.html#empty-ruby-reading"),
         help(
-            "the `《…》` reading after the `｜` base is empty — supply a reading \
+            "the `《…》` reading after the `｜` base is empty: supply a reading \
              or remove the `｜…《》` markers to keep the base as plain text"
         )
     )]
     EmptyRubyReading {
-        /// Caret location for miette rendering — the same byte-range as
-        /// the `span` field below, as the `(offset, length)` pair miette
-        /// wants.
+        /// Caret location for miette rendering, matching the byte range of `span`.
         #[label("empty reading")]
         at: miette::SourceSpan,
         /// Byte-range of the `｜base《》` construct in the sanitized source.
@@ -502,14 +490,12 @@ pub enum Diagnostic {
         code("aozora::lex::nested_ruby"),
         url("https://p4suta.github.io/aozora/notation/diagnostics.html#nested-ruby"),
         help(
-            "ruby cannot nest — close the outer reading before the inner `《`, \
+            "ruby cannot nest: close the outer reading before the inner `《`, \
              or remove the inner `《…》`"
         )
     )]
     NestedRuby {
-        /// Caret location for miette rendering — the same byte-range as
-        /// the `span` field below, as the `(offset, length)` pair miette
-        /// wants.
+        /// Caret location for miette rendering, matching the byte range of `span`.
         #[label("nested ruby opens here")]
         at: miette::SourceSpan,
         /// Byte-range of the inner `《` opener in the sanitized source.
@@ -529,14 +515,12 @@ pub enum Diagnostic {
         ),
         severity(Warning),
         help(
-            "`［＃ここから…］` must name a known container — `字下げ`, `地付き`, \
+            "`［＃ここから…］` must name a known container: `字下げ`, `地付き`, \
              `地から N 字上げ`; this directive was kept as a plain annotation"
         )
     )]
     UnrecognisedContainerDirective {
-        /// Caret location for miette rendering — the same byte-range as
-        /// the `span` field below, as the `(offset, length)` pair miette
-        /// wants.
+        /// Caret location for miette rendering, matching the byte range of `span`.
         #[label("unrecognised directive")]
         at: miette::SourceSpan,
         /// Byte-range of the `［＃ここから…］` directive in the sanitized
@@ -554,14 +538,12 @@ pub enum Diagnostic {
         url("https://p4suta.github.io/aozora/notation/diagnostics.html#tcy-target-not-found"),
         severity(Warning),
         help(
-            "the quoted 縦中横 target must occur earlier in the line — check the \
+            "the quoted 縦中横 target must occur earlier in the line: check the \
              spelling, or place the `［＃「X」は縦中横］` after the run it styles"
         )
     )]
     TcyTargetNotFound {
-        /// Caret location for miette rendering — the same byte-range as
-        /// the `span` field below, as the `(offset, length)` pair miette
-        /// wants.
+        /// Caret location for miette rendering, matching the byte range of `span`.
         #[label("target has no referent")]
         at: miette::SourceSpan,
         /// Byte-range of the `［＃「X」は縦中横］` directive in the sanitized
@@ -580,14 +562,12 @@ pub enum Diagnostic {
         url("https://p4suta.github.io/aozora/notation/diagnostics.html#bouten-target-ambiguous"),
         severity(Warning),
         help(
-            "the quoted target appears more than once before the `［＃…］` — the \
+            "the quoted target appears more than once before the `［＃…］`: the \
              styled run may not be the intended one; reword so the target is unique"
         )
     )]
     BoutenTargetAmbiguous {
-        /// Caret location for miette rendering — the same byte-range as
-        /// the `span` field below, as the `(offset, length)` pair miette
-        /// wants.
+        /// Caret location for miette rendering, matching the byte range of `span`.
         #[label("ambiguous target")]
         at: miette::SourceSpan,
         /// Byte-range of the `［＃「X」に傍点］` directive in the sanitized
@@ -611,14 +591,12 @@ pub enum Diagnostic {
         severity(Warning),
         help(
             "the quoted target is a ruby base, on an earlier line, inside another \
-             construct, or one of several targets — move the `［＃…］` next to a \
+             construct, or one of several targets: move the `［＃…］` next to a \
              plain occurrence of the target so the styling can be applied"
         )
     )]
     ForwardReferentNotStylable {
-        /// Caret location for miette rendering — the same byte-range as
-        /// the `span` field below, as the `(offset, length)` pair miette
-        /// wants.
+        /// Caret location for miette rendering, matching the byte range of `span`.
         #[label("target not stylable in place")]
         at: miette::SourceSpan,
         /// Byte-range of the `［＃「X」は…］` directive in the sanitized source.
@@ -626,7 +604,7 @@ pub enum Diagnostic {
     },
 
     /// A page or section break (`［＃改ページ］` / `［＃改段］` / …) appeared
-    /// inside a single-line container — a single-line layout directive
+    /// inside a single-line container: a single-line layout directive
     /// (`［＃地付き］` / `［＃N字下げ］`) sharing a source line with a later
     /// break, or a break between `［＃割り注］` and `［＃割り注終わり］`. A
     /// single-line container governs only the rest of its line, so a break
@@ -641,15 +619,13 @@ pub enum Diagnostic {
         ),
         severity(Warning),
         help(
-            "a single-line container governs only the rest of its line — move \
+            "a single-line container governs only the rest of its line: move \
              the break off the line, or use the paired `［＃ここから…］` … \
              `［＃ここで…終わり］` block form that persists across breaks"
         )
     )]
     BreakInSingleLineContainer {
-        /// Caret location for miette rendering — the same byte-range as
-        /// the `span` field below, as the `(offset, length)` pair miette
-        /// wants.
+        /// Caret location for miette rendering, matching the byte range of `span`.
         #[label("break drops the container")]
         at: miette::SourceSpan,
         /// Stable family tag of the dropped single-line container
@@ -661,7 +637,7 @@ pub enum Diagnostic {
 
     /// A bracketed kaeriten of rank ≥ 2 (`［＃二］` / `［＃下］` / `［＃乙］` …)
     /// appeared in a document whose matching family base (`［＃一］` /
-    /// `［＃上］` / `［＃甲］`) is absent entirely — there is nothing for the
+    /// `［＃上］` / `［＃甲］`) is absent entirely; there is nothing for the
     /// return mark to pair back to. The check is document-wide and
     /// base-only: kanbun return-mark groups routinely span `、` / `。` and
     /// line boundaries and 上下点 skips `中`, so any narrower scope misfires
@@ -673,15 +649,13 @@ pub enum Diagnostic {
             "https://p4suta.github.io/aozora/notation/diagnostics.html#bracketed-kaeriten-no-pair"
         ),
         help(
-            "a return mark needs its family base somewhere in the document — \
+            "a return mark needs its family base somewhere in the document: \
              a `［＃二］`/`［＃三］` needs a `［＃一］`, a `［＃下］`/`［＃中］` needs \
              a `［＃上］`, a `［＃乙］`… needs a `［＃甲］`"
         )
     )]
     BracketedKaeritenNoPair {
-        /// Caret location for miette rendering — the same byte-range as
-        /// the `span` field below, as the `(offset, length)` pair miette
-        /// wants.
+        /// Caret location for miette rendering, matching the byte range of `span`.
         #[label("unpaired kaeriten")]
         at: miette::SourceSpan,
         /// Byte-range of the `［＃…］` kaeriten directive in the sanitized
@@ -690,7 +664,7 @@ pub enum Diagnostic {
     },
 
     /// A kaeriten (`［＃二］` / `［＃レ］` / …) appeared outside a 漢文-like
-    /// context — it is the only kaeriten in the document and its
+    /// context: it is the only kaeriten in the document and its
     /// surroundings read as ordinary kana prose, so the mark is most likely
     /// a stray annotation rather than a genuine return mark. Conservative
     /// lookahead heuristic: a document with a cluster of kaeriten is never
@@ -702,14 +676,12 @@ pub enum Diagnostic {
         severity(Warning),
         help(
             "this is the only kaeriten in the document and its surroundings \
-             look like ordinary prose — check it is a genuine 返り点 and not a \
+             look like ordinary prose: check it is a genuine 返り点 and not a \
              stray `［＃…］` annotation"
         )
     )]
     KaeritenOutsideKanbun {
-        /// Caret location for miette rendering — the same byte-range as
-        /// the `span` field below, as the `(offset, length)` pair miette
-        /// wants.
+        /// Caret location for miette rendering, matching the byte range of `span`.
         #[label("isolated kaeriten")]
         at: miette::SourceSpan,
         /// Byte-range of the `［＃…］` kaeriten directive in the sanitized
@@ -718,7 +690,7 @@ pub enum Diagnostic {
     },
 
     /// A 傍点 / 傍線 range form (`［＃傍点］ … ［＃傍点終わり］`) was opened with
-    /// one family (点 / 線) and closed by the other — e.g. a `［＃傍点］`
+    /// one family (点 / 線) and closed by the other, e.g. a `［＃傍点］`
     /// opener closed by `［＃傍線終わり］`. The two families render
     /// differently (dots vs a line), so the run's emphasis is ambiguous.
     /// The parser recovers by keying the run to the opener's variant. The
@@ -732,14 +704,12 @@ pub enum Diagnostic {
         ),
         help(
             "close a 傍点 range with `［＃傍点終わり］` (any 点 variant) and a 傍線 \
-             range with `［＃傍線終わり］` (any 線 variant) — match the opener's \
+             range with `［＃傍線終わり］` (any 線 variant); match the opener's \
              family"
         )
     )]
     MismatchedBoutenContainer {
-        /// Caret location for miette rendering — the same byte-range as
-        /// the `span` field below, as the `(offset, length)` pair miette
-        /// wants.
+        /// Caret location for miette rendering, matching the byte range of `span`.
         #[label("mismatched close")]
         at: miette::SourceSpan,
         /// Family of the *open* marker (`傍点` / `傍線`).
@@ -750,7 +720,7 @@ pub enum Diagnostic {
         span: Span,
     },
 
-    /// Pipeline-internal sanity-check failure — production parses on
+    /// Pipeline-internal sanity-check failure; production parses on
     /// well-formed input never emit this. The [`check`](Self::Internal)
     /// payload identifies the specific check via the typed
     /// [`InternalCheckCode`] enum; tooling that prefers the stable
@@ -764,15 +734,13 @@ pub enum Diagnostic {
         url("https://p4suta.github.io/aozora/notation/diagnostics.html#internal"),
         help(
             "this is a pipeline-internal sanity check; appearance \
-             indicates a bug in aozora — please report at \
+             indicates a bug in aozora; please report at \
              https://github.com/P4suta/aozora/issues with the source \
              that triggered it"
         )
     )]
     Internal {
-        /// Caret location for miette rendering — the same byte-range as
-        /// the `span` field below, as the `(offset, length)` pair miette
-        /// wants.
+        /// Caret location for miette rendering, matching the byte range of `span`.
         #[label("at this position")]
         at: miette::SourceSpan,
         /// Typed identifier for the specific check that fired. Pin
@@ -785,7 +753,7 @@ pub enum Diagnostic {
     },
 }
 
-/// Introspected metadata for a diagnostic code — the data behind
+/// Introspected metadata for a diagnostic code; the data behind
 /// `aozora explain <code>`.
 ///
 /// Returned by [`Diagnostic::explain`]. `help` and `url` are read from
@@ -802,7 +770,7 @@ pub struct DiagnosticInfo {
     pub severity: Severity,
     /// Origin axis: user input vs. library-internal.
     pub source: DiagnosticSource,
-    /// One-line remediation help — the `#[diagnostic(help(…))]` text.
+    /// One-line remediation help (`#[diagnostic(help(…))]` text).
     pub help: String,
     /// Documentation URL for the code, when the variant carries one.
     pub url: Option<String>,
@@ -818,7 +786,7 @@ pub struct DiagnosticInfo {
     pub fixed: &'static str,
 }
 
-/// Static long-form documentation for one diagnostic code — the parts
+/// Static long-form documentation for one diagnostic code: the parts
 /// that do not vary with a specific instance (title, a minimal
 /// reproduction, and its corrected form). Paired at `explain` time with
 /// the instance-aware [`Diagnostic::detail_body`].
@@ -990,7 +958,7 @@ fn doc_for(code: &str) -> Option<&'static DiagnosticDoc> {
 
 #[allow(
     clippy::same_name_method,
-    reason = "intentional: our inherent severity() / code() return strongly-typed (Severity enum, &'static str) values that mirror miette::Diagnostic's loosely-typed defaults — callers prefer the inherent method"
+    reason = "intentional: inherent severity() / code() return strongly-typed values mirroring miette::Diagnostic defaults"
 )]
 impl Diagnostic {
     /// Report an opening directive with no established closing marker.
@@ -1197,7 +1165,7 @@ impl Diagnostic {
     }
 
     /// Constructor for [`Diagnostic::Internal`]. Takes a typed
-    /// [`InternalCheckCode`] — the compiler enforces that every
+    /// [`InternalCheckCode`]; the compiler enforces that every
     /// production emit-site classifies the check correctly.
     #[must_use]
     pub fn internal(at: Span, check: InternalCheckCode) -> Self {
@@ -1212,7 +1180,7 @@ impl Diagnostic {
     /// Severity routing axis. See [`Severity`].
     ///
     /// `#[non_exhaustive]` puts the responsibility on every match
-    /// here for adding-new-variant time, not on a catch-all arm —
+    /// here for adding-new-variant time, not on a catch-all arm:
     /// the compiler will refuse to build until the new variant is
     /// classified.
     #[must_use]
@@ -1311,14 +1279,14 @@ impl Diagnostic {
     /// Translates the `span` (and the miette `at` caret, which the
     /// constructors always derive from `span`) by `by`. Used by the
     /// incremental re-parse engine to lift a diagnostic produced
-    /// by lexing a document *segment* — whose offsets are segment-local —
+    /// by lexing a document segment whose offsets are segment-local
     /// back into whole-document coordinates by adding the segment's start
     /// offset.
     ///
     /// The single consolidated `|`-pattern arm relies on every variant
     /// sharing the `{ at, span, .. }` shape; the absence of a `_` arm
     /// means a future variant (the enum is `#[non_exhaustive]`) forces a
-    /// compile error here rather than silently skipping the rebase —
+    /// compile error here rather than silently skipping the rebase,
     /// matching the [`span`](Self::span) / [`severity`](Self::severity)
     /// accessors' exhaustive style.
     #[must_use]
@@ -1397,7 +1365,7 @@ impl Diagnostic {
     /// Instance-aware: variants that carry data (the offending
     /// codepoint, delimiter family, container tags, canonical spelling)
     /// interpolate the real values, so a host renders the exact detail
-    /// for the diagnostic in hand. The single authority for this prose —
+    /// for the diagnostic in hand. The single authority for this prose:
     /// `explain` renders it from a representative sample, a host renders
     /// it from the live diagnostic, and both read it from here.
     ///
@@ -1407,7 +1375,7 @@ impl Diagnostic {
     #[must_use]
     #[allow(
         clippy::too_many_lines,
-        reason = "one match arm of authored prose per diagnostic variant — the length is the catalogue, and splitting it would only scatter the single authority"
+        reason = "one match arm of authored prose per diagnostic variant"
     )]
     pub fn detail_body(&self) -> String {
         match self {
@@ -1438,7 +1406,7 @@ impl Diagnostic {
             Self::UnresolvedGaiji { .. } =>
                 "外字参照（※［＃…］）が Unicode 文字にも JIS X 0213 の面区点にも解決できませんでした。\n\n\
                  このため描画では意図した字形ではなく、説明テキストがそのまま表示されます。\n\n\
-                 直し方: 参照に解決可能な指定を与えてください — `第3水準1-15-23` のような面区点、\
+                 直し方: 参照に解決可能な指定を与えてください（`第3水準1-15-23` のような面区点、\
                  または `U+XXXX` 形式の Unicode 参照を補います。"
                     .to_owned(),
             Self::MismatchedContainerClose {
@@ -1448,7 +1416,7 @@ impl Diagnostic {
             } => format!(
                 "コンテナを `{open_kind}` として開いたのに、`{close_kind}` の閉じ指示で閉じています。\n\n\
                  開きと閉じの家系が食い違うため、範囲が正しく確定しません。\n\n\
-                 直し方: 開いた家系に合わせて閉じてください — `ここから字下げ` は `ここで字下げ終わり`、\
+                 直し方: 開いた家系に合わせて閉じてください（`ここから字下げ` は `ここで字下げ終わり`、\
                  `ここから地付き` は `ここで地付き終わり` のように対応させます。",
             ),
             Self::EmptyRubyReading { .. } =>
@@ -1481,7 +1449,7 @@ impl Diagnostic {
                  直し方: 対象が一意になるよう言い換えてください（例:「白い花」のように限定する）。"
                     .to_owned(),
             Self::ForwardReferentNotStylable { .. } =>
-                "前方参照の対象 X は直前までに存在しますが、その場で装飾できません — ルビのベース、前の行、\
+                "前方参照の対象 X は直前までに存在しますが、その場で装飾できません（ルビのベース、前の行、\
                  別の構造の内側、または複数候補のいずれかです。\n\n\
                  注記は保持され本文は往復しますが、装飾は前の出現には適用されません。\n\n\
                  直し方: 対象がプレーンに現れる箇所の隣へ ［＃…］ を移動してください。"
@@ -1496,11 +1464,11 @@ impl Diagnostic {
                 "角括弧返り点（［＃二］／［＃下］／［＃乙］ など）に対応する家系の基点（［＃一］／［＃上］／［＃甲］）が、\
                  文書中のどこにもありません。\n\n\
                  返るべき先が無いため、返り点として成立しません。\n\n\
-                 直し方: 家系の基点を文書のどこかに置いてください — ［＃二］/［＃三］には ［＃一］、\
+                 直し方: 家系の基点を文書のどこかに置いてください（［＃二］/［＃三］には ［＃一］、\
                  ［＃下］/［＃中］には ［＃上］、［＃乙］…には ［＃甲］。"
                     .to_owned(),
             Self::KaeritenOutsideKanbun { .. } =>
-                "返り点（［＃二］／［＃レ］ など）が漢文的でない文脈に現れています — 文書中で唯一の返り点で、\
+                "返り点（［＃二］／［＃レ］ など）が漢文的でない文脈に現れています。文書中で唯一の返り点で、\
                  周囲が普通のかな文です。\n\n\
                  本物の返り点ではなく、紛れ込んだ注記の可能性が高いと判定されました。\n\n\
                  直し方: 本物の返り点なら漢文文脈で使い、そうでなければ該当の ［＃…］ 注記を削除してください。"
@@ -1512,7 +1480,7 @@ impl Diagnostic {
             } => format!(
                 "傍点／傍線のレンジを `{open_family}` で開いたのに、`{close_family}` の閉じで閉じています。\n\n\
                  点と線は描画が異なるため、その範囲の強調が曖昧になります（パーサは開き側の家系で復旧します）。\n\n\
-                 直し方: 開いた家系に合わせて閉じてください — 傍点は ［＃傍点終わり］、傍線は ［＃傍線終わり］。",
+                 直し方: 開いた家系に合わせて閉じてください（傍点は ［＃傍点終わり］、傍線は ［＃傍線終わり］）。",
             ),
             Self::NonCanonicalDirective { canonical, .. } => format!(
                 "非正規の綴りの ［＃…］ 注記です。正規形は `［＃{canonical}］` です。\n\n\
@@ -1577,7 +1545,7 @@ impl Diagnostic {
         codes::REGISTRY_POSITION_MISMATCH,
     ];
 
-    /// Introspect the diagnostic identified by `code` — one of
+    /// Introspect the diagnostic identified by `code`, one of
     /// [`Self::ALL_CODES`] (equivalently a [`codes`] constant or an
     /// [`InternalCheckCode::as_code`]). `None` for an unknown code.
     ///
@@ -1733,7 +1701,7 @@ mod tests {
     #[test]
     fn prose_quote_pairing_is_warning_severity() {
         // Unbalanced prose quotation marks (「」) are an authorial-style
-        // observation — multi-paragraph dialogue conventionally leaves 「
+        // observation: multi-paragraph dialogue conventionally leaves 「
         // unclosed, and the quote characters stay literal text in the AAT,
         // so nothing is structurally lost. Only markup-bearing pair kinds
         // keep error severity (and with it the parse_complete gate).
@@ -1811,7 +1779,7 @@ mod tests {
         }
     }
 
-    /// Codes are stable identifiers — pin every constant so accidental
+    /// Codes are stable identifiers; pin every constant so accidental
     /// rename of one breaks this test rather than silently breaking
     /// downstream tooling that grep-matches on the string.
     #[test]
@@ -1879,7 +1847,7 @@ mod tests {
         );
     }
 
-    /// Severity / source axes are independent — pin the cross-product
+    /// Severity and source axes are independent; test the cross-product
     /// for the four production variants so a future variant addition
     /// has to think about both axes deliberately.
     #[test]
@@ -1965,7 +1933,7 @@ mod tests {
     }
 
     /// Every catalogued code resolves to a representative instance with
-    /// non-empty help and an https URL — guards `explain` against a code
+    /// non-empty help and an https URL, guarding `explain` against a code
     /// that has no sample (and pins the catalogue length).
     #[test]
     fn explain_covers_every_catalogued_code() {

@@ -1,25 +1,14 @@
 (ns soranoha.snh.view
-  "Commit-scoped repository view: the single, non-fallback read surface the
-  verifier uses. A view wraps exactly one git object store and exposes reads
-  of the form read-at(commit, path) and parents-of(commit); a path or object
-  the view cannot serve is a nil/failure, never completed from any other
-  source. Non-fallback is enforced, not assumed: every git invocation runs
-  with --no-replace-objects and --no-lazy-fetch (replacement refs and
-  promisor fetches would silently substitute or import objects), under a
-  sanitized environment with every GIT_-prefixed variable removed (inherited
-  GIT_DIR / GIT_OBJECT_DIRECTORY / GIT_ALTERNATE_OBJECT_DIRECTORIES would
-  redirect reads to a foreign object store), and bound explicitly to the git
-  directory resolved at construction; linked worktrees (whose common
-  directory differs from their git directory) and alternate object
-  directories are rejected at construction. Live verification wraps the fetched
-  authoritative repository; archive verification wraps only the archived
-  snapshot; mirrors and clones wrap themselves.
+  "Commit-scoped repository view for verification reads. Wraps a single git
+  object store and exposes read-at(commit, path) and parents-of(commit).
 
-  Reads run one git subprocess per call, except inside with-batch, which
-  serves read-at from a single persistent cat-file --batch subprocess
-  started under the same binding, flags, and sanitized environment. A
-  batched read still names commit:path per request, so it proves the same
-  path reachability from that one commit's tree as a spawned read."
+  Hardened against foreign object substitution: runs with --no-replace-objects
+  and --no-lazy-fetch under a sanitized environment (GIT_* removed) bound
+  explicitly to the resolved git directory. Rejects linked worktrees and
+  alternate object directories at construction.
+
+  Reads invoke git subprocesses or, inside `with-batch`, stream through a
+  persistent cat-file --batch subprocess under the same isolation flags."
   (:require [babashka.process :as process]
             [clojure.java.io :as io]
             [clojure.string :as str])
@@ -48,8 +37,8 @@
   Discovery runs under the sanitized environment; the resolved absolute git
   directory is then bound with --git-dir on every read, so the view can only
   ever consult that one object store. Throws when the repository is a linked
-  worktree — its per-worktree git directory hides the common directory's
-  object store and alternates file — or declares alternate object
+  worktree (its per-worktree git directory hides the common directory's
+  object store and alternates file) or declares alternate object
   directories, either of which would make reads span more than one object
   store. `base-env` defaults to the process environment and is a seam for
   probing the sanitization."
@@ -108,8 +97,8 @@
   persistent cat-file --batch subprocess instead of one subprocess per
   read; the subprocess starts under the view's binding, hardening flags,
   and sanitized environment, with stderr inherited so it can neither
-  fill a pipe nor disappear. On success the request stream is closed and
-  the subprocess must terminate cleanly — spawned reads check every git
+  fill a pipe nor disappear.  On success the request stream is closed and
+  the subprocess must terminate cleanly; spawned reads check every git
   exit, and a batch pass ends with the same obligation; on failure the
   subprocess is destroyed."
   [view f]
@@ -140,7 +129,7 @@
 
 (defn read-at
   "Blob bytes at `path` in `commit`'s tree, or nil when absent. Only the tree
-  of the named commit is consulted — presence of the same bytes elsewhere in
+  of the named commit is consulted; presence of the same bytes elsewhere in
   the object graph does not satisfy a read."
   ^bytes [view commit path]
   (if-let [batch (:batch view)]
@@ -167,7 +156,7 @@
   "Set of repo paths under `prefix` whose entries differ between the trees
   of `commit-a` and `commit-b`; additions and removals differ by
   definition. A path absent from this set therefore names bit-identical
-  tree entries in both commits — the tree comparison is itself a
+  tree entries in both commits: the tree comparison is itself a
   reachability proof for the path in each commit where it exists. Paths
   are NUL-delimited on the wire, so no quoting ambiguity arises."
   [view commit-a commit-b prefix]

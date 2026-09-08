@@ -11,18 +11,18 @@ allow = [
   "BSD-3-Clause",
   "BSL-1.0",
   "CC0-1.0",
-  # webpki-root-certs 1.0.8 sole term — permissive data license for root-cert data
+  # webpki-root-certs 1.0.8 sole term: permissive data license for root-cert data
   "CDLA-Permissive-2.0",
   "ISC",
   "MIT",
   "MIT-0",
-  # option-ext 0.2.0 sole term — file-level copyleft, unmodified transitive dep of dirs-sys; acceptable
+  # option-ext 0.2.0 sole term: file-level copyleft, unmodified transitive dep of dirs-sys; acceptable
   "MPL-2.0",
   "Unicode-3.0",
   "Unlicense",
   "Zlib",
 ]
-# NOTE: LGPL-2.1-or-later is deliberately NOT allowed here. It appears only
+# LGPL-2.1-or-later is not allowed here. It appears only
 # as one term of an OR expression (r-efi's "MIT OR Apache-2.0 OR
 # LGPL-2.1-or-later") which already resolves via the MIT/Apache-2.0 terms
 # above; cargo-deny is satisfied by any single OR'd term being allowed, so

@@ -1,4 +1,4 @@
-//! Fuzz target — classify-stage body-recognition on arbitrary UTF-8.
+//! Fuzz target: classify-stage body-recognition on arbitrary UTF-8.
 //!
 //! Drives the full streaming chain
 //! (`tokenize` → `pair` → `classify`) directly, bypassing the
@@ -7,7 +7,7 @@
 //! annotation catch-all) in isolation. Targets the slice-indexing,
 //! char-boundary, and `as`-cast paths in
 //! `aozora_pipeline::lexer::classify` that consume
-//! source-derived `Span` offsets — the sites that, under
+//! source-derived `Span` offsets: the sites that, under
 //! `panic = "abort"`, would turn a malformed UTF-8 document into a
 //! hard crash.
 //!
@@ -39,7 +39,7 @@ fuzz_target!(|data: &[u8]| {
     };
     // The classify stage consumes sanitize-stage *sanitized* text in
     // production, but it is a pure function of whatever `&str` it is
-    // handed — every recogniser reads `Span` offsets back out of the
+    // handed: every recogniser reads `Span` offsets back out of the
     // same `source`. Feeding it raw (un-sanitized) UTF-8 is therefore a
     // strictly wider adversarial surface than the sanitized path: it
     // exercises the same slice / cast / char-boundary code with
@@ -106,7 +106,7 @@ fuzz_target!(|data: &[u8]| {
     }
 
     // Invariant 3: diagnostic spans are non-inverted. We do not bound
-    // `end` against `src.len()` — classify diagnostics are emitted in
+    // `end` against `src.len()`: classify diagnostics are emitted in
     // source coordinates and may legitimately point at the EOF cursor.
     let mut diagnostics = pair_stream.take_diagnostics();
     diagnostics.extend(classify_diags);

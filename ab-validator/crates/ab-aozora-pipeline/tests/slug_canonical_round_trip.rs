@@ -7,7 +7,7 @@
 //! `［＃「対象」に…］` / `［＃「対象」は…］`) and assert that:
 //!
 //! 1. Parsing produces no `Internal` diagnostic with code
-//!    [`codes::RESIDUAL_ANNOTATION_MARKER`] — i.e. the slug landed
+//!    [`codes::RESIDUAL_ANNOTATION_MARKER`]: i.e. the slug landed
 //!    in the placeholder registry rather than leaking through as plain
 //!    text. That is the closest signal we have to "the parser
 //!    recognised this slug" without depending on the (non-public)
@@ -15,11 +15,11 @@
 //! 2. The normalized text contains exactly one
 //!    [`ab_aozora_spec::INLINE_SENTINEL`] / `BLOCK_LEAF_SENTINEL` /
 //!    `BLOCK_OPEN_SENTINEL` / `BLOCK_CLOSE_SENTINEL` (depending on the
-//!    family) — proving a registry entry was actually emitted.
+//!    family), proving a registry entry was actually emitted.
 //!
 //! `accepts_param` entries (canonical text contains a `{N}` / `{path}`
 //! placeholder) are exercised against a representative substituted
-//! body — `2字下げ`, `3字上げ`, `挿絵（fig01.png）入る`.
+//! body: `2字下げ`, `3字上げ`, `挿絵（fig01.png）入る`.
 //!
 //! Variant resolutions are covered by the tests in `aozora-spec`.
 
@@ -47,7 +47,7 @@ fn wrap_for_family(family: SlugFamily, body: &str) -> String {
 /// Which sentinel kind the family is expected to land in. Returns
 /// `None` for the forward-reference families (Bouten / `CombineUpright`)
 /// which attach to an existing inline span without emitting a
-/// dedicated sentinel of their own — those still need to *parse*
+/// dedicated sentinel of their own; those still need to *parse*
 /// cleanly but the sentinel-count assertion does not apply.
 fn expected_sentinel(family: SlugFamily) -> Option<char> {
     match family {
@@ -62,7 +62,7 @@ fn expected_sentinel(family: SlugFamily) -> Option<char> {
         // Forward-references (Bouten / CombineUpright) don't emit a
         // dedicated sentinel of their own, and Framed / Warichu
         // open/close are paired containers whose sentinel kind depends
-        // on canonical text — `#[non_exhaustive]` future families also
+        // on canonical text; `#[non_exhaustive]` future families also
         // skip the sentinel-count check until an expectation is
         // encoded above.
         _ => None,
@@ -110,7 +110,7 @@ fn every_canonical_slug_lands_a_sentinel_when_expected() {
 #[test]
 fn variant_canonicalisation_then_parse_matches_canonical_parse() {
     // Pick a representative non-trivial variant for each Bouten /
-    // BlockContainerOpen entry — substitute it into source, then
+    // BlockContainerOpen entry: substitute it into source, then
     // canonicalise, then parse, and compare normalized output against
     // the canonical-source parse. Both must agree on sentinel count
     // (the canonicalise step is supposed to be a pre-parse rewrite
@@ -132,7 +132,7 @@ fn variant_canonicalisation_then_parse_matches_canonical_parse() {
             .expect("canonical in SLUGS");
         let canonical_source = wrap_for_family(entry.family, &instantiate(canonical));
         let canonical_out = lex(&canonical_source);
-        // Re-parse the canonicalised text — for the LSP code action
+        // Re-parse the canonicalised text for the LSP code action
         // this is the post-rewrite source the editor would apply.
         let recanonical_out = lex(&canonical_source);
         assert_eq!(canonical_out.normalized, recanonical_out.normalized);

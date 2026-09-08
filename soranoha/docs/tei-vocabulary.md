@@ -28,13 +28,13 @@ carries it separately: a breaking vocabulary change increments it, while an
 additive attribute may keep the same major version when compatibility is
 documented.
 
-The profile hashes recorded in a work's `tei-validation.json` — `odd_hash`,
-`rng_hash`, `schematron_hash` — answer a different question. They change on any
+The profile hashes recorded in a work's `tei-validation.json` (`odd_hash`,
+`rng_hash`, `schematron_hash`) answer a different question. They change on any
 profile edit, additive ones included, so they say which profile validated a
 document but cannot tell you whether an existing `snh:*` reader is still
 correct. That is what the vocabulary version is for.
 
-Version `0` is deliberately attributes-only. Custom elements in this namespace
+Version `0` contains attributes only. Custom elements in this namespace
 are not part of it.
 
 ## Attributes

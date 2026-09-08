@@ -126,7 +126,7 @@ fn ablate(gold: &std::path::Path, report: &std::path::Path) -> anyhow::Result<()
     let model = LogisticRegression::default()
         .max_iterations(500)
         .fit(&dataset)?;
-    // Train-set accuracy (small data, no hold-out split — documented caveat).
+    // Train-set accuracy (small data, no hold-out split; documented caveat).
     // Use `Predict::predict` which returns the actual class labels directly,
     // avoiding any confusion about which class `predict_probabilities`
     // treats as "positive" (linfa-logistic picks the more-frequent class
@@ -153,7 +153,7 @@ Gold set: `{}` (n={}, accept={}, reject={})\n\n\
 ## Bias caveat (read before trusting these numbers)\n\n\
 This accuracy is against **bootstrap labels** (the Python\n\
 `is_katakana_sentence` heuristic labeling itself, via\n\
-aozora-corpus-generator — see `scripts/ortho-gold/bootstrap_label.py`).\n\
+aozora-corpus-generator; see `scripts/ortho-gold/bootstrap_label.py`).\n\
 It measures whether the linear model can reproduce the heuristic's\n\
 character cascade, NOT real-world detection quality. A perfectly-trained\n\
 model on these labels can at best tie the heuristic; it cannot exceed it\n\
@@ -201,7 +201,7 @@ fn cross_validate(
     let pos_total = y_all.iter().filter(|v| **v == 1).count();
     let neg_total = n - pos_total;
 
-    // Strided fold assignment (deterministic — the sampler pre-shuffled the
+    // Strided fold assignment (deterministic: the sampler pre-shuffled the
     // gold file, so a strided split yields class-balanced folds). Test fold f
     // = indices where i % k == f.
     let mut per_fold: Vec<FoldMetrics> = Vec::with_capacity(k);
@@ -313,7 +313,7 @@ fn cross_validate(
         "# Ortho-Detect ML k-Fold Cross-Validation\n\
 \n\
 Gold set: `{}` (n={}, LLM-labeled, accept={}, reject={})\n\
-k = {} (strided fold assignment; deterministic — the sampler pre-shuffled the gold file, so no separate shuffle is needed; each record appears in exactly one test fold)\n\
+k = {} (strided fold assignment; deterministic: the sampler pre-shuffled the gold file, so no separate shuffle is needed; each record appears in exactly one test fold)\n\
 Model: `linfa_logistic::LogisticRegression` (char-only features via `extract_char_features` + `features_to_vector`; same train config as `{}` train: `max_iterations=500`, label encoding `1=accept / 0=reject` as `i32`).\n\
 \n\
 ## Per-fold results (held-out test fold)\n\
@@ -331,11 +331,11 @@ Model: `linfa_logistic::LogisticRegression` (char-only features via `extract_cha
 \n\
 ## Prediction labels\n\
 \n\
-Evaluation uses `Predict::predict`, which returns the actual class labels directly. **Do NOT** use `predict_probabilities >= 0.5`: linfa-logistic's `label_classes` designates the *more-frequent* class as positive, so thresholded probabilities invert on this data (correct impl shows ~0.9x recall; a buggy probabilities-threshold impl shows ~0.05 recall — the inversion signature). Labels are `Array1<i32>` (`1=accept, 0=reject`); linfa-logistic requires `Ord` labels, ruling out `f64`.\n\
+Evaluation uses `Predict::predict`, which returns the actual class labels directly. **Do NOT** use `predict_probabilities >= 0.5`: linfa-logistic's `label_classes` designates the *more-frequent* class as positive, so thresholded probabilities invert on this data (correct impl shows ~0.9x recall; a buggy probabilities-threshold impl shows ~0.05 recall, the inversion signature). Labels are `Array1<i32>` (`1=accept, 0=reject`); linfa-logistic requires `Ord` labels, ruling out `f64`.\n\
 \n\
 ## Historical training comparison\n\
 \n\
-- Historical training recall (2026-07-05, 300 LLM labels, no hold-out): **0.958** — a training reference, not held-out performance.\n\
+- Historical training recall (2026-07-05, 300 LLM labels, no hold-out): **0.958** (a training reference, not held-out performance).\n\
 - Hold-out mean recall (this report): **{:.4}** (min {:.4}, max {:.4}).\n\
 \n\
 The ~{} percentage-point gap compares the historical training reference with this run; different input labels or samples make this comparison inapplicable.\n\

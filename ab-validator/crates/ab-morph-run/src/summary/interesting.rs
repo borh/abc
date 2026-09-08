@@ -8,7 +8,7 @@
 //! absent.
 //!
 //! Two collection engines produce identical results: a DuckDB CLI
-//! aggregation (required at full-corpus scale — the full Aozora warehouse
+//! aggregation (required at full-corpus scale: the full Aozora warehouse
 //! holds ~165M regions and ~17.8B feature-diff rows, far beyond what the
 //! in-memory path can hold) and a pure in-memory path used for small runs,
 //! tests, and environments without a `duckdb` binary.
@@ -43,7 +43,7 @@ use crate::warehouse::schema::WarehouseTable;
 /// rule (global won both p@50 and nDCG@50 against within-kind on the
 /// full-corpus labels). `v1` scores remain reproducible via
 /// `--rank-scope within-kind`, but that flag only reproduces v1
-/// *numbers* — the artifact's `score_version` is still whatever this
+/// *numbers*: the artifact's `score_version` is still whatever this
 /// build stamps (`2`), so cross-version comparison stays forbidden as
 /// always; do not treat a `--rank-scope within-kind` run under v2 as
 /// interchangeable with a genuine pre-2026-07-06 v1 artifact.
@@ -261,8 +261,8 @@ pub struct InterestingSummary {
 /// `rank_scope`, `score_mode`, and `sample_seed` were added after v1
 /// shipped (the calibration knobs). Pre-calibration artifacts predate these
 /// fields and omit them entirely; their `#[serde(default = ...)]`
-/// fallbacks encode what those artifacts actually were — within-kind
-/// pooling, RRF scoring, no sampling seed — so such artifacts deserialize
+/// fallbacks encode what those artifacts actually were (within-kind
+/// pooling, RRF scoring, no sampling seed), so such artifacts deserialize
 /// honestly instead of failing to parse. Serialization is unchanged: these
 /// fields are always written for artifacts produced going forward.
 #[derive(Debug, Clone, PartialEq, Serialize, serde::Deserialize)]
@@ -272,8 +272,8 @@ pub struct ScoreVersionBlock {
     pub rrf_k: u32,
     /// `λ_missing` is not a fixed constant: a fixed value breaks the
     /// missing-signal monotonicity invariant for ranks past `1/λ - k`. The
-    /// rank-floor policy sets `λ = 1/(k + N_kind + 1)` — "just below the
-    /// worst-ranked observed pattern of the kind" — which preserves it.
+    /// rank-floor policy sets `λ = 1/(k + N_kind + 1)` (just below the
+    /// worst-ranked observed pattern of the kind), which preserves it.
     pub lambda_missing_policy: String,
     /// Signal-rank pooling scope: `"within-kind"` (v1 default) or `"global"`.
     /// Absent in pre-calibration artifacts, which were always within-kind.
@@ -435,7 +435,7 @@ fn percentile_90(lengths: &[u64]) -> f64 {
     sorted[rank.max(1) - 1] as f64
 }
 
-/// Nearest-rank p90 over a sorted `(length, count)` histogram — same
+/// Nearest-rank p90 over a sorted `(length, count)` histogram: same
 /// result as [`percentile_90`] on the expanded multiset, without storing
 /// it.
 fn percentile_90_histogram(histogram: &[(u32, u32)]) -> f64 {
@@ -520,7 +520,7 @@ fn region_passes_filter(
 
 /// Coverage-kind pattern key: the segmentation-style surface-group key over
 /// a coverage-mismatch region. Unlike segmentation, a single surface group
-/// is allowed — the coverage mismatch itself is the finding even when all
+/// is allowed: the coverage mismatch itself is the finding even when all
 /// analyzers agree on surfaces.
 fn coverage_pattern_key(facts: &[WarehouseRegionAnalyzerFact]) -> Option<NwayPatternKey> {
     if facts.is_empty() {
@@ -564,7 +564,7 @@ pub(super) enum SqlSignature {
 }
 
 /// Finalized per-pattern statistics, engine-agnostic. Both collection
-/// engines must produce identical values here — pinned by the
+/// engines must produce identical values here, pinned by the
 /// path-equality test.
 #[derive(Debug, Clone)]
 pub(super) struct PatternStats {
@@ -676,7 +676,7 @@ pub(super) struct RegionOccurrence<'a> {
 
 #[derive(Default)]
 pub(super) struct PatternAccumulator {
-    /// Patterns indexed by raw content digest — storing the key again as a
+    /// Patterns indexed by raw content digest; storing the key again as a
     /// map key doubles key memory at full-corpus scale.
     index_of: std::collections::HashMap<[u8; 32], usize>,
     keys: Vec<(NwayPatternKey, PatternKind, [u8; 32])>,
@@ -1065,7 +1065,7 @@ struct PatternScore {
     rrf_score: f64,
 }
 
-/// Ranks patterns per signal (raw desc, `pattern_id` asc — the
+/// Ranks patterns per signal (raw desc, `pattern_id` asc, the
 /// deterministic tie-break) and fuses. Returns scores aligned with
 /// `patterns`. `rank_scope` selects whether ranking pools are formed
 /// within each kind (v1 default) or globally across all patterns.
@@ -1163,7 +1163,7 @@ fn score_patterns(
 /// Ranks one signal's present raws (desc, `pattern_id` asc tie-break) over
 /// `pool`, writing 1-based ranks into each member's slot. `slot_of` maps a
 /// pattern index to its slot for this signal (`None` = signal not
-/// applicable to that pattern's kind — skipped, stays missing).
+/// applicable to that pattern's kind; skipped, stays missing).
 fn rank_signal_pool(
     patterns: &[PatternStats],
     scores: &mut [PatternScore],
@@ -1322,7 +1322,7 @@ fn feature_profile_name(profile: WarehouseFeatureProfile) -> &'static str {
 ///
 /// Sudachi mode A (`sudachi-a`) is approximately UniDic short-unit
 /// granularity, mode B is middle-unit, and mode C is long-unit. Every other
-/// analyzer family (`vibrato` — any dictionary, including kindai/qkana;
+/// analyzer family (`vibrato` with any dictionary, including kindai/qkana;
 /// `vaporetto`; `test`) is a UniDic-短単位 lineage, hence `suw`.
 fn granularity_class(analyzer_arg: &str, analyzer_family: &str) -> &'static str {
     if analyzer_family == "sudachi" {
@@ -1337,7 +1337,7 @@ fn granularity_class(analyzer_arg: &str, analyzer_family: &str) -> &'static str 
 }
 
 /// Ranks a granularity class into the canonical composition order
-/// `suw < muw < luw` (NOT alphabetical — `luw` sorts last despite starting
+/// `suw < muw < luw` (not alphabetical; `luw` sorts last despite starting
 /// with `l`).
 fn granularity_class_rank(class: &str) -> u8 {
     match class {
@@ -1348,8 +1348,8 @@ fn granularity_class_rank(class: &str) -> u8 {
     }
 }
 
-/// Derives the run's `granularity_profile` — which segmentation granularity
-/// classes this run's analyzers compared — from its `run_analyzers` rows
+/// Derives the run's `granularity_profile` (which segmentation granularity
+/// classes this run's analyzers compared) from its `run_analyzers` rows
 /// (spec §Granularity Harmonization). Derived at summarize time from
 /// `run_analyzers.parquet` metadata rather than stored as a new warehouse
 /// column: a single source of truth, no schema change within v1, and
@@ -1358,8 +1358,8 @@ fn granularity_class_rank(class: &str) -> u8 {
 /// Each row is classified by [`granularity_class`] into `suw`/`muw`/`luw`;
 /// the profile is the deduped set of classes present, sorted in canonical
 /// order (`suw < muw < luw`, see [`granularity_class_rank`]) and joined with
-/// `"+"` — e.g. `"suw"`, `"suw+luw"`, `"suw+muw+luw"`, or the hypothetical
-/// `"muw+luw"`.
+/// `"+"` (such as `"suw"`, `"suw+luw"`, `"suw+muw+luw"`, or the hypothetical
+/// `"muw+luw"`).
 ///
 /// A single-class profile (`"suw"`) means no granularity-policy noise is
 /// possible: every analyzer in the run compares at the same segmentation
@@ -1611,7 +1611,7 @@ pub fn write_interesting_tsv(summary: &InterestingSummary, mut out: impl Write) 
 
 /// Rewrites `run_dir/nway_feature_diffs.parquet` from the v3 collapsed
 /// shape into the pre-v3 scalar `analyzer_id` shape (one row per
-/// analyzer, expanded in the list's stored — ascending — order,
+/// analyzer, expanded in the list's stored ascending order,
 /// mirroring the pre-v3 producer's emission order).
 ///
 /// Shared test-support helper: also used by `summary_body`'s tests to
@@ -2107,12 +2107,12 @@ mod tests {
         //     Span     = char_end-char_start = 3     (rank 1/3)
         //   feature pattern (src-a r2, pos1 名詞/動詞, 1 occurrence):
         //     Coverage = log2(1+0) = 0.0             (rank 3/3, tie-break pattern_id "fc1912…" > "aa9e4b…")
-        //     Rarity   = log2((2+1)/(1+1)) = 0.584963 (rank 2/3, loses the tie to the coverage pattern's pattern_id)
-        //     Impact   = impact_weight("pos1") = 4.0 (rank 1/1 — Impact's pool is feature-only)
+        //     Rarity   = log2((2+1)/(1+1)) = log2(1.5) = 0.584963 (rank 2/3, loses the tie to the coverage pattern's pattern_id)
+        //     Impact   = impact_weight("pos1") = 4.0 (rank 1/1; Impact's pool is feature-only)
         //     Span     = 1                            (rank 3/3)
         //   segmentation pattern (今日 split, src-a r0 + src-b r0, 2 occurrences):
         //     Coverage = log2(1+0) = 0.0              (rank 2/3, tie-break pattern_id "aa9e4b…" < "fc1912…")
-        //     Rarity   = log2((2+1)/(2+1)) = log2(1) = 0.0 (rank 3/3 — worst, 2 distinct source ids)
+        //     Rarity   = log2((2+1)/(2+1)) = log2(1) = 0.0 (rank 3/3, worst, 2 distinct source ids)
         //     Span     = 2                             (rank 2/3)
         // RRF terms are 1/(60+rank): rank1 -> 1/61 = 0.0163934426…,
         // rank2 -> 1/62 = 0.0161290323…, rank3 -> 1/63 = 0.0158730159….
@@ -2466,7 +2466,7 @@ mod tests {
         let text = String::from_utf8(buffer).unwrap();
         assert!(text.starts_with("rank\tkind\trrf_score"));
         // Under the default (global) rank scope the top-1 pattern is the
-        // coverage pattern (rrf_score 0.016393 — see the hand-computed
+        // coverage pattern (rrf_score 0.016393; see the hand-computed
         // arithmetic in `lexical_only_filter_excludes_punctuation_only_patterns`),
         // not the segmentation pattern. Its region is therefore excluded
         // from the anomaly channel (see
@@ -2774,7 +2774,7 @@ mod tests {
     }
 
     /// Looks a signal's assigned rank up by `Signal` identity rather than
-    /// slot index — segmentation and feature kinds place the same signal
+    /// slot index: segmentation and feature kinds place the same signal
     /// at different slots (e.g. `Span` is slot 3 for feature, slot 2 for
     /// segmentation), so a slot-index bug in pooled ranking would not show
     /// up if tests only ever indexed by position.
@@ -2849,7 +2849,7 @@ mod tests {
         }
 
         // rrf_score is round6 of the RRF-fusion formula applied to the
-        // ranks derived above — computed here from the formula, not by
+        // ranks derived above, computed from the formula rather than
         // reading the ranks back out of `scores`.
         let expected_rrf = |ranks: &[usize]| -> f64 {
             ranks
@@ -2869,8 +2869,8 @@ mod tests {
     fn global_rank_scope_pools_signal_ranks_across_kinds() {
         // Two feature + two segmentation patterns with rarity raws ordered
         // feature[0] > seg[0] > feature[1] > seg[1], and span raws ordered
-        // feature[1] > seg[0] > seg[1] > feature[0] — an independent order
-        // so the span assertion cannot pass by riding on the rarity setup.
+        // feature[1] > seg[0] > seg[1] > feature[0] (an independent order
+        // so the span assertion cannot pass by riding on the rarity setup).
         let patterns = vec![
             calib_stats(PatternKind::Feature, "feat-0", 1, 0, 10.0, Some("pos1")),
             calib_stats(PatternKind::Feature, "feat-1", 3, 0, 40.0, Some("pos1")),
@@ -2893,7 +2893,7 @@ mod tests {
         assert_eq!(rank_by_signal(&within, 2, Signal::Rarity), Some(1));
         assert_eq!(rank_by_signal(&global, 2, Signal::Rarity), Some(2));
         // Span lives at a different slot per kind (feature slot 3,
-        // segmentation slot 2 — see `Signal::applicable`); pooling must
+        // segmentation slot 2; see `Signal::applicable`); pooling must
         // still be by signal identity, not slot position. seg[0]'s span
         // (30.0) is within-kind rank 1 (beats seg[1]'s 20.0) but globally
         // rank 2 (feature[1]'s 40.0 pools ahead of it).
@@ -3019,10 +3019,8 @@ mod tests {
 
     #[test]
     fn splitmix64_is_pinned_for_cross_version_stability() {
-        // Golden: the first three outputs for seed 1234567, computed at
-        // plan time from Vigna's public-domain reference algorithm. The
-        // test's job is that they never change — shuffle artifacts must be
-        // reproducible years later.
+        // Golden: first three outputs for seed 1234567, computed from
+        // Vigna's reference algorithm. Pinned for artifact reproducibility.
         let mut state = 1234567u64;
         let observed = [
             splitmix64(&mut state),

@@ -185,7 +185,7 @@
   "TEI bytes -> validation record. Include-and-flag: a failed
   validation is an artifact, never an exclusion. The stage runs
   in-process, so its toolchain identity binds the Clojure runtime
-  identity alongside the TEI profile trio — a JVM validation-dependency
+  identity alongside the TEI profile trio: a JVM validation-dependency
   change must invalidate its traces."
   [clj-toolchain-id profile]
   {:stage-id "validate-tei"

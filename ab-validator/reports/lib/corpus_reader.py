@@ -6,39 +6,39 @@ archive recovery.
 Every discovered candidate is classified into exactly one of four
 classes:
 
-  - ``work``          — readable work source; carries the decoded text,
+  - ``work``          : readable work source; carries the decoded text,
                         label, reader path, and sha256.
-  - ``non_work``      — a zip archive with no ``.txt`` member (the
+  - ``non_work``      : a zip archive with no ``.txt`` member (the
                         ``_ttz``/``_etc`` auxiliary archives); excluded
-                        from every work universe BY DESIGN, matching the
+                        from every work universe by design, matching the
                         Rust pipeline.
-  - ``recovered_extra`` — readable ONLY by the tolerant 7zz extraction
+  - ``recovered_extra``: readable only by tolerant 7zz extraction
                         (nonzero exit tolerated when a ``.txt``
-                        materializes). These are OUTSIDE the production
+                        materializes). These are outside the production
                         17,886-entry universe: the Rust pipeline skips
                         them ("skipping unreadable zip"), and ABC's own
                         7zz fallback throws on nonzero exit, so no
                         production consumer reads them. They are scanned
                         and reported separately so no claim silently
                         excludes readable text.
-  - ``unreadable``    — no known reader (stdlib zip with windows-31j
+  - ``unreadable``    : no known reader (stdlib zip with windows-31j
                         member names, local-header bypass, tolerant 7zz)
                         yields any text.
 
 Reader order for zip-shaped candidates (superset of the split scanner's):
-  1. ``zipfile.ZipFile(path, metadata_encoding="windows-31j")`` — decodes
+  1. ``zipfile.ZipFile(path, metadata_encoding="windows-31j")``: decodes
      Shift_JIS member names correctly (Python's default cp437 mangles
      them but keeps the ASCII ``.txt`` suffix; windows-31j gives the true
      names). Requires Python >= 3.11.
   2. On a per-member read error: the local-header-trusting bypass
-     (imported from the split scanner — the two known central-directory
+     (imported from the split scanner for the two known central-directory
      corruption patterns).
   3. On total failure: 7zz extraction into a temp dir, tolerant of a
      nonzero exit when a ``.txt`` file materializes (class
      ``recovered_extra`` when only this path works).
 
-Decoding: BOM-gated UTF-8, else Shift_JIS with ``errors="replace"`` —
-the split scanner's rule (no fully-UTF-8 work exists in the pinned
+Decoding: BOM-gated UTF-8, else Shift_JIS with ``errors="replace"``
+(the split scanner's rule; no fully-UTF-8 work exists in the pinned
 corpus).
 """
 
@@ -106,7 +106,7 @@ def sha256_hex(data: bytes) -> str:
 def _sevenzip_tolerant(path: pathlib.Path) -> tuple[str, bytes] | None:
     """Extract with 7zz into a temp dir; accept the first .txt that
     materializes even on a nonzero exit (more lenient than ABC's strict
-    fallback — callers must classify such reads as recovered_extra)."""
+    fallback; callers must classify such reads as recovered_extra)."""
     binary = shutil.which("7zz") or shutil.which("7z")
     if binary is None:
         return None
@@ -180,7 +180,7 @@ def classify_candidate(corpus_root: pathlib.Path, path: pathlib.Path) -> Candida
             reader="zip_local_header_fallback",
             detail=stdlib_error,
         )
-    # 3. tolerant 7zz — recovers content NO production reader accepts.
+    # 3. tolerant 7zz: recovers content no production reader accepts.
     extra = _sevenzip_tolerant(path)
     if extra is not None:
         member, data = extra

@@ -2,7 +2,7 @@
 //! the editor-integration sprint).
 //!
 //! `classify::BODY_PATTERNS` is the *parser-side* aho-corasick
-//! table — its goal is exhaustive matching, including every digit a
+//! table: its goal is exhaustive matching, including every digit a
 //! `{N}字下げ` form can start with. This module is the *editor-side*
 //! mirror: the public, stable list of slugs an LSP completion menu
 //! offers and the LSP `canonicalize` code action snaps user input to.
@@ -26,7 +26,7 @@
 //! ## Canonicalisation
 //!
 //! [`canonicalise_slug`] maps a known orthographic *variant* (typically
-//! a hiragana-only spelling — `ぼうてん`, `にぼうてん`) to the canonical
+//! a hiragana-only spelling such as `ぼうてん` or `にぼうてん`) to the canonical
 //! form (`傍点`). The variant table is intentionally small: it covers
 //! the highest-frequency author-side abbreviations the editor surface
 //! treats as a one-keystroke-quick-fix. Any input that is already
@@ -93,7 +93,7 @@ impl SlugFamily {
     /// Stable camelCase identifier used by the driver wire formats.
     /// Centralised in the enum's own crate so the wire spelling has a
     /// single authority and the `match` is exhaustiveness-checked at
-    /// compile time (no `_` fallback — a new family must declare its tag).
+    /// compile time (no `_` fallback; a new family must declare its tag).
     #[must_use]
     pub const fn as_json_tag(self) -> &'static str {
         match self {
@@ -129,11 +129,11 @@ pub struct SlugEntry {
     /// punctuation, terminating period.
     pub doc: &'static str,
     /// For `BlockContainerOpen` / `BlockContainerClose` slugs, the
-    /// canonical text of the partner slug — so the editor can link
+    /// canonical text of the partner slug so the editor can link
     /// them together (insert close on accept, jump to partner, …).
     /// `None` for non-paired families.
     pub partner: Option<&'static str>,
-    /// Always [`PairKind::Bracket`] for the slugs in this table — the
+    /// Always [`PairKind::Bracket`] for the slugs in this table; the
     /// surrounding `［＃ … ］` is a bracket pair. Carried so editor
     /// snippets can render the wrapper bracket pair without having to
     /// re-derive it.
@@ -545,7 +545,7 @@ pub const SLUGS: &[SlugEntry] = &[
 /// are inserted automatically by [`canonicalise_slug`] so this table
 /// only needs the *non-trivial* variants.
 const VARIANTS: &[(&str, &str)] = &[
-    // Bouten — hiragana variants commonly typed in drafts.
+    // Bouten: hiragana variants commonly typed in drafts.
     ("ぼうてん", "傍点"),
     ("にぼうてん", "傍点"),
     ("しろぼうてん", "白ゴマ傍点"),
@@ -589,10 +589,10 @@ const VARIANTS: &[(&str, &str)] = &[
 /// stripped) to the canonical form, if one is recognised.
 ///
 /// Returns:
-/// - `Some(s)` — `s` is the canonical text. `s` is `&'static str`
+/// - `Some(s)`: `s` is the canonical text. `s` is `&'static str`
 ///   pointing into [`SLUGS`]'s `canonical` field, so callers can use
 ///   it as a stable key.
-/// - `None` — no recognised slug. Callers may still parse `input` as a
+/// - `None`: no recognised slug. Callers may still parse `input` as a
 ///   `{N}字下げ` parametric form (which intentionally has no fixed
 ///   variant).
 ///
@@ -625,7 +625,7 @@ pub fn canonicalise_slug(input: &str) -> Option<&'static str> {
 /// does not carry.
 ///
 /// `roman` is the stable kebab-case CSS slug. `reading` is the kana the
-/// slug romanises (Hepburn, long vowels dropped — 改丁／かいちょう →
+/// slug romanises (Hepburn, long vowels dropped, e.g. 改丁／かいちょう →
 /// `kaicho`); `None` marks a loanword kept in English (改ページ →
 /// `page-break`, キャプション → `caption`) which has no reading-derived
 /// spelling to check. `jis` cites the JIS Z 8125:2004 clause the term
@@ -633,8 +633,7 @@ pub fn canonicalise_slug(input: &str) -> Option<&'static str> {
 ///
 /// The `render_slug_matches_reading` test re-derives Hepburn from
 /// `reading` and asserts it agrees with `roman`, so a slug that drifts
-/// from its reading — 小書き is こがき (→ `kogaki`), not the over-long
-/// spelling once shipped — cannot reappear.
+/// from its reading (such as 小書き romanising to `kogaki`) cannot reappear.
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct RenderSlug {
@@ -649,7 +648,7 @@ pub struct RenderSlug {
     pub jis: Option<&'static str>,
 }
 
-/// The render slug catalogue — the single source of truth for romaji
+/// The render slug catalogue: the single source of truth for romaji
 /// CSS slugs. See [`RenderSlug`].
 pub const RENDER_SLUGS: &[RenderSlug] = &[
     // --- Section / page break (JIS Z 8125:2004 §07.24) ---------------------
@@ -765,9 +764,9 @@ pub const RENDER_SLUGS: &[RenderSlug] = &[
     // --- Emphasis / inline ---------------------------------------------------
     // The emphasis family now uses reading-based romaji slugs,
     // matching the bouten kinds: the slug is `hepburn(reading)`,
-    // enforced by `render_slug_matches_reading`. Two stay on their existing
-    // slugs deliberately — `caption` (a loanword, キャプション) and
-    // `keigakomi` (罫囲み＝けいがこみ, a valid reading already serving as the
+    // enforced by `render_slug_matches_reading`. Two retain existing
+    // slugs: `caption` (a loanword, キャプション) and `keigakomi`
+    // (罫囲み＝けいがこみ, a valid reading already serving as the
     // wire/API identifier). The slug is the CSS class only (`aozora-<slug>`);
     // the wire `as_json_tag` is a separate, frozen vocabulary.
     RenderSlug {
@@ -782,7 +781,7 @@ pub const RENDER_SLUGS: &[RenderSlug] = &[
         roman: "futoji",
         jis: None,
     },
-    // ゴシック体 — gothic typeface, distinct from 太字. ゴシック is a
+    // ゴシック体: gothic typeface, distinct from 太字. ゴシック is a
     // loanword (gothic), so `reading: None` opts out of the Hepburn check like
     // `caption`; the slug is the fixed CSS class `aozora-goshikku`.
     RenderSlug {
@@ -804,7 +803,7 @@ pub const RENDER_SLUGS: &[RenderSlug] = &[
         jis: Some("07.12.02"),
     },
     // 分数 (`「a/b」は分数`). `reading: None` opts out of the Hepburn
-    // re-derivation check — ぶんすう romanises with a long vowel (bunsū),
+    // re-derivation check: ぶんすう romanises with a long vowel (bunsū),
     // which would not match the stable `bunsu` slug.
     RenderSlug {
         canonical: "分数",
@@ -904,7 +903,7 @@ mod tests {
     }
 
     /// Minimal Hepburn romaniser (long vowel お／う段 + う dropped,
-    /// matching the slug convention 改丁→`kaicho`). Test-only — the
+    /// matching the slug convention 改丁→`kaicho`). Test-only; the
     /// production slugs are hand-written in [`RENDER_SLUGS`]; this
     /// re-derives them from `reading` to catch a misspelling.
     #[allow(
@@ -1044,7 +1043,7 @@ mod tests {
                     continue 'outer;
                 }
             }
-            // Unknown kana — surface it so the test fails loudly.
+            // Unknown kana: surface it so the test fails loudly.
             return format!("{out}?{rest}");
         }
         out

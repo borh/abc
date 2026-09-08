@@ -64,12 +64,11 @@
 ;; A structural allowlist keyed off :evidence_class, not off the absence of any
 ;; particular field. Admission (exact-tuple registry) and release
 ;; qualification (separately authorized) each name the exact evidence
-;; classes that may support the claim. Comparison/selection research evidence —
-;; the historical :parser-selection rows and the new :neutral-comparison rows —
-;; is deliberately outside both allowlists, so a comparison citation is
-;; structurally incapable of admitting or release-qualifying a parser regardless
-;; of its :status or which fields it carries. Downstream gates (e.g. the release gate) key their predicates
-;; off these sets rather than re-deriving the policy.
+;; classes that may support the claim. Comparison/selection research evidence
+;; (:parser-selection and :neutral-comparison) is outside both allowlists,
+;; so a comparison citation cannot admit or release-qualify a parser regardless
+;; of its :status or which fields it carries. Downstream gates key their
+;; predicates off these sets rather than re-deriving the policy.
 
 (def comparison-evidence-classes
   "Evidence classes that record parser comparison / selection research only.

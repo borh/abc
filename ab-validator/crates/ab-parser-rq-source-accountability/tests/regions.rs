@@ -574,10 +574,8 @@ fn the_bibliographic_block_ends_at_the_legend_even_with_no_blank_line() {
 /// The distribution notice is claimed, and it is tested before the colophon.
 ///
 /// One notice in the corpus writes its URL as `http：//` with a fullwidth
-/// colon. That makes the whole sentence a non-empty key, a fullwidth colon and
-/// a value — a colophon field by `is_colophon_field` — and it was classified
-/// as one until this producer learned the notice. The construct a sentence
-/// gets must not turn on a typo inside it, so both forms must land on
+/// colon. That makes the sentence match the key/colon/value shape of a colophon
+/// field under `is_colophon_field`. Both forms must classify as
 /// `distribution_notice_line`.
 ///
 /// The notice also ends any field run above it: an indented line beneath one
@@ -612,9 +610,9 @@ fn the_distribution_notice_is_recognized_before_a_colophon_field() {
 ///
 /// Across all 17,876 works of the pinned corpus, every tail line beginning
 /// `このファイルは、` is the distribution notice and every one names
-/// `青空文庫`, so this second anchor rejects nothing that exists today. It is
-/// kept, and tested, because the first anchor alone is a sentence opener that
-/// a transcriber could reasonably write — and the failure would be silent.
+/// `青空文庫`, so this second anchor rejects nothing in the corpus today. It is
+/// retained because the first anchor alone is a generic sentence opener that
+/// could otherwise misclassify silently.
 #[test]
 fn a_sentence_that_merely_opens_like_the_notice_is_not_claimed() {
     let rows = classified(concat!(

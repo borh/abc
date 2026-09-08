@@ -112,8 +112,8 @@
         _ (check-totality! blobs manifest selection)]
     (or
      ;; the scheduled no-op / determinism decision runs before any commit is
-     ;; created — an uncontended duplicate publishes nothing, an uncontended
-     ;; same-projection divergence halts
+     ;; created: an uncontended duplicate publishes nothing, and an uncontended
+     ;; same-projection divergence halts.
      (decide-against-head manifest head)
      (let [{:keys [hex bytes]} (decode/encode "release-manifest" manifest)
            commit (repo/write-commit!
@@ -124,8 +124,6 @@
                                                  :sig (sign-release hex)
                                                  :blobs blobs})
                           :message (str "snh release " hex)})
-           ;; the candidate must verify before it can reach the origin: a bad
-           ;; signature or missing blob throws here and the ref never moves
            _ (verify/verify-repository-at v commit pinned-keys)
            outcome (push-fn clone branch commit c)
            reconcile
@@ -150,7 +148,7 @@
 (defn- successor-for-event
   "Construct the successor manifest executing `event` on `head-manifest`, or
   a halt outcome when the event no longer validates against that head.
-  Returns {:manifest ... :blobs {hex bytes}} — a withdrawal must also publish
+  Returns {:manifest ... :blobs {hex bytes}}: a withdrawal must also publish
   the catalog with the withdrawn works removed, because a takedown that left
   them described in the release's own catalog would not be a takedown."
   [head-manifest head-hex head-catalog event-id {:strs [kind entries]}]
@@ -269,7 +267,6 @@
                                    :base-tree-of c
                                    :files files
                                    :message (str "snh governance " event-hex)})
-                    ;; the candidate must verify before it can reach the origin
                     _ (verify/verify-repository-at v commit pinned-keys)
                     outcome (push-fn clone branch commit c)]
                 (case outcome

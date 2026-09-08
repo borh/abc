@@ -1,7 +1,7 @@
 (ns soranoha.za.corpus
   "Fixture corpus for release-assembly acceptance: a miniature aozorabunko
   checkout under git (cards/ work zips + the official catalog zip), driven
-  through the real kernel — real provenance gate, catalog read, selection
+  through the real kernel: real provenance gate, catalog read, selection
   join, extract stage, and engine/trace/CAS. Every other stage (metadata,
   parse, convert, render, validate) is a deterministic in-process
   substitute whose wiring, output names, invalidation-relevant content
@@ -63,7 +63,7 @@
 (defn write-catalog!
   "The official catalog zip for `works`: one row per (work, contributor)
   pair, joining each zip to its work/person ids through the text-file
-  URL basename. This is the real catalog's shape — every row of a work
+  URL basename. This is the real catalog's shape: every row of a work
   repeats that work's URL, so a multi-contributor work has several rows
   sharing one basename. Each work's own :person-id 著者 row is emitted
   LAST, so the basename index (later rows win) resolves to it and the

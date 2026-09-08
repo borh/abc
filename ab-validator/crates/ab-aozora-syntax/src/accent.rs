@@ -1,4 +1,4 @@
-//! Aozora Bunko accent decomposition — ASCII digraph → Unicode letter.
+//! Aozora Bunko accent decomposition: ASCII digraph → Unicode letter.
 //!
 //! Spec: <https://www.aozora.gr.jp/accent_separation.html>
 //!
@@ -21,7 +21,7 @@
 //!   then single-letter digraphs.
 //! - `decompose_fragment` may **grow** the byte length of some substrings
 //!   (`m'` = ḿ, `e~` = ẽ are BMP codepoints ≥ U+1E00 whose UTF-8 forms are
-//!   3 bytes — larger than their 2-byte ASCII digraphs). Callers that back-map
+//!   3 bytes, larger than their 2-byte ASCII digraphs). Callers that back-map
 //!   diagnostic spans across the rewrite must record a per-position delta.
 //!
 //! # Scope of use
@@ -31,7 +31,7 @@
 //! transcribers wrap whole foreign passages in `〔…〕`, prose punctuation
 //! occurs *inside* the convention too, so two marker bytes are additionally
 //! gated per occurrence by `digraph_applies` (cedilla only before a letter,
-//! acute only on a vowel base) — corpus-validated against the archive's own
+//! acute only on a vowel base); corpus-validated against the archive's own
 //! XHTML rendering. `text,` therefore stays `text,` even inside a span.
 
 use std::borrow::Cow;
@@ -43,7 +43,7 @@ use crate::format::AccentMark;
 /// Public for downstream iteration (tests, doc-builders, corpus
 /// tooling). For runtime lookup, `decompose_fragment` uses the
 /// perfect-hash split tables (`ACCENT_DIGRAPHS` for the 110 two-byte
-/// entries; a 4-arm match for the four three-byte ligatures) — the
+/// entries; a 4-arm match for the four three-byte ligatures); the
 /// linear `ACCENT_TABLE` scan is no longer on the hot path.
 pub const ACCENT_TABLE: &[(&str, char)] = &[
     // --- Ligatures (checked first: 3-char patterns beat the 2-char group) ---
@@ -51,7 +51,7 @@ pub const ACCENT_TABLE: &[(&str, char)] = &[
     ("AE&", 'Æ'),
     ("oe&", 'œ'),
     ("OE&", 'Œ'),
-    ("s&", 'ß'), // eszett — `&` on `s` is a ligature, not ring-above
+    ("s&", 'ß'), // eszett: `&` on `s` is a ligature, not ring-above
     // --- 【a】 ---
     ("a`", 'à'),
     ("a'", 'á'),
@@ -266,8 +266,8 @@ const _: () = {
 
 /// Branchless membership test against [`ACCENT_MARKERS`].
 ///
-/// Compiles to `(b < 128) & ((MASK >> b) & 1)` — one cmp, one shift,
-/// one AND — no memory load, no loop, no branch. Replaces the prior
+/// Compiles to `(b < 128) & ((MASK >> b) & 1)`: one cmp, one shift,
+/// one AND, with no memory load, no loop, and no branch. Replaces the prior
 /// `ACCENT_MARKERS.contains(&b)` linear scan over 9 bytes.
 #[inline]
 #[must_use]
@@ -424,7 +424,7 @@ pub fn decompose_fragment(fragment: &str) -> Cow<'_, str> {
     // input bit-for-bit. Borrow to avoid allocation.
     //
     // The membership test goes through the [`ACCENT_MARKER_MASK`] u128
-    // bitmap, which lowers to one cmp + shift + AND per byte — the
+    // bitmap, which lowers to one cmp + shift + AND per byte; the
     // tightest path possible without SIMD. SIMD prefilter wouldn't help
     // here: aozora text is overwhelmingly Japanese (3-byte UTF-8 with
     // 0xE3 lead byte), so byte-level memchr-style searches don't reduce
@@ -463,7 +463,7 @@ pub fn decompose_fragment(fragment: &str) -> Cow<'_, str> {
 /// Each entry is `(in_off, in_len, out_len)`: the `in_len` input bytes at
 /// byte offset `in_off` (relative to `fragment`) become `out_len` output
 /// bytes. Only digraphs whose UTF-8 output length differs from the ASCII
-/// source are reported — length-preserving substitutions (`s&` = ß, 2→2)
+/// source are reported; length-preserving substitutions (`s&` = ß, 2→2)
 /// shift no later offset and are omitted, so the common case allocates an
 /// empty `Vec`.
 ///
@@ -492,7 +492,7 @@ pub fn decompose_fragment_edits(fragment: &str) -> Vec<(usize, usize, usize)> {
 /// `in_off` become `replacement`. [`decompose_fragment_edits`] is this list
 /// filtered to the length-changing entries. The unfiltered list exists for
 /// callers that need the substitution **sites** rather than the offset
-/// deltas — the sanitize stage records one diagnostic and one offset-map
+/// deltas: the sanitize stage records one diagnostic and one offset-map
 /// edit per site so that bytes between sites keep exact source positions (a
 /// whole-span edit would collapse every interior fact onto the span start).
 ///
@@ -579,7 +579,7 @@ const fn digraph_applies(base: u8, marker: u8, next: Option<u8>) -> bool {
 /// symbolically, so this maps [`AccentMark`] to the table's ASCII marker byte
 /// (Acute → `'`, Umlaut → `:`, Grave → `` ` ``), builds the 2-byte key, and
 /// looks it up. Returns `None` when `letter` is not ASCII-alphabetic or the
-/// `(letter, mark)` pair has no precomposed form (e.g. `q` + acute) — the
+/// `(letter, mark)` pair has no precomposed form (e.g. `q` + acute); the
 /// classifier then declines to `Directive{Unknown}` and the renderer emits the
 /// letter unstyled. This is the single authority shared by the forward-accent
 /// classifier and renderer, mirroring [`compose_dotted`]'s role for `AccentDot`.
@@ -595,7 +595,7 @@ pub fn compose_accent(letter: char, mark: AccentMark) -> Option<char> {
 }
 
 // ======================================================================
-// Dotted-letter composition (ドット付き) — a *separate* facility from
+// Dotted-letter composition (ドット付き): a separate facility from
 // the `〔…〕` digraph decomposition above.
 // ======================================================================
 //
@@ -603,7 +603,7 @@ pub fn compose_accent(letter: char, mark: AccentMark) -> Option<char> {
 // the immediately-preceding run and asks for a combining dot above / below it
 // (`m` → ṁ, `s` → ṣ). Unlike the `〔…〕` ASCII-digraph scheme, the input is the
 // **directive body's selector grammar**, not an inline marker, so this code is
-// called from the forward-reference classifier / renderer — never from
+// called from the forward-reference classifier / renderer, never from
 // `decompose_fragment`. Every attested `(letter, dot)` pair has a single NFC
 // precomposed scalar, so no combining-mark (U+0307 / U+0323) fallback is
 // needed. This makes `accent.rs` the one authority for "Latin letter +
@@ -613,9 +613,9 @@ pub fn compose_accent(letter: char, mark: AccentMark) -> Option<char> {
 /// `上ドット付き` (above) or `下ドット付き` (below).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DotPosition {
-    /// 上ドット — combining dot above (NFC-composed, e.g. `m` → ṁ U+1E41).
+    /// 上ドット: combining dot above (NFC-composed, e.g. `m` → ṁ U+1E41).
     Above,
-    /// 下ドット — combining dot below (NFC-composed, e.g. `s` → ṣ U+1E63).
+    /// 下ドット: combining dot below (NFC-composed, e.g. `s` → ṣ U+1E63).
     Below,
 }
 
@@ -624,7 +624,7 @@ pub enum DotPosition {
 /// Only the pairs attested in the 17,889-work `aozorabunko_text` mirror are
 /// tabled (above: `m`, `n`; below: `s t h r n d m` + capitals `T`, `R`). Each
 /// has a single precomposed scalar, verified NFD-decomposing to base +
-/// U+0307/U+0323 — so composition never needs a combining-mark fallback.
+/// U+0307/U+0323, so composition never needs a combining-mark fallback.
 /// Case-preserving: `t` → ṭ, `T` → Ṭ.
 pub const ACCENT_DOT_TABLE: &[(char, DotPosition, char)] = &[
     ('m', DotPosition::Above, 'ṁ'),
@@ -671,11 +671,11 @@ enum Occ {
     Unique,
     /// `ともに` / `それぞれ` explicitly selects all matching letters.
     All,
-    /// `前の` — the first occurrence.
+    /// `前の`: the first occurrence.
     First,
-    /// `Nつめの` — the N-th occurrence (1-indexed).
+    /// `Nつめの`: the N-th occurrence (1-indexed).
     Nth(usize),
-    /// `最後の` — the last occurrence.
+    /// `最後の`: the last occurrence.
     Last,
 }
 
@@ -725,7 +725,7 @@ fn parse_selector(sel: &str) -> Option<(Occ, &str)> {
     }
     if let Some((n, rest)) = parse_leading_number(sel) {
         // A bare number with no `つめの` (or `つめの` with no letters) is not a
-        // selector — decline.
+        // selector: decline.
         let letters = rest.strip_prefix("つめの")?;
         return Some((Occ::Nth(n), letters));
     }
@@ -782,7 +782,7 @@ fn parse_accent_clause(clause: &str) -> Option<Vec<DotOp>> {
 /// A body may be one clause or several `。` / `、`-joined clauses
 /// (`mは上ドット付き。２つめのsは下ドット付き`); every clause addresses the *same*
 /// reclaimed run, so their ops are concatenated and applied together. Any
-/// clause that is not a well-formed single clause fails the whole body — which
+/// clause that is not a well-formed single clause fails the whole body, which
 /// is exactly how word-qualified (`simhaのm…`) and `段目` table-row forms
 /// decline, since their `、`-split pieces are not pure ASCII-letter selectors.
 fn parse_accent_dot_body(body: &str) -> Option<Vec<DotOp>> {
@@ -900,7 +900,7 @@ mod tests {
         assert_eq!(
             ACCENT_TABLE.len(),
             EXPECTED,
-            "spec count drift — see docs/specs/aozora/accent_separation.html"
+            "spec count drift: see docs/specs/aozora/accent_separation.html"
         );
     }
 
@@ -974,7 +974,7 @@ mod tests {
 
     #[test]
     fn spec_point_ligatures_beat_ring_above() {
-        // `s&` = ß (eszett), NOT `s` + ring-above — longest-match ordering.
+        // `s&` = ß (eszett), NOT `s` + ring-above; longest-match ordering.
         assert_eq!(decompose_fragment("stras&e"), "straße");
         // Ligature over single-letter: ae& = æ, not a& + e.
         assert_eq!(decompose_fragment("ae&on"), "æon");
@@ -1099,7 +1099,7 @@ mod tests {
     #[test]
     fn sites_agree_with_decompose_and_edits_filter_them() {
         // Sites replay to the same output decompose_fragment produces, and
-        // the edits list is exactly the length-changing subset — the two
+        // the edits list is exactly the length-changing subset; the two
         // functions cannot drift apart without failing here.
         for input in ["stras&e", "ae&on m'a", "ve'rite'", "text,", "plain", ""] {
             let sites = decompose_fragment_sites(input);
@@ -1129,7 +1129,7 @@ mod tests {
     #[test]
     fn property_all_table_entries_round_trip_in_admissible_context() {
         // Every table entry decomposes to its target char in a context that
-        // satisfies its applicability gate — except the consonant acute rows,
+        // satisfies its applicability gate, except the consonant acute rows,
         // which no context admits (the corpus shows zero genuine uses and
         // every occurrence is élision or an apostrophe).
         for (pat, ch) in ACCENT_TABLE {
@@ -1258,7 +1258,7 @@ mod tests {
 
     #[test]
     fn accent_dot_declines_word_qualified_and_dangyou() {
-        // `simhaのm` — selector isn't a pure ASCII-letter run.
+        // `simhaのm`: selector is not a pure ASCII-letter run.
         assert_eq!(compose_accent_dots("simha", "simhaのmは上ドット付き"), None);
         // 段目 table-row form.
         assert_eq!(

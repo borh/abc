@@ -2,7 +2,7 @@
 # The environment supplies the deployment-specific values:
 #   SORANOHA_SERVE_LISTEN  host:port to listen on
 #   SORANOHA_SERVE_ROOT    path of the exported serving tree
-# Every response is a file from the tree — static file serving only, no
+# Every response is a file from the tree: static file serving only, no
 # directory listings, no body rewriting. Digest-addressed paths (blobs,
 # manifests, signatures, governance events) are immutable; the pointer
 # layer (releases/latest, releases/HEAD, catalog.json, works/, withdrawn/) and

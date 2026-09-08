@@ -1,7 +1,7 @@
 # Work identifiers
 
 Every published work has one identifier, of the form
-`<work-id>_<card-directory>` — six digits, an underscore, six digits:
+`<work-id>_<card-directory>`: six digits, an underscore, six digits:
 
 ```
 000092_000879
@@ -50,22 +50,16 @@ read.
 work can be withdrawn. A withdrawn identifier stops appearing under `/works/`
 and appears under `/withdrawn/<identifier>.json`, which names the signed
 governance event carrying the public reason. The releases that included the
-work keep their manifests, signatures and content — withdrawal removes the
+work keep their manifests, signatures and content; withdrawal removes the
 work from the current release, and never rewrites a past one.
 
 An identifier would also change if Aozora refiled the same work under a
 different contributor card, since the card directory is part of it. Only that
 work would be affected; every other identifier is computed independently.
 
-## What the identifier deliberately omits
+## What the identifier omits
 
-Earlier builds published a longer identifier —
-`000092_000879_000879_92_ruby_164` — which additionally carried the catalog
-person id, the archive filename stem, and its `ruby` or `txt` format variant.
-Those describe how the build reached the text, not what the text is. Keeping
-them in a permanent citable URL would mean that a change in how editions are
-selected either moved the identifier of an unchanged work or froze a stale
-description of the download.
+The identifier omits person IDs, archive filename stems, and format variants (`ruby`/`txt`). Those describe acquisition details rather than intellectual work identity. Including them in permanent URLs would couple work identity to edition selection mechanics.
 
 The card directory was kept even though the work id alone is nearly unique. It
 is the only component that distinguishes one work id filed under several

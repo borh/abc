@@ -51,7 +51,7 @@ The notebook uses contextual marimo UI controls for report view, row limit, feat
 a self-contained `examples.md` + `examples.json` bundle: projected-text
 snippets with the disagreement region marked 【…】, per-analyzer
 segmentation/POS tables, aozora markup reconstructed from the AAT, and work
-metadata (title, author, year — author names resolved from an ABC catalog
+metadata (title, author, year; author names resolved from an ABC catalog
 export's `persons/`). Run it where the warehouse run dir and AAT corpus live
 then copy the bundle next to the existing reports:
 

@@ -3,6 +3,26 @@
 version = 4
 
 [[package]]
+name = "ab-aat"
+version = "0.6.0"
+dependencies = [
+ "ab-aozora-facade",
+ "ab-aozora-pipeline",
+ "ab-rq-artifact-store",
+ "ab-source-syntax",
+ "anyhow",
+ "encoding_rs",
+ "hegeltest",
+ "jsonschema",
+ "proptest",
+ "regex",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
+]
+
+[[package]]
 name = "ab-aat-to-parser-ir"
 version = "0.1.0"
 dependencies = [
@@ -33,41 +53,6 @@ version = "0.5.0"
 dependencies = [
  "ab-aat",
  "serde_json",
-]
-
-[[package]]
-name = "ab-aat"
-version = "0.6.0"
-dependencies = [
- "ab-aozora-facade",
- "ab-aozora-pipeline",
- "ab-rq-artifact-store",
- "ab-source-syntax",
- "anyhow",
- "encoding_rs",
- "hegeltest",
- "jsonschema",
- "proptest",
- "regex",
- "serde",
- "serde_json",
- "sha2 0.10.9",
- "tempfile",
-]
-
-[[package]]
-name = "ab-capture"
-version = "0.6.0"
-dependencies = [
- "ab-aat",
- "ab-aozora-pipeline",
- "ab-rq-artifact-store",
- "anyhow",
- "hegeltest",
- "jsonschema",
- "serde_json",
- "sha2 0.10.9",
- "tempfile",
 ]
 
 [[package]]
@@ -192,6 +177,21 @@ version = "0.1.0"
 dependencies = [
  "ab-aozora-proptest",
  "proptest",
+]
+
+[[package]]
+name = "ab-capture"
+version = "0.6.0"
+dependencies = [
+ "ab-aat",
+ "ab-aozora-pipeline",
+ "ab-rq-artifact-store",
+ "anyhow",
+ "hegeltest",
+ "jsonschema",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
 ]
 
 [[package]]

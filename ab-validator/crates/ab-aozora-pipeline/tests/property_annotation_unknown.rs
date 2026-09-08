@@ -1,4 +1,4 @@
-//! Invariants for `DirectiveKind::Unknown` — the catch-all that
+//! Invariants for `DirectiveKind::Unknown`: the catch-all that
 //! the classify stage emits when no recogniser claimed an `［＃…］` annotation.
 //!
 //! The catch-all is a deliberate decision: every bracket annotation is
@@ -10,7 +10,7 @@
 //!    the catch-all path, including pathological / unbalanced bracket
 //!    shapes.
 //! 2. **non-empty raw bytes**: every emitted `Directive` node carries
-//!    a `NonEmptyStr` raw payload — the type system enforces it, but
+//!    a `NonEmptyStr` raw payload (the type system enforces it, but
 //!    we cross-check the runtime invariant explicitly so a future
 //!    refactor that loosens the type can't quietly emit empty
 //!    annotations.
@@ -23,7 +23,7 @@
 //!    emits no diagnostics for the source, the serialised text must
 //!    not contain a bare `［＃` (i.e. one not paired with a closing
 //!    `］`). On *malformed* inputs the serialiser legitimately
-//!    round-trips the source's own asymmetry — Tier-A is an HTML-side
+//!    round-trips the source's own asymmetry: Tier-A is an HTML-side
 //!    contract, and the serialise side honours it only when the
 //!    lexer accepts the input cleanly.
 
@@ -60,8 +60,8 @@ fn has_annotation(out: &ab_aozora_pipeline::LexOutput) -> bool {
 
 /// Tier-A canary on a string: no bare `［＃` may appear without a
 /// corresponding `］` after it on the same line. Not a perfect
-/// scanner — it exists to catch the obvious regression where the
-/// serialiser drops a closing bracket — but a bare `［＃` reaching
+/// scanner; it exists to catch regressions where the
+/// serialiser drops a closing bracket, but a bare `［＃` reaching
 /// the output is itself a Tier-A violation regardless of context.
 fn assert_no_bare_open_bracket(serialised: &str) {
     let mut cursor = 0_usize;
@@ -83,7 +83,7 @@ fn assert_annotation_invariants(source: &str) {
     // already says so via `NonEmptyStr`, but we cross-check at runtime
     // so the property fails loudly if a future refactor weakens the
     // invariant). Also verify each annotation's raw bytes are valid
-    // UTF-8 — true by construction (it's `&str`), but a `is_empty`
+    // UTF-8: true by construction (it's `&str`), but an `is_empty`
     // probe on every annotation closes the loop on (2).
     for (_, nr) in out_a.registry.iter_sorted() {
         if let NodeRef::Inline(Node::Directive(a)) = nr {
@@ -105,7 +105,7 @@ fn assert_annotation_invariants(source: &str) {
          source: {source:?}\nserialised: {serialised:?}"
     );
 
-    // (4) Tier-A canary on serialised text — no bare `［＃` leaks
+    // (4) Tier-A canary on serialised text: no bare `［＃` leaks
     // out *when the lexer accepts the input cleanly*. On malformed
     // inputs (those that emit diagnostics), the serialiser round-trips
     // the user's own asymmetry; Tier-A is an HTML-side contract and
@@ -146,7 +146,7 @@ fn known_annotations_round_trip() {
 
 #[test]
 fn unknown_annotations_round_trip() {
-    // Definitely not in the recogniser table — falls through to
+    // Definitely not in the recogniser table: falls through to
     // `DirectiveKind::Unknown`.
     assert_annotation_invariants("text［＃this is a wholly novel marker］more");
     assert_annotation_invariants("［＃random text 1234］");
@@ -168,14 +168,14 @@ fn directive_before_repeated_explicit_ruby_markers_round_trips() {
 proptest! {
     #![proptest_config(default_config())]
 
-    /// Workhorse — Aozora-shaped fragments must satisfy all four
+    /// Workhorse: Aozora-shaped fragments must satisfy all four
     /// invariants regardless of which annotation kinds get exercised.
     #[test]
     fn aozora_fragment_annotations_are_well_formed(s in aozora_fragment(120)) {
         assert_annotation_invariants(&s);
     }
 
-    /// Pathological — unbalanced and runaway bracket shapes are the
+    /// Pathological: unbalanced and runaway bracket shapes are the
     /// ones that drive the catch-all hardest. If the catch-all panics
     /// or drops annotations on the round-trip, this property fails
     /// under shrinking with a minimal repro.
@@ -184,7 +184,7 @@ proptest! {
         assert_annotation_invariants(&s);
     }
 
-    /// Unicode adversarial — combining marks, RTL overrides, PUA
+    /// Unicode adversarial: combining marks, RTL overrides, PUA
     /// codepoints, full-width bracket variants. Cross-checks that the
     /// catch-all does not misbehave when the annotation body itself
     /// contains adversarial Unicode.

@@ -532,7 +532,7 @@ pub(crate) mod tests {
                     char_end: 10,
                     surface: "である".to_owned(),
                 },
-                // A morpheme OUTSIDE every wanted range — must not be returned.
+                // A morpheme outside every wanted range; must not be returned.
                 MorphemeRow {
                     run_id: arc(RUN),
                     source_id: arc("src-a"),

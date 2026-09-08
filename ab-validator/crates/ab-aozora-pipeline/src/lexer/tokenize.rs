@@ -1,4 +1,4 @@
-//! Tokenize stage — linear tokenization of sanitized source into a token stream.
+//! Tokenize stage: linear tokenization of sanitized source into a token stream.
 //!
 //! Walks the sanitize-stage text via the SIMD-accelerated
 //! [`ab_aozora_scan`] crate and exposes a stateful iterator yielding one
@@ -18,7 +18,7 @@
 //! 3. [`Iterator::next`] merge-walks the two sorted offset streams
 //!    in event order, emitting `Text` / `Trigger` / `Newline` tokens.
 //! 4. `≪` / `≫` (U+226A/U+226B) are ordinary single-character triggers
-//!    (`AngleQuoteOpen` / `AngleQuoteClose`) — the aozora input encoding
+//!    (`AngleQuoteOpen` / `AngleQuoteClose`), the aozora input encoding
 //!    for a 底本's double-angle brackets `《`/`》`. No look-ahead merge.
 //!
 //! `［＃` is NOT emitted as a merged trigger: `Hash` after
@@ -91,7 +91,7 @@ impl<'s> Tokenizer<'s> {
         let trigger_offsets = ab_aozora_scan::scan_offsets(source);
         let bytes = source.as_bytes();
         // memchr_iter is internally vectorised (AVX2 on x86_64, NEON on
-        // aarch64) — the same machine code memchr3 uses for trigger
+        // aarch64), the same machine code memchr3 uses for trigger
         // candidates, here narrowed to the single newline byte.
         let mut newline_offsets: Vec<u32> = Vec::with_capacity(bytes.len() / 64);
         for n in memchr::memchr_iter(b'\n', bytes) {
@@ -125,7 +125,7 @@ impl<'s> Tokenizer<'s> {
 
     /// Pair a flushed Text token (if any) with the structural event
     /// that produced the flush. The Text comes first, the event is
-    /// buffered for the next `next()` call — preserving emission
+    /// buffered for the next `next()` call, preserving emission
     /// order without intermediate allocation.
     fn pair_text_then(&mut self, text: Option<Token>, event: Token) -> Token {
         match text {

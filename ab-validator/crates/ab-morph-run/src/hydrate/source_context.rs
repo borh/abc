@@ -67,7 +67,7 @@ impl SourceContext {
             Ok(snippet) => Some(snippet),
             Err(err) => {
                 // An example span the projected text cannot contain is a
-                // projection disagreement (closed vocabulary) — same code
+                // projection disagreement (closed vocabulary); same code
                 // as the source-level char-count gate.
                 errors.push(format!("projection-mismatch: {err}"));
                 None
@@ -77,7 +77,7 @@ impl SourceContext {
         // over-long range (every span overlaps), so an out-of-range region
         // must be rejected here to avoid quoting markup for a span the
         // warehouse never defined. The AAT node layer has no such
-        // correctness concern — it is just node identities — so it is still
+        // correctness concern (it is just node identities), so it is still
         // computed below with char_end clamped to document bounds.
         let aozora_markup = if char_end > total_chars {
             errors.push(format!("markup-unreconstructable: span [{char_start}, {char_end}) exceeds document bounds ({total_chars} chars)"));
@@ -91,10 +91,9 @@ impl SourceContext {
                 }
             }
         };
-        // Layer 4 (AAT node context) survives markup-layer failure (spec
-        // §Layer 4: "useful for debugging projection artifacts" — most
-        // valuable exactly when markup reconstruction fails). Clamp
-        // char_end so an out-of-range region still yields the spans that
+        // Layer 4 (AAT node context) survives markup-layer failure (useful
+        // for debugging projection artifacts when markup reconstruction fails).
+        // Clamp char_end so an out-of-range region still yields the spans that
         // overlap the in-bounds portion.
         let aat_nodes = contributing_node_refs(&self.spans, char_start, char_end.min(total_chars));
         RegionLayers {
@@ -120,7 +119,7 @@ pub struct Snippet {
 }
 
 impl Snippet {
-    /// `…before【region】after…` — the Markdown display form. Ellipses appear
+    /// `…before【region】after…`: the Markdown display form. Ellipses appear
     /// only where the window was clipped short of the document bounds, which
     /// the constructor encodes by leaving `before`/`after` at full context
     /// length; callers never re-check bounds.
@@ -234,7 +233,7 @@ pub fn reconstruct_markup(
             )
         })?;
         // Coverage check: a gap between consecutive contributing nodes means
-        // a non-projecting marker sits inside the region — render "…" and
+        // a non-projecting marker sits inside the region; render "…" and
         // record as a byte range (spec §Layer 3 step 3).
         if let Some(prev) = prev_byte_end
             && node_start > prev
@@ -278,8 +277,8 @@ pub fn reconstruct_markup(
 }
 
 /// The contributing spans' node identities for `[char_start, char_end)`,
-/// deduped by pointer, in document order — computable even when markup
-/// rendering fails (spec §Layer 4: node context survives markup omission).
+/// deduped by pointer, in document order (computable even when markup
+/// rendering fails).
 /// Spans are sorted by projected offset already (projection contract).
 fn contributing_node_refs(
     spans: &[ab_plaintext::ProjectionSpan],
@@ -338,7 +337,7 @@ fn node_byte_span(node: &serde_json::Value) -> Option<(u64, u64)> {
     ))
 }
 
-/// The Aozora marker form of a gaiji node — `※［＃description］` when a
+/// The Aozora marker form of a gaiji node: `※［＃description］` when a
 /// description is present, else the resolved character. Both callers use
 /// this so gaiji renders identically at top level and nested inside
 /// style/tcy; byte-length verification (top level only) decides
@@ -482,7 +481,6 @@ pub(crate) mod tests {
     /// `#[cfg(test)]` reuse.
     ///
     /// Sanitized-source layout the spans below describe (byte offsets):
-    ///   0..15  text  "このあいびきは"  — wait, keep it byte-countable:
     /// Use ASCII-measurable pieces: "AB" (2b) + "｜仏蘭西《フランス》" (30b)
     /// + "CD" (2b) + "端物《はもの》" (21b) + gaiji marker (20b) + "EF" (2b).
     pub(crate) fn typed_aat_fixture() -> serde_json::Value {
@@ -681,7 +679,7 @@ pub(crate) mod tests {
         assert!(!layers.errors.is_empty());
         assert!(!layers.aat_nodes.is_empty());
 
-        // Every error uses the closed vocabulary — the snippet failure is a
+        // Every error uses the closed vocabulary: the snippet failure is a
         // projection disagreement, not its own ad-hoc code.
         for error in &layers.errors {
             let code = error.split(':').next().unwrap();
@@ -794,7 +792,7 @@ pub(crate) mod tests {
                 byte_end: 12
             }]
         );
-        // The node after the gap rendered verbatim — it must NOT be listed
+        // The node after the gap rendered verbatim; it must not be listed
         // as approximate just because a gap precedes it.
         assert!(markup.approximate_pointers.is_empty());
     }

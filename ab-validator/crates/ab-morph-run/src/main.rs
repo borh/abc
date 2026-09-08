@@ -105,8 +105,8 @@ The model carries no training-provenance metadata; verify its source before trus
             requires = "warehouse_dir",
             help = "Lane A (historical-kana): an aozora_works.parquet sidecar (from \
 `import-aozora-metadata`). When set, only works whose orthographic_style is in \
---orthographic-style are analyzed — a run-eligibility filter for running old-kana \
-works under a historical UniDic (e.g. --analyzer vibrato:unidic-kindai-bungo-202512). \
+--orthographic-style are analyzed (a run-eligibility filter for running old-kana \
+works under a historical UniDic, e.g. --analyzer vibrato:unidic-kindai-bungo-202512). \
 Does not change normalization."
         )]
         works_parquet: Option<PathBuf>,

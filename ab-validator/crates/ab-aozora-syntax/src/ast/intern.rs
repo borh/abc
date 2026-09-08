@@ -54,7 +54,7 @@ pub struct InternStats {
     /// Calls that allocated a new entry.
     pub allocs: u64,
     /// Calls that bypassed the table because the string exceeded
-    /// `INTERN_LENGTH_LIMIT` — counted as an alloc as well.
+    /// `INTERN_LENGTH_LIMIT`, counted as an alloc as well.
     pub long_bypass: u64,
     /// Total resize events the table performed.
     pub resizes: u64,
@@ -139,7 +139,7 @@ impl StrInterner {
     ///
     /// Panics if the interner's backing buffer would exceed `u32::MAX` bytes,
     /// a single interned string exceeds `u32::MAX` bytes, or the unique-string
-    /// count exceeds `u32::MAX` — none reachable for any realistic document.
+    /// count exceeds `u32::MAX`; none reachable for any realistic document.
     pub fn intern(&mut self, s: &str) -> StrId {
         self.stats.calls += 1;
 
@@ -154,7 +154,7 @@ impl StrInterner {
 
         let bytes = s.as_bytes();
 
-        // Length-threshold bypass — long strings skip the probe table (no
+        // Length-threshold bypass: long strings skip the probe table (no
         // dedup). They still allocate a `StrId` so payloads can reference
         // them.
         if bytes.len() > INTERN_LENGTH_LIMIT {
@@ -203,7 +203,7 @@ impl StrInterner {
     }
 
     /// Append `s`'s bytes to `buf`, record its span, and mint a fresh
-    /// [`StrId`]. Does not touch the probe table — callers (the fresh-slot and
+    /// [`StrId`]. Does not touch the probe table; callers (the fresh-slot and
     /// long-bypass paths) own that bookkeeping.
     fn alloc(&mut self, s: &str) -> StrId {
         let start =
@@ -255,7 +255,7 @@ impl StrInterner {
         &self.buf[start as usize..start as usize + len as usize]
     }
 
-    /// Number of distinct strings held — the size of the dense [`StrId`] space
+    /// Number of distinct strings held: the size of the dense [`StrId`] space
     /// (`StrId(0)..StrId(len)`). Counts every interned string, short and long,
     /// including table-bypassed long strings, which the owned tree must still
     /// address by id.
@@ -340,7 +340,7 @@ mod tests {
     #[test]
     fn distinct_interleaved_content_probes_the_table() {
         // Interleave two distinct readings so the inline cache never serves
-        // them — every reuse must come from the probe table.
+        // them; every reuse must come from the probe table.
         let mut i = StrInterner::new();
         let a = i.intern("青");
         let b = i.intern("空");
@@ -385,10 +385,10 @@ mod tests {
         assert_eq!(i.stats.cache_hits, 1, "second long call hits the cache");
         assert_eq!(i.resolve(s1), long, "bypassed long string resolves exactly");
         // Long strings consume no probe-table slot.
-        assert_eq!(i.capacity(), 0, "no short intern yet — table unsized");
+        assert_eq!(i.capacity(), 0, "no short intern yet: table unsized");
 
         // A different long string re-primes the cache, so a later identical
-        // long string can no longer short-circuit — and, with no table dedup,
+        // long string can no longer short-circuit, and, with no table dedup,
         // re-allocates a *distinct* id whose bytes are still identical
         // (output-invariant despite the duplicate allocation).
         let other = "y".repeat(128);
@@ -410,7 +410,7 @@ mod tests {
     fn many_unique_strings_trigger_resize() {
         let mut i = StrInterner::new();
         // 256-slot initial table; resize at 7/8 load. Insert 300 unique
-        // strings — capacity must grow past the initial 256.
+        // strings: capacity must grow past the initial 256.
         for k in 0..300 {
             let s = format!("unique-string-{k}");
             i.intern(&s);
@@ -430,7 +430,7 @@ mod tests {
         }
         assert!(
             i.avg_probe_length() < 2.0,
-            "avg probe {} too high — hash function may be degenerate",
+            "avg probe {} too high: hash function may be degenerate",
             i.avg_probe_length()
         );
     }

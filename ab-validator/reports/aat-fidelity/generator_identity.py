@@ -2,7 +2,7 @@
 
 The generator records both the dump's **input identity**
 (`input_set_hash`) and its own **output content hash** (`output_content_hash`) in
-`metadata.json`, so staleness is decidable — a dump is stale exactly when a
+`metadata.json`, so staleness is decidable: a dump is stale exactly when a
 freshly-computed `input_set_hash` differs from the one it recorded.
 
 Content-based, fail toward correctness: the corpus tree, adapter binary, and
@@ -44,18 +44,18 @@ def build_identity_object(
 
     `ab_index_binary` and `ab_check_binary` are hashed by content: both binaries
     produce the `aat/` tree (`ab-index`'s `index.json` feeds `ab-check`), so a
-    logic change in either must invalidate a dump's identity — otherwise stale
+    logic change in either must invalidate a dump's identity; otherwise stale
     output is served as fresh.
 
     `renderer_dir` is the external parser/renderer an adapter invokes as a
-    subprocess to produce the `aat/` output — the upstream `aozora` parser for
+    subprocess to produce the `aat/` output: the upstream `aozora` parser for
     the aozora adapter, the Ruby aozora2html gem for aozora2html, or
     AozoraEpub3.jar for aozora-epub3. Since it determines the output, its nix
     package dir is hashed by content (`tree_hash`), same as the corpus. It is
     `None` only when no external parser/renderer is supplied.
 
     `work_ids` is a *file path* (`ab-check --work-ids` is a `PathBuf` whose JSON
-    content selects works), so it is hashed by CONTENT, not by its path string —
+    content selects works), so it is hashed by content, not by its path string;
     otherwise an in-place edit of the work-ids file would leave identity unchanged
     while the selected works, and thus the output, changed. `features` is a
     genuine inline comma list, so its literal value is the identity.
@@ -92,7 +92,7 @@ def provenance_fields(*, aat_dir: str | Path, **identity_kwargs: Any) -> dict[st
 
 def identity_fields(**identity_kwargs: Any) -> dict[str, Any]:
     """The full identity object, for recording in metadata.json alongside the
-    derived input_set_hash — so an audit can see WHICH input changed."""
+    derived input_set_hash, allowing an audit to inspect which input changed."""
     return build_identity_object(**identity_kwargs)
 
 

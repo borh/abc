@@ -1,24 +1,24 @@
-//! Sanitize stage — source sanitation.
+//! Sanitize stage: source sanitation.
 //!
 //! Prepares the raw source text for the downstream lexer stages:
 //!
-//! 1. **BOM strip** — every leading `U+FEFF` (UTF-8 BOM, 3 bytes each)
+//! 1. **BOM strip**: every leading `U+FEFF` (UTF-8 BOM, 3 bytes each)
 //!    is consumed. Both single (`U+FEFF`) and stacked (`U+FEFF`+
 //!    `U+FEFF`+…) leading sequences resolve to the same empty prefix
-//!    so that `to_source(to_source(x))` round-trips byte-equal — a
+//!    so that `to_source(to_source(x))` round-trips byte-equal, a
 //!    single-strip would peel off one BOM per pass and break I3
 //!    fixed-point on inputs that carry more than one. Interior
 //!    `U+FEFF` (zero-width no-break space) is still preserved.
-//! 2. **CR/LF normalization** — `\r\n` → `\n`, lone `\r` → `\n`. Aozora
+//! 2. **CR/LF normalization**: `\r\n` → `\n`, lone `\r` → `\n`. Aozora
 //!    source comes from a variety of encoders; downstream stages assume
 //!    `\n` as the one line terminator so they don't have to handle three
 //!    variants each.
-//! 3. **Accent decomposition inside `〔...〕`** — ASCII accent digraphs
+//! 3. **Accent decomposition inside `〔...〕`**: ASCII accent digraphs
 //!    (`fune`+grave-accent → funèbre, `cafe`+apostrophe → café, …) are
 //!    rewritten to their Unicode-combined form before any later stage
 //!    sees them. Scope is deliberately restricted to tortoiseshell-
 //!    bracket spans; the function is the identity outside them.
-//! 4. **Decorative rule isolation** — lines composed entirely of 10 or
+//! 4. **Decorative rule isolation**: lines composed entirely of 10 or
 //!    more `-`, `=`, or `_` characters (a very common visual separator
 //!    in Aozora Bunko prose) are forced to sit on their own stanza by
 //!    inserting a blank line before them, so downstream Markdown
@@ -42,7 +42,7 @@ use ab_aozora_spec::{Diagnostic, PairKind};
 
 use super::{pair::pair, tokenize::tokenize};
 
-/// Tortoiseshell-bracket open character — delimits accent-decomposition
+/// Tortoiseshell-bracket open character: delimits accent-decomposition
 /// spans.
 const TORTOISE_OPEN: char = '〔';
 /// UTF-8 byte encoding of [`TORTOISE_OPEN`] for `memmem`-based scans.
@@ -237,7 +237,7 @@ pub fn sanitize(source: &str) -> SanitizeOutput<'_> {
 /// can translate a byte offset in the sanitized `text` back to the
 /// corresponding offset in `source` (groundwork for span
 /// semantics). Mirrors `sanitize`'s exact step sequence and MUST stay
-/// bit-identical to it — both delegate to the same `_core` functions, so
+/// bit-identical to it; both delegate to the same `_core` functions, so
 /// there is only one implementation of each step to drift.
 #[must_use]
 pub fn sanitize_mapped(source: &str) -> SanitizeMappedOutput<'_> {
@@ -333,7 +333,7 @@ pub fn rewrite_accent_spans(input: &str) -> String {
 /// bracket exactly the replacement character. Accent decomposition is
 /// *not* byte-length-preserving, so
 /// an input-coordinate span would slide once the first digraph changes
-/// width. The downstream stages — and the CLI's miette renderer — see the
+/// width. Downstream stages and the CLI miette renderer see the
 /// rewritten text, so output coordinates put the caret on the right
 /// character.
 fn rewrite_accent_spans_collecting(input: &str, diagnostics: &mut Vec<Diagnostic>) -> String {
@@ -341,13 +341,13 @@ fn rewrite_accent_spans_collecting(input: &str, diagnostics: &mut Vec<Diagnostic
 }
 
 /// Core of [`rewrite_accent_spans_collecting`]; when `edits` is `Some`,
-/// records delimiter deletions and one [`MapEdit`] per digraph substitution — the source digraph
+/// records delimiter deletions and one [`MapEdit`] per digraph substitution: the source digraph
 /// bytes to the replacement character, in THIS step's input/output
 /// coordinates. Length-preserving substitutions (`s&` = ß, `s,` = ş) are
 /// recorded too: an edit marks "these bytes were rewritten", exactly as the
 /// width-equal lone-`\r` → `\n` normalization does. Bytes *between* sites
 /// carry no edit, so every unrewritten byte inside a span keeps its exact
-/// source position — a whole-span edit here once collapsed every interior
+/// source position; a whole-span edit here once collapsed every interior
 /// fact onto the span start, which manufactured byte-identical
 /// classified-source entries out of distinct constructs.
 pub(super) fn rewrite_accent_spans_collecting_core(
@@ -486,7 +486,7 @@ fn is_decorative_rule_line(line: &str) -> bool {
 
 /// Byte-level rule-line check on a string the caller has already
 /// trimmed. Used by [`isolate_decorative_rules`] which also needs
-/// the trimmed length for the blank-line bookkeeping — sharing the
+/// the trimmed length for the blank-line bookkeeping; sharing the
 /// trim avoids the duplicate work the prior split called for.
 ///
 /// `-` / `=` / `_` are ASCII single-byte characters, so the
@@ -499,7 +499,7 @@ fn is_decorative_rule_line(line: &str) -> bool {
 /// in-workspace LSP `ParseCache` can reuse the *exact* decorative-rule
 /// predicate when it (a) precomputes which raw lines gained an isolation
 /// blank and (b) gates an incremental edit that would create or destroy a
-/// rule line — sharing the predicate keeps the rope splice byte-identical
+/// rule line; sharing the predicate keeps the rope splice byte-identical
 /// to a full sanitize.
 #[doc(hidden)]
 #[must_use]
@@ -541,7 +541,7 @@ pub fn isolate_decorative_rules(input: &str) -> String {
 }
 
 /// Core of [`isolate_decorative_rules`]; when `edits` is `Some`, records
-/// one [`MapEdit`] per inserted blank line — an empty source span (the
+/// one [`MapEdit`] per inserted blank line: an empty source span (the
 /// insertion point) to the one-byte `\n` it produced (offset-map
 /// groundwork).
 fn isolate_decorative_rules_core(input: &str, mut edits: Option<&mut Vec<MapEdit>>) -> String {
@@ -622,8 +622,8 @@ fn isolate_decorative_rules_core(input: &str, mut edits: Option<&mut Vec<MapEdit
 /// One pass over the input, one buffer allocation. Replaces the prior
 /// `.replace("\r\n", "\n").replace('\r', "\n")` pair which materialised
 /// **two** intermediate `String`s and walked the input twice. On the
-/// 17 k-document Aozora corpus — where every document arrives with
-/// CRLF line endings (the archive's house format) — this sub-pass is
+/// 17 k-document Aozora corpus, where every document arrives with
+/// CRLF line endings (the archive's house format), this sub-pass is
 /// the dominant cost in the sanitize stage; the single-pass form is
 /// ~2–3× faster at memory-bandwidth ceiling.
 ///
@@ -723,7 +723,7 @@ mod tests {
         // Edge case: an input that is *nothing but* leading BOMs
         // resolves to the empty string. The previous single-strip
         // behaviour produced `""` for one BOM and `"\u{feff}"` for
-        // two — the source of the I3 fuzz crash.
+        // two; the source of the I3 fuzz crash.
         let out = sanitize("\u{FEFF}\u{FEFF}");
         assert_eq!(out.text.as_ref(), "");
     }
@@ -944,7 +944,7 @@ mod tests {
 
     #[test]
     fn unclosed_tortoiseshell_span_passes_through_verbatim() {
-        // Graceful degradation — don't panic, emit the rest as-is so a
+        // Graceful degradation: do not panic, emit the rest as-is so a
         // later stage can surface a diagnostic.
         let input = "tail 〔fune`bre without close";
         let out = sanitize(input);
@@ -974,16 +974,16 @@ mod tests {
     }
 
     // -------------------------------------------------------------
-    // Decorative rule isolation — long `-` / `=` / `_` rows must not
+    // Decorative rule isolation: long `-` / `=` / `_` rows must not
     // be misread as setext underlines for a preceding paragraph.
     //
     // Background: Aozora Bunko prose frequently inserts
     // `---------------------------------------------------------`
     // as a visual separator between front matter and body. Without
     // this pass, CommonMark would swallow the front-matter paragraph
-    // into an H2. These tests pin both halves of the contract — long
+    // into an H2. These tests pin both halves of the contract: long
     // runs are isolated, short runs (the genuine setext idiom) are
-    // untouched — so future refactors cannot silently regress either
+    // untouched, so future refactors cannot silently regress either
     // direction.
     // -------------------------------------------------------------
 
@@ -1045,7 +1045,7 @@ mod tests {
 
     #[test]
     fn ten_char_hyphen_row_is_isolated() {
-        // Ten characters — the first length at which we classify the
+        // Ten characters: the first length at which we classify the
         // row as decorative rather than setext.
         let input = "Heading\n----------\nbody";
         let out = sanitize(input);
@@ -1081,7 +1081,7 @@ mod tests {
     #[test]
     fn rule_at_document_start_is_unchanged() {
         // With no preceding non-blank line, the setext-heading
-        // confusion cannot arise — no blank line needed.
+        // confusion cannot arise; no blank line needed.
         let input = "-----------\n本文";
         let out = sanitize(input);
         assert_eq!(out.text.as_ref(), input);
@@ -1146,7 +1146,7 @@ mod tests {
     }
 
     // -------------------------------------------------------------
-    // `sanitize_mapped` + `OffsetMap` — offset bookkeeping
+    // `sanitize_mapped` + `OffsetMap`: offset bookkeeping
     // across the five sanitize transform steps.
     // -------------------------------------------------------------
 
@@ -1201,7 +1201,7 @@ mod tests {
     #[test]
     fn bytes_between_accent_sites_keep_exact_source_positions() {
         // `〔Henri《ア》 Re'gnier《レ》〕`: one digraph site (`e'` → é). Every
-        // byte outside that site — the ruby runs before AND after it — must
+        // byte outside that site (the ruby runs before AND after it) must
         // translate to its own source position, not to the span start. The
         // old whole-span edit collapsed all of them onto `〔`, which
         // manufactured byte-identical ledger entries out of distinct
@@ -1238,7 +1238,7 @@ mod tests {
     #[test]
     fn each_accent_site_gets_its_own_diagnostic_bracketing_the_replacement() {
         // Two digraphs in one span → two Notes, each on its replacement
-        // character in output coordinates — not one whole-span Note.
+        // character in output coordinates, not one whole-span Note.
         let out = sanitize("〔ve'rite'〕");
         let dst = out.text.as_ref();
         assert_eq!(dst, "vérité");

@@ -1,7 +1,7 @@
 //! Byte-range span over a UTF-8 source buffer.
 //!
 //! `u32` (rather than `usize`) caps the addressable source at 4 GiB,
-//! which is roughly 4 000× the largest plausible Aozora Bunko work — and
+//! which is roughly 4 000× the largest plausible Aozora Bunko work, and
 //! halves span size on 64-bit targets, which compounds across the
 //! thousands of nodes a long novel produces.
 
@@ -39,8 +39,8 @@ impl Span {
     }
 
     /// Whether the span covers zero bytes (`start == end`). An empty
-    /// span still carries a position — e.g. a marker inserted between
-    /// two characters.
+    /// span still carries a position (e.g. a marker inserted between
+    /// two characters).
     #[must_use]
     pub const fn is_empty(self) -> bool {
         self.start == self.end
@@ -143,7 +143,7 @@ mod tests {
     fn slice_panics_on_misaligned_boundary() {
         let src = "青空"; // 6 bytes total, 0..3 = 青, 3..6 = 空
         // The slice is `#[must_use]` but the body is the panic, not
-        // the return value — assign to a typed binding to consume it.
+        // the return value; assign to a typed binding to consume it.
         let _slice: &str = Span::new(1, 4).slice(src);
     }
 

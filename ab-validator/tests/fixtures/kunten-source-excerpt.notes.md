@@ -17,7 +17,7 @@ to represent.
 | author                 | 河上肇                                                         |
 | excerpt regions        | source lines 17–19 (notation header) and 100–101 (a couplet)   |
 
-The work is a kanbun-kundoku (漢文訓読) commentary — exactly the genre that
+The work is a kanbun-kundoku (漢文訓読) commentary: exactly the genre that
 requires kunten. It was selected by scanning all 1,227 card directories in
 the local Aozora snapshot (cards/*/files/*_ruby_*.zip and *_txt_*.zip) for
 the Aozora 返り点 / 送り仮名 marker forms documented at
@@ -26,23 +26,23 @@ is the richest hit: it emits *every* marker sub-variety (see below).
 
 ## Kunten markers present in the excerpt
 
-The excerpt's couplet (excerpt B) is dense — two source lines carry all of
+The excerpt's couplet (excerpt B) is dense: two source lines carry all of
 the following markers:
 
-### 返り点 (reading-order points) — ordered-numeric / ordinal forms
+### 返り点 (reading-order points): ordered-numeric / ordinal forms
 
 | marker       | meaning (per Aozora manual, `annotation/kunten.html`) |
 | ------------ | ------------------------------------------------------ |
-| `［＃レ］`   | レ点 — read the preceding char, then go back           |
-| `［＃一］`   | 一点 — ordinal 返り点 (read 1st)                        |
-| `［＃二］`   | 二点 — ordinal 返り点 (read 2nd)                        |
-| `［＃上］`   | 上点 — ordinal 返り点 (upper)                           |
-| `［＃中］`   | 中点 — ordinal 返り点 (middle)                          |
-| `［＃下］`   | 下点 — ordinal 返り点 (lower)                           |
+| `［＃レ］`   | レ点: read the preceding char, then go back           |
+| `［＃一］`   | 一点: ordinal 返り点 (read 1st)                        |
+| `［＃二］`   | 二点: ordinal 返り点 (read 2nd)                        |
+| `［＃上］`   | 上点: ordinal 返り点 (upper)                           |
+| `［＃中］`   | 中点: ordinal 返り点 (middle)                          |
+| `［＃下］`   | 下点: ordinal 返り点 (lower)                           |
 
 Excerpt A (the notation header) additionally documents the `［＃…］：返り点` form itself with the example `四月熟［＃二］黄梅［＃一］`.
 
-### 送り仮名 / 再読文字 (okurigana / re-read markers) — parenthesised kana forms
+### 送り仮名 / 再読文字 (okurigana / re-read markers): parenthesised kana forms
 
 | marker          | meaning                                                    |
 | --------------- | ---------------------------------------------------------- |
@@ -52,7 +52,7 @@ Excerpt A (the notation header) additionally documents the `［＃…］：返�
 
 Across the full source file `hoo_kansho07.txt` the work additionally emits
 `［＃（ツ）］`, `［＃（フ）］`, `［＃（ヒ）］`, `［＃（レ）］`, `［＃三］`,
-`［＃天／地／人］`-style markers — the complete set of 24 documented at the
+`［＃天／地／人］`-style markers: the complete set of 24 documented at the
 manual page. The excerpt captures a representative, dense subset; the full
 file can be re-extracted from the card path above if a wider sample is
 needed.

@@ -1,7 +1,7 @@
 (ns soranoha.snh.semantic
-  "Single-object semantic rules for the five protocol JSON objects — every
-  rule a lone object must satisfy that the JSON Schemas deliberately do not
-  carry (ordering, uniqueness, disjointness, real calendar dates, absolute
+  "Single-object semantic rules for the five protocol JSON objects: every
+  rule a lone object must satisfy that the JSON Schemas do not carry
+  (ordering, uniqueness, disjointness, real calendar dates, absolute
   origins; JSON Schema cannot express ordering and its `format` enforcement
   is inconsistent across validators). Boundary decode applies the matching
   check after structural validation, so assembler and verifier inherit every
@@ -39,9 +39,9 @@
              (catch java.time.format.DateTimeParseException _ false)))))
 
 (defn absolute-origin?
-  "True iff `s` is an absolute URI with a scheme and a non-empty host — the
+  "True iff `s` is an absolute URI with a scheme and a non-empty host (the
   rule for every published URL: `corpus.upstream_origin`,
-  `rights.statement_url`, and each catalog entry's `card_url`."
+  `rights.statement_url`, and each catalog entry's `card_url`)."
   [s]
   (boolean
    (and (string? s)

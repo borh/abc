@@ -108,7 +108,7 @@ impl OffsetMap {
     /// # Errors
     ///
     /// Returns [`OrthoMapError::CrossesBoundary`] if `norm_range` crosses an
-    /// entry boundary where byte-length changed (e.g., ヴ→う゛) — callers
+    /// entry boundary where byte-length changed (such as ヴ→う゛); callers
     /// must split the span at annotation boundaries first.
     /// Returns [`OrthoMapError::UncoveredOffset`] if either endpoint is not
     /// covered by any entry.

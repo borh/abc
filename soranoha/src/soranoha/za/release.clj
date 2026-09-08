@@ -1,12 +1,11 @@
 (ns soranoha.za.release
   "The automated release driver requests kernel artifacts during release
-  assembly and the publication transaction. Admission is a fail-closed input — the assessment
+  assembly and the publication transaction. Admission is a fail-closed input: the assessment
   snapshot arrives as protocol bytes and is boundary-decoded before
   anything else runs, so a malformed or non-canonical snapshot publishes
   nothing. The driver adds no transaction semantics of its own: outcomes
-  are the transaction's — :published, :already-published (the scheduled
-  no-op), :requeue (the next scheduled invocation retries against the
-  new head), :determinism-halt."
+  are the transaction's (:published, :already-published for scheduled
+  no-ops, :requeue to retry against a new head, and :determinism-halt)."
   (:require [soranoha.core.hash :as hash]
             [soranoha.core.rights :as rights]
             [soranoha.snh.decode :as decode]
@@ -15,14 +14,13 @@
             [soranoha.za.assemble :as assemble]))
 
 ;; The one rights-publication state that authorizes release publication.
-;; Every other, missing, or malformed state is fail-closed. Moving this
-;; value is a deliberate governance change, not an implementation detail.
+;; Every other, missing, or malformed state is fail-closed.
 (def ^:private authorizing-rights-state :assessment-required)
 
 (defn rights-authority!
   "Fail-closed value-plus-hash rights authority over the policy bytes:
   strict UTF-8 + EDN decode, then only the authorizing rights-publication
-  state releases — the value evaluated and the manifest policy hash
+  state releases; the value evaluated and the manifest policy hash
   derive from the same byte array, so the recorded hash can never
   disagree with what was evaluated. The grant travels back to the caller so
   the build embeds the same terms in each work's TEI that the manifest

@@ -2,7 +2,7 @@
   "Archival-observation acceptance at the CLI boundary: a filesystem copy
   of the origin stands in as the archived view and is the sole read
   source. A readable view always yields a report (success or failed with
-  the verifier's reason); an unreadable view throws — a failure to
+  the verifier's reason); an unreadable view throws: a failure to
   perform the observation, never an observation."
   (:require [babashka.fs :as fs]
             [clojure.string :as str]
@@ -13,7 +13,7 @@
 (def ^:private slug-a "hashire_merosu_000035_1567")
 
 (defn- archived-copy!
-  "A filesystem copy of the bare origin — the archived view."
+  "A filesystem copy of the bare origin (the archived view)."
   [origin]
   (let [dir (fs/path (fs/create-temp-dir {:prefix "za-archive"})
                      "snapshot.git")]

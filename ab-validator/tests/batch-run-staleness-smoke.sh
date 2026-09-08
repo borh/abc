@@ -6,7 +6,7 @@
 # generator identity / freshness check. These prove the invariants the whole
 # feature rests on: identity is deterministic and content-sensitive, a fresh
 # indexed run is skipped, and any changed/broken input recomputes (fail toward
-# correctness). Pure stdlib unittest — no network, no nix, no /db.
+# correctness). Pure stdlib unittest: no network, no nix, no /db.
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

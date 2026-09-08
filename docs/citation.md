@@ -2,7 +2,7 @@
 
 Citation is a scholarly norm here, not a licence condition: everything
 Soranoha publishes is CC0, so you may reuse it without attribution. Please
-cite anyway — see [rights](rights.md) for why credit is secured this way.
+cite anyway; see [rights](rights.md) for why credit is secured this way.
 
 ## Cite a release, not "the corpus"
 
@@ -27,7 +27,7 @@ re-verify the chain independently.
 > **Not yet minted.** The Zenodo concept and version DOIs are created at
 > public genesis. Until then the DOI lines below are shown in their intended
 > form with a placeholder, and the head is the only stable release
-> identifier. Tracked in `soranoha-lv9.3`.
+> identifier.
 
 ## Citing the whole corpus
 
@@ -54,7 +54,7 @@ form; GitHub-compatible forges and Zenodo read it directly.
 
 To cite the corpus across releases rather than one of them, use the Zenodo
 *concept* DOI, which always resolves to the latest version. Do not use it when
-reproducibility matters — it does not name specific bytes.
+reproducibility matters: it does not name specific bytes.
 
 ## Citing one work
 
@@ -72,13 +72,11 @@ d9f2a1c0…95867. https://doi.org/10.5281/zenodo.XXXXXXX
 
 Every field before the corpus name comes from the work's TEI header, which is
 the authoritative bibliographic record; the catalog and every generated
-citation format are projections of it. Per-work CSL-JSON and BibLaTeX
-downloads, and a copyable citation block on each work page, are tracked in
-`soranoha-szg.11`.
+citation format are projections of it.
 
-Romanized titles are deliberately not published. Supply the Japanese title and
-its kana reading and let your journal's style — Hepburn with or without
-macrons, ALA-LC — govern the romanization.
+Romanized titles are not published. Supply the Japanese title and
+its kana reading and let your journal's style (Hepburn with or without
+macrons, ALA-LC) govern the romanization.
 
 ## Citing an exact byte sequence
 
@@ -101,6 +99,6 @@ is specified in [`docs/design/snh-protocol-v1.md`](design/snh-protocol-v1.md).
 ## Citing the tooling
 
 The conversion and publication code is a separate work from the corpus, under
-a separate licence, and includes a forked parser core — see
+a separate licence, and includes a forked parser core; see
 [rights](rights.md#the-toolchain). Cite it when the method rather than the
 texts is what your work depends on.

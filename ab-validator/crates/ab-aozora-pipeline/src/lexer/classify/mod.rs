@@ -1,4 +1,4 @@
-//! Classify stage — classify the pair-stage event stream into [`Node`] spans.
+//! Classify stage: classify the pair-stage event stream into [`Node`] spans.
 //!
 //! Walks the cross-linked [`PairEvent`] stream produced by the pair stage and
 //! produces a contiguous vector of [`ClassifiedSpan`] whose
@@ -7,14 +7,14 @@
 //!
 //! The span kinds are:
 //!
-//! * [`SpanKind::Plain`] — a run of text that carries no Aozora
+//! * [`SpanKind::Plain`]: a run of text that carries no Aozora
 //!   construct. Adjacent events with equal [`PlainProvenance`] are merged;
 //!   recovery boundaries remain visible while the normalize stage emits all
 //!   plain spans verbatim.
-//! * [`SpanKind::Aozora`] — a classified Aozora construct, carrying the
+//! * [`SpanKind::Aozora`]: a classified Aozora construct, carrying the
 //!   concrete [`Node`] that the normalize stage will replace
 //!   with a PUA placeholder sentinel (see [`crate::INLINE_SENTINEL`] and friends).
-//! * [`SpanKind::Newline`] — a `\n` in the sanitized text, kept as its
+//! * [`SpanKind::Newline`]: a `\n` in the sanitized text, kept as its
 //!   own span kind because block-level annotations (normalize-stage block
 //!   sentinel substitution) care about line boundaries.
 //!
@@ -45,7 +45,7 @@
 //!   (`N字下げ` / `地からN字上げ`), sashie (`挿絵`), forward-ref
 //!   bouten, forward-ref TCY, paired-container open / close, and
 //!   an `Directive{Unknown}` catch-all.
-//! * Gaiji — `※［＃...］` reference-mark + bracket combos.
+//! * Gaiji: `※［＃...］` reference-mark + bracket combos.
 //! * Double-angle quotation `≪…≫` (displayed as `《…》`) (`AngleQuote`).
 //!
 //! The catch-all makes every well-formed `［＃…］` bracket produce
@@ -53,32 +53,11 @@
 //! HTML output outside an `aozora-directive` wrapper) holds regardless
 //! of which specialised recogniser claims the bracket.
 //!
-//! ## Inlining note (negative result)
+//! ## Inlining note
 //!
-//! `classify_subsystems` (instrumented) reports 88 % of classify wall in
-//! "iterator-dispatch overhead" and only 9.4 % in actual recogniser
-//! leaves. The straightforward fix — sprinkle `#[inline]` on
-//! `recognize_and_emit` / `try_ruby_emit` / `try_bracket_emit` /
-//! `try_gaiji_emit` / `process_event` / `handle_top_level` /
-//! `handle_stream_event` / `Iterator::next` — was tried and reverted:
-//! aggressive inlining regressed throughput by 1–6 % across all
-//! bands. Selective inline (only the *small* helpers `push_output` /
-//! `flush_plain_up_to` / `append_to_frame` / `pending_outputs_pop_front`
-//! plus tokenize-stage `flush_text` / `pair_text_then` / `try_merge_double`)
-//! brought it within ±1.3 % of baseline — neutral.
-//!
-//! Conclusion: **LLVM's default inline judgement is already optimal
-//! on this code at -O3 + fat-LTO.** Forcing inline on
-//! recogniser-wrapping dispatchers regresses via i-cache thrash
-//! (the wrappers expand into the per-call hot path and code bloat
-//! dominates the dispatch saving). The 88 % "overhead" reported by
-//! the instrumented build is partly the instrumentation itself
-//! (`Instant::now()` per guard); the production overhead is real but
-//! attacking it with attributes alone doesn't move it.
-//!
-//! The remaining headroom requires *structural* changes (Vec-passing
-//! between stages, removing iterator chains) rather than attribute
-//! hints.
+//! Recogniser-wrapping dispatchers rely on compiler inlining at `-O3`
+//! with LTO. Forcing `#[inline]` on dispatch wrappers increases code size
+//! and degrades instruction-cache locality without throughput benefit.
 
 #[cfg(feature = "classify-instrument")]
 use super::instrumentation::{
@@ -163,7 +142,7 @@ pub struct PlainSpan {
 ///
 /// # Memory layout
 ///
-/// The `Aozora(Node)` variant is *not* boxed —
+/// The `Aozora(Node)` variant is not boxed;
 /// `Node` is `Copy` and small (a handful of machine words), so
 /// storing it inline keeps `SpanKind` to `Aozora`-variant size while
 /// avoiding the `Box` indirection the legacy owned shape paid.
@@ -179,12 +158,12 @@ pub enum SpanKind {
     /// placeholder registry keyed at the sentinel's normalized
     /// position.
     Aozora(Node),
-    /// Paired-container opener — `［＃ここから字下げ］`, `［＃罫囲み］`,
+    /// Paired-container opener: `［＃ここから字下げ］`, `［＃罫囲み］`,
     /// etc. The normalizer emits an `E003` sentinel line; `post_process`
     /// matches it to the corresponding `BlockClose` via a balanced
     /// stack walk of the AST.
     BlockOpen(RegionFormat),
-    /// Paired-container closer — `［＃ここで字下げ終わり］`,
+    /// Paired-container closer: `［＃ここで字下げ終わり］`,
     /// `［＃罫囲み終わり］`, etc. The normalizer emits an `E004`
     /// sentinel line; the carried [`RegionClose`] is a hint used by
     /// `post_process` to diagnose `［＃罫囲み終わり］` closing an
@@ -209,13 +188,13 @@ pub enum SpanKind {
 /// per call to [`Iterator::next`]. After exhaustion, call
 /// [`ClassifyStream::take_diagnostics`] to drain non-fatal observations
 /// accumulated during recognition. The upstream pair stream's
-/// diagnostics are NOT forwarded automatically — the caller is
+/// diagnostics are NOT forwarded automatically; the caller is
 /// responsible for calling `pair_stream.take_diagnostics()` after the
 /// classify stream is dropped (the fused pipeline in `aozora-pipeline` does
 /// this).
 ///
 /// Pure function; no I/O. The yielded spans byte-contiguously cover
-/// `source` — see the module-level span-coverage invariant.
+/// `source`; see the module-level span-coverage invariant.
 #[must_use]
 pub fn classify<'src, 'al, I>(
     events: I,
@@ -244,7 +223,7 @@ where
 ///
 /// Owns the upstream [`PairEvent`] iterator and consumes it lazily,
 /// yielding one [`ClassifiedSpan`] per [`Iterator::next`] call. The
-/// classifier maintains its own per-pair frame stack — when a top-level
+/// classifier maintains its own per-pair frame stack: when a top-level
 /// `PairOpen` arrives, all subsequent events accumulate into a smallvec
 /// body buffer until the matching `PairClose`; recognition then runs
 /// against the buffer and yields a single span (or, in the rare
@@ -294,7 +273,7 @@ where
     /// Stream-through state for top-level pair kinds that have no
     /// recogniser (Quote, Tortoise, or a bracket without `＃`). When
     /// `Some((kind, depth))`, `process_event` bypasses frame buffering
-    /// — events stream directly through `handle_stream_event` so we
+    /// events stream directly through `handle_stream_event` so we
     /// don't waste an O(N) `SmallVec` push per event followed by an
     /// O(N) replay walk. The depth counter tracks nested opens of the
     /// same kind so the outer close is unambiguous.
@@ -311,7 +290,7 @@ where
     /// following `《…》` ruby can take it as its base (`※［＃…］《みは》`).
     /// A gaiji resolves to a glyph distinct from its `※［＃…］` source and
     /// is emitted as its own node, so a ruby cannot reach back to reclaim
-    /// it once yielded — instead the emit is deferred here. Flushed as a
+    /// it once yielded; instead the emit is deferred here. Flushed as a
     /// standalone gaiji span by `process_event` / `finalize` when the next
     /// event is not the adjacent ruby that would consume it.
     pending_ruby_base: Option<PendingRubyBase>,
@@ -325,7 +304,7 @@ where
 }
 
 /// Active stream-through frame for a top-level Quote / Tortoise pair.
-/// Carries no event buffer — just the outer pair kind and a nested-
+/// Carries no event buffer: just the outer pair kind and a nested-
 /// open depth counter. Each `PairOpen` of the same kind increments,
 /// each `PairClose` of the same kind decrements; reaching zero ends
 /// stream-through.
@@ -346,10 +325,10 @@ struct PendingPlain {
 enum FrameStep {
     /// The frame is still accumulating body events.
     Open,
-    /// The OUTERMOST pair just closed — run recognition on the body.
+    /// The OUTERMOST pair just closed: run recognition on the body.
     Closed,
     /// The pair stage force-expired the frame's own open (newline expiry
-    /// of a line-spanning `［`, or the EOF drain) — replay the body as
+    /// of a line-spanning `［`, or the EOF drain): replay the body as
     /// plain and return to top-level classification.
     Abandoned,
 }
@@ -403,7 +382,7 @@ impl PendingRubyBase {
 
 /// Outcome of [`ClassifyStream::try_ruby_over_pending_base`].
 enum PendingBaseRuby {
-    /// No adjacent deferred base — continue to the plain-base path.
+    /// No adjacent deferred base: continue to the plain-base path.
     NotApplicable,
     /// A ruby adopted the deferred base.
     Emitted(ClassifiedSpan),
@@ -438,9 +417,9 @@ pub(crate) struct BodyView<'b> {
 /// `clippy.toml::too-many-arguments-threshold = 4`) without losing
 /// the per-call positional clarity of the body-window indices.
 ///
-/// The two lifetimes deliberately stay distinct:
-/// - `'al` — the borrow lifetime of the `&mut alloc` reference
-/// - `'s`  — the sanitized source lifetime
+/// The two lifetimes stay distinct:
+/// - `'al`: the borrow lifetime of the `&mut alloc` reference
+/// - `'s`: the sanitized source lifetime
 ///
 /// Strings the recognisers intern are owned by the allocator's
 /// `NodeStore` (not borrowed from the source), so there is no arena
@@ -453,7 +432,7 @@ pub(crate) struct RecogniseCtx<'al, 's> {
     /// Non-fatal diagnostics raised while building *nested* content
     /// (a gaiji inside a ruby / annotation reading). The owning
     /// `ClassifyStream` drains this into its own sink after each
-    /// recognise call — a `RecogniseCtx` is a short-lived per-call view,
+    /// recognise call: a `RecogniseCtx` is a short-lived per-call view,
     /// so an owned `Vec` avoids threading a `&mut` sink (and a fourth
     /// lifetime) through every recogniser.
     pub diagnostics: Vec<Diagnostic>,
@@ -480,8 +459,8 @@ pub(crate) struct RecogniseCtx<'al, 's> {
 /// `recognize_gaiji` / `try_angle_quote`) consume the buffer as a
 /// [`BodyView`] with `open_idx = 0` and `close_idx = body.len() - 1`.
 ///
-/// `inner_stack` tracks the per-buffer mini-stack of nested opens —
-/// `(kind, body_index)` — so that on each nested close we can locate
+/// `inner_stack` tracks the per-buffer mini-stack of nested opens:
+/// `(kind, body_index)`, so that on each nested close we can locate
 /// the matching open in the body buffer and patch the `links` table.
 struct Frame {
     body: smallvec::SmallVec<[PairEvent; 16]>,
@@ -536,7 +515,7 @@ fn literal_reference_sign(source: &str, span: Span) -> bool {
 
 /// Span of the first ruby (`《…》`) opening *inside* the body
 /// event range `lo..hi`, if any. Used by [`ClassifyStream::try_ruby_emit`]
-/// to flag `nested_ruby` — `build_content_from_body` folds only nested
+/// to flag `nested_ruby`: `build_content_from_body` folds only nested
 /// gaiji / annotation, so an inner ruby open would otherwise survive raw.
 fn first_nested_ruby_open(events: &[PairEvent], lo: usize, hi: usize) -> Option<Span> {
     events[lo..hi].iter().find_map(|e| match e {
@@ -560,7 +539,7 @@ fn empty_explicit_ruby_span(
 ) -> Option<Span> {
     let bar_off = bar_byte_offset?;
     if open_span.end < close_span.start {
-        return None; // reading carries bytes — not empty
+        return None; // reading carries bytes: not empty
     }
     let bar_pos = preceding_start + u32::try_from(bar_off).ok()?;
     Some(Span::new(bar_pos, close_span.end))
@@ -586,10 +565,10 @@ type SynthRubyView = (
 /// `｜` base would leave the base text empty.
 ///
 /// The two buffers are `SmallVec<[_; 16]>`: a ruby is `[Text(base),
-/// PairOpen, reading…, PairClose]` — ~5 events — so the synth stays inline
+/// PairOpen, reading…, PairClose]` (~5 events), so the synth stays inline
 /// and allocates zero heap for the ~200 ruby/file that dominate the parse.
 /// (Plain `Vec::with_capacity` here was ~67% of ALL owned-pipeline heap
-/// allocations — two mallocs per ruby.) The `[16]` inline size matches
+/// allocations: two mallocs per ruby.) The `[16]` inline size matches
 /// `Frame::body`, whose contents this is a superset of.
 fn build_synth_ruby_view(
     body: BodyView<'_>,
@@ -673,11 +652,11 @@ where
     /// The pairing rule is *document-wide base presence*: a ladder mark
     /// of rank ≥ 2 fires only when its family's base (`一` / `上` / `甲`)
     /// is absent from the entire document. This is calibrated against the
-    /// real 青空文庫 corpus — kanbun return-mark groups routinely span
+    /// real 青空文庫 corpus: kanbun return-mark groups routinely span
     /// `、` / `。` and line boundaries, and 上下点 skips `中`, so any
     /// narrower scope or stricter ladder misfires on valid kanbun (per-
     /// clause strict: 586 false positives across 337 corpus files; this
-    /// rule: 2). It matches the catalogue's literal wording — "a `［＃二］`
+    /// rule: 2). It matches the catalogue's literal wording: "a `［＃二］`
     /// with no `［＃一］`".
     fn finalize_kaeriten(&mut self) {
         let obs = mem::take(&mut self.kaeriten_obs);
@@ -686,7 +665,7 @@ where
         }
         // Conservative outside-kanbun heuristic: the document holds a
         // single, isolated kaeriten and its surroundings read as kana
-        // prose — most likely a stray annotation, not a genuine 返り点.
+        // prose: most likely a stray annotation, not a genuine 返り点.
         if let [only] = obs.as_slice()
             && looks_like_kana_prose(self.source, only.span)
         {
@@ -904,7 +883,7 @@ where
                 // guarantees that a PairClose only arrives when the
                 // top of the global stack matches its kind, but inside
                 // the body buffer we may have nested opens of various
-                // kinds — we patch the nearest matching open.
+                // kinds: we patch the nearest matching open.
                 if let Some(pos) = frame.inner_stack.iter().rposition(|&(k, _)| k == *kind) {
                     let (_, open_body_idx) = frame.inner_stack.remove(pos);
                     frame.body.push(event);
@@ -915,7 +894,7 @@ where
                     frame.links.push(open_body_idx_u32);
                     frame.links[open_body_idx] = body_idx_u32;
                 } else {
-                    // No matching open in this buffer — should not
+                    // No matching open in this buffer; should not
                     // happen because the pair stage's stack-balance contract
                     // means a PairClose only arrives when the outer
                     // stack matches; but be defensive and append as-is.
@@ -929,15 +908,15 @@ where
                 // bracket (see `pair.rs`), drop its inner-stack entry so the
                 // buffer can still close on the following `PairClose(Bracket)`.
                 // The event stays in the body with no link (`u32::MAX`), so
-                // forward recognisers see an unresolved pair and decline —
+                // forward recognisers see an unresolved pair and decline:
                 // the body round-trips as raw bytes.
                 //
                 // Position semantics: the frame's OUTERMOST open lives at
                 // inner-stack position 0 and never closes via a hard-scope
                 // unwind (that pops opens stacked *above* the bracket). A
                 // position-0 match means the pair stage force-expired the
-                // frame's own open — the EOF drain, or the newline expiry
-                // of a line-spanning `［` — so the frame is ABANDONED: its
+                // frame's own open (the EOF drain, or the newline expiry
+                // of a line-spanning `［`), so the frame is abandoned: its
                 // buffered body replays to plain (the caller's abandon
                 // path), and later events classify at top level again
                 // instead of buffering forever.
@@ -1022,7 +1001,7 @@ where
                     // `recognize_gaiji` could read the bracket open at
                     // index 1. But `recognize_gaiji` parameterises the
                     // bracket entry point via `bracket_open_idx` and
-                    // takes `refmark_span` as a separate argument — the
+                    // takes `refmark_span` as a separate argument; the
                     // synthetic prefix was never consumed. Eliminating
                     // the rebuild closes pathological doc 50685's
                     // memcpy_memmove 25.13 % bucket and doc 49178's
@@ -1095,7 +1074,7 @@ where
             _ => {}
         }
 
-        // Recognition declined — every event in the body becomes plain.
+        // Recognition declined: every event in the body becomes plain.
         // Replay the buffered events through the per-event acceptor so
         // that any Newlines inside fire as their own spans and the
         // surrounding bytes attach to a top-level Plain run. If the
@@ -1223,7 +1202,7 @@ where
                 // calls `flush_plain_up_to(consume_start)` itself,
                 // with the same effect for recognised brackets and a
                 // single fused Plain run (literal + raw bracket bytes)
-                // for the unrecognised path's replay — visually
+                // for the unrecognised path's replay, visually
                 // identical to the pre-defer two-span shape.
                 let gaiji_refmark = if matches!(kind, PairKind::Bracket) {
                     self.pending_refmark.take()
@@ -1273,7 +1252,7 @@ where
     /// event is the `［` that consumes it (the gaiji shape). The streaming
     /// mirror of the top-level refmark block in `process_event`, which is
     /// skipped while streaming because the stream-through check routes to
-    /// `handle_stream_event` first — so an orphan `※` inside a quote
+    /// `handle_stream_event` first, so an orphan `※` inside a quote
     /// round-trips as plain, exactly as at top level.
     fn fold_held_refmark(&mut self, event: &PairEvent) {
         if self.pending_refmark.is_some()
@@ -1294,10 +1273,10 @@ where
 
         // A nested Ruby / AngleQuote / Bracket inside the streamed
         // Quote/Tortoise is recognised WITHOUT touching the streaming depth
-        // — so do it before borrowing the streaming frame. This is what
+        // So do it before borrowing the streaming frame. This is what
         // makes `「駄目《だめ》」` form a ruby, a nested `≪…≫` resolve, and an
-        // in-quote directive / gaiji — `「…［＃「X」に傍点］…」`,
-        // `「…※［＃…水準…］《みは》…」` — resolve instead of leaking as literal
+        // in-quote directive / gaiji (`「…［＃「X」に傍点］…」`,
+        // `「…※［＃…水準…］《みは》…」`) resolve instead of leaking as literal
         // text: the sub-frame runs the same recogniser as at top level, and
         // `pending_plain_start` (kept live through the quote) supplies the
         // ruby base or the forward-reference target. `process_event` checks
@@ -1331,7 +1310,7 @@ where
             );
             return;
         }
-        // Defensive — only called when streaming is Some.
+        // Defensive: only called when streaming is Some.
         let stream = self
             .streaming
             .as_mut()
@@ -1359,7 +1338,7 @@ where
             PairEvent::Unclosed { kind, .. } => {
                 // The pair stage emits synthetic Unclosed events when EOF
                 // arrives mid-frame, one per still-open pair. Each
-                // one's span aliases its original PairOpen — those
+                // one's span aliases its original PairOpen; those
                 // bytes were already folded into the plain run when
                 // the PairOpen arrived (or emitted by an intervening
                 // Newline flush). Re-folding here would set
@@ -1384,7 +1363,7 @@ where
                 kind: TriggerKind::RefMark,
                 span,
             } => {
-                // Hold the `※` pending the next event — the streaming
+                // Hold the `※` pending the next event: the streaming
                 // mirror of the top-level `handle_top_level` refmark arm.
                 // The block at the top of this method folds it to plain if
                 // no `［` follows, or the Bracket sub-frame absorbs it as
@@ -1508,7 +1487,7 @@ where
         #[cfg(feature = "classify-instrument")]
         let _classify_guard = SubsystemGuard::new(Subsystem::TryRubyEmit);
         // Ruby recognition uses the PRECEDING text (if any) as the
-        // base — but in the streaming model we don't have that text in
+        // base, but in the streaming model we don't have that text in
         // the body buffer. We walk back through `pending_outputs` and
         // `pending_plain_start` to find it.
         //
@@ -1612,7 +1591,7 @@ where
     /// Attempt to classify the buffered body as a `AngleQuote` node.
     ///
     /// Returns `None` when the body content is empty (`≪≫` with
-    /// no payload) — the caller falls through to plain replay so the
+    /// no payload); the caller falls through to plain replay so the
     /// bytes show up as literal source. Emitting a `AngleQuote` span
     /// here would violate the `NonEmpty` invariant on the
     /// `Content` payload.
@@ -1650,7 +1629,7 @@ where
         );
         // Drain diagnostics raised while building the nested angle-quote body.
         self.diagnostics.append(&mut ctx.diagnostics);
-        // Empty `≪≫` is not a valid AngleQuote — let the bytes
+        // Empty `≪≫` is not a valid AngleQuote: let the bytes
         // flow through as plain text. The caller's fall-through path
         // (`replay_unrecognised_body`) handles the plain emission.
         let content_is_empty = match content {
@@ -1724,7 +1703,7 @@ where
         };
         // Surface any non-fatal warning the recogniser attached
         // (unrecognised container directive / 縦中横 target not found /
-        // ambiguous bouten target). The emitted node is unaffected — for
+        // ambiguous bouten target). The emitted node is unaffected; for
         // the catch-all cases it is still `Directive{Unknown}`, so the
         // Tier-A "no bare ［＃" canary holds. `ctx`'s reborrow of
         // `self.alloc` ended at `recognize_annotation`, so pushing onto the
@@ -1988,7 +1967,7 @@ where
                 self.process_event(event);
             } else {
                 // Upstream exhausted. A deferred gaiji with no following
-                // ruby is a standalone span — flush it FIRST (it precedes
+                // ruby is a standalone span: flush it first (it precedes
                 // any dangling frame's body in source order). Then close
                 // any active frame as unclosed (its body events fold back
                 // to plain; a gaiji-mode refmark also falls into plain),
@@ -2025,9 +2004,9 @@ where
     }
 
     fn process_event(&mut self, event: PairEvent) {
-        // Frame buffering comes first — checked BEFORE `streaming` so a
+        // Frame buffering comes first: checked before `streaming` so a
         // sub-frame opened mid-stream for a nested Ruby / AngleQuote
-        // (`《…》` / `≪…≫` inside a `「…」` quote — see
+        // (`《…》` / `≪…≫` inside a `「…」` quote, see
         // `handle_stream_event`) actually accumulates its body instead of
         // the quote's stream-through path swallowing it. Once the
         // sub-frame's outer pair closes, recognition runs and the frame
@@ -2123,7 +2102,7 @@ where
             self.emit_pending_base(pending);
         }
 
-        // Stream-through path for top-level Quote / Tortoise — see
+        // Stream-through path for top-level Quote / Tortoise: see
         // `StreamingFrame` for the rationale. Body events flow straight
         // through, except a nested Ruby / AngleQuote opens a sub-frame
         // (buffered by the frame check above).
@@ -2153,8 +2132,8 @@ where
 }
 
 /// Intermediate result of `recognize_ruby`. `base` stays borrowed
-/// (the two forms we handle — explicit `｜X《Y》` and implicit
-/// trailing-kanji — both come from a single [`PairEvent::Text`] event
+/// (the two forms we handle, explicit `｜X《Y》` and implicit
+/// trailing-kanji, both come from a single [`PairEvent::Text`] event
 /// with no nested structure). `reading`, on the other hand, can carry
 /// embedded gaiji (`※［＃…］`) or annotations (`［＃ママ］`), so it is
 /// already resolved into a `Content` via `build_content_from_body`.
@@ -2176,10 +2155,10 @@ struct RubyMatch<'s> {
 /// Two shapes per the Aozora annotation manual
 /// (<https://www.aozora.gr.jp/annotation/ruby.html>):
 ///
-/// * **Explicit** — `｜X《Y》`. A [`TriggerKind::Bar`] `Solo` two
+/// * **Explicit**: `｜X《Y》`. A [`TriggerKind::Bar`] `Solo` two
 ///   events before the [`PairKind::Ruby`] open marks the full base.
 ///   Any Text, not just kanji, may be the base.
-/// * **Implicit** — `…X《Y》` where the preceding Text event ends in
+/// * **Implicit**: `…X《Y》` where the preceding Text event ends in
 ///   a run of ideographs. The base is the trailing kanji run of that
 ///   Text; any non-kanji prefix remains plain.
 ///
@@ -2214,7 +2193,7 @@ impl<'s> RecogniseCtx<'_, 's> {
             return None;
         };
         if open_span.end >= close_span.start {
-            // Empty reading — the `《…》` body has no bytes.
+            // Empty reading: the `《…》` body has no bytes.
             return None;
         }
         if open_idx == 0 {
@@ -2256,7 +2235,7 @@ impl<'s> RecogniseCtx<'_, 's> {
         }
 
         // Implicit form: the trailing same-class base run of the preceding
-        // Text (kanji, or a non-kanji word/letter run — see
+        // Text (kanji, or a non-kanji word/letter run, see
         // `trailing_ruby_base_start`).
         let base_offset = trailing_ruby_base_start(prev_text);
         if base_offset == prev_text.len() {
@@ -2278,8 +2257,8 @@ impl<'s> RecogniseCtx<'_, 's> {
 /// `build_content_from_body` can flush text segments using source
 /// byte slices without re-derefing event spans on every iteration.
 ///
-/// The two ranges are redundant in principle — `bytes.start` always
-/// equals `events[events.start]`'s leading edge — but caching them
+/// The two ranges are redundant in principle: `bytes.start` always
+/// equals `events[events.start]`'s leading edge, but caching them
 /// avoids a branch when the range is empty and makes the helper
 /// signature honest about what it needs.
 struct BodyWindow {
@@ -2301,7 +2280,7 @@ struct BodyWindow {
 ///
 /// Non-Directive Aozora emits (a paired-container opener, a block
 /// leaf, etc.) are *not* first-class segments and are folded back
-/// into `Directive{Unknown}` with the raw bracket bytes — this keeps
+/// into `Directive{Unknown}` with the raw bracket bytes; this keeps
 /// the Tier-A canary intact inside a ruby body regardless of how
 /// unusual the inner annotation shape is.
 ///
@@ -2312,7 +2291,7 @@ struct BodyWindow {
 /// guaranteed to be plain text (possibly peppered with unrelated
 /// triggers like `｜` or mismatched quotes, which we treat as text).
 /// Returning `Content::from(&str)` in that branch skips the `Vec`
-/// allocation and the `from_segments` collapse pass — a win for the
+/// allocation and the `from_segments` collapse pass, a win for the
 /// 99%+ of ruby readings that carry no embedded structure.
 ///
 /// ## Slow path
@@ -2359,7 +2338,7 @@ impl RecogniseCtx<'_, '_> {
     /// window, recognising any nested gaiji / annotation constructs in
     /// a single forward sweep.
     ///
-    /// Fast path returns when the body has no `※` and no `［` —
+    /// Fast path returns when the body has no `※` and no `［`:
     /// emits the raw byte run as a single `Plain`. The slow path
     /// dispatches each event index through two per-shape recognise
     /// helpers and falls through (advancing `i`) when neither claims
@@ -2425,7 +2404,7 @@ impl RecogniseCtx<'_, '_> {
         self.alloc.content_segments(&build.segments)
     }
 
-    /// Shape 1: `※［＃…］` — `Solo(RefMark)` immediately followed by a
+    /// Shape 1: `※［＃…］`: `Solo(RefMark)` immediately followed by a
     /// matched `PairOpen(Bracket)`. On a successful gaiji recognise,
     /// flush the pending Text run, push a `Segment::Gaiji`, advance
     /// `text_start`, and return the index of the first event past the
@@ -2486,7 +2465,7 @@ impl RecogniseCtx<'_, '_> {
         Some(close_idx + 1)
     }
 
-    /// Shape 2: `［＃…］` — a standalone bracket annotation. Tried
+    /// Shape 2: `［＃…］`: a standalone bracket annotation. Tried
     /// after [`Self::try_emit_gaiji_at`] so the `※`+bracket combo gets
     /// first claim on a leading bracket. `recognize_annotation` has an
     /// `Unknown` catch-all (only returns `None` for malformed brackets
@@ -2632,7 +2611,7 @@ fn push_text_segment(
 /// `text.len()` if the final char is not a ruby-base char (→ no
 /// implicit base available).
 /// Byte offset where the trailing implicit-ruby base run of `text` starts
-/// — the maximal run of a single `RubyBaseClass` ending at `text`'s end.
+/// The maximal run of a single `RubyBaseClass` ending at `text`'s end.
 /// Returns `text.len()` when the last char is not a base char (no implicit
 /// base). For a kanji-ending run this is byte-for-byte the historical
 /// `trailing_kanji_start` (the `Kanji` class equals the old set); a
@@ -2660,7 +2639,7 @@ fn trailing_ruby_base_start(text: &str) -> usize {
 ///
 /// `emit` decides which [`SpanKind`] the driver pushes for the
 /// top-level case. `annotation_payload` is `Some` exactly when the
-/// recogniser produced an `Directive{…}` payload — the
+/// recogniser produced an `Directive{…}` payload; the
 /// `build_content_from_body` caller uses it to wrap the same payload
 /// as a `Segment::Directive` without reconstructing it. The emit
 /// variants `BlockOpen` / `BlockClose` and non-`Directive` `Aozora`
@@ -2671,7 +2650,7 @@ struct AnnotationMatch {
     annotation_payload: Option<Directive>,
     consume_start: u32,
     consume_end: u32,
-    /// A non-fatal warning to surface for this bracket, if any —
+    /// A non-fatal warning to surface for this bracket, if any:
     /// `unrecognised_container_directive`, `tcy_target_not_found`, or
     /// `bouten_target_ambiguous`. The caller drains it into the diagnostic
     /// stream; the emitted node (often the `Directive{Unknown}` catch-all,
@@ -2681,12 +2660,12 @@ struct AnnotationMatch {
 
 /// What to emit for a matched annotation.
 enum EmitKind {
-    /// Inline or block-leaf — becomes [`SpanKind::Aozora`].
+    /// Inline or block-leaf: becomes [`SpanKind::Aozora`].
     Aozora(Node),
-    /// Paired-container opener — becomes [`SpanKind::BlockOpen`]. Carries the
+    /// Paired-container opener: becomes [`SpanKind::BlockOpen`]. Carries the
     /// authoritative open [`RegionFormat`].
     BlockOpen(RegionFormat),
-    /// Paired-container closer — becomes [`SpanKind::BlockClose`]. Carries the
+    /// Paired-container closer: becomes [`SpanKind::BlockClose`]. Carries the
     /// [`RegionClose`] discriminant (the open payload stays authoritative).
     BlockClose(RegionClose),
     /// One supplied marker names two adjacent scopes, in closing order.
@@ -2710,7 +2689,7 @@ mod tests {
     //! on `Node` spans and resolve their payloads through the
     //! `Allocator`'s `NodeStore`. End-to-end byte-identity of the rendered
     //! output is pinned separately by the conformance vectors, the corpus
-    //! verbatim gate, and the render byte-identity gates — the frozen authority.
+    //! verbatim gate, and the render byte-identity gates: the frozen authority.
 
     use super::*;
     use ab_aozora_syntax::ast::{Content, ContentRange, Node, NodeStore, Segment, StrId};
@@ -2730,7 +2709,7 @@ mod tests {
 
     impl TestClassifyOutput {
         /// Resolve a length-1 content run to its plain text (`None` for a
-        /// `Segments`/multi run) — the owned analogue of `Content::as_plain`.
+        /// `Segments`/multi run), the owned analogue of `Content::as_plain`.
         fn plain(&self, range: ContentRange) -> Option<&str> {
             self.store.content_range_as_plain(range)
         }

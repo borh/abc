@@ -12,7 +12,7 @@ trap 'rm -rf "$tmp"' EXIT
 
 # The fixtures omit `expected.source` and `run_descriptor` on purpose: without a
 # `source.flake_input` the validator never consults flake.lock, so the fixture is
-# self-contained (no repo state, no /db) — see validate_run_set / aat_runs.py.
+# self-contained (no repo state, no /db); see validate_run_set / aat_runs.py.
 unset AB_AOZORA_AAT_DIR
 
 mkdir -p "$tmp/aat/aozora-adapter"

@@ -19,7 +19,7 @@
 //! | `」` | corner-bracket close          | E3 80 8D    |
 //!
 //! Every trigger is a 3-byte UTF-8 BMP character. The leading byte is
-//! one of `{0xE2, 0xE3, 0xEF}` — a fact the SIMD scanner exploits to
+//! one of `{0xE2, 0xE3, 0xEF}`: a fact the SIMD scanner exploits to
 //! bulk-skip the 99.5% of source bytes that are not trigger candidates.
 //!
 //! `≪`/`≫` (U+226A/U+226B) are the aozora input encoding for a 底本's
@@ -42,10 +42,10 @@ pub enum TriggerKind {
     /// `》` (U+300B). Ruby-reading close.
     RubyClose,
 
-    /// `≪` (U+226A). Double-angle quotation open — the aozora input
+    /// `≪` (U+226A). Double-angle quotation open: the aozora input
     /// encoding for a 底本 `《`; a renderer displays it as `《`.
     AngleQuoteOpen,
-    /// `≫` (U+226B). Double-angle quotation close — input encoding for a
+    /// `≫` (U+226B). Double-angle quotation close: input encoding for a
     /// 底本 `》`; a renderer displays it as `》`.
     AngleQuoteClose,
 
@@ -57,7 +57,7 @@ pub enum TriggerKind {
     /// `＃` (U+FF03). Directive keyword marker (meaningful after `［`).
     Hash,
 
-    /// `※` (U+203B). Reference mark — prefix of a gaiji annotation.
+    /// `※` (U+203B). Reference mark: prefix of a gaiji annotation.
     RefMark,
 
     /// `〔` (U+3014). Tortoise-shell bracket open.
@@ -107,14 +107,14 @@ impl TriggerKind {
 /// "branch-free O(1), strictly better than a `match` chain". A
 /// flamegraph of a ruby-dense document disproved that: `phf::Map::get`
 /// hashes the key with `SipHash`-1-3, and a `SipHash` over three bytes
-/// costs far more than a handful of byte comparisons over an 11-entry set
-/// — the hash alone accounted for ≈0.8 % of total render time (≈5 % of
+/// costs far more than a handful of byte comparisons over an 11-entry set;
+/// the hash alone accounted for ≈0.8 % of total render time (≈5 % of
 /// the parser's own time).
 ///
-/// The 13 trigrams carry a trivial discriminator — the leading byte
+/// The 13 trigrams carry a trivial discriminator: the leading byte
 /// splits them into `0xE2` (three: ※ ≪ ≫, by middle + trailing byte),
 /// `0xE3` (six, by the trailing byte) and `0xEF` (four, by the middle
-/// and trailing byte) — so an exhaustive `match` lowers to a small
+/// and trailing byte); an exhaustive `match` lowers to a small
 /// comparison tree with no hashing at all. The `tests` module pins
 /// this `match` against [`ALL_TRIGGER_TRIGRAMS`], exhaustively over
 /// the candidate leading-byte space, so the two cannot silently drift.
@@ -257,7 +257,7 @@ mod tests {
             assert!(
                 TRIGGER_LEADING_BYTES.contains(&entry_key[0]),
                 "trigger byte sequence {entry_key:?} starts with {:#04X} \
-                 which is not in TRIGGER_LEADING_BYTES — \
+                 which is not in TRIGGER_LEADING_BYTES; \
                  update the SIMD scanner mask",
                 entry_key[0]
             );
@@ -300,9 +300,9 @@ mod tests {
         assert_eq!(kinds.len(), 13, "expected exactly 13 distinct triggers");
         assert_eq!(ALL_TRIGGER_TRIGRAMS.len(), 13);
 
-        // Reverse: the match accepts *nothing* outside the array, swept
+        // Reverse: the match accepts nothing outside the array, swept
         // exhaustively over the candidate leading-byte space (the only
-        // bytes the SIMD scanner ever feeds in — guarded complete by
+        // bytes the SIMD scanner feeds in, guarded complete by
         // `trigger_leading_bytes_are_complete_for_known_triggers`).
         for &b0 in &TRIGGER_LEADING_BYTES {
             for b1 in 0u8..=u8::MAX {

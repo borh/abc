@@ -47,9 +47,8 @@ impl MlLogisticRegression {
         Self { model }
     }
 
-    /// Load a model from a bincode file. Validates `feature_names` match
-    /// `FEATURE_NAMES` (canonical order) — a mismatch is a hard error to
-    /// prevent silently applying wrong weights to the wrong features.
+    /// Load a model from a bincode file. Validates that `feature_names` match
+    /// `FEATURE_NAMES` (canonical order); a mismatch returns an error.
     ///
     /// # Errors
     /// Returns `MlError::Io` on read failure, `MlError::Bincode` on decode
@@ -156,7 +155,7 @@ mod tests {
             threshold: 0.5,
         };
         let det = MlLogisticRegression::new(m);
-        // "吾輩ハ猫デアル" — katakana_ratio 4/7 ≈ 0.571 > 0.5.
+        // "吾輩ハ猫デアル": katakana_ratio 4/7 ≈ 0.571 > 0.5.
         let spans = ab_plaintext::sentence_split("吾輩ハ猫デアル");
         let anns = det.detect(&spans);
         assert!(
@@ -184,7 +183,7 @@ mod tests {
             threshold: 0.5,
         };
         let det = MlLogisticRegression::new(m);
-        // "吾輩は猫である" — katakana_ratio 0 → z = -5 → p ≈ 0.0067 < 0.5 → reject.
+        // "吾輩は猫である": katakana_ratio 0 → z = -5 → p ≈ 0.0067 < 0.5 → reject.
         let spans = ab_plaintext::sentence_split("吾輩は猫である");
         assert!(det.detect(&spans).is_empty());
     }

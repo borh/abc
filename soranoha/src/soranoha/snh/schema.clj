@@ -1,16 +1,11 @@
 (ns soranoha.snh.schema
-  "Protocol JSON Schemas, loaded from resources
-  and keyed by artifact type. These schemas govern structure only; semantic
-  and state invariants live in the protocol specification and are checked by
-  assembler/verifier code; the conformance vectors demonstrate both."
+  "Protocol JSON Schemas, loaded from resources and keyed by artifact type."
   (:require [charred.api :as json]
             [clojure.java.io :as io]
             [soranoha.core.schema :as schema-validator]))
 
 (def schema-resources
-  "Artifact type -> classpath resource of its JSON Schema. This map is the
-  executable form of the type registry's release-level protocol JSON
-  objects — the only types boundary decode applies to."
+  "Artifact type -> classpath resource of its JSON Schema."
   {"release-manifest"    "snh/schemas/snh-manifest-2.schema.json"
    "assessment-snapshot" "snh/schemas/snh-assessment-snapshot-2.schema.json"
    "admission-report"    "snh/schemas/snh-admission-report-1.schema.json"

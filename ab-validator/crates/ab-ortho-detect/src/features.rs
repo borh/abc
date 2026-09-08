@@ -93,9 +93,9 @@ pub fn extract_char_features(text: &str) -> CharFeatures {
         runs
     };
 
-    // Repeated bigram pattern ratio: count of IMMEDIATE ABAB echoes
-    // (optionally ッ-separated). Faithful port of the Python heuristic's
-    // `len(re.findall(r"(..)ッ?\1", text))` — NOT "distinct bigrams appearing
+    // Repeated bigram pattern ratio: count of immediate ABAB echoes
+    // (optionally ッ-separated). Mirrors the Python heuristic's
+    // `len(re.findall(r"(..)ッ?\1", text))`, not "distinct bigrams appearing
     // >=2 times anywhere", which would reject unrelated repetitions.
     let repeated_bigram_pattern_count = count_immediate_bigram_echoes(&chars);
 
@@ -244,7 +244,7 @@ mod tests {
 
     #[test]
     fn detects_bigram_patterns() {
-        // "ABABAB" — immediate ABAB echoes at positions 0 and 2.
+        // "ABABAB": immediate ABAB echoes at positions 0 and 2.
         let f = extract_char_features("ABABAB");
         assert!(f.repeated_bigram_pattern_ratio > 0.0);
     }
@@ -268,10 +268,10 @@ mod tests {
 
     #[test]
     fn immediate_bigram_echo_zero_for_non_repeating() {
-        // ABXY — different bigrams, no immediate echo.
+        // ABXY: different bigrams, no immediate echo.
         let chars: Vec<char> = "ABXY".chars().collect();
         assert_eq!(count_immediate_bigram_echoes(&chars), 0);
-        // AB AB with separator 、 (not ッ) — does NOT match.
+        // AB AB with separator 、 (not ッ): does not match.
         let chars2: Vec<char> = "AB、AB".chars().collect();
         assert_eq!(count_immediate_bigram_echoes(&chars2), 0);
     }

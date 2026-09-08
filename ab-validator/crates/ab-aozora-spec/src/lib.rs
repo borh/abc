@@ -2,19 +2,18 @@
 //! at rev 1a4f864603970983719655aa4af4525958ac2d38 (independent fork).
 //! Upstream crate: aozora-spec. License: MIT OR Apache-2.0 (see NOTICE).
 
-//! Aozora Bunko notation — canonical specification crate.
+//! Aozora Bunko notation specification crate.
 //!
-//! This crate is the **single source of truth** for facts that every other
-//! crate in the workspace needs to agree on:
+//! This crate is the source of truth for types shared across crates:
 //!
-//! - **PUA sentinel codepoints** — the four `U+E001..U+E004` markers the
+//! - **PUA sentinel codepoints**: the four `U+E001..U+E004` markers the
 //!   lexer injects into normalized text (see [`sentinels`]).
-//! - **[`Span`]** — `(u32, u32)` byte-range over a UTF-8 source.
-//! - **[`TriggerKind`]** — the set of Aozora notation marker characters
+//! - **[`Span`]**: `(u32, u32)` byte-range over a UTF-8 source.
+//! - **[`TriggerKind`]**: the set of Aozora notation marker characters
 //!   (`｜《》［］＃※〔〕「」`) plus the const-PHF byte-sequence lookup
 //!   table that maps a UTF-8 trigger byte sequence to its kind.
-//! - **[`PairKind`]** — categories of balanced open/close delimiters.
-//! - **[`Diagnostic`]** — every non-fatal observation any pipeline stage can emit.
+//! - **[`PairKind`]**: categories of balanced open/close delimiters.
+//! - **[`Diagnostic`]**: non-fatal observations emitted by pipeline stages.
 //!
 //! ## Why a separate crate
 //!

@@ -10,7 +10,7 @@ if ! grep -q 'nix --option eval-cache false ' <<<"$dry_run"; then
 fi
 
 # Every subcommand that evaluates a flake can be served a stale answer by the
-# eval cache, so all of them must carry the uncached option — not just the
+# eval cache, so all of them must carry the uncached option, not just the
 # build/check/eval trio. `nix --option ... <sub>` never
 # matches, because the subcommand does not directly follow `nix `.
 cached_boundary_re='(^|[;&|`$([:space:]])nix (flake (check|show)|build |eval |run )'

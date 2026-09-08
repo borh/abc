@@ -2,7 +2,7 @@
 
 Gates the expensive `ab-morph-run analyze-aat` batch on the input-set identity:
 compute the identity, look for a valid indexed run, and **skip** it if one is
-fresh — otherwise run the compute step and record the run (manifest + by-input
+fresh; otherwise run the compute step and record the run (manifest + by-input
 index). The compute step is injected (a callable), exactly like the nix-bridge
 `:runner`, so the gate logic is unit-testable without the 45 GB Rust batch. The
 recipe supplies the real command; this module only decides skip-vs-run and records.
@@ -43,7 +43,7 @@ def resolve_compute_record(
     - Unless `force`, resolves the by-input index: a `fresh` hit returns without
       calling `compute` (the skip).
     - Otherwise calls `compute` (which must materialize `runs/<run_id>/`; it may
-      raise — the exception propagates and nothing is recorded), then writes the
+      raise, propagating before anything is recorded), then writes the
       run manifest and by-input link.
 
     Returns `{"action": "skip"|"computed", "reason": <index-status>,
@@ -158,7 +158,7 @@ def main(argv: list[str] | None = None) -> int:
             force=args.force,
         )
     except subprocess.CalledProcessError as exc:
-        # Preserve the batch's own exit code (nothing was recorded — the
+        # Preserve the batch's own exit code (nothing was recorded because the
         # exception propagated before the manifest/index write).
         print(f"compute command failed (exit {exc.returncode})", file=sys.stderr)
         return exc.returncode

@@ -1257,12 +1257,11 @@ mod tests {
     }
 
     // ----------------------------------------------------------------
-    // 金庫番 (gatekeeper) tests — pin the on-disk format and public
-    // surface so any change must be deliberate.
+    // Gatekeeper tests: pin the on-disk format and public surface.
     //
-    // These tests are intentionally brittle: bumping any number here
-    // requires a same-PR update to the corresponding constant AND the
-    // CHANGELOG entry that records the format version bump.
+    // These tests are intentionally strict: changing any constant here
+    // requires updating the corresponding constant and the CHANGELOG entry
+    // that records the format version bump.
     // ----------------------------------------------------------------
 
     #[test]

@@ -157,7 +157,7 @@ fn halfwidth_to_fullwidth_katakana(ch: char) -> Option<char> {
         '\u{FF9B}' => '\u{30ED}', // ﾛ→ロ
         '\u{FF9C}' => '\u{30EF}', // ﾜ→ワ
         '\u{FF9D}' => '\u{30F3}', // ﾝ→ン
-        '\u{FF9E}' => '\u{309B}', // ﾞ→゛ (voiced mark — maps directly to hiragana combining)
+        '\u{FF9E}' => '\u{309B}', // ﾞ→゛ (voiced mark: maps directly to hiragana combining)
         '\u{FF9F}' => '\u{309C}', // ﾟ→゜ (semi-voiced mark)
         _ => return None,
     };

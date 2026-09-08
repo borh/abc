@@ -1,6 +1,6 @@
 [package]
 name = "ab-aozora-pipeline"
-description = "Aozora notation lex pipeline — orchestrator + lexer (sanitize → tokenize → pair → classify) producing an owned, lifetime-free AST. Internal crate; depend on the aozora umbrella crate instead."
+description = "Aozora notation lex pipeline: orchestrator + lexer (sanitize → tokenize → pair → classify) producing an owned, lifetime-free AST. Internal crate; depend on the aozora umbrella crate instead."
 version = "0.2.0"
 edition.workspace = true
 license = "MIT OR Apache-2.0"
@@ -25,7 +25,7 @@ ab-aozora-syntax = { path = "../ab-aozora-syntax" }
 ab-aozora-encoding = { path = "../ab-aozora-encoding" }
 ab-aozora-scan = { path = "../ab-aozora-scan" }
 
-# Tokenize-stage build-time tooling — unchanged from the lexer's
+# Tokenize-stage build-time tooling, unchanged from the lexer's
 # historical deps (before it was folded into aozora-pipeline).
 aho-corasick = { version = "1.1", default-features = false, features = ["std"] }
 memchr = "2.8"

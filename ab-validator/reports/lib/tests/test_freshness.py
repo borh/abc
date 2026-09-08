@@ -7,7 +7,7 @@ Two suites live here:
   EXACT result dicts of the two callers (``generator_skip.is_fresh`` and
   ``warehouse_index.check``) against real on-disk fixtures. They are the oracle:
   written to PASS against the current (un-refactored) callers, they must stay green
-  after the decision rule is extracted into ``freshness`` — byte-for-byte identical
+  after the decision rule is extracted into ``freshness``, preserving byte-for-byte identical
   return vocabulary.
 
 ``freshness`` is imported lazily inside the ``Classify`` cases so that, before the

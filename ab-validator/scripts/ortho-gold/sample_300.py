@@ -1,20 +1,18 @@
 #!/usr/bin/env python
 """Corpus-representative sampler for the LLM-labeled evaluation set.
 
-Strategy (revised after data check rejected author-capping):
-- Sample each author-prefix IN PROPORTION to its candidate-pool share.
+Strategy:
+- Sample each author-prefix in proportion to its candidate-pool share.
   The pool is 70% Tanizaki, and Tanizaki carries 90% of all 'accept'
-  candidates (649/721). Capping him would starve the accept class.
+  candidates (649/721). Capping would starve the accept class.
 - Per-author minimum of 4 where the pool allows, for sparse-author
-  style coverage (Natsume_S has 5, Oguri_M has 4 — take all available
+  style coverage (Natsume_S has 5, Oguri_M has 4; take all available
   if below the min). Otherwise the natural corpus weight is preserved.
-- Accept/reject ratio left to reflect the natural pool distribution
-  (721:347 ≈ 2:1 accept:reject). Do NOT force 50/50 — the workload is
-  genuinely accept-heavy.
-- Within each author, SHUFFLE with a fixed seed and take the first n.
-  NOT strided/round-robin — that approach is over-engineered and buggy
-  for small allocations (when n < works-for-author, the stride exceeds
-  work size and the loop picks zero — confirmed by simulation).
+- Accept/reject ratio reflects the natural pool distribution
+  (721:347 ≈ 2:1 accept:reject). Do not force 50/50: the workload is
+  accept-heavy.
+- Within each author, shuffle with a fixed seed and take the first n.
+  Avoid striding/round-robin because small allocations can underflow.
 
 Outputs JSONL with all original fields + bootstrap_label (copy of label).
 """
@@ -97,7 +95,7 @@ def main() -> None:
     print(
         f"Tanizaki share: {sum(1 for r in out if r['work_id'].startswith('Tanizaki_J')) / len(out):.2f}"
     )
-    assert len(out) == TARGET_N, f"expected {TARGET_N}, got {len(out)} — pool may be too small"
+    assert len(out) == TARGET_N, f"expected {TARGET_N}, got {len(out)}: pool may be too small"
 
 
 if __name__ == "__main__":

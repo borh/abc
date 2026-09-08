@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Parity between two AAT dumps (directories of per-work *.json).
 
-Two instruments over the same allowlist — exactly the identity pointers
-/meta/adapter and /meta/adapter_version:
+Two instruments over the same allowlist (the identity pointers
+/meta/adapter and /meta/adapter_version):
 
   semantic  parsed-JSON equality after REMOVING the two pointers. Key order
             and number formatting are invisible. Localization diagnostic.

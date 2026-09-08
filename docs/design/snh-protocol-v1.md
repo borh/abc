@@ -41,8 +41,8 @@ moved there and what that cost.
   External citation form: `snh:1:release-manifest:<hex>`.
 - Resolver route: artifact id → `/blobs/sha256/<hex[0:2]>/<hex>`.
   The static serving tree exposes the same sharded blob layout as the repository.
-- In-repo blob layout: `blobs/sha256/<hex[0:2]>/<hex>` —
-  SHARDED; a flat directory of tens of thousands of entries would
+- In-repo blob layout: `blobs/sha256/<hex[0:2]>/<hex>` (sharded).
+  A flat directory of tens of thousands of entries would
   rewrite one giant tree object per release. Fixed here so verifiers
   and the archival predicate can locate any blob in any commit or
   archive by hash alone.
@@ -58,19 +58,19 @@ v2 consumers must never meet unknown members.
 
 ## 3. `snh-manifest/2`
 
-Required top-level fields; closed schema — no other members. No dedicated date or timestamp fields appear in manifest bytes.
+Required top-level fields; closed schema (no other members). No dedicated date or timestamp fields appear in manifest bytes.
 
 | Field | Contract |
 |---|---|
 | `schema` | literal `"snh-manifest/2"` |
 | `corpus` | `{upstream_origin (URL string), upstream_rev (commit hex)}` |
-| `toolchain` | object: stage-id (matches `^[0-9a-z][0-9a-z-]*$`) → `{nix_closure_hash (string), stage_code_version (string)}`; keys sorted. Provenance/derivation-key input only — never an input to artifact identity. `nix_closure_hash` carries the stage's toolchain identity EXACTLY as the build's derivation keys carry it: the wrapper-supplied Nix closure hash for nix-provisioned stages, the hashed binary/profile identity for subprocess stages; a constant placeholder is prohibited — the build fails closed without a supplied identity |
+| `toolchain` | object: stage-id (matches `^[0-9a-z][0-9a-z-]*$`) → `{nix_closure_hash (string), stage_code_version (string)}`; keys sorted. Provenance/derivation-key input only; never an input to artifact identity. `nix_closure_hash` carries the stage's toolchain identity EXACTLY as the build's derivation keys carry it: the wrapper-supplied Nix closure hash for nix-provisioned stages, the hashed binary/profile identity for subprocess stages; a constant placeholder is prohibited: the build fails closed without a supplied identity |
 | `selection_params` | object; string keys sorted; values strings or safe-range integers; `{}` when the inclusion rule takes no parameters |
 | `admission` | `{policy_id (string), policy_hash (hex), inclusion_rule_id (string), inclusion_rule_hash (hex), assessment_snapshot (artifact id), admission_report (artifact id)}` |
 | `catalog` | the `catalog` artifact id (§13) describing exactly this manifest's `works` |
-| `rights` | `{works (string), encoding (string), statement_url (absolute URL)}` — the grant under which the published bytes may be reused. `works` states the standing of the underlying texts, `encoding` the licence over Soranoha's own encoding and derived artifacts. Carried by the rights policy whose `policy_hash` this manifest already records, so the terms published and the terms authorized cannot diverge |
-| `works` | array sorted by `slug` as raw UTF-8 bytes ascending; slugs match `^[0-9a-z_-]+$` (non-empty), unique. Each `{slug, source_content_hash (hex of the CANONICAL SOURCE-BUNDLE IDENTITY: sha256 over the canonical bytes of the abc-source-bundle-v1 identity object `{construction, members: [{path, member_hash}...], primary_text_member}` — stable across archive-level repackaging that preserves members, unlike a raw archive hash), artifacts}`; `artifacts` sorted bytewise by `type` — `markdown`, `plaintext`, `tei`, `tei-validation` — each `{type, id, bytes}` with `bytes` = exact byte length (non-negative safe integer). Every work has exactly one artifact per per-work registry type |
-| `withdrawn` | array sorted by `slug`; each `{slug, event}` with `event` a `governance-event` artifact id — the GOVERNING event carrying the public reason |
+| `rights` | `{works (string), encoding (string), statement_url (absolute URL)}` (the grant under which the published bytes may be reused). `works` states the standing of the underlying texts, `encoding` the licence over Soranoha's own encoding and derived artifacts. Carried by the rights policy whose `policy_hash` this manifest already records, so the terms published and the terms authorized cannot diverge |
+| `works` | array sorted by `slug` as raw UTF-8 bytes ascending; slugs match `^[0-9a-z_-]+$` (non-empty), unique. Each `{slug, source_content_hash (hex of the CANONICAL SOURCE-BUNDLE IDENTITY: sha256 over the canonical bytes of the abc-source-bundle-v1 identity object `{construction, members: [{path, member_hash}...], primary_text_member}`, stable across archive-level repackaging that preserves members, unlike a raw archive hash), artifacts}`; `artifacts` sorted bytewise by `type` (`markdown`, `plaintext`, `tei`, `tei-validation`); each `{type, id, bytes}` with `bytes` = exact byte length (non-negative safe integer). Every work has exactly one artifact per per-work registry type |
+| `withdrawn` | array sorted by `slug`; each `{slug, event}` with `event` a `governance-event` artifact id (the GOVERNING event carrying the public reason) |
 | `validation_summary` | `{invalid_count (integer), invalid_slugs (sorted array of slugs)}` |
 | `governance_event` | `null`, or the `governance-event` artifact id this manifest executes; non-null exactly when the manifest performs a withdrawal or event-amendment |
 | `prev_manifest` | hex of the predecessor manifest's canonical bytes; genesis = 64×"0" |
@@ -92,7 +92,7 @@ record; governance events contain only the public statement.
 - `reason_code` ∈ {"rights", "takedown-request", "data-defect", "other"}.
 - `statement`: string, may be empty. No dedicated date or timestamp
   FIELD exists in event bytes; substantive dates may appear
-  inside the free-form `statement` text — the enforceable rule is
+  inside the free-form `statement` text: the enforceable rule is
   structural, not a prohibition on prose content.
 - `entries` is non-empty with unique slugs. In a `withdrawal` event NO
   entry has `amends`; in an `event-amendment` event EVERY entry has
@@ -139,11 +139,11 @@ Independent candidate shape:
   at least one contribution.
 - Fact rule (both levels): status `not-evaluated` ⇔ `jurisdiction`,
   `effective_date`, and `basis` are all `null`. Every other status
-  (including `undetermined` — the assessment was performed) carries all
+  (including `undetermined`: the assessment was performed) carries all
   three non-null: `jurisdiction` lowercase (`^[a-z][a-z0-9-]+$`, e.g.
   `jp`), `effective_date` = the effective date of the recorded facts
   (`YYYY-MM-DD`; a REAL calendar date per the semantic rule below;
-  dates are permitted here — the structural no-date-field rule binds
+  dates are permitted here because the structural no-date-field rule binds
   manifest and event bytes), `basis` a non-empty recorded-basis string.
 
 Semantic boundary rules (enforced inside the §1 boundary
@@ -155,7 +155,7 @@ inherit them from the one shared operation; never JSON Schema
 - `corpus.upstream_origin` (§3) must be an absolute URI with a scheme
   and a non-empty host.
 
-**`snh-admission-report/1`** — the inclusion rule's TOTAL PARTITION:
+**`snh-admission-report/1`**: the inclusion rule's TOTAL PARTITION:
 
 ```
 {schema: "snh-admission-report/1",
@@ -182,17 +182,17 @@ the partition with the executable inclusion rule.
   - governance events: `snh-governance-event-sig/1:<event hex>`
 - `.sig` file: EXACTLY 64 raw Ed25519 signature bytes.
 - Key-bytes file (`.pub`; the encoding for key bytes in the
-  trust-anchor deposit and pinned verifier configuration — v1's
+  trust-anchor deposit and pinned verifier configuration; v1's
   PUBLICATION repositories and serving trees contain NO key copies;
   deployment source MAY carry public keys as NON-AUTHENTICATING
   pinned verifier configuration; only the trust anchor authenticates
-  the role assignment): EXACTLY 65 bytes —
+  the role assignment): EXACTLY 65 bytes:
   64 lowercase ASCII hex characters (the 32 raw Ed25519 public-key
   bytes) + one LF.
 - Key FINGERPRINT: lowercase sha256 hex over the DECODED 32 raw key
   bytes (never over `.pub` file bytes).
-- `releases/HEAD` file: EXACTLY 65 bytes — 64 lowercase ASCII hex + one
-  LF. Present in every commit of the publication branch including the
+- `releases/HEAD` file: EXACTLY 65 bytes (64 lowercase ASCII hex + one
+  LF). Present in every commit of the publication branch including the
   initial one; 64 zeros before genesis; the current raw manifest_id
   after each publication.
 
@@ -207,12 +207,12 @@ events, and no epoch/window machinery exists to distinguish the
 cases). No key-manifest, no in-band rotation, no envelope in v1:
 
 - **RELEASE role** (online, held by CI; v1 set size 1): signs release
-  manifests — authenticates that Soranoha issued the release.
-- **GOVERNANCE role** (offline, owner-held; v1 set size 1 — one
+  manifests (authenticates that Soranoha issued the release).
+- **GOVERNANCE role** (offline, owner-held; v1 set size 1; one
   SOFTWARE Ed25519 keypair generated offline, held as TWO authorized
   persistent copies on separately controlled encrypted offline media
   under the ceremony-declared copy inventory): signs governance
-  events — authenticates withdrawal/amendment authority. A
+  events (authenticates withdrawal/amendment authority). A
   compromised release key cannot withdraw works.
 
 The verifier selects the ROLE from the signed object's kind,
@@ -222,26 +222,26 @@ and accepts the raw signature iff it verifies against that role's pinned key.
 Degradation and halt ("lost without compromise" is not
 normally observable; for SOFTWARE keys accountability attaches to the
 DECLARED COPY INVENTORY, not a physical token): the ceremony declares
-the governance key's COMPLETE AUTHORIZED PERSISTENT-COPY INVENTORY —
+the governance key's COMPLETE AUTHORIZED PERSISTENT-COPY INVENTORY:
 v1: exactly two encrypted offline media, separately controlled; the
 copy operation itself is recorded in the inventory. Governance
 operation continues only while EVERY surviving inventoried medium
 remains accounted for and controlled. One medium verifiably destroyed
-or failed leaves governance operating on the remaining copy — the
+or failed leaves governance operating on the remaining copy: the
 pinned set never changes. An UNEXPLAINED COPY, LOST CUSTODY of any
 medium, or POSSIBLE DISCLOSURE is SUSPECTED COMPROMISE and triggers
-the halt rule — a copyable file has no "lost but unread" state.
+the halt rule: a copyable file has no "lost but unread" state.
 COMPROMISE of any role member halts the role's operations
-(fail-closed — a valid signature no longer proves authority).
+(fail-closed: a valid signature no longer proves authority).
 Custody of the media's encryption secrets is an operational ceremony
 matter, OUTSIDE the wire protocol.
 
 Key distribution: pinned key BYTES and fingerprints live ONLY
 in the independent trust anchor and the verifier's pinned
 configuration, obtained via the owner-named pre-release discovery
-channel — the owner's ORCID record, which lists the FIRST anchor
+channel (the owner's ORCID record, which lists the FIRST anchor
 deposit's specific Zenodo VERSION DOI as a work before the first
-signed release (ONE pointer to the ONE immutable role-bound
+signed release; ONE pointer to the ONE immutable role-bound
 anchor; a version DOI's files are fixed, unlike the concept DOI's;
 no fingerprints are duplicated outside the anchor, so no counts can
 drift). The anchor
@@ -249,7 +249,7 @@ authenticates the ROLE ASSIGNMENT, never a flat key list:
 RELEASE = {K_release}; GOVERNANCE = {K_governance}. `pinned_keys`
 PRESERVES that partition; the role
 sets MUST be disjoint, and an un-roled/overlapping configuration is
-INVALID — otherwise an accidental flat configuration could authorize
+INVALID: otherwise an accidental flat configuration could authorize
 the online release key for governance. v1's PUBLICATION repositories
 and serving trees contain NO key copies (a copy hosted
 in the publication channel cannot authenticate itself and has no
@@ -267,9 +267,9 @@ evidence. Ceremony signatures never replace the checked-in fixture signatures.
 ## 8. Verifier invariants
 
 THE verifier primitive:
-`verify_repository_at(repository_view, C, pinned_keys)`. Every read —
-commits, trees, manifests, signatures, events, artifacts,
-`releases/HEAD` — goes through the single NON-FALLBACK
+`verify_repository_at(repository_view, C, pinned_keys)`. Every read
+(commits, trees, manifests, signatures, events, artifacts,
+`releases/HEAD`) goes through the single NON-FALLBACK
 `repository_view`; there is no secondary data source, so an incomplete
 view FAILS instead of silently completing from elsewhere (an
 implementation must not be able to fetch a missing signature or blob
@@ -280,7 +280,7 @@ mirrors and local clones supply themselves. The invariants below are
 what the primitive checks, with C:`releases/HEAD` as the target head.
 
 The view's contract is COMMIT-SCOPED and NON-SUBSTITUTING: reads must ignore object-replacement mechanisms and must not
-import objects from outside the view's single object store — for a
+import objects from outside the view's single object store; for a
 git-backed view, replacement refs are disabled, promisor/lazy fetches
 are disabled, and alternate object directories are rejected outright.
 Discovery and reads run under a SANITIZED environment bound to the
@@ -295,8 +295,8 @@ requires the resolved common directory to equal the git directory
 It exposes reads of the
 form `read_at(C, required_path)` and `parent_of(C)`. Every manifest,
 signature, event, and artifact must be REACHABLE AT ITS PRESCRIBED
-PATH from C's tree; presence anywhere else in the same object graph —
-another branch, a later commit, a dangling object — is INSUFFICIENT
+PATH from C's tree; presence anywhere else in the same object graph
+(another branch, a later commit, a dangling object) is INSUFFICIENT
 (the co-presence error one level lower). Pre-genesis base case: the
 initial commit with the zero `releases/HEAD` is a valid EMPTY
 repository state; every later valid target C must be a publication
@@ -310,12 +310,12 @@ search): C is a publication commit iff
 - M.prev_manifest = H;
 - C contains M and its required verification closure.
 
-Structural (single-object rules — works/withdrawn/invalid_slugs
+Structural single-object rules (works/withdrawn/invalid_slugs
 sortedness, uniqueness, and disjointness; event entries sortedness;
 snapshot candidate/contribution ordering; report list ordering and
-partition-list disjointness — are enforced by the §1 boundary decode
+partition-list disjointness) are enforced by the §1 boundary decode
 each manifest/evidence/event fetch passes through; the bullets
-below are the verifier's cross-object additions):
+below are the verifier's cross-object additions:
 - Every artifact id hash is 64 lowercase hex; `bytes` matches the
   stored blob's length.
 - Type-prefix and hash checks are EXPLICIT: every artifact id's
@@ -326,12 +326,12 @@ below are the verifier's cross-object additions):
   FETCHES, it recomputes sha256 over the bytes and requires equality
   with the id's hash component; each of the FIVE PROTOCOL JSON
   objects additionally passes the §1 BOUNDARY DECODE (stored bytes must equal the canonical bytes of the validated
-  value). All other artifacts — e.g. `tei-validation` JSON bytes —
+  value). All other artifacts (e.g. `tei-validation` JSON bytes)
   are exact published bytes checked by hash; they have no frozen schema or
   canonical form. Validation records additionally satisfy the consumed contract below.
 - Validation-summary RE-DERIVATION: the verifier consumes
   a fixed projection of each per-work `tei-validation` record under a
-  minimal consumed contract — the record parses as strict JSON with
+  minimal consumed contract: the record parses as strict JSON with
   duplicate keys rejected, `status` is exactly one of `passed`,
   `warning`, `failed`, and `validated_artifact` is exactly
   `sha256:<hex>` with `<hex>` equal to that work's `tei` artifact
@@ -340,7 +340,7 @@ below are the verifier's cross-object additions):
   tei-validation bytes remain exact published bytes checked by hash,
   with no frozen schema and no canonical form.
 - Semantic boundary rules (applied inside the §1 boundary
-  decode — never via JSON Schema `format`): `corpus.upstream_origin`
+  decode, never via JSON Schema `format`): `corpus.upstream_origin`
   is an absolute URI with a scheme and non-empty host, as are
   `rights.statement_url` and every catalog entry's `card_url`; every non-null
   `effective_date` in the assessment snapshot is a real
@@ -362,7 +362,7 @@ Admission (fetch both evidence artifacts by hash):
   selection PRECEDES assessment (it cannot run "under the inclusion
   rule", which consumes the snapshot's facts), and the assembler checks set equality against the
   transactionally consistent selection it derived before emitting the
-  manifest. v1 makes NO public-recomputation claim — rule and policy
+  manifest. v1 makes NO public-recomputation claim: rule and policy
   bytes are not publicly resolvable. Public verifiers still check the
   partition and field-binding invariants above.
 - `works[].slug` set = admitted − withdrawn slugs. Excluded and
@@ -372,7 +372,7 @@ Catalog (fetch by hash and boundary-decode):
 - The catalog's `works[].slug` sequence EQUALS the manifest's, element
   for element and in the same order, and each entry's
   `source_content_hash` equals that work's. A manifest may therefore not
-  name a catalog describing a different release — including one that
+  name a catalog describing a different release: including one that
   still describes a work this release withdrew, which is exactly what a
   takedown must remove. A withdrawal consequently publishes a new
   catalog; an event-amendment, which changes no work, does not.
@@ -381,7 +381,7 @@ Chain (walk `prev_manifest` from `releases/HEAD` to the zero genesis;
 reject a HEAD not matching a valid chain head):
 - **Linear history:**
   every commit on the publication branch except the initial one has
-  EXACTLY ONE parent — the previously accepted head. Merge commits on
+  EXACTLY ONE parent (the previously accepted head). Merge commits on
   the publication branch are INVALID; the verifier rejects them.
 - **Append-onlyness:** for every commit transition where
   `releases/HEAD` changes from H to M, `M.prev_manifest == H` MUST
@@ -391,8 +391,8 @@ reject a HEAD not matching a valid chain head):
 - **Genesis (the predecessor-relative rules below are otherwise
   undefined without a predecessor):** the genesis manifest has
   `prev_manifest` = 64×"0", `governance_event` = `null`, and
-  `withdrawn` = `[]` — explicit values replacing the ordinary-build
-  predecessor rules at the chain's start.
+  `withdrawn` = `[]` (explicit values replacing the ordinary-build
+  predecessor rules at the chain's start).
 - The `withdrawn` slug set is a monotonic extension of the
   predecessor's; entries are never silently dropped; reinstatement does
   not exist in v1.
@@ -406,7 +406,7 @@ reject a HEAD not matching a valid chain head):
   are the affected slugs' removals.
 - kind `event-amendment` ⇒ changed `withdrawn` slugs equal
   the event's `entries` slugs exactly; for each, `amends ==
-  predecessor.withdrawn[slug].event` (linear — no skipped or
+  predecessor.withdrawn[slug].event` (linear: no skipped or
   overwritten corrections); each changed `withdrawn[slug].event`
   equals this manifest's `governance_event`; withdrawn slug set,
   `works`, and coordinates verbatim-unchanged. (A superseded event
@@ -432,11 +432,11 @@ stale or equivocated head):
   and the compare-and-swap serialization point;
 - Zenodo checkpoints → independently recorded historical cutoffs.
 "Completeness" names THREE distinct claims, none an origin
-property: REPOSITORY-CLOSURE completeness — every manifest, signature,
-event, and blob required for verification is present (a verifier
-result); ADMISSION-PARTITION completeness — the published
-snapshot/report partition checks internally (§8, a verifier result);
-CANDIDATE-SELECTION totality — assembler-only in v1 (§8, not
+property: REPOSITORY-CLOSURE completeness (every manifest, signature,
+event, and blob required for verification is present; a verifier
+result); ADMISSION-PARTITION completeness (the published
+snapshot/report partition checks internally; §8, a verifier result);
+CANDIDATE-SELECTION totality (assembler-only in v1; §8, not
 publicly recomputable). A non-authoritative carrier (mirror, archive,
 clone) can present an internally valid chain from genesis; whether
 that chain is a prefix of the authoritative one is decidable only by
@@ -445,7 +445,7 @@ comparison against an independently obtained head or checkpoint.
 1. Fetch Git commit C (branch head).
 2. FULLY VERIFY C with the §8 primitive and take the manifest head H
    and the decoded head manifest from its result: the fetched
-   state is trusted only after verification — an accepted-but-invalid
+   state is trusted only after verification; an accepted-but-invalid
    tip (e.g. a permitted fast-forward that leaves `releases/HEAD`
    unchanged) must fail here, never satisfy the no-op decision in
    step 3. The same rule governs reconciliation (step 7).
@@ -453,20 +453,20 @@ comparison against an independently obtained head or checkpoint.
    commit, apply the projection/derived-state decision against
    the current head: projection equal and derived content equal →
    SUCCESS without publishing (the scheduled no-op); projection equal
-   and derived content different → DETERMINISM FAILURE — halt (the
+   and derived content different → DETERMINISM FAILURE: halt (the
    halt rule applies uncontended, not only after losing a race);
    projection different → proceed.
 4. Create commit C′ with EXACTLY ONE parent, C (never a merge):
    M's blobs, `releases/<manifest_id>.json` + `.sig`,
    `releases/HEAD` = M's manifest_id.
 5. VERIFY C′ with the §8 primitive BEFORE pushing: an invalid
-   candidate — a bad signature, a missing blob, any violated
-   invariant — must never reach the origin ref. Then push with C as
+   candidate (a bad signature, a missing blob, or any violated
+   invariant) must never reach the origin ref. Then push with C as
    the expected ref value.
 6. UNKNOWN result: if M is on the accepted manifest chain (walked from
-   the current `releases/HEAD`) — success. If M is ABSENT, proceed
+   the current `releases/HEAD`): success. If M is ABSENT, proceed
    exactly as for REJECTION (step 7); the two cases converge.
-7. REJECTION — reconcile against the current accepted state:
+7. REJECTION: reconcile against the current accepted state:
    - Fetch and FULLY VERIFY the new accepted head; DISCARD the
      assembled M.
    - **Build:** recompute the desired projection `{corpus, toolchain,
@@ -479,7 +479,7 @@ comparison against an independently obtained head or checkpoint.
        admitted − withdrawn, artifact ids, `validation_summary`).
        Equal to the head's → SUCCESS (the desired state is already
        published, whoever published it). Different → DETERMINISM
-       FAILURE — halt (same coordinates, different output; consistent
+       FAILURE: halt (same coordinates, different output; consistent
        with the halt rule below).
    - **Governance:** the event's artifact id already appears as some
      chain manifest's `governance_event` → SUCCESS (already applied).
@@ -503,18 +503,18 @@ determinism defect.
 - Naming: the canonical, citable identity is the full typed manifest
   id `snh:1:release-manifest:<hex>`. Publication dates are
   presentation/citation metadata only (from the accepted commit and the
-  Zenodo record) — never part of the name, because a Git committer
+  Zenodo record), never part of the name, because a Git committer
   timestamp is unsigned: the same signed manifest would otherwise
   acquire a different derived name when repackaged in another commit
   history. Display conventions (e.g. a short hash prefix such as
   `r<manifest_id[0:12]>`) are presentation concerns OUTSIDE this
-  protocol — they carry no identity semantics.
+  protocol; they carry no identity semantics.
 - Stored lifecycle state: `published` only.
 - Withdrawal semantics (the PROTOCOL guarantees exactly
   three things): after a withdrawal manifest, the slug is ABSENT from
   current `works`, PRESENT in `withdrawn`, and the transition is
   authorized by its governance event (§8). Removal from discovery and
-  work-facing serving routes is a SERVICE obligation of soranoha.za —
+  work-facing serving routes is a SERVICE obligation of soranoha.za;
   the service tests exercise that obligation because this protocol defines no
   work-facing routes. NEITHER layer promises byte erasure or
   hash-level suppression: bytes remain in chain history, clones,
@@ -535,9 +535,9 @@ determinism defect.
   co-presence of C and a valid head is not binding); OTHERWISE a
   FAILED report recording the reason. The DISPOSABLE
   report records the SWH snapshot identifier, C, the pinned key
-  fingerprints, and the verifier version + result — no signed
-  receipt, no frozen schema. The claim is repository-closure
-  completeness plus the public §7–§8 invariants — nothing more. CITATION ELIGIBILITY requires a SUCCESSFUL observation
+  fingerprints, and the verifier version + result (no signed
+  receipt, no frozen schema). The claim is repository-closure
+  completeness plus the public §7–§8 invariants, nothing more. CITATION ELIGIBILITY requires a SUCCESSFUL observation
   satisfying the CURRENT citation policy (disposable reports
   have no ordering contract, so "the latest report" is undefined, and
   a later failed observation does not necessarily invalidate an
@@ -545,7 +545,7 @@ determinism defect.
 - Archive resolution recipe (a documented recipe, no new wire
   format): the published promise documents how to map a manifest id +
   artifact id to the archived publication commit and the sharded
-  in-repo path (§1), hence to an SWHID — so a citation stays
+  in-repo path (§1), hence to an SWHID, so a citation stays
   resolvable if the live resolver disappears.
 - Independent authorship checkpoints: Zenodo deposits containing the
   ACTUAL canonical manifest bytes + signature, made with credentials
@@ -560,7 +560,7 @@ determinism defect.
 ## 11. Executable schemas and conformance vectors
 
 Schemas are at `soranoha/resources/snh/schemas/*.schema.json`, one per §2
-release-level type — five of them. Vectors are at `soranoha/resources/snh/vectors/`, with
+release-level type (five of them). Vectors are at `soranoha/resources/snh/vectors/`, with
 `expected.json` as their index. Accept vectors contain exact canonical bytes;
 reject vectors contain exact rejected bytes and their rejection reasons.
 `soranoha.snh.conformance-test` checks items 1–5 below. State and transaction
@@ -569,16 +569,16 @@ item 6 against a local fixture origin.
 
 1. Canonicalization: existing shared vectors (§1).
 2. A complete valid manifest → canonical bytes → manifest_id; the
-   boundary-decode NEGATIVE vector — EQUIVALENT but NONCANONICAL
+   boundary-decode NEGATIVE vector: EQUIVALENT but NONCANONICAL
    JSON (same value; reordered keys or altered whitespace) must be
-   REJECTED; and the DUPLICATE-KEY negative vector — JSON
+   REJECTED; and the DUPLICATE-KEY negative vector: JSON
    carrying a repeated object key must be REJECTED at parse, BEFORE
    schema validation (canonicality vectors cannot exercise this
    parser behavior).
 3. A governance event (each kind) → canonical bytes → id.
 4. Signature: key bytes, message bytes, 64-byte signature for one
    manifest and one event; and the table-driven CROSS-ROLE
-   tests — the release key signing a governance event FAILS, a
+   tests: the release key signing a governance event FAILS, a
    governance key signing a manifest FAILS, a non-member key FAILS,
    and an overlapping/un-roled `pinned_keys` configuration is
    REJECTED. All vectors use FIXTURE keys: the key
@@ -587,28 +587,28 @@ item 6 against a local fixture origin.
 5. `.pub` and `releases/HEAD` byte-exact fixtures (65 bytes each),
    including the pre-genesis zero HEAD.
 6. Invariant fixtures: each §8 rule with one passing and one failing
-   case — including the linearity rule (a MERGE commit carrying
+   case, including the linearity rule (a MERGE commit carrying
    the old head on its second parent must FAIL), the
    HEAD-transition rule (a chain-replacement attempt with
    `prev_manifest` = 0 must FAIL), an explicit genesis fixture (zero
    `prev_manifest`, null `governance_event`, empty `withdrawn`), and
    the assembler-side totality check; the §9 current-state
-   reconciliation cases — build: state-already-published success,
+   reconciliation cases (build: state-already-published success,
    same-projection-different-content determinism failure,
-   changed-projection requeue (including after an intervening
-   withdrawal, and after MULTIPLE intervening commits);
+   changed-projection requeue, including after an intervening
+   withdrawal, and after MULTIPLE intervening commits;
    governance: already-applied success, revalidate-and-append,
-   conflicting-withdrawal halt, stale-`amends` halt; and the
-   archive-binding NEGATIVE fixture — an archived snapshot whose
-   current head verifies but whose expected commit C is invalid (or
-   is not a publication commit) must produce a FAILED
-   `archive_verification` report; the view-isolation NEGATIVE
-   fixture — an archived view lacking a required signature/blob that
-   the live origin still has must FAIL (no fallback reads); and the
-   tree-reachability NEGATIVE fixture — a
+   conflicting-withdrawal halt, stale-`amends` halt); and the
+   archive-binding NEGATIVE fixture (an archived snapshot whose
+   current head verifies but whose expected commit C is invalid, or
+   is not a publication commit, must produce a FAILED
+   `archive_verification` report); the view-isolation NEGATIVE
+   fixture (an archived view lacking a required signature/blob that
+   the live origin still has must FAIL without fallback reads); and the
+   tree-reachability NEGATIVE fixture (a
    required blob present ELSEWHERE in the same archived object graph
-   (another branch, a later commit, or dangling) but absent at its
-   prescribed path under C's tree must FAIL.
+   such as another branch, a later commit, or dangling, but absent at its
+   prescribed path under C's tree must FAIL).
 
 ## 12. Assessment snapshot payload version 2
 
@@ -662,16 +662,16 @@ the manifest's `works` (§8). Each entry is closed:
 
 `{slug, source_content_hash, title, title_reading, subtitle, original_title,
 first_published, orthographic_style, ndc, card_url, archive_stem,
-contributors, source_editions}` — nullable where Aozora's catalog leaves the
+contributors, source_editions}` (nullable where Aozora's catalog leaves the
 field empty; `title`, `orthographic_style`, `card_url` and `archive_stem` are
-always present. `contributors` is sorted by `person_id`, unique, non-empty,
+always present). `contributors` is sorted by `person_id`, unique, non-empty,
 each `{person_id, family_name, given_name, family_name_romaji,
 given_name_romaji, relation_to_work}`. `source_editions` entries are
 `{title, publisher, first_edition_year}`.
 
 `archive_stem` is the Aozora archive's own name for the work's primary text
 member, without its extension. Every published work has exactly one such
-member — the source bundle fails closed on none and on several — so the value
+member (the source bundle fails closed on none and on several), so the value
 is always well defined and needs no fallback rule.
 
 FACTS, NOT RENDERINGS. The catalog carries no download filename, citation

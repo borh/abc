@@ -44,7 +44,7 @@ pub(super) struct GaijiMatch {
 /// * `events[refmark_idx + 2]` is `Solo(Hash)` [checked here]
 ///
 /// Consume range is from `refmark_span.start` to the bracket close's
-/// end — i.e. the `※` and the entire following `［＃…］` fold into
+/// end: the `※` and the entire following `［＃…］` fold into
 /// one Aozora span.
 impl RecogniseCtx<'_, '_> {
     pub(super) fn recognize_gaiji(
@@ -106,13 +106,13 @@ impl RecogniseCtx<'_, '_> {
         };
 
         // Split the body into (description, mencode) via the single
-        // authority in aozora-encoding — shared with the LSP resolution
+        // authority in aozora-encoding, shared with the LSP resolution
         // view and the gaiji() wire. It handles the simple quoted form, the
         // composed-glyph / 正字 / 屋号 forms, and the bare form with one
         // right-to-left mencode scan (the naive first-`、` split it replaces
         // wrongly cut composed forms.
         // Recognition gate (I3 idempotency) via the single authority in
-        // aozora-encoding — shared with the resolution view and the
+        // aozora-encoding, shared with the resolution view and the
         // gaiji() wire. The simple `「desc」` quoted form is a gaiji even
         // without a mencode; the composed / bare forms need a trailing mencode
         // anchor. Complete nested glyph references remain documentary parts
@@ -169,7 +169,7 @@ mod is_mencode_shaped_tests {
             "第3水準1-84-27"
         );
         assert_eq!(mencode_resolution_token("U+74FC、372-10"), "U+74FC");
-        // No page-line suffix — returned unchanged.
+        // No page-line suffix: returned unchanged.
         assert_eq!(mencode_resolution_token("第3水準1-85-54"), "第3水準1-85-54");
     }
 

@@ -6,7 +6,7 @@
 //! existing materializers) and Rust reads back one bounded row per pattern.
 //!
 //! Grouping happens on canonical signature strings built with `list_sort`
-//! (deterministic, input-order independent — verified including NULL struct
+//! (deterministic and input-order independent, including NULL struct
 //! fields). Rust re-canonicalizes parsed groups before hashing, so
 //! `pattern_id` is identical across engines; the path-equality test pins
 //! full-summary agreement.
@@ -141,7 +141,7 @@ fn rarity_sql(run_dir: &Path, rarity: &RarityConfig) -> (String, String) {
 /// keeps a bounded per-group heap and `quantile_disc` holds one integer
 /// per occurrence.
 /// `carry_cols` may contain NULLs (e.g. `scope_position`); `join_key`
-/// must be non-null columns only — SQL joins never match NULL = NULL, so
+/// must be non-null columns only; SQL joins never match NULL = NULL, so
 /// joining rollups on nullable scope columns silently dropped every
 /// whole-region feature pattern.
 fn pattern_rollup_sql(

@@ -101,7 +101,7 @@ pub struct SourceAnnotationsBoth<'a> {
 
 /// The three declared regions of an Aozora source, in one coordinate.
 ///
-/// The body is the work — prose and annotations. The header and tail are
+/// The body is the work: prose and annotations. The header and tail are
 /// metadata *about* the work. They are two populations, not two candidate
 /// denominators for one ratio, and measuring their union averages parser
 /// fidelity against packaging attribution and can mean neither.
@@ -135,8 +135,8 @@ impl SourceRegions {
     ///
     /// This is the only constructor, so the conservation identity cannot be
     /// bypassed by assembling the regions field by field. Every defect traced
-    /// in this area shared one property — no invariant existed that could
-    /// catch it — so this one is checked rather than documented.
+    /// in this area shared one property: no invariant existed that could
+    /// catch it, so this one is checked rather than documented.
     ///
     /// # Errors
     ///
@@ -157,7 +157,7 @@ impl SourceRegions {
         };
         // Conservation and disjointness, asserted rather than assumed. The
         // regions are half-open and adjacent by construction above, so this
-        // can only fail on arithmetic overflow — which is exactly the case a
+        // can only fail on arithmetic overflow, which is the case a
         // reader would otherwise assume away.
         let covered = regions
             .header
@@ -216,7 +216,7 @@ impl SourceRegions {
     }
 }
 
-/// Returns the Aozora BODY range and TAIL start of a source text — the one
+/// Returns the Aozora BODY range and TAIL start of a source text: the single
 /// authority for "where does the body start/end", shared by the parser
 /// (`ab-aat` sanitize stage) and the checker (`ab-check::body_text`)
 /// so the two sides of any source↔AAT comparison cannot drift.

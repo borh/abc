@@ -99,8 +99,8 @@ published corpus.
 
 ## The published site
 
-An exported serving tree holds two kinds of file. Chain content — manifests,
-signatures, blobs, governance events — is copied byte for byte, and the
+An exported serving tree holds two kinds of file. Chain content (manifests,
+signatures, blobs, governance events) is copied byte for byte, and the
 work-facing routes are names over it. The browse layer is generated from that
 release: a landing page at `/`, author, title and NDC indexes, one page per
 work at `/works/<identifier>/`, a reading view at `/works/<identifier>/read`,
@@ -122,13 +122,13 @@ data.
 
 | Scope | Licence |
 |---|---|
-| Underlying Aozora Bunko works | Public domain — not Soranoha's to license |
+| Underlying Aozora Bunko works | Public domain: not Soranoha's to license |
 | Published corpus artifacts: TEI, plaintext, Markdown, validation reports, catalog, manifests | [CC0-1.0](LICENSE-CC0) |
 | TEI customisation and protocol JSON Schemas | [CC0-1.0](LICENSE-CC0) |
 | All source code | [Apache-2.0](LICENSE) |
 
 Attribution is requested, not required, mirroring Aozora Bunko's own posture.
-[docs/rights.md](docs/rights.md) is the full public statement — the two rights
+[docs/rights.md](docs/rights.md) is the full public statement: the two rights
 layers, the toolchain's licence position, where the grant appears in published
 bytes, and how a rights holder requests withdrawal. [docs/citation.md](docs/citation.md)
 gives the citation forms for a release, a single work, and an exact byte

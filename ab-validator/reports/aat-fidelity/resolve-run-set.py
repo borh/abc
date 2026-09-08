@@ -3,7 +3,7 @@
 
 This is the single impure boundary: it reads the manifest, validates it (fails
 closed), resolves every adapter's AAT directory to an absolute path, and emits a
-`fidelity-lock/v1` value. The compute tools then read ONLY the lock — no env, no
+`fidelity-lock/v1` value. The compute tools then read only the lock: no env, no
 CWD, no `/db` discovery.
 
 The lock is a pure function of the manifest (+ AB_DB_ROOT interpolation): no
@@ -47,11 +47,11 @@ def resolve_lock(
     """Validate the run-set and return the resolved lock, or raise on failure.
 
     Folds three checks into the one resolve step and fails closed if any fails:
-    validate-aat-run-set coherence, the non-empty-dir gate, and (Move A) content
-    verification — each pinned adapter's on-disk AAT tree is hashed and compared to the
+    validate-aat-run-set coherence, the non-empty-dir gate, and content
+    verification: each pinned adapter's on-disk AAT tree is hashed and compared to the
     manifest's `expected.content_hash`, so a mutated/truncated/swapped `/db` dump is
     caught here (the idempotency gate), not silently computed on. Descriptor
-    (`metadata.json`) presence is NOT required — some dumps legitimately lack one today.
+    (`metadata.json`) presence is not required; some dumps legitimately lack one today.
 
     verify_content is on by default (hashing the pinned dumps is ~seconds); pass
     verify_content=False for fast dev iteration. Adapters without a pinned
@@ -84,7 +84,7 @@ def resolve_lock(
             actual = hash_aat_dir(aat_dir)
             if expected and actual != expected:
                 hash_errors.append(
-                    f"{label}: content hash mismatch — the dump at {aat_dir} does not "
+                    f"{label}: content hash mismatch: the dump at {aat_dir} does not "
                     f"match the pinned identity (mutated / truncated / regenerated?): "
                     f"expected {expected}, got {actual}"
                 )

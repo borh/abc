@@ -1,7 +1,7 @@
 (ns soranoha.za.assemble
   "Release assembly: the bridge from kernel outputs to the publication
   transaction's input. Kernel stages build requested works policy-blind;
-  admission is decided here — the assessment snapshot commits facts or attributed reliance,
+  admission is decided here: the assessment snapshot commits facts or attributed reliance,
   the inclusion rule derives the total admitted/excluded/quarantined
   partition, and both evidence artifacts publish with the release. Works
   are the admitted slugs minus the chain's withdrawn set; every published
@@ -93,8 +93,8 @@
   "snh-manifest/2 toolchain object from engine-shaped stages: per stage id,
   the toolchain identity and stage code version exactly as its derivation
   keys carry them. nix_closure_hash holds that derivation toolchain
-  identity — the wrapper-supplied Nix closure hash for nix-provisioned
-  stages, the hashed binary/profile identity for subprocess stages; it is
+  identity (the wrapper-supplied Nix closure hash for nix-provisioned
+  stages, the hashed binary/profile identity for subprocess stages); it is
   provenance, never an input to artifact identity."
   [stages]
   (into (sorted-map)
@@ -106,21 +106,21 @@
 (defn- assemble-release
   "One desired release as the transaction's assemble result
   {:core :blobs :selection}.
-  - :cas-dir — the kura CAS every artifact byte is read from;
-  - :corpus / :toolchain / :selection-params / :policy-id / :policy-hash —
+  - :cas-dir: the kura CAS every artifact byte is read from;
+  - :corpus / :toolchain / :selection-params / :policy-id / :policy-hash:
     manifest coordinates;
-  - :candidates — snapshot candidate values covering the assessed
+  - :candidates: snapshot candidate values covering the assessed
     population (the totality gate compares their slugs against
     :selection, the kernel's selected slug set, so an unassessed or
     unselected candidate blocks emission);
-  - :rights — the grant published in the manifest, carried by the same
+  - :rights: the grant published in the manifest, carried by the same
     rights policy whose hash the manifest already records;
-  - :works — slug -> {:markdown :plaintext :tei :tei-validation
+  - :works: slug -> {:markdown :plaintext :tei :tei-validation
     :metadata-record :persons <cas hex>, :primary-text-member <path>,
     :source-content-hash \"sha256:<hex>\"} kernel outputs, covering at
     least every published candidate;
-  - :source-hashes — assessed source-content hashes, independent of built artifacts;
-  - :withdrawn-slugs — the chain head's withdrawn set; works = admitted
+  - :source-hashes: assessed source-content hashes, independent of built artifacts;
+  - :withdrawn-slugs: the chain head's withdrawn set; works = admitted
     minus withdrawn."
   [{:keys [cas-dir corpus toolchain selection-params policy-id policy-hash
            rights candidates works source-hashes withdrawn-slugs selection]}]

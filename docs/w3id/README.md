@@ -21,11 +21,6 @@ path, plus a bare `/soranoha/`:
 | `/soranoha/schemas/` | Record schema identifiers embedded in published records |
 | `/soranoha/works/` | Landing pages for published works |
 
-`/soranoha/works/` is claimed now although nothing renders it yet. Claiming a
-prefix costs nothing and commits nothing, whereas discovering later that someone
-else holds it is unrecoverable. Whether citations render the w3id form or the
-`soranoha.org` form is decided separately, in soranoha-szg.11.
-
 Redirects are 302 rather than 301 throughout: the target is a current serving
 location, and permanent client-side caching would defeat the point of an
 indirection service.
@@ -35,12 +30,3 @@ indirection service.
 Register `soranoha.org` and make it resolve before opening the pull request, so
 review does not encounter a dead redirect target. `https://w3id.org/soranoha/ns/tei`
 must resolve before genesis, because the IRI is already in published bytes.
-
-## Why not `/abc/`
-
-The vocabulary previously used `https://w3id.org/abc/ns/tei`, which never
-resolved. The perma-id repository has no `ids/abc` directory, so the prefix was
-unclaimed and remained claimable by anyone, who would then have controlled what
-the namespace of Soranoha's published TEI resolved to. The w3id naming policy
-also permits administrators to refuse identifiers that are too generic, which a
-three-letter `abc` plainly is, so claiming it was not a reliable option either.

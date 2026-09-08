@@ -1,4 +1,4 @@
-//! Owned, no-lifetime semantic AST — the parser's sole AST.
+//! Owned, no-lifetime semantic AST: the parser's sole AST.
 //!
 //! Every payload is `Copy`, and the variable-length pieces are `u32`
 //! handles into a flat [`NodeStore`] rather than `&'src str` borrows, so

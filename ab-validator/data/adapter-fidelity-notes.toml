@@ -103,7 +103,7 @@ id = "aozora2-upstream-implicit-ruby-base-lost-after-gaiji-ruby"
 adapter = "aozora2"
 syntax_row_ids = ["ruby.basic", "gaiji_ruby.inline_base"]
 status = "active"
-summary = "Upstream aozora-core 0.7.1: after a gaiji-bearing ruby earlier in the same line, the next bar-less ruby is parsed as Ruby { children: [] } — the base text stays in the preceding Text node and the AAT ruby has an empty base (3,541 rubies across 1,266 works in the aozora2-full-20260705 dump). Reproduced against the upstream crate directly; the adapter maps the upstream nodes faithfully."
+summary = "Upstream aozora-core 0.7.1: after a gaiji-bearing ruby earlier in the same line, the next bar-less ruby is parsed as Ruby { children: [] }; the base text stays in the preceding Text node and the AAT ruby has an empty base (3,541 rubies across 1,266 works in the aozora2-full-20260705 dump). Reproduced against the upstream crate directly; the adapter maps the upstream nodes faithfully."
 evidence = "docs/adapter-fidelity.md"
 
 [[note]]

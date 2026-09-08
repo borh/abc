@@ -12,7 +12,7 @@
   withdrawal/amendment shapes, genesis form).
 
   Verification streams: each manifest is decoded exactly once and only the
-  head manifest is retained — the result carries the ordered manifest ids,
+  head manifest is retained: the result carries the ordered manifest ids,
   the executed governance-event ids, and the chain length, which is
   everything the transaction consumes. Within one pass a work artifact's
   content is verified once: an older commit reuses the younger commit's
@@ -193,8 +193,8 @@
   validation-summary re-derivation: each tei-validation record must name
   that work's TEI bytes, and invalid_slugs must equal exactly the sorted
   slugs whose status is failed. Returns {path hex} for every verified
-  artifact — the younger-commit evidence `reuse?` grants draw on when the
-  predecessor is verified next."
+  artifact (the younger-commit evidence `reuse?` grants draw on when the
+  predecessor is verified next)."
   [v commit manifest reuse]
   (let [failed
         (vec
@@ -262,8 +262,8 @@
 (defn- check-catalog!
   "The catalog must describe THIS release: the same works, in the same order,
   bound to the same source bytes. Without this a manifest could name any
-  catalog blob, including one that still describes a withdrawn work — which
-  is exactly what a takedown must remove."
+  catalog blob, including one that still describes a withdrawn work (which
+  is exactly what a takedown must remove)."
   [v commit manifest]
   (let [catalog (:value (decoded-artifact v commit (get manifest "catalog")
                                           "catalog"))

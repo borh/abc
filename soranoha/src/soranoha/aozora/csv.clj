@@ -59,7 +59,7 @@
 (def ^:private century-prose-pattern
   ;; Japanese BCE century prose with optional sub-century qualifier.
   ;; The qualifier (`初頭`/`初`/`末`/`半ば`/`前半`/`後半`) is captured
-  ;; only for the audit trail — EDTF Level 1 has no sub-century
+  ;; only for the audit trail; EDTF Level 1 has no sub-century
   ;; precision, so the qualifier does not influence the canonical
   ;; lexical output.
   #"^紀元前(\d+)世紀(初頭|初|末|半ば|前半|後半)?$")
@@ -96,7 +96,7 @@
 
 (defn- valid-calendar-shape?
   "Reject impossible calendar dates (Feb 31, etc.) for YYYY-MM-DD /
-  YYYY-MM lexical forms — including negative-year (BCE) forms, which
+  YYYY-MM lexical forms, including negative-year (BCE) forms, which
   java.time accepts as a leading `-` in `LocalDate.parse` /
   `YearMonth.parse`. The schema regex rules out month ≤ 0, ≥ 13,
   day ≤ 0, ≥ 32; this catches month/day pairs that the regex can't
@@ -122,7 +122,7 @@
   `strip-whitespace`, `collapse-multi-dash`,
   `normalize-date-separator`. Semantic rules: `bce-astronomical`,
   `unknown-marker`, `century-prose`. Decade markers (`192X`) are
-  admitted verbatim with no rule entry — no rewrite occurs."
+  admitted verbatim with no rule entry; no rewrite occurs."
   [raw]
   (cond
     (or (nil? raw) (= "" raw))
@@ -141,10 +141,7 @@
             (let [corrected (bce->astronomical n-str)]
               [corrected
                [{"raw" raw "corrected" corrected "rule" "bce-astronomical"}]])
-            ;; 前0 / 前000 has no astronomical equivalent (the BCE
-            ;; calendar starts at 1 BCE). Pass raw through; downstream
-            ;; schema validation will reject the Japanese-character
-            ;; lexical form.
+            ;; 前0 has no astronomical equivalent (BCE starts at 1).
             [raw-str []]))
 
         (re-matches century-prose-pattern raw-str)
@@ -180,12 +177,10 @@
               (if (valid-calendar-shape? corrected)
                 [corrected
                  (mapv (fn [r] {"raw" raw "corrected" corrected "rule" r}) rules)]
-                ;; Regex-shaped but impossible calendar date (e.g. 2020-02-31).
-                ;; Pass through verbatim; downstream validation will reject it.
+                ;; Invalid calendar date (e.g. 2020-02-31); pass raw through.
                 [raw-str []]))
 
-            ;; Unparseable shape; pass through verbatim. Schema
-            ;; validation will reject it downstream.
+            ;; Unrecognized shape; pass raw through.
             [raw-str []]))))))
 
 (defn- nonblank [s]

@@ -1,8 +1,8 @@
-"""Read a resolved fidelity lock — the compute stage's sole dump-selection input.
+"""Read a resolved fidelity lock, the compute stage's sole dump-selection input.
 
 The lock is emitted by `resolve-run-set.py` and consumed read-only here. It mirrors
 `aat_runs`' resolution interface (`*_aat_dirs` / `*_aat_globs`) so compute tools swap
-one for the other without touching their logic — but the lock is a *closed value*: no
+one for the other without touching their logic; the lock is a *closed value*: no
 env, no CWD, no `/db` discovery happen when reading it (that is resolve's job).
 """
 

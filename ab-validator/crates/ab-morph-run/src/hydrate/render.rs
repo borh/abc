@@ -24,7 +24,7 @@ pub fn write_markdown(bundle: &HydratedBundle, out: &mut impl Write) -> Result<(
         .map(|(short, full)| (full.as_str(), short.as_str()))
         .collect();
 
-    writeln!(out, "# Hydrated examples — {}", bundle.provenance.run_id)?;
+    writeln!(out, "# Hydrated examples: {}", bundle.provenance.run_id)?;
     writeln!(out)?;
     writeln!(
         out,
@@ -41,7 +41,7 @@ pub fn write_markdown(bundle: &HydratedBundle, out: &mut impl Write) -> Result<(
         bundle.provenance.built_at_utc, bundle.provenance.context_chars, limit_display
     )?;
     let catalog_display = bundle.provenance.abc_catalog.as_deref().map_or_else(
-        || "absent — authors shown as person ids".to_owned(),
+        || "absent (authors shown as person ids)".to_owned(),
         |path| format!("`{path}`"),
     );
     writeln!(out, "- ABC catalog: {catalog_display}")?;
@@ -51,7 +51,7 @@ pub fn write_markdown(bundle: &HydratedBundle, out: &mut impl Write) -> Result<(
     for (index, row) in bundle.rows.iter().enumerate() {
         let rank = index + 1;
         writeln!(out)?;
-        writeln!(out, "## #{rank} {} — {}", row.row.kind, row.row.pattern)?;
+        writeln!(out, "## #{rank} {}: {}", row.row.kind, row.row.pattern)?;
         writeln!(
             out,
             "rrf {:.6} · {} examples · pattern `{}`",
@@ -226,9 +226,8 @@ fn render_body(
 }
 
 /// The first error whose code matches one of `prefixes`, falling back to
-/// the first error overall (a whole-source load failure — `aat-missing` or
-/// `projection-mismatch` — takes down every layer at once, so it is the
-/// right explanation even though its code doesn't name the layer), and
+/// the first error overall (a whole-source load failure such as `aat-missing`
+/// or `projection-mismatch` affects every layer at once), and
 /// finally to a generic message when there is no error at all to show
 /// (defensive: every `None` layer this is called for was pushed alongside
 /// an error by `build_example`, but rendering must not panic if that
@@ -321,9 +320,9 @@ mod tests {
         let (_dir, opts) = crate::hydrate::tests::write_e2e_fixture();
         crate::hydrate::run_hydrate_interesting(&opts).unwrap();
         let md = std::fs::read_to_string(opts.output_dir.join("examples.md")).unwrap();
-        assert!(md.starts_with("# Hydrated examples — run-h"));
+        assert!(md.starts_with("# Hydrated examples: run-h"));
         assert!(md.contains("Analyzer legend:"));
-        assert!(md.contains("## #1 feature — pattern-p-ruby"));
+        assert!(md.contains("## #1 feature: pattern-p-ruby"));
         assert!(md.contains("『煙管』 芥川竜之介"));
         assert!(md.contains("【仏蘭西】"));
         assert!(md.contains("| analyzers | segmentation | pos |"));

@@ -1,4 +1,4 @@
-# Blind labeling package — full-corpus interestingness calibration (2026-07-06)
+# Blind labeling package: full-corpus interestingness calibration (2026-07-06)
 
 This directory contains a pooled, blinded sample of morpheme-difference
 patterns for human verdicts. `labels.tsv` is the union of the top-50
@@ -14,7 +14,7 @@ surfaced a row or at what rank. The method/rank data lives only in
 |---|---|
 | `bug` | Analyzer output is wrong: a real defect in an analyzer's segmentation or feature output. |
 | `expected-policy` | Legitimate segmentation/POS policy difference between analyzers (both defensible under their own guidelines). |
-| `expected-dictionary` | Dictionary coverage/lemma difference — not a bug, but informative about lexicon gaps. |
+| `expected-dictionary` | Dictionary coverage/lemma difference; not a bug, but informative about lexicon gaps. |
 | `corpus-artifact` | Aozora encoding/gaiji/formatting artifact, not a linguistic disagreement. |
 | `noise` | Punctuation/whitespace/trivial difference with no diagnostic value. |
 | `unclear` | Cannot judge from the snippets provided. |
@@ -27,11 +27,11 @@ noise=0, unclear=0.
 
 - Edit ONLY the `verdict` column (and optionally `notes`) of each data row.
   Any editor works, but keep the tab separators intact.
-- `verdict` must be exactly one of the six strings above, on every row —
+- `verdict` must be exactly one of the six strings above, on every row;
   the scorer hard-errors on an empty or misspelled verdict and lists the
   offending `label_id`s (partial labeling would silently bias p@k, so it
   is rejected outright).
-- Do NOT add, delete, or reorder rows, and do not touch `label_id` — the
+- Do NOT add, delete, or reorder rows, and do not touch `label_id`: the
   scorer verifies the TSV's `label_id` set equals `mapping.json`'s key set
   exactly and hard-errors on any mismatch (missing, unknown, or duplicated
   ids).

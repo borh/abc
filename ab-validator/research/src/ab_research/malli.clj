@@ -1,9 +1,8 @@
 (ns ab-research.malli
   "Shared Malli values: scalar schemas that domain namespaces compose
   into their own explicit registries, plus explanation-formatting
-  helpers. This namespace never depends on a domain, never mutates
-  malli's default registry, and never instruments anything —
-  validation call sites pass a registry explicitly."
+  helpers. This namespace does not depend on a domain or mutate
+  malli's default registry; validation call sites pass a registry explicitly."
   (:require [clojure.string :as string]
             [malli.core :as m]
             [malli.error :as me]))

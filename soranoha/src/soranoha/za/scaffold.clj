@@ -80,7 +80,7 @@
 
 (defn projection-drift
   "nil when the checkout's and the snapshot's projections are identical;
-  otherwise a diagnostic naming the drift — slugs on only one side, and
+  otherwise a diagnostic naming the drift: slugs on only one side, and
   slugs whose contribution-candidate lists differ (the case slug
   totality alone cannot see: a catalog revision that adds a translator
   or changes a role while every slug survives). Counts are complete and

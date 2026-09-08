@@ -205,7 +205,7 @@ impl NodeStore {
     ///
     /// # Panics
     ///
-    /// Panics if the content pool would exceed `u32::MAX` entries — not
+    /// Panics if the content pool would exceed `u32::MAX` entries; not
     /// reachable for any realistic document.
     pub fn push_contents(&mut self, items: &[Content]) -> ContentRange {
         let start =
@@ -219,7 +219,7 @@ impl NodeStore {
     ///
     /// # Panics
     ///
-    /// Panics if the segment pool would exceed `u32::MAX` entries — not
+    /// Panics if the segment pool would exceed `u32::MAX` entries; not
     /// reachable for any realistic document.
     pub fn push_segments(&mut self, items: &[Segment]) -> SegRange {
         let start =

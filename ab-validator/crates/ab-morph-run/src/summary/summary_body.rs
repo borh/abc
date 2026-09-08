@@ -43,7 +43,7 @@ pub(crate) enum FeatureDiffsShape {
 
 /// Sniffs the parquet footer of `nway_feature_diffs` (single file or first
 /// sorted part of a directory-of-parts) for the analyzer column shape. The
-/// footer is authoritative — `runs.schema_version` is never consulted, so a
+/// footer is authoritative; `runs.schema_version` is never consulted, so a
 /// run dir whose version metadata disagrees with its actual files still
 /// reads correctly.
 pub(crate) fn nway_feature_diffs_shape(run_dir: &Path) -> Result<FeatureDiffsShape> {

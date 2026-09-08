@@ -57,7 +57,7 @@ pub use ab_aozora_encoding::gaiji::{GaijiCanonical, MenKuTen, Resolved};
 
 /// Byte-range span into the original source document.
 ///
-/// Re-exported from [`ab_aozora_spec::Span`] — see that module for the
+/// Re-exported from [`ab_aozora_spec::Span`]; see that module for the
 /// canonical definition.
 pub use ab_aozora_spec::Span;
 
@@ -76,8 +76,8 @@ pub struct Container {
 /// Which 傍点 (emphasis dot) or 傍線 (sideline) mark decorates a run.
 ///
 /// Carried by both the forward-reference `ast::ForwardFormat` leaf and the
-/// paired [`crate::RegionFormat::Bouten`]. The 点 (dot) vs 線 (line) split —
-/// see [`Self::is_line`] — is the family boundary the
+/// paired [`crate::RegionFormat::Bouten`]. The 点 (dot) vs 線 (line) split
+/// ([`Self::is_line`]) is the family boundary the
 /// `mismatched_bouten_container` diagnostic enforces. Each variant maps to a
 /// canonical 青空文庫 keyword via [`Self::keyword`]; [`BOUTEN_KINDS`] is the
 /// single declaration-order list the rest of the workspace derives from.
@@ -148,7 +148,7 @@ impl BoutenKind {
 /// [`BoutenKind::keyword`] instead of hand-maintaining a second match,
 /// and the render / spec slug tables are drift-checked against it. Adding
 /// a bouten mark therefore means a new variant + its `keyword` arm + one
-/// row here — nothing else can silently fall out of sync.
+/// row here: nothing else can silently fall out of sync.
 pub const BOUTEN_KINDS: &[BoutenKind] = &[
     BoutenKind::Goma,
     BoutenKind::WhiteSesame,
@@ -171,14 +171,14 @@ pub const BOUTEN_KINDS: &[BoutenKind] = &[
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub enum BoutenPosition {
-    /// Right of (in horizontal terms, above) the base text — the
+    /// Right of (in horizontal terms, above) the base text: the
     /// default side, the bare `［＃「X」に傍点］` form.
     #[default]
     Right,
-    /// Left of (below) the base text — the `左に` modifier
+    /// Left of (below) the base text: the `左に` modifier
     /// (`［＃「X」の左に傍点］`).
     Left,
-    /// Both sides of the base text — the `の両側に` modifier
+    /// Both sides of the base text: the `の両側に` modifier
     /// (`［＃「X」の両側に傍線］`).
     Both,
 }
@@ -188,10 +188,10 @@ pub enum BoutenPosition {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub enum RubySide {
-    /// Standard ruby — `｜base《reading》` (right of / above the base).
+    /// Standard ruby: `｜base《reading》` (right of / above the base).
     #[default]
     Right,
-    /// Left-side (below) ruby — `［＃「base」の左に「reading」のルビ］`, the
+    /// Left-side (below) ruby: `［＃「base」の左に「reading」のルビ］`, the
     /// saidoku-moji (再読文字) building block.
     Left,
 }
@@ -199,7 +199,7 @@ pub enum RubySide {
 /// The character class an implicit-ruby base run belongs to.
 ///
 /// A bare `《reading》` attaches to the maximal run of a *single* class
-/// immediately preceding it — mixing classes would move where the base
+/// immediately preceding it; mixing classes would move where the base
 /// starts on re-parse, so a run stays within one class.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[non_exhaustive]
@@ -229,7 +229,7 @@ pub enum RubyBaseClass {
 /// ([`is_ruby_base_char`]'s callers) and the serializer's canonical
 /// bare-vs-`｜` decision: the serializer drops `｜` only when a
 /// bare reading would re-parse to the *same* base, decided by comparing
-/// classes here — so both sides must move in lockstep.
+/// classes here, so both sides must move in lockstep.
 ///
 /// Aozora input rules treat `〇`, `〻`, and `ヶ` as kanji for ruby boundaries.
 /// An explicit `｜` limits the base when preceding kanji must stay outside it.
@@ -247,7 +247,7 @@ pub const fn ruby_base_class(ch: char) -> Option<RubyBaseClass> {
         | '〻'
         | 'ヶ' => RubyBaseClass::Kanji,
         '\u{3041}'..='\u{3096}' | '\u{309D}'..='\u{309E}' => RubyBaseClass::Hiragana,
-        // Katakana letters ァ..ヴ, phonetic ヷ..ヺ, and ー / ヽ / ヾ — but
+        // Katakana letters ァ..ヴ, phonetic ヷ..ヺ, and ー / ヽ / ヾ, but
         // NOT the small ヵ(30F5) / ヶ(30F6) or the middle dot ・(30FB).
         '\u{30A1}'..='\u{30F4}' | '\u{30F7}'..='\u{30FA}' | '\u{30FC}'..='\u{30FE}' => {
             RubyBaseClass::Katakana
@@ -261,7 +261,7 @@ pub const fn ruby_base_class(ch: char) -> Option<RubyBaseClass> {
     })
 }
 
-/// True when `ch` can serve as (part of) an implicit-ruby *kanji* base —
+/// True when `ch` can serve as (part of) an implicit-ruby *kanji* base:
 /// predicate is shared with the implicit-base classifier.
 #[must_use]
 pub const fn is_ruby_base_char(ch: char) -> bool {
@@ -285,10 +285,10 @@ pub enum MarginNotePosition {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub enum MarginNoteKind {
-    /// 注記 — an editorial gloss, with side recorded separately when supplied.
+    /// 注記: an editorial gloss, with side recorded separately when supplied.
     #[default]
     Gloss,
-    /// 傍記 — `［＃「X」に「Y」の傍記］`, a redaction marker (典型的に ×)
+    /// 傍記: `［＃「X」に「Y」の傍記］`, a redaction marker (典型的に ×)
     /// written beside X, used in censorship restoration.
     Marginal,
     /// A printed page label identified by a supplied section locator.
@@ -318,7 +318,7 @@ impl MarginNoteKind {
     }
 }
 
-/// Which section-break directive an `ast::Node::SectionBreak` carries —
+/// Which section-break directive an `ast::Node::SectionBreak` carries:
 /// the stronger page-structure breaks beyond the plain `［＃改ページ］`.
 ///
 /// Each variant maps to its canonical keyword via [`Self::keyword`];
@@ -336,7 +336,7 @@ pub enum SectionKind {
     Kaimihiraki,
 }
 
-/// Heading *level* — the 大 / 中 / 小 outline rank.
+/// Heading outline level: the 大 / 中 / 小 outline rank.
 ///
 /// Orthogonal to [`HeadingStyle`]; the two combine (同行中見出し is
 /// `Medium` + `SameLine`, 窓小見出し is `Small` + `Window`, …).
@@ -344,16 +344,16 @@ pub enum SectionKind {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub enum HeadingKind {
-    /// 大見出し — the top outline level (renders as `<h1>`).
+    /// 大見出し: the top outline level (renders as `<h1>`).
     Large,
-    /// 中見出し — the middle outline level (renders as `<h2>`).
+    /// 中見出し: the middle outline level (renders as `<h2>`).
     Medium,
-    /// 小見出し — the lowest outline level (renders as `<h3>`).
+    /// 小見出し: the lowest outline level (renders as `<h3>`).
     Small,
 }
 
 impl HeadingKind {
-    /// The numeric outline level — `1` = 大, `2` = 中, `3` = 小 — carried by
+    /// The numeric outline level (`1` = 大, `2` = 中, `3` = 小) carried by
     /// the inline `ast::HeadingHint`'s `data-level` attribute.
     ///
     /// The single source of the 大/中/小 → 1/2/3 mapping (the renderer and the
@@ -369,7 +369,7 @@ impl HeadingKind {
     }
 }
 
-/// Heading *style* — standard, 同行 (same-line), or 窓 (window).
+/// Heading style: standard, 同行 (same-line), or 窓 (window).
 ///
 /// Orthogonal to [`HeadingKind`] (the 大 / 中 / 小 level): each style
 /// pairs with any level. The 同行 style runs the title into the body on the
@@ -379,19 +379,19 @@ impl HeadingKind {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub enum HeadingStyle {
-    /// Standard heading — no 同行 / 窓 prefix. The default.
+    /// Standard heading: no 同行 / 窓 prefix. The default.
     #[default]
     Standard,
-    /// 同行見出し — the title runs into the body on the same line.
+    /// 同行見出し: the title runs into the body on the same line.
     SameLine,
-    /// 窓見出し — an inset ("window") title.
+    /// 窓見出し: an inset ("window") title.
     Window,
 }
 
 /// Every [`SectionKind`] variant in declaration order.
 ///
 /// Drives the renderer's class-list derivation (and any codegen) so a new
-/// section break flows in without a hand-maintained parallel — mirrors
+/// section break flows in without a hand-maintained parallel, mirroring
 /// [`BOUTEN_KINDS`].
 pub const SECTION_KINDS: &[SectionKind] = &[
     SectionKind::Kaicho,
@@ -416,7 +416,7 @@ pub const HEADING_STYLES: &[HeadingStyle] = &[
 // The single source of truth for the Japanese keyword each render-bearing
 // enum maps to (e.g. `BoutenKind::WhiteSesame` → "白ゴマ傍点"). Both the
 // serializer (AST → annotation text) and the renderers key on these, and
-// `ab_aozora_spec::roman_slug` turns the keyword into the romaji CSS slug — so
+// `ab_aozora_spec::roman_slug` turns the keyword into the romaji CSS slug, so
 // the keyword lives here once instead of being copied per crate.
 
 impl BoutenKind {
@@ -478,9 +478,9 @@ pub enum DirectiveKind {
     BaseTextVariant,
     /// A ruby span that couldn't be parsed cleanly.
     InvalidRubySpan,
-    /// Inline warichu opener — `［＃割り注］`.
+    /// Inline warichu opener: `［＃割り注］`.
     WarichuOpen,
-    /// Inline warichu closer — `［＃割り注終わり］`.
+    /// Inline warichu closer: `［＃割り注終わり］`.
     WarichuClose,
     /// An empty directive `［＃］` (or whitespace-only `［＃　］`). Not an
     /// unrecognised notation: it is the de-facto-standard symbol used in the
@@ -488,7 +488,7 @@ pub enum DirectiveKind {
     /// 青空文庫 work. Typed distinctly so it leaves the `Unknown` bucket while
     /// still round-tripping its raw bytes.
     Empty,
-    /// Numbered input-typist note (`［＃入力者注(N)］`) — a reference to the
+    /// Numbered input-typist note (`［＃入力者注(N)］`): a reference to the
     /// numbered note listed in the file's 凡例. Rendered as a visible `注N`
     /// superscript; typed distinctly so it leaves the `Unknown` bucket.
     EditorNote,
@@ -502,32 +502,32 @@ pub enum DirectiveKind {
     ExplanationNote,
     /// A supplied external table filename, without its content or resolution.
     ExternalTableReference,
-    /// Ruby-presence editorial note (`［＃「X」にルビ］`) — records that the run
+    /// Ruby-presence editorial note (`［＃「X」にルビ］`): records that the run
     /// `X` carries a ruby gloss in the source. The gloss text itself is not in
     /// the directive; this is a proofreading marker, not renderable ruby.
     /// Rendered as a compact visible marker; the raw bracket round-trips.
     RubyAttached,
-    /// Ruby-binding editorial note (`［＃ルビは「X」にかかる］`) — records that a
+    /// Ruby-binding editorial note (`［＃ルビは「X」にかかる］`): records that a
     /// nearby ruby applies to the run `X` (disambiguation, not renderable
     /// ruby). Rendered as a compact marker; the raw bracket round-trips.
     RubyRetarget,
-    /// Left-side-ruby span opener (`［＃左にルビ付き］`) — marks the start of a
+    /// Left-side-ruby span opener (`［＃左にルビ付き］`): marks the start of a
     /// run that carries a left-side ruby whose reading is named on the matching
     /// [`Self::RubyPairClose`]. A raw-preserving `Direct` directive (the pair is
     /// not coupled at the splice layer, like the inline warichu pair).
     RubyPairOpen,
-    /// Left-side-ruby span closer (`［＃左に「Y」のルビ付き終わり］`) — names the
+    /// Left-side-ruby span closer (`［＃左に「Y」のルビ付き終わり］`): names the
     /// left-side ruby reading `Y` for the span opened by [`Self::RubyPairOpen`].
     /// `Y` is preserved verbatim in the raw bracket and shown in the marker.
     RubyPairClose,
-    /// Margin-note span opener (`［＃注記付き］` / `［＃左に注記付き］`) — marks the
+    /// Margin-note span opener (`［＃注記付き］` / `［＃左に注記付き］`): marks the
     /// start of a run that carries a margin note whose text is named on the
     /// matching [`Self::MarginNotePairClose`]. A raw-preserving `Direct`
     /// directive (the pair is not coupled at the splice layer, like the inline
     /// warichu pair). The `左に` prefix records that the note sits on the left.
     MarginNotePairOpen,
     /// Margin-note span closer (`［＃「Y」の注記付き終わり］` / `［＃左に「Y」の注記
-    /// 付き終わり］`) — names the margin-note text `Y` for the span opened by
+    /// 付き終わり］`): names the margin-note text `Y` for the span opened by
     /// [`Self::MarginNotePairOpen`]. `Y` is preserved verbatim in the raw
     /// bracket (it may contain a nested `［＃…］` gaiji) and shown in the marker.
     MarginNotePairClose,
@@ -692,7 +692,7 @@ mod tests {
             ),
             // AccentDot's body is the selector grammar (serialized from the
             // interned `annotation_body`, never `keyword()`), so it rides the 太字
-            // default too — `keyword()` is never called for it.
+            // default too: `keyword()` is never called for it.
             (ForwardAttr::AccentDot, "太字"),
             // Accent's suffix carries the bracketed mark symbol (serialized in a
             // dedicated arm, never `keyword()`), so it rides the 太字 default too.

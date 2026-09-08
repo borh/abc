@@ -1,7 +1,7 @@
 (ns soranoha.za.oracle
   "The three-set delta acceptance oracle over two kernel runs: (a) the
   source/selection delta, (b) the stages invalidated and executed, (c) the
-  artifact delta — with the explanation invariant that every executed stage
+  artifact delta: with the explanation invariant that every executed stage
   of the second run is accounted for by a changed declared input (a changed
   trace key under equal, complete stage evidence). Manifest set-difference
   alone is not a delta oracle: source edits can preserve output bytes, and
@@ -75,7 +75,7 @@
 (defn unexplained-executions
   "Invariant check over the engine's own derivation keys: every stage
   executed in `run-b` for a work already present in `run-a` must carry a
-  changed trace key — i.e. a changed declared input (a work new to run-b
+  changed trace key (a changed declared input). A work new to run-b
   explains all its executions; a same-key execution surfaces missing-blob
   recovery work, which is exactly what the invariant should expose).
 

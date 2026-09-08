@@ -2,7 +2,7 @@
   "Publication-repository plumbing: writing single-parent publication commits
   without a work tree, and the fast-forward-only push that serves as the
   compare-and-swap. Used by the transaction and by test fixtures (which also
-  craft deliberately invalid commits through the same writer)."
+  craft invalid commits through the same writer)."
   (:require [babashka.fs :as fs]
             [babashka.process :as process]
             [clojure.string :as str])
@@ -12,7 +12,7 @@
 (def ^:private ident-env
   ;; real commit time: two racers producing byte-identical content in the
   ;; same second may collide into one commit, and a push of that commit
-  ;; reports up-to-date — which is state convergence, not a failure
+  ;; reports up-to-date (state convergence, not a failure).
   {"GIT_AUTHOR_NAME" "snh" "GIT_AUTHOR_EMAIL" "snh@localhost"
    "GIT_COMMITTER_NAME" "snh" "GIT_COMMITTER_EMAIL" "snh@localhost"})
 

@@ -1,19 +1,4 @@
-;; Kernel CLI. `build` runs the full per-work stage graph at an aozorabunko
-;; checkout revision into the kura store; output is CAS + trace results plus
-;; a disposable run report (a query/export over the trace store — no
-;; independent identity, no schema, no retention promise). The build itself
-;; carries no manifest, signing, or publishing: those operate on admission
-;; evidence the kernel never sees. `release` composes the scheduled release
-;; pipeline — build, then the za driver's assembly and publication
-;; transaction, with the assessment snapshot, policy value, signing seed,
-;; reviewed assessment source records, and pinned verifier keys as fail-closed
-;; file inputs. `assessment-evaluate` regenerates a snapshot and an optional
-;; internal RDF view. `governance`
-;; appends one offline-signed event; `serving-tree` exports the verified
-;; chain's serving tree; `archive-verify` runs the archival observation
-;; over a sole archived view. `delta` runs
-;; the three-set delta oracle over two run reports; `verify` runs the
-;; kura determinism + fixity report.
+;; Entry point for the soranoha publication kernel, assessment, and chain CLI.
 (ns soranoha.main
   (:require [babashka.cli :as cli]
             [babashka.fs :as fs]
@@ -327,12 +312,12 @@
   build run reports (strictly decoded), printed as deterministic JSON.
   Run against each candidate aozorabunko revision's report and the
   previous qualified run's; comparison requires matching
-  stage-coordinate tables — differing coordinates fail as incomparable
+  stage-coordinate tables: differing coordinates fail as incomparable
   and require a new baseline run. The reports themselves stay
   disposable. `ok` requires zero unexplained executions; the source and
   artifact deltas are descriptive (content hashes already establish
   what changed, and no executed stage is evidence for or against an
-  artifact change — a warm cache can produce changed bytes without
+  artifact change; a warm cache can produce changed bytes without
   executing anything)."
   [{:keys [report-a report-b]}]
   (let [run-a (oracle/decode-run (fs/read-all-bytes (str report-a)))
@@ -386,7 +371,7 @@
 (defn- read-signing-seed
   "Parse a signing-seed file (64 lowercase hex + optional surrounding
   whitespace) into 32 bytes. The file content is a secret: rejection
-  names only the file, never the content — hex->bytes would otherwise
+  names only the file, never the content: hex->bytes would otherwise
   carry the rejected text into exception data, which the CLI prints."
   ^bytes [path]
   (let [text (string/trim (slurp (str path)))]
@@ -815,7 +800,7 @@
   identified by the normalized local path of the observed view plus the
   commit; a materializer that binds a view to an external identifier
   replaces that locator with the bound identity. A view that cannot be
-  constructed throws — a failure to perform the observation, never an
+  constructed throws: a failure to perform the observation, never an
   observation; a readable view always yields a report, success or
   failed."
   [{:keys [archive commit release-pub governance-pub]}]

@@ -4,14 +4,14 @@
   assembler and verifier sides:
 
     1. reject duplicate object keys at parse, before schema validation;
-    2. parse without coercion (integral JSON numbers only — any float or
+    2. parse without coercion (integral JSON numbers only; any float or
        lexically non-integral number fails);
     3. validate the parsed value against the type's JSON Schema;
     4. apply the type's single-object semantic boundary rules (real calendar
-       dates, absolute origin) — cross-object and transition invariants stay
+       dates, absolute origin); cross-object and transition invariants stay
        with the chain verifier;
     5. canonicalize the same value and require the stored bytes to equal the
-       canonical bytes — equivalent-but-noncanonical JSON is invalid;
+       canonical bytes (equivalent-but-noncanonical JSON is invalid);
     6. recompute the id from the stored bytes: snh:1:<type>:<sha256hex>.
 
   All other artifacts (e.g. tei-validation JSON) are exact published bytes
@@ -69,7 +69,7 @@
   five release-level registry types). Returns
   {:value <parsed> :hex <sha256 hex of stored bytes> :id \"snh:1:<type>:<hex>\"}.
   Throws ex-info with :reason on any rejection:
-  :parse-invalid (malformed JSON or duplicate object key — detected at parse,
+  :parse-invalid (malformed JSON or duplicate object key detected at parse
   before schema validation), :non-integral-number, :schema-invalid,
   :invalid-upstream-origin, :invalid-effective-date, :noncanonical."
   [type ^bytes stored-bytes]
@@ -91,15 +91,14 @@
          :id (str "snh:1:" type ":" hex)}))))
 
 (defn encode
-  "Assembler-side inverse: canonical bytes + id for a protocol value of
-  `type`. Round-trips through `decode` so an emitted object is by
-  construction exactly what the verifier will accept."
+  "Returns canonical bytes and id for a protocol value of `type`.
+  Round-trips through `decode` to ensure validity before emission."
   [type value]
   (let [bytes (canonical/rfc8785-safe-integer-json-bytes-v1 value)
         decoded (decode type bytes)]
     (assoc decoded :bytes bytes)))
 
 (defn decode-string
-  "Convenience for tests and fixtures: decode a JSON string's UTF-8 bytes."
+  "Decodes a JSON string's UTF-8 bytes."
   [type ^String s]
   (decode type (.getBytes s StandardCharsets/UTF_8)))

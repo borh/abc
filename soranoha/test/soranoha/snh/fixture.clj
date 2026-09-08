@@ -232,7 +232,7 @@
   "A catalog matching `manifest-value`'s works, plus its blob file. Crafted
   releases get one by default: the manifest-to-catalog binding is checked on
   every commit, so a crafted manifest without a matching catalog would fail
-  there and mask the rule the test is actually about — exactly as a real
+  there and mask the rule the test is actually about, exactly as a real
   forger would have to supply one. Returns nil when the planted works cannot
   produce a valid catalog (duplicate or unsorted slugs), leaving the
   manifest's own catalog reference in place."
@@ -249,7 +249,7 @@
   `sign-fn` defaults to the release key. `raw` skips the boundary decode so
   semantically invalid manifests can be planted; the default round-trips
   through decode. The catalog is rebound to the planted works unless
-  `keep-catalog` is set — set it to exercise the binding rule itself.
+  `keep-catalog` is set (set it to exercise the binding rule itself).
   Returns {:commit :hex}."
   [clone {:keys [parents base-tree-of manifest-value extra-files sign-fn raw
                  keep-catalog]

@@ -41,7 +41,7 @@ pub(super) struct KaeritenObs {
 /// `Xレ` compounds ladder by their base char `X`; `レ` alone and 送り仮名
 /// `（X）` are non-ladder.
 pub(super) fn classify_kaeriten_mark(mark: &str) -> (KaeritenFamily, u8, bool) {
-    // 送り仮名 ［＃（X）］ — a kaeriten node but not a ladder mark.
+    // 送り仮名 ［＃（X）］: a kaeriten node but not a ladder mark.
     if mark.starts_with('（') {
         return (KaeritenFamily::Other, 0, false);
     }
@@ -106,7 +106,7 @@ fn is_kana(c: char) -> bool {
     matches!(c, '\u{3040}'..='\u{30FF}' | '\u{FF66}'..='\u{FF9D}')
 }
 
-/// CJK unified ideographs (incl. Ext-A and compatibility) — "kanji".
+/// CJK unified ideographs (incl. Ext-A and compatibility): "kanji".
 fn is_kanji(c: char) -> bool {
     matches!(c, '\u{3400}'..='\u{9FFF}' | '\u{F900}'..='\u{FAFF}')
 }

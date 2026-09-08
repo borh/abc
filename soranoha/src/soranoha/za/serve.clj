@@ -6,8 +6,8 @@
   no current work route, but remain available through historical manifests
   and through a generated page explaining the withdrawal.
 
-  An export holds two kinds of file. Chain content — manifests, signatures,
-  blobs, governance events, the head pointer — is copied byte for byte, and
+  An export holds two kinds of file. Chain content (manifests, signatures,
+  blobs, governance events, the head pointer) is copied byte for byte, and
   the work-facing routes are names over it. Each artifact gets two of those
   names: the type-named route a citation points at, and a readable filename
   so that saving one is not saving a file called `tei`. The browse layer is
@@ -202,11 +202,7 @@
                              (write! (verify/event-sig-path hex)
                                      (read! (verify/event-sig-path hex))))
                            (write! verify/head-path (sign/hex64-lf-bytes (:head chain-result)))
-                           ;; the work-facing layer is relative symlinks into chain content
-                           ;; — human URLs for the current corpus, slug-addressed withdrawal
-                           ;; statements, and the short-cache head pointer — so it adds
-                           ;; names, never bytes. Generated presentation follows it, and is
-                           ;; the one place this export writes bytes of its own.
+                           ;; Relative symlinks provide stable human routes into chain content without duplicating bytes.
                            (let [head-manifest (second (first manifests))
                                  head-catalog (:value
                                                (decode/decode
@@ -222,9 +218,6 @@
                                                                          :slug slug :type type})))))]
                              (link! (fs/path staging "releases" "latest")
                                     (str (:head chain-result) ".json"))
-                             ;; the catalog is the one artifact a reader needs
-                             ;; before they know any slug; without a name here
-                             ;; finding it means parsing the whole manifest
                              (link! (fs/path staging "catalog.json")
                                     (verify/blob-path
                                      (verify/id->hex (get head-manifest "catalog"))))
@@ -255,21 +248,9 @@
                                 (fs/path staging "withdrawn" (str (get entry "slug") ".json"))
                                 (str "../" (verify/event-path
                                             (verify/id->hex (get entry "event"))))))
-                             ;; the browse layer: presentation over bytes this
-                             ;; export has already verified, written as ordinary
-                             ;; files so serving stays one static tree with no
-                             ;; runtime. Generated here rather than beside the
-                             ;; tree so that `current` remains the single
-                             ;; readiness token, and so the reuse check covers
-                             ;; the pages exactly as it covers chain content —
-                             ;; which it can, because generation is a pure
-                             ;; function of this release. Nothing generated here
-                             ;; is named by a manifest or checked by a verifier.
-                             ;; the reading pages hold a whole rendered work
-                             ;; each, so the sequence is consumed one page at a
-                             ;; time and counted here rather than measured
-                             ;; afterwards — naming the whole sequence would
-                             ;; hold every page it has already produced
+                             ;; Presentation over verified bytes written as static files.
+                             ;; Reading pages hold a whole rendered work each, so the sequence
+                             ;; is consumed one page at a time.
                              (doseq [[path bytes]
                                      (browse/pages
                                       {:head-hex (:head chain-result)
@@ -284,12 +265,7 @@
                                        :tei (fn [slug] (artifact! slug "tei"))})]
                                (write! path bytes)
                                (vswap! page-count inc))
-                             ;; the bulk archives, last because they are the
-                             ;; largest thing this export writes and the only
-                             ;; thing it streams. A whole-corpus archive cannot
-                             ;; be held as a byte array, so each is produced
-                             ;; into the destination — or, on the reuse path,
-                             ;; into a stream that compares rather than writes
+                             ;; Stream bulk archives into destination or compare stream on reuse path.
                              (doseq [[path produce] (bundle/archives
                                                      {:catalog head-catalog
                                                       :artifact artifact!})]
@@ -300,11 +276,7 @@
                             :blobs (count blob-hexes)
                             :pages @page-count
                             :archives @archive-count})))]
-          ;; the rename targets the exact destination path, never a
-          ;; directory to nest under; atomicity here is atomic namespace
-          ;; visibility — not no-clobber or crash durability — and the
-          ;; exporter-owned parent is what keeps the destination from
-          ;; appearing concurrently
+          ;; Atomic rename into the exporter-owned parent ensures atomic namespace visibility.
           (if reuse?
             (when-not (= (persistent! @expected) (tree-paths staging)) (mismatch! staging))
             (Files/move (fs/path staging) out-path

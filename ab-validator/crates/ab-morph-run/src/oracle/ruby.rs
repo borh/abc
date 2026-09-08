@@ -52,7 +52,7 @@ pub(crate) fn morpheme_reading(analyzer_id: &str, morpheme: &Morpheme) -> Option
             .get(key)
             .and_then(|value| value.as_ref())
             .map(|value| value.to_string())
-            // A present-but-empty or "*" feature is absent, not a reading — else a
+            // A present-but-empty or "*" feature is absent, not a reading; otherwise a
             // kana="*" would normalize to "" and become a false non-match instead
             // of falling back to pron. (Analyzers already map "*"→None at parse
             // time, but the guard makes the contract robust to any caller.)
@@ -81,8 +81,8 @@ pub struct RegionSpan {
 /// tile contiguously (non-overlapping), so the set of regions overlapping
 /// `[base_start, base_end)` is a single contiguous window. `partition_point`
 /// finds its left edge in O(log R); the window is then scanned linearly for
-/// the first disagreement (same order as the original `.find`), and — since
-/// regions are non-overlapping and sorted — only the window's first entry can
+/// the first disagreement (same order as the original `.find`). Because
+/// regions are non-overlapping and sorted, only the window's first entry can
 /// possibly contain `base_start` (any later entry's start is >= the first
 /// entry's end, which is already > base_start), so checking it there
 /// reproduces the original "region containing base_start" fallback exactly.
@@ -210,7 +210,7 @@ pub fn adjudicate(
     for base in ruby_bases {
         let ruby_norm = super::reading_norm::normalize(&base.reading);
         if ruby_norm.is_empty() {
-            // An all-non-kana/interpunct-only ruby reading normalizes to "" — skip
+            // An all-non-kana/interpunct-only ruby reading normalizes to ""; skip
             // it, else an all-non-kana analyzer reading would falsely "match" on
             // "" == "" instead of being correctly judged unadjudicable.
             continue;
@@ -227,8 +227,8 @@ pub fn adjudicate(
             if !is_match {
                 any_loser = true;
             }
-            // Deferred: no name clone, no evidence-map entry yet — built only
-            // if the emit gate below decides this base is worth a row.
+            // Deferred: built only if the emit gate below decides this
+            // base is worth a row.
             outcomes.push(AnalyzerOutcome {
                 analyzer: analysis.analyzer.as_str(),
                 reading,
@@ -262,9 +262,9 @@ pub fn adjudicate(
             );
         }
         // resolved: ≥1 winner. nonstandard_ruby: no winner but ≥1 analyzer produced a
-        // comparable (exact) reading — a genuine reading the dictionaries lack.
+        // comparable (exact) reading (a genuine reading the dictionaries lack).
         // no_comparable_reading: no analyzer produced a comparable reading (all
-        // boundary-misalign or no-reading) — not a dictionary signal.
+        // boundary-misalign or no-reading; not a dictionary signal).
         let classification = if !winners.is_empty() {
             "resolved"
         } else if any_comparable {
@@ -320,7 +320,7 @@ pub fn adjudicate(
 /// Verbatim copy of the pre-refactor `adjudicate` body (builds the evidence
 /// `detail` map and clones winner/loser names inside the per-analyzer loop,
 /// before the emit gate). Retained as the differential oracle for
-/// `adjudicate_matches_reference_*` tests below — never called from
+/// `adjudicate_matches_reference_*` tests below; never called from
 /// production code.
 #[cfg(test)]
 fn adjudicate_reference(
@@ -849,7 +849,7 @@ mod tests {
 
     #[test]
     fn empty_normalized_ruby_reading_is_skipped() {
-        // "・" (interpunct only) normalizes to "" — must not be adjudicated, else
+        // "・" (interpunct only) normalizes to ""; must not be adjudicated, else
         // an all-non-kana analyzer reading would falsely "match" on "" == "".
         let a = analysis("vibrato", vec![morph("x", 0..1, &[("kana", "*")])]);
         let b = analysis(

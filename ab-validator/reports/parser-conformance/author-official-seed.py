@@ -8,7 +8,7 @@ reliance on a single instrument.
 Scope: a SEED (not a complete instrument). Cases + construct identification are
 derived from the official docs; the expected `kind` labels reuse the shared
 measurement vocabulary so the existing harness can score them. Node spans are
-NOMINAL (whole source) — the cross-parser comparison uses the kind sequence (AAT
+nominal (whole source): the cross-parser comparison uses the kind sequence (AAT
 adapters emit no spans), which is what these vectors exercise.
 
 Emits vector.json files compatible with run-aozora-notation-spec.py.
@@ -293,7 +293,7 @@ SEED = [
         "https://www.aozora.gr.jp/annotation/external_character.html",
         "[provenance:official] verbatim example; accent-decomposed Latin 〔e'tiquette〕",
     ),
-    # Ruby on a Latin base (explicit ｜ marker applied to alphabet) — edge of the core
+    # Ruby on a Latin base (explicit ｜ marker applied to alphabet): edge of the core
     # ruby construct.
     (
         "official_ruby_alphabet_base",

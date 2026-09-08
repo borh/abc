@@ -23,7 +23,7 @@ INPUT_SET_IDENTITY_VERSION = "soranoha-run-identity-v1"
 def canonical_json(value: Any) -> str:
     """Deterministic JSON: sorted keys, compact separators, UTF-8, no NaN.
 
-    Raises on a non-JSON-serializable value (fail closed — a run must never get a
+    Raises on a non-JSON-serializable value (fail closed: a run must never get a
     silent partial identity)."""
     return json.dumps(
         value,

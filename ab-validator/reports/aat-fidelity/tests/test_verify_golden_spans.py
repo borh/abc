@@ -1,10 +1,10 @@
 """verify-golden-spans.py must suppress ONLY the documented CRLF projection
 artifact (sanitize-stage \\r\\n -> \\n normalization on `value`, with `span`
-kept over the full raw byte range — see crates/ab-aat/tests/goldens.rs
+kept over the full raw byte range; see crates/ab-aat/tests/goldens.rs
 and the module docstring in verify-golden-spans.py), counted and reported as
-`crlf_artifact_suppressed: N`. Any other span/value mismatch — including one
+`crlf_artifact_suppressed: N`. Any other span/value mismatch (including one
 that merely happens to contain a `\\r` but isn't a pure CRLF-collapse of
-`value` — must still fail the run.
+`value`) must still fail the run.
 """
 
 import json

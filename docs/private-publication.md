@@ -61,8 +61,8 @@ Forgejo Actions. The workflow uses the existing release secret without exposing
 it to build children, publishes with both role pins, and installs a verified
 serving tree. Inspect `/releases/HEAD`, the corresponding manifest and signature,
 and the work links named by that manifest. The root URL now serves the generated
-browse layer — a landing page, author, title and NDC indexes, and one page per
-work — which is presentation over the same release and is named by no manifest.
+browse layer (a landing page, author, title and NDC indexes, and one page per
+work), providing presentation over the same release without being named by a manifest.
 Follow `/catalog.json` for the signed discovery record.
 
 The NixOS publisher profile provisions the source and chain clones, shared serving

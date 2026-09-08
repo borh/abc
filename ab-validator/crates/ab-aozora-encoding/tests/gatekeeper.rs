@@ -13,9 +13,8 @@
 //! * `lookup` decision-tree: each input shape lands on a specific
 //!   tier in the documented order.
 //!
-//! Failures here are *meant* to be brittle — any change to the
-//! pinned numbers must come with a same-PR update plus a
-//! CHANGELOG note (where applicable).
+//! Any change to the pinned numbers must update the corresponding
+//! constant and CHANGELOG note (where applicable).
 
 use ab_aozora_encoding::DecodeError;
 use ab_aozora_encoding::gaiji::{Resolved, lookup, table_sizes};

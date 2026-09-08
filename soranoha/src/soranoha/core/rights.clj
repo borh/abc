@@ -2,11 +2,10 @@
   "The rights policy document and the vocabulary its grant is written in.
 
   One file states the terms: soranoha/data/publication-policy.edn, whose
-  bytes the release manifest already hashes as `admission.policy_hash`. Both
-  places the grant is published — the manifest's `rights` field and each
-  work's TEI `publicationStmt/availability` — read that one document through
-  this namespace, so the terms signed off, the terms in the release record and
-  the terms travelling inside a detached TEI file cannot disagree.
+  bytes the release manifest already hashes as `admission.policy_hash`.  Both places the grant is published (the manifest's `rights` field and
+  each work's TEI `publicationStmt/availability`) read that one document
+  through this namespace, so the terms signed off, the terms in the release
+  record and the terms travelling inside a detached TEI file cannot disagree.
 
   The policy stores identifiers, not sentences. Rendering an identifier into
   prose is code, and belongs here rather than in the stored value: a rendered
@@ -27,7 +26,7 @@
 
 (defn- read-one-edn
   "Read exactly one EDN value spanning the whole of `text`: an empty
-  document, a second form, or trailing garbage after the value all fail —
+  document, a second form, or trailing garbage after the value all fail;
   a reader that stops at the first value would hash bytes it never
   evaluated."
   [^String text]
@@ -54,7 +53,7 @@
 
 (defn grant
   "The published rights grant carried by a policy value, in the manifest's
-  own key spelling. Fail-closed — a policy that authorizes publication
+  own key spelling. Fail-closed: a policy that authorizes publication
   without stating terms publishes nothing."
   [value]
   (let [{:keys [works encoding statement-url]} (:rights-statement value)]

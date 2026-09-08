@@ -3449,9 +3449,9 @@ fn push_source_gap(content: &mut Vec<Value>, decoded: &DecodedSource, start: usi
         return;
     }
     // Emit the gap one source line at a time (terminator-inclusive) so the
-    // block builder can end a paragraph at each line end. Splitting here is
-    // load-bearing for spans: this is the last point where the body-relative
-    // offsets are available to re-map each line's byte/line coordinates.
+    // block builder can end a paragraph at each line end. Splitting here
+    // preserves body-relative offsets required to re-map each line's byte
+    // and line coordinates.
     for segment in paragraph_segments(source) {
         let segment_source = &source[segment.clone()];
         let span = Span {

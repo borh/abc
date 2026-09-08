@@ -273,7 +273,7 @@
           lockFile = mecab-dic-converter-src + "/Cargo.lock";
           outputHashes = {
             # NOTE: this vibrato-rkyv-0.7.7 hash intentionally differs from the
-            # like-named key in `cargoGitOutputHashes` below — mecab-dic-converter
+            # like-named key in `cargoGitOutputHashes` below; mecab-dic-converter
             # pins a different rev/tree of the fork than the ab-validator
             # workspace does, so the vendored source hashes are not the same key
             # by coincidence. Do not "deduplicate" these two values.
@@ -360,7 +360,7 @@
           hash = "sha256-92+UbTLIuatnm65S+528yK+4A3T93ZFlOQ5+1C71D0c=";
         };
 
-        # 近世 (Edo-period) editions — for the ~2% of Aozora authored by pre-Meiji
+        # 近世 (Edo-period) editions: for the ~2% of Aozora authored by pre-Meiji
         # writers (曲亭馬琴, 井原西鶴, …) whose raw 旧字旧仮名 texts the 近代/現代
         # dictionaries mis-segment. Not in the default run set; opt in by name.
         vibratoDictKinseiEdo = buildUnidicVibratoDict {
@@ -1154,7 +1154,7 @@
 
         # The morphological-analysis engine (`ab-morph-run analyze-aat`). Built
         # through nix so the morph-warehouse skip gate can pin it by content
-        # (store path / binary hash) — running it via `cargo` from live source
+        # (store path / binary hash); running it via `cargo` from live source
         # would leave the engine version out of the run's input identity.
         abMorphRun = mkRustBin {
           pname = "ab-morph-run";
@@ -1178,7 +1178,7 @@
 
         # ab-index: builds the corpus feature index (index.json) consumed by
         # ab-check. Packaged through nix so run-aat-full.sh can pin it by content
-        # (store path) in the AAT dump's input identity — running it via cargo from
+        # (store path) in the AAT dump's input identity; running it via cargo from
         # live source would leave the indexer's version out of the dump identity.
         abIndex = mkRustBin {
           pname = "ab-index";
@@ -1193,7 +1193,7 @@
 
         # ab-check: the fidelity engine that produces the aat/ tree (runs the
         # adapter per work, emits AAT JSON). Packaged through nix so its version is
-        # pinnable by content in the dump identity — it is the primary output
+        # pinnable by content in the dump identity; it is the primary output
         # producer, so leaving it unpinned is the worst engine-hole.
         abCheck = mkRustBin {
           pname = "ab-check";
@@ -1420,7 +1420,7 @@
               export -f vibrato-dict-link
 
               # Bootstrap: only needed when AB_VIBRATO_DICT_DIR is disabled AND
-              # no dictionaries are linked — build the default cwj dictionary so
+              # no dictionaries are linked; build the default cwj dictionary so
               # the fallback path still works. With AB_VIBRATO_DICT_DIR set (the
               # default above) every dictionary is already resolvable.
               if [ "''${AB_BOOTSTRAP_VIBRATO_DICT:-1}" != "0" ] && \

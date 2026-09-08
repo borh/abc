@@ -165,20 +165,16 @@ CARGO_LOCK = pathlib.Path("ab-validator/Cargo.lock")
 def locked_dependency_projection(repo_root: pathlib.Path, package: str) -> list[dict[str, str]]:
     """Project one package's transitive Cargo.lock closure into a sorted value.
 
-    The lockfile is workspace-wide, so binding its bytes made this instrument's
-    identity rotate whenever any unrelated workspace package moved. That is not
-    hypothetical: adding `ab-capture` rotated the parser-IR identity
-    while `ab-aat-to-parser-ir`'s own lock entry stayed byte-identical and no
-    resolved third-party version changed anywhere. This projection keeps the
-    claim worth making — the resolved graph the instrument actually compiles
-    against, `jsonschema` included, since that crate decides schema-valid from
-    schema-invalid — and drops the part that never authenticated anything.
+    The lockfile is workspace-wide, so hashing all bytes rotated this instrument's
+    identity whenever an unrelated workspace package changed. This projection
+    tracks the resolved dependency graph the instrument compiles against
+    (including `jsonschema`, which decides schema validity) while ignoring
+    unrelated workspace packages.
 
-    Known and deliberately not closed here: workspace-local members carry no
-    checksum, so their bytes are outside this projection and outside
-    `reviewed_sources`. Editing a sibling crate that this instrument depends on
-    rotates nothing. Cargo.lock likewise records no feature selection. Both
-    gaps require separate source and feature identity inputs.
+    Known limitation: workspace-local members carry no checksum, so their
+    bytes are outside this projection and outside `reviewed_sources`. Cargo.lock
+    likewise records no feature selection. Both gaps require separate source
+    and feature identity inputs.
     """
     lock = tomllib.loads((repo_root / CARGO_LOCK).read_text(encoding="utf-8"))
     # Keyed by (name, version), not name. Thirty-six names in this workspace

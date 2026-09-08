@@ -44,7 +44,7 @@
   "The one encoding of a stage's non-input derivation coordinates: the
   exact object every derivation key hashes (with \"inputs\" added) and the
   delta oracle compares. A coordinate added here is automatically both
-  hashed and compared — there is no second encoding to keep in sync."
+  hashed and compared: there is no second encoding to keep in sync."
   [{:keys [stage-id stage-version toolchain-id]}]
   {"stage_id" stage-id
    "stage_version" stage-version
@@ -77,7 +77,7 @@
 
 (defn record-execution!
   "Record an executed derivation: history append first (the observation),
-  then the trace row (INSERT OR IGNORE keeps the first winner under races —
+  then the trace row (INSERT OR IGNORE keeps the first winner under races;
   divergent losers remain visible in history)."
   [{:keys [conn] :as store} stage inputs outputs]
   (let [trace-key (derivation-key stage inputs)

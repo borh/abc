@@ -1,7 +1,7 @@
 //! Round-trip + uniqueness invariants for [`Sentinel`].
 //!
 //! The PUA sentinel scheme is the single point through which every
-//! phase of the lex pipeline talks about Aozora-vs-plain bytes — a
+//! phase of the lex pipeline talks about Aozora-vs-plain bytes: a
 //! `from_char` / `as_char` mismatch silently misroutes every entry in
 //! every registry. The properties here gate that surface against:
 //!
@@ -15,7 +15,7 @@
 //!    masquerade as a registry sentinel).
 //!
 //! A 4-variant enum is technically exhaustive without proptest, but
-//! the negative property #3 is naturally a property — generate any
+//! the negative property #3 is naturally a property: generate any
 //! `char`, exclude the four sentinels, assert `from_char` returns
 //! `None`. That keeps the gate honest if a future variant lands.
 

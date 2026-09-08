@@ -1,9 +1,9 @@
 """End-to-end tests for the warehouse_runner CLI (main()).
 
-Exercises the whole gate path — arg parsing, identity, index, and a REAL
-subprocess compute (a trivial python one-liner materializing the run dir) — so no
-Rust batch is needed. A marker file counts compute invocations, proving that a
-fresh hit truly skips the command.
+Exercises the gate path (arg parsing, identity, index, and a real
+subprocess compute materializing the run dir), so no Rust batch is needed.
+A marker file counts compute invocations, proving that a fresh hit skips
+the command.
 """
 
 from __future__ import annotations

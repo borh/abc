@@ -56,7 +56,7 @@ revisions:
 - Note: e-Gov does not carry the TPP整備法 as a standalone law
   (`/api/2/laws?law_title=環太平洋パートナーシップ` returns zero), and the
   consolidated 著作権法 XML truncates before amendment-act 附則 blocks in
-  API retrieval — hence S-D for the 整備法 text.
+  API retrieval, hence S-D for the 整備法 text.
 
 ## the applicable term and its transition rule
 
@@ -78,7 +78,7 @@ into force for Japan (S-D, 附則第1条: この法律は、環太平洋パー�
 関する包括的及び先進的な協定が日本国について効力を生ずる日…から施行する),
 which was 平成30 (2018) 年12月30日 (S-C 問3).
 
-Non-revival — the transition rule itself (S-D, 附則第7条第1項,
+Non-revival: the transition rule itself (S-D, 附則第7条第1項,
 著作権法の一部改正に伴う経過措置):
 
 > 第七条 第八条の規定による改正後の著作権法（次項及び第三項において「新著作権法」という。）第五十一条第二項、第五十二条第一項、第五十三条第一項、第五十七条並びに第百一条第二項第一号及び第二号の規定は、施行日の前日において現に第八条の規定による改正前の著作権法（以下この項において「旧著作権法」という。）による著作権又は著作隣接権が存する著作物、実演及びレコードについて適用し、同日において旧著作権法による著作権又は著作隣接権が消滅している著作物、実演及びレコードについては、なお従前の例による。
@@ -101,7 +101,7 @@ S-A, 第57条:
 > 第五十一条第二項、第五十二条第一項、第五十三条第一項又は第五十四条第一項の場合において、著作者の死後七十年又は著作物の公表後七十年若しくは創作後七十年の期間の終期を計算するときは、著作者が死亡した日又は著作物が公表され若しくは創作された日のそれぞれ属する年の翌年から起算する。
 
 S-C 問2: すべての期間は、死亡、公表、創作した年の「翌年の1月1日」から
-起算します（第57条）— with the example that a 1989 death is protected
+起算します（第57条）, with the example that a 1989 death is protected
 to 2059-12-31 under the 70-year term.
 
 ## anonymous, pseudonymous, and corporate works
@@ -143,7 +143,7 @@ Wartime additions (S-B, 第4条):
 S-C 問7 gives the operational figure: e.g. 3,794 days for the United
 States and Australia (1941-12-08 to the day before the peace treaty's
 entry into force). 問8–問9: works inside a wartime-addition period on
-2018-12-29 were subsisting rights, so they too were extended — legally
+2018-12-29 were subsisting rights, so they too were extended: legally
 70 years plus the addition.
 
 ## composition of the original author's and translator's terms
@@ -158,12 +158,12 @@ S-A, 第28条:
 > 二次的著作物の原著作物の著作者は、当該二次的著作物の利用に関し、この款に規定する権利で当該二次的著作物の著作者が有するものと同一の種類の権利を専有する。
 
 Using a translation therefore implicates two independently-running
-rights: the translator's own copyright in the derivative work — whose
+rights: the translator's own copyright in the derivative work (whose
 term is whichever of 第51条/第52条/第53条 applies to the translation's
-authorship form (death-based only for real-name or 周知変名 natural
-persons) — and the original author's rights over the derivative's use
+authorship form, death-based only for real-name or 周知変名 natural
+persons), and the original author's rights over the derivative's use
 (第28条, running on the original work's term, likewise under whichever
-of 第51〜53条 applies). Free use requires BOTH terms to have expired —
+of 第51〜53条 applies). Free use requires BOTH terms to have expired:
 the statutory basis for the composition rule described in
 [Aozora's handling rules](aozora-rights-source-contract.md).
 
@@ -190,9 +190,9 @@ each date, 施行 1971-01-01 / 1997-03-25 / 2004-01-01 / 2018-12-30):
 
 (※ the PDF table's second row is rendered near-identically to the
 first at this resolution; the statute itself resolves the 死後公表
-cell — see 旧法第4条 below: the old-law posthumous-publication term
+cell: see 旧法第4条 below: the old-law posthumous-publication term
 is PUBLICATION-counted, not death-counted, whatever the table cell's
-label. Film rows omitted here — no films in scope.)
+label. Film rows omitted here; no films in scope.)
 
 The old law's own term articles (S-E; base figures before the
 昭和37–44年 interim extension laws, which raised the table's
@@ -215,6 +215,6 @@ The governing rule as 文化庁 states it (S-C 問10):
 > 法改正により保護期間の長さが変更される場合は，それぞれの改正法の施行の際，現に著作権が消滅していないもののみが，変更された保護期間の適用を受けます。なお，旧法の時代の著作物の保護期間については，変更後の保護期間と比べて，旧法に定められた保護期間の方が長い場合は，その長い保護期間が適用されます。
 
 Worked example (S-C 問10): an author who died 昭和45 (1970), work
-published under real name in their lifetime — old law: protected to
+published under real name in their lifetime. Old law: protected to
 2008 (死後38年); still protected at 1971-01-01, so 死後50年 → 2020;
 still protected at 2018-12-30, so 死後70年 → 2040.

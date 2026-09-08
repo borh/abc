@@ -8,7 +8,7 @@
 //!
 //! **Producer/consumer split (U1 / I2-D8).** All compute-heavy work stays in
 //! Rust: this crate is the sole producer of the policy hash. ABC reads the
-//! hash opaquely — it never recomputes normalization nor re-derives the hash.
+//! hash opaquely; it never recomputes normalization nor re-derives the hash.
 //!
 //! **Canonicalization.** The hash is SHA-256 over a JCS canonicalization of the
 //! descriptor (RFC 8785 subset: object keys sorted, compact separators, UTF-8),
@@ -38,7 +38,7 @@ pub enum PolicyError {
 }
 
 /// Version tag for the descriptor shape. Bump only on a breaking shape change
-/// (which changes every hash) — new detectors/kinds do not bump it.
+/// (which changes every hash); new detectors/kinds do not bump it.
 pub const POLICY_SCHEMA_VERSION: &str = "ortho-input-normalization-v1";
 /// Algorithm tag for the span-scoped, detector-driven ortho-normalize path.
 pub const ALGORITHM_ORTHO_NORMALIZE_V1: &str = "ortho-normalize-v1";
@@ -175,8 +175,8 @@ impl NormalizationPolicy {
 /// descriptors: objects (keys sorted), arrays (order preserved), strings,
 /// numbers, booleans, null. NOT byte-compatible with
 /// `ab-research.jcs/canonical-json-string`, which escapes `/` and non-ASCII
-/// (Charred defaults); recorded `policy_hash` values pin THIS dialect, so the
-/// divergence is frozen — do not "align" it.
+/// (Charred defaults); recorded `policy_hash` values pin this dialect, so the
+/// divergence is frozen: do not modify it.
 fn canonical_json_string(value: &serde_json::Value) -> String {
     match value {
         serde_json::Value::Null => "null".to_owned(),

@@ -2,7 +2,7 @@
 
 The Move-B contract: replacing the compute stage's implicit `load_run_set()` +
 `adapter_aat_globs()` with `resolve` -> lock -> `lock_aat_globs()` is a pure
-substitution — for the same manifest the resolved globs are identical. Proving that
+substitution: for the same manifest the resolved globs are identical. Proving that
 here means the coverage-report outputs are unchanged without re-walking /db.
 
 Run: python3 reports/lib/tests/test_fidelity_lock.py   (from ab-validator/)

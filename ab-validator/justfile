@@ -283,21 +283,21 @@ scratch-keep-recent KEEP_N='1':
 
 # Default comparison set: cwj vibrato (general modern UniDic), the
 # period-correct 近現代口語小説 novel-register vibrato dictionary (many times
-# more period-correct than cwj for Aozora texts), and Sudachi modes A + C —
+# more period-correct than cwj for Aozora texts), and Sudachi modes A + C,
 # so summarize-warehouse-interesting reports granularity_profile=suw+luw.
 # Expanding further: adding sudachi-b is possible but less interesting; if
 # added, vibrato:unidic-qkana-202512 should be added too (owner guidance).
 # jobs=0 (auto) default: after the P1 front-load scheduler (2026-07-07), the
 # large-document tail no longer serializes the run end, so higher job counts
 # help instead of hurting. Memory-aware auto (see auto_jobs.rs, recalibrated
-# from the post-P1 full-corpus RSS curve) picks a safe count — ~18 on the
+# from the post-P1 full-corpus RSS curve) picks a safe count (~18 on the
 # 88 GiB / 32-core hinoki, where a full run is ~52 min vs ~67 min at the old
-# jobs=8. Pass an explicit jobs to override (e.g. on a smaller host).
+# jobs=8). Pass an explicit jobs to override (e.g. on a smaller host).
 morph-warehouse-run profile="full" aat_dir=morph_warehouse_aat_dir run_id="" jobs="0":
 	@just morph-warehouse-run-with-analyzers "{{profile}}" "{{aat_dir}}" "vibrato vibrato:unidic-novel-202512 sudachi-a sudachi-c" "{{run_id}}" "{{jobs}}"
 
 # SUW-only run: every analyzer is 短単位 (Short Unit Word), so
-# summarize-warehouse-interesting labels it granularity_profile=suw — use for
+# summarize-warehouse-interesting labels it granularity_profile=suw; use for
 # granularity-noise-free scoring runs.
 morph-warehouse-run-suw profile="full" aat_dir=morph_warehouse_aat_dir run_id="" jobs="0":
 	@just morph-warehouse-run-with-analyzers "{{profile}}" "{{aat_dir}}" "vibrato vibrato:unidic-novel-202512 sudachi-a" "{{run_id}}" "{{jobs}}"
@@ -311,7 +311,7 @@ morph-warehouse-run-suw profile="full" aat_dir=morph_warehouse_aat_dir run_id=""
 # Gated on input-set identity: skips the analyze-aat batch when a fresh warehouse
 # run is already indexed for these inputs (AAT content, dictionaries, analyzers,
 # profile, schema). Pass force="1" to recompute. The command after `--` is the
-# byte-identical invocation used before the gate — a cache miss runs exactly it.
+# byte-identical invocation used before the gate; a cache miss runs exactly it.
 morph-warehouse-run-with-analyzers profile="full" aat_dir=morph_warehouse_aat_dir analyzers="vibrato sudachi-a sudachi-c" run_id="" jobs="0" force="":
 	@jobs="{{jobs}}"; \
 	run_id="{{run_id}}"; \
@@ -676,7 +676,7 @@ dictionary-build-kinsei-bungo:
 
 # Build all available vibrato dictionaries and link them.
 # NOTE: linking is the LEGACY fallback. Prefer AB_VIBRATO_DICT_DIR (see
-# `just dictionary-env`) — the dev shell exports it automatically, and it needs
+# `just dictionary-env`): the dev shell exports it automatically, and it needs
 # no per-dictionary symlink into the repo.
 dictionary-build-all: dictionary-build-cwj dictionary-build-csj dictionary-build-novel dictionary-build-qkana dictionary-build-kindai-bungo dictionary-build-kinsei-edo dictionary-build-kinsei-bungo
 	@echo "All vibrato dictionaries built and linked."

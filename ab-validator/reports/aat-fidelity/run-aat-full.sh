@@ -201,7 +201,7 @@ if [[ "$print_plan" == "1" ]]; then
 fi
 
 # Resolve the shared engine binaries (ab-index, ab-check) from the flake's
-# store paths — never cargo/just against the live source tree. Refs are
+# store paths; never cargo/just against the live source tree. Refs are
 # repo-anchored ("$repo_root#...") so they resolve against the repo
 # regardless of the caller's $PWD. This runs only past the --print-plan
 # early-exit above, so a plan stays build-free.
@@ -214,7 +214,7 @@ triage_python="$(nix build "$repo_root#aat-triage-python" --no-link --print-out-
 # adapter_hash_target then points at that nix mapper binary for them.
 
 # ab-aozora is the permanent native stdin->AAT binary: no separate
-# Rust mapper, no external renderer — the binary itself is the complete
+# Rust mapper, no external renderer: the binary itself is the complete
 # generator identity. --adapter-bin overrides resolution entirely: no nix
 # build, the override both executes AND is what is recorded (never silently
 # diverging).
@@ -422,8 +422,8 @@ metadata = {
 }
 
 # Explicit --adapter-bin override identity (ab-aozora lane): recorded
-# verbatim — proof the override reached the adapter subprocess ab-check
-# actually invoked, not merely that a flag was passed.
+# verbatim; records the binary actually invoked by ab-check, not merely
+# that a flag was passed.
 if adapter_bin_override:
     metadata["adapter_bin_override"] = {
         "path": adapter_bin_override,

@@ -3,18 +3,18 @@
 //! The lex pipeline operates over **three** distinct coordinate
 //! spaces that all happen to use `u32` byte offsets:
 //!
-//! 1. **Source** — bytes of the original input string the caller
+//! 1. **Source**: bytes of the original input string the caller
 //!    handed to [`Document::new`](`crate`)<!-- doc-link via meta crate -->.
 //!    BOM, CRLF and decorative-rule positions are still in their
 //!    original positions.
-//! 2. **Sanitized source** — bytes of the sanitize-stage output.
+//! 2. **Sanitized source**: bytes of the sanitize-stage output.
 //!    BOM-stripped, CR/LF-normalised, accent-decomposed,
 //!    decorative-rule-isolated. For the typical document
 //!    (no BOM, only LF, no `〔...〕` accent spans, no long
 //!    decorative rule lines) sanitized == source byte-for-byte;
 //!    [`Span`](crate::Span) values are quoted in this coordinate
 //!    space throughout the public API.
-//! 3. **Normalized** — bytes of the PUA-sentinel-rewritten text
+//! 3. **Normalized**: bytes of the PUA-sentinel-rewritten text
 //!    that the placeholder registry indexes. Each Aozora construct
 //!    occupies one PUA codepoint here regardless of its source
 //!    width.
@@ -22,7 +22,7 @@
 //! The newtypes [`SourceOffset`] and [`NormalizedOffset`] make
 //! cross-space mismatches ("I passed a normalized offset where the
 //! API expected a source offset") a build error without paying any
-//! runtime cost — both compile to a `u32` field access.
+//! runtime cost; both compile to a `u32` field access.
 //!
 //! # Conversion policy
 //!
@@ -139,25 +139,13 @@ mod tests {
         assert_eq!(n.get(), 1);
     }
 
-    /// The lack of cross-conversion is load-bearing — the pipeline
-    /// distinguishes source offsets from normalized offsets at the
-    /// type level. This test pins the absence of `From<SourceOffset>
-    /// for NormalizedOffset` (and vice versa) by attempting the
-    /// conversion through `into()` would fail to compile if the impl
-    /// were ever added accidentally. We can't write a "must-not-
-    /// compile" test in plain rustc, so we instead document the
-    /// intent here.
+    /// Coordinate spaces are distinct types with no implicit conversion.
+    /// Callers translate via `LexOutput::source_nodes`.
     #[test]
     fn coordinate_spaces_are_disjoint() {
-        // The newtypes share an underlying `u32` representation but
-        // are distinct types. Callers translate between them via the
-        // `LexOutput::source_nodes` side-table, never by
-        // direct casting.
         let s = SourceOffset::new(5);
         let n = NormalizedOffset::new(5);
-        // Both reach the same underlying byte value — but reaching
-        // it goes through `.get()` in either direction, signalling
-        // the cross-space hop explicitly.
+        // Both reach the same underlying byte value through `.get()`.
         assert_eq!(s.get(), n.get());
     }
 

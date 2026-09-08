@@ -15,7 +15,7 @@ INDEPENDENTLY from a baseline AAT dump's raw marker nodes
 while this instrument derives them from source text. The Rust classifier
 must mirror the model test-for-test.
 
-Pass 1 — one GLOBAL nesting stack over the line's tokens in order:
+Pass 1: one global nesting stack over the line's tokens in order:
   * open K: push, including nested scopes of the same construct.
   * close K with empty stack: mark K invalid (orphan close).
   * close K with top-of-stack K: pop; record a candidate pair.
@@ -23,7 +23,7 @@ Pass 1 — one GLOBAL nesting stack over the line's tokens in order:
     J and K invalid; nothing is popped.
   * end of line: every frame still on the stack marks its construct
     invalid (orphan open).
-Pass 2 — a candidate pair is adopted iff its construct was not marked
+Pass 2: a candidate pair is adopted if and only if its construct was not marked
 invalid; every marker of an invalid construct stays raw (rollback for
 candidates). Invalidation is construct-scoped per line.
 

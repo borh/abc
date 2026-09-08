@@ -11,7 +11,7 @@ use ab_ortho_detect::{
     OrthoAnnotation, OrthoDetector, OrthoNormalization, OrthoTokenizer, ortho_normalize,
 };
 
-/// A stub tokenizer that returns no tokens — exercises the character-level
+/// A stub tokenizer that returns no tokens to exercise the character-level
 /// cascade without needing a real dictionary.
 struct StubTokenizer;
 impl OrthoTokenizer for StubTokenizer {
@@ -128,7 +128,7 @@ fn detect_and_normalize_katakana_prose() {
     // `私ハ毎日学校ヘ行ク。` has katakana ratio 3/10 = 0.3 and is rejected by
     // the cascade regardless of tokenizer; we substitute one that exercises
     // both the cascade acceptance and the proper-noun guard against `学校`,
-    // which is `普通名詞` — not `固有名詞` — under Unidic-CWJ.)
+    // which is `普通名詞`, not `固有名詞`, under Unidic-CWJ.)
     let text = "吾輩は猫である。名前はまだ無い。私ハ学校ニ毎日通ッテ、勉強シテイマシタヨ。";
     let sentences = ab_plaintext::sentence_split(text);
     let annotations = detector.detect(&sentences);

@@ -216,9 +216,9 @@
           "the refused export leaves no staging residue"))))
 
 (deftest an-export-owns-only-its-own-staging-directory
-  ;; sibling directories — including one that happens to carry a
-  ;; staging-like name — belong to whoever created them, not to the
-  ;; exporter's cleanup
+  ;; Sibling directories (including one that happens to carry a
+  ;; staging-like name) belong to whoever created them, not to the
+  ;; exporter's cleanup.
   (let [{:keys [clone]} (chain-with-withdrawal!)
         out (tree-out)
         foreign (fs/path (str out ".staging") "valuable")]

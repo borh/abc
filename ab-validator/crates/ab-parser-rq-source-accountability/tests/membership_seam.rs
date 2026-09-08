@@ -5,9 +5,9 @@
 //! recognition record. Every other test drives recognition from a hand-written
 //! membership index, so nothing else here asserts that a real one is accepted.
 //! That is the property the node-span coverage retirement must not break: the
-//! coverage quantity leaves the work record, which changes the record hashes,
-//! which changes the index bytes, which rotates `membership_ref` — and the
-//! recognition path must keep authenticating across that rotation.
+//! coverage quantity leaves the work record, changing the record hashes,
+//! the index bytes, and rotating `membership_ref`; the recognition path
+//! must keep authenticating across that rotation.
 
 use std::collections::BTreeMap;
 use std::fs;

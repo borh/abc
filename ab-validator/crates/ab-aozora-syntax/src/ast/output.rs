@@ -3,7 +3,7 @@
 //! [`SourceNode`] pairs a sanitized-source span with the node it
 //! classified there; [`LexOutput`] holds the lexer's output, with a
 //! `store: NodeStore` that backs the `StrId`/range payloads. The whole struct
-//! is `Send + Sync` (static assertion below) — the point of the owned
+//! is `Send + Sync` (static assertion below); the point of the owned
 //! representation for the incremental cache / LSP consumer.
 
 use ab_aozora_spec::{Diagnostic, PairLink, SourceOffset, Span};
@@ -39,7 +39,7 @@ pub struct SourceNode {
 pub struct LexOutput {
     /// Normalized text with PUA sentinels.
     pub normalized: String,
-    /// Verbatim post-sanitize source text (no sentinels, no padding) — the
+    /// Verbatim post-sanitize source text (no sentinels, no padding): the
     /// coordinate space every `source_span` indexes.
     pub sanitized: String,
     /// Sentinel-position → node lookup table.
@@ -68,7 +68,7 @@ impl LexOutput {
     /// Assemble an [`LexOutput`] from its already-owned field set.
     ///
     /// The only constructor for this `#[non_exhaustive]` struct reachable from
-    /// outside `aozora-syntax` — the pipeline's native owned producer
+    /// outside `aozora-syntax`; the pipeline's native owned producer
     /// (`ab_aozora_pipeline::lex` / `Pipeline::build`) builds the
     /// [`Registry`], [`SourceNode`] table, and [`NodeStore`] (the
     /// classify stage allocates owned nodes directly into the store via

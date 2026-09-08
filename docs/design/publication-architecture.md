@@ -54,8 +54,8 @@ export active. Storage paths, backup and retention are server configuration, not
 wire protocol.
 
 An export holds two kinds of file, and the distinction is the boundary that keeps
-presentation out of verification. Chain content — manifests, signatures, blobs,
-governance events, the head pointer — is copied byte for byte, and the work-facing
+presentation out of verification. Chain content (manifests, signatures, blobs,
+governance events, the head pointer) is copied byte for byte, and the work-facing
 routes are names over it. The browse layer is generated: a landing page, author,
 title and NDC indexes, one page per work, a reading view per work, and a page for
 each withdrawn work. Nothing in it is named by a manifest, hashed into the chain,

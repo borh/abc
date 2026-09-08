@@ -1,7 +1,6 @@
 //! Runs with serde_json/preserve_order ACTIVE (this workspace enables it),
-//! so `serde_json::Map` preserves insertion order and these tests are a
-//! genuine probe of explicit sorting — in the root workspace (BTreeMap)
-//! they would pass vacuously.
+//! so `serde_json::Map` preserves insertion order and these tests probe
+//! explicit sorting; in the root workspace (BTreeMap) they would pass vacuously.
 use std::path::{Path, PathBuf};
 
 use serde_json::{json, Map, Value};
@@ -135,8 +134,8 @@ fn convert_and_serialize_parser_ir_is_canonical_under_preserve_order() {
     let abc = research_root(&repo);
     // The mapping loaded below (`aat-to-parser-ir-mapping-v1.json`) declares
     // `source_aat_version: 1`; `MappingDocument::preflight` requires the
-    // loaded AAT schema version to match, so this canary — whose fixture AAT
-    // document is itself `"version": 1` — loads the v1 schema tuple. (v2
+    // loaded AAT schema version to match, so this canary (whose fixture AAT
+    // document is itself `"version": 1`) loads the v1 schema tuple. (v2
     // fails preflight with "mapping/schema tuple mismatch".) This preserves
     // the canary's original assertion: preserve_order active, canonical
     // (sorted-key) parser-IR serialization is unaffected by map ordering.

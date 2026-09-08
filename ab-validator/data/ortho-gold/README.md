@@ -8,9 +8,9 @@ normalization layer (katakana→hiragana for pre-war Japanese prose).
 | File | Description |
 |---|---|
 | `candidates.jsonl` (1068 records) | Full candidate pool extracted from 46 Aozora fiction works (9 author-prefixes). Each record has `work_id`, `sentence`, `katakana_ratio`, `hiragana_count`, `total_chars`, and a bootstrap `label` from the Python `aozora-corpus-generator` heuristic. |
-| `sample-300-unlabeled.jsonl` (300 records) | Corpus-representative sample drawn from the candidate pool by `scripts/ortho-gold/sample_300.py`. Each record has a `label` field currently set to the bootstrap value — overwrite it with your own `"accept"` or `"reject"`. The original is preserved in `bootstrap_label`. |
+| `sample-300-unlabeled.jsonl` (300 records) | Corpus-representative sample drawn from the candidate pool by `scripts/ortho-gold/sample_300.py`. Each record has a `label` field currently set to the bootstrap value; overwrite it with your own `"accept"` or `"reject"`. The original is preserved in `bootstrap_label`. |
 | `sentences-llm-300.jsonl` (300 records) | **LLM-labeled evaluation set** (single-annotator, NOT human ground truth). Labeled by an LLM applying the spec's intent rubric. 10% spot-check agreement 0.933. Used for the heuristic tuning and ML cross-validation. |
-| `sentences.jsonl` (457 records) | Bootstrap-labeled set. 58% Tanizaki — inherited from an unstratified candidate pool. Superseded by `sentences-llm-300.jsonl` for evaluation; retained for historical comparison. |
+| `sentences.jsonl` (457 records) | Bootstrap-labeled set. 58% Tanizaki, inherited from an unstratified candidate pool. Superseded by `sentences-llm-300.jsonl` for evaluation; retained for historical comparison. |
 | `sentences-human-sample.jsonl` (50 records) | Human-annotated probe. First human-labeled subset; used to discover the 0.636 recall floor. |
 | `models/model-v1.bin` | ML model trained on the bootstrap labels (457 records). Superseded by `model-gold-300.bin`. |
 | `models/model-v2-human.bin` | ML model trained on the 50-sentence human probe. Small-data quality; not for production use. |
@@ -22,7 +22,7 @@ Three labels separate two orthogonal concerns: (1) is the katakana usage
 historical orthography? (2) would converting katakana→hiragana improve
 tokenization, regardless of the historical question?
 
-### `accept` — Historical kanji-katakana-majiri prose
+### `accept`: Historical kanji-katakana-majiri prose
 
 Katakana serves the grammatical role of hiragana (particles は/が/の/を,
 okurigana, copulas だ/である, auxiliary verbs タ/テ/ナイ). The sentence is
@@ -32,20 +32,20 @@ what matters is that the katakana is doing grammatical work. Normalizing
 would improve tokenization, AND the usage is a historical-orthography fact
 worth recording.
 
-### `normalize` — Emphatic/stylistic/robot-speech katakana
+### `normalize`: Emphatic, stylistic, or robot-speech katakana
 
 Katakana is used for emphasis, robot/alien speech, diary-entry delineation
-(e.g. in Tanizaki's *Kagi*), or other stylistic effect — NOT historical
+(e.g. in Tanizaki's *Kagi*), or other stylistic effect; not historical
 orthography. However, converting to hiragana WOULD improve tokenization
 (e.g. Vibrato fails to segment `ボクヲミタコト` and `イイナサイ` as single
 unknown nouns, but `ぼくをみたこと` and `いいなさい` would segment correctly).
 
 **Record as `normalize`, not `accept`.** The normalization should happen
 before tokenization, but the katakana usage is NOT a historical-orthography
-fact — it's a separate phenomenon that should not be conflated with
+fact; it is a separate phenomenon that should not be conflated with
 historical kana use in annotation.
 
-### `reject` — No normalization benefit
+### `reject`: No normalization benefit
 
 (a) exclamations/interjections (`「アハハ」`, `「ヨイショ」`, `「ハテナ」`);
 (b) onomatopoeia (`ウハハハハ`, `フフフ`, `アッハッハ`);
@@ -69,7 +69,7 @@ tokenization (`シマッタ！`, `オロカ！`).
 
 ## How to produce a fresh human-labeled set
 
-1. **Sample** (optional — `sample-300-unlabeled.jsonl` is ready to label):
+1. **Sample** (optional; `sample-300-unlabeled.jsonl` is ready to label):
 
    ```bash
    cd ab-validator
@@ -84,7 +84,7 @@ tokenization (`シマッタ！`, `オロカ！`).
 2. **Label**: Open `data/ortho-gold/sample-300-unlabeled.jsonl` and overwrite
    the `label` field in each record with your verdict: `"accept"`, `"normalize"`,
    or `"reject"` (see rubric above). The original bootstrap value is already
-   saved in `bootstrap_label` — do not change that field. Optionally add
+   saved in `bootstrap_label`; do not change that field. Optionally add
    `label_notes` for edge cases. Set `labeler` to your name. When done, save as
    `data/ortho-gold/sentences-human-REVIEWER.jsonl`.
 

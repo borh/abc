@@ -426,7 +426,7 @@
 ;; the pinned corpus on the measurement host) and writes the deterministic
 ;; report JSON. The bundle carries `:report_id`, `:identity`, and
 ;; `:measurements`; the corpus and predicate set are loaded from their pinned
-;; artifacts. No observation is ever synthesized here — absent keys become
+;; artifacts. No observation is synthesized here; absent keys become
 ;; `:unavailable` verdicts by construction.
 
 (defn report-from-bundle

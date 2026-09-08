@@ -8,11 +8,8 @@ Neither pinned key can ever change: a different pinned set ends that chain and s
 a new one with no continuity. This document is the procedure that establishes both
 keys and the procedure that uses the governance key afterwards.
 
-Rehearsal is the point of the ceremony, not the document. The first real use of the
-governance key will be a rights-holder withdrawal request, under time pressure, and
-it must not also be the first execution of this procedure. The ceremony therefore
-signs a checked-in conformance vector with the real governance key while a mistake
-is still free.
+To verify toolchain behavior before live operation, the ceremony signs a
+checked-in conformance vector with the newly generated governance key.
 
 ## What the ceremony fixes permanently
 
@@ -20,12 +17,12 @@ Both keys are generated fresh for the public chain. No key that has been residen
 a network-connected host may be pinned, because the pinned set cannot later be
 retired, so any exposure in a key's history is permanent.
 
-The two roles fail differently. A compromised release key can publish an unwanted
-release but cannot withdraw a work; the damage is visible and bounded. A compromised
-governance key can withdraw anything. A *lost* release key is equally terminal in a
-different direction: without it no further release can ever be signed, and the chain
-cannot be continued under a replacement. Both keys therefore need durable backups,
-and both backups live on the governance media created below.
+The two roles fail differently:
+- A compromised release key can publish an unwanted release but cannot withdraw a work.
+- A compromised governance key can withdraw published works.
+- A lost release key prevents signing subsequent releases, as the pinned key cannot be replaced.
+
+Both keys require durable backups on the offline governance media created below.
 
 ## Ceremony parameters
 
@@ -167,7 +164,7 @@ working copies.
 
 The inventory is the accountability record for a key that is a file rather than a
 physical token, so there is no "lost but unread" state to fall back on. It lists the
-complete set of authorized persistent copies — in v1, exactly two — together with the
+complete set of authorized persistent copies (in v1, exactly two), together with the
 copy operation that produced the second, and it is maintained outside this
 repository. Governance operates only while every surviving inventoried medium is
 accounted for and controlled.
@@ -197,8 +194,8 @@ The governance seed is never derived to hex and never leaves the media.
 ## Rehearse governance signing
 
 Immediately after the media exist, and before genesis, sign a checked-in conformance
-vector with the real governance key. This exercises the whole path — opening a
-medium, constructing the message, producing 64 raw bytes, reading the result back —
+vector with the real governance key. This exercises the whole path (opening a
+medium, constructing the message, producing 64 raw bytes, reading the result back)
 against a subject whose bytes are already fixed.
 
 ```sh
@@ -255,8 +252,8 @@ For a software key, accountability attaches to the declared copy inventory rathe
 than to possession of a token. An unexplained copy of the key material, lost custody
 of any inventoried medium, or any suspected disclosure of a medium or its passphrase
 is a suspected compromise, and suspected compromise of a role halts that role's
-operations. The verifier keeps accepting past signatures — the pinned set never
-changes — but no new signing occurs under that role, because a valid signature no
+operations. The verifier keeps accepting past signatures because the pinned set never
+changes, but no new signing occurs under that role: a valid signature no
 longer proves authority.
 
 A medium that is verifiably destroyed or has failed is not a compromise. Record its
@@ -265,7 +262,7 @@ still does not change.
 
 The publication owner decides whether an event is a compromise and records the
 decision with its basis in the inventory. There is no second role to escalate to, so
-the decision is deliberately biased towards halting: the cost of a wrongly declared
+the decision favors halting: the cost of a wrongly declared
 halt is suspended publication, and the cost of a missed compromise is an unwanted
 withdrawal that the chain records as authorized.
 
@@ -273,6 +270,6 @@ withdrawal that the chain records as authorized.
 
 Private key material, the hex release seed, media passphrases, and the custody
 inventory itself all stay out of this repository and out of the publication chain.
-The repository holds this procedure, the conformance vectors, and — as
-non-authenticating deployment configuration — the two public keys. Only the trust
+The repository holds this procedure, the conformance vectors, and the two public
+keys (as non-authenticating deployment configuration). Only the trust
 anchor authenticates which public key holds which role.

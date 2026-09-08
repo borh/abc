@@ -66,9 +66,8 @@
                                                      candidates))})))
 
 (defn- run->report
-  "The build run report the driver consumes, projected from a fixture
-  kernel run — the same fields main/build! exports, including the
-  selected slugs captured from the selection join rather than the works."
+  "Project a fixture kernel run into the build-run report format exported
+  by `main/build!`."
   [run]
   {"aozora_git_commit" (:commit run)
    "selected_slugs" (vec (sort (map :slug (:candidates run))))
@@ -298,8 +297,7 @@
            (mapv #(get % "slug") (get (:head-manifest (verified-chain clone)) "works"))))))
 
 (deftest rights-policy-must-be-one-whole-document
-  ;; a reader stopping at the first value would authorize — and hash —
-  ;; bytes it never evaluated
+  ;; Reject policy documents with trailing forms or content.
   (let [reason (fn [^String s]
                  (try (release/rights-authority! (.getBytes s "UTF-8"))
                       :accepted
@@ -451,15 +449,11 @@
                    "commit" "-qm" "Record unrelated fixture data")
       (write! "notes.txt" "unrelated local edit")
       (is (= "source git unavailable" (error base))))
-    (testing "with every file input valid, the first failure is the
-      provenance gate the corpus-reading checks sit behind — proof every
-      file input was preflighted first"
+    (testing "provenance gate executes after all file inputs are preflighted"
       (is (= "source git unavailable" (error base))))))
 
 (deftest stale-snapshot-is-refused-before-publication
-  ;; the case slug totality alone cannot see: the catalog loses a
-  ;; contributor while every slug survives, so the committed snapshot no
-  ;; longer describes the corpus under release
+  ;; Refuse release when catalog contributors change despite identical slug set.
   (let [translated (assoc merosu :contributors [{:person-id "000009"
                                                  :role "翻訳者"}])
         root (corpus/init-corpus! [translated kumo])

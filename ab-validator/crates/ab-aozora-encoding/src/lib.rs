@@ -25,9 +25,8 @@ pub enum DecodeError {
     /// The input was not valid `Shift_JIS`: `encoding_rs` reported a malformed
     /// byte sequence (or, in [`decode_sjis_into`], an output-buffer overflow).
     ///
-    /// Carries no position payload — the decode path is deliberately strict and
-    /// all-or-nothing rather than offering lossy replacement, so callers learn
-    /// they're looking at corrupted source rather than silently absorbing it.
+    /// Carries no position payload: decoding is fail-closed without lossy
+    /// replacement.
     #[error("Shift_JIS からの変換に失敗しました (不正なバイト列)")]
     #[diagnostic(code(aozora::encoding::sjis_invalid))]
     ShiftJisInvalid,
@@ -39,9 +38,7 @@ pub enum DecodeError {
 /// # Errors
 ///
 /// Returns [`DecodeError::ShiftJisInvalid`] if `encoding_rs` reports a malformed byte
-/// sequence. Lossy replacement is deliberately not offered — callers need to know
-/// when they're looking at corrupted source material rather than silently absorbing
-/// the damage.
+/// sequence. Decoding does not perform lossy replacement.
 ///
 /// Allocates a fresh `String` per call. For workloads that decode many
 /// documents in succession, prefer [`decode_sjis_into`] with a reusable
@@ -103,15 +100,13 @@ pub fn decode_sjis_into(input: &[u8], dst: &mut String) -> Result<(), DecodeErro
 /// - Valid UTF-8 is returned **borrowed**, zero-copy.
 /// - Otherwise the bytes are decoded as `Shift_JIS` (owned).
 ///
-/// UTF-8 is tried first on purpose. Valid UTF-8 is a near-unambiguous
-/// signal — `Shift_JIS` Japanese text essentially never forms a wholly
-/// valid UTF-8 sequence — whereas the converse does not hold: a UTF-8
-/// document can contain byte runs that decode as *some* `Shift_JIS`
-/// without erroring, so sniffing `Shift_JIS` first risks mojibake on
-/// UTF-8 input.
+/// UTF-8 is tried first. Valid UTF-8 is an unambiguous signal
+/// (Shift_JIS Japanese text rarely forms valid UTF-8), whereas a UTF-8
+/// document can contain byte sequences that happen to decode as valid
+/// Shift_JIS.
 ///
-/// BOM stripping, CRLF folding and NFC normalisation are the parser's
-/// sanitization responsibility and are deliberately not applied here.
+/// BOM stripping, CRLF folding, and NFC normalization belong to parser
+/// sanitization and are not applied here.
 ///
 /// # Errors
 ///
@@ -375,10 +370,8 @@ mod tests {
         // The buffer-reuse contract: a `dst` String that already has
         // enough capacity should not allocate again on the second
         // decode. We verify this by asserting capacity is preserved
-        // across `clear() + decode_sjis_into` cycles. (Pinning the
-        // exact byte count would couple the test to bumpalo /
-        // encoding_rs internals; the load-bearing invariant is "no
-        // shrink".)
+        // across `clear() + decode_sjis_into` cycles. (The invariant
+        // tested is that capacity does not shrink.)
         let mut buf = String::with_capacity(4096);
         let cap_before = buf.capacity();
         decode_sjis_into(b"hello", &mut buf).unwrap();

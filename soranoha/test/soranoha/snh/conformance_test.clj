@@ -1,7 +1,7 @@
 (ns soranoha.snh.conformance-test
   "Table-driven conformance tests over the protocol vectors. The vector
   files under resources/snh/vectors carry the exact bytes and recorded
-  outcomes; these tests recompute every claim from the stored bytes — they
+  outcomes; these tests recompute every claim from the stored bytes: they
   never regenerate."
   (:require [charred.api :as json]
             [clojure.java.io :as io]
@@ -114,7 +114,7 @@
                    (sign/validate-pinned-keys! {:release pub-r
                                                 :governance pub-g
                                                 :escrow pub-r}))))
-    (testing "set-shaped role rejected — v1 pins exactly one key per role"
+    (testing "set-shaped role rejected: v1 pins exactly one key per role"
       (is (thrown? clojure.lang.ExceptionInfo
                    (sign/validate-pinned-keys! {:release [pub-r]
                                                 :governance pub-g})))

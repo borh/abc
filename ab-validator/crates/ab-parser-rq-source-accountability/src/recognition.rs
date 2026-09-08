@@ -19,15 +19,12 @@ const AUTHORITY_BYTES: &[u8] =
 /// terminators and wholly blank lines removed. See `RecognitionMetadata` for
 /// why. At v4 the `accent_decomposition` proof obligation changed from "the
 /// whole `〔…〕` span re-decomposes to the normalized form" to "the proof
-/// pair is exactly one row of the policy's `accent_mappings`" — the capture
-/// adapter now proves each digraph substitution at its own site, which is
-/// what makes the obligation checkable at all (a whole-span form conflated
-/// the accent rewrite with CRLF normalization and failed round-trip on any
-/// multi-line span of a CRLF work). A v3 record and a v4 record can carry
-/// identical field names and mean different things, which is exactly what a
-/// version string exists to prevent — the record shape
-/// (`abc/parser-rq-source-recognition-work/v3`) is unchanged, so nothing but
-/// the instrument string distinguishes which obligation the numbers passed.
+/// pair is exactly one row of the policy's `accent_mappings`". The capture
+/// adapter now proves each digraph substitution at its own site, making
+/// the obligation checkable (a whole-span form conflated the accent rewrite
+/// with CRLF normalization and failed round-trip on multi-line spans of CRLF
+/// works). Because the record shape (`abc/parser-rq-source-recognition-work/v3`)
+/// is unchanged, the instrument version distinguishes which obligation was verified.
 ///
 /// The predicate set binds this version since 2026-07-31, when both of its
 /// thresholds were consciously declared for what v4 measures rather than
@@ -43,9 +40,8 @@ const AUTHORITY_BYTES: &[u8] =
 /// The metadata threshold's `:= 1.0` is met by every work of both the design
 /// and the held-out exploratory sample, so today it refuses nothing. That is
 /// its designed value, not a validation claim: it fails the gate the first
-/// time the archive produces packaging these classifiers do not know — a
-/// header with no fence, a colophon field in an unseen form, a new
-/// boilerplate sentence.
+/// time the archive produces packaging these classifiers do not know: a
+/// header with no fence, a colophon field in an unseen form, or new boilerplate.
 const INSTRUMENT_VERSION: &str = "parser-rq-source-recognition-v4";
 
 #[derive(Clone, Debug)]
@@ -116,9 +112,9 @@ pub struct RecognitionBlobRef {
 ///
 /// ## Two denominators, and which one the ratio is over
 ///
-/// `eligible_bytes` is the header and tail regions whole. It is what makes the
-/// partition assertable — `eligible + metadata.eligible == decoded`, disjoint —
-/// and it is published for that reason and kept for it.
+/// `eligible_bytes` is the header and tail regions whole. It makes the
+/// partition assertable (`eligible + metadata.eligible == decoded`, disjoint)
+/// and is published and retained for that reason.
 ///
 /// `content_bytes` is the same regions with **line terminators and wholly
 /// blank lines removed**, and it is the denominator the attribution ratio is
@@ -325,8 +321,8 @@ fn canonical_json(value: &Value) -> Option<Vec<u8>> {
 /// The content lines of a metadata region: every line carrying at least one
 /// non-whitespace character, its terminator excluded.
 ///
-/// The span kept for such a line is the WHOLE line, layout whitespace
-/// included, because that is the span its fact claims — a colophon
+/// The span kept for such a line is the whole line, layout whitespace
+/// included, because that is the span its fact claims: a colophon
 /// continuation is recognized by its indentation, so a denominator that
 /// excluded the indentation would not contain its own numerator.
 ///
@@ -445,9 +441,8 @@ fn policy_allows(policy: &Policy, entry: &LedgerEntry) -> bool {
 ///
 /// Since v4 the capture adapter proves each digraph substitution at its own
 /// site, so the obligation is site-local: the proof pair must be a mapping
-/// row verbatim. This is deliberately stronger than re-running a
-/// decomposition — a row lookup cannot be satisfied by two errors that
-/// cancel, and it is independent of *which* sites the parser chooses to
+/// row verbatim. A row lookup cannot be satisfied by two errors that
+/// cancel, and it is independent of which sites the parser chooses to
 /// rewrite, so a parser-side applicability rule can change without touching
 /// this instrument.
 fn is_accent_mapping_row(source: &str, normalized: &str, policy: &Policy) -> bool {

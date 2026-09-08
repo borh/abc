@@ -17,7 +17,7 @@
 
 (defn parse
   "Parse `args` with tools.cli. Returns the tools.cli result map (incl.
-  `:arguments`) plus `:missing` — the `required` option keys whose parsed
+  `:arguments`) plus `:missing`: the `required` option keys whose parsed
   value is nil."
   [args {:keys [cli-options required]}]
   (let [result (tools-cli/parse-opts (strip-double-dash args) cli-options)]

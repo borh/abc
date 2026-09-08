@@ -2,7 +2,7 @@
 //! at rev 1a4f864603970983719655aa4af4525958ac2d38 (independent fork).
 //! Upstream crate: aozora-pipeline. License: MIT OR Apache-2.0 (see NOTICE).
 
-//! Aozora notation lex pipeline — owned-AST front door.
+//! Aozora notation lex pipeline: owned-AST front door.
 //!
 //! Both the orchestrator and the per-stage pipeline impl live in
 //! this single crate:
@@ -14,7 +14,7 @@
 //!   lifetime-free [`LexOutput`] (`Send + Sync`): the classify
 //!   stage builds the owned nodes directly into an
 //!   `ab_aozora_syntax::ast::NodeStore` (a string interner plus flat
-//!   content / segment pools addressed by `u32` handles) — there is no
+//!   content / segment pools addressed by `u32` handles); there is no
 //!   arena.
 //! - The stage implementations live under [`lexer`] (`lexer::sanitize`
 //!   through `lexer::classify`). External consumers should reach for
@@ -22,7 +22,7 @@
 //!   per-stage functions are exposed for benchmarks and the
 //!   instrumentation feature.
 //!
-//! [`ab_aozora_scan`] still ships as a separate `no_std` crate — the
+//! [`ab_aozora_scan`] still ships as a separate `no_std` crate; the
 //! SIMD trigger scan is independently swappable, benchmarkable, and
 //! consumed by `lexer::tokenize` directly.
 //!
@@ -62,7 +62,7 @@ pub use pipeline::{Paired, Pipeline, Sanitized, Source, Tokenized};
 /// critical path. Idempotent and cheap to call repeatedly.
 ///
 /// Lexing stays lazy by default; this is opt-in for latency-sensitive
-/// front ends — the umbrella `ab_aozora_facade::prewarm` is the public entry point.
+/// front ends: the umbrella `ab_aozora_facade::prewarm` is the public entry point.
 pub fn prewarm() {
     ab_aozora_scan::prewarm();
     lexer::classify::prewarm();
@@ -72,7 +72,7 @@ pub fn prewarm() {
 /// so downstream `aozora-render::serialize` can run the same idempotent
 /// blank-line-injection pass on its output and converge to a parser
 /// fixed point in one cycle. The helpers are otherwise pipeline
-/// internals — keep the public surface narrow.
+/// internals: keep the public surface narrow.
 pub use lexer::sanitize::{has_long_rule_line, isolate_decorative_rules};
 
 pub use ab_aozora_spec::{

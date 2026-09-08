@@ -224,7 +224,7 @@
 (deftest rejected-push-converges-when-desired-state-already-published
   ;; the winner lands the identical state between the loser's pre-push check
   ;; and its push; depending on whether the two byte-identical commits share
-  ;; a timestamp the loser sees an up-to-date push (:published — the same
+  ;; a timestamp the loser sees an up-to-date push (:published, the same
   ;; commit) or a rejection reconciled to :already-published; both are the
   ;; same convergence
   (let [same (assoc base :selection-params {"config" "fixture" "round" 2})

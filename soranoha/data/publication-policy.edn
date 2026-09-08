@@ -6,7 +6,7 @@
 ;; :rights-statement    the grant published in each manifest's `rights` field.
 ;;                      :works is the standing of the underlying Aozora texts;
 ;;                      :encoding is the licence over Soranoha's own encoding
-;;                      and derived artifacts (soranoha-szg.3). :statement-url
+;;                      and derived artifacts. :statement-url
 ;;                      must resolve to the full statement before genesis.
 {:rights-publication :assessment-required
  :rights-statement {:works "public-domain"

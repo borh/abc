@@ -1,4 +1,4 @@
-//! Fuzz target — `aozora_pipeline::lex` on arbitrary UTF-8.
+//! Fuzz target: `aozora_pipeline::lex` on arbitrary UTF-8.
 //!
 //! Arbitrary bytes are decoded as UTF-8 (invalid sequences skip this
 //! iteration). The resulting source text is pushed through
@@ -31,7 +31,7 @@ fuzz_target!(|data: &[u8]| {
     //    length: sanitize-stage normalization (CRLF → LF, leading BOM strip)
     //    shrinks the buffer, but diagnostics are emitted in source
     //    coordinates so they can point past the normalized end.
-    //    Bounding against the source length isn't useful either —
+    //    Bounding against the source length isn't useful either:
     //    the diagnostic carries no source reference and the caller
     //    is responsible for picking the right text frame.
     for diag in &out.diagnostics {

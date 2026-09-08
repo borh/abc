@@ -6,10 +6,10 @@ output files) and is indexed at ``<warehouse>/by-input/<hex> -> ../runs/<run-id>
 The skip decision re-verifies the recorded output hash on read, mirroring the
 workflow cache's ``valid-cached-node-result``:
 
-- ``fresh``   — index resolves, manifest matches, outputs re-verify → reuse;
-- ``stale``   — outputs changed/corrupted since publish → recompute;
-- ``missing`` — no run indexed for these inputs → compute;
-- ``invalid`` — index/manifest broken (dangling link, absent/malformed manifest,
+- ``fresh``   : index resolves, manifest matches, outputs re-verify → reuse;
+- ``stale``   : outputs changed/corrupted since publish → recompute;
+- ``missing`` : no run indexed for these inputs → compute;
+- ``invalid`` : index/manifest broken (dangling link, absent/malformed manifest,
   or manifest ``input_set_hash`` mismatch) → recompute.
 
 Content only; no timestamps. Run manifests are rebuildable, so the index is

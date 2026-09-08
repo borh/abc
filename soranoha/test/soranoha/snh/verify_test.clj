@@ -1,7 +1,7 @@
 (ns soranoha.snh.verify-test
   "Verifier invariant fixtures, table-driven: each chain rule has a passing
   case (the lifecycle chains built through the transaction) and an isolating
-  mutation whose exact rejection reason is asserted — a deleted check turns
+  mutation whose exact rejection reason is asserted; a deleted check turns
   its rows red. Scenario tests cover the archive report contract, the
   deficient-view failure, and git replacement-ref immunity."
   (:require [clojure.string :as str]

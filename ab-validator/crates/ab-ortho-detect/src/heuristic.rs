@@ -209,7 +209,7 @@ mod tests {
         }
     }
 
-    /// A stub tokenizer that returns no tokens — lets us exercise the
+    /// A stub tokenizer that returns no tokens to exercise the
     /// character-level cascade without a real dictionary.
     struct StubTokenizer;
     impl OrthoTokenizer for StubTokenizer {

@@ -717,8 +717,8 @@ impl WarehouseFeaturePatternAccumulator {
     /// `push_region_rows` (`warehouse::rows`) emits `feature_diffs` as
     /// *maximal contiguous runs* per group key: `region_index` is monotone
     /// non-decreasing and each region's `feature_groups` is emitted once as a
-    /// block — see the producer-invariant test
-    /// `push_region_rows_emits_maximal_contiguous_feature_diff_runs`. If a
+    /// block (see the producer-invariant test
+    /// `push_region_rows_emits_maximal_contiguous_feature_diff_runs`). If a
     /// future change to the producer ever breaks that guarantee, the
     /// monotonicity guard below returns an error rather than silently
     /// under-merging groups (a debug-only assertion would not be safe here,
@@ -786,7 +786,7 @@ impl WarehouseFeaturePatternAccumulator {
 
     /// Filters `feature_diffs` to `WAREHOUSE_CORE_FEATURE_KEYS`, computes each
     /// surviving diff's `WarehouseFeatureGroupKey`, and asserts `region_index`
-    /// is monotone non-decreasing across the filtered sequence — the
+    /// is monotone non-decreasing across the filtered sequence, which is the
     /// release-safe half of the contiguity guard `record` depends on (see its
     /// doc comment). Bails instead of silently miscounting if violated.
     fn keyed_core_diffs(
@@ -1623,7 +1623,7 @@ mod tests {
         assert!(id.contains("dictionary_hash"), "{id}");
         assert!(id.contains("rules_hash"), "{id}");
         // The runs-row policy hash must equal the policy built from the same
-        // oracle archive hash — i.e. resolve and the pipeline detector agree.
+        // oracle archive hash (resolve and the pipeline detector agree).
         let dict_hash = ab_morph_analyzers::dictionary_archive_hash(M2_ORACLE_DICTIONARY).unwrap();
         let expected = ab_ortho_detect::NormalizationPolicy::ortho_normalize_v1(
             ab_ortho_detect::OrthoDetectorId::HistoricalRewriteV1 {

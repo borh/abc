@@ -87,7 +87,7 @@
 (defn- verify?
   "True iff `sig-bytes` is exactly 64 bytes and verifies over `message`
   against the public key given as 64 lowercase hex. Private:
-  arbitrary-message verification must not be a public operation — public
+  arbitrary-message verification must not be a public operation; public
   callers go through `verify-artifact-signature?`, which constructs the
   message from the artifact itself."
   [pub-hex ^String message ^bytes sig-bytes]
@@ -106,9 +106,9 @@
 (defn validate-pinned-keys!
   "Validate a pinned-keys configuration {:release pub-hex :governance pub-hex}.
   v1 pins exactly one key per role; scalar values make any other
-  cardinality unrepresentable — a set-shaped configuration would silently
+  cardinality unrepresentable: a set-shaped configuration would silently
   permit unsupported in-chain key addition. The two roles must be
-  present, each a single 64-hex public key, and distinct — an overlapping or
+  present, each a single 64-hex public key, and distinct: an overlapping or
   un-roled configuration is invalid (an accidental flat configuration could
   otherwise authorize the online release key for governance)."
   [pinned-keys]
@@ -127,9 +127,9 @@
   pinned-keys)
 
 (defn seed-signs-for?
-  "True iff signatures produced by `seed` verify against `pub-hex` — the
+  "True iff signatures produced by `seed` verify against `pub-hex` (the
   configuration probe that a signing seed corresponds to a pinned public
-  key, checked before any real message is signed. The probe message is
+  key, checked before any real message is signed). The probe message is
   domain-separated from every artifact signature domain."
   [^bytes seed pub-hex]
   (let [message "snh-key-probe/1"]
@@ -146,10 +146,10 @@
 (defn verify-artifact-signature?
   "Role-bound verification, bound to the artifact: the caller supplies
   the decoded artifact's type and content hex; the domain-separated message is
-  constructed here from that pair — a caller can never present a signature
+  constructed here from that pair: a caller can never present a signature
   over one domain or subject as authority for another. The role is selected
   from the type; the 64-byte signature must verify against that role's pinned
-  key. `pinned-keys` is validated on every call — verification never proceeds
+  key. `pinned-keys` is validated on every call; verification never proceeds
   under an invalid configuration."
   [pinned-keys type artifact-hex ^bytes sig-bytes]
   (validate-pinned-keys! pinned-keys)

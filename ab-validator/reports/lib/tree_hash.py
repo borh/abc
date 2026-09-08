@@ -1,8 +1,8 @@
-"""General content hash of a directory tree — the all-files generalization of
+"""General content hash of a directory tree, the all-files generalization of
 ``aat_hash.hash_aat_dir``.
 
 Folds sorted relative POSIX paths with each file's byte digest, so both the file
-set and every file's content are covered, independent of directory-walk order —
+set and every file's content are covered, independent of directory-walk order,
 the same construction `aat_hash` uses for `*.json`, generalized to an arbitrary
 glob plus an exclude-list. Kept as a SEPARATE function (not a refactor of
 `aat_hash.hash_aat_dir`) on purpose: `hash_aat_dir`'s exact output is pinned as

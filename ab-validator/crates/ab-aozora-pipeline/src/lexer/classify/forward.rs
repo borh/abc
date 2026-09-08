@@ -85,7 +85,7 @@ const FORWARD_QUOTE_BODY_THRESHOLD: usize = 64;
 
 /// Build the forward-reference target index by scanning raw source
 /// bytes for `「…」` quote pairs and recording the first byte position
-/// of each unique body. Event-free — runs before the streaming
+/// of each unique body. Event-free: runs before the streaming
 /// pipeline starts and replaces the legacy event-driven pre-pass that
 /// I-2 deforestation made impossible to keep around.
 pub(super) fn install_forward_target_index_from_source(source: &str) {
@@ -101,7 +101,7 @@ pub(super) fn install_forward_target_index_from_source(source: &str) {
     let bytes = source.as_bytes();
     // Count quote opens with early termination at the
     // threshold. The previous shape unconditionally collected every
-    // `「` offset into a `Vec<usize>` before checking the count —
+    // `「` offset into a `Vec<usize>` before checking the count;
     // wasted allocation on the >99 % of corpus docs that have far
     // fewer than 64 quote opens. memmem::find_iter is internally
     // SIMD-vectorised, so the count loop is bandwidth-bound; bailing
@@ -123,20 +123,20 @@ pub(super) fn install_forward_target_index_from_source(source: &str) {
     // Pair each `「` with its BALANCED `」` via a quote-only stack,
     // mirroring the pair stage (`PairKind::Quote`, pair.rs) so a quote
     // body is sliced at the same extent the recognisers see through
-    // `view.links`. A target whose text embeds a nested `「…」` — a
-    // forward-referenced gaiji base such as `冢※［＃「土へん＋冢」…］` — is
+    // `view.links`. A target whose text embeds a nested `「…」` (a
+    // forward-referenced gaiji base such as `冢※［＃「土へん＋冢」…］`) is
     // captured whole instead of truncated at the inner `」` (the naive
     // "first `」`" scan recorded `冢※［＃「土へん＋冢`, a body no recogniser
     // queries, so the real target was absent from the index and every
     // installed-doc lookup wrongly returned "not preceded"). When quote
     // depth never exceeds 1 (every non-nested document) the innermost
     // open is always the immediately-preceding one, so this yields the
-    // identical body set the first-`」` scan did — byte-for-byte
+    // identical body set the first-`」` scan did; byte-for-byte
     // unchanged wherever there are no nested quotes.
     //
     // The stored value is the body's first occurrence **as a substring
-    // of the source** (`memmem::find` over the whole source) — the same
-    // question the `source[..cutoff].contains(target)` fallback answers —
+    // of the source** (`memmem::find` over the whole source), the same
+    // question the `source[..cutoff].contains(target)` fallback answers;
     // NOT the position of the `「` that introduced this body. The
     // canonical reference is `語句［＃「語句」に傍点］`, whose referent is
     // *bare* text before the bracket while the only `「語句」` pair lives
@@ -186,7 +186,7 @@ pub(super) fn install_forward_target_index_from_source(source: &str) {
 /// `events[open_idx]`.
 ///
 /// Requires the immediately-next event to be a [`TriggerKind::Hash`]
-/// [`PairEvent::Solo`] — the shape `［` `＃` `body` `］`. Bodies
+/// [`PairEvent::Solo`]: the shape `［` `＃` `body` `］`. Bodies
 /// without a hash (plain `［…］`) are not annotations; bodies with a
 /// hash whose keyword no specialised recogniser matches fall through
 /// to the `Directive { Unknown }` catch-all so the bracket is
@@ -199,16 +199,16 @@ impl RecogniseCtx<'_, '_> {
     /// forward-reference recognisers, falling through to the
     /// `Directive{Unknown}` catch-all. Cascade order:
     ///
-    /// 1. body keyword — `classify_annotation_body`
-    /// 2. bouten (single) — `「X」に<kind>`
-    /// 3. bouten (range) — `「X」～「Y」に<kind>`
-    /// 4. left-ruby — `「X」の左に「Y」のルビ`
-    /// 5. side-note — `「X」の左に「Y」の注記` / `「X」に「Y」の傍記`
-    /// 6. 縦中横 — `「X」は縦中横`
-    /// 7. heading — `「X」は…見出し`
-    /// 8. emphasis — `「X」は太字` / `斜体`
-    /// 9. caption-figure — `「cap」のキャプション付きの…（file）入る`
-    /// 10. general image — `<desc>（file）入る`
+    /// 1. body keyword: `classify_annotation_body`
+    /// 2. bouten (single): `「X」に<kind>`
+    /// 3. bouten (range): `「X」～「Y」に<kind>`
+    /// 4. left-ruby: `「X」の左に「Y」のルビ`
+    /// 5. side-note: `「X」の左に「Y」の注記` / `「X」に「Y」の傍記`
+    /// 6. 縦中横: `「X」は縦中横`
+    /// 7. heading: `「X」は…見出し`
+    /// 8. emphasis: `「X」は太字` / `斜体`
+    /// 9. caption-figure: `「cap」のキャプション付きの…（file）入る`
+    /// 10. general image: `<desc>（file）入る`
     /// 11. empty / editorial-note / `Directive{Unknown}` catch-all
     ///
     /// # Ordering contract
@@ -218,31 +218,31 @@ impl RecogniseCtx<'_, '_> {
     /// leaves the output unchanged. These are deliberately *not* pinned
     /// by dedicated order tests (such a test would be vacuous):
     ///
-    /// * bouten vs left-ruby vs side-note — `のルビ`, `の注記`, and `の傍記`
+    /// * bouten vs left-ruby vs side-note: `のルビ`, `の注記`, and `の傍記`
     ///   are not bouten kinds, so each declines before the next is tried.
-    /// * 縦中横 / heading / emphasis — `縦中横`, `…見出し`, and
+    /// * 縦中横 / heading / emphasis: `縦中横`, `…見出し`, and
     ///   `太字`/`斜体` are mutually exclusive after the shared `は`
     ///   particle (縦中横's *diagnostic* threading is the one exception,
     ///   below).
-    /// * bouten single vs range — separated by the `～` / `〜` infix.
+    /// * bouten single vs range: separated by the `～` / `〜` infix.
     ///
     /// The orderings that **are** load-bearing (reordering changes the
     /// output) each have a regression test that pins them:
     ///
-    /// * caption-figure ≺ general-image — both end in `（file）入る`; the
+    /// * caption-figure ≺ general-image: both end in `（file）入る`; the
     ///   caption form is more specific and must win to keep its
     ///   figcaption. Pinned by `caption_before_figure_recognised`.
-    /// * target-bearing recogniser ≺ editorial-note — `「ママ」に傍点`
+    /// * target-bearing recogniser ≺ editorial-note: `「ママ」に傍点`
     ///   must be claimed as bouten before the `ママ` editorial note would
     ///   type it as `Sic`. Pinned by
     ///   `mama_target_with_bouten_stays_bouten`.
-    /// * editorial-note ≺ `Unknown` — the editorial kinds refine the
+    /// * editorial-note ≺ `Unknown`: the editorial kinds refine the
     ///   catch-all, which would otherwise claim every body. Pinned by
     ///   `editorial_notes_type_as_asis_and_textual_note`.
-    /// * 縦中横 compound ≺ small-script range — `「X」は縦中横、行右小書き`
+    /// * 縦中横 compound ≺ small-script range: `「X」は縦中横、行右小書き`
     ///   assigns both attributes to one target. The compound must be
     ///   recognized before the single-attribute small-script classifier.
-    /// * 縦中横 `ShapedNoTarget` diagnostic survives the fall-through —
+    /// * 縦中横 `ShapedNoTarget` diagnostic survives the fall-through:
     ///   when the target is absent the directive degrades to
     ///   `Directive{Unknown}`, but its `tcy_target_not_found` warning is
     ///   carried through the later arms via `tcy_pending`. Pinned by
@@ -251,7 +251,7 @@ impl RecogniseCtx<'_, '_> {
     #[allow(
         clippy::too_many_lines,
         reason = "a flat dispatch chain over the forward-reference recognisers \
-                  (body / bouten / 縦中横 / heading / emphasis) — each block is \
+                  (body / bouten / 縦中横 / heading / emphasis); each block is \
                   the same shape and splitting them would scatter the ordered \
                   fall-through to the Directive{Unknown} catch-all"
     )]
@@ -358,7 +358,7 @@ impl RecogniseCtx<'_, '_> {
                 pending_diagnostic: diag.into_diagnostic(directive_span),
             });
         }
-        // Range bouten `「X」～「Y」に<kind>` — applies the marks to the whole
+        // Range bouten `「X」～「Y」に<kind>`: applies the marks to the whole
         // preceding run from X to Y.
         if let Some((node, consume_start)) =
             self.classify_forward_bouten_range(view, open_idx, close_idx)
@@ -371,7 +371,7 @@ impl RecogniseCtx<'_, '_> {
                 pending_diagnostic: None,
             });
         }
-        // `「X」の左に「Y」のルビ` — left-side ruby (saidoku building block). The
+        // `「X」の左に「Y」のルビ`: left-side ruby (saidoku building block). The
         // `の左に` prefix overlaps left-side bouten, but its `のルビ` keyword is
         // not a bouten kind, so the bouten classifier already returned `None`.
         if let Some((node, consume_start)) =
@@ -385,7 +385,7 @@ impl RecogniseCtx<'_, '_> {
                 pending_diagnostic: None,
             });
         }
-        // `「X」…の注記` / `「X」に「Y」の傍記` — side annotation (注記 / 傍記).
+        // `「X」…の注記` / `「X」に「Y」の傍記`: side annotation (注記 / 傍記).
         // The `の注記` / `の傍記` keywords are disjoint from `のルビ` and every
         // bouten kind, so the bouten and left-ruby classifiers above have
         // already declined.
@@ -430,7 +430,7 @@ impl RecogniseCtx<'_, '_> {
                 pending_diagnostic: tcy_pending,
             });
         }
-        // `「X」は「□」囲み` — box-character enclosure (§6.7). Its `は「…」囲み`
+        // `「X」は「□」囲み`: box-character enclosure (§6.7). Its `は「…」囲み`
         // suffix is disjoint from every emphasis keyword, so ordering versus
         // emphasis is free; kept adjacent as another `は`-form leaf.
         if let Some((node, consume_start, diag)) =
@@ -456,11 +456,11 @@ impl RecogniseCtx<'_, '_> {
             });
         }
 
-        // `<run>［＃mは上ドット付き］` — dotted-letter composition. Gated on
+        // `<run>［＃mは上ドット付き］`: dotted-letter composition. Gated on
         // the `ドット付き` suffix so the reclaim look-back (which copies the
         // preceding run) never runs on ordinary directives. Unlike the styling
         // recognisers above it addresses a bare Latin letter in the preceding
-        // run — no `「X」` quote — so it must run its own reclaim, not
+        // run (no `「X」` quote), so it must run its own reclaim, not
         // `extract_forward_quote_targets`.
         if body.ends_with("ドット付き")
             && let Some((node, consume_start)) =
@@ -475,7 +475,7 @@ impl RecogniseCtx<'_, '_> {
             });
         }
 
-        // `「caption」のキャプション付きの(図|挿絵)（file）入る` — illustration
+        // `「caption」のキャプション付きの(図|挿絵)（file）入る`: illustration
         // with a quoted caption reference. Emits an Illustration (consumes the whole
         // bracket); checked here, after the styling recognisers.
         if let Some(node) = self.classify_caption_figure(view, open_idx, close_idx) {
@@ -489,7 +489,7 @@ impl RecogniseCtx<'_, '_> {
         }
 
         // General image form `［＃<説明>（file［、横W×縦H］）入る］` (graphics.html)
-        // — the free leading description (図 / 地図 / コンドル博士の図 …) is the
+        // The free leading description (図 / 地図 / コンドル博士の図 …) is the
         // alt. Its description is arbitrary so it has no prefix needle in the
         // body dispatcher; checked here, after the more-specific 「caption」
         // form so it retains the quoted reference, and before the Unknown catch-all.
@@ -511,13 +511,13 @@ impl RecogniseCtx<'_, '_> {
         // Empty / placeholder directives from the file-header 凡例 that
         // prefixes nearly every work: `［＃］` (入力者注), `［＃…］` (返り点),
         // `［＃（…）］` (訓点送り仮名). The body is empty (post-trim) or an
-        // ellipsis placeholder — a de-facto-standard symbol, not unrecognised
+        // ellipsis placeholder: a de-facto-standard symbol, not unrecognised
         // notation. Type it as `Empty` rather than the `Unknown` catch-all.
         if body.is_empty() || body == "…" || body == "（…）" {
             return Some(self.typed_annotation_match(directive_span, DirectiveKind::Empty));
         }
         // Input-editor notes (`「X」はママ`, `「X」は底本では「Y」`, …). These
-        // do not restyle their target — X stays in the text — so they emit a
+        // do not restyle their target (X stays in the text), so they emit a
         // typed `Directive` consuming only the bracket, exactly like the
         // Unknown catch-all but with the correct kind. Checked here, after the
         // specialised recognisers, so `「ママ」に傍点` etc. are already claimed.
@@ -544,7 +544,7 @@ impl RecogniseCtx<'_, '_> {
             });
         }
 
-        // No specialised recogniser claimed the bracket — fall back to the
+        // No specialised recogniser claimed the bracket; fall back to the
         // `Directive{Unknown}` catch-all.
         Some(self.unknown_annotation_match(directive_span, body, tcy_pending))
     }
@@ -552,7 +552,7 @@ impl RecogniseCtx<'_, '_> {
     /// Standalone (no-`※`) external-character recogniser. Reuses the
     /// gaiji body parser with the bracket open as the consume start, and
     /// declines unless the body resolves to a glyph or carries a mencode /
-    /// 底本ページ-行 tail — so an ordinary `［＃「…」］` note is never claimed.
+    /// 底本ページ-行 tail, so an ordinary `［＃「…」］` note is never claimed.
     /// Returns the gaiji node and whether it stayed unresolved.
     fn classify_standalone_gaiji(
         &mut self,
@@ -577,7 +577,7 @@ impl RecogniseCtx<'_, '_> {
     }
 
     /// Catch-all for any well-formed `［＃…］` whose body no specialised
-    /// recogniser claimed — including empty bodies (`［＃］`), which real
+    /// recogniser claimed, including empty bodies (`［＃］`), which real
     /// Aozora corpora occasionally use as illustrative glyphs. Emitting
     /// `Directive{Unknown}` with the raw source slice keeps the Tier-A
     /// canary (no bare `［＃` in HTML output) intact. `directive_span` is the
@@ -603,7 +603,7 @@ impl RecogniseCtx<'_, '_> {
         // Notation-hygiene lint: a body that is a verified near-miss of a
         // recognized directive (kept as Unknown) gets a canonical-form
         // suggestion. Catalogue bodies are disjoint from the ここから / 縦中横
-        // cases below, so the priority is only defensive — never double-fires.
+        // cases below, so the priority is only defensive; never double-fires.
         let pending_diagnostic = canonical_directive(body)
             .map(|canonical| Diagnostic::non_canonical_directive(directive_span, canonical))
             .or(tcy_pending)
@@ -622,8 +622,8 @@ impl RecogniseCtx<'_, '_> {
 
     /// Emit a `［＃…］` as an `Directive` carrying a *specific* kind
     /// (`Sic`, `BaseTextVariant`, …) rather than the `Unknown` catch-all.
-    /// Same span discipline as [`Self::unknown_annotation_match`] — the
-    /// whole bracket is consumed and the target text is left in place — so
+    /// Same span discipline as [`Self::unknown_annotation_match`]: the
+    /// whole bracket is consumed and the target text is left in place, so
     /// the raw round-trips and the HTML output is unchanged (these kinds
     /// render hidden, as Unknown does); only the typed `DirectiveKind` the
     /// AST / wire surfaces differs.
@@ -764,9 +764,9 @@ impl RecogniseCtx<'_, '_> {
         };
         let marker = &self.source[open.start as usize..close.end as usize];
         let suffix = formatting_edition_note(marker).map_or(extracted.suffix, |(suffix, _)| suffix);
-        // Shape 1: `に<kind>` — default right-side placement.
-        // Shape 2: `の左に<kind>` — left-side placement (position flipped).
-        // Shape 3: `の両側に<kind>` — both sides.
+        // Shape 1: `に<kind>`: default right-side placement.
+        // Shape 2: `の左に<kind>`: left-side placement (position flipped).
+        // Shape 3: `の両側に<kind>`: both sides.
         let (position, kind_suffix) = if let Some(rest) = suffix.strip_prefix("に") {
             (BoutenPosition::Right, rest)
         } else if let Some(rest) = suffix.strip_prefix("の左に") {
@@ -999,7 +999,7 @@ fn extract_bouten_selection<'a>(
 /// bracket degrades to `Directive{Unknown}`), and from a bracket that is
 /// not a 縦中横 directive at all (silent fall-through).
 enum ForwardTcy {
-    /// A 縦中横 with a located target — the node, its consume start, and the
+    /// A 縦中横 with a located target: the node, its consume start, and the
     /// directive-level diagnostic (`NotStylable` for a declined referent).
     Recognised(Node, u32, ForwardDiag),
     /// `は縦中横` shape matched but the target has no preceding referent.
@@ -1095,14 +1095,14 @@ impl RecogniseCtx<'_, '_> {
             ][..],
             _ => return ForwardTcy::NotTcy,
         };
-        // Single target only — a multi-quote `「A」「B」は縦中横` is not a real
+        // Single target only: a multi-quote `「A」「B」は縦中横` is not a real
         // Aozora shape and used to keep only the first target (silent data
         // loss); it now declines to `Directive{Unknown}`, mirroring emphasis.
         let [first] = extracted.targets.as_slice() else {
             return ForwardTcy::NotTcy;
         };
         // The shape is a 縦中横 directive. If its target has no referent in
-        // the preceding text the styling is meaningless — flag it (the
+        // the preceding text the styling is meaningless; flag it (the
         // caller turns this into `tcy_target_not_found`) and let the bracket
         // fall through to `Directive{Unknown}`.
         if !forward_target_is_preceded(view.events, self.source, open_idx, first) {
@@ -1137,7 +1137,7 @@ impl RecogniseCtx<'_, '_> {
 /// suppress `［＃「X」…］` spans whose target has no referent.
 ///
 /// Returns `false` if the event shape isn't the expected `PairOpen`
-/// (defensive — the caller is responsible for having picked a valid
+/// (defensive: the caller is responsible for having picked a valid
 /// bracket, so this only fails if invariants drift).
 fn forward_target_is_preceded(
     events: &[PairEvent],
@@ -1177,7 +1177,7 @@ fn forward_target_is_preceded(
 /// markers are stripped.
 ///
 /// A heading whose quoted target is the ruby-*stripped* form of a preceding
-/// run — `○　両頭《りやうとう》の蛇《へび》［＃「○　両頭の蛇」は中見出し］` — is not
+/// run (`○　両頭《りやうとう》の蛇《へび》［＃「○　両頭の蛇」は中見出し］`) is not
 /// a contiguous source substring, so the exact gate misses it (the AC index
 /// misses it too, recording such a target at its own directive quote past
 /// `cutoff`). Stripping is done over the raw source rather than the event
@@ -1200,7 +1200,7 @@ fn forward_heading_target_is_preceded_ruby_stripped(
     let prefix = &source[..span.start as usize];
 
     // Drop every `《reading》` span and explicit-base `｜`. A `《` with no
-    // closing `》` leaves `in_ruby` set, dropping the tail — a ruby-less real
+    // closing `》` leaves `in_ruby` set, dropping the tail; a ruby-less real
     // heading is unaffected, and an unmatched `《` only suppresses a match
     // (never invents one), so the gate stays conservative.
     let mut stripped = String::with_capacity(prefix.len());
@@ -1256,23 +1256,23 @@ fn find_immediate_predecessor_target_position(
 }
 
 /// Where a forward-reference target `X` resolves relative to its `［`, given
-/// the current pending plain run — the three-way generalisation of
+/// the current pending plain run: the three-way generalisation of
 /// [`find_immediate_predecessor_target_position`] for interior referents.
 ///
-/// - [`Adjacent`](ForwardReferent::Adjacent): `X` butts the bracket — pull it
+/// - [`Adjacent`](ForwardReferent::Adjacent): `X` butts the bracket; pull it
 ///   back into a `Reclaimed` node (case A, unchanged behaviour).
 /// - [`Interior`](ForwardReferent::Interior): `X` is a plain occurrence inside
-///   the pending run but *not* adjacent — the caller materialises a `Detached`
+///   the pending run but *not* adjacent; the caller materialises a `Detached`
 ///   decoration at `[start, end)` and keeps the bracket `Referenced` (case B).
 /// - [`Unresolvable`](ForwardReferent::Unresolvable): `X` is present in the
 ///   look-back but not in the pending run (a ruby base, an earlier line, or
-///   inside a prior construct) — keep it `Referenced`, declined.
+///   inside a prior construct): keep it `Referenced`, declined.
 ///
 /// The window `[pending_plain_start, ［)` is pure plain source by construction
 /// (every completed node resets `pending_plain_start` to a byte past itself,
 /// every newline flushes it), so a window `rfind` selects exactly the §7.5
 /// most-recent-preceding *base-text* occurrence when one is representable and
-/// returns `Unresolvable` otherwise — the ruby-base / cross-line decline falls
+/// returns `Unresolvable` otherwise: the ruby-base / cross-line decline falls
 /// out for free, with no separate detector.
 enum ForwardReferent {
     Adjacent(u32),
@@ -1285,10 +1285,10 @@ enum ForwardReferent {
 enum ForwardDiag {
     /// No diagnostic.
     None,
-    /// A styled target that occurs more than once in the look-back — the
+    /// A styled target that occurs more than once in the look-back: the
     /// chosen run may be unintended (`bouten_target_ambiguous`).
     Ambiguous,
-    /// The target is present but not stylable in place — a ruby base, an
+    /// The target is present but not stylable in place: a ruby base, an
     /// earlier line, a prior construct, or one of several targets
     /// (`forward_referent_not_stylable`).
     NotStylable,
@@ -1307,8 +1307,7 @@ impl ForwardDiag {
 
 #[allow(
     clippy::too_many_arguments,
-    reason = "each parameter is an independent input to the pure resolution — the events \
-              table, source, bracket index, target text, and the pending-run window start."
+    reason = "Resolution inputs (events, target, range) are independent."
 )]
 fn resolve_forward_referent(
     events: &[PairEvent],
@@ -1322,7 +1321,7 @@ fn resolve_forward_referent(
     };
     let cutoff = span.start as usize;
     let len = target.len();
-    // A: byte-adjacent — the most-recent occurrence by definition. `target`
+    // A: byte-adjacent: the most-recent occurrence by definition. `target`
     // is canonical UTF-8, so a byte-slice compare is a string compare.
     if cutoff >= len && &source.as_bytes()[cutoff - len..cutoff] == target.as_bytes() {
         return u32::try_from(cutoff - len)
@@ -1350,7 +1349,7 @@ fn resolve_forward_referent(
 /// Quoted targets exclude their quotation delimiters; an unquoted
 /// parenthesized target retains its supplied parentheses.
 struct ForwardTargetExtract<'s> {
-    /// Inline capacity 4 covers the corpus 99th percentile — most
+    /// Inline capacity 4 covers the corpus 99th percentile: most
     /// forward-reference annotations have a single quoted target,
     /// the long tail rarely exceeds 2-3.
     targets: smallvec::SmallVec<[&'s str; 4]>,
@@ -1415,7 +1414,7 @@ fn extract_forward_quote_targets<'s>(
             return None;
         }
         let quote_close_idx = quote_close_link as usize;
-        // The quote must close *before* the bracket — a cross-boundary
+        // The quote must close *before* the bracket: a cross-boundary
         // close would mean the quote is not nested inside the bracket.
         if quote_close_idx >= close_idx {
             return None;
@@ -1428,7 +1427,7 @@ fn extract_forward_quote_targets<'s>(
             return None;
         };
         // Empty quotes are tolerated in-position but not added to the
-        // target list — they carry no semantic content.
+        // target list; they carry no semantic content.
         let body = &source[quote_open_span.end as usize..quote_close_span.start as usize];
         if !body.is_empty() {
             targets.push(body);
@@ -1448,7 +1447,7 @@ fn extract_forward_quote_targets<'s>(
 /// heading annotation.
 ///
 /// Shares the event-stream extraction helper with `classify_forward_bouten`
-/// — the quote-delimited target and the trailing keyword live in the same
+/// The quote-delimited target and the trailing keyword live in the same
 /// `［＃「X」…］` shape. The suffix after the target must start with `は`
 /// (unlike bouten's `に`), and the keyword selects the Markdown heading
 /// level: `大見出し` → 1, `中見出し` → 2, `小見出し` → 3.
@@ -1521,7 +1520,7 @@ impl RecogniseCtx<'_, '_> {
     }
 }
 
-/// Classify a `「X」の左に「Y」のルビ` forward-reference **left-side ruby** — the
+/// Classify a `「X」の左に「Y」のルビ` forward-reference **left-side ruby**: the
 /// building block of a 再読文字 (saidoku-moji). The target `X` is pulled back
 /// (mirroring `classify_forward_bouten`); the reading `Y` attaches on the left.
 /// Single-target only; the `の左に「…」のルビ` suffix shape is unique, so a
@@ -1842,7 +1841,7 @@ impl RecogniseCtx<'_, '_> {
 /// `classify_forward_heading`: the suffix after the target must start with
 /// `は`, and the keyword selects 太字 (`<b>`) or 斜体 (`<i>`).
 ///
-/// Single-target only — `「A」「B」は太字` is not a real Aozora shape and
+/// Single-target only: `「A」「B」は太字` is not a real Aozora shape and
 /// would not round-trip byte-exactly, so it falls through to
 /// `Directive{Unknown}`. The `forward_target_is_preceded` gate rejects a
 /// target with no referent (emphasis over nothing); the
@@ -1860,7 +1859,7 @@ impl RecogniseCtx<'_, '_> {
     #[allow(
         clippy::too_many_arguments,
         reason = "the caller already holds the body view, bracket index, open-span start, \
-                  resolved attribute, and target text — each an independent input."
+                  resolved attribute, and target text: each an independent input."
     )]
     fn resolve_forward_format(
         &mut self,
@@ -1924,7 +1923,7 @@ impl RecogniseCtx<'_, '_> {
         let extracted = extract_forward_quote_targets(view, self.source, open_idx, close_idx)?;
         // The particle is tied to the decoration. `は` is the dominant emphasis
         // form (`「X」は太字`). The frame decoration also takes the "applied to"
-        // particle `に` (`「X」に枠囲み`) — but 太字/斜体/… stay `は`-only, so a `に`
+        // particle `に` (`「X」に枠囲み`), but 太字/斜体/… stay `は`-only, so a `に`
         // suffix is accepted only when it resolves to `Framed`. Bouten runs
         // earlier in the cascade and already claims `に〈bouten-kind〉`. The
         // serializer canonicalises both particles to `」は`.
@@ -1963,7 +1962,7 @@ impl RecogniseCtx<'_, '_> {
     }
 }
 
-/// Classify a `［＃「X」は「□」囲み］` box-character enclosure — the 「□」 box
+/// Classify a `［＃「X」は「□」囲み］` box-character enclosure: the 「□」 box
 /// member of the 罫囲み enclosure family ([`EnclosureKind::Box`], §6.7).
 ///
 /// A single target `X`; the `は` particle and the quoted `□` glyph live in the
@@ -1973,7 +1972,7 @@ impl RecogniseCtx<'_, '_> {
 /// the same source-target resolution as
 /// [`Self::classify_forward_emphasis`]. The `は「` prefix + `」囲み` suffix shape
 /// excludes every `の注記` / `のルビ` / `に…` form; only the canonical `□`
-/// (U+25A1) glyph is claimed — any other glyph stays `Directive{Unknown}` until
+/// (U+25A1) glyph is claimed; any other glyph stays `Directive{Unknown}` until
 /// it earns its own [`EnclosureKind`] member.
 impl RecogniseCtx<'_, '_> {
     fn classify_forward_box_enclosure(
@@ -2007,14 +2006,14 @@ impl RecogniseCtx<'_, '_> {
 /// Classify a `<run>［＃mは上ドット付き］` dotted-letter directive.
 ///
 /// The directive addresses a base Latin letter *inside the immediately-
-/// preceding run* — a bare word (`Padma-sambhava`) or a decomposed `〔…〕`
-/// accent span — and asks for a combining dot above / below it. This is
+/// preceding run* (a bare word `Padma-sambhava` or a decomposed `〔…〕`
+/// accent span) and asks for a combining dot above / below it. This is
 /// sub-run occurrence addressing, not the `「X」は…` quote shape, so it reclaims
 /// the preceding run directly (never `extract_forward_quote_targets`). The run
 /// is pulled back (the styled span is the sole rendered copy, without duplicate rendering); the
 /// raw body is interned for byte-exact serialize and render-time composition.
 /// `ab_aozora_syntax::accent::compose_accent_dots` is the single authority for the
-/// selector grammar and glyph table, shared with the renderer — a `Some`
+/// selector grammar and glyph table, shared with the renderer; a `Some`
 /// result both validates the claim and (in the renderer) produces the glyphs.
 impl RecogniseCtx<'_, '_> {
     fn classify_forward_accent_dot(
@@ -2036,7 +2035,7 @@ impl RecogniseCtx<'_, '_> {
         // word-qualified / 段目 form and any unresolvable or
         // uncomposable letter, leaving those as `Directive{Unknown}`.
         compose_accent_dots(run, body)?;
-        // Store the reclaimed run *uncomposed* — the renderer composes on the
+        // Store the reclaimed run *uncomposed*: the renderer composes on the
         // fly and the serializer re-emits it verbatim before the raw body.
         let text = self.alloc.content_plain(run);
         let consume_start = u32::try_from(run_start).ok()?;
@@ -2047,7 +2046,7 @@ impl RecogniseCtx<'_, '_> {
 
 /// Byte offset where the run immediately preceding a dotted-letter directive
 /// begins, or `None` when the bracket is butted by a non-Latin character
-/// (a `》` ruby close, Japanese text) — which declines the directive.
+/// (a `》` ruby close, Japanese text), which declines the directive.
 ///
 /// A prefix ending in `〕` reclaims the whole decomposed `〔…〕` accent span
 /// (sanitize keeps its brackets, so it is a contiguous run); otherwise the
@@ -2137,7 +2136,7 @@ pub(super) fn forward_attr_from_suffix(s: &str) -> Option<ForwardAttr> {
 /// Parse a forward accent-mark suffix (`アクサン（´）付き` / `アクサン（｀）付き` /
 /// `ウムラウト（¨）付き`) into a [`ForwardAttr::Accent`].
 ///
-/// The mark *word* does not distinguish acute from grave — the bracketed symbol
+/// The mark *word* does not distinguish acute from grave: the bracketed symbol
 /// does (´ U+00B4 vs ｀ U+FF40); ウムラウト（¨） (¨ U+00A8) is the umlaut. Only the
 /// canonical fullwidth-paren spelling (U+FF08 / U+FF09) is claimed; the
 /// classifier separately requires the quoted target to be a *single composable
@@ -2154,7 +2153,7 @@ fn parse_accent_suffix(s: &str) -> Option<ForwardAttr> {
 }
 
 /// Parse a `地付き` / `文末より N字上げ揃え` / `行末より N字上がり` end-alignment
-/// suffix into a [`ForwardAttr::AlignEnd`] — the forward-scope analogue of the
+/// suffix into a [`ForwardAttr::AlignEnd`]: the forward-scope analogue of the
 /// line-form `AlignEndParamPrefix` (§7.6). Mirrors its verb set (`字上げ` /
 /// `字上がり`, optional `揃え`) and, like the line-form `LineFormat::AlignEnd`,
 /// collapses the 文末 / 行末 / 地より / 地から anchor to the offset alone. `地付き`
@@ -2162,7 +2161,7 @@ fn parse_accent_suffix(s: &str) -> Option<ForwardAttr> {
 /// `None` for a missing/zero magnitude or any other suffix (→
 /// `Directive{Unknown}`).
 fn parse_align_end_suffix(s: &str) -> Option<ForwardAttr> {
-    // 地付き — flush to the text-end edge (zero lift); the forward analogue of
+    // 地付き: flush to the text-end edge (zero lift); the forward analogue of
     // the `地付き` line form (LineFormat::AlignEnd { offset: 0 }). A distinct
     // lexeme with no magnitude, so it can't ride the prefix+digit path below.
     if s == "地付き" {
@@ -2219,7 +2218,7 @@ mod tests {
             forward_attr_from_suffix("ウムラウト（¨）付き"),
             Some(ForwardAttr::Accent(AccentMark::Umlaut))
         );
-        // Half-width parens are not the canonical spelling — declined here (the
+        // Half-width parens are not the canonical spelling; declined here (the
         // corpus half-width forms are all word-qualified anyway).
         assert_eq!(forward_attr_from_suffix("アクサン(´)付き"), None);
         // A bare mark word with no bracketed symbol is not a claimable suffix.
@@ -2266,7 +2265,7 @@ mod tests {
             Some(ForwardAttr::Fraction)
         );
         // A comma-joined compound (`「3」は上付き小文字、「1/143」は分数`) reaches this
-        // fn with a suffix that is not exactly `分数`, so it must NOT match — it
+        // fn with a suffix that is not exactly `分数`, so it must not match; it
         // stays `Directive{Unknown}` until the multi-directive-per-bracket
         // grammar owns it out-of-scope).
         assert_eq!(

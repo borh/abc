@@ -61,7 +61,7 @@ public keys. Use a chain whose origin is also isolated: activation fetches the
 configured origin. These timings include JVM startup, full chain verification,
 and checking the exported tree; they do not measure release assembly.
 
-On Speely's isolated four-release, 72,749-blob chain, with Charred 1.042 in both
+On an isolated four-release, 72,749-blob chain, with Charred 1.042 in both
 builds, bypassing per-string buffered-writer construction yielded a median paired
 elapsed reduction of 12.8% (four pairs; 95% percentile bootstrap interval 11.4–13.0%).
 A subsequent per-document streaming candidate yielded 15.1% (12.6–17.6%). Its
@@ -217,9 +217,10 @@ its attestation, remains unadmitted until assessment inputs justify it. Label th
 observation fixture, source range, admitted population and cache conditions with
 any reported timings.
 
-Reference corpus run on Speely using installed app
-`/nix/store/l2mk0cirhrhkv1mgqmnj227gmx3l7dwb-soranoha-publication-replay`, source commits
-`19549096…` → `36bf8ec8…` → `0e9ea3e5…` (2026-04-23 through 2026-04-25):
+## Reference publication baseline (2026-09)
+
+Reference corpus run using source commits `19549096…` → `36bf8ec8…` → `0e9ea3e5…`
+(2026-04-23 through 2026-04-25):
 
 | Source date | Assessment (s) | Release (s) | Serving (s) | Repeat release + serving (s) | Executed stages |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -231,34 +232,24 @@ The full selection grew from 17,601 to 17,602 candidates; the published populati
 from 17,307 to 17,308 works. Apr 24 retained every published work entry. Apr 25
 added one, changed one and retained 17,306. Every unchanged repeat executed zero
 stages and preserved the publication commit and verified export. Both consecutive
-report comparisons passed the existing delta oracle with zero unexplained
-executions. The fixture used
-34,618 URL mappings backed by the 17,308 retained reliance records, supplied as
-simulated contemporary responses over those historical commits.
+report comparisons passed the delta oracle with zero unexplained executions. The fixture used
+34,618 URL mappings backed by the 17,308 retained reliance records.
 
 The complete command took 1,598.89 seconds, including JVM startup, setup and all
 three repeats, with GNU time reporting 5,821,864 KiB peak RSS. Repository cloning
 took 12.97 seconds. This was an empty computation cache with available Nix closures
-and uncontrolled OS page caches. It is one baseline run, not a speedup comparison.
-That measured harness retained the assessment result until row emission, so its peak
-includes that result. The current harness discards the unused result immediately.
-Phase measurements and reports remain under
-`/data/soranoha-benchmarks/publication-20260906/run` on Speely.
+and uncontrolled OS page caches. It is a baseline run, not a speedup comparison.
 
-Publication source capture now reuses the existing extraction stage, keyed by the
+Publication source capture reuses the extraction stage, keyed by the
 current ZIP digest, extraction version and Clojure toolchain. Source-fact bytes
 must match their CAS digest and name that same archive before assessment consumes
-them. A missing output recomputes; corrupt source-fact bytes refuse the attempt.
-The local trace store retains its existing trusted-writer boundary. Fresh HTTP
-acquisition, retained-evidence validation and assessment of current records still
-run on every attempt. An unrelated source commit reuses the same extraction;
-changed edition bytes select a new derivation.
+them. Missing outputs recompute; corrupt bytes fail closed. Fresh HTTP acquisition,
+retained-evidence validation and assessment of current records run on every attempt.
+An unrelated source commit reuses the same extraction; changed edition bytes select a new derivation.
 
-A balanced full-corpus comparison on Speely used the completed three-release
-fixture above, at `0e9ea3e586eb0aa34039fabfc85a407d2f98b165`, with 17,308 published
-works and 51,929 verified blobs. Each process started a fresh JVM against the warm
-computation cache and existing export, with concurrency 16 and the same recorded
-observations. The baseline includes the unused-assessment-result cleanup.
+A balanced full-corpus comparison using the completed three-release
+fixture at `0e9ea3e586eb0aa34039fabfc85a407d2f98b165` (17,308 published works and
+51,929 verified blobs) with concurrency 16 and warm computation cache:
 
 | Metric | Baseline median | Candidate median | Median paired reduction | 95% paired bootstrap interval |
 | --- | ---: | ---: | ---: | ---: |
@@ -269,32 +260,11 @@ observations. The baseline includes the unused-assessment-result cleanup.
 | Peak RSS | 4,822,844 KiB | 4,814,938 KiB | 0.08% | -0.19–1.21% |
 
 The assessment improvement clears the preselected 20% relevant-phase threshold;
-the largest paired peak-RSS increase was 0.19%, below the 10% guardrail. The
-candidate is retained. Serving and build times did not materially improve.
+the largest paired peak-RSS increase was 0.19%, below the 10% guardrail.
 Preflight fell from 14.595 to 7.864 seconds; the two source captures within release
 fell from 21.233 to 7.764 seconds combined, and Aozora checking from 9.636 to 6.364
-seconds. Release verification remained approximately 24.4 seconds. These nested
-phase medians identify the saved source-derivation work; they are not additive.
+seconds. Release verification remained approximately 24.4 seconds.
 
 All eight runs executed zero stages and preserved manifest
 `027f578070ab4e1ba1458583ca65e874d3f0154960c880058dc8c165093f2e2b`, publication commit
-`394ffce2eb50fc4c5493f16fb9c772a2c42a0e06`, and the reused verified export. Tests
-also cover fresh acquisition failure on cached inputs, changed editions,
-unrelated commits, missing cache outputs, and corrupt source-fact bytes. This is
-recorded-observation repeat latency, not live HTTP latency or a measured cold-start
-speedup. Four pairs describe this experiment's spread, not deployment percentiles.
-The intervals enumerate all 256 bootstrap resamples of the four paired effects.
-
-The measured programs were
-`/nix/store/42rb4snalvxllcrdg9flx81m0z66hkj7-soranoha-publication-replay` (baseline)
-and `/nix/store/psvg6nc6aajd646rlcz87n4sv5cbm3b0-soranoha-publication-replay`
-(candidate). Raw rows, process timings, stdout and stderr remain under
-`/data/soranoha-benchmarks/publication-20260906/source-facts-pairs-v2` on Speely.
-
-The integrated executable
-`/nix/store/017g8nhif5v66myljwkyn1hs64rfn3ba-soranoha-publication-replay` passed a
-further full-population repeat with the same result and zero stage executions.
-Its separately timed manifest assembly took 4.939 seconds; release took 69.297
-seconds and serving 46.840 seconds. This integration check is outside the paired
-sample. It includes the narrowed Nix sources; both resulting Rust executables are
-byte-identical to the binaries used in the comparison.
+`394ffce2eb50fc4c5493f16fb9c772a2c42a0e06`, and the reused verified export.

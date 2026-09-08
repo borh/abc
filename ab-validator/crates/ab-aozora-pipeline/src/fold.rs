@@ -7,12 +7,12 @@
 //! [`Normalizer`] is the PUA-rewriter + position-recorder over those spans.
 //! Every interned string lives once, in the allocator's
 //! `NodeStore`, which threads straight into
-//! the output — no arena, no conversion step.
+//! the output: no arena, no conversion step.
 //!
 //! ## Pipeline
 //!
 //! 1. The sanitize / tokenize / pair stages run as owned-data helpers operating
-//!    on byte spans and event indices — they never construct AST.
+//!    on byte spans and event indices; they never construct AST.
 //! 2. The classify stage is invoked with an
 //!    [`Allocator`](ab_aozora_syntax::alloc::Allocator); owned AST
 //!    nodes land in its `NodeStore`, strings
@@ -54,7 +54,7 @@ pub fn lex(source: &str) -> LexOutput {
 /// Output recorder for the [`Normalizer`] fold.
 ///
 /// Holds the position-keyed registry entries and the source-keyed side table.
-/// Each emitted [`Node`] is `Copy`, so recording it is a plain push — no
+/// Each emitted [`Node`] is `Copy`, so recording it is a plain push: no
 /// conversion, no second store (the allocator's
 /// `NodeStore` is authoritative and threads
 /// into the output separately).
@@ -918,7 +918,7 @@ fn is_standalone_block_for_render(node: Node) -> bool {
     )
 }
 
-// Container registries: pure copy of (u32, RegionFormat) / RegionClose — all
+// Container registries: pure copy of (u32, RegionFormat) / RegionClose; all
 // `Copy`. A static assertion pins the no-conversion expectation.
 const _: fn() = || {
     fn assert_copy<T: Copy>() {}

@@ -2243,8 +2243,8 @@ mod tests {
 
     #[test]
     fn compact_staged_table_coalesces_many_small_parts_into_one_file() {
-        // Build a staging dir with 65 tiny part files for Sources — just over the
-        // 64-part threshold, each well under 1 MiB median.
+        // Build a staging dir with 65 tiny part files for Sources (just over the
+        // 64-part threshold, each well under 1 MiB median).
         let root = temp_dir("compact-many-small");
         let paths = WarehousePaths::new(&root, "r");
         let sources_staged = paths.staging_dir.join(WarehouseTable::Sources.file_name());

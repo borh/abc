@@ -12,14 +12,14 @@ use crate::Span;
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]
 pub enum PairKind {
-    /// `［ … ］` (U+FF3B / U+FF3D). Directive body container — always
+    /// `［ … ］` (U+FF3B / U+FF3D). Directive body container: always
     /// a bracket pair, with or without the leading `＃`.
     Bracket,
 
     /// `《 … 》` (U+300A / U+300B). Ruby reading.
     Ruby,
 
-    /// `≪ … ≫` (U+226A / U+226B). Double-angle quotation — the aozora
+    /// `≪ … ≫` (U+226A / U+226B). Double-angle quotation: the aozora
     /// input encoding for a 底本's twin angle brackets, displayed back
     /// as `《…》`. Its own pair kind (a stray `》` never closes a `≪`).
     AngleQuote,
@@ -95,9 +95,8 @@ impl PairKind {
 /// `Span` lives in). Used downstream by editor surfaces such as LSP
 /// `textDocument/linkedEditingRange` and `documentHighlight`.
 ///
-/// `Unclosed` opens (no matching close was found before EOF) and stray
-/// `Unmatched` closes are deliberately *not* represented here — they
-/// have no partner span to link to and would only confuse the editor.
+/// `Unclosed` opens and stray `Unmatched` closes are omitted here; they
+/// have no partner span to link to.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct PairLink {
@@ -127,7 +126,7 @@ mod tests {
     fn pair_kind_is_copy() {
         let k = PairKind::Bracket;
         let copy = k;
-        // Both still usable — Copy semantics confirmed.
+        // Both still usable: Copy semantics confirmed.
         assert_eq!(k, copy);
     }
 

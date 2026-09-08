@@ -1,4 +1,4 @@
-# 0001 — snh-manifest/2: a signed catalog, published markdown, and a rights grant
+# 0001: snh-manifest/2: a signed catalog, published markdown, and a rights grant
 
 Status: accepted, 2026-09-08. Pre-genesis; no public chain carries
 `snh-manifest/1`.
@@ -43,14 +43,14 @@ unsharded.
 The alternative was an index derived from TEI headers at serving or activation
 time: no protocol change, ships immediately, revisable at will.
 
-The archival argument decided it. `soranoha-lv9` deposits release manifests in
+The archival argument decided it. Release manifests are deposited in
 Zenodo, and a manifest that cannot name its own contents is a weak archival
 object. An unsigned serving index sits outside the verified chain, so it
 carries no archival guarantee and cannot be cited as part of a release. The
 catalog is the part of the record a reader is most likely to cite and least
 able to re-derive.
 
-Measured cost: roughly 3.4 MB for 17308 works against the 8.95 MB manifest —
+Measured cost: roughly 3.4 MB for 17308 works against the 8.95 MB manifest;
 affordable, but large enough to belong as a separate artifact rather than
 inflated into the manifest.
 
@@ -75,18 +75,17 @@ probable second bump later.
 - `rights` joins the governance projection, so a governance event can no longer
   change the licence as a side effect of a withdrawal.
 
-## What the catalog deliberately does not carry
+## What the catalog does not carry
 
 Facts, not renderings. No download filename, no citation string, no DOI, no
 manifest id, no release ordinal.
 
 A rendered filename stored beside the fields it renders from can disagree with
-them, in a record that can never be corrected; `soranoha-szg.9`'s filename rule
-and `soranoha-szg.11`'s citation forms are both derivable from what the catalog
-does carry, and they live in the serving layer where a mistake is fixable. A
+them, in a record that cannot be corrected; filename rules
+and citation forms are both derivable from what the catalog
+does carry, and they live in the serving layer where formatting can be corrected. A
 `manifest_id` inside the catalog would be circular, since the manifest names
-the catalog — this corrects the expectation recorded under `soranoha-lv9.3`,
-which is not implementable in that direction. Content addressing also lets
+the catalog. Content addressing also lets
 consecutive releases with an unchanged corpus share one catalog blob, which an
 embedded release ordinal would defeat. Keeping archive-provider references out
 leaves the closed schema provider-neutral.
@@ -106,7 +105,7 @@ leaves the closed schema provider-neutral.
 
 ## Migration
 
-None. `snh-manifest/1` never reached a public chain; `soranoha-lv9` anchors a
+None. `snh-manifest/1` never reached a public chain; public release anchors a
 fresh genesis. The repository therefore ships one manifest schema, not two, and
-the verifier accepts `snh-manifest/2` only. This is precisely why the bump is
-cheap today and would not be after genesis.
+the verifier accepts `snh-manifest/2` only. This is why the bump is
+practical today and would not be after genesis.

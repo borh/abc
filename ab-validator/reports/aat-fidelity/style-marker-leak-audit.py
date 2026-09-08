@@ -294,7 +294,7 @@ def markdown(summary: dict[str, Any]) -> str:
     for row in summary["examples"]:
         lines.append(
             f"- `{row['file_stem']}` `{row['style_type']}` `{row['json_path']}`: "
-            f"`{row['signature']}` — {row['excerpt']}"
+            f"`{row['signature']}`: {row['excerpt']}"
         )
     if not summary["examples"]:
         lines.append("- none")

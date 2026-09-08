@@ -1,4 +1,4 @@
-//! Fuzz target — the `aozora-ffi` C-ABI surface must never panic/abort.
+//! Fuzz target: the `aozora-ffi` C-ABI surface must never panic/abort.
 //!
 //! Drives arbitrary bytes through the real exported `extern "C"`
 //! entry points (`aozora_document_new` → `aozora_document_to_html` /
@@ -7,7 +7,7 @@
 //! non-Rust host (Ruby / Node / Go / JVM) would. The crate is built
 //! with `panic = "abort"` in release, so a panic anywhere on a parse /
 //! render / JSON-serialize path reachable from these functions would
-//! `abort()` the host process — a denial-of-service for every embedder.
+//! `abort()` the host process: a denial-of-service for every embedder.
 //! This target makes libFuzzer surface such an input as a crash
 //! artifact.
 //!
@@ -20,12 +20,12 @@
 //! Invariants asserted (beyond "no abort"):
 //!
 //! 1. `aozora_document_new` returns either `Ok` (with a non-null
-//!    handle) or `InvalidUtf8` (with a null handle) — never any other
+//!    handle) or `InvalidUtf8` (with a null handle), never any other
 //!    status, never `Ok` with a null handle.
 //! 2. Every byte-buffer accessor returns `Ok` and a buffer whose
 //!    `(ptr, len)` is internally consistent (non-null when `len > 0`).
 //! 3. The HTML buffer is valid UTF-8 and carries no surviving PUA
-//!    sentinel (U+E001..U+E004) — the same render contract the
+//!    sentinel (U+E001..U+E004): the same render contract the
 //!    `render_html` target pins, but verified through the C ABI and
 //!    only for inputs that did not themselves smuggle in a sentinel.
 //! 4. Every buffer is released via `aozora_bytes_free` and the handle
@@ -43,7 +43,7 @@ use aozora_ffi::{
 };
 use libfuzzer_sys::fuzz_target;
 
-/// PUA sentinel codepoints the renderer must consume — none may
+/// PUA sentinel codepoints the renderer must consume: none may
 /// survive into HTML emitted through the C ABI.
 const PUA_SENTINELS: [char; 4] = ['\u{E001}', '\u{E002}', '\u{E003}', '\u{E004}'];
 

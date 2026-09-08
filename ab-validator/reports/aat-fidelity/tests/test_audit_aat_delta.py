@@ -104,7 +104,7 @@ def test_identity_pointer_change_is_class3(tmp_path):
 
 def test_same_paragraph_pair_rewrites_to_container(tmp_path):
     # Baseline inner node "\n中身\n" (span 10..18); the grammar strips the
-    # boundary newlines (value → "中身", span untouched — mirroring the Rust
+    # boundary newlines (value → "中身", span untouched, mirroring the Rust
     # strip helpers, which mutate values only) and strips the leading "\n"
     # of the post-close text.
     inner = text("\n中身\n", 10)  # span 10..18
@@ -259,7 +259,7 @@ def style_chitsuki(content):
 
 def style_span(content, start, end):
     # Inline style built in inline_content: CARRIES a span, existed whole
-    # in the flat stream at strip time — Rust's boundary strip no-ops on it.
+    # in the flat stream at strip time; Rust's boundary strip no-ops on it.
     return {
         "kind": "style",
         "style_type": "bold",
@@ -270,7 +270,7 @@ def style_span(content, start, end):
 
 def test_tail_in_chitsuki_wrapper_stripped(tmp_path):
     # Close marker starts its paragraph (tail empty): the flat stream's
-    # last inner node is the chitsuki wrapper's text — Rust stripped it
+    # last inner node is the chitsuki wrapper's text: Rust stripped it
     # BEFORE the wrapper assembled. The head keeps its trailing newline.
     base = write_dump(
         tmp_path,
@@ -355,7 +355,7 @@ def test_span_carrying_style_at_tail_not_stripped(tmp_path):
 
 def test_candidate_stripping_span_styled_tail_fails(tmp_path):
     # The other direction: a candidate that stripped INSIDE the
-    # span-carrying style did something Rust does not do — exit 2.
+    # span-carrying style did something Rust does not do: exit 2.
     base = write_dump(
         tmp_path,
         "a",
@@ -450,7 +450,7 @@ YCLOSE = "［＃ここで横組み終わり］"
 
 def test_nested_pair_inner_admitted_outer_raw(tmp_path):
     # 001558 corpus pattern: yokogumi open, keigakomi open, keigakomi
-    # close, yokogumi close — all inline in ONE paragraph. Rust tries each
+    # close, yokogumi close, all inline in ONE paragraph. Rust tries each
     # node in stream order: the yokogumi open is unadmitted (its close
     # scan aborts on the inner containerOpen) and stays raw; the inner
     # keigakomi pair IS admitted. The outer close also stays raw, in the
@@ -500,7 +500,7 @@ def test_nested_pair_inner_admitted_outer_raw(tmp_path):
 
 def test_post_close_chitsuki_paragraph_not_stripped(tmp_path):
     # Post empty (close ends its paragraph): Rust's post-close flag is
-    # consumed by the next flat node — the chitsuki alignEnd MARKER, not
+    # consumed by the next flat node: the chitsuki alignEnd MARKER, not
     # the text inside the wrapper. The wrapper text keeps its newline.
     chitsuki_para = para(style_chitsuki([text("\n地付き", 60)]))
     base = write_dump(
@@ -601,7 +601,7 @@ def test_invalid_span_fails(tmp_path):
 
 def test_null_span_fails_in_span_mode(tmp_path):
     # A candidate node with "span": null must not slip past masking as a
-    # false PASS — non-dict spans are rejected.
+    # false PASS: non-dict spans are rejected.
     base = write_dump(tmp_path, "a", {"w1": doc([para(spanned("あ\n", 0, 4, 1, 1))])})
     cand = write_dump(
         tmp_path, "b", {"w1": doc([para({"kind": "text", "value": "あ\n", "span": None})])}
@@ -714,7 +714,7 @@ def test_v2_migration_left_ruby_upgrade(tmp_path):
 
 
 def test_v2_migration_rejects_unexpected_raw_to_ruby_upgrade(tmp_path):
-    # Source does not match the left-ruby marker form at all — must survive
+    # Source does not match the left-ruby marker form at all; must survive
     # as raw; a candidate that upgrades it anyway is a defect.
     raw_ruby = raw_marker("［＃「変」の注記］", "ruby", 0)
     base = write_dump(tmp_path, "a", {"w1": doc([para(raw_ruby)])})
@@ -731,7 +731,7 @@ def test_v2_migration_rejects_unexpected_raw_to_ruby_upgrade(tmp_path):
 
 
 def test_v2_migration_rejects_prefixed_left_ruby_marker(tmp_path):
-    # `pre` = "前文" is neither "" nor base ("X") — this is NOT an
+    # `pre` = "前文" is neither "" nor base ("X"): this is not an
     # admissible left-ruby marker per the anchored regex, so the raw node
     # must survive unchanged. A candidate that upgrades it anyway (the old
     # unanchored `.search()` would have falsely accepted this) is rejected.
@@ -750,7 +750,7 @@ def test_v2_migration_rejects_prefixed_left_ruby_marker(tmp_path):
 
 
 def test_v2_migration_echoed_base_left_ruby_still_upgrades(tmp_path):
-    # `pre` = "名" equals base ("名") — the echoed-base prefix form is still
+    # `pre` = "名" equals base ("名"): the echoed-base prefix form is still
     # admissible and upgrades, even under the anchored regex.
     raw_ruby = raw_marker("名［＃「名」の左に「な」のルビ］", "ruby", 0)
     base = write_dump(tmp_path, "a", {"w1": doc([para(raw_ruby)])})
@@ -797,7 +797,7 @@ def _line_width_base(tmp_path):
 
 def test_v2_migration_line_width_container_stays_raw(tmp_path):
     # C3 gate fix (mirror of the Rust `line_width_container` pin): the
-    # standalone `字詰め` line-width form migrates MECHANICALLY only — the
+    # standalone `字詰め` line-width form migrates MECHANICALLY only: the
     # candidate keeps the raw containerOpen/containerClose pair, so the doc
     # lands in `migrated`, never `jizume_rewritten`.
     base = _line_width_base(tmp_path)
@@ -827,7 +827,7 @@ def test_v2_migration_line_width_container_stays_raw(tmp_path):
 
 def test_v2_migration_rejects_standalone_jizume_block(tmp_path):
     # A candidate that forms a jizume_block from the standalone line-width
-    # form is the over-match the C3 gate caught — it must be REJECTED, since
+    # form is the over-match the C3 gate caught; it must be REJECTED, since
     # the forward rewrite leaves the pair raw.
     base = _line_width_base(tmp_path)
     cand = write_dump(
@@ -933,7 +933,7 @@ def burasage_style(content, first, rest):
 def test_v2_migration_compound_jizume_wrap(tmp_path):
     # v1's compound-container burasage classification already discards any
     # 字詰め clause on its marker (burasage_container_indent is unchanged
-    # since the initial port) — so the baseline shape below is exactly what
+    # since the initial port), so the baseline shape below is exactly what
     # a real v1 dump produces whether or not the original marker carried a
     # 字詰め clause. The audit cannot re-derive the width from baseline
     # alone; it adopts the candidate's jizume_block wrapper (verifying
@@ -963,7 +963,7 @@ def test_v2_migration_compound_jizume_wrap(tmp_path):
 
 def test_v2_migration_rejects_warning_missing_span_when_line_present(tmp_path):
     # Baseline warning carries a line; candidate warning has no span at
-    # all — the candidate must carry a dict span whenever baseline had a
+    # all: the candidate must carry a dict span whenever baseline had a
     # line, so this is rejected (was previously silently accepted since the
     # old check only fired when a dict span happened to already be present).
     base = write_dump(
@@ -1004,9 +1004,9 @@ def typed_left_ruby(base_text, reading, span):
 def test_v2_migration_gaiji_base_left_ruby_upgrades(tmp_path):
     # Failure shape 1 (corpus 001395_49905): the left-ruby BASE is itself an
     # embedded gaiji reference `※［＃「漸／耳」、第4水準2-85-15］`. Its inner `」`
-    # and `］` are LITERAL base text — the parser resolves the base via
+    # and `］` are literal base text; the parser resolves the base via
     # `alloc.content_plain` and `ruby_node` emits a typed `direction:"left"`
-    # node verbatim. The old `[^」]`/`[^］]` char-class regex mis-anchored on
+    # node verbatim. The old `[^」]`/`[^］]` char-class regex mis-anchors on
     # the inner brackets and left the node raw; the structural parser types it.
     src = "［＃「※［＃「漸／耳」、第4水準2-85-15］」の左に「にい」のルビ］"
     raw_ruby = raw_marker(src, "ruby", 200)
@@ -1020,7 +1020,7 @@ def test_v2_migration_gaiji_base_left_ruby_upgrades(tmp_path):
 
 def test_v2_migration_compound_gaiji_base_left_ruby_upgrades(tmp_path):
     # Failure shape 2 (corpus 001395_49891): the base is a COMPOUND run with a
-    # gaiji in the middle — `銅※［＃「金＋拔のつくり」、第3水準1-93-6］子` — again
+    # gaiji in the middle (`銅※［＃「金＋拔のつくり」、第3水準1-93-6］子`), again
     # captured whole by the structural split, not the char-class regex.
     src = "［＃「銅※［＃「金＋拔のつくり」、第3水準1-93-6］子」の左に「どびょうし」のルビ］"
     raw_ruby = raw_marker(src, "ruby", 300)
@@ -1152,7 +1152,7 @@ def test_v2_migration_chitsuki_left_ruby_remerge_stops_at_inner_raw(tmp_path):
 
 def test_v2_migration_rejects_warning_extra_key(tmp_path):
     # Candidate warning has a key outside the allowed v2 warning shape
-    # {"code", "severity", "message", "span", "path"} — rejected even
+    # {"code", "severity", "message", "span", "path"}; rejected even
     # though every other field is otherwise correct.
     base = write_dump(
         tmp_path,
@@ -1236,7 +1236,7 @@ def test_append_mode_valid_source_note_append(tmp_path):
 
 
 def test_append_mode_multiple_source_note_blocks_pass(tmp_path):
-    # Multiple source_note blocks per work are legal — a blank/colophon line
+    # Multiple source_note blocks per work are legal: a blank/colophon line
     # can split contiguous terminal-provenance groups into distinct blocks;
     # the "appended blocks all source_note" invariant applies to each.
     base_blocks = [para(text("本文\n", 0, 7))]
@@ -1278,7 +1278,7 @@ def test_append_mode_rejects_wrong_region_class(tmp_path):
 
 def test_append_mode_rejects_inserted_not_appended(tmp_path):
     # The extra source_note is a well-formed block, but INSERTED before the
-    # last baseline block rather than appended after all of them — the
+    # last baseline block rather than appended after all of them; the
     # candidate's leading blocks no longer equal the baseline prefix.
     base_blocks = [para(text("前\n", 0, 5)), para(text("後\n", 100, 105))]
     base = write_dump(tmp_path, "a", {"w1": v2_doc(base_blocks)})
@@ -1326,8 +1326,8 @@ def test_append_mode_rejects_degenerate_span(tmp_path):
 
 
 def test_append_mode_rejects_terminator_stripped_values(tmp_path):
-    # Two adjacent content values where the first lacks its line terminator
-    # — without it the two values would concatenate into one line; the
+    # Two adjacent content values where the first lacks its line terminator;
+    # without it the two values would concatenate into one line; the
     # per-line invariant (values never concatenate lines) is violated.
     base_blocks = [para(text("本文\n", 0, 7))]
     base = write_dump(tmp_path, "a", {"w1": v2_doc(base_blocks)})
@@ -1349,7 +1349,7 @@ def test_append_mode_rejects_terminator_stripped_values(tmp_path):
 # Its signature is incompatible with what these tests need (explicit
 # byte_start/byte_end independent of source length, plus the real AAT
 # `x-source-marker-kind` for a bare-toggle marker, which is
-# containerOpen/containerClose — not "directive"), so a same-named
+# containerOpen/containerClose, not "directive"), so a same-named
 # redefinition here would silently shadow it and break every earlier test
 # that calls it. Hence a distinctly-named helper, `bare_marker`.
 
@@ -1508,7 +1508,7 @@ def test_bare_toggle_expected_counter_mismatch_fails(tmp_path):
 def test_bare_toggle_independence_missing_adoption_fails(tmp_path):
     # Baseline implies (via classify_tokens) exactly one valid yokogumi
     # adoption, but the candidate left the markers raw (byte-identical to
-    # baseline) — the independent derivation must catch this even though
+    # baseline); the independent derivation must catch this even though
     # there is no structural diff to inspect.
     inner = {
         "kind": "text",
@@ -1534,7 +1534,7 @@ def test_bare_toggle_independence_missing_adoption_fails(tmp_path):
 
 def test_bare_toggle_independence_invalid_adoption_fails(tmp_path):
     # Baseline's yokogumi/keigakomi markers interleave on one line, so
-    # classify_tokens invalidates BOTH constructs — no adoption is expected.
+    # classify_tokens invalidates BOTH constructs; no adoption is expected.
     # A candidate that nevertheless wraps the yokogumi span in a toggle
     # container (byte-exact and structurally recoverable) must still be
     # rejected: the independent derivation, not structural recoverability,
@@ -1574,7 +1574,7 @@ def test_bare_toggle_compensating_cross_line_adoption_fails(tmp_path):
     # line 2's yokogumi span cancels in the totals: observed yokogumi 1 ==
     # expected 1, declined 4 (line-1 pair 2 + line-2 open_k/close_k 2) ==
     # expected 4. Only the per-LINE binding (observed line 1 {0,0} !=
-    # expected {1,0}) catches it — must exit 2.
+    # expected {1,0}) catches it: must exit 2.
     open_y1 = bare_marker("［＃横組み］", line=1, bs=0, be=12)
     inner1 = {
         "kind": "text",

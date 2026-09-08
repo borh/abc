@@ -171,12 +171,12 @@ impl Allocator {
         Content::Segments(self.store.push_segments(segs))
     }
 
-    /// `Segment::Text(s)` — interns the string.
+    /// `Segment::Text(s)`: interns the string.
     pub fn seg_text(&mut self, s: &str) -> Segment {
         Segment::Text(self.store.intern(s))
     }
 
-    /// `Segment::Gaiji(g)` — wraps a payload built via [`Self::make_gaiji`].
+    /// `Segment::Gaiji(g)`: wraps a payload built via [`Self::make_gaiji`].
     #[must_use]
     pub fn seg_gaiji(&self, g: Gaiji) -> Segment {
         Segment::Gaiji(g)
@@ -273,7 +273,7 @@ impl Allocator {
         })
     }
 
-    /// `Node::Ruby(Ruby { side: Left, … })` — a left-side ruby.
+    /// `Node::Ruby(Ruby { side: Left, … })`: a left-side ruby.
     ///
     /// # Panics
     ///
@@ -332,7 +332,7 @@ impl Allocator {
     /// Panics if `target` is empty.
     #[allow(
         clippy::too_many_arguments,
-        reason = "every parameter is part of the bouten contract — kind / target / position / origin each carry independent semantics."
+        reason = "Kind, target, position, and origin carry independent semantics."
     )]
     pub fn bouten(
         &mut self,
@@ -446,13 +446,13 @@ impl Allocator {
         Node::Gaiji(g)
     }
 
-    /// `Node::Line(lf)` — a single-line layout directive.
+    /// `Node::Line(lf)`: a single-line layout directive.
     #[must_use]
     pub fn line(&self, lf: LineFormat) -> Node {
         Node::Line(lf)
     }
 
-    /// `Node::Warichu(Warichu { upper, lower })` — bare-content fields.
+    /// `Node::Warichu(Warichu { upper, lower })`: bare-content fields.
     #[must_use]
     pub fn warichu(&self, upper: Content, lower: Content) -> Node {
         Node::Warichu(Warichu { upper, lower })
@@ -514,14 +514,14 @@ impl Allocator {
         })
     }
 
-    /// `Node::Illustration` — keyword 挿絵 form.
+    /// `Node::Illustration`: keyword 挿絵 form.
     ///
     /// # Panics
     ///
     /// Panics if `file` is empty.
     #[allow(
         clippy::too_many_arguments,
-        reason = "every parameter is an independent part of the 挿絵 contract — file / number / dimensions / caption."
+        reason = "File, number, dimensions, and caption carry independent semantics."
     )]
     pub fn sashie(
         &mut self,
@@ -553,7 +553,7 @@ impl Allocator {
         }))
     }
 
-    /// `Node::Illustration` — general image form (leading description, no
+    /// `Node::Illustration`: general image form (leading description, no
     /// 挿絵 keyword / number / caption).
     ///
     /// # Panics

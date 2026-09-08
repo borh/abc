@@ -1,16 +1,16 @@
 //! Non-canonical directive catalogue for the notation-hygiene lint.
 //!
 //! [`canonical_directive`] maps a `［＃…］` directive body that the parser
-//! keeps as `DirectiveKind::Unknown` — because it is spelled as a *verified
-//! near-miss* of a recognized construct (送り仮名 drift, a synonym, or a
-//! malformed prefix / close) — to its canonical spelling. It returns `None`
+//! keeps as `DirectiveKind::Unknown` (because it is spelled as a *verified
+//! near-miss* of a recognized construct: 送り仮名 drift, a synonym, or a
+//! malformed prefix / close) to its canonical spelling. It returns `None`
 //! for a genuine editorial Unknown, so the lint that consumes it fires only
 //! on the closed, parser-verified catalogue below.
 //!
 //! Zero false positives by construction: the catalogue is a fixed map, not a
 //! fuzzy matcher, and the `lint_catalogue` self-test in the `aozora` crate
 //! pins the invariant that every suggested canonical parses
-//! to a non-Unknown node while every catalogue key still parses to Unknown —
+//! to a non-Unknown node while every catalogue key still parses to Unknown;
 //! so the map can never rot into suggesting a form the parser rejects, nor
 //! target a body the parser already recognizes.
 //!
@@ -40,7 +40,7 @@ const EXACT: &[(&str, &str)] = &[
     // 傍点 marker-suffix spellings → the canonical mark-prefix keyword.
     ("傍点（白丸）", "白丸傍点"),
     ("傍点◎", "二重丸傍点"),
-    // Region-close synonyms — okurigana drift / 文字下げ / 横書き=横組み /
+    // Region-close synonyms: okurigana drift / 文字下げ / 横書き=横組み /
     // 横組みの表=表, all resolving to the canonical `ここで…終わり` close.
     ("ここで左から右への横組み終わり", "ここで横組み終わり"),
     ("ここで横組みの表終わり", "ここで表終わり"),
@@ -68,7 +68,7 @@ pub(crate) fn is_digit_run(s: &str) -> bool {
             .all(|c| c.is_ascii_digit() || ('０'..='９').contains(&c))
 }
 
-/// Digit-preserving rules — the `{N}` run is copied verbatim. Grouped by the
+/// Digit-preserving rules: the `{N}` run is copied verbatim. Grouped by the
 /// scope each family normalises (font-size / region-open / region-close /
 /// alignment); the first group to claim the body wins.
 fn parameterized(body: &str) -> Option<String> {
@@ -182,7 +182,7 @@ fn forward_form(body: &str) -> Option<String> {
     }
 
     // Missing `は` before `ゴシック体`; `の小文字` drift (only when the head is a
-    // bare `「X」` target — excludes the editorial `…ローマ数字の小文字`).
+    // bare `「X」` target; excludes the editorial `…ローマ数字の小文字`).
     if let Some(head) = body.strip_suffix("ゴシック体")
         && head.ends_with('」')
     {
@@ -246,7 +246,7 @@ pub const CATALOGUE_SAMPLES: &[&str] = &[
     "この行2字下げ",
 ];
 
-/// Bodies that MUST stay a lossless `Unknown` — the negative catalogue that
+/// Bodies that MUST stay a lossless `Unknown`: the negative catalogue that
 /// anchors the zero-false-positive invariant from the *other* side.
 ///
 /// Drawn from the occurrence-ranked corpus residue (`corpus/render-digest.json`
@@ -254,14 +254,14 @@ pub const CATALOGUE_SAMPLES: &[&str] = &[
 /// and that neither Tier1 ([`canonical_directive`]) nor Tier2
 /// ([`crate::degraded::degraded_directive`]) may ever match:
 ///
-/// - **Editorial prose** — bibliographic / collation / conjecture / semantic
+/// - **Editorial prose**: bibliographic / collation / conjecture / semantic
 ///   notes (edition names, `では`, `誤記か`, `伏字`, `注釈番号`, `正字`) and
 ///   free-form spatial-layout descriptions (`上に…付き`, `右側に…形で`) for which
 ///   the core models no construct. Matching one would launder an editor's note
 ///   into a directive.
-/// - **Multi-axis compounds** — `、`-joined directives whose reduction
+/// - **Multi-axis compounds**: `、`-joined directives whose reduction
 ///   would drop an axis.
-/// - **Gaiji-composition descriptions** — `「X」の下に「Y」` glyph builds, owned
+/// - **Gaiji-composition descriptions**: `「X」の下に「Y」` glyph builds, owned
 ///   by the 外字 layer, not the directive catalogues.
 ///
 /// The `catalogue_refuses_every_editorial_body` self-test in the `aozora` crate
@@ -269,7 +269,7 @@ pub const CATALOGUE_SAMPLES: &[&str] = &[
 /// PR adds the adjacent editorial bodies its new rule sits near, so a future
 /// rule that over-generalises fails here instead of laundering prose.
 pub const EDITORIAL_MUST_STAY_UNKNOWN: &[&str] = &[
-    // Editorial prose — bibliographic / collation / conjecture / semantic.
+    // Editorial prose: bibliographic / collation / conjecture / semantic.
     "底本では「蒼空」",
     "入力者注",
     "未完",
@@ -281,18 +281,18 @@ pub const EDITORIAL_MUST_STAY_UNKNOWN: &[&str] = &[
     "「甲」の「乙」に代えて「丙」",
     "一つ目の「甲」は「乙」付き",
     "「甲」は「乙」の右側に注記するような形で",
-    // Spatial / layout descriptions the vertical core models no construct for —
+    // Spatial / layout descriptions without vertical core construct modeling:
     // ruby/annotation attaches only right (default) or 左に (left), never 上に
     // (above); "上部に出ている" / "下にポイントを下げて…行で" are free-form position
     // prose. Folding any onto a real leaf would be a spatial lie, so they stay
-    // inert — the decoys adjacent to Tier2's 下げて… indent rule (D6).
+    // inert: the decoys adjacent to Tier2's 下げて… indent rule (D6).
     "「甲」は上に「乙」付き",
     "「甲」は上部に出ている",
     "「甲」は「乙」の下にポイントを下げて2行で",
     // Reducing a multi-axis compound to one directive would lose an axis.
     "「甲」は上付き小文字、「乙」は分数",
     "「甲」は縦中横、「乙」は上付き小書き",
-    // Gaiji-composition descriptions — owned by the 外字 layer.
+    // Gaiji-composition descriptions: owned by the 外字 layer.
     "「窗」の下に「心」",
     "「甲」の中に「乙」",
 ];
@@ -315,7 +315,7 @@ mod tests {
             Some("ここで字下げ終わり")
         );
         // 中文字、ゴシック体 is lossy (gothic→bold erases the spelling the parser
-        // keeps Unknown to preserve), so it is NOT Tier1 — it moved to
+        // keeps Unknown to preserve), so it is not Tier1; it moved to
         // [`crate::degraded`] (Tier2, opt-in render only). Pin the boundary.
         assert_eq!(canonical_directive("中文字、ゴシック体"), None);
     }
@@ -435,7 +435,7 @@ mod tests {
 
     #[test]
     fn genuine_editorial_unknown_returns_none() {
-        // Real editorial notes must never match — the zero-FP anchor.
+        // Real editorial notes must never match: zero-FP anchor.
         assert!(canonical_directive("底本では「青空」").is_none());
         assert!(canonical_directive("入力者注").is_none());
         assert!(canonical_directive("「」は「」の「」").is_none());

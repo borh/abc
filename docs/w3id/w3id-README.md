@@ -19,5 +19,5 @@ rather than a permanent one.
 
 ## Contact
 
-Bor Hodošček — GitHub [@borh](https://github.com/borh),
-ORCID [0000-0003-2246-8774](https://orcid.org/0000-0003-2246-8774).
+Bor Hodošček (GitHub [@borh](https://github.com/borh),
+ORCID [0000-0003-2246-8774](https://orcid.org/0000-0003-2246-8774)).

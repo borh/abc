@@ -72,7 +72,7 @@ keyword_idents_2024 = "warn"
 # behind `Box`. The lexer's `SpanKind::Aozora` already wraps its
 # inner `AozoraNode` in `Box` so the variant is 8 bytes, but the
 # residual ratio against 0-byte unit variants (`Plain`, `Newline`)
-# still trips the heuristic. Allowed at the workspace level — the
+# still trips the heuristic. Allowed at the workspace level; the
 # related `clippy::large_enum_variant` carve-out below documents the
 # same call.
 variant_size_differences = "allow"

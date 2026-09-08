@@ -4,7 +4,7 @@
 //!
 //! 1. The Frame body buffer (a `SmallVec<[PairEvent; 16]>`) handles
 //!    nesting that exceeds the inline capacity by spilling to the heap
-//!    transparently — the registry shape at 16, 64 and 256 levels of
+//!    transparently: the registry shape at 16, 64 and 256 levels of
 //!    nesting must stay structurally consistent.
 //! 2. The streaming classifier's recognition is iterative, not
 //!    recursive (see `ClassifyStream::iter` + the `inner_stack` in
@@ -38,7 +38,7 @@ fn nested_annotation(depth: usize) -> String {
     s
 }
 
-/// 16 levels — exactly fills the `SmallVec` inline capacity.
+/// 16 levels: exactly fills the `SmallVec` inline capacity.
 #[test]
 fn nested_annotations_16_levels_lex_without_panic() {
     let src = nested_annotation(16);
@@ -63,7 +63,7 @@ fn nested_annotations_16_levels_lex_without_panic() {
     );
 }
 
-/// 64 levels — forces the `SmallVec` body buffer to spill to the heap.
+/// 64 levels: forces the `SmallVec` body buffer to spill to the heap.
 /// The result must still be structurally identical to the 16-level
 /// case (same registry shape, no diagnostics).
 #[test]
@@ -77,7 +77,7 @@ fn nested_annotations_64_levels_spill_to_heap_unchanged() {
     assert!(out.diagnostics.is_empty());
 }
 
-/// 256 levels — well past any plausible real-corpus nesting, included
+/// 256 levels: well past any plausible real-corpus nesting, included
 /// to verify the recognition loop is iterative (the classifier walks
 /// `frame.inner_stack` rather than recursing into nested helpers).
 /// A recursive helper at this depth would blow Rust's default 2 MiB

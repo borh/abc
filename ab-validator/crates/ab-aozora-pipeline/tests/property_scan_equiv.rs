@@ -5,7 +5,7 @@
 //! `aozora-scan/tests/property_backend_equiv.rs` already proves that
 //! the production `scan_offsets` agrees byte-for-byte with
 //! [`NaiveScanner`] on raw source bytes. That covers a *single layer*
-//! — the scanner — and says nothing about how the tokenize stage's output
+//! (the scanner) and says nothing about how the tokenize stage's output
 //! flows through pair / classify on into the lexer's normalized
 //! buffer.
 //!
@@ -20,7 +20,7 @@
 //!    or invalidated boundaries would surface here.
 //!
 //! 2. **Tokenize-stage monotonicity.** The Aozora pipeline can only *consume*
-//!    triggers (replacing them with PUA sentinels) — it never adds
+//!    triggers (replacing them with PUA sentinels); it never adds
 //!    new ones. Therefore the count of triggers in the *normalized*
 //!    buffer is at most the count in the *source* (modulo the sanitize
 //!    stage's rewrites: BOM strip, CRLF→LF, accent decomposition).
@@ -77,10 +77,10 @@ fn assert_scan_invariants(source: &str) {
     // (2) tokenize-stage monotonicity: the pipeline consumes (or passes
     // through) triggers but never invents new ones. The sanitize-stage
     // layer can rewrite sequences in ways that *add*
-    // characters from the lexer's reserved trigger set in principle —
+    // characters from the lexer's reserved trigger set in principle;
     // accent decomposition expands `〔NFC〕` into combining sequences
     // that are not themselves triggers, so this concern is theoretical
-    // — but the property catches any future sanitize / tokenize change
+    // but the property catches any future sanitize / tokenize change
     // that accidentally synthesises trigger glyphs.
     let source_triggers = scan_count(source);
     let normalized_triggers = norm_offsets.len();
@@ -109,7 +109,7 @@ fn plain_text_satisfies_invariants() {
 
 #[test]
 fn explicit_ruby_satisfies_invariants() {
-    // `｜青梅《おうめ》` — three triggers in source (`｜`, `《`, `》`),
+    // `｜青梅《おうめ》`: three triggers in source (`｜`, `《`, `》`),
     // all consumed into PUA sentinels by the classify stage → zero triggers in
     // normalized. Property: 0 ≤ 3.
     assert_scan_invariants("｜青梅《おうめ》");
@@ -133,14 +133,14 @@ fn literal_pua_keeps_scan_invariants() {
 proptest! {
     #![proptest_config(default_config())]
 
-    /// Workhorse — the SIMD scan / tokenize-stage monotonicity duality must
+    /// Workhorse: the SIMD scan / tokenize-stage monotonicity duality must
     /// hold over every Aozora-shaped fragment.
     #[test]
     fn aozora_fragment_scan_invariants_hold(s in aozora_fragment(120)) {
         assert_scan_invariants(&s);
     }
 
-    /// Pathological — runs of unbalanced trigger glyphs (the case that
+    /// Pathological: runs of unbalanced trigger glyphs (the case that
     /// most stresses tokenize → pair → classify trigger-consumption
     /// accounting).
     #[test]
@@ -148,7 +148,7 @@ proptest! {
         assert_scan_invariants(&s);
     }
 
-    /// Unicode adversarial — combining marks, RTL overrides, PUA
+    /// Unicode adversarial: combining marks, RTL overrides, PUA
     /// codepoints, full-width forms. The SIMD scanner must classify
     /// every Unicode shape correctly, and the lexer must not synthesise
     /// triggers when normalising adversarial input.

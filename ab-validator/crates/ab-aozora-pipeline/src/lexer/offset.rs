@@ -1,4 +1,4 @@
-//! Sanitized ↔ source byte-offset mapping — byte-offset mapping.
+//! Sanitized ↔ source byte-offset mapping.
 //!
 //! [`Document::parse`](crate) reports [`Diagnostic`](ab_aozora_spec::Diagnostic)
 //! spans in **sanitized** coordinates: the [`sanitize`](super::sanitize)
@@ -11,7 +11,7 @@
 //!
 //! BOM and `CR`/`LF` are pure deletions a byte-alignment can recover, but
 //! the `〔…〕` accent substitution (`ae&` → æ, `m'` → ḿ) changes length
-//! per digraph and cannot be recovered by alignment alone — it is the one
+//! per digraph and cannot be recovered by alignment alone; it is the one
 //! primitive a source-coordinate consumer can't derive robustly on its
 //! own. [`offset_map`] builds an exact map covering **all** the shifts.
 //!
@@ -38,7 +38,7 @@ use ab_aozora_syntax::Span;
 /// identity ([`OffsetMap::is_identity`]).
 #[derive(Debug, Clone)]
 pub struct OffsetMap {
-    /// Bytes of leading `U+FEFF` BOM stripped — a constant shift applied
+    /// Bytes of leading `U+FEFF` BOM stripped; a constant shift applied
     /// after the per-pass pieces resolve into post-BOM coordinates.
     bom: u32,
     /// `line_normalized → after_bom`: one anchor per `\r\n` collapse.
@@ -55,7 +55,7 @@ impl OffsetMap {
     /// Map a sanitized byte offset to the source byte offset it originated
     /// from. Offsets at or past the sanitized length map to the source
     /// length. A sanitized offset on a UTF-8 char boundary maps to a
-    /// source char boundary — the property diagnostic spans (always on
+    /// source char boundary, a property diagnostic spans (always on
     /// boundaries) rely on.
     #[must_use]
     pub fn source_offset(&self, sanitized: u32) -> u32 {
@@ -73,7 +73,7 @@ impl OffsetMap {
         Span::new(self.source_offset(span.start), self.source_offset(span.end))
     }
 
-    /// Whether the map is the identity — the source needed no sanitation
+    /// Whether the map is the identity: the source needed no sanitation
     /// (no BOM, no `\r`, no isolated rule, no decomposed accent), so
     /// sanitized and source coordinates coincide.
     #[must_use]
@@ -140,7 +140,7 @@ impl Piece {
 /// Build the exact [`OffsetMap`] for `source`.
 ///
 /// Re-derives the [`sanitize`](super::sanitize::sanitize)
-/// transform's offset shifts pass by pass. Pure — allocates only the
+/// transform's offset shifts pass by pass. Pure function; allocates only the
 /// small per-pass anchor tables (empty for a source that needs no
 /// sanitation).
 ///
@@ -151,7 +151,7 @@ pub fn offset_map(source: &str) -> OffsetMap {
     use super::sanitize::{has_long_rule_line, isolate_decorative_rules, normalize_line_endings};
     use std::borrow::Cow;
 
-    // Pass 1 — strip every leading BOM. A single constant shift.
+    // Pass 1: strip every leading BOM. A single constant shift.
     let mut after_bom = source;
     while let Some(rest) = after_bom.strip_prefix('\u{FEFF}') {
         after_bom = rest;
@@ -162,7 +162,7 @@ pub fn offset_map(source: &str) -> OffsetMap {
     )]
     let bom = (source.len() - after_bom.len()) as u32;
 
-    // Pass 2 — CR/LF folding. Only `\r\n` (2→1) shifts; lone `\r` (1→1)
+    // Pass 2: CR/LF folding. Only `\r\n` (2→1) shifts; lone `\r` (1→1)
     // does not. Mirror normalize_line_endings' `\r` scan.
     let crlf_edits = scan_crlf_edits(after_bom);
     let line_normalized: Cow<'_, str> = if after_bom.contains('\r') {
@@ -171,7 +171,7 @@ pub fn offset_map(source: &str) -> OffsetMap {
         Cow::Borrowed(after_bom)
     };
 
-    // Pass 3 — decorative-rule isolation. Each insertion adds one `\n`.
+    // Pass 3: decorative-rule isolation. Each insertion adds one `\n`.
     let rule_edits = scan_rule_edits(&line_normalized);
     let rule_isolated: Cow<'_, str> = if has_long_rule_line(&line_normalized) {
         Cow::Owned(isolate_decorative_rules(&line_normalized))
@@ -179,7 +179,7 @@ pub fn offset_map(source: &str) -> OffsetMap {
         line_normalized
     };
 
-    // Pass 4 — `〔…〕` accent decomposition. Per length-changing digraph.
+    // Pass 4: `〔…〕` accent decomposition. Per length-changing digraph.
     let accent_edits = scan_accent_edits(&rule_isolated);
 
     OffsetMap {

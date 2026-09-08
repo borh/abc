@@ -120,7 +120,7 @@ fn mismatched_container_close_fires_as_error() {
 
 #[test]
 fn matched_container_close_is_silent() {
-    // Same family open/close — the amount payload differs internally
+    // Same family open/close: the amount payload differs internally
     // (`Indent{2}` open vs `Indent{0}` close) but the discriminant is
     // equal, so this must NOT fire.
     assert_eq!(
@@ -319,7 +319,7 @@ fn break_on_next_line_is_silent() {
 #[test]
 fn break_in_block_container_is_silent() {
     // Paired `［＃ここから…］` block containers persist across breaks (print
-    // typography) — a break inside one must NOT fire.
+    // typography): a break inside one must not fire.
     assert_eq!(
         count_code(
             "［＃ここから2字下げ］本文［＃改ページ］残り［＃ここで字下げ終わり］",
@@ -350,7 +350,7 @@ fn bracketed_kaeriten_no_pair_fires_as_error() {
 
 #[test]
 fn kaeriten_base_present_is_silent() {
-    // `二` and `一` both present — order does not matter (real kanbun writes
+    // `二` and `一` both present: order does not matter (real kanbun writes
     // `二` before `一`).
     assert_eq!(
         count_code("非［＃二］怪物［＃一］", codes::BRACKETED_KAERITEN_NO_PAIR),
@@ -361,7 +361,7 @@ fn kaeriten_base_present_is_silent() {
         count_code("有［＃レ］朋", codes::BRACKETED_KAERITEN_NO_PAIR),
         0
     );
-    // 上下点 may skip `中` — `上` + `下` with no `中` is a valid two-level
+    // 上下点 may skip `中`: `上` + `下` with no `中` is a valid two-level
     // pair (base `上` is present).
     assert_eq!(
         count_code("有［＃下］其人［＃上］", codes::BRACKETED_KAERITEN_NO_PAIR),
@@ -372,7 +372,7 @@ fn kaeriten_base_present_is_silent() {
 #[test]
 fn kaeriten_base_presence_is_document_wide() {
     // The base `一` lives in a different clause (after the `。`) than the
-    // `二` — kanbun return groups span clause boundaries, so this is NOT
+    // `二`: kanbun return groups span clause boundaries, so this is not
     // flagged (document-wide base presence).
     assert_eq!(
         count_code(
@@ -381,7 +381,7 @@ fn kaeriten_base_presence_is_document_wide() {
         ),
         0
     );
-    // `三` with `一` present but no `二` is silent — base-only, not a strict
+    // `三` with `一` present but no `二` is silent: base-only, not a strict
     // ladder.
     assert_eq!(
         count_code("見［＃三］而知［＃一］", codes::BRACKETED_KAERITEN_NO_PAIR),
@@ -402,7 +402,7 @@ fn kaeriten_base_presence_is_document_wide() {
 #[test]
 fn kaeriten_outside_kanbun_fires_as_warning() {
     // A single `レ` kaeriten (non-laddering, so no pair diagnostic) sitting
-    // in kana-dominant prose — the only kaeriten in the document.
+    // in kana-dominant prose: the only kaeriten in the document.
     let sev = one_diag_severity("これは［＃レ］と書いた。", codes::KAERITEN_OUTSIDE_KANBUN);
     assert_eq!(sev, Severity::Warning);
 }

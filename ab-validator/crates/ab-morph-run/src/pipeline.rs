@@ -135,7 +135,7 @@ impl std::ops::AddAssign for PhaseTimings {
 /// Log a one-line, stderr-only diagnostic summary of a run's phase-timing
 /// split (mirrors the `auto-jobs:` line style in `auto_jobs.rs`). `n` is the
 /// number of shards summed into `timings`. Never written to any
-/// parquet/JSONL output — diagnostic only.
+/// parquet/JSONL output; diagnostic only.
 fn log_phase_timings(n: usize, timings: &PhaseTimings) {
     let pct = |d: std::time::Duration, total: std::time::Duration| -> f64 {
         if total.is_zero() {
@@ -922,7 +922,7 @@ pub(crate) fn run_analyze_aat_serial(
         // per-document peak excludes it (several× file size on the large tail).
         drop(aat);
         // Orthographic normalization (katakana→hiragana) for pre-war text.
-        // `None` means "no normalization applied" — analyze the document text
+        // `None` means "no normalization applied": analyze the document text
         // directly with NO extra copy (P2; warehouse runs always take this path).
         let (normalized_text_opt, offset_map_opt, annotations_opt): (
             Option<String>,
@@ -1071,7 +1071,7 @@ pub(crate) fn run_analyze_aat_serial(
                         // Morphemes remain in normalized coords. Leave source_text as
                         // the normalized text the analyzer produced (consistent with
                         // the morphemes). Record the failure so it is never silently
-                        // dropped (Invariant 4) — including on the warehouse path,
+                        // dropped (Invariant 4), including on the warehouse path,
                         // which publication uses and which has no errors_writer.
                         let (code, message) = match &e {
                             ab_ortho_detect::OrthoMapError::CrossesBoundary { range, boundary } => {
@@ -1129,12 +1129,12 @@ pub(crate) fn run_analyze_aat_serial(
         analysis_time += analysis_start.elapsed();
 
         // Cross-analyzer (n-way / pairwise) comparison requires every analysis
-        // to byte-match the source. A single analyzer whose surfaces diverge —
-        // e.g. a dictionary that lexicalizes a decorative run and sweeps leading
-        // full-width spaces into a token — must not poison the whole work's
-        // comparison for the other analyzers. Validate each analysis here and
-        // drop only the offending analyzers from the comparison set below; their
-        // raw per-analyzer morphemes are still written unchanged.
+        // to byte-match the source. A single analyzer whose surfaces diverge
+        // (such as sweeping leading full-width spaces into a token) must not
+        // poison the whole work's comparison for other analyzers. Validate
+        // each analysis here and drop only the offending analyzers from the
+        // comparison set below; their raw per-analyzer morphemes are still
+        // written unchanged.
         let invalid_for_compare = invalid_analyzers_for_compare(&analyses, &document.text);
 
         let adj_start = std::time::Instant::now();
@@ -2218,13 +2218,13 @@ fn shard_staging_root(warehouse_dir: &Path, run_id: &str) -> PathBuf {
 }
 
 /// A staging owner is alive iff its PID exists and its cmdline names this
-/// binary — the cmdline check closes the PID-reuse hole (an unrelated process
+/// binary: the cmdline check closes the PID-reuse hole (an unrelated process
 /// that recycled the PID does not block cleanup).
 ///
 /// Any error reading `/proc/<pid>/cmdline` (including a permissions error, not
 /// just "no such process") is treated as dead. On default Linux configs (no
 /// `hidepid` mount option restricting `/proc` visibility), an unreadable
-/// cmdline is effectively equivalent to ESRCH — the process is gone — so this
+/// cmdline is effectively equivalent to ESRCH (the process is gone), so this
 /// is a reasonable default rather than a conservative approximation.
 fn staging_owner_alive(pid: u32, cmdline_needle: &str) -> bool {
     match std::fs::read(format!("/proc/{pid}/cmdline")) {

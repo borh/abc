@@ -26,7 +26,7 @@ use std::time::Instant;
 
 /// Classify-stage recogniser subsystem identifier.
 ///
-/// One variant per major recogniser entry point. The set is closed —
+/// One variant per major recogniser entry point. The set is closed:
 /// adding a new variant is an explicit decision because each variant
 /// implies a corresponding `SubsystemGuard::new(...)` call site.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -34,17 +34,17 @@ pub enum Subsystem {
     // -------------------------------------------------------------
     // Recogniser leaves (do not nest with each other)
     // -------------------------------------------------------------
-    /// `recognize_ruby` — paired-quote ruby spans `｜base《reading》`.
+    /// `recognize_ruby`: paired-quote ruby spans `｜base《reading》`.
     Ruby,
-    /// `recognize_annotation` — bracket-hash annotation `［＃...］`.
+    /// `recognize_annotation`: bracket-hash annotation `［＃...］`.
     Directive,
-    /// `recognize_gaiji` — gaiji marker `※［＃...］`.
+    /// `recognize_gaiji`: gaiji marker `※［＃...］`.
     Gaiji,
-    /// `build_content_from_body` — segment construction + interning
+    /// `build_content_from_body`: segment construction + interning
     /// for ruby readings, bouten targets, warichu bodies, etc.
     BuildContent,
     /// `body_dispatcher` Aho-Corasick pattern lookup inside
-    /// `classify_annotation_body` — covers the ~30 fixed body
+    /// `classify_annotation_body`: covers the ~30 fixed body
     /// keywords (kaeriten, indent, warichu open/close, etc.).
     BodyDispatcher,
 
@@ -52,42 +52,42 @@ pub enum Subsystem {
     // Framework / dispatch (may nest with leaves; their total double-
     // counts the leaf time; subtract leaves to get pure framework cost)
     // -------------------------------------------------------------
-    /// Outer `ClassifyStream::next()` body — wraps every per-event
+    /// Outer `ClassifyStream::next()` body: wraps every per-event
     /// dispatch including all recogniser calls. Total time minus
     /// the recogniser leaves' sum gives the pure dispatch overhead.
     IterDispatch,
-    /// `forward_target_is_preceded` — per-call AC index lookup or
+    /// `forward_target_is_preceded`: per-call AC index lookup or
     /// substring scan over the source preceding the current open.
     ForwardTargetCheck,
-    /// `install_forward_target_index_from_source` — one-time-per-
+    /// `install_forward_target_index_from_source`: one-time-per-
     /// document pre-pass that builds the source-byte AC quote-body
     /// index. Called once per `classify()` entry.
     ForwardIndexInstall,
-    /// `append_to_frame` — per-event frame buffer push + nested
+    /// `append_to_frame`: per-event frame buffer push + nested
     /// pair-stack maintenance. Called on every event consumed
     /// inside an open frame.
     FrameAppend,
-    /// `recognize_and_emit` — runs when the outermost open closes;
+    /// `recognize_and_emit`: runs when the outermost open closes;
     /// dispatches into the per-`PairKind` recogniser. Wraps recogniser
-    /// leaves so its time INCLUDES Ruby/Directive/Gaiji/etc. — the
+    /// leaves so its time includes Ruby/Directive/Gaiji/etc.: the
     /// dispatch overhead = `recognize_and_emit` - `leaf_total`.
     RecognizeAndEmit,
-    /// `replay_unrecognised_body` — frames whose recogniser declined
+    /// `replay_unrecognised_body`: frames whose recogniser declined
     /// (or whose kind has no recogniser at top level) walk the body
     /// events back as Plain spans. One frame may yield many spans.
     ReplayBody,
-    /// `open_frame` — initial frame allocation when an outer `PairOpen`
+    /// `open_frame`: initial frame allocation when an outer `PairOpen`
     /// appears at top level. Allocates the body buffer `SmallVec`.
     OpenFrame,
-    /// `flush_plain_up_to` — emit any pending plain run on outer
+    /// `flush_plain_up_to`: emit any pending plain run on outer
     /// boundary (newline / Aozora yield). Cheap, but called per
     /// trigger event.
     FlushPlain,
-    /// `try_ruby_emit` — wraps `recognize_ruby`. Pre-work: scan
+    /// `try_ruby_emit`: wraps `recognize_ruby`. Pre-work: scan
     /// preceding source text for `｜` (potential O(N) per ruby on
     /// large pending plain runs), build synthetic event vec.
     TryRubyEmit,
-    /// `try_bracket_emit` — wraps `recognize_annotation`. Pre-work:
+    /// `try_bracket_emit`: wraps `recognize_annotation`. Pre-work:
     /// frame setup + sentinel padding decisions.
     TryBracketEmit,
     /// Outer `next()` loop body INCLUDING all sub-callees, MINUS the
@@ -151,7 +151,7 @@ impl Subsystem {
     }
 
     /// Whether this subsystem is a "leaf" (does not call other
-    /// instrumented entries) — used by probes to compute the
+    /// instrumented entries), used by probes to compute the
     /// pure-dispatch overhead.
     #[must_use]
     pub fn is_leaf(self) -> bool {
@@ -307,7 +307,7 @@ thread_local! {
 }
 
 /// Append one replayed-body size (the event count of a frame whose
-/// recogniser declined and was walked back as Plain spans — see
+/// recogniser declined and was walked back as Plain spans; see
 /// [`Subsystem::ReplayBody`]) to the thread-local sample list.
 pub fn record_replay_body_size(size: u64) {
     REPLAY_SIZES.with(|v| v.borrow_mut().push(size));

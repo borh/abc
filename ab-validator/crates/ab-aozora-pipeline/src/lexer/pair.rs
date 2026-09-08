@@ -1,4 +1,4 @@
-//! Pair stage — streaming balanced-stack pairing over the tokenize-stage token stream.
+//! Pair stage: streaming balanced-stack pairing over the tokenize-stage token stream.
 //!
 //! Consumes the [`Token`] iterator produced by the tokenize stage and emits a
 //! parallel [`PairEvent`] iterator: [`Token::Text`] / [`Token::Newline`]
@@ -11,9 +11,9 @@
 //! Aozora annotation bodies nest:
 //!
 //! ```text
-//! ［＃「青空」に傍点］       — quoted literal nested inside bracket body
-//! ［＃底本では「旧字」］      — same shape, different keyword
-//! ［＃「X［＃「Y」に傍点］Z」は底本では「W」］   — doubly nested
+//! ［＃「青空」に傍点］:       quoted literal nested inside bracket body
+//! ［＃底本では「旧字」］:      same shape, different keyword
+//! ［＃「X［＃「Y」に傍点］Z」は底本では「W」］:   doubly nested
 //! ```
 //!
 //! A naïve "find the next `］`" scan hits the *first* `］` even when it
@@ -32,7 +32,7 @@
 //!   open never closed; treat its accumulated body events as plain".
 //! * **Stray close** (empty stack or kind-mismatched top): emitted as
 //!   [`PairEvent::Unmatched`] with a [`Diagnostic::UnmatchedClose`].
-//!   The stack is *not* popped — this is deliberately conservative, so
+//!   The stack is not popped (conservative by design, so
 //!   a well-formed outer pair like `［...］` still closes correctly even
 //!   when an inner stray `》` appears inside the body.
 //! * **Bracket is a hard pairing scope** (refines the stray-close rule
@@ -40,13 +40,13 @@
 //!   non-bracket opens are stacked above it, force-resolving those opens
 //!   as [`PairEvent::Unclosed`] (innermost-first) before the
 //!   [`PairEvent::PairClose`]. This keeps an unbalanced `「` inside a
-//!   directive body — an image caption `［＃「…（fig）入る］`, a composed-glyph
-//!   gaiji `［＃「口＋「皐」…］`, a typo-note quoting literal quotes — from
+//!   directive body (an image caption `［＃「…（fig）入る］`, a composed-glyph
+//!   gaiji `［＃「口＋「皐」…］`, a typo-note quoting literal quotes) from
 //!   swallowing the `］` so the bracket never closes and the classifier
 //!   sinks the rest of the document to plain. A balanced body never
 //!   triggers it, except a closing delimiter quoted as a single glyph. That
 //!   glyph is text when immediately followed by its quote closer. A `」`
-//!   still cannot cross a bracket downward — only `］` gets this scope.
+//!   still cannot cross a bracket downward; only `］` gets this scope.
 
 use core::iter::Peekable;
 use core::mem;
@@ -125,7 +125,7 @@ pub enum PairEvent {
         /// Bracket family of the open that never closed.
         kind: PairKind,
         /// Sanitized-source byte span of the original (still-open) open
-        /// delimiter — *not* an end-of-input position.
+        /// delimiter, not an end-of-input position.
         span: Span,
     },
 
@@ -138,7 +138,7 @@ pub enum PairEvent {
         span: Span,
     },
 
-    /// Unchanged from [`Token::Newline`] — kept so the classify stage can
+    /// Unchanged from [`Token::Newline`]; kept so the classify stage can
     /// attach line structure to block-level annotations.
     Newline {
         /// Sanitized-source byte offset of the `\n`.
@@ -253,7 +253,7 @@ where
     }
 
     /// Borrow the resolved [`PairLink`] list in place. Same caveat
-    /// applies — only complete after exhaustion.
+    /// applies: only complete after exhaustion.
     #[must_use]
     pub fn links(&self) -> &[PairLink] {
         &self.links
@@ -295,9 +295,9 @@ where
             // A `］` treats its bracket as a *hard pairing scope*: it closes
             // the nearest enclosing `［`, force-resolving any non-bracket opens
             // stacked above that bracket as `Unclosed` (innermost-first). This
-            // is what stops an unbalanced `「` inside a directive body — e.g.
+            // is what stops an unbalanced `「` inside a directive body (e.g.
             // `［＃「…（fig）入る］` or the composed-glyph gaiji
-            // `［＃「口＋「皐」…］` — from burying the `］` so the bracket never
+            // `［＃「口＋「皐」…］`) from burying the `］` so the bracket never
             // closes and the classifier sinks the rest of the document to plain.
             // A quoted scalar closer is already retained as text above.
             if pair_kind == PairKind::Bracket
@@ -374,7 +374,7 @@ where
         if self.eof_drain {
             // Drain residual stack entries as Unclosed events. We pop
             // from the BACK so innermost (last-pushed) opens surface
-            // first — same diagnostic order the legacy `pair()` used.
+            // first, matching the diagnostic order legacy `pair()` used.
             if let Some((kind, span, _)) = self.stack.pop() {
                 self.diagnostics
                     .push(Diagnostic::unclosed_bracket(span, kind));
@@ -392,8 +392,8 @@ where
                 // it on the stack makes the classifier buffer the rest of
                 // the document (one stray gloss bracket would bury every
                 // later line's markers). Expire the lowest open bracket
-                // and everything nested above it, innermost-first —
-                // mirroring the EOF drain — then surface the newline.
+                // and everything nested above it, innermost-first,
+                // mirroring the EOF drain, then surface the newline.
                 // Opens BELOW the bracket (a multi-paragraph 「) survive.
                 for entry in &mut self.stack {
                     if entry.0 == PairKind::Bracket && entry.2 > 0 {
@@ -572,7 +572,7 @@ mod tests {
     fn newline_keeps_multi_line_directive_bracket_open() {
         // A `［＃…` directive legitimately spans lines in rare editorial
         // notes (北條民雄全集's ［＃入力者註：…9 lines…］). Only PLAIN `［`
-        // opens — which can never become directives — expire at the
+        // opens (which can never become directives) expire at the
         // newline.
         let (events, diagnostics) = run("［＃入力者註：以下を修正した。\n「甲」→「乙」］\n本文\n");
         assert!(
@@ -592,7 +592,7 @@ mod tests {
     fn directive_bracket_expires_after_bounded_newline_allowance() {
         // A stray unclosed ［＃ (a typo'd nested marker like
         // ［＃［愛」に「ママ」の注記］) may span lines, but only up to the
-        // bounded allowance — beyond it the expiry reclaims it so the
+        // bounded allowance; beyond it the expiry reclaims it so the
         // rest of the document still classifies.
         let mut src = String::from("可愛［＃タイポ\n");
         for _ in 0..40 {
@@ -846,7 +846,7 @@ mod tests {
     #[test]
     fn pair_stream_eof_drains_innermost_first_after_multiple_unclosed() {
         let (events, diagnostics) = run("［＃［＃［＃");
-        // Filter Unclosed events out — they should be the LAST three
+        // Filter Unclosed events out: they should be the last three
         // events of the stream (after Open/Solo/Open/Solo/Open/Solo).
         let unclosed: Vec<&PairEvent> = events
             .iter()
@@ -889,7 +889,7 @@ mod tests {
             let _ = stream.next();
         }
         let mid = stream.take_diagnostics();
-        // 0 or more diagnostics — exact count depends on tokenisation,
+        // 0 or more diagnostics: exact count depends on tokenisation,
         // we only require the call to be safe and return what was
         // accumulated so far.
         let _ = mid.len(); // observably non-panicking access
@@ -931,7 +931,7 @@ mod tests {
     }
 
     proptest! {
-        /// Output is a pure function of input — running the same source
+        /// Output is a pure function of input: running the same source
         /// twice must produce identical event sequences.
         #[test]
         fn proptest_pair_is_deterministic(src in source_strategy()) {

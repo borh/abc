@@ -42,30 +42,18 @@ impl Sentinel {
         Self::BlockClose,
     ];
 
-    /// Codepoint for this sentinel kind. Compiles to a constant — the
+    /// Codepoint for this sentinel kind. Compiles to a constant: the
     /// `#[repr(u32)]` discriminant is the codepoint scalar, so the
-    /// transmute via `char::from_u32_unchecked` is a noop. We use the
-    /// safe `char::from_u32` path here and rely on the variant
-    /// discriminants being valid scalar values (they are: PUA is a
-    /// proper subset of the scalar range and all four sentinels lie
-    /// inside it).
+    /// transmute via `char::from_u32_unchecked` is a no-op.
     ///
     /// # Panics
     ///
-    /// `panic!`s with a const-eval-friendly message if a future
-    /// variant ever lands an invalid Unicode scalar discriminant.
-    /// All current variants ([`Self::Inline`] / [`Self::BlockLeaf`] /
-    /// [`Self::BlockOpen`] / [`Self::BlockClose`]) lie in the
-    /// `U+E001..U+E004` PUA range and never trigger the panic; the
-    /// arm exists to keep `#[repr(u32)]` discriminants honest at
-    /// const-eval time.
+    /// Panics if a discriminant is not a valid Unicode scalar value.
     #[must_use]
     pub const fn as_char(self) -> char {
         // SAFETY-equivalent reasoning: each discriminant is a valid
         // scalar value (PUA codepoint), so `char::from_u32` returns
-        // `Some` for every variant. We unwrap with a const-friendly
-        // pattern that turns the panic into a const-eval error if a
-        // future variant ever lands an invalid scalar.
+        // `Some` for every variant.
         match char::from_u32(self as u32) {
             Some(c) => c,
             None => panic!("Sentinel discriminant must be a valid Unicode scalar"),
@@ -88,31 +76,27 @@ impl Sentinel {
 
 /// Inline Aozora span (ruby / bouten / annotation / gaiji / TCY / kaeriten).
 ///
-/// Convenience shim — equivalent to [`Sentinel::Inline`]'s
-/// [`as_char`](Sentinel::as_char).
+/// Convenience constant equivalent to `Sentinel::Inline.as_char()`.
 pub const INLINE_SENTINEL: char = Sentinel::Inline.as_char();
 
 /// Block-leaf Aozora line (page break, section break, leaf indent, sashie).
 ///
-/// Convenience shim — equivalent to [`Sentinel::BlockLeaf`]'s
-/// [`as_char`](Sentinel::as_char).
+/// Convenience constant equivalent to `Sentinel::BlockLeaf.as_char()`.
 pub const BLOCK_LEAF_SENTINEL: char = Sentinel::BlockLeaf.as_char();
 
 /// Paired-container open line (e.g. `［＃ここから字下げ］`).
 ///
-/// Convenience shim — equivalent to [`Sentinel::BlockOpen`]'s
-/// [`as_char`](Sentinel::as_char).
+/// Convenience constant equivalent to `Sentinel::BlockOpen.as_char()`.
 pub const BLOCK_OPEN_SENTINEL: char = Sentinel::BlockOpen.as_char();
 
 /// Paired-container close line (e.g. `［＃ここで字下げ終わり］`).
 ///
-/// Convenience shim — equivalent to [`Sentinel::BlockClose`]'s
-/// [`as_char`](Sentinel::as_char).
+/// Convenience constant equivalent to `Sentinel::BlockClose.as_char()`.
 pub const BLOCK_CLOSE_SENTINEL: char = Sentinel::BlockClose.as_char();
 
 /// All four sentinels in declaration order.
 ///
-/// Convenience shim — equivalent to mapping [`Sentinel::ALL`] through
+/// Convenience constant equivalent to mapping [`Sentinel::ALL`] through
 /// [`Sentinel::as_char`].
 pub const ALL_SENTINELS: [char; 4] = [
     Sentinel::Inline.as_char(),

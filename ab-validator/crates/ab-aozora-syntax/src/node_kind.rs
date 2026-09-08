@@ -8,8 +8,8 @@
 //! the tag to a stable camelCase string via [`NodeKind::as_json_tag`]).
 //!
 //! The typed enum (rather than a `&'static str` constant) lets every
-//! consumer pattern-match the tag exhaustively — the compiler points
-//! out a new variant landing without a wire mapping — and concentrates
+//! consumer pattern-match the tag exhaustively (the compiler points
+//! out a new variant landing without a wire mapping) and concentrates
 //! the camelCase string in a single authority.
 
 /// Cross-cutting tag for an AST node or `NodeRef` projection.
@@ -18,7 +18,7 @@
 /// project from `Node`'s discriminant. The
 /// final two ([`Self::ContainerOpen`] / [`Self::ContainerClose`])
 /// only arise from `NodeRef`'s container open /
-/// close variants — the inline `Container` payload uses
+/// close variants: the inline `Container` payload uses
 /// [`Self::Container`].
 ///
 /// `#[non_exhaustive]` so adding a new `Node` variant only needs
@@ -32,11 +32,11 @@
 pub enum NodeKind {
     /// Ruby annotation (`｜base《reading》`).
     Ruby,
-    /// Bouten (傍点) — emphasis dots over a span.
+    /// Bouten (傍点): emphasis dots over a span.
     Bouten,
-    /// 縦中横 (tate-chu-yoko) — horizontal text inside vertical run.
+    /// 縦中横 (tate-chu-yoko): horizontal text inside vertical run.
     CombineUpright,
-    /// 外字 (gaiji) — non-Unicode character reference.
+    /// 外字 (gaiji): non-Unicode character reference.
     Gaiji,
     /// Inline indent (字下げ) marker.
     Indent,
@@ -44,29 +44,29 @@ pub enum NodeKind {
     AlignEnd,
     /// Centring (中央) marker (`ページの左右中央` / `中央揃え`).
     Center,
-    /// 割注 (warichu) — split-line annotation.
+    /// 割注 (warichu): split-line annotation.
     Warichu,
-    /// 罫囲み (keigakomi) — ruled box.
+    /// 罫囲み (keigakomi): ruled box.
     Framed,
-    /// ゴシック体 line marker (`この行はゴシック体`) — sets the line it sits on
+    /// ゴシック体 line marker (`この行はゴシック体`): sets the line it sits on
     /// in gothic ([`crate::Format::Gothic`], distinct from 太字).
     LineGothic,
-    /// Absolute font-size line marker (`大文字` … `特大文字、太字`) — sizes the
+    /// Absolute font-size line marker (`大文字` … `特大文字、太字`): sizes the
     /// line it sits on.
     LineFontSize,
     /// 改ページ (page break).
     PageBreak,
     /// Section break (大見出し系統合).
     SectionBreak,
-    /// 本文終わり (body-end marker) — main body ends, colophon follows.
+    /// 本文終わり (body-end marker): main body ends, colophon follows.
     BodyEnd,
-    /// 改行 (forced line break) — in-paragraph `<br />`.
+    /// 改行 (forced line break): in-paragraph `<br />`.
     ForcedBreak,
     /// Aozora heading (見出し).
     Heading,
     /// Heading hint that informs downstream rendering decisions.
     HeadingHint,
-    /// 挿絵 (sashie) — illustration reference.
+    /// 挿絵 (sashie): illustration reference.
     Illustration,
     /// Supplied return mark or kunten okurigana.
     Kunten,
@@ -76,16 +76,16 @@ pub enum NodeKind {
     Directive,
     /// Double-angle quotation (input `≪…≫`, display `《…》`).
     AngleQuote,
-    /// 太字 / 斜体 (bold / italic) — forward-reference emphasis leaf.
+    /// 太字 / 斜体 (bold / italic): forward-reference emphasis leaf.
     Emphasis,
-    /// Side annotation (注記) — `「X」の左に「Y」の注記`.
+    /// Side annotation (注記): `「X」の左に「Y」の注記`.
     MarginNote,
     /// Inline-attached container (字下げ系の `Node` 包み込み).
     Container,
-    /// `NodeRef::BlockOpen` projection — paired-container open
+    /// `NodeRef::BlockOpen` projection: paired-container open
     /// sentinel position.
     ContainerOpen,
-    /// `NodeRef::BlockClose` projection — paired-container close
+    /// `NodeRef::BlockClose` projection: paired-container close
     /// sentinel position.
     ContainerClose,
 }
@@ -170,7 +170,7 @@ impl NodeKind {
 mod tests {
     use super::*;
 
-    /// camelCase strings are pinned — accidental rename of one breaks
+    /// camelCase strings are pinned; accidental rename of one breaks
     /// this test instead of silently breaking downstream tooling that
     /// switches on the tag.
     #[test]

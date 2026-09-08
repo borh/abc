@@ -3,8 +3,8 @@
 //! Single source of truth for the decode + hash pipeline shared by `ab-check`,
 //! `ab-index`, and (text-only) `ab-coverage`. The decoder strips a UTF-8 BOM,
 //! then tries strict UTF-8, then falls back to Windows-31J (Shift_JIS) with a
-//! `windows-31j-lossy` classification when bytes are invalid — matching the
-//! behaviour of reference Aozora parsers.
+//! `windows-31j-lossy` classification when bytes are invalid (matching the
+//! behaviour of reference Aozora parsers).
 
 use anyhow::Result;
 use encoding_rs::SHIFT_JIS;
@@ -27,8 +27,8 @@ pub struct DecodedSource {
 /// # Errors
 ///
 /// Returns an error when the bytes start with a UTF-8 BOM but the bytes that
-/// follow are not valid UTF-8 — i.e. a file that claims to be UTF-8-encoded but
-/// is not. Plain UTF-8 and Windows-31J inputs never error.
+/// follow are not valid UTF-8 (such as a file that claims to be UTF-8-encoded but
+/// is not). Plain UTF-8 and Windows-31J inputs never error.
 pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
     let raw_sha256 = format!("sha256:{}", hex_sha256(bytes));
 

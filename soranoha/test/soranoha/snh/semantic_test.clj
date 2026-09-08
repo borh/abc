@@ -1,7 +1,7 @@
 (ns soranoha.snh.semantic-test
   "The semantic boundary rules: real-calendar effective dates and
-  absolute upstream origins — enforced in code, never via JSON Schema
-  `format`. The valid fixture vectors must pass both checks."
+  absolute upstream origins (enforced in code, never via JSON Schema
+  `format`). The valid fixture vectors must pass both checks."
   (:require [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]
             [soranoha.core.canonical :as canonical]

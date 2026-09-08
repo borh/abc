@@ -44,8 +44,9 @@ establish their current applicability. Preparation does not publish anything.
 The build log names the generated JSON report under `production/root/runs`.
 The new export directory contains each work's TEI, plaintext, Markdown, validation,
 projection and fidelity reports, including works whose assessment does not permit publication.
-Markdown and its projection report are experimental review artifacts; the signed
-publication protocol continues to identify TEI and plaintext.
+Markdown is now a published per-work artifact alongside TEI and plaintext
+(`snh-manifest/2`); its projection report remains an experimental review
+artifact outside the signed set.
 Use a new export directory for subsequent iterations; the build cache is reused.
 Review the resulting admission partition and export measurements, then commit
 the accepted source and snapshot together at their repository paths.

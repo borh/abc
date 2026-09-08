@@ -8,7 +8,10 @@ and vectors is a defect; no artifact silently overrides another.
 
 Key rotation, successor-chain recovery statements and signature envelopes are
 outside this version. Assessment snapshots use payload version 2 under the
-existing `snh:1:assessment-snapshot` artifact identity.
+existing `snh:1:assessment-snapshot` artifact identity, and the release
+catalog uses payload version 1 under the `snh:1:catalog` identity. The
+manifest is at wire version 2; `adr/0001-snh-manifest-2.md` records why it
+moved there and what that cost.
 
 ## 1. Canonical form and identity
 
@@ -20,7 +23,7 @@ existing `snh:1:assessment-snapshot` artifact identity.
 - Every content id is `sha256` lowercase hex over canonical bytes (for
   JSON objects) or exact published bytes (for artifacts).
 - BOUNDARY DECODE (ONE reusable operation applied to EACH
-  OF THE FOUR PROTOCOL JSON OBJECTS (the §2 registry) and to NOTHING
+  OF THE FIVE PROTOCOL JSON OBJECTS (the §2 registry) and to NOTHING
   ELSE, on both the assembler and verifier sides):
   reject duplicate object keys; parse WITHOUT coercion; validate the
   parsed value against its frozen JSON Schema; apply the type's
@@ -47,24 +50,26 @@ existing `snh:1:assessment-snapshot` artifact identity.
 ## 2. Type registry (closed)
 
 Per-work types (the only types permitted in `works[].artifacts`):
-`tei`, `plaintext`, `tei-validation`.
+`markdown`, `tei`, `plaintext`, `tei-validation`.
 Release-level types: `release-manifest`, `assessment-snapshot`,
-`admission-report`, `governance-event`.
-Any addition or removal is wire version `snh-manifest/2`; closed-schema
-v1 consumers must never meet unknown members.
+`admission-report`, `catalog`, `governance-event`.
+Any addition or removal is wire version `snh-manifest/3`; closed-schema
+v2 consumers must never meet unknown members.
 
-## 3. `snh-manifest/1`
+## 3. `snh-manifest/2`
 
 Required top-level fields; closed schema — no other members. No dedicated date or timestamp fields appear in manifest bytes.
 
 | Field | Contract |
 |---|---|
-| `schema` | literal `"snh-manifest/1"` |
+| `schema` | literal `"snh-manifest/2"` |
 | `corpus` | `{upstream_origin (URL string), upstream_rev (commit hex)}` |
 | `toolchain` | object: stage-id (matches `^[0-9a-z][0-9a-z-]*$`) → `{nix_closure_hash (string), stage_code_version (string)}`; keys sorted. Provenance/derivation-key input only — never an input to artifact identity. `nix_closure_hash` carries the stage's toolchain identity EXACTLY as the build's derivation keys carry it: the wrapper-supplied Nix closure hash for nix-provisioned stages, the hashed binary/profile identity for subprocess stages; a constant placeholder is prohibited — the build fails closed without a supplied identity |
 | `selection_params` | object; string keys sorted; values strings or safe-range integers; `{}` when the inclusion rule takes no parameters |
 | `admission` | `{policy_id (string), policy_hash (hex), inclusion_rule_id (string), inclusion_rule_hash (hex), assessment_snapshot (artifact id), admission_report (artifact id)}` |
-| `works` | array sorted by `slug` as raw UTF-8 bytes ascending; slugs match `^[0-9a-z_-]+$` (non-empty), unique. Each `{slug, source_content_hash (hex of the CANONICAL SOURCE-BUNDLE IDENTITY: sha256 over the canonical bytes of the abc-source-bundle-v1 identity object `{construction, members: [{path, member_hash}...], primary_text_member}` — stable across archive-level repackaging that preserves members, unlike a raw archive hash), artifacts}`; `artifacts` sorted bytewise by `type`, each `{type, id, bytes}` with `bytes` = exact byte length (non-negative safe integer). Every work has exactly one artifact per per-work registry type |
+| `catalog` | the `catalog` artifact id (§13) describing exactly this manifest's `works` |
+| `rights` | `{works (string), encoding (string), statement_url (absolute URL)}` — the grant under which the published bytes may be reused. `works` states the standing of the underlying texts, `encoding` the licence over Soranoha's own encoding and derived artifacts. Carried by the rights policy whose `policy_hash` this manifest already records, so the terms published and the terms authorized cannot diverge |
+| `works` | array sorted by `slug` as raw UTF-8 bytes ascending; slugs match `^[0-9a-z_-]+$` (non-empty), unique. Each `{slug, source_content_hash (hex of the CANONICAL SOURCE-BUNDLE IDENTITY: sha256 over the canonical bytes of the abc-source-bundle-v1 identity object `{construction, members: [{path, member_hash}...], primary_text_member}` — stable across archive-level repackaging that preserves members, unlike a raw archive hash), artifacts}`; `artifacts` sorted bytewise by `type` — `markdown`, `plaintext`, `tei`, `tei-validation` — each `{type, id, bytes}` with `bytes` = exact byte length (non-negative safe integer). Every work has exactly one artifact per per-work registry type |
 | `withdrawn` | array sorted by `slug`; each `{slug, event}` with `event` a `governance-event` artifact id — the GOVERNING event carrying the public reason |
 | `validation_summary` | `{invalid_count (integer), invalid_slugs (sorted array of slugs)}` |
 | `governance_event` | `null`, or the `governance-event` artifact id this manifest executes; non-null exactly when the manifest performs a withdrawal or event-amendment |
@@ -317,9 +322,9 @@ below are the verifier's cross-object additions):
   `<type>` component must match its field context (`withdrawn[].event`
   and `governance_event` are `governance-event`; `admission.*` ids are
   `assessment-snapshot`/`admission-report`; `works[].artifacts[].id`
-  type equals its `type` member); for every artifact the verifier
+  type equals its `type` member; `catalog` is `catalog`); for every artifact the verifier
   FETCHES, it recomputes sha256 over the bytes and requires equality
-  with the id's hash component; each of the FOUR PROTOCOL JSON
+  with the id's hash component; each of the FIVE PROTOCOL JSON
   objects additionally passes the §1 BOUNDARY DECODE (stored bytes must equal the canonical bytes of the validated
   value). All other artifacts — e.g. `tei-validation` JSON bytes —
   are exact published bytes checked by hash; they have no frozen schema or
@@ -336,7 +341,8 @@ below are the verifier's cross-object additions):
   with no frozen schema and no canonical form.
 - Semantic boundary rules (applied inside the §1 boundary
   decode — never via JSON Schema `format`): `corpus.upstream_origin`
-  is an absolute URI with a scheme and non-empty host; every non-null
+  is an absolute URI with a scheme and non-empty host, as are
+  `rights.statement_url` and every catalog entry's `card_url`; every non-null
   `effective_date` in the assessment snapshot is a real
   proleptic-Gregorian calendar date.
 
@@ -361,6 +367,15 @@ Admission (fetch both evidence artifacts by hash):
   partition and field-binding invariants above.
 - `works[].slug` set = admitted − withdrawn slugs. Excluded and
   quarantined slugs never appear in `works`.
+
+Catalog (fetch by hash and boundary-decode):
+- The catalog's `works[].slug` sequence EQUALS the manifest's, element
+  for element and in the same order, and each entry's
+  `source_content_hash` equals that work's. A manifest may therefore not
+  name a catalog describing a different release — including one that
+  still describes a work this release withdrew, which is exactly what a
+  takedown must remove. A withdrawal consequently publishes a new
+  catalog; an event-amendment, which changes no work, does not.
 
 Chain (walk `prev_manifest` from `releases/HEAD` to the zero genesis;
 reject a HEAD not matching a valid chain head):
@@ -545,7 +560,7 @@ determinism defect.
 ## 11. Executable schemas and conformance vectors
 
 Schemas are at `soranoha/resources/snh/schemas/*.schema.json`, one per §2
-release-level type. Vectors are at `soranoha/resources/snh/vectors/`, with
+release-level type — five of them. Vectors are at `soranoha/resources/snh/vectors/`, with
 `expected.json` as their index. Accept vectors contain exact canonical bytes;
 reject vectors contain exact rejected bytes and their rejection reasons.
 `soranoha.snh.conformance-test` checks items 1–5 below. State and transaction
@@ -633,3 +648,41 @@ Internal RDF places attributed source classification and the relying
 decision in their own record graphs. Current reliance links appear only in
 `accepted-reliance`, separately from independently evaluated facts in
 `accepted`; no synthetic contribution or independent fact is introduced.
+
+## 13. Release catalog payload version 1
+
+`snh-catalog/1` uses the registered `catalog` release-level type and the
+`snh:1:catalog:<sha256>` identity over its canonical stored bytes. ONE
+release-level object, not one per work: a reader looking for a text should
+need one fetch, and a manifest that cannot name its own contents is a weak
+archival object.
+
+`{schema, works}`. `works` is sorted by `slug` ascending, unique, and equal to
+the manifest's `works` (§8). Each entry is closed:
+
+`{slug, source_content_hash, title, title_reading, subtitle, original_title,
+first_published, orthographic_style, ndc, card_url, archive_stem,
+contributors, source_editions}` — nullable where Aozora's catalog leaves the
+field empty; `title`, `orthographic_style`, `card_url` and `archive_stem` are
+always present. `contributors` is sorted by `person_id`, unique, non-empty,
+each `{person_id, family_name, given_name, family_name_romaji,
+given_name_romaji, relation_to_work}`. `source_editions` entries are
+`{title, publisher, first_edition_year}`.
+
+`archive_stem` is the Aozora archive's own name for the work's primary text
+member, without its extension. Every published work has exactly one such
+member — the source bundle fails closed on none and on several — so the value
+is always well defined and needs no fallback rule.
+
+FACTS, NOT RENDERINGS. The catalog carries no download filename, citation
+string, DOI, manifest id or release ordinal.
+
+- A filename or citation rendered from these fields and stored beside them
+  could disagree with them, in a record that can never be corrected. The
+  rendering rules belong to the serving layer, which can be.
+- A catalog naming its own manifest would be circular: the manifest names the
+  catalog. Content addressing also lets consecutive releases with an unchanged
+  corpus share one catalog blob, which an embedded release ordinal defeats.
+- Archive-provider references such as a Zenodo DOI stay out of the closed
+  schema, which keeps it provider-neutral; serving injects them from
+  deployment configuration.

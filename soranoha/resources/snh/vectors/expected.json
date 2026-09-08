@@ -3,7 +3,7 @@
     {
       "file": "release-manifest-valid.json",
       "type": "release-manifest",
-      "id": "snh:1:release-manifest:7eb4e129b8b72cfc0b2dbd403f424119e5ae2c0db02f0fb9dc0b4c6ab5e42593"
+      "id": "snh:1:release-manifest:499d499202e37e09ebb493e42285afd94c376016a7c514ef025d9f195ca5271b"
     },
     {
       "file": "assessment-snapshot-valid.json",
@@ -24,7 +24,13 @@
       "file": "governance-event-amendment-valid.json",
       "type": "governance-event",
       "id": "snh:1:governance-event:954a8d6bb72f01cd78bb121afba8c04a46f9ad3efe981ba24cbfbe7224a11973"
-    }],
+    },
+    {
+      "file": "catalog-valid.json",
+      "type": "catalog",
+      "id": "snh:1:catalog:0f5a0af764ce7852d2427f4dd94aac68e6d662e2bd746a40698e38a32c3ab749"
+    }
+  ],
   "reject": [
     {
       "file": "release-manifest-noncanonical-whitespace.json",
@@ -85,5 +91,26 @@
       "file": "governance-event-invalid-amendment-missing-amends.json",
       "type": "governance-event",
       "reason": "schema-invalid"
-    }]
+    },
+    {
+      "file": "release-manifest-invalid-rights-statement-url.json",
+      "type": "release-manifest",
+      "reason": "invalid-rights-statement-url"
+    },
+    {
+      "file": "catalog-invalid-works-unsorted.json",
+      "type": "catalog",
+      "reason": "catalog-works-not-sorted-unique"
+    },
+    {
+      "file": "catalog-invalid-relative-card-url.json",
+      "type": "catalog",
+      "reason": "invalid-card-url"
+    },
+    {
+      "file": "catalog-invalid-extra-member.json",
+      "type": "catalog",
+      "reason": "schema-invalid"
+    }
+  ]
 }

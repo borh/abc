@@ -260,6 +260,14 @@
                                                                 [:validate "tei-validation"])
                                                         "parser-ir" (get-in outputs
                                                                             [:convert "parser-ir"])
+                                                        ;; catalog inputs: the release
+                                                        ;; assembler reads these back out
+                                                        ;; of the CAS to build the signed
+                                                        ;; bibliographic catalog
+                                                        "metadata-record" (get-in outputs [:metadata "metadata-record"])
+                                                        "persons" (get-in outputs [:metadata "persons"])
+                                                        "primary_text_member"
+                                                        (get source-facts "primary_text_member")
                                                         "source_zip" zip-hex
                                                         "source_relpath" (get relpath-of slug)
                                                         "source_content_hash"
@@ -632,7 +640,7 @@
 (defn release!
   "Preflight the full selection, then build the artifacts requested by verified-head assembly."
   [{:keys [root chain-clone branch upstream-origin out] :as opts}]
-  (let [{:keys [snapshot-bytes policy-id policy-hash pinned sign-release
+  (let [{:keys [snapshot-bytes policy-id policy-hash rights pinned sign-release
                 source-commit source-hashes assessment-source-bytes assessment-inputs]}
         (release-preflight! opts)
         captured (capture-build! opts)
@@ -674,7 +682,7 @@
           :cas-dir (config/cas-dir (config/root root))
           :upstream-origin upstream-origin
           :selection-params {}
-          :policy-id policy-id :policy-hash policy-hash
+          :policy-id policy-id :policy-hash policy-hash :rights rights
           :snapshot-bytes snapshot-bytes
           :clone (str chain-clone) :branch branch
           :pinned-keys pinned :sign-release sign-release})]

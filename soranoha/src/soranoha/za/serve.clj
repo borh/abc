@@ -21,13 +21,15 @@
 
 (defn- referenced-ids
   "Every typed artifact id one manifest roots: work artifacts, the two
-  admission evidence artifacts, and the governing event when present."
+  admission evidence artifacts, the release catalog, and the governing event
+  when present."
   [manifest]
   (concat (for [work (get manifest "works")
                 artifact (get work "artifacts")]
             (get artifact "id"))
           [(get-in manifest ["admission" "assessment_snapshot"])
-           (get-in manifest ["admission" "admission_report"])]
+           (get-in manifest ["admission" "admission_report"])
+           (get manifest "catalog")]
           (some-> (get manifest "governance_event") vector)))
 
 (defn- tree-paths [root]
@@ -122,6 +124,12 @@
                            (let [head-manifest (first manifests)]
                              (link! (fs/path staging "releases" "latest")
                                     (str (:head chain-result) ".json"))
+                             ;; the catalog is the one artifact a reader needs
+                             ;; before they know any slug; without a name here
+                             ;; finding it means parsing the whole manifest
+                             (link! (fs/path staging "catalog.json")
+                                    (verify/blob-path
+                                     (verify/id->hex (get head-manifest "catalog"))))
                              (doseq [work (get head-manifest "works")
                                      :let [dir (fs/path staging "works" (get work "slug"))]
                                      artifact (get work "artifacts")]

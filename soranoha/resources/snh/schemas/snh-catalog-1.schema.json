@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:snh:schema:catalog:1",
+  "title": "snh-catalog/1",
+  "description": "Release-level bibliographic catalog: one entry per published work, carrying the descriptive metadata a reader needs to find and cite a work without fetching its TEI. This schema governs structure only; ordering and uniqueness are semantic rules checked at boundary decode, and agreement with the manifest's works is a cross-object rule checked by the chain verifier. Closed schema: no members beyond those listed. Facts only: no rendered filename, citation string or DOI appears here, because a derived value stored beside its own inputs can disagree with them.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "works"],
+  "properties": {
+    "schema": { "const": "snh-catalog/1" },
+    "works": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "slug",
+          "source_content_hash",
+          "title",
+          "title_reading",
+          "subtitle",
+          "original_title",
+          "first_published",
+          "orthographic_style",
+          "ndc",
+          "card_url",
+          "archive_stem",
+          "contributors",
+          "source_editions"
+        ],
+        "properties": {
+          "slug": { "$ref": "#/$defs/slug" },
+          "source_content_hash": { "$ref": "#/$defs/hex64" },
+          "title": { "type": "string", "minLength": 1 },
+          "title_reading": { "$ref": "#/$defs/nullableString" },
+          "subtitle": { "$ref": "#/$defs/nullableString" },
+          "original_title": { "$ref": "#/$defs/nullableString" },
+          "first_published": { "$ref": "#/$defs/nullableString" },
+          "orthographic_style": { "type": "string", "minLength": 1 },
+          "ndc": { "$ref": "#/$defs/nullableString" },
+          "card_url": { "type": "string", "minLength": 1 },
+          "archive_stem": { "type": "string", "pattern": "^[!-~]+$" },
+          "contributors": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "person_id",
+                "family_name",
+                "given_name",
+                "family_name_romaji",
+                "given_name_romaji",
+                "relation_to_work"
+              ],
+              "properties": {
+                "person_id": { "type": "string", "pattern": "^[0-9]{6}$" },
+                "family_name": { "$ref": "#/$defs/nullableString" },
+                "given_name": { "$ref": "#/$defs/nullableString" },
+                "family_name_romaji": { "$ref": "#/$defs/nullableString" },
+                "given_name_romaji": { "$ref": "#/$defs/nullableString" },
+                "relation_to_work": { "type": "string", "minLength": 1 }
+              }
+            }
+          },
+          "source_editions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["title", "publisher", "first_edition_year"],
+              "properties": {
+                "title": { "type": "string", "minLength": 1 },
+                "publisher": { "type": "string", "minLength": 1 },
+                "first_edition_year": { "$ref": "#/$defs/nullableString" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "hex64": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "slug": { "type": "string", "pattern": "^[0-9a-z_-]+$" },
+    "nullableString": {
+      "oneOf": [{ "type": "null" }, { "type": "string", "minLength": 1 }]
+    }
+  }
+}

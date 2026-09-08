@@ -1,5 +1,5 @@
 (ns soranoha.snh.decode
-  "Boundary decode: the one reusable operation applied to each of the four
+  "Boundary decode: the one reusable operation applied to each of the five
   release-level protocol JSON objects and to nothing else, on both the
   assembler and verifier sides:
 
@@ -66,7 +66,7 @@
 
 (defn decode
   "Boundary-decode `stored-bytes` as a protocol object of `type` (one of the
-  four release-level registry types). Returns
+  five release-level registry types). Returns
   {:value <parsed> :hex <sha256 hex of stored bytes> :id \"snh:1:<type>:<hex>\"}.
   Throws ex-info with :reason on any rejection:
   :parse-invalid (malformed JSON or duplicate object key — detected at parse,
@@ -74,7 +74,7 @@
   :invalid-upstream-origin, :invalid-effective-date, :noncanonical."
   [type ^bytes stored-bytes]
   (when-not (contains? schema/schema-resources type)
-    (throw (ex-info "boundary decode applies only to the four protocol JSON objects"
+    (throw (ex-info "boundary decode applies only to the five protocol JSON objects"
                     {:type type :known (keys schema/schema-resources)})))
   (let [value (parse-value type stored-bytes)]
     (when-let [errors (schema/validation-errors type value)]

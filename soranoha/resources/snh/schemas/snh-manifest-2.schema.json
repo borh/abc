@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:snh:schema:release-manifest:1",
-  "title": "snh-manifest/1",
-  "description": "Release manifest structure. This schema governs structure only; ordering, uniqueness, and cross-object invariants are semantic rules checked by the verifier. Closed schema: no members beyond those listed. No dates of any kind appear in manifest bytes.",
+  "$id": "urn:snh:schema:release-manifest:2",
+  "title": "snh-manifest/2",
+  "description": "Release manifest structure (wire version 2: adds the release-level catalog reference, the rights grant, and the markdown per-work artifact). This schema governs structure only; ordering, uniqueness, and cross-object invariants are semantic rules checked by the verifier. Closed schema: no members beyond those listed. No dates of any kind appear in manifest bytes.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -11,6 +11,8 @@
     "toolchain",
     "selection_params",
     "admission",
+    "catalog",
+    "rights",
     "works",
     "withdrawn",
     "validation_summary",
@@ -18,7 +20,7 @@
     "prev_manifest"
   ],
   "properties": {
-    "schema": { "const": "snh-manifest/1" },
+    "schema": { "const": "snh-manifest/2" },
     "corpus": {
       "type": "object",
       "additionalProperties": false,
@@ -75,6 +77,20 @@
         }
       }
     },
+    "catalog": {
+      "type": "string",
+      "pattern": "^snh:1:catalog:[0-9a-f]{64}$"
+    },
+    "rights": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["works", "encoding", "statement_url"],
+      "properties": {
+        "works": { "type": "string", "minLength": 1 },
+        "encoding": { "type": "string", "minLength": 1 },
+        "statement_url": { "type": "string", "minLength": 1 }
+      }
+    },
     "works": {
       "type": "array",
       "items": {
@@ -86,9 +102,19 @@
           "source_content_hash": { "$ref": "#/$defs/hex64" },
           "artifacts": {
             "type": "array",
-            "minItems": 3,
-            "maxItems": 3,
+            "minItems": 4,
+            "maxItems": 4,
             "prefixItems": [
+              {
+                "$ref": "#/$defs/artifact",
+                "properties": {
+                  "type": { "const": "markdown" },
+                  "id": {
+                    "type": "string",
+                    "pattern": "^snh:1:markdown:[0-9a-f]{64}$"
+                  }
+                }
+              },
               {
                 "$ref": "#/$defs/artifact",
                 "properties": {

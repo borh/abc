@@ -130,12 +130,30 @@
                       (throw (ex-info "work id absent from catalog"
                                       {:work-id work-id})))
               person-id (catalog/row-person-id row)]
+          ;; the real metadata-record shape, because the release assembler
+          ;; builds the signed catalog out of these bytes
           {"metadata-record" (json-bytes {"work_id" work-id
+                                          "work" {"work_id" work-id
+                                                  "title" (get row "作品名")
+                                                  "title_reading" nil
+                                                  "subtitle" nil
+                                                  "original_title" nil
+                                                  "first_published" nil
+                                                  "orthographic_style" "新字新仮名"
+                                                  "ndc" nil
+                                                  "card_url" (str "https://www.aozora.gr.jp/cards/"
+                                                                  person-id "/card" work-id ".html")
+                                                  "source_editions" []}
                                           "title" (get row "作品名")
                                           "contributors"
                                           [{"person_id" person-id
+                                            "relation_to_work" "著者"
                                             "role" "author"}]})
            "persons" (json-bytes {person-id {"person_id" person-id
+                                             "family_name" (str "person-" person-id)
+                                             "given_name" nil
+                                             "family_name_romaji" (str "Person_" person-id)
+                                             "given_name_romaji" nil
                                              "name" (str "person-"
                                                          person-id)}})}))})
 
@@ -259,14 +277,21 @@
             "UTF-8")))
 
 (defn works-for-assembly
-  "The assembler's works map from one run's results."
+  "The assembler's works map from one run's results: published artifact
+  hexes plus the catalog's inputs."
   [run]
   (into {}
         (map (fn [[slug {:keys [outputs]}]]
-               [slug {:plaintext (get-in outputs [:plaintext "plaintext"])
+               [slug {:markdown (get-in outputs [:markdown "markdown"])
+                      :plaintext (get-in outputs [:plaintext "plaintext"])
                       :tei (get-in outputs [:render "tei"])
                       :tei-validation (get-in outputs [:validate
                                                        "tei-validation"])
+                      :metadata-record (get-in outputs [:metadata
+                                                        "metadata-record"])
+                      :persons (get-in outputs [:metadata "persons"])
+                      :primary-text-member (get (source-facts run slug)
+                                                "primary_text_member")
                       :source-content-hash (get (source-facts run slug)
                                                 "work_content_hash")}]))
         (:results run)))

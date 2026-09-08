@@ -27,6 +27,14 @@
             [soranoha.za.release :as release]
             [soranoha.za.scaffold :as scaffold]))
 
+(def ^:private authorizing
+  ;; A rights policy must both authorize publication and state the terms the
+  ;; manifest publishes; a policy carrying only the state publishes nothing.
+  (str "{:rights-publication :assessment-required "
+       ":rights-statement {:works \"public-domain\" "
+       ":encoding \"CC0-1.0\" "
+       ":statement-url \"https://soranoha.example/rights\"}}"))
+
 (def ^:private merosu {:work-id "000100" :person-id "000001" :card "000001"
                        :book "100" :n "1001" :title "hashire-merosu"
                        :text "メロスは激怒した。\nfixture line two\n"})
@@ -69,10 +77,17 @@
                   (dissoc (:stage-coordinates run) :accountability :coverage))
    "works" (into {}
                  (map (fn [[slug {:keys [outputs]}]]
-                        [slug {"plaintext" (get-in outputs [:plaintext "plaintext"])
+                        [slug {"markdown" (get-in outputs [:markdown "markdown"])
+                               "plaintext" (get-in outputs [:plaintext "plaintext"])
                                "tei" (get-in outputs [:render "tei"])
                                "tei-validation"
                                (get-in outputs [:validate "tei-validation"])
+                               "metadata-record"
+                               (get-in outputs [:metadata "metadata-record"])
+                               "persons" (get-in outputs [:metadata "persons"])
+                               "primary_text_member"
+                               (get (corpus/source-facts run slug)
+                                    "primary_text_member")
                                "source_content_hash"
                                (get (corpus/source-facts run slug)
                                     "work_content_hash")}]))
@@ -87,6 +102,9 @@
    :selection-params {}
    :policy-id "za-fixture-policy-v1"
    :policy-hash policy-hash
+   :rights {"works" "public-domain"
+            "encoding" "CC0-1.0"
+            "statement_url" "https://soranoha.example/rights"}
    :snapshot-bytes snapshot
    :clone clone
    :branch fx/branch
@@ -295,11 +313,17 @@
     (is (= :policy-unreadable
            (reason "{:rights-publication :assessment-required} garbage")))
     (is (= :policy-unreadable (reason "")))
+    (testing "a policy that authorizes release but states no terms publishes nothing"
+      (is (= :missing-rights-statement
+             (reason "{:rights-publication :assessment-required}"))))
     (testing "the exact single-value document still authorizes"
-      (is (= "rights-publication-policy-v1"
-             (:policy-id (release/rights-authority!
-                          (.getBytes "{:rights-publication :assessment-required}\n"
-                                     "UTF-8"))))))))
+      (let [{:keys [policy-id rights]}
+            (release/rights-authority! (.getBytes (str authorizing "\n") "UTF-8"))]
+        (is (= "rights-publication-policy-v1" policy-id))
+        (is (= {"works" "public-domain"
+                "encoding" "CC0-1.0"
+                "statement_url" "https://soranoha.example/rights"}
+               rights))))))
 
 (defn- git-inputs! [dir & args]
   (let [result (apply process/sh {:dir (str dir) :out :string :err :string}
@@ -338,8 +362,7 @@
                                                   "UTF-8"))
               :as-of "2026-09-05"
               :assessment snapshot-file
-              :policy (write! "policy.edn"
-                              "{:rights-publication :assessment-required}")
+              :policy (write! "policy.edn" authorizing)
               :release-pub (write! "release.pub"
                                    (str (get-in ks ["release" "pub"]) "\n"))
               :governance-pub (write! "governance.pub"
@@ -467,8 +490,7 @@
               :assessment (let [path (str (fs/path dir "snapshot.json"))]
                             (fs/write-bytes path (scaffold-bytes))
                             path)
-              :policy (write! "policy.edn"
-                              "{:rights-publication :assessment-required}")
+              :policy (write! "policy.edn" authorizing)
               :release-pub (write! "release.pub"
                                    (str (get-in ks ["release" "pub"]) "\n"))
               :governance-pub (write! "governance.pub"
@@ -575,7 +597,7 @@
                                                                   (assoc records/empty-source "reliances" [declaration])))
                                                   "UTF-8"))
               :assessment (str (fs/path dir "snapshot.json"))
-              :policy (write! "policy.edn" "{:rights-publication :assessment-required}")
+              :policy (write! "policy.edn" authorizing)
               :release-pub (write! "release.pub" (str (get-in ks ["release" "pub"]) "\n"))
               :governance-pub (write! "governance.pub" (str (get-in ks ["governance" "pub"]) "\n"))
               :release-key (write! "release.seed" (get-in ks ["release" "seed"]))

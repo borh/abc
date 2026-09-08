@@ -1,5 +1,5 @@
 (ns soranoha.snh.semantic
-  "Single-object semantic rules for the four protocol JSON objects — every
+  "Single-object semantic rules for the five protocol JSON objects — every
   rule a lone object must satisfy that the JSON Schemas deliberately do not
   carry (ordering, uniqueness, disjointness, real calendar dates, absolute
   origins; JSON Schema cannot express ordering and its `format` enforcement
@@ -39,8 +39,9 @@
              (catch java.time.format.DateTimeParseException _ false)))))
 
 (defn absolute-origin?
-  "True iff `s` is an absolute URI with a scheme and a non-empty host —
-  the rule for `corpus.upstream_origin`."
+  "True iff `s` is an absolute URI with a scheme and a non-empty host — the
+  rule for every published URL: `corpus.upstream_origin`,
+  `rights.statement_url`, and each catalog entry's `card_url`."
   [s]
   (boolean
    (and (string? s)
@@ -55,6 +56,12 @@
   (when-not (absolute-origin? (get-in manifest ["corpus" "upstream_origin"]))
     (fail! :invalid-upstream-origin
            {:origin (get-in manifest ["corpus" "upstream_origin"])}))
+  ;; The rights grant is only usable if a reader can reach the statement it
+  ;; summarises, so the URL is held to the same absolute-origin rule as the
+  ;; corpus origin rather than being any non-empty string.
+  (when-not (absolute-origin? (get-in manifest ["rights" "statement_url"]))
+    (fail! :invalid-rights-statement-url
+           {:statement_url (get-in manifest ["rights" "statement_url"])}))
   (let [works (mapv #(get % "slug") (get manifest "works"))
         withdrawn (mapv #(get % "slug") (get manifest "withdrawn"))
         {:strs [invalid_count invalid_slugs]} (get manifest "validation_summary")]
@@ -105,6 +112,21 @@
         (fail! :partition-sets-overlap {}))))
   report)
 
+(defn check-catalog!
+  [catalog]
+  (sorted-unique! :catalog-works-not-sorted-unique
+                  (mapv #(get % "slug") (get catalog "works")) {})
+  (doseq [{:strs [slug card_url contributors]} (get catalog "works")]
+    ;; A relative card URL would not identify the Aozora card the entry
+    ;; claims to come from, which is the one cross-reference the catalog
+    ;; exists to carry.
+    (when-not (absolute-origin? card_url)
+      (fail! :invalid-card-url {:slug slug :card_url card_url}))
+    (sorted-unique! :contributors-not-sorted-unique
+                    (mapv #(get % "person_id") contributors)
+                    {:slug slug}))
+  catalog)
+
 (defn check-event!
   [event]
   (sorted-unique! :entries-not-sorted-unique
@@ -116,4 +138,5 @@
   {"release-manifest" check-manifest!
    "assessment-snapshot" check-snapshot!
    "admission-report" check-report!
-   "governance-event" check-event!})
+   "governance-event" check-event!
+   "catalog" check-catalog!})

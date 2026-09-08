@@ -1,7 +1,7 @@
 (ns soranoha.za.assemble-test
   "Release-assembly acceptance against the real kernel: a fixture corpus
   checkout built through the real selection/extract/engine path, assembled
-  into snh-manifest/1 with real admission evidence, published through the
+  into snh-manifest/2 with real admission evidence, published through the
   publication transaction, and verified. Covers the include-and-flag path
   for an invalid work, manifest round-trip stability, the second-revision
   three-set delta oracle (addition, deletion, content edit, catalog
@@ -76,6 +76,9 @@
                 :selection-params {"config" "za-fixture" "concurrency" 1}
                 :policy-id "za-fixture-policy-v1"
                 :policy-hash policy-hash
+                :rights {"works" "public-domain"
+                         "encoding" "CC0-1.0"
+                         "statement_url" "https://soranoha.example/rights"}
                 :candidates candidates
                 :works (corpus/works-for-assembly run)
                 :selection (map :slug (:candidates run))})}))
@@ -177,13 +180,16 @@
         (let [entry (first (filter #(= (slug-of merosu) (get % "slug"))
                                    (get head "works")))
               outputs (get-in run [:results (slug-of merosu) :outputs])]
-          (is (= (str "snh:1:tei:" (get-in outputs [:render "tei"]))
-                 (get-in entry ["artifacts" 1 "id"])))
-          (is (= (str "snh:1:plaintext:" (get-in outputs [:plaintext "plaintext"]))
+          ;; positions are the schema's fixed bytewise order by type
+          (is (= (str "snh:1:markdown:" (get-in outputs [:markdown "markdown"]))
                  (get-in entry ["artifacts" 0 "id"])))
+          (is (= (str "snh:1:plaintext:" (get-in outputs [:plaintext "plaintext"]))
+                 (get-in entry ["artifacts" 1 "id"])))
+          (is (= (str "snh:1:tei:" (get-in outputs [:render "tei"]))
+                 (get-in entry ["artifacts" 2 "id"])))
           (is (= (str "snh:1:tei-validation:"
                       (get-in outputs [:validate "tei-validation"]))
-                 (get-in entry ["artifacts" 2 "id"])))))
+                 (get-in entry ["artifacts" 3 "id"])))))
 
       (testing "the manifest round-trips with a stable id"
         (let [reencoded (decode/encode "release-manifest" head)]

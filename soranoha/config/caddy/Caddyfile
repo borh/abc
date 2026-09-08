@@ -5,8 +5,10 @@
 # Every response is a file from the tree — static file serving only, no
 # directory listings, no body rewriting. Digest-addressed paths (blobs,
 # manifests, signatures, governance events) are immutable; the pointer
-# layer (releases/latest, releases/HEAD, works/, withdrawn/) is
-# short-cache, since it moves with each release.
+# layer (releases/latest, releases/HEAD, catalog.json, works/, withdrawn/) is
+# short-cache, since it moves with each release. Updating this file requires
+# bumping the rev + hash pin in the estate's soranoha-serve.nix, which is what
+# keeps serving policy immutable system state rather than release data.
 
 {
 	admin off
@@ -26,7 +28,7 @@ http://{$SORANOHA_SERVE_LISTEN} {
 	}
 	header @immutable Cache-Control "public, max-age=31536000, immutable"
 
-	@pointer path /releases/latest /releases/HEAD /works/* /withdrawn/*
+	@pointer path /releases/latest /releases/HEAD /catalog.json /works/* /withdrawn/*
 	header @pointer Cache-Control "public, max-age=60"
 
 	file_server

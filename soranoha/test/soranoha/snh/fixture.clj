@@ -73,14 +73,17 @@
              "UTF-8"))
 
 (defn- work-entry [slug variant failed?]
-  (let [plaintext ^bytes (work-blob-bytes "plaintext" slug variant)
+  (let [markdown ^bytes (work-blob-bytes "markdown" slug variant)
+        plaintext ^bytes (work-blob-bytes "plaintext" slug variant)
         tei ^bytes (work-blob-bytes "tei" slug variant)
         validation (validation-blob-bytes (hash/sha256-bytes tei) failed?)
         entry-for (fn [kind ^bytes bytes]
                     {"type" kind
                      "id" (str "snh:1:" kind ":" (hash/sha256-bytes bytes))
                      "bytes" (alength bytes)})
-        parts [["plaintext" plaintext] ["tei" tei] ["tei-validation" validation]]]
+        ;; bytewise ascending by type, as the manifest schema pins positionally
+        parts [["markdown" markdown] ["plaintext" plaintext]
+               ["tei" tei] ["tei-validation" validation]]]
     {:blobs (into {} (map (fn [[_ ^bytes bytes]] [(hash/sha256-bytes bytes) bytes]))
                   parts)
      :entry {"slug" slug
@@ -88,6 +91,38 @@
              "artifacts" (mapv (fn [[kind bytes]] (entry-for kind bytes)) parts)}}))
 
 (def policy-hash (hash/sha256-string "fixture:policy"))
+
+(def rights
+  {"works" "public-domain"
+   "encoding" "CC0-1.0"
+   "statement_url" "https://soranoha.example/rights"})
+
+(defn catalog-for
+  "The fixture catalog: one entry per manifest work, in the manifest's order
+  and bound to the same source hashes, which is what the verifier checks."
+  [entries]
+  {"schema" "snh-catalog/1"
+   "works" (mapv (fn [{:strs [slug source_content_hash]}]
+                   {"slug" slug
+                    "source_content_hash" source_content_hash
+                    "title" (str "fixture:" slug)
+                    "title_reading" nil
+                    "subtitle" nil
+                    "original_title" nil
+                    "first_published" nil
+                    "orthographic_style" "新字新仮名"
+                    "ndc" nil
+                    "card_url" (str "https://www.aozora.gr.jp/cards/000001/card"
+                                    slug ".html")
+                    "archive_stem" (str "fixture_" slug)
+                    "contributors" [{"person_id" "000001"
+                                     "family_name" "試験"
+                                     "given_name" nil
+                                     "family_name_romaji" "Shiken"
+                                     "given_name_romaji" nil
+                                     "relation_to_work" "著者"}]
+                    "source_editions" []})
+                 entries)})
 (def rule-hash (hash/sha256-canonical-json admission/inclusion-rule))
 
 (defn make-assemble
@@ -124,8 +159,9 @@
                                    (sort excluded))
                   "quarantined" (mapv (fn [slug] {"slug" slug "reason_code" "not-fully-evaluated"})
                                       (sort quarantined))}
-          report-enc (decode/encode "admission-report" report)]
-      {:core {"schema" "snh-manifest/1"
+          report-enc (decode/encode "admission-report" report)
+          catalog-enc (decode/encode "catalog" (catalog-for (mapv :entry works)))]
+      {:core {"schema" "snh-manifest/2"
               "corpus" {"upstream_origin" "https://github.com/aozorabunko/aozorabunko.git"
                         "upstream_rev" "0e9ea3e586eb0aa34039fabfc85a407d2f98b165"}
               "toolchain" {"render" {"nix_closure_hash" (hash/sha256-string "fixture:render")
@@ -137,12 +173,15 @@
                            "inclusion_rule_hash" rule-hash
                            "assessment_snapshot" (:id snapshot-enc)
                            "admission_report" (:id report-enc)}
+              "catalog" (:id catalog-enc)
+              "rights" rights
               "works" (mapv :entry works)
               "validation_summary" (let [failed (vec (filter (set invalid) live))]
                                      {"invalid_count" (count failed)
                                       "invalid_slugs" failed})}
        :blobs (into {(:hex snapshot-enc) (:bytes snapshot-enc)
-                     (:hex report-enc) (:bytes report-enc)}
+                     (:hex report-enc) (:bytes report-enc)
+                     (:hex catalog-enc) (:bytes catalog-enc)}
                     (map :blobs works))
        :selection (set all-candidates)})))
 
@@ -171,19 +210,41 @@
   [clone]
   (repo/fetch! clone branch))
 
+(defn- catalog-rebinding
+  "A catalog matching `manifest-value`'s works, plus its blob file. Crafted
+  releases get one by default: the manifest-to-catalog binding is checked on
+  every commit, so a crafted manifest without a matching catalog would fail
+  there and mask the rule the test is actually about — exactly as a real
+  forger would have to supply one. Returns nil when the planted works cannot
+  produce a valid catalog (duplicate or unsorted slugs), leaving the
+  manifest's own catalog reference in place."
+  [manifest-value]
+  (try
+    (let [{:keys [id hex bytes]}
+          (decode/encode "catalog" (catalog-for (get manifest-value "works")))]
+      {:id id :files {(verify/blob-path hex) bytes}})
+    (catch clojure.lang.ExceptionInfo _ nil)))
+
 (defn craft-release!
   "Write (without pushing) a commit on `parents` carrying `manifest-value`
   as the release: manifest json + signature + advanced head + `extra-files`.
   `sign-fn` defaults to the release key. `raw` skips the boundary decode so
   semantically invalid manifests can be planted; the default round-trips
-  through decode. Returns {:commit :hex}."
-  [clone {:keys [parents base-tree-of manifest-value extra-files sign-fn raw]
+  through decode. The catalog is rebound to the planted works unless
+  `keep-catalog` is set — set it to exercise the binding rule itself.
+  Returns {:commit :hex}."
+  [clone {:keys [parents base-tree-of manifest-value extra-files sign-fn raw
+                 keep-catalog]
           :or {sign-fn sign-release}}]
-  (let [bytes (if raw
+  (let [rebinding (when-not keep-catalog (catalog-rebinding manifest-value))
+        manifest-value (cond-> manifest-value
+                         rebinding (assoc "catalog" (:id rebinding)))
+        bytes (if raw
                 (canonical/rfc8785-safe-integer-json-bytes-v1 manifest-value)
                 (:bytes (decode/encode "release-manifest" manifest-value)))
         hex (hash/sha256-bytes bytes)
-        files (merge {(verify/manifest-path hex) bytes
+        files (merge (:files rebinding)
+                     {(verify/manifest-path hex) bytes
                       (verify/manifest-sig-path hex) (sign-fn hex)
                       verify/head-path (sign/hex64-lf-bytes hex)}
                      extra-files)]

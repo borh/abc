@@ -11,10 +11,11 @@
   "Artifact type -> classpath resource of its JSON Schema. This map is the
   executable form of the type registry's release-level protocol JSON
   objects — the only types boundary decode applies to."
-  {"release-manifest"    "snh/schemas/snh-manifest-1.schema.json"
+  {"release-manifest"    "snh/schemas/snh-manifest-2.schema.json"
    "assessment-snapshot" "snh/schemas/snh-assessment-snapshot-2.schema.json"
    "admission-report"    "snh/schemas/snh-admission-report-1.schema.json"
-   "governance-event"    "snh/schemas/snh-governance-event-1.schema.json"})
+   "governance-event"    "snh/schemas/snh-governance-event-1.schema.json"
+   "catalog"             "snh/schemas/snh-catalog-1.schema.json"})
 
 (def ^:private loaded
   (delay

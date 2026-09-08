@@ -81,7 +81,11 @@
                :clj-toolchain-id corpus/fixture-toolchain :evidence-root (str evidence)
                :assessment-source (write! "source.json" (String. ^bytes (:bytes (records/encode
                                                                                  (assoc records/empty-source "reliances" [record]))) "UTF-8"))
-               :policy (write! "policy.edn" "{:rights-publication :assessment-required}")
+               :policy (write! "policy.edn"
+                               (str "{:rights-publication :assessment-required "
+                                    ":rights-statement {:works \"public-domain\" "
+                                    ":encoding \"CC0-1.0\" "
+                                    ":statement-url \"https://soranoha.example/rights\"}}"))
                :recording (write! "recording.json" (json/write-json-str
                                                     {"revisions" (assoc (zipmap commits (repeat "available"))
                                                                         unavailable-commit "unavailable")

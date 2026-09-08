@@ -1,1 +1,14 @@
-{:rights-publication :assessment-required}
+;; The rights authority for release publication. Its bytes are hashed into
+;; every manifest as `admission.policy_hash`, so the terms recorded below and
+;; the terms a release publishes cannot diverge.
+;;
+;; :rights-publication  the one state that authorizes publishing at all.
+;; :rights-statement    the grant published in each manifest's `rights` field.
+;;                      :works is the standing of the underlying Aozora texts;
+;;                      :encoding is the licence over Soranoha's own encoding
+;;                      and derived artifacts (soranoha-szg.3). :statement-url
+;;                      must resolve to the full statement before genesis.
+{:rights-publication :assessment-required
+ :rights-statement {:works "public-domain"
+                    :encoding "CC0-1.0"
+                    :statement-url "https://soranoha.org/rights"}}

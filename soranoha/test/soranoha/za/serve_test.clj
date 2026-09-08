@@ -100,12 +100,13 @@
                                       :when (= slug-b (get work "slug"))
                                       artifact (get work "artifacts")]
                                   (verify/id->hex (get artifact "id")))]
-        (is (= 3 (count withdrawn-artifacts)))
+        (is (= 4 (count withdrawn-artifacts)))
         (doseq [hex withdrawn-artifacts]
           (is (fs/exists? (fs/path out (verify/blob-path hex)))))))
 
     (testing "the work-facing layer names only the current corpus"
       (is (fs/sym-link? (fs/path out "releases/latest")))
+      (is (fs/sym-link? (fs/path out "catalog.json")))
       (is (= [slug-a]
              (mapv fs/file-name (fs/list-dir (fs/path out "works")))))
       (is (fs/sym-link? (fs/path out "withdrawn" (str slug-b ".json")))))

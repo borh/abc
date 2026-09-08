@@ -14,7 +14,8 @@
             [soranoha.kura.cas :as cas]
             [soranoha.snh.decode :as decode]
             [soranoha.snh.admission :as admission]
-            [soranoha.snh.verify :as verify]))
+            [soranoha.snh.verify :as verify]
+            [soranoha.za.catalog :as catalog]))
 
 (defn- fail! [reason data]
   (throw (ex-info (str "release assembly failed: " (name reason))
@@ -45,7 +46,9 @@
    "excluded" (vec (sort-by #(get % "slug") excluded))
    "quarantined" (vec (sort-by #(get % "slug") quarantined))})
 
-(def ^:private artifact-kinds ["plaintext" "tei" "tei-validation"])
+;; Bytewise ascending by type, which is the order the manifest schema pins
+;; positionally. markdown sorts first.
+(def ^:private artifact-kinds ["markdown" "plaintext" "tei" "tei-validation"])
 
 (defn- cas-blob ^bytes [cas-dir hex]
   (or (cas/get-bytes cas-dir hex)
@@ -57,7 +60,8 @@
 
 (defn- work-entry
   "Manifest works[] entry + its blob map for one slug's kernel outputs.
-  Artifact order is the schema's fixed [plaintext, tei, tei-validation]."
+  Artifact order is the schema's fixed
+  [markdown, plaintext, tei, tei-validation]."
   [cas-dir slug outputs]
   (let [blobs (mapv (fn [kind]
                       (let [hex (or (get outputs (keyword kind))
@@ -86,7 +90,7 @@
      (:status (verify/consumed-validation-record (cas-blob cas-dir hex)))))
 
 (defn toolchain-value
-  "snh-manifest/1 toolchain object from engine-shaped stages: per stage id,
+  "snh-manifest/2 toolchain object from engine-shaped stages: per stage id,
   the toolchain identity and stage code version exactly as its derivation
   keys carry them. nix_closure_hash holds that derivation toolchain
   identity — the wrapper-supplied Nix closure hash for nix-provisioned
@@ -109,14 +113,17 @@
     population (the totality gate compares their slugs against
     :selection, the kernel's selected slug set, so an unassessed or
     unselected candidate blocks emission);
-  - :works — slug -> {:plaintext :tei :tei-validation <cas hex>,
+  - :rights — the grant published in the manifest, carried by the same
+    rights policy whose hash the manifest already records;
+  - :works — slug -> {:markdown :plaintext :tei :tei-validation
+    :metadata-record :persons <cas hex>, :primary-text-member <path>,
     :source-content-hash \"sha256:<hex>\"} kernel outputs, covering at
     least every published candidate;
   - :source-hashes — assessed source-content hashes, independent of built artifacts;
   - :withdrawn-slugs — the chain head's withdrawn set; works = admitted
     minus withdrawn."
   [{:keys [cas-dir corpus toolchain selection-params policy-id policy-hash
-           candidates works source-hashes withdrawn-slugs selection]}]
+           rights candidates works source-hashes withdrawn-slugs selection]}]
   (let [snapshot-enc (decode/encode "assessment-snapshot"
                                     (snapshot-value candidates))
         rule admission/inclusion-rule
@@ -141,8 +148,11 @@
                       published)
         invalid (vec (filter #(validation-failed?
                                cas-dir (:tei-validation (get works %)))
-                             published))]
-    {:core {"schema" "snh-manifest/1"
+                             published))
+        catalog-enc (decode/encode
+                     "catalog"
+                     (catalog/catalog-value cas-dir published works))]
+    {:core {"schema" "snh-manifest/2"
             "corpus" corpus
             "toolchain" toolchain
             "selection_params" selection-params
@@ -152,11 +162,14 @@
                          "inclusion_rule_hash" (hash/sha256-canonical-json rule)
                          "assessment_snapshot" (:id snapshot-enc)
                          "admission_report" (:id report-enc)}
+            "catalog" (:id catalog-enc)
+            "rights" (or rights (fail! :missing-rights-grant {}))
             "works" (mapv :entry entries)
             "validation_summary" {"invalid_count" (count invalid)
                                   "invalid_slugs" invalid}}
      :blobs (into {(:hex snapshot-enc) (:bytes snapshot-enc)
-                   (:hex report-enc) (:bytes report-enc)}
+                   (:hex report-enc) (:bytes report-enc)
+                   (:hex catalog-enc) (:bytes catalog-enc)}
                   (map :blobs)
                   entries)
      :selection (set selection)}))

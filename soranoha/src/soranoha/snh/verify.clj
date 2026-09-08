@@ -110,7 +110,7 @@
 (defn- withdrawn-map [manifest]
   (into {} (map (fn [{:strs [slug event]}] [slug event])) (get manifest "withdrawn")))
 
-(def projection-keys ["corpus" "toolchain" "selection_params" "admission"])
+(def projection-keys ["corpus" "toolchain" "selection_params" "admission" "rights"])
 
 (defn projection [manifest] (select-keys manifest projection-keys))
 
@@ -259,6 +259,27 @@
                    (vec (sort (remove (set (withdrawn-slugs manifest)) admitted))))
         (fail! :works-not-admitted-minus-withdrawn {:commit commit})))))
 
+(defn- check-catalog!
+  "The catalog must describe THIS release: the same works, in the same order,
+  bound to the same source bytes. Without this a manifest could name any
+  catalog blob, including one that still describes a withdrawn work — which
+  is exactly what a takedown must remove."
+  [v commit manifest]
+  (let [catalog (:value (decoded-artifact v commit (get manifest "catalog")
+                                          "catalog"))
+        entries (get catalog "works")
+        works (get manifest "works")]
+    (when-not (= (mapv #(get % "slug") entries) (work-slugs manifest))
+      (fail! :catalog-works-mismatch
+             {:commit commit
+              :catalog (mapv #(get % "slug") entries)
+              :works (work-slugs manifest)}))
+    (doseq [[entry work] (map vector entries works)]
+      (when-not (= (get entry "source_content_hash")
+                   (get work "source_content_hash"))
+        (fail! :catalog-source-content-mismatch
+               {:commit commit :slug (get work "slug")})))))
+
 (defn- check-events! [v commit pinned-keys manifest]
   (let [events (into {}
                      (map (fn [id] [id (check-event! v commit pinned-keys id)]))
@@ -369,6 +390,7 @@
                     verified (check-works-blobs! v c m {:reuse? reuse?
                                                         :facts facts})]
                 (check-admission! v c m)
+                (check-catalog! v c m)
                 (let [events (check-events! v c pinned-keys m)
                       chain (conj chain m-hex)
                       gov-ids (cond-> gov-ids

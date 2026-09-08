@@ -62,7 +62,7 @@
         hex (hash/sha256-bytes record-bytes)
         manifest (-> (assoc core "prev_manifest" (:hex head)
                             "withdrawn" [] "governance_event" nil)
-                     (update-in ["works" 0 "artifacts" 2]
+                     (update-in ["works" 0 "artifacts" 3]
                                 assoc "id" (str "snh:1:tei-validation:" hex)
                                 "bytes" (alength record-bytes)))]
     {:manifest manifest :files (blob-files (assoc blobs hex record-bytes))}))
@@ -135,6 +135,27 @@
                                 (assoc (blob-files (dissoc blobs stray))
                                        "attic/misplaced-blob" (get blobs stray))}))))}
 
+   {:name "catalog describing a different corpus than the manifest's works"
+    :expect :catalog-works-mismatch
+    :craft (fn [{:keys [clone head-commit head]}]
+             ;; a manifest publishing one work while pointing at the head's
+             ;; two-work catalog: admission is self-consistent, so only the
+             ;; catalog binding can catch it
+             (let [{:keys [core blobs]}
+                   (assembled {:admitted [slug-a]
+                               :selection-params {"config" "fixture" "round" 3}}
+                              (:value head))
+                   manifest (assoc core
+                                   "prev_manifest" (:hex head)
+                                   "withdrawn" [] "governance_event" nil
+                                   "catalog" (get (:value head) "catalog"))]
+               (:commit (fx/craft-release!
+                         clone {:parents [head-commit]
+                                :base-tree-of head-commit
+                                :manifest-value manifest
+                                :extra-files (blob-files blobs)
+                                :keep-catalog true}))))}
+
    {:name "declared artifact byte length disagreeing with the stored blob"
     :expect :blob-length-mismatch
     :craft (fn [{:keys [clone head-commit] :as ctx}]
@@ -180,7 +201,7 @@
                    wrong-hex (hash/sha256-bytes wrong)
                    ;; swap slug-a's validation artifact for one naming ghost
                    ;; TEI bytes, keeping manifest and blobs consistent
-                   manifest (update-in manifest ["works" 0 "artifacts" 2]
+                   manifest (update-in manifest ["works" 0 "artifacts" 3]
                                        assoc "id" (str "snh:1:tei-validation:" wrong-hex)
                                        "bytes" (alength wrong))]
                (:commit (fx/craft-release!

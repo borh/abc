@@ -1,5 +1,6 @@
 (ns soranoha.snh.reliance-test
   (:require [babashka.fs :as fs]
+            [charred.api :as json]
             [clojure.java.io :as io]
             [clojure.java.shell :as shell]
             [clojure.test :refer [deftest is]]
@@ -41,9 +42,33 @@
 
 (defn- work! [cas-dir slug]
   (let [text (cas/put-bytes! cas-dir (fx/work-blob-bytes "plaintext" slug "v1"))
+        markdown (cas/put-bytes! cas-dir (fx/work-blob-bytes "markdown" slug "v1"))
         tei (cas/put-bytes! cas-dir (fx/work-blob-bytes "tei" slug "v1"))
-        validation (cas/put-bytes! cas-dir (fx/validation-blob-bytes tei false))]
-    {:plaintext text :tei tei :tei-validation validation
+        validation (cas/put-bytes! cas-dir (fx/validation-blob-bytes tei false))
+        metadata (cas/put-bytes!
+                  cas-dir
+                  (.getBytes ^String
+                   (json/write-json-str
+                    {"work" {"title" (str "fixture:" slug)
+                             "title_reading" nil "subtitle" nil
+                             "original_title" nil "first_published" nil
+                             "orthographic_style" "新字新仮名" "ndc" nil
+                             "card_url" "https://www.aozora.gr.jp/cards/000001/card1.html"
+                             "source_editions" []}
+                     "contributors" [{"person_id" "000001"
+                                      "relation_to_work" "著者"}]})
+                             "UTF-8"))
+        persons (cas/put-bytes!
+                 cas-dir
+                 (.getBytes ^String
+                  (json/write-json-str
+                   {"000001" {"family_name" "試験" "given_name" nil
+                              "family_name_romaji" "Shiken"
+                              "given_name_romaji" nil}})
+                            "UTF-8"))]
+    {:plaintext text :markdown markdown :tei tei :tei-validation validation
+     :metadata-record metadata :persons persons
+     :primary-text-member (str slug ".txt")
      :source-content-hash (str "sha256:" (apply str (repeat 64 "1")))}))
 
 (defn- assembly-inputs [cas-dir]
@@ -52,6 +77,9 @@
             "upstream_rev" (apply str (repeat 40 "2"))}
    :toolchain {} :selection-params {} :policy-id "synthetic-reliance-test"
    :policy-hash (hash/sha256-string "synthetic-reliance-policy")
+   :rights {"works" "public-domain"
+            "encoding" "CC0-1.0"
+            "statement_url" "https://soranoha.example/rights"}
    :candidates (get (snapshot) "candidates")
    :works (into {} (map (fn [slug] [slug (work! cas-dir slug)])) ["independent" "relied"])
    :source-hashes {"relied" (str "sha256:" (apply str (repeat 64 "1")))}

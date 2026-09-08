@@ -46,6 +46,24 @@
         (throw (ex-info "trailing input after the policy value" {})))
       value)))
 
+(defn- rights-grant!
+  "The published rights grant, read from the same policy document that
+  authorizes publication at all. Carrying it here rather than as a constant
+  binds the grant in the manifest to the policy hash the manifest already
+  records: the terms published and the terms signed off cannot diverge.
+  Fail-closed — a policy that authorizes release without stating terms
+  publishes nothing."
+  [value]
+  (let [{:keys [works encoding statement-url]} (:rights-statement value)]
+    (when-not (and (string? works) (seq works)
+                   (string? encoding) (seq encoding)
+                   (string? statement-url) (seq statement-url))
+      (throw (ex-info "rights policy states no publishable rights grant"
+                      {:reason :missing-rights-statement})))
+    {"works" works
+     "encoding" encoding
+     "statement_url" statement-url}))
+
 (defn rights-authority!
   "Fail-closed value-plus-hash rights authority over the policy bytes:
   strict UTF-8 + EDN decode, then only the authorizing rights-publication
@@ -53,7 +71,7 @@
   derive from the same byte array, so the recorded hash can never
   disagree with what was evaluated. The policy id is fixed here, by the
   authority, never supplied by the caller. Returns
-  {:policy-id :policy-hash}; throws on anything else."
+  {:policy-id :policy-hash :rights}; throws on anything else."
   [^bytes policy-bytes]
   (let [value (try
                 (read-one-edn (strict-utf8 policy-bytes))
@@ -68,16 +86,24 @@
                       {:reason :rights-blocked
                        :state (or state :missing-rights-publication-policy)})))
     {:policy-id "rights-publication-policy-v1"
-     :policy-hash (hash/sha256-bytes policy-bytes)}))
+     :policy-hash (hash/sha256-bytes policy-bytes)
+     :rights (rights-grant! value)}))
 
 (defn- report-works
-  "The assembler's works map projected from a build run report."
+  "The assembler's works map projected from a build run report. Published
+  artifact hexes, plus the catalog's inputs: the metadata and person records
+  stay CAS references rather than values, so the assembler reads the same
+  bytes the release publishes from."
   [report]
   (into {}
         (map (fn [[slug work]]
-               [slug {:plaintext (get work "plaintext")
+               [slug {:markdown (get work "markdown")
+                      :plaintext (get work "plaintext")
                       :tei (get work "tei")
                       :tei-validation (get work "tei-validation")
+                      :metadata-record (get work "metadata-record")
+                      :persons (get work "persons")
+                      :primary-text-member (get work "primary_text_member")
                       :source-content-hash (get work "source_content_hash")}]))
         (get report "works")))
 
@@ -98,7 +124,7 @@
   it must recheck source and assessment inputs before returning on every attempt.
   :source-hashes binds assessed source facts even when no artifact is requested."
   [{:keys [selection build-works! source-hashes cas-dir upstream-origin selection-params
-           policy-id policy-hash snapshot-bytes
+           policy-id policy-hash rights snapshot-bytes
            clone branch pinned-keys sign-release push-fn]}]
   (let [snapshot (:value (decode/decode "assessment-snapshot" snapshot-bytes))
         candidates (get snapshot "candidates")
@@ -130,6 +156,7 @@
                      :toolchain (report-toolchain report)
                      :selection-params selection-params
                      :policy-id policy-id :policy-hash policy-hash
+                     :rights rights
                      :candidates candidates :works (report-works report)
                      :source-hashes source-hashes :selection selected}) head)))}
        push-fn (assoc :push-fn push-fn)))))

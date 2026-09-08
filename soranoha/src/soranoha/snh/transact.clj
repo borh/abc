@@ -149,8 +149,11 @@
 
 (defn- successor-for-event
   "Construct the successor manifest executing `event` on `head-manifest`, or
-  a halt outcome when the event no longer validates against that head."
-  [head-manifest head-hex event-id {:strs [kind entries]}]
+  a halt outcome when the event no longer validates against that head.
+  Returns {:manifest ... :blobs {hex bytes}} — a withdrawal must also publish
+  the catalog with the withdrawn works removed, because a takedown that left
+  them described in the release's own catalog would not be a takedown."
+  [head-manifest head-hex head-catalog event-id {:strs [kind entries]}]
   (let [wd-map (into {} (map (fn [{:strs [slug event]}] [slug event]))
                      (get head-manifest "withdrawn"))
         entry-slugs (mapv #(get % "slug") entries)]
@@ -169,11 +172,18 @@
           :else
           (let [gone (set entry-slugs)
                 summary (get head-manifest "validation_summary")
-                invalid (vec (remove gone (get summary "invalid_slugs")))]
-            {:manifest
+                invalid (vec (remove gone (get summary "invalid_slugs")))
+                catalog (decode/encode
+                         "catalog"
+                         (update head-catalog "works"
+                                 (fn [works]
+                                   (vec (remove #(gone (get % "slug")) works)))))]
+            {:blobs {(:hex catalog) (:bytes catalog)}
+             :manifest
              (assoc head-manifest
                     "prev_manifest" head-hex
                     "governance_event" event-id
+                    "catalog" (:id catalog)
                     "works" (vec (remove #(gone (get % "slug"))
                                          (get head-manifest "works")))
                     "withdrawn" (vec (sort-by #(get % "slug")
@@ -190,7 +200,10 @@
                           entries)]
         (if (seq stale)
           {:halt :stale-amends :slugs (mapv #(get % "slug") stale)}
-          {:manifest
+          ;; an amendment changes only which event governs a withdrawal, so
+          ;; the published works and their catalog are untouched
+          {:blobs {}
+           :manifest
            (assoc head-manifest
                   "prev_manifest" head-hex
                   "governance_event" event-id
@@ -229,8 +242,17 @@
           :else
           (let [head-hex (:head chain)
                 head-manifest (:head-manifest chain)
-                {:keys [halt manifest] :as attempt-result}
-                (successor-for-event head-manifest head-hex event-id event)]
+                head-catalog (:value (decode/decode
+                                      "catalog"
+                                      (or (view/read-at
+                                           v c (verify/blob-path
+                                                (verify/id->hex
+                                                 (get head-manifest "catalog"))))
+                                          (fail! :missing-head-catalog
+                                                 {:head head-hex}))))
+                {:keys [halt manifest blobs] :as attempt-result}
+                (successor-for-event head-manifest head-hex head-catalog
+                                     event-id event)]
             (if halt
               {:outcome :halt :reason halt
                :slugs (:slugs attempt-result)}
@@ -238,7 +260,8 @@
                     files (merge (release-files {:manifest-bytes bytes
                                                  :manifest-hex hex
                                                  :sig (sign-release hex)
-                                                 :blobs {event-hex event-bytes}})
+                                                 :blobs (assoc blobs
+                                                               event-hex event-bytes)})
                                  {(verify/event-path event-hex) event-bytes
                                   (verify/event-sig-path event-hex) event-sig})
                     commit (repo/write-commit!

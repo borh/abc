@@ -9,10 +9,10 @@
 //! introducing nondeterminism (e.g. iteration order over a `HashMap`)
 //! or from desynchronising the registry from the normalised text.
 
-use ab_aozora_proptest::config::default_config;
-use ab_aozora_proptest::generators::*;
 use ab_aozora_spec::Sentinel;
 use ab_aozora_syntax::ast::NodeRef;
+use ab_proptest::config::default_config;
+use ab_proptest::generators::*;
 use proptest::prelude::*;
 
 #[allow(

@@ -19,8 +19,8 @@
 //! `char`, exclude the four sentinels, assert `from_char` returns
 //! `None`. This validates rejection if a future variant is added.
 
-use ab_aozora_proptest::config::default_config;
 use ab_aozora_spec::Sentinel;
+use ab_proptest::config::default_config;
 use proptest::prelude::*;
 
 #[test]

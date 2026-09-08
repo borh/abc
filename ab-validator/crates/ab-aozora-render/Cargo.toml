@@ -18,7 +18,7 @@ memchr = "2.8"
 [dev-dependencies]
 pretty_assertions = "1.4.1"
 proptest = "1.11"
-ab-aozora-proptest = { path = "../ab-aozora-proptest" }
+ab-proptest = { path = "../ab-proptest" }
 insta = { version = "1.47", features = ["yaml", "json", "filters"] }
 
 [package.metadata.docs.rs]

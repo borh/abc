@@ -16,7 +16,7 @@ serde = { version = "1.0", features = ["derive"], optional = true }
 
 [dev-dependencies]
 proptest = "1.11"
-ab-aozora-proptest = { path = "../ab-aozora-proptest" }
+ab-proptest = { path = "../ab-proptest" }
 
 [features]
 default = []

@@ -22,9 +22,8 @@
 //!   per-stage functions are exposed for benchmarks and the
 //!   instrumentation feature.
 //!
-//! [`ab_aozora_scan`] still ships as a separate `no_std` crate; the
-//! SIMD trigger scan is independently swappable, benchmarkable, and
-//! consumed by `lexer::tokenize` directly.
+//! The trigger scan that opens the tokenize stage lives in
+//! [`lexer::trigger_scan`]; `lexer::tokenize` is its only caller.
 //!
 //! # Observable equivalence
 //!
@@ -56,15 +55,15 @@ pub use pipeline::{Paired, Pipeline, Sanitized, Source, Tokenized};
 
 /// Eagerly initialise every lazily-built parser table.
 ///
-/// Forces the tokenize-stage SIMD backend choice (`ab_aozora_scan`) and
-/// the classify-stage annotation-classifier Aho-Corasick DFA, so the
+/// Forces the tokenize-stage trigger automaton and the classify-stage
+/// annotation-classifier Aho-Corasick DFA, so the
 /// first [`lex`] does not pay the one-time build cost on its
 /// critical path. Idempotent and cheap to call repeatedly.
 ///
 /// Lexing stays lazy by default; this is opt-in for latency-sensitive
 /// front ends: the umbrella `ab_aozora_facade::prewarm` is the public entry point.
 pub fn prewarm() {
-    ab_aozora_scan::prewarm();
+    lexer::trigger_scan::prewarm();
     lexer::classify::prewarm();
 }
 
@@ -85,8 +84,8 @@ pub use ab_aozora_spec::{
 mod tests {
     use super::*;
 
-    /// `ab_aozora_scan::scan_offsets` MUST yield the exact same byte offsets that
-    /// the tokenize-stage tokeniser uses for its trigger positions. We
+    /// The trigger scan MUST yield the exact same byte offsets that the
+    /// tokenize-stage tokeniser uses for its trigger positions. We
     /// cross-check at the [`LexOutput`] level: every PUA sentinel in
     /// `normalized` must correspond to a consumed source trigger.
     #[test]

@@ -1,17 +1,16 @@
 //! Tokenize stage: linear tokenization of sanitized source into a token stream.
 //!
-//! Walks the sanitize-stage text via the SIMD-accelerated
-//! [`ab_aozora_scan`] crate and exposes a stateful iterator yielding one
-//! [`Token`] per delimiter or contiguous text run. Triggers are the
-//! Aozora notation marker characters listed in [`TriggerKind`];
-//! everything else flows into [`Token::Text`] runs.
+//! Walks the sanitize-stage text via [`crate::lexer::trigger_scan`] and
+//! exposes a stateful iterator yielding one [`Token`] per delimiter or
+//! contiguous text run. Triggers are the Aozora notation marker characters
+//! listed in [`TriggerKind`]; everything else flows into [`Token::Text`]
+//! runs.
 //!
 //! ## Algorithm
 //!
-//! 1. [`ab_aozora_scan::scan_offsets`] returns the byte offsets of every
-//!    trigger character in `source`. On `x86_64` this dispatches to
-//!    Teddy (Hyperscan multi-pattern fingerprint matcher); on minimal
-//!    hosts to a SIMD-free DFA. Both produce byte-identical output.
+//! 1. [`trigger_scan::scan_offsets`] returns the byte offsets of every
+//!    trigger character in `source`, matched by an `aho-corasick`
+//!    automaton over the 13 trigger trigrams.
 //! 2. A single [`memchr::memchr_iter`] sweep collects every newline
 //!    offset. Together with step 1, source bytes are touched twice
 //!    (once per scan), both at near memory-bandwidth speed.
@@ -24,17 +23,11 @@
 //! `［＃` is NOT emitted as a merged trigger: `Hash` after
 //! `BracketOpen` is common but not universal (a stray `［` followed
 //! by plain text is legal). The pair stage inspects the two tokens together.
-//!
-//! ## Backend
-//!
-//! Trigger detection uses Teddy (the [Hyperscan](https://intel.github.io/hyperscan/)
-//! short-string algorithm via `aho-corasick::packed`); see
-//! [`ab_aozora_scan`] for the full backend selection. The previous naive
-//! per-codepoint walker ran at ~150 MiB/s; Teddy reaches 10–20 GiB/s
-//! on Japanese text.
 
 use ab_aozora_spec::classify_trigger_bytes;
 use ab_aozora_syntax::Span;
+
+use crate::lexer::trigger_scan;
 
 use super::token::{Token, TriggerKind};
 
@@ -88,7 +81,7 @@ impl<'s> Tokenizer<'s> {
             "source too long for u32 span offsets ({} bytes)",
             source.len()
         );
-        let trigger_offsets = ab_aozora_scan::scan_offsets(source);
+        let trigger_offsets = trigger_scan::scan_offsets(source);
         let bytes = source.as_bytes();
         // memchr_iter is internally vectorised (AVX2 on x86_64, NEON on
         // aarch64), the same machine code memchr3 uses for trigger

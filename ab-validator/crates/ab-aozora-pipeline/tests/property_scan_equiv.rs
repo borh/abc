@@ -1,10 +1,10 @@
 //! Cross-checks between the tokenize-stage trigger scan and the brute-force
-//! [`NaiveScanner`] reference, projected through the whole
+//! [`naive_scan_offsets`] reference, projected through the whole
 //! `lex` pipeline.
 //!
-//! `aozora-scan/tests/property_backend_equiv.rs` already proves that
-//! the production `scan_offsets` agrees byte-for-byte with
-//! [`NaiveScanner`] on raw source bytes. That covers a *single layer*
+//! The differential proptests inside `lexer::trigger_scan` already prove
+//! that the production `scan_offsets` agrees byte-for-byte with
+//! [`naive_scan_offsets`] on raw source bytes. That covers a *single layer*
 //! (the scanner) and says nothing about how the tokenize stage's output
 //! flows through pair / classify on into the lexer's normalized
 //! buffer.
@@ -12,7 +12,7 @@
 //! The properties here close the gap by reasoning about the *whole*
 //! pipeline:
 //!
-//! 1. **Scanner totality on lex output.** [`NaiveScanner`] applied to
+//! 1. **Scanner totality on lex output.** [`naive_scan_offsets`] applied to
 //!    the lexer's normalized buffer must not panic and must return
 //!    offsets that are valid UTF-8 char boundaries inside that buffer.
 //!    The normalized buffer carries PUA sentinels and may differ in
@@ -35,13 +35,13 @@
 //! during normalization fails them under shrinking.
 
 use ab_aozora_pipeline::lex;
-use ab_aozora_proptest::config::default_config;
-use ab_aozora_proptest::generators::*;
-use ab_aozora_scan::NaiveScanner;
+use ab_aozora_pipeline::lexer::trigger_scan::naive_scan_offsets;
+use ab_proptest::config::default_config;
+use ab_proptest::generators::*;
 use proptest::prelude::*;
 
 fn scan_count(source: &str) -> usize {
-    NaiveScanner.scan_offsets(source).len()
+    naive_scan_offsets(source).len()
 }
 
 fn assert_offsets_are_char_boundaries(label: &str, text: &str, offsets: &[u32]) {
@@ -60,18 +60,16 @@ fn assert_offsets_are_char_boundaries(label: &str, text: &str, offsets: &[u32]) 
 }
 
 fn assert_scan_invariants(source: &str) {
-    // (1a) Scanner totality on raw source. NaiveScanner is the same
-    // kernel used by every backend; this also pins that the scanner
-    // is panic-free over the full generator surface (a separate
-    // assurance from the in-scan-crate property because we now expose
-    // it through a downstream caller).
-    let source_offsets = NaiveScanner.scan_offsets(source);
+    // (1a) Scanner totality on raw source. This also pins that the
+    // reference walker is panic-free over the full generator surface, a
+    // separate assurance from the in-module differential property.
+    let source_offsets = naive_scan_offsets(source);
     assert_offsets_are_char_boundaries("source", source, &source_offsets);
 
     // Run the lex pipeline. (1b) Scanner totality on the normalized
     // buffer.
     let out = lex(source);
-    let norm_offsets = NaiveScanner.scan_offsets(&out.normalized);
+    let norm_offsets = naive_scan_offsets(&out.normalized);
     assert_offsets_are_char_boundaries("normalized", &out.normalized, &norm_offsets);
 
     // (2) tokenize-stage monotonicity: the pipeline consumes (or passes

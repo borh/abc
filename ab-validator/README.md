@@ -5,7 +5,7 @@ source-authority measurement, and morphology tools. Soranoha consumes the
 `ab-aozora` and `ab-aat-to-parser-ir` executables for publication. Research
 adapters, schemas, fixtures, and reports live under `research/`.
 
-The parser core is not original work. The ten `ab-aozora-*` crates are an
+The parser core is not original work. The seven `ab-aozora-*` crates are an
 independent fork of [P4suta/aozora](https://github.com/P4suta/aozora) at
 revision `1a4f864603970983719655aa4af4525958ac2d38`, dual-licensed MIT or
 Apache-2.0. Each carries `LICENSE-MIT`, `LICENSE-APACHE` and `NOTICE`, and

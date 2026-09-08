@@ -230,10 +230,10 @@ pub mod encoding {
 /// Aozora-shaped `proptest` strategies.
 ///
 /// Downstream renderer / visitor authors writing their own property
-/// tests reach through this module instead of pulling
-/// `aozora-proptest` directly. Enabled by the `proptest` Cargo
-/// feature on the `aozora` crate; both `ab_aozora_facade::proptest::*` and
-/// the `proptest` crate itself are then in scope for the consumer.
+/// tests reach through this module instead of pulling `ab-proptest`
+/// directly. Enabled by the `proptest` Cargo feature on the `aozora`
+/// crate; both `ab_aozora_facade::proptest::*` and the `proptest` crate
+/// itself are then in scope for the consumer.
 ///
 /// The generators here cover the same shapes the workspace's
 /// `tests/property_*` suites rely on, so any regression noticed
@@ -242,7 +242,7 @@ pub mod encoding {
 #[cfg(feature = "proptest")]
 #[cfg_attr(docsrs, doc(cfg(feature = "proptest")))]
 pub mod proptest {
-    pub use ab_aozora_proptest::*;
+    pub use ab_proptest::*;
 }
 
 #[cfg(test)]

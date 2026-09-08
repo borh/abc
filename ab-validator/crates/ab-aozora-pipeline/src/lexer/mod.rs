@@ -22,6 +22,8 @@ pub mod pair;
 pub mod sanitize;
 pub mod token;
 mod tokenize;
+#[doc(hidden)]
+pub mod trigger_scan;
 
 pub use classify::{
     ClassifiedSpan, ClassifyStream, PlainProvenance, PlainSpan, SpanKind, classify,

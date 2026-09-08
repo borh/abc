@@ -38,7 +38,7 @@ schemars = { version = "1.0", features = ["preserve_order"], optional = true }
 # only by the `proptest` feature so library consumers don't pay
 # the proptest dep cost unless they're writing property tests
 # themselves.
-ab-aozora-proptest = { path = "../ab-aozora-proptest", optional = true }
+ab-proptest = { path = "../ab-proptest", optional = true }
 proptest = { version = "1.11", optional = true }
 
 [features]
@@ -69,7 +69,7 @@ schema = ["json", "dep:schemars"]
 # Aozora-shaped proptest generators (`aozora::proptest::*`).
 # Downstream renderer authors enable this when writing property
 # tests over their own `AozoraVisitor` impls.
-proptest = ["dep:proptest", "dep:ab-aozora-proptest"]
+proptest = ["dep:proptest", "dep:ab-proptest"]
 
 [dev-dependencies]
 # Used by `tests/corpus_sweep.rs`, `tests/corpus_incremental_merge.rs`, and
@@ -79,7 +79,7 @@ proptest = ["dep:proptest", "dep:ab-aozora-proptest"]
 # dev-only corpus loader that stays `publish = false`.
 ab-aozora-corpus = { path = "../ab-aozora-corpus" }
 proptest = "1.11"
-ab-aozora-proptest = { path = "../ab-aozora-proptest" }
+ab-proptest = { path = "../ab-proptest" }
 
 [package.metadata.cargo-shear]
 # `proptest` is an intentional optional dependency exposed via the

@@ -87,10 +87,10 @@ dependencies = [
  "ab-aozora-corpus",
  "ab-aozora-encoding",
  "ab-aozora-pipeline",
- "ab-aozora-proptest",
  "ab-aozora-render",
  "ab-aozora-spec",
  "ab-aozora-syntax",
+ "ab-proptest",
  "proptest",
  "schemars",
  "serde",
@@ -102,11 +102,10 @@ name = "ab-aozora-pipeline"
 version = "0.2.0"
 dependencies = [
  "ab-aozora-encoding",
- "ab-aozora-proptest",
  "ab-aozora-render",
- "ab-aozora-scan",
  "ab-aozora-spec",
  "ab-aozora-syntax",
+ "ab-proptest",
  "aho-corasick",
  "hegeltest",
  "insta",
@@ -116,20 +115,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "ab-aozora-proptest"
-version = "0.1.0"
-dependencies = [
- "proptest",
-]
-
-[[package]]
 name = "ab-aozora-render"
 version = "0.1.0"
 dependencies = [
  "ab-aozora-pipeline",
- "ab-aozora-proptest",
  "ab-aozora-spec",
  "ab-aozora-syntax",
+ "ab-proptest",
  "insta",
  "memchr",
  "pretty_assertions",
@@ -137,21 +129,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "ab-aozora-scan"
-version = "0.1.0"
-dependencies = [
- "ab-aozora-proptest",
- "ab-aozora-spec",
- "aho-corasick",
- "bumpalo",
- "proptest",
-]
-
-[[package]]
 name = "ab-aozora-spec"
 version = "0.1.0"
 dependencies = [
- "ab-aozora-proptest",
+ "ab-proptest",
  "miette",
  "proptest",
  "serde",
@@ -164,19 +145,10 @@ version = "0.1.0"
 dependencies = [
  "ab-aozora-encoding",
  "ab-aozora-spec",
- "ab-aozora-veb",
  "miette",
  "phf",
  "serde",
  "thiserror 2.0.18",
-]
-
-[[package]]
-name = "ab-aozora-veb"
-version = "0.1.0"
-dependencies = [
- "ab-aozora-proptest",
- "proptest",
 ]
 
 [[package]]
@@ -416,6 +388,14 @@ dependencies = [
  "proptest",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "ab-proptest"
+version = "0.1.0"
+dependencies = [
+ "ab-aozora-spec",
+ "proptest",
 ]
 
 [[package]]

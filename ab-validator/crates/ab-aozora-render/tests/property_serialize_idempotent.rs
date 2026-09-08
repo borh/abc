@@ -10,9 +10,9 @@
 //! second pass would *change* the bytes, and the property fails.
 
 use ab_aozora_pipeline::lex;
-use ab_aozora_proptest::config::default_config;
-use ab_aozora_proptest::generators::*;
 use ab_aozora_render::serialize;
+use ab_proptest::config::default_config;
+use ab_proptest::generators::*;
 use proptest::prelude::*;
 
 fn round_trip_once(source: &str) -> String {

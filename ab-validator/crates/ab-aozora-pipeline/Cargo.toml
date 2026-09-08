@@ -23,18 +23,23 @@ classify-instrument = []
 ab-aozora-spec = { path = "../ab-aozora-spec" }
 ab-aozora-syntax = { path = "../ab-aozora-syntax" }
 ab-aozora-encoding = { path = "../ab-aozora-encoding" }
-ab-aozora-scan = { path = "../ab-aozora-scan" }
 
-# Tokenize-stage build-time tooling, unchanged from the lexer's
-# historical deps (before it was folded into aozora-pipeline).
-aho-corasick = { version = "1.1", default-features = false, features = ["std"] }
+# `aho-corasick` backs both the tokenize-stage trigger automaton and the
+# classify-stage annotation classifier. `perf-literal` is what enables the
+# packed (SIMD) matcher, and it is not implied by `std`: it must be requested
+# here rather than arriving through feature unification with some other crate
+# that happens to ask for it.
+aho-corasick = { version = "1.1", default-features = false, features = [
+    "std",
+    "perf-literal",
+] }
 memchr = "2.8"
 smallvec = "1.15"
 
 [dev-dependencies]
 hegeltest = "0.28"
 proptest = "1.11"
-ab-aozora-proptest = { path = "../ab-aozora-proptest" }
+ab-proptest = { path = "../ab-proptest" }
 ab-aozora-render = { path = "../ab-aozora-render" }
 insta = { version = "1.47", features = ["yaml", "json", "filters"] }
 

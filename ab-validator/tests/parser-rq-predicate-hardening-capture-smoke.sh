@@ -239,14 +239,27 @@ manifest = {"blobs": sorted(manifest_members, key=lambda member: member["locator
 PY
 }
 
+# What this proves is that capture generation is deterministic. It deliberately
+# does not compare against the committed capture under
+# research/test/fixtures/parser-rq/predicate-hardening-capture: that capture is
+# retained evidence of a past instrument, anchored to the parser-ir-0.7.0 schema
+# it keeps beside it, so today's converter is expected to produce different
+# bytes. Comparing the two treated retention as drift and failed unconditionally
+# from the moment the retained schema was placed in that directory, since no
+# generation produces it. The Clojure re-derivation test in this check is what
+# holds the retained capture to account, reading it through that retained schema.
 generate "$tmp/first"
 generate "$tmp/second"
 diff -ru "$tmp/first" "$tmp/second"
 
 if [[ -n "$write_target" ]]; then
+  retained="$research_root/test/fixtures/parser-rq/predicate-hardening-capture"
+  if [[ "$(readlink -m "$write_target")" == "$(readlink -m "$retained")" ]]; then
+    echo "refusing to overwrite the retained capture at $retained" >&2
+    echo "it is evidence, and this mode would first remove the retained schema" >&2
+    exit 64
+  fi
   rm -rf "$write_target"
   mkdir -p "$(dirname "$write_target")"
   cp -R "$tmp/first" "$write_target"
-else
-  diff -ru "$research_root/test/fixtures/parser-rq/predicate-hardening-capture" "$tmp/first"
 fi

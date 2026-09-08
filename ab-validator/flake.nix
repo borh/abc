@@ -981,12 +981,15 @@
             '';
 
         parserRqPredicateHardeningCaptureSmokeCheck =
+          # Capture generation only. The lint and the focused Clojure test that
+          # used to run here are already covered by research-clojure-tests,
+          # whose kaocha :unit suite matches every -test namespace and whose
+          # clj-kondo and cljfmt run over the same src and test paths.
           pkgs.runCommand "parser-rq-predicate-hardening-capture-smoke"
             {
               nativeBuildInputs = [
                 abAozora
                 abAatToParserIr
-                pkgs.clojure
                 pkgs.python3
                 pkgs.coreutils
                 pkgs.diffutils
@@ -995,21 +998,9 @@
               AB_AAT_TO_PARSER_IR_BIN = "${abAatToParserIr}/bin/ab-aat-to-parser-ir";
             }
             ''
-                  bash ${source}/tests/parser-rq-predicate-hardening-capture-smoke.sh \
-                    ${source} ${researchRoot}
-                  export HOME="${researchCljDepsCache}"
-                  export JAVA_TOOL_OPTIONS="-Duser.home=${researchCljDepsCache}"
-                  export CLJ_CONFIG="$HOME/.clojure"
-                  export CLJ_CACHE="$TMPDIR/cp-cache"
-                  export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
-                  export GITLIBS="$HOME/.gitlibs"
-                  mkdir -p "$CLJ_CACHE" "$XDG_CONFIG_HOME"
-                  cd ${researchSource}
-                  clj-kondo --fail-level warning --lint src test
-              cljfmt check src test
-              clojure -M:test -m kaocha.runner \
-                    --focus ab-research.parser-rq-predicate-hardening-capture-test
-                  touch "$out"
+              bash ${source}/tests/parser-rq-predicate-hardening-capture-smoke.sh \
+                ${source} ${researchRoot}
+              touch "$out"
             '';
 
         taxonomyGenerator = mkRustBin {

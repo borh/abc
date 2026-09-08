@@ -1440,7 +1440,7 @@ fn splice_prologue<S: SanitizedSrc>(
 /// [`splice_prologue`] (`O(region)` re-lex) and then **only** the diagnostics
 /// splice plus the store-free `source_nodes`/`pairs` splice the *next* edit's
 /// region-find consumes, avoiding the `O(doc)` work a full parse does (the
-/// normalized/sanitized string build, the store + registry Eytzinger table, the
+/// normalized/sanitized string build, the store + registry lookup table, the
 /// container-pairs table). The result is `O(region + #diagnostics)`.
 ///
 /// Its `diagnostics` flatten from the spliced [`PieceSeq`] over the shared

@@ -40,7 +40,7 @@ the following markers:
 | `［＃中］`   | 中点: ordinal 返り点 (middle)                          |
 | `［＃下］`   | 下点: ordinal 返り点 (lower)                           |
 
-Excerpt A (the notation header) additionally documents the `［＃…］：返り点` form itself with the example `四月熟［＃二］黄梅［＃一］`.
+Excerpt A (the notation header) also documents the `［＃…］：返り点` form itself with the example `四月熟［＃二］黄梅［＃一］`.
 
 ### 送り仮名 / 再読文字 (okurigana / re-read markers): parenthesised kana forms
 
@@ -50,7 +50,7 @@ Excerpt A (the notation header) additionally documents the `［＃…］：返�
 | `［＃（ス）］`  | 送り仮名 「す」 inflection                                  |
 | `［＃（レント）］` | 送り仮名 / conjugation ending 「れんと」 (incl. re-read) |
 
-Across the full source file `hoo_kansho07.txt` the work additionally emits
+Across the full source file `hoo_kansho07.txt` the work also emits
 `［＃（ツ）］`, `［＃（フ）］`, `［＃（ヒ）］`, `［＃（レ）］`, `［＃三］`,
 `［＃天／地／人］`-style markers: the complete set of 24 documented at the
 manual page. The excerpt captures a representative, dense subset; the full

@@ -1441,8 +1441,8 @@ pub fn summarize_warehouse_interesting(
         );
     }
     // Derived once and reused for every emitted score_version block (both
-    // engines, the empty-run early return, and --explain) so it is always
-    // the honest value, never a hardcode.
+    // engines, the empty-run early return, and --explain) so it reflects the
+    // actual configuration rather than a hardcoded value.
     let granularity_profile = granularity_profile_token(&read_analyzer_arg_family(run_dir)?);
     let source_ids = read_distinct_column(run_dir, WarehouseTable::Sources, 1)?;
     if source_ids.is_empty() {
@@ -2604,8 +2604,8 @@ mod tests {
     #[test]
     fn granularity_profile_empty_input_is_empty_string() {
         // Never reached in production (>= 2 analyzers is enforced before
-        // this is called) but the honest answer to "which classes did zero
-        // rows compare?" is none, not a default.
+        // this is called), but when zero rows are compared the accurate
+        // result is empty, not a fallback default.
         assert_eq!(granularity_profile_token(&[]), "");
     }
 
@@ -2788,8 +2788,8 @@ mod tests {
 
     #[test]
     fn within_kind_default_scoring_matches_hand_computed_ranks() {
-        // 3 feature + 2 segmentation patterns, each signal given a
-        // deliberately distinct order across coverage/rarity/span/impact
+        // 3 feature + 2 segmentation patterns, each signal configured with a
+        // distinct order across coverage/rarity/span/impact
         // so no assertion could pass by accident from correlated inputs.
         let rarity_total = 50;
         let patterns = vec![

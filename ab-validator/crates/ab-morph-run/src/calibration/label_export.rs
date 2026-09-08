@@ -473,7 +473,7 @@ mod tests {
                 fixture_row("p-left", vec![region_example("source-a", 0, 3)]),
             ],
         );
-        // Right's region example for the shared pattern deliberately differs
+        // Right's region example for the shared pattern differs
         // from left's (and from every other pattern's span), so the "first
         // input wins" contract is falsifiable.
         let right = fixture_summary(

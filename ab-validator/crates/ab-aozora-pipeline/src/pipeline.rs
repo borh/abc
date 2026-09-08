@@ -770,13 +770,13 @@ const fn attr_decorates_ruby_base(attr: ForwardAttr) -> bool {
 /// `Referenced` (serializes the bracket verbatim, renders nothing), so serialize
 /// stays byte-identical.
 ///
-/// Uniqueness is load-bearing, not "nearest ruby wins": the target must match
-/// **exactly one** preceding ruby base and **no** preceding plain-text run
-/// anywhere in the look-back (a plain copy that precedes the ruby (cross-line
-/// or same-line, out of the classifier's reset window) is a competing referent,
-/// so we decline and keep the honest `forward_referent_not_stylable` warning.
-/// Returns the directive spans decorated, so the builder can suppress exactly
-/// those warnings.
+/// Target resolution requires strict uniqueness, rather than nearest-ruby
+/// matching: the target must match **exactly one** preceding ruby base and
+/// **no** preceding plain-text run anywhere in the look-back (a plain copy that
+/// precedes the ruby, cross-line or same-line out of the classifier's reset
+/// window, is a competing referent). If a competing referent exists, we decline
+/// and retain the `forward_referent_not_stylable` warning. Returns the directive
+/// spans decorated, so the builder can suppress exactly those warnings.
 fn decorate_ruby_bases(out: &mut [ClassifiedSpan], source: &str, store: &NodeStore) -> Vec<Span> {
     let detached: BTreeSet<_> = out
         .iter()

@@ -16,8 +16,8 @@ use super::store::NodeStore;
 /// Source-keyed registry entry.
 ///
 /// Pairs a sanitized-source byte span with the classified node landed there.
-/// Derives `Debug, Clone, Copy`; deliberately no `PartialEq`/`Eq`. `Copy`
-/// requires [`NodeRef`] be `Copy`.
+/// Derives `Debug, Clone, Copy`; omits `PartialEq`/`Eq`. `Copy` requires
+/// [`NodeRef`] to be `Copy`.
 #[derive(Debug, Clone, Copy)]
 pub struct SourceNode {
     /// Half-open byte range, in sanitized-source coordinates, this node was

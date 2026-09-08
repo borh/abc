@@ -177,12 +177,12 @@ Soranoha can read.
 
 ### Romanization
 
-Romanized titles are deliberately not published, in any form. The kana reading
-carries no word boundaries, so a mechanical transliteration is not correct
-Hepburn. Supply the Japanese title and its reading, and let your journal's
-style (Hepburn with or without macrons, ALA-LC) govern the romanization.
-The 文字遣い種別 values are Aozora's own classification and are left in
-Japanese for the same reason.
+Romanized titles are not published in any format: kana readings carry no
+word boundaries, so mechanical transliteration cannot reliably produce valid
+Hepburn romanization. Supply the Japanese title and its reading, and let your
+journal's style (Hepburn with or without macrons, ALA-LC) govern the
+romanization. The 文字遣い種別 values are Aozora's own classification and are left
+in Japanese for the same reason.
 
 ## Citing an exact byte sequence
 

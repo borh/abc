@@ -1,8 +1,8 @@
 (ns soranoha.snh.repo
   "Publication-repository plumbing: writing single-parent publication commits
-  without a work tree, and the fast-forward-only push that serves as the
-  compare-and-swap. Used by the transaction and by test fixtures (which also
-  craft invalid commits through the same writer)."
+  without a work tree, and the fast-forward-only push that provides
+  compare-and-swap semantics. Used by the transaction and by test fixtures (which
+  also craft invalid commits through the same writer)."
   (:require [babashka.fs :as fs]
             [babashka.process :as process]
             [clojure.string :as str])

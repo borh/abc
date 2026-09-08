@@ -1,4 +1,4 @@
-//! Load-bearing gate for incremental re-parse.
+//! Invariant gate for incremental re-parse equivalence.
 //!
 //! Proves, over every document in `AOZORA_CORPUS_ROOT`, that the
 //! **diagnostics-only** incremental engine
@@ -11,7 +11,7 @@
 //! cannot prove byte-identical returns `None` and falls back to a full parse
 //! (trivially correct).
 //!
-//! Skipped silently when `AOZORA_CORPUS_ROOT` is unset; never hard-fails on
+//! Skipped when `AOZORA_CORPUS_ROOT` is unset; never hard-fails on
 //! a missing corpus (mirrors `corpus_sweep`).
 
 use ab_aozora_encoding::decode_auto;

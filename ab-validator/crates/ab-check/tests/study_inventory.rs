@@ -6,7 +6,7 @@ use ab_check::encoding::hex_sha256;
 /// (sha12 = first 12 hex of sha256(indexed_path)) and the content hash is
 /// sha256(bytes). This is the scheme that produced the committed
 /// `aozorabunko-source-snapshot` corpus hash; the Python `materialize_index`
-/// smoke helper deliberately differs (id = raw work id, path = sha256(work_id))
+/// smoke helper differs (id = raw work id, path = sha256(work_id))
 /// and must not be mistaken for it.
 #[test]
 fn inventory_identity_is_the_authoritative_work_id_sha12_scheme() {

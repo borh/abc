@@ -325,10 +325,10 @@ below are the verifier's cross-object additions:
   type equals its `type` member; `catalog` is `catalog`); for every artifact the verifier
   FETCHES, it recomputes sha256 over the bytes and requires equality
   with the id's hash component; each of the FIVE PROTOCOL JSON
-  objects additionally passes the §1 BOUNDARY DECODE (stored bytes must equal the canonical bytes of the validated
+  objects also passes the §1 BOUNDARY DECODE (stored bytes must equal the canonical bytes of the validated
   value). All other artifacts (e.g. `tei-validation` JSON bytes)
   are exact published bytes checked by hash; they have no frozen schema or
-  canonical form. Validation records additionally satisfy the consumed contract below.
+  canonical form. Validation records also satisfy the consumed contract below.
 - Validation-summary RE-DERIVATION: the verifier consumes
   a fixed projection of each per-work `tei-validation` record under a
   minimal consumed contract: the record parses as strict JSON with

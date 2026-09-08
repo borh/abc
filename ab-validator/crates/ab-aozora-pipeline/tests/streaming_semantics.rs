@@ -105,9 +105,8 @@ fn pair_stream_take_n_does_not_exhaust_underlying_source() {
     assert_eq!(first_10.len(), 10, "events: {first_10:?}");
     // The first 10 events cover roughly the first 2-3 groups (2.5 ×
     // 12 bytes ≈ 30 bytes). We pin a generous ceiling (1/8 of the
-    // full input) to keep the assertion robust against minor changes
-    // in event packing while still catching a "drains everything"
-    // regression.
+    // full input) to accommodate minor variations in event packing
+    // while still catching an unexpected drain of the full input stream.
     let max_end: u32 = first_10
         .iter()
         .filter_map(|e| e.span().map(|s| s.end))

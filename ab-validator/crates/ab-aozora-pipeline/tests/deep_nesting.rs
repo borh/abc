@@ -21,8 +21,8 @@
 //! Unknown }` for the OUTERMOST bracket. The innermost-out annotation
 //! is what we care about for the iterative-classify smoke; the
 //! registry shape of `1 inline entry + 0 leaves + 0 containers`
-//! stays the same regardless of nesting depth, so structure
-//! consistency is the load-bearing assertion.
+//! stays the same regardless of nesting depth, which the test
+//! asserts directly.
 
 use ab_aozora_pipeline::lex;
 use ab_aozora_spec::Sentinel;

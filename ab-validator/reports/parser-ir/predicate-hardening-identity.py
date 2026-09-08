@@ -240,8 +240,7 @@ def _sha256(data: bytes) -> str:
 def _canonical(value: Any) -> bytes:
     # abc-legacy-json-c14n-v0: ABC's frozen historical canonicalization,
     # including Charred's escaped solidus behavior. Existing ABC identities
-    # deliberately retain this representation rather than silently switching
-    # to RFC 8785.
+    # retain this representation rather than migrating to RFC 8785.
     return canonical_json(value).encode("utf-8")
 
 

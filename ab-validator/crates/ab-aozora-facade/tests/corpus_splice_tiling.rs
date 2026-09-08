@@ -6,7 +6,7 @@
 //!   region byte-slices concatenate back to it exactly.
 //! * No region is unclassified (`Opaque`) — every real construct is editable.
 //! * The **identity splice** reproduces the sanitized source. `check_tiling`
-//!   already proves the byte-level tiling for *every* region; this additionally
+//!   already proves the byte-level tiling for *every* region; this also
 //!   runs the real `Tree::splice` machinery (a `Direct` byte replacement, or a
 //!   `Coupled` partner-derivation + scoped verification) on a representative
 //!   sample — one region per safety class per document. The splice itself is
@@ -16,7 +16,7 @@
 //!   for every one of the corpus's millions of coupled regions.
 //!
 //! This extends the property-test coverage in `aozora-cst`'s lossless
-//! invariant to the full 青空文庫 corpus. Skipped silently when
+//! invariant to the full 青空文庫 corpus. Skipped when
 //! `AOZORA_CORPUS_ROOT` is unset; never hard-fails on missing corpus.
 
 use ab_aozora_encoding::decode_auto;

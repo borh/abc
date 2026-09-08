@@ -13,10 +13,10 @@
 //! **Canonicalization.** The hash is SHA-256 over a JCS canonicalization of the
 //! descriptor (RFC 8785 subset: object keys sorted, compact separators, UTF-8),
 //! mirroring `ab-research.jcs` so the discipline matches `tokenizer-profile-hash`.
-//! The descriptor deliberately contains only strings and string arrays with
-//! slash-free ASCII identifiers, so the escaping-sensitive corners of RFC 8785
-//! (numbers, `/`, non-ASCII) never fire and the two implementations would agree
-//! byte-for-byte if ABC ever needed to verify.
+//! The descriptor contains only strings and string arrays with
+//! slash-free ASCII identifiers, so escaping-sensitive branches of RFC 8785
+//! (numbers, `/`, non-ASCII) never trigger and the two implementations agree
+//! byte-for-byte if cross-verification is needed.
 
 use serde::Serialize;
 use sha2::{Digest, Sha256};
@@ -121,7 +121,7 @@ impl NormalizationPolicy {
     /// modernizing dictionary is unpinned and two runs under the "same" policy
     /// could differ. The pipeline must call this before applying a policy; the
     /// infallible constructors stay infallible so hash-ordering tests can build
-    /// deliberately-invalid combinations.
+    /// invalid combinations for negative test cases.
     ///
     /// # Errors
     ///

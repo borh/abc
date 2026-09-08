@@ -1,7 +1,7 @@
 (ns soranoha.snh.fixture
   "Shared machinery for verifier/transaction tests: a throwaway origin +
   clone pair, the fixture signing keys, a parameterized corpus assembler,
-  and a low-level crafter for deliberately invalid publication commits."
+  and a low-level crafter for invalid publication commits used in negative tests."
   (:require [babashka.fs :as fs]
             [charred.api :as json]
             [clojure.java.io :as io]

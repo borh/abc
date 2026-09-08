@@ -35,7 +35,7 @@ cat > "$tmp/vectors/unsupported_shape/vector.json" <<'JSON'
     "feature": "unknown_future_feature",
     "level": "should",
     "spec_section": "9.9",
-    "note": "[provenance:smoke] deliberately unsupported by fake adapter"
+    "note": "[provenance:smoke] unsupported by fake adapter"
   },
   "source": "［＃未来機能］",
   "expected": {

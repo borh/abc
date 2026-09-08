@@ -1781,8 +1781,8 @@ fn is_okurigana_body(body: &str) -> bool {
 }
 
 /// Character class accepted inside okurigana parens: hiragana,
-/// katakana (incl. half-width), CJK unified ideographs. Deliberately
-/// narrower than "any non-whitespace" so editorial `（注）` or
+/// katakana (incl. half-width), CJK unified ideographs. Narrower
+/// than "any non-whitespace" so editorial `（注）` or
 /// punctuation-rich glosses fall through to the annotation path.
 const fn is_okurigana_char(ch: char) -> bool {
     matches!(
@@ -2652,7 +2652,7 @@ mod both_margin_tests {
         }
     }
 
-    /// Forms that are deliberately NOT both-margin decline (fall through to the
+    /// Forms that do not match both-margin syntax decline (fall through to the
     /// `Directive{Unknown}` catch-all): a plain head indent with no bottom
     /// clause, and a bottom clause missing its explicit count.
     #[test]

@@ -152,7 +152,7 @@ Use a distinct passphrase per medium so that disclosure of one passphrase does n
 unlock the other, and make sure each passphrase is independently recoverable: the
 protocol tolerates one medium being destroyed and governance continuing on the
 other, which is only true if the surviving medium can still be opened. Custody of
-these passphrases is an operational matter that the specification deliberately places
+these passphrases is an operational matter that the specification places
 outside the wire protocol; record the arrangement in the inventory.
 
 After both media exist, reopen each one and confirm its `MANIFEST` still matches, so
@@ -169,7 +169,7 @@ copy operation that produced the second, and it is maintained outside this
 repository. Governance operates only while every surviving inventoried medium is
 accounted for and controlled.
 
-The release seed additionally exists as a CI secret, which is not part of the
+The release seed also exists as a CI secret, which is not part of the
 governance inventory but should be recorded in the same document so that the total
 set of places each key exists is written down in one place.
 

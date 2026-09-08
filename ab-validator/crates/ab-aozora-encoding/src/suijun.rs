@@ -79,9 +79,9 @@ impl Suijun {
 ///
 /// Returns [`Suijun::Outside`] for any scalar not present in the
 /// JIS X 0213:2004 table (half-width katakana, Hangul, emoji, the
-/// Windows CP932 variant forms, …). Note that ASCII letters and digits
-/// *are* in the table (the JIS X 0208 row-3 Latin cells), so they
-/// classify as [`Suijun::Level1`], not `Outside`.
+/// Windows CP932 variant forms, …). ASCII letters and digits are in the
+/// table (the JIS X 0208 row-3 Latin cells), so they classify as
+/// [`Suijun::Level1`], not `Outside`.
 ///
 /// ```
 /// use ab_aozora_encoding::{jis_level, Suijun};

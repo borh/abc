@@ -17,10 +17,10 @@
   What the reading shows is the same text the plaintext projection publishes:
   one lemma from an apparatus, the first supported branch of a choice, the
   same order. `soranoha.annotations.view/selected-children` is the authority
-  for that policy and this namespace mirrors it. Where the two differ they
-  differ deliberately: `view` drops ruby readings and notes because analysis
-  wants base text, and a reader wants both, so they are shown rather than
-  removed.
+  for that policy and this namespace mirrors it. The two differ on ruby
+  readings and notes: `view` drops ruby readings and notes for analysis
+  workflows that consume base text, whereas the reading view presents them for
+  human readers.
 
   Where the encoding records something HTML cannot carry, the fact becomes a
   class or a title rather than disappearing: an apparatus's rejected reading,

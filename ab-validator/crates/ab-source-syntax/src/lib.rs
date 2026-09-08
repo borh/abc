@@ -107,11 +107,10 @@ pub struct SourceAnnotationsBoth<'a> {
 /// fidelity against packaging attribution and can mean neither.
 ///
 /// The regions are derived from [`aozora_body_range`] alone; no separator or
-/// `底本：` heuristic is maintained anywhere else. Note that the tail is
-/// anchored on the body **end**, not on the tail start that function returns:
-/// `body_end` is trim-adjusted for trailing newlines and `tail_start` is not,
-/// so anchoring on the latter would leave the blank lines between them in no
-/// region at all.
+/// `底本：` heuristic is maintained anywhere else. The tail is anchored on
+/// the body **end**, not on the tail start that function returns: `body_end`
+/// is trim-adjusted for trailing newlines and `tail_start` is not, so anchoring
+/// on the latter would leave the blank lines between them in no region at all.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SourceRegions {
     header: core::ops::Range<usize>,
@@ -1390,7 +1389,7 @@ mod tests {
     //
     // Region set, in this function's own coordinates:
     //   header [0, body_start)   body [body_start, body_end)   tail [body_end, len)
-    // Note that the tail is anchored on `body_end`, NOT on the returned
+    // The tail is anchored on `body_end`, not on the returned
     // `tail_start`. The two differ, and the next test says by how much.
 
     fn assert_partitions(source: &str, label: &str) {

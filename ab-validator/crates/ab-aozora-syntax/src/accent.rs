@@ -29,7 +29,7 @@
 //! The function is **only safe to call on the body of a `〔...〕` span**:
 //! aozora restricts accent decomposition to that convention. Because
 //! transcribers wrap whole foreign passages in `〔…〕`, prose punctuation
-//! occurs *inside* the convention too, so two marker bytes are additionally
+//! occurs *inside* the convention too, so two marker bytes are also
 //! gated per occurrence by `digraph_applies` (cedilla only before a letter,
 //! acute only on a vowel base); corpus-validated against the archive's own
 //! XHTML rendering. `text,` therefore stays `text,` even inside a span.
@@ -229,10 +229,10 @@ pub(crate) const fn is_composed_letter(ch: char) -> bool {
     false
 }
 
-/// ASCII characters that act as accent markers in the spec.
+/// ASCII characters used as accent markers in the spec.
 ///
-/// Kept as a `&[u8]` slice for downstream consumers that want to
-/// enumerate the marker bytes; runtime membership checks go through
+/// Kept as a `&[u8]` slice for downstream consumers that enumerate
+/// the marker bytes; runtime membership checks go through
 /// the `u128` bitmap `ACCENT_MARKER_MASK` instead, which lowers to a
 /// single shift + AND.
 pub const ACCENT_MARKERS: &[u8] = b"'`^:~&,/_";

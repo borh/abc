@@ -529,7 +529,7 @@ fn build_level_table(path: &std::path::Path) -> LevelTable {
         // the primary is the ASCII form (e.g. `|` U+007C) but the
         // full-width form (｜ U+FF5C, a notation marker) is what appears
         // in real text and must classify as in-JIS. `Windows:` aliases
-        // are deliberately NOT registered — they are the non-portable
+        // are not registered: they are the non-portable
         // CP932 variants that should surface as 機種依存文字.
         for note in &notes {
             if let Some(rest) = note.trim().strip_prefix("Fullwidth:")

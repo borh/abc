@@ -328,12 +328,11 @@ fn degraded_reductions_are_render_only() {
     }
 }
 
-/// Meaning-preservation axis (the structural fix): the parser deliberately keeps
-/// `ここから最後まで3字下げ` Unknown *to preserve its until-EOF scope* (the parser
-/// has no until-end indent concept). Tier1 must not override that preservation
-/// decision — the lossy reduction (dropping 最後まで) lives in Tier2, reachable
-/// only from `--degraded`. This closes the recognition-vs-meaning gap that let a
-/// lossy fold sit in Tier1 undetected.
+/// Meaning-preservation axis: the parser retains `ここから最後まで3字下げ` as
+/// Unknown *to preserve its until-EOF scope* (the parser has no until-end indent
+/// concept). Tier1 must not override that preservation decision: the lossy
+/// reduction (dropping 最後まで) lives in Tier2, reachable only from `--degraded`.
+/// This prevents a lossy fold in Tier1.
 ///
 /// (Before this axis used `中文字、ゴシック体` → `中文字、太字`; that fold was
 /// removed when ゴシック体 became a first-class gothic construct, so the axis now
@@ -362,9 +361,9 @@ fn tier1_never_overrides_parser_spelling_preservation() {
     );
 }
 
-/// Tier2 keeps the zero-FP relaxation honest: genuinely editorial, compound, or
-/// composition-note bodies must NOT reduce — reducing them would launder
-/// editorial prose or invent lost data.
+/// Tier2 enforces zero-false-positive bounds: editorial, compound, or
+/// composition-note bodies must not reduce, as reducing them would alter
+/// editorial prose or synthesize missing data.
 #[test]
 fn degraded_refuses_editorial_and_compound() {
     for body in [

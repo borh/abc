@@ -115,7 +115,7 @@ tokenization (`シマッタ！`, `オロカ！`).
      --model data/ortho-gold/models/model-human.bin
    ```
 
-5. **Cross-validate** (for honest generalization):
+5. **Cross-validate** (for out-of-sample generalization):
 
    ```bash
    cargo run -p ab-ortho-detect-ml -- cross-validate \

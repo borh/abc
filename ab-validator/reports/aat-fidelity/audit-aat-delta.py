@@ -346,8 +346,8 @@ def rewrite_blocks(blocks):
     """One grammar pass over a block list; returns (rewritten, count).
 
     Admits only the fixed-marker container constructs (CONSTRUCTS). The
-    standalone `字詰め` line-width form is deliberately NOT admitted (C3 gate
-    fix); it stays a raw containerOpen/containerClose pair per spec §6.6.
+    standalone `字詰め` line-width form is not admitted; it stays a raw
+    containerOpen/containerClose pair per spec §6.6.
     """
     out, count, i = [], 0, 0
     while i < len(blocks):
@@ -1109,7 +1109,7 @@ def expand_adoptions(node, base_doc, name, adopted, adopted_by_line):
     [raw open, *content, raw close] (spans recovered verbatim from the
     baseline via recover_markers) and tallying `adopted` by construct.
 
-    Each adoption is additionally BOUND TO ITS LINE via the recovered
+    Each adoption is also bound to its line via the recovered
     baseline open marker's span line_start into `adopted_by_line`
     ({line: {construct: count}}), so the caller can compare observed vs
     expected adoptions per marker-carrying line rather than per work:

@@ -27,7 +27,7 @@ fuzz_target!(|data: &[u8]| {
         "lex returned invalid UTF-8 in normalized text",
     );
     // 2. Every diagnostic must report a non-inverted span. We
-    //    deliberately do not bound `span.end` against the normalized
+    //    do not bound `span.end` against the normalized
     //    length: sanitize-stage normalization (CRLF → LF, leading BOM strip)
     //    shrinks the buffer, but diagnostics are emitted in source
     //    coordinates so they can point past the normalized end.

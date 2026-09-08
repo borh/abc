@@ -55,7 +55,7 @@ pub enum DirectiveNormalization {
     /// [`canonical_directive`]) to canonical form. The level `fmt --fix`
     /// and `render --normalize` use.
     Canonical,
-    /// Tier1 + Tier2: additionally reduce the lossy / judgment degraded forms
+    /// Tier1 + Tier2: also reduce the lossy / judgment degraded forms
     /// (per [`degraded_directive`]) Tier1 refuses. Constructed **only** by the
     /// opt-in renderer ([`crate::render_html_normalized`] via `render --degraded`),
     /// never by a persistent-write path, so a Tier2 misfire can reach only

@@ -212,10 +212,10 @@ pub struct Coupling {
 pub enum SpliceError {
     /// A [`Coupled`](SpliceSafety::Coupled) edit could not be carried out
     /// coherently: the candidate source did not re-parse to the intended
-    /// construct, so applying it would silently desync the reference. The
-    /// honest terminal outcome for the corpus-attested hard cases — an
-    /// ambiguous forward referent, a ruby-base target literal, or a
-    /// disjoint target list. The source is left unchanged.
+    /// construct, so applying it would desynchronize the reference. This is
+    /// the terminal outcome for corpus-attested edge cases such as
+    /// ambiguous forward referents, ruby-base target literals, or
+    /// disjoint target lists. The source is left unchanged.
     Unverifiable {
         /// The edited region's role, for diagnostics.
         role: RegionRole,

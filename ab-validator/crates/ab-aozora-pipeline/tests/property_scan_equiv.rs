@@ -27,10 +27,10 @@
 //!    A regression that emitted a trigger in the normalized output
 //!    where none existed in source would shift this delta.
 //!
-//! Both properties are deliberately stated as inequalities rather than
-//! equalities. The sanitize stage can drop bytes (BOM, CR) and rewrite
-//! sequences (`〔NFC〕` → combining), so a strict "trigger count is
-//! equal" property would have many false positives. The inequality
+//! Both properties are stated as inequalities rather than equalities:
+//! the sanitize stage can drop bytes (BOM, CR) and rewrite sequences
+//! (`〔NFC〕` → combining), so a strict "trigger count is equal"
+//! property would produce false positives. The inequality
 //! properties remain decisive: any regression that *adds* triggers
 //! during normalization fails them under shrinking.
 

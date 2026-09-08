@@ -229,8 +229,8 @@ mod tests {
     #[test]
     fn iteration_is_deterministic() {
         let dir = fresh_root();
-        // Create in a deliberately out-of-order sequence; the iterator
-        // must sort so that tests don't flake across filesystems.
+        // Create files in an unsorted sequence; the iterator must sort
+        // them so tests remain deterministic across filesystems.
         seed_fixture(dir.path(), "bb", b"b");
         seed_fixture(dir.path(), "aa", b"a");
         seed_fixture(dir.path(), "cc", b"c");

@@ -261,7 +261,7 @@ pub const fn ruby_base_class(ch: char) -> Option<RubyBaseClass> {
     })
 }
 
-/// True when `ch` can serve as (part of) an implicit-ruby *kanji* base:
+/// Returns true when `ch` functions as (part of) an implicit-ruby *kanji* base:
 /// predicate is shared with the implicit-base classifier.
 #[must_use]
 pub const fn is_ruby_base_char(ch: char) -> bool {
@@ -374,7 +374,7 @@ impl HeadingKind {
 /// Orthogonal to [`HeadingKind`] (the 大 / 中 / 小 level): each style
 /// pairs with any level. The 同行 style runs the title into the body on the
 /// same line; 窓 is an inset title. 副見出し is **not** a real annotation (it
-/// does not occur in the corpus) and is deliberately absent.
+/// does not occur in the corpus) and is absent.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]

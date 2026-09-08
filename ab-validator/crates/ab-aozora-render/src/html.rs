@@ -35,7 +35,7 @@ use crate::walk::{SentinelKind, WalkSink, walk};
 /// canonical spelling — reached *transitively* through the formatter rewrite,
 /// never a second copy of the catalogue — so a known 揺れ renders as a real
 /// element instead of a hidden directive span. `Canonical` consults Tier1 only
-/// (`render --normalize`); `Degraded` additionally reduces the lossy / judgment
+/// (`render --normalize`); `Degraded` also reduces the lossy / judgment
 /// Tier2 forms (`render --degraded`).
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct RenderOptions {

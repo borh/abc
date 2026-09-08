@@ -78,8 +78,8 @@ because it is a title of the work in another script, not a property of the
 first one. The author has three `<persName>` forms — kanji, kana, romaji —
 each marked with the script it is in, so a tool can pick the one it can sort
 or display. All of it comes from Aozora's catalog, and is kept as the catalog
-has it rather than silently normalised — note that the given name is 竜之介
-here while the printed edition on the next block names 龍之介.
+has it rather than normalised: the given name is 竜之介 here, whereas the
+printed edition in the next block uses 龍之介.
 
 The person `<idno>` names whoever issued the identifier, the same way the
 publication identifiers below do. `aozora-person-id` is Aozora's six-digit
@@ -420,9 +420,9 @@ print(rubies[:3])             # [('御釈迦様', 'おしゃかさま'), ('蓮�
 print(rubies[18])             # ('犍陀多', 'かんだた')  — gaiji inside the base
 ```
 
-A furigana list like this is the reason to take TEI rather than the plaintext:
+A furigana list like this is the reason to take TEI rather than plaintext:
 the readings are an editorial layer the source carried, and the plaintext
-deliberately does not have them.
+omits them.
 
 **Every gaiji, with the marker the source used:**
 

@@ -453,7 +453,7 @@ impl<'a> Tree<'a> {
     /// Re-emit Aozora source text with explicit [`SerializeOptions`].
     ///
     /// With the default options this equals [`Self::to_source`]. With
-    /// `directives` not `Off` it additionally rewrites the notation-hygiene
+    /// `directives` not `Off` it also rewrites the notation-hygiene
     /// lint's `DirectiveKind::Unknown` near-misses to canonical form — the
     /// `aozora fmt --fix` autofix (which constructs `Canonical`).
     ///

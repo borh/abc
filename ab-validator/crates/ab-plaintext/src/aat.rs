@@ -16,7 +16,7 @@ pub fn from_aat_value(aat: &Value) -> Result<PlainTextDocument, PlainTextError> 
     })
 }
 
-/// Like [`from_aat_value`], additionally returning the projected-char-offset →
+/// Like [`from_aat_value`], also returning the projected-char-offset →
 /// AAT-inline-node span mapping (see [`ProjectionSpan`]).
 ///
 /// # Errors

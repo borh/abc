@@ -93,7 +93,7 @@ pub fn decode_sjis_into(input: &[u8], dst: &mut String) -> Result<(), DecodeErro
 /// `Shift_JIS` archive files, and already-decoded UTF-8 mirrors (e.g. a
 /// corpus that has been pre-converted). Forcing every caller to commit
 /// to one encoding up front is the wrong default — it is why corpus
-/// tooling historically hard-coded [`decode_sjis`] and silently broke on
+/// tooling historically hard-coded [`decode_sjis`] and failed on
 /// UTF-8 input. This entry point removes that concern: hand it bytes,
 /// get back UTF-8.
 ///

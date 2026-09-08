@@ -3,10 +3,10 @@
   archives.
 
   Renderings, not facts. The signed catalog carries `archive_stem` and the
-  romanized name parts; it deliberately does not carry the filename they
-  render into, because a derived value stored beside its own inputs can
-  disagree with them and the chain is append-only. The rule lives here so it
-  can be corrected in a later release without rewriting a signed record.
+  romanized name parts; it excludes the assembled filename they render into,
+  because a derived value stored beside its own inputs can disagree with them
+  and the chain is append-only. The rule lives here so it can be corrected in a
+  later release without rewriting a signed record.
 
   A download filename is a convenience. The citable thing is the identifier,
   which is why it is a component of every filename rather than an alternative

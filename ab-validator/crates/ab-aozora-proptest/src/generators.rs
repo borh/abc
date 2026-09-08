@@ -86,11 +86,10 @@ pub fn hiragana_fragment(max_len: usize) -> impl Strategy<Value = String> {
 /// ASCII filler, whitespace, line separators, and long `-`/`=`/`_`
 /// decorative rule rows.
 ///
-/// This is the workhorse strategy for "parse is total" and "Tier-A
-/// canary holds for well-formed inputs" properties. It deliberately
-/// emits *unbalanced* bracket shapes so shrinking can surface
-/// malformed-input panics; downstream properties that demand
-/// well-formedness gate on the lexer's own diagnostics.
+/// Primary strategy for "parse is total" and "Tier-A canary holds for
+/// well-formed inputs" properties. It emits *unbalanced* bracket shapes
+/// so shrinking can surface malformed-input panics; downstream
+/// properties requiring well-formedness gate on the lexer's diagnostics.
 ///
 /// The decorative rule atoms (≥ 10 repeats of `-`/`=`/`_`) are the
 /// bait for the setext rule — the sanitize stage must isolate them so
@@ -129,8 +128,8 @@ pub fn aozora_fragment(max_atoms: usize) -> impl Strategy<Value = String> {
     prop::collection::vec(atoms, 0..=max_atoms).prop_map(|pieces| pieces.join(""))
 }
 
-/// Generate an adversarial Aozora source that deliberately exercises
-/// malformed / pathological shapes.
+/// Generate adversarial Aozora source text exercising malformed or
+/// pathological shapes.
 ///
 /// Specifically emits:
 ///
@@ -278,10 +277,9 @@ pub fn unicode_adversarial() -> impl Strategy<Value = String> {
 /// Generate arbitrary byte strings for `ab_aozora_encoding::decode_sjis`'s
 /// error path.
 ///
-/// Most draws are random `Vec<u8>`; the strategy deliberately does
-/// *not* try to bias toward valid SJIS because the failure modes of
-/// interest (decode errors, EOF-in-trail-byte, trailing garbage) all
-/// live in the error path.
+/// Most draws are random `Vec<u8>`; the strategy does not bias toward
+/// valid SJIS because the failure modes of interest (decode errors,
+/// EOF-in-trail-byte, trailing garbage) all live in the error path.
 pub fn sjis_bytes(max_len: usize) -> impl Strategy<Value = Vec<u8>> {
     prop::collection::vec(any::<u8>(), 0..=max_len)
 }
@@ -297,8 +295,8 @@ pub fn sjis_bytes(max_len: usize) -> impl Strategy<Value = Vec<u8>> {
 ///
 /// The generator emits one of: a valid lead+trail pair, an unpaired
 /// lead at end-of-input, an out-of-range trail, or filler ASCII.
-/// Inputs are deliberately short (≤ 64 bytes) so the shrinker can
-/// pinpoint the offending boundary cleanly.
+/// Inputs are kept short (≤ 64 bytes) so the shrinker can pinpoint
+/// the offending boundary cleanly.
 pub fn sjis_boundary_bytes() -> impl Strategy<Value = Vec<u8>> {
     let atoms = prop_oneof![
         // Valid lead-byte ranges followed by an in-range trail.

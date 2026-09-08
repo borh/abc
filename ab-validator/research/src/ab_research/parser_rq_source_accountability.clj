@@ -489,9 +489,9 @@
          ;; The attribution denominator's own conservation: content is the
          ;; regions minus line structure, so it sits between what is
          ;; attributed and what is eligible, and its complement is published
-         ;; rather than inferred. A producer that ever claimed a terminator
-         ;; or a blank line breaks the ordering here instead of quietly
-         ;; scoring above 1.
+         ;; rather than inferred. A producer that claims a terminator or blank
+         ;; line violates this inequality constraint instead of producing a
+         ;; score above 1.0.
          (<= (:attributed_bytes metadata)
              (:content_bytes metadata)
              (:eligible_bytes metadata))

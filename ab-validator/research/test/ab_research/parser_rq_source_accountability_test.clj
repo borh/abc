@@ -878,12 +878,12 @@
   (is (= "" (#'rq-source/strict-utf8 (byte-array 0)))))
 
 (deftest disposition-audit-counts-are-derived-not-merely-summed
-  (let [honest {:diagnostic_count 2 :authorizing_diagnostic_count 1
-                :observe_only_diagnostic_count 1}
+  (let [expected {:diagnostic_count 2 :authorizing_diagnostic_count 1
+                  :observe_only_diagnostic_count 1}
         swapped {:diagnostic_count 2 :authorizing_diagnostic_count 0
                  :observe_only_diagnostic_count 2}
         dispositions ["authorize_exact_span" "observe_only"]]
-    (is (#'rq-source/disposition-counts-coherent? honest dispositions))
+    (is (#'rq-source/disposition-counts-coherent? expected dispositions))
     (is (not (#'rq-source/disposition-counts-coherent? swapped dispositions)))))
 
 (deftest diagnostic-gap-aggregate-fails-closed-without-mutating-r1
@@ -1163,12 +1163,11 @@
 ;; reason for existing.
 ;;
 ;; Retiring node-span coverage moves the work record to a v2 wire version and
-;; deletes the P1 aggregate outright. Nothing emits either v1 shape any more,
-;; so the frozen schemas have no live producer to keep them honest -- which is
-;; exactly how a frozen schema quietly stops matching what it claims to
-;; validate. This test is the check that keeps them load-bearing: it reads the
-;; published run artifacts, which are immutable, and asserts each still
-;; validates against the schema for the wire version it declares.
+;; deletes the P1 aggregate outright. Nothing emits either v1 shape any longer,
+;; so the frozen schemas have no live producer. This test validates the frozen
+;; schemas against historical data: it reads the immutable published run
+;; artifacts and asserts each still validates against the schema for the wire
+;; version it declares.
 ;;
 ;; The counts are asserted too. Without them a run directory could lose an
 ;; artifact and the validation loop would pass over an empty set.

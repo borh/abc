@@ -79,10 +79,9 @@ The filename is a convenience and the identifier is the citable thing. The
 filename is a serving-layer rendering: it can be corrected in a later release,
 its author component picks one contributor out of a work that may record
 several, and its middle component is Aozora Bunko's own archive stem rather
-than anything this project assigns. The signed catalog carries the inputs —
-`archive_stem` and the romanized name parts — and deliberately not the
-assembled name, because a derived value stored beside its own inputs can
-disagree with them and the chain is append-only.
+than anything this project assigns. The signed catalog carries the inputs (`archive_stem` and the romanized name
+parts) rather than the assembled name, because a derived value stored beside
+its own inputs can disagree with them and the chain is append-only.
 
 The identifier is a component of the filename rather than an alternative to
 it. 372 author-and-title pairs are shared by 1966 works, so a name built from

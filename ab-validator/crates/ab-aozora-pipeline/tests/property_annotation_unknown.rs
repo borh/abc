@@ -1,7 +1,7 @@
 //! Invariants for `DirectiveKind::Unknown`: the catch-all that
 //! the classify stage emits when no recogniser claimed an `［＃…］` annotation.
 //!
-//! The catch-all is a deliberate decision: every bracket annotation is
+//! The catch-all ensures every bracket annotation is
 //! claimed *somewhere* in the AST so the Tier-A canary (no bare `［＃`
 //! survives to HTML) holds end-to-end. The property tests here pin the
 //! four invariants the catch-all must satisfy:
@@ -10,10 +10,9 @@
 //!    the catch-all path, including pathological / unbalanced bracket
 //!    shapes.
 //! 2. **non-empty raw bytes**: every emitted `Directive` node carries
-//!    a `NonEmptyStr` raw payload (the type system enforces it, but
-//!    we cross-check the runtime invariant explicitly so a future
-//!    refactor that loosens the type can't quietly emit empty
-//!    annotations.
+//!    a `NonEmptyStr` raw payload (the type system enforces it, and
+//!    this runtime invariant ensures a future refactor that loosens
+//!    the type fails if it emits empty annotations).
 //! 3. **lex → serialise → lex round-trip preserves Directive count**:
 //!    re-parsing the serialised output must produce the same number of
 //!    Directive nodes (any kind, including Unknown). A regression that

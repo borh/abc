@@ -40,8 +40,8 @@ enum Cmd {
     },
     /// k-fold cross-validation on a gold JSONL set. Trains k models,
     /// each leaving one strided fold out as the test set, and reports
-    /// per-fold + mean recall/precision/F1/accuracy. Honest hold-out
-    /// generalization estimate (vs the train-accuracy ceiling).
+    /// per-fold + mean recall/precision/F1/accuracy to provide an
+    /// unbiased hold-out generalization estimate against the training-accuracy ceiling.
     CrossValidate {
         #[arg(long)]
         gold: std::path::PathBuf,

@@ -5,15 +5,15 @@
 //! output, after a leading BOM is stripped, `CR`/`LF` is folded to `\n`,
 //! decorative rules gain a separating blank line, and `〔…〕` accent
 //! digraphs are decomposed. Each of those shifts byte offsets, so a
-//! consumer that wants to land a caret (an editor overlay, a SARIF
+//! consumer that positions a caret (an editor overlay, a SARIF
 //! region, a character-level checker) on the **source** text must undo
 //! the sanitize transform.
 //!
 //! BOM and `CR`/`LF` are pure deletions a byte-alignment can recover, but
 //! the `〔…〕` accent substitution (`ae&` → æ, `m'` → ḿ) changes length
-//! per digraph and cannot be recovered by alignment alone; it is the one
-//! primitive a source-coordinate consumer can't derive robustly on its
-//! own. [`offset_map`] builds an exact map covering **all** the shifts.
+//! per digraph and cannot be recovered by alignment alone; it cannot be
+//! derived by a source-coordinate consumer from text alignment alone.
+//! [`offset_map`] builds an exact map covering **all** the shifts.
 //!
 //! ```
 //! use ab_aozora_pipeline::lexer::offset_map;

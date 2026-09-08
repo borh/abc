@@ -490,12 +490,11 @@ fn normalization_entry(
 /// is a citation whose title opens with a `※［＃...］` gaiji annotation, so a
 /// producer that declined `※` lines by shape would decline a real one.
 ///
-/// **The distribution notice is tested before the colophon field, and that
-/// order is load-bearing.** One notice line in the corpus writes its URL with a
-/// fullwidth `http：//`, which makes the whole sentence a non-empty key, a
-/// fullwidth colon and a value -- a colophon field by `is_colophon_field`, and
-/// it was classified as one until this producer learned the notice. A typo
-/// inside a sentence must not decide which construct the sentence is.
+/// The distribution notice must be tested before the colophon field: one notice
+/// line in the corpus writes its URL with a fullwidth `http：//`, which makes
+/// the whole sentence a non-empty key, a fullwidth colon, and a value -- matching
+/// `is_colophon_field`. Testing the notice first prevents misclassifying that
+/// notice line as a colophon field due to a fullwidth colon typo.
 ///
 /// The header's editorial legend block and bibliographic block have producers
 /// of their own, `legend_entries` and `bibliographic_entries`.
@@ -526,7 +525,7 @@ fn metadata_entries(decoded: &DecodedSource, parser: &MemberIdentity) -> Vec<Val
             continue;
         }
         // Openers are tested before continuations, and among themselves in the
-        // order below. Each ordering is load-bearing and each has a test.
+        // sequence below. Precedence affects classification and each ordering has a test.
         let opened = if is_distribution_notice(content) {
             Some((
                 TailRun::None,
@@ -610,8 +609,8 @@ enum TailRun {
 /// 2-84-53］蟲「三田文学　第四巻第二号」三田文学会`. Reading `※` without
 /// reading the column would reclassify those three citations as remarks. The
 /// fourth is a genuine remark that happens to be indented, and it is read as a
-/// continuation instead; under a field run that is the honest reading, because
-/// indentation under a field is what a continuation is.
+/// continuation instead; under a field run that is the expected classification,
+/// because indentation under a field defines a continuation.
 ///
 /// Claiming this is not claiming to understand the sentence. What is claimed
 /// is which act the line performs -- editorial commentary on the transcription,
@@ -633,9 +632,9 @@ fn is_transcriber_remark(line: &str) -> bool {
 /// matching `YYYY年M月D日...` carry 19 distinct suffixes over 21,990 lines, and
 /// `作成` (15,780), `修正` (4,240) and `公開` (1,944) are 99.9% of them. The
 /// other 16 -- `初版第1刷発行`, `第14刷`, `改版` -- are publication dates of the
-/// source edition that happen to be written unindented, so they are NOT file
-/// dating lines and are deliberately left out of the set. A looser test that
-/// accepted any suffix would relabel a publication date as file provenance.
+/// source edition that happen to be written unindented, so they are not file
+/// dating lines and are excluded from the set. A looser test that accepted
+/// any suffix would relabel a publication date as file provenance.
 fn is_file_dating_line(line: &str) -> bool {
     let Some(rest) = line.strip_suffix("作成").or_else(|| {
         line.strip_suffix("修正")
@@ -837,8 +836,8 @@ fn region_fact(line: &RegionLine, construct: &str, role: &str) -> Value {
 ///
 /// Measured over a 597-work sample of the pinned corpus: every fence of every
 /// legend block is a run of `-` with no indentation and no other character,
-/// 53 to 55 of them. The bound is deliberately loose on length and strict on
-/// composition, because length is transcriber style and composition is not.
+/// 53 to 55 of them. The bound is permissive on length and strict on
+/// composition, because length varies by transcriber style whereas composition does not.
 fn is_separator_rule(line: &str) -> bool {
     line.len() >= 5 && line.bytes().all(|byte| byte == b'-')
 }
@@ -1004,10 +1003,10 @@ fn is_bracketed_heading(line: &str) -> bool {
 
 /// A legend entry: a notation symbol, a fullwidth colon, then its explanation.
 ///
-/// Shape-identical to `is_colophon_field`, and deliberately a separate
-/// function: the two are the same shape carrying different meanings in
-/// different regions, and collapsing them into one predicate would invite
-/// reusing it where the region no longer distinguishes them.
+/// Shape-identical to `is_colophon_field`, but kept as a separate function:
+/// the two share a syntax pattern but carry different semantics in
+/// different regions. Combining them would allow unintended reuse where
+/// the region distinction is lost.
 fn is_legend_entry(line: &str) -> bool {
     let Some((symbol, _explanation)) = line.split_once('：') else {
         return false;

@@ -14,7 +14,7 @@ rights standing has been established against a recorded basis and that basis
 still holds at the moment of publication.
 
 Admission is not a judgement about the quality of the encoding, and passing
-validation does not admit a work. The two are deliberately separate: a work
+validation does not admit a work. The two are distinct: a work
 can be encoded perfectly and not be published, and being published says
 nothing about how good the encoding is.
 
@@ -197,7 +197,7 @@ A reading printed alongside or above the characters it applies to — furigana.
 In the source it is written `蓮池《はすいけ》`; in TEI it is `<ruby>` with an
 `<rb>` base and an `<rt>` reading.
 
-Ruby readings are in the TEI and deliberately not in the plaintext, which
+Ruby readings are in the TEI and omitted from the plaintext, which
 carries base text only.
 
 ## source offset

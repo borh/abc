@@ -22,9 +22,8 @@ sys.path.insert(0, str(_LIB))
 
 import aat_runs  # noqa: E402
 
-# The manifest deliberately carries a legacy `aat_dir_env` field so the test
-# exercises the override code path directly: post-Phase-1 the resolver must
-# ignore that field entirely rather than honour the named env var.
+# The manifest includes a legacy `aat_dir_env` field to verify that the
+# resolver ignores that field entirely rather than honoring the environment variable.
 _MANIFEST = {
     "schema_version": 1,
     "run_set_id": "test",

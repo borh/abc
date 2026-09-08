@@ -10,7 +10,7 @@ separate from independent rights findings.
 
 The passages below were inspected in the aozorabunko Git checkout at revision
 `0e9ea3e586eb0aa34039fabfc85a407d2f98b165`. They describe that revision's
-published guidance; current reliance additionally checks live official responses.
+published guidance; current reliance also checks live official responses.
 
 - [`soramoyou/soramoyou2011.html`, 2011-01-13 entry](https://github.com/aozorabunko/aozorabunko/blob/0e9ea3e586eb0aa34039fabfc85a407d2f98b165/soramoyou/soramoyou2011.html)
   introduces the extended CSV: the work flag is `あり` if any contributing

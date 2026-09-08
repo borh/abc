@@ -162,7 +162,7 @@ Contributors are recorded with the role Aozora gives them — 著者, 翻訳者,
 校訂者, 編者 — and a work can have several. The site indexes people by all of
 their roles, not only authorship.
 
-Two things are deliberately narrower than "everything in Aozora":
+Two boundaries exclude items present in upstream Aozora Bunko:
 
 **Publication is per work and gated on rights.** A work appears in a release
 only after its rights standing has been assessed against a recorded basis. The

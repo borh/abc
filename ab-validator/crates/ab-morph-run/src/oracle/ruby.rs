@@ -55,7 +55,7 @@ pub(crate) fn morpheme_reading(analyzer_id: &str, morpheme: &Morpheme) -> Option
             // A present-but-empty or "*" feature is absent, not a reading; otherwise a
             // kana="*" would normalize to "" and become a false non-match instead
             // of falling back to pron. (Analyzers already map "*"→None at parse
-            // time, but the guard makes the contract robust to any caller.)
+            // time, but this guard enforces the contract across all callers.)
             .filter(|value| !value.is_empty() && value != "*")
     };
     if analyzer_id.starts_with("vibrato") || analyzer_id.starts_with("vaporetto") {

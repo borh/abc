@@ -1848,8 +1848,8 @@ mod tests {
     }
 
     /// Severity and source axes are independent; test the cross-product
-    /// for the four production variants so a future variant addition
-    /// has to think about both axes deliberately.
+    /// for the four production variants to ensure both axes are explicitly
+    /// specified when adding future variants.
     #[test]
     fn severity_source_cross_product_is_pinned() {
         let unclosed = Diagnostic::unclosed_bracket(Span::new(0, 3), PairKind::Bracket);

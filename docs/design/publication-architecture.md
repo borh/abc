@@ -65,14 +65,13 @@ being exported, the exporter's reuse check covers those pages exactly as it
 covers chain content, and the same commit re-exports byte-identically. Serving
 stays one static tree with no application runtime.
 
-The reading view renders each work's published TEI into HTML at export time,
-from that work's own artifact bytes. It is deliberately not a stylesheet
-reference inside the published file. An `<?xml-stylesheet?>` processing
-instruction would change every TEI artifact's bytes, and so would move
-presentation into the artifact ids, into the conformance vectors and into
-genesis — leaving the one part of the system most certain to need correction as
-the one part that cannot be corrected without republishing. A rendering that
-lives in the serving layer is replaced at the next activation. It states the
+The reading view renders each work's published TEI into HTML at export time
+from that work's own artifact bytes, rather than using a stylesheet reference
+inside the published file. An `<?xml-stylesheet?>` processing instruction would
+change every TEI artifact's bytes, moving presentation into the artifact ids,
+the conformance vectors, and genesis -- which would prevent presentation
+updates without republishing the corpus. A rendering that lives in the serving
+layer is replaced at the next activation. It states the
 release it was rendered from and links the artifact it was rendered out of, so
 a reader who doubts the rendering can check it against the bytes, and it selects
 the same text the published plaintext projection selects — one lemma from an

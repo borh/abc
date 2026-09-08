@@ -7,7 +7,7 @@
 //! Produces a generated feature-taxonomy table and verifies it against the
 //! hand-written §0 of `PARSER_REPORT.md`.
 //!
-//! Non-authoritative `chuki_tag.txt` is deliberately not read.
+//! Non-authoritative `chuki_tag.txt` is excluded from processing.
 
 use anyhow::{Context, Result};
 use clap::Parser;

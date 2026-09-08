@@ -16,8 +16,8 @@
 //! 3. **Accent decomposition inside `〔...〕`**: ASCII accent digraphs
 //!    (`fune`+grave-accent → funèbre, `cafe`+apostrophe → café, …) are
 //!    rewritten to their Unicode-combined form before any later stage
-//!    sees them. Scope is deliberately restricted to tortoiseshell-
-//!    bracket spans; the function is the identity outside them.
+//!    processes them. Scope is restricted to tortoiseshell-bracket
+//!    spans; the function is the identity outside them.
 //! 4. **Decorative rule isolation**: lines composed entirely of 10 or
 //!    more `-`, `=`, or `_` characters (a very common visual separator
 //!    in Aozora Bunko prose) are forced to sit on their own stanza by
@@ -231,7 +231,7 @@ pub fn sanitize(source: &str) -> SanitizeOutput<'_> {
     }
 }
 
-/// As [`sanitize`], but additionally returns a [`SanitizeMaps`].
+/// Like [`sanitize`], but also returns a [`SanitizeMaps`].
 ///
 /// Composes one [`OffsetMap`] per transform step, so a downstream consumer
 /// can translate a byte offset in the sanitized `text` back to the
@@ -324,7 +324,7 @@ pub fn rewrite_accent_spans(input: &str) -> String {
     rewrite_accent_spans_collecting(input, &mut sink)
 }
 
-/// As [`rewrite_accent_spans`], but additionally pushes one
+/// Like [`rewrite_accent_spans`], but also pushes one
 /// [`Diagnostic::accent_decomposition_applied`] (a `Note`) for every
 /// digraph **substitution site** inside a `〔…〕` span; a `〔…〕` that
 /// contains no accent digraph is silent.
@@ -1104,9 +1104,9 @@ mod tests {
         // the extra blank line between two rules is a no-op in
         // CommonMark (both become `<hr>` regardless), so the simpler
         // uniform behaviour is preferred over a conditional that
-        // special-cases rule-after-rule. Test documents the shape so
-        // a future tightening that skips the second isolation has to
-        // update this expectation deliberately.
+        // special-cases rule-after-rule. This test documents the shape so
+        // any future change skipping the second isolation requires updating
+        // this expectation.
         let input = "前置き\n----------\n==========\n本文";
         let out = sanitize(input);
         assert_eq!(

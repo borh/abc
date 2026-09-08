@@ -137,7 +137,7 @@ impl DecodedSource {
 /// Two offset systems feed span emission: the parser (and AAT node
 /// construction) work in `span_text` (sanitized-body-relative) offsets;
 /// `sanitize_diagnostics` carry full-sanitized-text offsets. Both compose
-/// through `maps` (sanitized → decoded `text`); the former additionally
+/// through `maps` (sanitized → decoded `text`); the former also
 /// needs `body_offset` added first (body-relative → full-sanitized).
 ///
 /// `pub` (with `pub` `maps`/`body_offset`/`to_decoded`) because the
@@ -6102,7 +6102,7 @@ mod tests {
     /// cd ab-validator
     /// cargo test -p ab-aat --lib aat_json_from_bytes_is_byte_exact_under_default_map_ordering -- --nocapture
     /// ```
-    /// (this test's own literal is the deliberately-stale assertion; the
+    /// (this test's literal asserts the expected canonical serialization; the
     /// panic message prints the actual bytes, decoded and pasted here
     /// verbatim). The `(git unknown)` suffix in `adapter_version` is
     /// `build.rs`'s fallback when `AB_AOZORA_GIT_REV` is unset, which is the
@@ -7688,7 +7688,7 @@ mod tests {
     /// `classify_tokens` exactly — used ONLY as the property oracle for
     /// `bare_toggle_zero_adoption_is_structurally_unchanged`: true iff at
     /// least one marker pair in `markers` (one line's marker sequence, in
-    /// source order) would adopt. Deliberately independent of
+    /// source order) would adopt. Independent of
     /// `pair_line_markers`/`pair_bare_toggles` so the property doesn't test
     /// the production pass against itself.
     fn oracle_line_has_adoption(markers: &[(&'static str, bool)]) -> bool {

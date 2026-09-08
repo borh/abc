@@ -257,9 +257,9 @@ fn canonicalize(v: &Value) -> Value {
 /// four marker literals AND whose span lies ENTIRELY on `line`, in
 /// document order.
 ///
-/// Restricted to marker-literal raw nodes (not generic text/gap nodes)
-/// deliberately: a marker always becomes its own parser node with a tight
-/// span (`bare_toggle_marker`'s subject), so it never straddles a line
+/// Restricted to marker-literal raw nodes (not generic text/gap nodes):
+/// a marker always becomes its own parser node with a tight span
+/// (`bare_toggle_marker`'s subject), so it never straddles a line
 /// boundary. A generic filler/gap `text` node CAN straddle a boundary
 /// (`push_source_gap` merges a maximal run with no recognized node in
 /// between, which spans the embedded `\n` when neither line contains a
@@ -427,9 +427,9 @@ proptest! {
     /// Property 3 (ADAPTER-level determinism): running
     /// the whole public pipeline (`aat_json_from_bytes` — decode, sanitize,
     /// parse, classify, serialize) twice on the same input yields identical
-    /// output bytes, hence identical JSON. Byte equality is deliberately
-    /// stronger than `Value` equality (it also pins key order under the
-    /// default `BTreeMap` map, the `preserve_order` tripwire's concern).
+    /// output bytes, hence identical JSON. Byte equality is stronger
+    /// than `Value` equality (it also verifies key order under the
+    /// default `BTreeMap` map).
     /// The pass-level determinism property
     /// (`bare_toggle_pass_is_deterministic`, `src/lib.rs` `mod tests`)
     /// remains as a narrower, direct `pair_bare_toggles` check.

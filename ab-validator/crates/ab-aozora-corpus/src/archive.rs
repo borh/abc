@@ -219,7 +219,7 @@ pub struct EntryMeta {
     /// before falling back to full-content `blake3` confirmation.
     pub source_mtime_ns: i64,
     /// blake3 hash of the source file bytes (raw SJIS bytes for
-    /// archives built from a directory of `.txt` files). Acts as the
+    /// archives built from a directory of `.txt` files). Provides the
     /// content-addressed identity used by the incremental pack diff.
     pub source_blake3: [u8; 32],
     /// Human-readable label (typically the path relative to the
@@ -274,9 +274,8 @@ impl Archive {
 
         // Hard cap: every index record needs at least INDEX_FIXED_LEN
         // bytes (the variable label adds more). A `count` larger than
-        // `(file_size - HEADER_LEN) / INDEX_FIXED_LEN` cannot possibly
-        // be honest — refuse rather than allocate a multi-GB
-        // `Vec<EntryMeta>` from a hostile or corrupted header.
+        // `(file_size - HEADER_LEN) / INDEX_FIXED_LEN` indicates a corrupted or
+        // adversarial header; reject it before allocating Vec<EntryMeta>.
         let count_ceiling = bytes.len().saturating_sub(HEADER_LEN) / INDEX_FIXED_LEN;
         if count > count_ceiling {
             return Err(ArchiveError::InvalidSize {

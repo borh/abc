@@ -473,7 +473,7 @@ impl WarehouseWriter {
     /// `NwayFeatureDiffRow` literals and call this method across the crate
     /// boundary, where a `#[cfg(test)]` item in this crate would not be
     /// visible -- `#[cfg(test)]` gates compilation per-crate, not
-    /// per-workspace. It also still serves as this crate's own byte-identity
+    /// per-workspace. It also still functions as this crate's own byte-identity
     /// reference (see `nway_feature_diffs_direct_builder_matches_reference_bytes`).
     pub fn append_nway_feature_diffs(&mut self, rows: &[NwayFeatureDiffRow]) -> Result<()> {
         if rows.is_empty() {

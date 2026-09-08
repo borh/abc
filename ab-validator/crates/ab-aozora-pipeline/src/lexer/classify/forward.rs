@@ -215,8 +215,8 @@ impl RecogniseCtx<'_, '_> {
     ///
     /// Most adjacent recognisers are **keyword-disjoint**: their bodies
     /// carry mutually exclusive particles/keywords, so reordering them
-    /// leaves the output unchanged. These are deliberately *not* pinned
-    /// by dedicated order tests (such a test would be vacuous):
+    /// leaves the output unchanged. These are not pinned by dedicated
+    /// order tests (such a test would be vacuous):
     ///
     /// * bouten vs left-ruby vs side-note: `のルビ`, `の注記`, and `の傍記`
     ///   are not bouten kinds, so each declines before the next is tried.
@@ -226,8 +226,7 @@ impl RecogniseCtx<'_, '_> {
     ///   below).
     /// * bouten single vs range: separated by the `～` / `〜` infix.
     ///
-    /// The orderings that **are** load-bearing (reordering changes the
-    /// output) each have a regression test that pins them:
+    /// Orderings where sequence affects output each have a regression test:
     ///
     /// * caption-figure ≺ general-image: both end in `（file）入る`; the
     ///   caption form is more specific and must win to keep its

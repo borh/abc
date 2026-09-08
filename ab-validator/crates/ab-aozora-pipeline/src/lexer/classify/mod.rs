@@ -2259,8 +2259,8 @@ impl<'s> RecogniseCtx<'_, 's> {
 ///
 /// The two ranges are redundant in principle: `bytes.start` always
 /// equals `events[events.start]`'s leading edge, but caching them
-/// avoids a branch when the range is empty and makes the helper
-/// signature honest about what it needs.
+/// avoids a branch when the range is empty and explicitly declares
+/// the helper's required bounds.
 struct BodyWindow {
     events: Range<usize>,
     bytes: Range<u32>,

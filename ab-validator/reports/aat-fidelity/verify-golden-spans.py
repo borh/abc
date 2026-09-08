@@ -11,9 +11,9 @@ span; exit 1 on any mismatch.
 The sanitize stage's CR/LF normalization
 (`ab-aozora-pipeline/src/lexer/sanitize.rs`, `normalize_line_endings_core`)
 collapses every `\\r\\n` (and lone `\\r`) to a single `\\n` in the text the
-parser actually sees, while the byte-offset map deliberately expands the
-corresponding span back to the full raw `\\r\\n` run in decoded-source
-coordinates so spans stay contiguous and never drop source bytes. The
+parser processes, while the byte-offset map maps the corresponding span back
+to the full raw `\\r\\n` run in decoded-source coordinates so spans stay
+contiguous and retain source bytes. The
 result: `value` (sanitized/normalized text) legitimately differs from
 `decoded[byte_start:byte_end]` (raw span slice) by exactly the CRLF
 collapse, while `line_start`/`line_end` (computed by counting raw `\\n`

@@ -456,11 +456,11 @@ fn a_fenced_block_without_a_heading_is_declined_rather_than_guessed_at() {
 /// indentation that would mean "continues the field" means "continues the
 /// remark" three lines later. Position, not shape.
 ///
-/// **The decline is the last line, and it is what keeps the measure honest.**
-/// It follows a blank, so no run is open; it opens none itself; and nothing
+/// Declining the last line maintains the strict boundary of the measure:
+/// it follows a blank, so no run is open; it opens none itself; and nothing
 /// claims it. A producer that claimed it would be claiming by position alone,
 /// and the measure would drift toward 1.0 by widening the claim rather than by
-/// understanding more of the packaging.
+/// verifying more of the packaging.
 #[test]
 fn the_bibliographic_block_and_the_colophon_run_are_bounded_by_position() {
     assert_eq!(

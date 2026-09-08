@@ -117,9 +117,9 @@ for work_id in work_ids:
     diagnostic_count += emitted
     works_with_diagnostics += int(emitted > 0)
     # The governed expectation, restated from the corpus into the policy and
-    # authenticated against it before capture. This fixture deliberately feeds
-    # one work a source that emits a diagnostic it is not governed to emit, so
-    # the ratio here is below 1.0 on purpose.
+    # authenticated against it before capture. This fixture feeds one work
+    # a source that emits an un-governed diagnostic to test ratio calculation
+    # below 1.0.
     expected_codes = sorted(diag_policy["expected_diagnostics"][work_id])
     observed_codes = sorted(entry["code"] for entry in diag_value["data"])
     matching_works += int(observed_codes == expected_codes)
@@ -239,8 +239,8 @@ manifest = {"blobs": sorted(manifest_members, key=lambda member: member["locator
 PY
 }
 
-# What this proves is that capture generation is deterministic. It deliberately
-# does not compare against the committed capture under
+# Proves that capture generation is deterministic. It does not compare
+# against the committed capture under
 # research/test/fixtures/parser-rq/predicate-hardening-capture: that capture is
 # retained evidence of a past instrument, anchored to the parser-ir-0.7.0 schema
 # it keeps beside it, so today's converter is expected to produce different

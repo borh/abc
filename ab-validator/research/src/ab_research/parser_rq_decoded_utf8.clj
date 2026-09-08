@@ -76,7 +76,7 @@
       (partition 2 1 intervals))))))
 
 (defn canonical-intervals?
-  "Boolean form of canonical-interval-errors, additionally requiring a
+  "Boolean form of canonical-interval-errors, also requiring a
   vector."
   ([intervals eligible-bytes]
    (canonical-intervals? intervals 0 eligible-bytes))

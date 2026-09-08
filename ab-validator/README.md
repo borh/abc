@@ -9,9 +9,9 @@ The parser core is not original work. The ten `ab-aozora-*` crates are an
 independent fork of [P4suta/aozora](https://github.com/P4suta/aozora) at
 revision `1a4f864603970983719655aa4af4525958ac2d38`, dual-licensed MIT or
 Apache-2.0. Each carries `LICENSE-MIT`, `LICENSE-APACHE` and `NOTICE`, and
-every lifted source file opens with a header naming the upstream crate and
-that revision. This is a methodological fact as well as a licence one: the
-forked code determines the transcription of every work Soranoha publishes.
+each crate root names the upstream crate and that revision in a header. This
+is a methodological fact as well as a licence one: the forked code determines
+the transcription of every work Soranoha publishes.
 
 The `ab-aozora-` prefix marks that lineage. `ab-aozora` without a suffix is
 locally authored despite the name.

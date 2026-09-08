@@ -3,6 +3,7 @@ set -euo pipefail
 
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/tests/lib/smoke-env.sh"
 repo_root="$AB_VALIDATOR_ROOT"
+smoke_trace_failures
 tmp="$(smoke_tmp_dir ab-validator-notation-spec-comparator)"
 trap 'smoke_cleanup "$tmp"' EXIT
 
@@ -46,6 +47,9 @@ cat > "$tmp/vectors/unsupported_shape/vector.json" <<'JSON'
 }
 JSON
 
+# The fake stands in for `aozora inspect`, so its envelope must carry the wire
+# schemaVersion the comparator accepts (2). Emitting an older version makes
+# every inspect-adapter row fail on the envelope rather than on the vector.
 cat > "$tmp/fake-aozora" <<SH
 #!${BASH}
 set -euo pipefail
@@ -53,19 +57,19 @@ kind="\$2"
 input="\$(cat)"
 case "\$kind:\$input" in
   nodes:｜青梅*)
-    printf '{"schemaVersion":1,"data":[{"kind":"ruby","span":{"start":0,"end":24}}]}\n'
+    printf '{"schemaVersion":2,"data":[{"kind":"ruby","span":{"start":0,"end":24}}]}\n'
     ;;
   nodes:*)
-    printf '{"schemaVersion":1,"data":[]}\n'
+    printf '{"schemaVersion":2,"data":[]}\n'
     ;;
   pairs:*)
-    printf '{"schemaVersion":1,"data":[]}\n'
+    printf '{"schemaVersion":2,"data":[]}\n'
     ;;
   diagnostics:*)
-    printf '{"schemaVersion":1,"data":[]}\n'
+    printf '{"schemaVersion":2,"data":[]}\n'
     ;;
   *)
-    printf '{"schemaVersion":1,"data":[]}\n'
+    printf '{"schemaVersion":2,"data":[]}\n'
     ;;
 esac
 SH
@@ -86,19 +90,19 @@ python "$repo_root/reports/parser-conformance/run-aozora-notation-spec.py" \
   --summary-json "$tmp/summary.json" \
   --report-md "$tmp/report.md"
 
-jq -e '.totals.vectors == 2' "$tmp/summary.json"
-jq -e '.totals.adapters == 2' "$tmp/summary.json"
-jq -e '.totals.rows == 4' "$tmp/summary.json"
-jq -e '.rows[] | select(.vector == "ruby_explicit" and .adapter == "fake") | .status == "pass"' "$tmp/summary.json"
+smoke_jq '.totals.vectors == 2' "$tmp/summary.json"
+smoke_jq '.totals.adapters == 2' "$tmp/summary.json"
+smoke_jq '.totals.rows == 4' "$tmp/summary.json"
+smoke_jq '.rows[] | select(.vector == "ruby_explicit" and .adapter == "fake") | .status == "pass"' "$tmp/summary.json"
 # AAT adapters are now scored via the projected spec-kind sequence: the fake AAT
 # adapter emits a matching ruby node, so it passes (was a blanket skip->warning).
-jq -e '.rows[] | select(.vector == "ruby_explicit" and .adapter == "fake-aat") | .status == "pass"' "$tmp/summary.json"
+smoke_jq '.rows[] | select(.vector == "ruby_explicit" and .adapter == "fake-aat") | .status == "pass"' "$tmp/summary.json"
 # Projections an AAT adapter cannot answer (pairs/diagnostics) are explicit skips,
 # not warnings, so they no longer mask the nodes pass/fail.
-jq -e '.rows[] | select(.vector == "ruby_explicit" and .adapter == "fake-aat") | (.skips | length) > 0' "$tmp/summary.json"
-jq -e '.totals | has("skip")' "$tmp/summary.json"
-jq -e '.rows[] | select(.vector == "unsupported_shape" and .adapter == "fake") | .status == "warning"' "$tmp/summary.json"
-rg -n 'ruby_explicit' "$tmp/report.md"
-rg -n 'unsupported_shape' "$tmp/report.md"
+smoke_jq '.rows[] | select(.vector == "ruby_explicit" and .adapter == "fake-aat") | (.skips | length) > 0' "$tmp/summary.json"
+smoke_jq '.totals | has("skip")' "$tmp/summary.json"
+smoke_jq '.rows[] | select(.vector == "unsupported_shape" and .adapter == "fake") | .status == "warning"' "$tmp/summary.json"
+smoke_grep 'ruby_explicit' "$tmp/report.md"
+smoke_grep 'unsupported_shape' "$tmp/report.md"
 
 echo "aozora notation-spec comparator smoke ok"

@@ -2,6 +2,8 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$repo_root/tests/lib/smoke-env.sh"
+smoke_trace_failures
 out_dir="$(mktemp -d "${TMPDIR:-/tmp}/ab-parser-ir-publication-bundle.XXXXXX")"
 trap 'rm -rf "$out_dir"' EXIT
 
@@ -28,6 +30,7 @@ cat > "$parser_ir" <<'JSON'
     "work_content_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
     "source_path": "cards/000000/files/example.txt",
     "encoding": "Shift_JIS",
+    "decode_outcome": "windows-31j",
     "normalization": "source"
   },
   "nodes": [
@@ -78,7 +81,16 @@ cat > "$parser_ir" <<'JSON'
     }
   ],
   "warnings": [],
-  "errors": []
+  "errors": [],
+  "interpretation_problems": [],
+  "interpretation_facts": [
+    {
+      "kind": "ruby",
+      "outcome": "established",
+      "aspects": ["content", "structure"],
+      "source_span": {"start": 6, "end": 9, "line": 1, "coordinate_system": "decoded_utf8"}
+    }
+  ]
 }
 JSON
 
@@ -212,19 +224,19 @@ python "$repo_root/reports/parser-ir/publication-bundle-validate.py" \
   --summary-json "$summary_json" \
   --report-md "$report_md"
 
-jq -e '.schema_version == "publication-bundle-validation-evidence-v2"' "$summary_json" >/dev/null
-jq -e '.verdict == "PUBLICATION_BUNDLE_VALIDATION_PASSED"' "$summary_json" >/dev/null
-jq -e '.validated_bundle.tei.hash == "'"$tei_hash"'"' "$summary_json" >/dev/null
-jq -e '.validated_bundle.plaintext.hash == "'"$plain_hash"'"' "$summary_json" >/dev/null
-jq -e '.structure_check_candidates.tei_manifest_references_preservation == true' "$summary_json" >/dev/null
-jq -e '.structure_check_candidates.tei_manifest_references_validation_result == true' "$summary_json" >/dev/null
-jq -e '.structure_check_candidates.tei_abc_projection_resolves_to_sidecar == true' "$summary_json" >/dev/null
-jq -e '.structure_check_candidates.preservation_tei_pointers_resolve == true' "$summary_json" >/dev/null
-jq -e '.structure_check_candidates.preservation_source_pointers_resolve == true' "$summary_json" >/dev/null
-jq -e '.structure_check_candidates.plaintext_body_only == true' "$summary_json" >/dev/null
-jq -e '.supporting_preconditions.parser_ir_schema_valid == true' "$summary_json" >/dev/null
-jq -e '.join_input.status == "valid" and .counts.preservation_records > 0' "$summary_json" >/dev/null
-rg -n "Publication Bundle Validation" "$report_md" >/dev/null
+smoke_jq '.schema_version == "publication-bundle-validation-evidence-v2"' "$summary_json"
+smoke_jq '.verdict == "PUBLICATION_BUNDLE_VALIDATION_PASSED"' "$summary_json"
+smoke_jq '.validated_bundle.tei.hash == "'"$tei_hash"'"' "$summary_json"
+smoke_jq '.validated_bundle.plaintext.hash == "'"$plain_hash"'"' "$summary_json"
+smoke_jq '.structure_check_candidates.tei_manifest_references_preservation == true' "$summary_json"
+smoke_jq '.structure_check_candidates.tei_manifest_references_validation_result == true' "$summary_json"
+smoke_jq '.structure_check_candidates.tei_abc_projection_resolves_to_sidecar == true' "$summary_json"
+smoke_jq '.structure_check_candidates.preservation_tei_pointers_resolve == true' "$summary_json"
+smoke_jq '.structure_check_candidates.preservation_source_pointers_resolve == true' "$summary_json"
+smoke_jq '.structure_check_candidates.plaintext_body_only == true' "$summary_json"
+smoke_jq '.supporting_preconditions.parser_ir_schema_valid == true' "$summary_json"
+smoke_jq '.join_input.status == "valid" and .counts.preservation_records > 0' "$summary_json"
+smoke_grep "Publication Bundle Validation" "$report_md"
 
 printf '吾輩猫ねこ\n（古伝説と、シルレルの詩から。）\n' > "$bundle_dir/plain.txt"
 
@@ -238,6 +250,6 @@ python "$repo_root/reports/parser-ir/publication-bundle-validate.py" \
   --summary-json "$failed_summary_json" \
   --report-md "$failed_report_md"
 
-jq -e '.verdict == "PUBLICATION_BUNDLE_VALIDATION_FAILED"' "$failed_summary_json" >/dev/null
-jq -e '.structure_check_candidates.plaintext_body_only == false' "$failed_summary_json" >/dev/null
-jq -e '.failures[] | select(.check == "plaintext_body_only")' "$failed_summary_json" >/dev/null
+smoke_jq '.verdict == "PUBLICATION_BUNDLE_VALIDATION_FAILED"' "$failed_summary_json"
+smoke_jq '.structure_check_candidates.plaintext_body_only == false' "$failed_summary_json"
+smoke_jq '.failures[] | select(.check == "plaintext_body_only")' "$failed_summary_json"

@@ -85,33 +85,22 @@ parser-rq-instrument-identity:
 		"./ab-validator#checks.$system.parser-rq-predicate-hardening-capture-smoke" \
 		--no-link --print-build-logs
 
-# Build the flake checks no other gate recipe covers. Every check here is
-# hermetic and needs no corpus data, so the only reason any of them sat outside
-# the gate was that `flake check --no-build` evaluates without running.
-# Deliberately absent: cargo-test, the workspace suite, which runs several
-# minutes and stays a focused check; and four ab-validator checks that are
-# currently red. The ab-validator set is enumerated rather than run through
-# `flake check` so those four cannot hide the rest.
+# Build every flake check. `flake check --no-build` evaluates without running,
+# which is how thirty checks stayed silently red while appearing gated, so the
+# ab-validator set is built here by name. The names come from the flake rather
+# than a hand-kept list: a check added later is gated without touching this
+# recipe, which is the failure mode being closed.
+#
+# `cargo-test`, `default` and `ab-validator` are the same multi-minute workspace
+# derivation under three names, excluded here and run as a focused check.
 flake-checks:
 	@{{nix_eval}} flake check --print-build-logs
 	@system="$({{nix_eval}} eval --impure --raw --expr builtins.currentSystem)"; \
-	{{nix_eval}} build --no-link --print-build-logs \
-		"./ab-validator#checks.$system.cargo-check" \
-		"./ab-validator#checks.$system.cargo-clippy" \
-		"./ab-validator#checks.$system.cargo-fmt" \
-		"./ab-validator#checks.$system.cargo-deny" \
-		"./ab-validator#checks.$system.monorepo-path-hygiene-smoke" \
-		"./ab-validator#checks.$system.monorepo-workspace-layout-smoke" \
-		"./ab-validator#checks.$system.taxonomy-drift" \
-		"./ab-validator#checks.$system.source-inventory-smoke" \
-		"./ab-validator#checks.$system.source-representability-gate" \
-		"./ab-validator#checks.$system.aat-fidelity-duckdb-smoke" \
-		"./ab-validator#checks.$system.reports-pytest" \
-		"./ab-validator#checks.$system.parser-rq-core-attempt-python-tests" \
-		"./ab-validator#checks.$system.parser-rq-campaign-provenance-python-tests" \
-		"./ab-validator#checks.$system.parser-rq-predicate-hardening-capture-python-tests" \
-		"./ab-validator#checks.$system.parser-rq-resource-capture-smoke" \
-		"./ab-validator#checks.$system.upstream-aozora-notation-spec"
+	names="$({{nix_eval}} eval --raw "./ab-validator#checks.$system" --apply \
+		'cs: builtins.concatStringsSep " " (builtins.filter (n: !(builtins.elem n [ "default" "ab-validator" "cargo-test" ])) (builtins.attrNames cs))')"; \
+	targets=""; \
+	for name in $names; do targets="$targets ./ab-validator#checks.$system.$name"; done; \
+	{{nix_eval}} build --no-link --print-build-logs $targets
 
 validate: check-no-build evidence-gate parser-rq-instrument-identity flake-checks release-parser-reproducible
 

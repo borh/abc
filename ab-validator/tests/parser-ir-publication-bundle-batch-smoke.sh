@@ -2,6 +2,8 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$repo_root/tests/lib/smoke-env.sh"
+smoke_trace_failures
 out_dir="$(mktemp -d "${TMPDIR:-/tmp}/ab-parser-ir-publication-bundle-batch.XXXXXX")"
 trap 'rm -rf "$out_dir"' EXIT
 
@@ -67,6 +69,7 @@ write_row_bundle() {
     "work_content_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
     "source_path": "cards/000000/files/example.txt",
     "encoding": "Shift_JIS",
+    "decode_outcome": "windows-31j",
     "normalization": "source"
   },
   "nodes": [
@@ -91,7 +94,16 @@ write_row_bundle() {
     {"id": "p000001", "span": {"start": 9, "end": $source_note_end, "coordinate_system": "parser_text_utf8"}, "span_source": "direct", "node_range": {"start": 2, "end": 3}, "role": "source-note", "classification": "heuristic", "source_pointer": "blocks[1]"}
   ],
   "warnings": [],
-  "errors": []
+  "errors": [],
+  "interpretation_problems": [],
+  "interpretation_facts": [
+    {
+      "kind": "ruby",
+      "outcome": "established",
+      "aspects": ["content", "structure"],
+      "source_span": {"start": 6, "end": 9, "line": 1, "coordinate_system": "decoded_utf8"}
+    }
+  ]
 }
 JSON
 
@@ -200,13 +212,13 @@ python "$repo_root/reports/parser-ir/publication-bundle-validate.py" \
   --summary-json "$summary_json" \
   --report-md "$report_md"
 
-jq -e '.schema_version == "publication-bundle-batch-validation-evidence-v2"' "$summary_json" >/dev/null
-jq -e '.verdict == "PUBLICATION_BUNDLE_BATCH_VALIDATION_PASSED"' "$summary_json" >/dev/null
-jq -e '.scope.rows_discovered == 2 and .scope.rows_validated == 2 and .scope.rows_failed == 0' "$summary_json" >/dev/null
-jq -e '.structure_check_candidates.plaintext_body_only == true' "$summary_json" >/dev/null
-jq -e '.rows | length == 2' "$summary_json" >/dev/null
-jq -e '.rows[] | select(.row_id == "row-a" and .verdict == "PUBLICATION_BUNDLE_VALIDATION_PASSED")' "$summary_json" >/dev/null
-rg -n "Publication Bundle Batch Validation" "$report_md" >/dev/null
+smoke_jq '.schema_version == "publication-bundle-batch-validation-evidence-v2"' "$summary_json"
+smoke_jq '.verdict == "PUBLICATION_BUNDLE_BATCH_VALIDATION_PASSED"' "$summary_json"
+smoke_jq '.scope.rows_discovered == 2 and .scope.rows_validated == 2 and .scope.rows_failed == 0' "$summary_json"
+smoke_jq '.structure_check_candidates.plaintext_body_only == true' "$summary_json"
+smoke_jq '.rows | length == 2' "$summary_json"
+smoke_jq '.rows[] | select(.row_id == "row-a" and .verdict == "PUBLICATION_BUNDLE_VALIDATION_PASSED")' "$summary_json"
+smoke_grep "Publication Bundle Batch Validation" "$report_md"
 
 write_row_bundle "$out_dir/rows/row-c" "ねこ" "底本：「fixture」" "吾輩猫ねこ"
 
@@ -221,8 +233,8 @@ python "$repo_root/reports/parser-ir/publication-bundle-validate.py" \
   --summary-json "$failed_summary_json" \
   --report-md "$failed_report_md"
 
-jq -e '.verdict == "PUBLICATION_BUNDLE_BATCH_VALIDATION_FAILED"' "$failed_summary_json" >/dev/null
-jq -e '.scope.rows_discovered == 3 and .scope.rows_failed == 1' "$failed_summary_json" >/dev/null
-jq -e '.structure_check_candidates.plaintext_body_only == false' "$failed_summary_json" >/dev/null
-jq -e '.failures[] | select(.row_id == "row-c" and .check == "plaintext_body_only")' "$failed_summary_json" >/dev/null
-jq -e '.failures[] | select(.row_id == "row-c" and .check == "plaintext_body_only" and .details.kind == "plaintext_mismatch" and .details.expected_length == 3 and .details.actual_length == 5)' "$failed_summary_json" >/dev/null
+smoke_jq '.verdict == "PUBLICATION_BUNDLE_BATCH_VALIDATION_FAILED"' "$failed_summary_json"
+smoke_jq '.scope.rows_discovered == 3 and .scope.rows_failed == 1' "$failed_summary_json"
+smoke_jq '.structure_check_candidates.plaintext_body_only == false' "$failed_summary_json"
+smoke_jq '.failures[] | select(.row_id == "row-c" and .check == "plaintext_body_only")' "$failed_summary_json"
+smoke_jq '.failures[] | select(.row_id == "row-c" and .check == "plaintext_body_only" and .details.kind == "plaintext_mismatch" and .details.expected_length == 3 and .details.actual_length == 5)' "$failed_summary_json"

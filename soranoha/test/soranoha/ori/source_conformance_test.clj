@@ -47,10 +47,22 @@
          reading (view/from-tei tei)]
      {:ir ir :tei tei :view reading :plaintext (projection/plaintext reading)})))
 
-(defn- elements [result tag]
+(defn- inside-refs-decl? [^Node node]
+  (cond (nil? node) false
+        (= "refsDecl" (view/local-name node)) true
+        :else (recur (.getParentNode node))))
+
+(defn- elements
+  "Every `tag` element in the document, except those the `refsDecl` contributes.
+
+  The header's `refsDecl` explains in prose how to read a source-span
+  reference, so a query for the work's paragraphs would otherwise return it.
+  Header elements that carry data rather than prose, such as the `mapping` of a
+  glyph declaration, are still in scope."
+  [result tag]
   (let [^Document doc (get-in result [:view :view/document])
         nodes (.getElementsByTagNameNS doc view/tei-namespace tag)]
-    (mapv #(.item nodes %) (range (.getLength nodes)))))
+    (into [] (remove inside-refs-decl?) (map #(.item nodes %) (range (.getLength nodes))))))
 
 (defn- attribute [^Element node ^String name] (.getAttribute node name))
 

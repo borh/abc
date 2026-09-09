@@ -1,6 +1,6 @@
 (ns soranoha.ori.base-text-variant-test
   (:require [babashka.fs :as fs]
-            [charred.api :as json]
+            [clojure.string :as string]
             [clojure.test :refer [deftest is]]
             [soranoha.annotations.view :as view]
             [soranoha.core.hash :as hash]
@@ -66,8 +66,15 @@
     (is (= "本文続き未知" (:view/text (view/from-tei (:tei output)))))
     (is (= 2 (.getLength segments)))
     (is (= 1 (count source-notes)))
-    (is (= source-span (json/read-json (.getTextContent note))))
-    (is (= (str "urn:" source-hash) (.getAttribute note "corresp")))
+    ;; The note is empty: its extent is in its own id, its coordinate system
+    ;; is fixed for every span, and the primary text hash is declared once in
+    ;; the header rather than repeated on every note.
+    (is (= "" (.getTextContent note)))
+    (is (= (str "source-" (get source-span "start") "-" (get source-span "end"))
+           (.getAttributeNS note view/xml-namespace "id")))
+    (is (= "" (.getAttribute note "n")) "no line was supplied, so none is claimed")
+    (is (string/includes? (:tei output) (str "<idno type=\"primary-text-hash\">" source-hash "</idno>"))
+        "the hash the notes used to repeat is declared once")
     (is (= (str "#" (.getAttributeNS note view/xml-namespace "id"))
            (.getAttribute ^Element (.item segments 0) "source")
            (.getAttribute ^Element (.item segments 1) "source")))

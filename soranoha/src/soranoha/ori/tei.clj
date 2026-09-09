@@ -1,6 +1,5 @@
 (ns soranoha.ori.tei
   (:require [soranoha.ori.publication-whitespace :as whitespace]
-            [soranoha.core.json :as record-json]
             [clojure.string :as string]))
 
 (defn- present-text? [text]
@@ -597,6 +596,41 @@
           acc
           nodes))
 
+(def ^:private recoverable-span-keys
+  "Everything a `source-span` note's reference and its declaration account for.
+  `start` and `end` are in the id, `coordinate_system` is fixed for every span
+  in the corpus, and `line` becomes `@n`. Any other key would be dropped by the
+  reduction, so its presence is an error rather than a silent loss."
+  ["start" "end" "line" "coordinate_system"])
+
+(defn- source-span-note
+  "One extent of the authenticated source text, as an empty note.
+
+  Everything the extent is made of is already elsewhere in the document.
+  `start` and `end` are in the id a consumer must parse anyway to resolve the
+  reference; `coordinate_system` is `decoded_utf8` for every span, because
+  `source-reference` refuses any other; and the primary text hash is declared
+  once in the header's `sourceDesc`. Only the line number is new, so only the
+  line number is carried, in `@n`. The `refsDecl` in `encodingDesc` states how
+  to read the id.
+
+  A span carrying anything the reference does not account for throws rather
+  than being silently reduced. This is the one place the reduction could lose
+  something, and the cost of being wrong is a published extent that no longer
+  says what it stood for."
+  [id span]
+  (let [{:strs [start end line coordinate_system]} span]
+    (when-not (and (= "decoded_utf8" coordinate_system)
+                   (= id (str "source-" start "-" end))
+                   (or (nil? line) (integer? line))
+                   (empty? (apply dissoc span recoverable-span-keys)))
+      (throw (ex-info "source span is not recoverable from its reference"
+                      {:reason :irreducible-source-span :id id :span span})))
+    ;; A span whose line is unknown carries no `n`, rather than a placeholder
+    ;; a consumer would have to recognise as one.
+    [:note (cond-> {:type "source-span" :xml/id id}
+             line (assoc :n (str line)))]))
+
 (defn- tei-source-div [notes]
   (into [:div {:type "source"}] notes))
 
@@ -617,12 +651,8 @@
                    flush-paragraph
                    flush-division)
         result (update result :back-notes into
-                       (map (fn [[id span]]
-                              [:note (cond-> {:type "source-span" :xml/id id}
-                                       (:primary-text-hash result)
-                                       (assoc :corresp (str "urn:" (:primary-text-hash result))))
-                               (record-json/write-deterministic-json-str span)])
-                            (:source-spans result)))]
+                       (map (fn [[id span]] (source-span-note id span)))
+                       (:source-spans result))]
     {:body (tei-text result)
      :char_declarations (:char_declarations result)
      :node_counts (:node_counts result)

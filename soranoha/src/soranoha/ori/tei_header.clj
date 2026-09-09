@@ -253,8 +253,30 @@
      " 文字遣い種別: the orthographic style Aozora Bunko records for the "
      "transcription."]]])
 
+(def ^:private source-refs-decl
+  "How to read a `source-span` reference.
+
+  Each `note` of type `source-span` in the back matter stands for one extent
+  of the source text, and carries only what its reference does not already
+  give: the line number. Declaring the rest once is what lets the notes be
+  empty. Without this a reader would have to infer that the two numbers in the
+  id are offsets, and into which text."
+  ;; Plain text rather than the tagdocs elements gi and att: the publication
+  ;; profile does not admit them, and naming the elements in prose reads the
+  ;; same to the person this paragraph is for.
+  [:refsDecl {:xml/id "source-spans"}
+   [:p "Each note of type source-span in the back matter identifies one extent "
+    "of the source text. Its xml:id has the form source-START-END, where START "
+    "and END are byte offsets into the decoded UTF-8 primary text named by the "
+    "idno of type primary-text-hash in sourceDesc. Its n attribute is the line "
+    "the extent begins on, and is absent when the line is not recorded. "
+    "Elements point at these extents through their source attribute. Notes "
+    "whose xml:id begins parser-source belong to a parser diagnostic instead, "
+    "and carry their extent as JSON because their identifier does not encode "
+    "it."]])
+
 (defn- encoding-desc [declarations]
-  (cond-> [:encodingDesc [:styleDefDecl {:scheme "css"}] class-decl]
+  (cond-> [:encodingDesc [:styleDefDecl {:scheme "css"}] class-decl source-refs-decl]
     (seq declarations) (conj (char-decl declarations))))
 
 (defn- text-class

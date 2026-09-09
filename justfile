@@ -31,6 +31,16 @@ docs-links:
 catalog-figures *args:
 	@python scripts/catalog-figures-check.py {{args}}
 
+# Build a browsable preview of the public serving tree and serve it on
+# 127.0.0.1:PORT. Not a release: the chain is local and throwaway, signed with
+# the checked-in conformance fixture keys, and the assessment snapshot is
+# asserted rather than evaluated. Everything a reader would see comes from the
+# real publication and serving code. Needs a corpus checkout: set
+# CORPUS_CHECKOUT. SORANOHA_PREVIEW_DIR moves the work directory, which
+# defaults under XDG_CACHE_HOME so a preview never touches the tree.
+site-preview works="8" port="8787":
+	@bash scripts/site-preview.sh {{works}} {{port}}
+
 nix-format-check:
 	@find . \
 		-path './.git' -prune -o \

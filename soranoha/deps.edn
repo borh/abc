@@ -25,6 +25,13 @@
    :extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}}
    :main-opts ["-m" "kaocha.runner"]}
 
+  ;; local site preview: dev-only, and on its own path so that nothing on the
+  ;; source path can reach the conformance fixture signing keys it uses
+  :site-preview
+  {:extra-paths ["dev/src"]
+   :jvm-opts ["-Xmx4g" "--enable-native-access=ALL-UNNAMED"]
+   :main-opts ["-m" "soranoha.dev.site-preview"]}
+
   :soranoha/build
   {:jvm-opts ["-Xmx4g" "--enable-native-access=ALL-UNNAMED"]
    :main-opts ["-m" "soranoha.main"]}}}

@@ -26,6 +26,25 @@ Resource tests verify recorded reports against their captures and memory witness
 Recorded identities describe their original instruments and must not be rewritten
 to describe a newer implementation.
 
+## The `parser-rq` prefix
+
+`parser-rq` abbreviates *parser release qualification*. It names the schema
+identifiers under `schemas/`, the instrument identities recorded in captures
+(`parser-rq-diagnostic-authorization-v1`, `parser-rq-source-recognition-v1`,
+`parser-rq-core-attempt-v1`, `parser-rq-resource-v1`), the retained run tree
+under `docs/reports/parser-rq/`, and the `ab-parser-rq-*` crates, which are
+named after the records they emit. The unabbreviated form appears in the
+qualification entry point itself, `ab-research.parser-release-qualification`,
+and in the corpus and predicate identifiers under `data/`.
+
+The prefix is wire vocabulary rather than a naming convention, so it is fixed
+rather than conventional. The literal string is inside the hashed bytes of the
+published records under `docs/reports/parser-rq/`, and the frozen `*-v1`
+schemas exist so those bytes stay checkable. Renaming it in identifiers would
+invalidate the evidence it identifies, and renaming only the crates would
+leave published executable provenance naming crates that no longer exist.
+Expand it in prose when introducing it; leave it alone in data.
+
 ## Evidence and identity boundaries
 
 Parser-selection studies compare instruments; conversion-compatibility evidence

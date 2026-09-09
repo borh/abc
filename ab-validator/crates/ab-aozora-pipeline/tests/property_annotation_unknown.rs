@@ -193,6 +193,19 @@ proptest! {
     }
 }
 
+/// An unpaired `［` before a block directive used to suppress a later
+/// directive: the newline expiry reclaimed the stray bracket and, because a
+/// stack pops only from the top, took the live multi-line directive above it
+/// as well. The serializer then padded the block directive with blank lines,
+/// which separated the stray bracket from what followed, so the second parse
+/// saw the later directive after all and the count drifted. The expiry now
+/// leaves a directive with newline allowance alone, which makes both parses
+/// agree with what the same text does without the stray bracket.
+#[test]
+fn unpaired_bracket_before_a_block_directive_round_trips() {
+    assert_annotation_invariants("［［＃ここから字下げ］［＃\n］");
+}
+
 #[test]
 fn opaque_multiline_directive_cannot_extend_a_later_ruby_base() {
     assert_annotation_invariants("｜［＃\n］［＃］｜改丁《］》");

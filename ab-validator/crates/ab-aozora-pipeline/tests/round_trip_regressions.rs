@@ -14,18 +14,23 @@ fn directive_count(out: &ab_aozora_pipeline::LexOutput) -> usize {
         .count()
 }
 
-/// An unpaired `［` before a block directive suppresses a later directive in
-/// the first parse. The serializer then pads the block directive with blank
-/// lines, which separates the stray bracket from what follows it, so the
-/// second parse sees the later directive after all.
+/// The serializer pads a block directive with blank lines. On input whose
+/// brackets do not balance, those newlines expire the open brackets that the
+/// first parse still had on its stack, so a later `］` that closed a real
+/// bracket in the first parse is an unmatched close in the second. An
+/// unmatched close does not pop, by design, so the quote frames it would have
+/// force-resolved stay open and bury the directive that follows them inside a
+/// body: the first parse sees one directive and the second sees none.
 ///
-/// Fixing this means deciding which of the two readings is correct on
-/// malformed input, not just making the counts agree, which is why the test
-/// records the disagreement instead of asserting either answer.
+/// Both parses are locally consistent with their own input. Fixing this means
+/// deciding whether serializing malformed input may introduce newlines that
+/// change its bracket structure, which is a question about the serializer's
+/// padding rule rather than about the pair stage, so the test records the
+/// disagreement instead of asserting either answer.
 #[test]
-#[ignore = "known defect: serializing an unpaired bracket changes what the next parse sees"]
-fn unpaired_bracket_before_a_block_directive_round_trips() {
-    let source = "［［＃ここから字下げ］［＃\n］";
+#[ignore = "known defect: block-directive padding changes bracket structure on malformed input"]
+fn directive_after_unmatched_closes_survives_block_directive_padding() {
+    let source = "［［》》［＃ここから字下げ］《《≪≪］］［＃改］］";
     let first = lex(source);
     let second = lex(&serialize(&first));
     assert_eq!(

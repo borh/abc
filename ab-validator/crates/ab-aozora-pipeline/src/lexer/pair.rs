@@ -391,19 +391,36 @@ where
                 // the newline can never close as a directive, and leaving
                 // it on the stack makes the classifier buffer the rest of
                 // the document (one stray gloss bracket would bury every
-                // later line's markers). Expire the lowest open bracket
-                // and everything nested above it, innermost-first,
+                // later line's markers). Expire the lowest expirable open
+                // bracket and everything nested above it, innermost-first,
                 // mirroring the EOF drain, then surface the newline.
-                // Opens BELOW the bracket (a multi-paragraph 「) survive.
+                // Opens BELOW the bracket (a multi-paragraph 「) survive,
+                // and so does anything beneath a directive bracket that
+                // still has newline allowance.
                 for entry in &mut self.stack {
                     if entry.0 == PairKind::Bracket && entry.2 > 0 {
                         entry.2 -= 1;
                     }
                 }
-                if let Some(lowest) = self
+                // A directive bracket that still has newline allowance
+                // protects every frame below it. The stack can only be
+                // popped from the top, so expiring a plain `［` underneath
+                // a live multi-line directive would take the directive
+                // with it, and this newline is one the directive is
+                // entitled to span. The protection is bounded rather than
+                // indefinite: the directive's own allowance was just
+                // decremented, so a stray gloss bracket holding a
+                // directive above it is still reclaimed within
+                // `MULTILINE_DIRECTIVE_NEWLINE_ALLOWANCE` newlines.
+                let protected = self
                     .stack
                     .iter()
+                    .rposition(|&(k, _, allowance)| k == PairKind::Bracket && allowance > 0)
+                    .map_or(0, |index| index + 1);
+                if let Some(lowest) = self.stack[protected..]
+                    .iter()
                     .position(|&(k, _, allowance)| k == PairKind::Bracket && allowance == 0)
+                    .map(|index| index + protected)
                 {
                     while self.stack.len() > lowest {
                         let (k, open_span, _) = self.stack.pop().expect("len > lowest");
@@ -605,6 +622,54 @@ mod tests {
                 .any(|&(what, kind)| what == "unclosed" && kind == PairKind::Bracket)
         );
         assert_eq!(diagnostics.len(), 1);
+    }
+
+    #[test]
+    fn live_directive_protects_a_stray_bracket_beneath_it_from_the_newline() {
+        // A stack pops only from the top, so expiring the stray gloss `［`
+        // would take the multi-line directive nested above it as well, and
+        // that directive is entitled to this newline. The directive closes
+        // at its own `］`; the stray drains at EOF.
+        let (events, diagnostics) =
+            run("彼の［［＃入力者註：以下を修正した。\n「甲」→「乙」］\n本文\n");
+        assert_eq!(
+            pair_kinds(&events),
+            vec![
+                ("open", PairKind::Bracket),
+                ("open", PairKind::Bracket),
+                ("open", PairKind::Quote),
+                ("close", PairKind::Quote),
+                ("open", PairKind::Quote),
+                ("close", PairKind::Quote),
+                ("close", PairKind::Bracket),
+                ("unclosed", PairKind::Bracket),
+            ]
+        );
+        // Only the stray is reported, and only once the directive is gone.
+        assert_eq!(diagnostics.len(), 1);
+    }
+
+    #[test]
+    fn a_protected_stray_bracket_is_still_reclaimed_within_the_allowance() {
+        // The protection is bounded rather than indefinite: the directive's
+        // own allowance keeps ticking down across the newlines it spans, and
+        // when it reaches zero the expiry takes both frames, so a stray
+        // gloss bracket cannot bury the rest of the document.
+        let mut src = String::from("彼の［［＃タイポ\n");
+        for _ in 0..40 {
+            src.push_str("本文の一行。\n");
+        }
+        let (events, diagnostics) = run(&src);
+        assert_eq!(
+            pair_kinds(&events),
+            vec![
+                ("open", PairKind::Bracket),
+                ("open", PairKind::Bracket),
+                ("unclosed", PairKind::Bracket),
+                ("unclosed", PairKind::Bracket),
+            ]
+        );
+        assert_eq!(diagnostics.len(), 2);
     }
 
     #[test]

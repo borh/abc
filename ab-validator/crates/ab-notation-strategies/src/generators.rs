@@ -137,9 +137,11 @@ pub fn pathological_aozora(max_depth: usize) -> impl Strategy<Value = String> {
 /// Doubling is what makes an atom reliably unbalanced: two of a delimiter
 /// cannot both find a partner in a fragment assembled from other doubled
 /// atoms. `［` is held back: a doubled bracket open reaches a known defect
-/// where serializing an unpaired bracket changes what the next parse sees, so
-/// including it makes this generator fail within a hundred cases and mask
-/// every other shape behind it. The reproducer is the ignored test in
+/// where the blank lines the serializer pads a block directive with expire
+/// brackets the first parse still had open, so the second parse reads a
+/// different bracket structure. Including it makes this generator fail
+/// within a hundred cases and mask every other shape behind it. The
+/// reproducer is the ignored test in
 /// `ab-aozora-pipeline/tests/round_trip_regressions.rs`; restore the glyph
 /// here once that test passes.
 fn doubled_trigger_glyphs() -> Vec<String> {

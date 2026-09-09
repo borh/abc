@@ -57,14 +57,19 @@ The proportion of source markup preserved in the resulting encoding. This
 is a measurement rather than a grade, and does not constitute a rights or
 correctness claim.
 
-The corpus publishes two separate pieces of evidence about it:
+Two separate pieces of evidence about it are produced with every build. They
+are not part of a release: a release publishes the TEI edition and its three
+projections, and these reports are how the project checks its own work, written
+alongside a build for anyone who runs one.
 
 - **source accountability** scans the raw Aozora file for every recognisable
   annotation, independently of the parser, and records each one with its exact
   spelling and byte span.
 - **interpretation coverage** joins that scan to what the converter says it
-  understood. Occurrences the converter claimed are distinguished from
-  occurrences left `unaccounted`.
+  understood. It counts, per annotation family, the occurrences the converter
+  claimed against those left `unaccounted`, and lists the unaccounted ones in
+  full. A claimed occurrence is not listed, because the TEI element the claim
+  produced already carries that occurrence's byte span.
 
 Neither one certifies that the exported semantics are right. A scan finding no
 unaccounted markers means nothing was *missed*, not that everything found was

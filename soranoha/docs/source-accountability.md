@@ -36,14 +36,14 @@ interpretation problems retain their original influence bounds alongside positiv
 claims. A positive claim is not evidence that an overlapping or document-wide
 problem has been resolved.
 
-The published report states the counts and lists the exceptions. `families` and
+The report states the counts and lists the exceptions. `families` and
 `interpretation_problems` cover every occurrence; `occurrence_count` and
 `unclassified_occurrence_count` give the totals; `unaccounted_occurrences` holds,
 whole, each occurrence with an unaccounted family or no recognized family at all.
 A claimed occurrence is not listed, because the correspondence is already
-published from the other direction: the TEI element the claim produced carries
-that occurrence's span in its `source` attribute. Nothing else published records
-which occurrences went unaccounted, so those are kept in full.
+recorded from the other direction: the TEI element the claim produced carries
+that occurrence's span in its `source` attribute. Nothing else the build writes
+records which occurrences went unaccounted, so those are kept in full.
 
 ## Review exports
 

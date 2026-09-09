@@ -218,22 +218,21 @@
        "occurrences" results
        "interpretation_problems" problems})))
 
-(defn published-coverage
-  "The coverage report in the form it is published in: the family counts, the
+(defn reported-coverage
+  "The coverage report in the form the stage writes it: the family counts, the
   interpretation problems, and the occurrences that were not fully accounted
   for.
 
   An occurrence the interpreter claimed is already visible from the other
   direction, as the `source` attribute on the element the claim produced, so
-  listing every one of them here published the same correspondence twice. It
-  was not a small duplication: measured over the pre-genesis rebuild, this
-  report was 38% of every published byte and larger than the TEI it accounts
-  for, while 99.7% of its occurrences were cleanly claimed and said nothing a
-  reader could act on.
+  listing every one of them here said the same thing twice. It was not a small
+  duplication: measured over a full review export, this report was 38% of the
+  bytes written and larger than the TEI it accounts for, while 99.7% of its
+  occurrences were cleanly claimed and said nothing a reader could act on.
 
-  What is not recoverable from anything else published is which occurrences
-  went unaccounted, so those are kept whole, and the total they were drawn from
-  is stated so their number can be read as a proportion."
+  What is not recoverable from anything else the build writes is which
+  occurrences went unaccounted, so those are kept whole, and the total they
+  were drawn from is stated so their number can be read as a proportion."
   [report]
   (let [occurrences (get report "occurrences")]
     (-> report
@@ -259,5 +258,5 @@
                                               input-bytes))]
           {"interpretation-coverage"
            (.getBytes ^String (record-json/write-deterministic-json-str
-                               (published-coverage report))
+                               (reported-coverage report))
                       "UTF-8")}))})

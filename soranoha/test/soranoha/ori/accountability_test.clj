@@ -73,7 +73,7 @@
     (is (empty? (get-in report ["occurrences" 1 "claims"])))
     (is (= ["emphasis.basic"] (get-in report ["occurrences" 1 "unaccounted_families"])))))
 
-(deftest published-coverage-keeps-the-exceptions-and-the-total-they-came-from
+(deftest reported-coverage-keeps-the-exceptions-and-the-total-they-came-from
   (let [marker (fn [start end] {"source_span" (span start end)
                                 "kind" "CommandFullwidth" "region" "body"
                                 "families" ["emphasis.basic"]})
@@ -82,28 +82,28 @@
         report (accountability/coverage-report
                 (oracle [(marker 15 30) (marker 0 9)])
                 (interpretation [(fact 0 9)]))
-        published (accountability/published-coverage report)]
-    (is (= "soranoha-interpretation-coverage/2" (get published "schema")))
-    (is (= 2 (get published "occurrence_count"))
+        reported (accountability/reported-coverage report)]
+    (is (= "soranoha-interpretation-coverage/2" (get reported "schema")))
+    (is (= 2 (get reported "occurrence_count"))
         "both occurrences are counted, whether or not either is listed")
     (is (= [15] (mapv #(get-in % ["source_span" "start"])
-                      (get published "unaccounted_occurrences")))
+                      (get reported "unaccounted_occurrences")))
         "only the occurrence no claim accounted for is listed")
-    (is (nil? (get published "occurrences"))
+    (is (nil? (get reported "occurrences"))
         "the claimed occurrences are visible as @source on the elements they produced")
     (is (= {"interpreter_claimed" 1 "unaccounted" 1}
-           (get-in published ["families" "emphasis.basic"]))
+           (get-in reported ["families" "emphasis.basic"]))
         "the family counts still cover every occurrence")
-    (is (= 0 (get published "unclassified_occurrence_count")))))
+    (is (= 0 (get reported "unclassified_occurrence_count")))))
 
-(deftest published-coverage-lists-an-unclassified-occurrence
+(deftest reported-coverage-lists-an-unclassified-occurrence
   (let [unknown {"source_span" (span 0 9) "kind" "CommandFullwidth" "region" "body"
                  "raw" "［＃］" "families" []}
-        published (accountability/published-coverage
-                   (accountability/coverage-report (oracle [unknown])
-                                                   (interpretation [])))]
-    (is (= 1 (get published "unclassified_occurrence_count")))
-    (is (= ["［＃］"] (mapv #(get % "raw") (get published "unaccounted_occurrences")))
+        reported (accountability/reported-coverage
+                  (accountability/coverage-report (oracle [unknown])
+                                                  (interpretation [])))]
+    (is (= 1 (get reported "unclassified_occurrence_count")))
+    (is (= ["［＃］"] (mapv #(get % "raw") (get reported "unaccounted_occurrences")))
         "a marker with no families is an exception even though it has none to be unaccounted")))
 
 (deftest claims-need-compatible-kinds-and-spans-and-do-not-certify-semantics

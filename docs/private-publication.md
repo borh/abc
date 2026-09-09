@@ -14,10 +14,13 @@ paths because the Nix wrapper changes its working directory.
 
 ## Prepare and inspect the whole corpus
 
-As the publisher account on Speely, with `prod` set to its configured
-publication directory:
+Run these as the publisher account on Speely, from the repository checkout:
+`$PWD` below resolves the assessment source and the assets root, and `prod` is
+the configured publication directory.
 
 ```sh
+prod=/var/lib/soranoha-runner/soranoha/production
+
 nix run .#soranoha-kernel -- aozora-reliance-prepare --all \
   --aozora-root "$prod/aozora" --evidence-root "$prod/evidence" \
   --assessment-source "$PWD/soranoha/data/assessment-source.json" \
@@ -110,6 +113,8 @@ release. As the publisher, clone the designated private origin, configure the
 existing runner SSH identity, and run:
 
 ```sh
+prod=/var/lib/soranoha-runner/soranoha/production
+
 export GIT_SSH_COMMAND="/run/current-system/sw/bin/ssh -i /var/lib/soranoha-runner/soranoha/.ssh/id_ed25519 -o UserKnownHostsFile=/var/lib/soranoha-runner/soranoha/.ssh/known_hosts -o StrictHostKeyChecking=yes"
 git clone ssh://forgejo@speely.hyakutake-barbel.ts.net:63333/bor/soranoha-chain.git "$prod/chain"
 nix run .#soranoha-kernel -- publication-init \
@@ -133,20 +138,53 @@ and serving units. On the current Speely host:
 sudo systemctl stop gitea-runner-soranoha.service \
   soranoha-serve.path soranoha-serve.service
 
-origin=/var/lib/forgejo/repositories/bor/soranoha-chain.git
-sudo -u forgejo git --git-dir="$origin" for-each-ref \
-  --format='%(refname) %(objectname)'
+sudo -u forgejo \
+  git --git-dir=/var/lib/forgejo/repositories/bor/soranoha-chain.git \
+  for-each-ref --format='%(refname) %(objectname)'
 ```
 
 Confirm that `main` is the designated disposable branch and there are no other
-publication refs to retain. Set `expected` to the recorded commit, then remove
-that exact ref locally as its operator. This does not relax receive rules:
+publication refs to retain. Set `expected` to the commit that listing reported,
+then remove that exact ref locally as its operator. This does not relax receive
+rules:
 
 ```sh
-sudo -u forgejo git --git-dir="$origin" update-ref -d refs/heads/main "${expected:?set the recorded private commit}"
+expected=...   # the commit recorded from the ref listing above
+
+printf '%s' "$expected" | grep -qE '^[0-9a-f]{40}$' \
+  && [ "$expected" != "0000000000000000000000000000000000000000" ] \
+  && sudo -u forgejo \
+       git --git-dir=/var/lib/forgejo/repositories/bor/soranoha-chain.git \
+       update-ref -d refs/heads/main "$expected"
+```
+
+Once that reports success and the ref is gone, remove the local clone and the
+serving trees:
+
+```sh
 sudo rm -rf -- /var/lib/soranoha-runner/soranoha/production/chain
 sudo rm -rf -- /var/lib/soranoha-runner/serve
 ```
+
+Two things about the guard, both established by running it against a throwaway
+repository rather than assumed.
+
+`update-ref -d <ref> <oldvalue>` does refuse a wrong old value: it reports that
+the ref is at one commit but another was expected, exits non-zero, and leaves
+the ref in place. The exception is the all-zero object id, which git reads as
+"no old value supplied" rather than as a value, so it deletes the ref and exits
+zero. That is not an unlikely thing to paste: a push line or a listing of a ref
+that has just been created or deleted shows all zeros. The shape check above
+rejects it, and rejects the unedited placeholder with it.
+
+The checks are chained with `&&` rather than written as separate statements
+because a failed check that does not gate the next command is not a check.
+These blocks are pasted into a shell without `set -e`, where a preceding
+failure changes nothing about whether the deletion runs.
+
+The repository is named in full in both blocks rather than carried in a
+variable. `origin` is among the names most likely to already hold something
+else in an operator's shell, and this is the block that deletes a branch.
 
 Reclone the private origin as the publisher and run `publication-init` above.
 Restart the runner and serving path unit, then dispatch a fresh release:

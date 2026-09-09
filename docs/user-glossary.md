@@ -177,9 +177,9 @@ plaintext projection, by the site's reading view, and by any annotation layer
 that targets the corpus.
 
 It walks the TEI body and, where the encoding offers alternatives, chooses:
-one lemma from an apparatus, the first supported branch of an editorial
-choice, base text rather than ruby readings, and no editorial notes or figure
-descriptions. Unresolved gaiji are excluded from the annotatable region rather
+the one lemma of an apparatus, the corrected, regularized or expanded branch of
+an editorial choice ahead of the original it replaces, base text rather than
+ruby readings, and no editorial notes or figure descriptions. Unresolved gaiji are excluded from the annotatable region rather
 than being silently replaced.
 
 The name matters because it is versioned. An annotation stated against

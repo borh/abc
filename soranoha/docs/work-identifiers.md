@@ -61,11 +61,16 @@ work would be affected; every other identifier is computed independently.
 
 The identifier omits person IDs, archive filename stems, and format variants (`ruby`/`txt`). Those describe acquisition details rather than intellectual work identity. Including them in permanent URLs would couple work identity to edition selection mechanics.
 
-The card directory was kept even though the work id alone is nearly unique. It
-is the only component that distinguishes one work id filed under several
-contributor cards, and seven work ids in the current selection are filed under
-two cards each. Work id alone, and work id with person id, both collide on
-those.
+The card directory is not a person ID that happens to look like one. It is the
+card the archive is filed under, which for 146 works belongs to a contributor
+other than the first author.
+
+The card directory was kept even though the work id alone is unique across the
+present corpus: in the catalog this release builds from, no work id is filed
+under more than one contributor card. It is the documented disambiguator for a
+work id that is filed under several, so the scheme is collision-safe by
+construction rather than by observation, which is what a permanent identifier
+needs.
 
 ## The identifier and the download filename
 

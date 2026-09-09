@@ -28,7 +28,7 @@ Evidence supporting publication is retained indefinitely, separately from dispos
 
 ## Evaluate a reviewed source
 
-From the repository root, using a clean Git checkout of the corpus, set `ASSESSMENT_STORE`, `CORPUS_CHECKOUT`, and `SNAPSHOT_OUTPUT` to absolute paths. The Nix wrapper changes directory to its store copy before launching Clojure, so input and output paths must not depend on the caller’s working directory:
+From the repository root, using a clean Git checkout of the corpus, set `ASSESSMENT_STORE`, `CORPUS_CHECKOUT`, `EVIDENCE_ROOT`, and `SNAPSHOT_OUTPUT` to absolute paths. The Nix wrapper changes directory to its store copy before launching Clojure, so input and output paths must not depend on the caller’s working directory:
 
 ```sh
 nix run .#soranoha-kernel -- assessment-evaluate \

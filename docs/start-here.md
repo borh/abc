@@ -3,7 +3,7 @@
 Soranoha is a TEI edition of Aozora Bunko. It takes the copyright-expired
 Japanese texts that Aozora Bunko distributes as annotated plain text, converts
 their markup into TEI P5 XML, and publishes each work in four forms with a
-signed record of exactly which bytes were published and when.
+signed record of exactly which bytes were published.
 
 You do not need Nix, Clojure or TEI to use it. This page gets you one text,
 then all of them, and tells you what you are holding.
@@ -23,7 +23,7 @@ Every work is published in four files, all reachable from its identifier:
 | `tei` | TEI P5 XML edition containing ruby, gaiji, emphasis, indentation, headings, the source colophon, and byte offsets into the Aozora source. |
 | `plaintext` | Reading text alone in UTF-8. Ruby readings, editorial notes, and apparatus remain in the TEI edition rather than this projection. |
 | `markdown` | CommonMark containing the reading text with headings, ruby as inline HTML `<ruby>`, and CSS emphasis marks. |
-| `tei-validation` | JSON report recording schema validation passes, rule severities, and profile version. |
+| `tei-validation` | JSON report recording each validation layer's result, every rule finding with its severity, and the sha256 of the TEI profile the file was checked against. |
 
 TEI is the authoritative edition, and the other three files are downstream projections. When they disagree, the TEI file governs because the projections are generated directly from it.
 
@@ -47,7 +47,7 @@ curl -O https://soranoha.org/works/000092_000879/Akutagawa_Ryunosuke-kumono_ito-
 
 The name is `<author>-<Aozora stem>-<identifier>.<ext>`. The middle part is
 Aozora Bunko's own filename for the text, which its volunteers wrote with word
-boundaries by hand. **The filename is a convenience, whereas the identifier is the citable reference.** The identifier is included in every filename because title and author alone do not uniquely identify a work; approximately one work in seven in the corpus shares an author and title with another work. Without the identifier, files could overwrite each other during bulk extraction. Every work page shows both forms.
+boundaries by hand. **The filename is a convenience, whereas the identifier is the citable reference.** The identifier is included in every filename because title and author alone do not uniquely identify a work: 2353 works in the corpus share an author and title with another work. Without the identifier, those files would overwrite each other during bulk extraction. Every work page shows both forms.
 
 To read it rather than download it, open
 `https://soranoha.org/works/000092_000879/` for the bibliography and
@@ -64,7 +64,10 @@ what that promises and what it does not.
 
 ## Find a text
 
-- Search by title, author, kana title reading, or NDC class at `https://soranoha.org/`.
+- Search by title, kana title reading, author or identifier at `https://soranoha.org/`.
+- Browse by author at `https://soranoha.org/authors/`, by title at
+  `https://soranoha.org/titles/`, grouped under the first kana of the reading,
+  or by NDC class at `https://soranoha.org/ndc/`.
 - Retrieve the bibliography of every work in the current release as a single JSON file at `https://soranoha.org/catalog.json`. This file forms part of the signed record rather than a convenience export.
 
 A catalog entry gives you the identifier, the title and its reading, the
@@ -75,11 +78,17 @@ source edition the transcription was made from.
 ```python
 import json, urllib.request
 
+def name(person):
+    # A contributor can carry one name part rather than two: 30 people in the
+    # catalog have a family name and no given name (ヴォルテール, 兼好法師),
+    # and the missing part is null rather than an empty string.
+    return "".join(part for part in (person["family_name"],
+                                     person["given_name"]) if part)
+
 catalog = json.load(urllib.request.urlopen("https://soranoha.org/catalog.json"))
 for work in catalog["works"][:5]:
     authors = [c for c in work["contributors"] if c["relation_to_work"] == "著者"]
-    print(work["slug"], work["title"],
-          "／".join(f'{a["family_name"]}{a["given_name"]}' for a in authors))
+    print(work["slug"], work["title"], "／".join(name(a) for a in authors))
 ```
 
 ## Get all of them
@@ -118,7 +127,7 @@ columns, while the work page shows the recorded string in full.
 To fetch works individually, such as a filtered subset:
 
 ```python
-import json, urllib.request, pathlib
+import json, urllib.request, pathlib, time
 
 catalog = json.load(urllib.request.urlopen("https://soranoha.org/catalog.json"))
 out = pathlib.Path("corpus-tei")
@@ -131,6 +140,7 @@ for work in catalog["works"]:
         continue
     with urllib.request.urlopen(f"https://soranoha.org/works/{slug}/tei") as r:
         target.write_bytes(r.read())
+    time.sleep(0.5)
 ```
 
 Be polite about rate: this is one small server, and the corpus is tens of
@@ -141,9 +151,9 @@ single-download option.
 ## Scale and coverage
 
 The source is Aozora Bunko's catalog of works whose copyright has expired in
-Japan, restricted to works with a downloadable text file: about 17,600 of them
-at the time of writing, contributed by about 1,100 authors, translators,
-editors and collators. That number moves as Aozora adds works and as
+Japan, restricted to works with a downloadable text file: 17,655 of them in the
+catalog this release builds from, contributed by 1,167 authors, translators,
+editors and collators. Those numbers move as Aozora adds works and as
 copyrights expire. Each release states its own count on the landing page and
 in `/catalog.json`; a release is a fixed set of works, not a live view.
 

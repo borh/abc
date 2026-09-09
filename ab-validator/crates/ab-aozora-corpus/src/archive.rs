@@ -304,8 +304,8 @@ impl Archive {
                     .try_into()
                     .expect("4-byte slice"),
             );
-            // Reject obviously hostile decoded_len values at parse
-            // time so `payload_at` can pre-allocate from a trusted
+            // Reject decoded_len values exceeding the maximum entry threshold at parse
+            // time so `payload_at` can allocate from a bounded
             // budget. Aozora docs cap well under
             // `MAX_DECODED_LEN_PER_ENTRY` (256 MiB); anything past
             // that is a decode-bomb attempt.
@@ -451,13 +451,13 @@ impl Archive {
         &self.bytes[start..end]
     }
 
-    /// Iterate entries, decompressing each payload on the fly if
-    /// needed. Yields owned `(label, bytes)` pairs — for raw
-    /// archives the bytes are a `to_vec` of the in-memory slice;
-    /// for zstd archives they are the freshly decompressed bytes.
+    /// Iterate entries, decompressing each payload on demand if
+    /// needed. Yields owned `(label, bytes)` pairs: raw
+    /// archives yield a copy of the in-memory slice;
+    /// zstd archives yield freshly decompressed bytes.
     ///
-    /// Use `Self::iter_borrowed` when the caller does not
-    /// need to take ownership — zero-copy on raw archives.
+    /// Use `Self::iter_borrowed` when borrowed slices suffice
+    /// to avoid copying.
     ///
     /// # Errors
     ///

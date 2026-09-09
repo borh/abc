@@ -14,11 +14,11 @@ after stripping leading whitespace, starts with `底本：`. This mirrors
 exact same `line.trim_start().starts_with("底本：")` check to end the
 parser's body span. A work with no such line has no tail at all.
 
-**Why a state machine and not a per-line predicate.** Inside the tail,
-some lines are self-describing head lines (`底本：...`, `入力：...`, ...)
-but many are bare continuation lines -- an edition/date line, a plain
-name, a blank line -- that carry no marker of their own. The SAME
-line shape means different things depending on what came before it:
+**State machine rationale.** Inside the tail, some lines are
+self-describing head lines (`底本：...`, `入力：...`, ...), but many
+are bare continuation lines (such as edition dates, personal names, or blank
+lines) that carry no marker of their own. Identical line shapes carry
+different semantics depending on preceding context:
 
     底本：「日本文学全集1　坪内逍遥・二葉亭四迷集」集英社
     1969（昭和44）年12月25日初版      <- inherits: terminal_provenance
@@ -28,19 +28,17 @@ line shape means different things depending on what came before it:
     2006年1月6日修正
 
 (this is a real tail, `cards/000005/files/5_ruby_21311.zip::aibiki.txt` in
-the pinned aozorabunko corpus.) `1998年7月28日公開` and
-`1969（昭和44）年12月25日初版` are shaped identically -- both are bare
-date lines -- but the first is colophon metadata (it follows 入力：/校正：)
-and the second is terminal provenance (it follows 底本：). No per-line
-predicate can tell them apart; only the state carried from the most
-recent head line can.
+the pinned aozorabunko corpus.) Both `1998年7月28日公開` and
+`1969（昭和44）年12月25日初版` are bare date lines, but the first represents
+colophon metadata (following 入力：/校正：) while the second represents
+terminal provenance (following 底本：). Distinguishing them requires
+state carried from the most recent head line.
 
-**Fail-closed.** A non-blank tail line reached before ANY state-setting
-head line has been seen raises `UnclassifiableTail` -- there is no state
-to inherit from, and guessing would silently mis-attribute an unknown
-editorial convention. Callers (the generator) must treat this, and any
-non-empty residual of unclassifiable lines from a full-corpus scan, as a
-fail-closed error (exit 2), never a warning.
+**Fail-closed design.** A non-blank tail line reached before any state-setting
+head line has been seen raises `UnclassifiableTail`, as no state exists to
+inherit from and guessing risks misattributing editorial conventions. Callers
+(the generator) must treat this, and any non-empty residual of unclassifiable
+lines from a full-corpus scan, as a fail-closed error (exit 2), never a warning.
 """
 
 from __future__ import annotations
@@ -55,8 +53,7 @@ TERMINAL_PROVENANCE_CLASS: Class = "terminal_provenance"
 COLOPHON_METADATA_CLASS: Class = "colophon_metadata"
 BLANK_CLASS: Class = "blank"
 
-# The tail-start marker: mirrors `aozora_body_range`'s
-# `line.trim_start().starts_with("底本：")` check in
+# The line whose presence in the file signals that a tail exists, mirroring
 # crates/ab-aat/src/lib.rs. This is NOT a head in the state-machine
 # sense below (it always also matches the first PROVENANCE_HEADS entry);
 # it is what defines where the tail begins in the first place.

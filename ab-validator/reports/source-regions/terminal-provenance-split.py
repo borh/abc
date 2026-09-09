@@ -9,18 +9,16 @@ boundary rule in `reports/lib/terminal_provenance.py` (the NORMATIVE rule
 every work in the corpus and reports how many tail lines fall on each
 side of the 底本：/入力： boundary.
 
-Corpus layout + iteration mirrors `reports/aat-fidelity/denominator-
-attribution.py`'s `iter_work_texts`: the pinned `aozorabunko` corpus mirror
-is a website snapshot, not a flat directory of plaintext -- each work's
-Shift_JIS text lives inside a per-work zip under `cards/<id>/files/*.zip`
-(plus a handful of bare `*.txt` siblings). `work_id_from_index_path`
-mirrors `work_id_from_index_path` in `crates/ab-index/src/index.rs`; it
-labels samples/residuals for humans but is NOT a dedup key -- ab-index's
-own reference index has 236 ids shared by 2-3 entries each (ruby vs
-non-ruby zip variants of the same literary work), so `works_scanned` and
-friends count corpus TEXT ENTRIES (one per zip member / bare txt file),
-the same unit as every other `works_scanned`/`files_scanned` figure in
-this codebase (e.g. the pinned corpus's 17886-entry count).
+Corpus layout and iteration mirror `iter_work_texts` in
+`reports/aat-fidelity/denominator-attribution.py`. The pinned `aozorabunko`
+corpus mirror is a website snapshot rather than a flat directory of plaintext;
+each work's Shift_JIS text resides inside a per-work zip under
+`cards/<id>/files/*.zip` (alongside several bare `*.txt` files).
+`work_id_from_index_path` mirrors its counterpart in
+`crates/ab-index/src/index.rs`. Because 236 work IDs are shared across
+multiple entries (such as ruby and non-ruby zip variants of the same work),
+`works_scanned` counts corpus text entries (one per zip member or bare txt file),
+matching other corpus metrics across the codebase.
 
 Usage:
   terminal-provenance-split.py --corpus-root DIR --summary-json PATH \

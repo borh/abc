@@ -37,12 +37,12 @@ the contract and should not be treated as version-stable adapter APIs.
 
 ## Parser core and facade
 
-The `ab-aozora-` prefix means forked: these seven crates are lifted from
+The `ab-aozora-` prefix identifies forked crates. These seven crates are lifted from
 [P4suta/aozora](https://github.com/P4suta/aozora) at revision
 `1a4f864603970983719655aa4af4525958ac2d38`, dual-licensed MIT or Apache-2.0,
 and each carries `LICENSE-MIT`, `LICENSE-APACHE` and `NOTICE` beside its
-sources. The prefix is a reliable signal in one direction only: `ab-aozora`
-without a suffix is locally authored, and is marked below.
+sources. Although the prefix marks forked crates, `ab-aozora` without a suffix is
+locally authored and is indicated in the table below.
 
 | Crate | Origin | Purpose |
 | --- | --- | --- |

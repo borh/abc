@@ -465,30 +465,22 @@ fn normalization_entry(
 /// normalizations, which only exist because the sanitizer walks the whole text.
 /// That left the packaging unattributed rather than attributed-and-clear.
 ///
-/// Three tail forms are classified here. The `key：value` line is what the
-/// Aozora colophon is built from -- `底本：`, `入力：`, `校正：`, `初出：` and
-/// the rest. Under a field sits its **continuation run**: indented lines that
-/// carry the rest of what the field states and have no `key：` of their own,
-/// `　　　1993（平成5）年2月10日第1刷発行` under a `底本：`, or the
-/// per-piece citations under an `初出：`. Last comes the archive's own
-/// **distribution notice**, which closes almost every file.
+/// Three tail forms are classified here. The `key：value` lines make up the
+/// Aozora colophon (`底本：`, `入力：`, `校正：`, `初出：`, and related fields).
+/// Following a field line, indented continuation lines carry the rest of the field
+/// statement without a `key：` prefix (such as `　　　1993（平成5）年2月10日第1刷発行`
+/// under `底本：` or per-piece citations under `初出：`). Finally, the archive's
+/// distribution notice closes almost every file.
 ///
-/// **The tail is what bounds this producer, not the shape of the line.**
-/// `is_colophon_field` is a shape test and a loose one: the standard notation
-/// legend `《》：ルビ` is a fullwidth-colon `key：value` line by that test and
-/// nothing about its shape distinguishes it from `底本：`. The legend sits in
-/// the HEADER, so scanning the tail alone is what keeps it out. Widening this
-/// scan back to `regions.metadata()` would silently reclassify the legend
-/// block as publication metadata.
+/// The tail bounds this producer rather than the shape of the line.
+/// Because `is_colophon_field` tests line shape, header lines like `《》：ルビ`
+/// share the fullwidth-colon pattern of colophon fields. Scanning the tail alone
+/// excludes the header notation legend.
 ///
-/// **A continuation is bounded by the run it sits in, not by what it says.**
-/// It must be indented and it must reach a field line above it without crossing
-/// a blank line. The tail's other unindented lines (the transcriber's `※`
-/// remarks, the distribution notice, and the file's own dating lines) are not
-/// continuations of anything and stay unattributed. Testing the text instead
-/// would be worse in both directions. One continuation in the 597-work sample
-/// is a citation whose title opens with a `※［＃...］` gaiji annotation, so a
-/// producer that declined `※` lines by shape would decline a real one.
+/// A continuation is bounded by the run it sits in rather than its text content.
+/// It must be indented and must connect to a field line above without an intervening
+/// blank line. Unindented remarks, notices, and file dating lines remain outside
+/// continuation runs.
 ///
 /// The distribution notice must be tested before the colophon field because
 /// one notice line in the corpus writes its URL with a fullwidth `http：//`.
@@ -499,12 +491,10 @@ fn normalization_entry(
 /// The header's editorial legend block and bibliographic block have producers
 /// of their own, `legend_entries` and `bibliographic_entries`.
 ///
-/// **Nothing here is claimed by position alone.** Every construct below needs
-/// an opener that was measured over the whole corpus, and a line that opens no
-/// run and continues none stays unattributed. Blanket-claiming every metadata
-/// byte would make the measure reach 1.0 by construction and therefore mean
-/// nothing; the check that this has not happened is that it does not reach 1.0
-/// -- no work of the 597-work sample does, because line terminators remain.
+/// Spans are not claimed by position alone. Every classified construct requires
+/// a recognized opener measured across the corpus. Lines that neither open nor
+/// continue a run remain unattributed, leaving unnormalized line terminators
+/// unassigned.
 ///
 /// The span excludes the line terminator, which already carries its own
 /// normalization or newline fact. Two producers must not claim the same byte.
@@ -596,45 +586,30 @@ enum TailRun {
 /// was normalized, what was left alone and what was checked against which
 /// edition.
 ///
-/// **`※` at column zero is the whole test, and both halves of it are
-/// measured.** Across the pinned corpus's 17,718 colophon-bearing works, `※`
-/// is the ONLY marker any tail line opens a remark with -- 12,526 lines, and
-/// neither `＊` nor `●` ever appears in that position, though both do inside
-/// the header's legend block, which a different producer bounds.
+/// Across the pinned corpus of 17,718 colophon-bearing works, `※` at column
+/// zero is the only marker opening remarks in the tail region (12,526 lines).
 ///
-/// The column matters because indentation already means something else here.
-/// Exactly four tail lines in the corpus are indented and open with `※`, and
-/// **three of them are not remarks**: they are colophon continuations whose
-/// cited title begins with a gaiji annotation, as in `※［＃「糸＋條」、第4水準
-/// 2-84-53］蟲「三田文学　第四巻第二号」三田文学会`. Reading `※` without
-/// reading the column would reclassify those three citations as remarks. The
-/// fourth is a genuine remark that happens to be indented, and it is read as a
-/// continuation instead; under a field run that is the expected classification,
-/// because indentation under a field defines a continuation.
+/// Unindented positioning distinguishes remarks from colophon continuations.
+/// Four tail lines in the corpus begin with `※` while indented; three of those
+/// are continuations whose cited titles open with gaiji annotations rather than
+/// remarks.
 ///
-/// Claiming this is not claiming to understand the sentence. What is claimed
-/// is which act the line performs -- editorial commentary on the transcription,
-/// not bibliographic data about the source -- exactly as
-/// `bibliographic_header_line` claims block membership without claiming which
-/// bibliographic item a line is.
+/// This classifies the functional role of the line as editorial transcription
+/// commentary rather than source bibliographic metadata, analogous to how
+/// `bibliographic_header_line` identifies block membership.
 fn is_transcriber_remark(line: &str) -> bool {
     line.starts_with('※')
 }
 
 /// The file's own dating line: `2007年4月2日作成`, and nothing else on it.
 ///
-/// This is provenance about the FILE rather than about the publication, which
-/// is why it carries `file_provenance` and not `publication_metadata`. The
-/// `底本：` block says where the text came from; this says when this file was
-/// made from it.
+/// This is provenance about the file rather than the publication, which
+/// is why it carries `file_provenance` rather than `publication_metadata`.
 ///
-/// **The three suffixes are closed and measured.** Corpus-wide, tail lines
-/// matching `YYYY年M月D日...` carry 19 distinct suffixes over 21,990 lines, and
-/// `作成` (15,780), `修正` (4,240) and `公開` (1,944) are 99.9% of them. The
-/// other 16 -- `初版第1刷発行`, `第14刷`, `改版` -- are publication dates of the
-/// source edition that happen to be written unindented, so they are not file
-/// dating lines and are excluded from the set. A looser test that accepted
-/// any suffix would relabel a publication date as file provenance.
+/// The three recognized suffixes (`作成`, `修正`, `公開`) account for 99.9%
+/// of file dating lines matching `YYYY年M月D日...` across the corpus.
+/// Other suffixes such as `初版第1刷発行`, `第14刷`, or `改版` represent source edition
+/// publication dates rather than digital file provenance, and are excluded.
 fn is_file_dating_line(line: &str) -> bool {
     let Some(rest) = line.strip_suffix("作成").or_else(|| {
         line.strip_suffix("修正")
@@ -665,35 +640,27 @@ fn is_file_dating_line(line: &str) -> bool {
 /// not asking the same question, and one role answering both would make the
 /// distinction unrecoverable from the ledger.
 ///
-/// **The anchor is the licence's own name.** Corpus-wide these are 216 lines in
-/// 12 distinct head forms, and every one of them contains
-/// `クリエイティブ・コモンズ` -- with and without the interpunct, with and
-/// without the bracket, opened with `※` and opened plainly. The 72 lines
-/// reading `上記のライセンスに従って、訳者に断りなく…` carry no such name and
-/// are not tested for: they always follow one of the 72 `※この翻訳は「クリエイ
-/// ティブ・コモンズ…` lines, so the run continues onto them.
+/// Across the corpus, 216 licence lines appear in 12 head forms, all
+/// containing `クリエイティブ・コモンズ` (with or without brackets, interpuncts,
+/// or leading `※`). An additional 72 lines beginning
+/// `上記のライセンスに従って、訳者に断りなく…` follow these entries as continuations.
 ///
-/// Tested BEFORE the remark, because 89 of the 216 open with `※` and would
-/// otherwise be read as remarks. Both claims attribute, so the ordering does
-/// not move the measure by a byte -- it decides only whether the ledger says
-/// "terms" or "commentary", which is the part worth getting right.
+/// This test runs before remark classification because 89 licence lines open
+/// with `※` and would otherwise be classified as general transcriber remarks.
 fn is_licence_statement(line: &str) -> bool {
     line.contains("クリエイティブ・コモンズ")
 }
 
-/// A colophon field whose value opens with a quoted title instead of a colon:
-/// `底本の親本「宮本百合子全集　第六巻」河出書房`.
+/// A colophon field whose value opens with a quoted title instead of a colon,
+/// such as `底本の親本「宮本百合子全集　第六巻」河出書房`.
 ///
-/// **Recognized only inside an open field run, never on its own.** The shape
-/// alone is far too loose -- `繰返し記号「ゝ」「ゞ」は、仮名に書き換えました。`
-/// is a transcriber's sentence with the same shape, and it is read correctly
-/// because it sits in a remark run rather than a field one. Position is again
-/// what separates two identical shapes.
+/// This is recognized only inside an open field run. Context distinguishes
+/// titled fields from remarks sharing the same shape (such as
+/// `繰返し記号「ゝ」「ゞ」は、仮名に書き換えました。`).
 ///
-/// Corpus-wide this catches 56 lines in 6 forms, and every one is a real field
-/// name: `底本の親本` (47), `初出` and its punctuated variants (7),
-/// `底本の親本一、` (1), `初出時の表題は` (1). Without it those lines also cost
-/// the indented continuations beneath them, which lose the run they hang from.
+/// Corpus-wide, this matches 56 lines across 6 recognized field names:
+/// `底本の親本` (47), `初出` and its punctuated variants (7),
+/// `底本の親本一、` (1), and `初出時の表題は` (1).
 fn is_titled_colophon_field(line: &str) -> bool {
     let Some((name, _title)) = line.split_once('「') else {
         return false;
@@ -710,40 +677,26 @@ fn is_titled_colophon_field(line: &str) -> bool {
 /// Aozora Bunko rather than written by a transcriber, and it states in prose
 /// what the `入力：` and `校正：` fields state as fields.
 ///
-/// **This is the one place a sentence is recognized, and it is recognized as a
-/// constant rather than read.** A closed set of literals was measured and
-/// rejected: across all 17,876 works of the pinned corpus the notice appears in
-/// 29 distinct forms, and the variation is not only the URL. It is
-/// `インターネツト` for `インターネット`, `あたつた` for `あたった`,
-/// `みんなさん` for `皆さん`, `www.aozora.gr.p` for `.jp`, a fullwidth `：` in
-/// the scheme, halfwidth `()` for `（）`, and truncations that drop the final
-/// `。`. Enumerating those would be enumerating typos, and the thirtieth would
-/// arrive with the next corpus revision.
+/// Across 17,876 corpus works, the distribution notice appears with small typographical
+/// variations in the text and URL.
 ///
-/// So the test is the two fixed anchors the sentence opens with and names: it
-/// begins `このファイルは、` and it names `青空文庫`. Measured over the whole
-/// corpus, **every one of the 17,680 tail lines beginning `このファイルは、` is
-/// this notice** and not one of them lacks `青空文庫` -- so the second anchor
-/// currently rejects nothing and is kept as the guard against a transcriber
-/// remark that happens to open the same way.
-///
-/// Claiming this is not claiming to understand a sentence, which is why the `※`
-/// remarks beside it stay unattributed. This sentence is a constant the archive
-/// emits; those are prose a person wrote, each saying something different.
+/// The test checks two anchors: the opening `このファイルは、` and the presence
+/// of `青空文庫`. Across the corpus, every tail line beginning `このファイルは、`
+/// represents this distribution notice; checking `青空文庫` guards against
+/// potential remarks opening with the same phrase.
 fn is_distribution_notice(line: &str) -> bool {
     line.starts_with("このファイルは、") && line.contains("青空文庫")
 }
 
-/// A colophon field line: a non-empty key, a fullwidth colon, and a value.
+/// A colophon field line containing a non-empty key, a fullwidth colon, and a value.
 ///
-/// The key must not itself contain a colon, so a line that merely mentions one
-/// mid-sentence is not a field. An empty value is still a field -- `初出：`
-/// with the citation on the following lines is a real shape.
+/// The key must not itself contain a colon, so lines mentioning a colon
+/// mid-sentence are not fields. An empty value is still a field (such as `初出：`
+/// followed by citations on subsequent indented lines).
 ///
 /// This is a shape test only, and shape does not separate a colophon field
-/// from the header's notation legend: `《》：ルビ` passes it. Only the caller's
-/// tail-region scope makes that distinction, so this must not be reused
-/// against text from any other region.
+/// from the header notation legend (`《》：ルビ` passes it). The caller's
+/// tail-region scope makes that distinction.
 fn is_colophon_field(line: &str) -> bool {
     let Some((key, _value)) = line.split_once('：') else {
         return false;

@@ -1,10 +1,11 @@
 # TEI validation
 
 Soranoha owns the [TEI profile ODD](../schemas/tei-profile.odd). It defines two
-validation layers: Relax NG checks XML structure, and Schematron checks constraints
-such as nonempty ruby readings, resolved local references, header metadata, and
-preservation-record shape. The generated [RNG](../schemas/tei-profile.rng) and
-[Schematron](../schemas/tei-profile.sch) are derived from that ODD.
+validation layers: Relax NG validates XML structure, while Schematron enforces
+semantic constraints such as nonempty ruby readings, resolved local references,
+header metadata, and preservation-record shape. The generated
+[RNG](../schemas/tei-profile.rng) and [Schematron](../schemas/tei-profile.sch)
+are derived from that ODD.
 
 The `tei-validation.json` output records both layers, rule IDs, severities, and
 whether warnings are allowed. Its profile identity is the ODD hash. Toolchain

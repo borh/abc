@@ -1,15 +1,14 @@
 # Soranoha
 
-Soranoha is a TEI edition of Aozora Bunko: it converts the copyright-expired
+Soranoha is a TEI edition of Aozora Bunko. It converts copyright-expired
 Japanese texts that Aozora Bunko distributes as annotated plain text into TEI
-P5, and publishes each work as TEI, plaintext, Markdown and a validation
-report, with a signed record of exactly which bytes were published.
+P5, and publishes each work as TEI, plaintext, Markdown, and a validation
+report, with a signed record of the published bytes.
 
-**Reading or using the corpus?** Start with [start here](docs/start-here.md),
-which needs no Nix, Clojure or TEI, then
+**Reading or using the corpus?** Begin with [start here](docs/start-here.md),
+which requires no Nix, Clojure, or TEI background, followed by
 [a worked example](docs/worked-example.md) and the
-[glossary](docs/user-glossary.md). The rest of this file is for working on the
-system.
+[glossary](docs/user-glossary.md). The rest of this file covers development.
 
 This is the canonical monorepo for the conversion and validation system. It
 contains:
@@ -101,16 +100,15 @@ published corpus.
 
 An exported serving tree holds two kinds of file. Chain content (manifests,
 signatures, blobs, governance events) is copied byte for byte, and the
-work-facing routes are names over it. The browse layer is generated from that
-release: a landing page at `/`, author, title and NDC indexes, one page per
-work at `/works/<identifier>/`, a reading view at `/works/<identifier>/read`,
-an explanation for each withdrawn work, and pre-built bulk archives under
-`/bulk/` for the whole corpus, one person, or one NDC class. Each artifact
-carries two names over one blob: `/works/<identifier>/<type>`, which a
-citation points at, and a readable filename, which is what a browser save
-writes to disk. Each work also serves its own citation record at
-`/works/<identifier>/citation.json` and `.bib`, and its page embeds COinS so a
-reference manager saves it in one click.
+work-facing routes are names over it. The browse layer is generated from that release and provides a landing page
+at `/`, author, title, and NDC indexes, individual work pages at
+`/works/<identifier>/`, a reading view at `/works/<identifier>/read`, an
+explanation for each withdrawn work, and pre-built bulk archives under `/bulk/`
+for the whole corpus, an author, or an NDC class. Each artifact has two names
+for one underlying blob: `/works/<identifier>/<type>` for citation links, and a
+descriptive filename for browser downloads. Each work also serves its citation
+record at `/works/<identifier>/citation.json` and `.bib`, and embeds COinS
+metadata for reference managers.
 Nothing generated is named by a manifest or checked by a verifier; the signed
 discovery record is `/catalog.json`. Site text is bilingual, Japanese first.
 
@@ -124,15 +122,15 @@ data.
 
 | Scope | Licence |
 |---|---|
-| Underlying Aozora Bunko works | Public domain: not Soranoha's to license |
-| Published corpus artifacts: TEI, plaintext, Markdown, validation reports, catalog, manifests | [CC0-1.0](LICENSE-CC0) |
+| Underlying Aozora Bunko works | Public domain (not Soranoha's to license) |
+| Published corpus artifacts (TEI, plaintext, Markdown, validation reports, catalog, manifests) | [CC0-1.0](LICENSE-CC0) |
 | TEI customisation and protocol JSON Schemas | [CC0-1.0](LICENSE-CC0) |
 | All source code | [Apache-2.0](LICENSE) |
 
-Attribution is requested, not required, mirroring Aozora Bunko's own posture.
-[docs/rights.md](docs/rights.md) is the full public statement: the two rights
-layers, the toolchain's licence position, where the grant appears in published
-bytes, and how a rights holder requests withdrawal. [docs/citation.md](docs/citation.md)
-gives the citation forms for a release, a single work, and an exact byte
-sequence, in Japanese and English, with what each component is for;
-`CITATION.cff` carries the corpus record in machine-readable form.
+Attribution is requested rather than required, mirroring Aozora Bunko's own
+practice. [docs/rights.md](docs/rights.md) provides the complete public
+statement covering the two rights layers, toolchain licensing, header grants in
+published bytes, and the withdrawal process. [docs/citation.md](docs/citation.md)
+gives citation forms for releases, individual works, and exact byte sequences,
+in Japanese and English, with the role of each component; `CITATION.cff` carries
+the machine-readable corpus citation.

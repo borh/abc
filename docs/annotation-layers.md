@@ -11,7 +11,7 @@ separators. UTF-8 byte offsets are the coordinate unit. An unresolved empty glyp
 occupies U+FFFC and is excluded from eligible ranges; it is never silently deleted.
 The view identity binds the exact text and reading policy. Its DOM alignment is local
 to the source document and is not part of the reusable analyzer input. Image
-metadata is not principal text: `figDesc` preserves descriptions and a
+metadata is not principal text; `figDesc` preserves descriptions and a
 `note` of type `caption-reference` preserves any quoted caption reference. The
 separately transcribed visible caption remains body text, following the
 [Aozora image convention](https://www.aozora.gr.jp/annotation/graphics.html).
@@ -27,8 +27,8 @@ does not certify its linguistic conclusions.
 
 All offsets must fall on UTF-8 boundaries within eligible ranges. Producer inputs
 include the code, model, dictionary and configuration actually used, as applicable.
-Masks are computation inputs: changing eligibility can invalidate analysis even when
-text remains equal. A completed empty result differs from failed, partial and unrun
+Because masks are computation inputs, changing eligibility can invalidate analysis even
+when text remains equal. A completed empty result differs from failed, partial and unrun
 execution. Failed and unrun layers cannot carry claims. Competing tokenizations or
 entity labels are separate artifacts, not replacements of shared records.
 
@@ -44,8 +44,8 @@ are analysis claims rather than source assertions. The base TEI and plaintext st
 do not depend on the selected analysis layers. The enrichment stage consumes only
 the base TEI and ordered layer blob identities.
 
-Anchors can separate text nodes without changing their concatenated content. TEI
-glyphs remain atomic: assembly rejects an analysis boundary inside a multi-codepoint
+Anchors can separate text nodes without changing their concatenated content. Because TEI
+glyphs remain atomic, assembly rejects an analysis boundary inside a multi-codepoint
 glyph rather than splitting its realization. Existing XML identifiers are preserved;
 an identifier collision or an incompatible text view is an error. File commands refuse
 to overwrite an existing output.

@@ -81,8 +81,8 @@ pub struct DecodedSource {
     pub encoding: &'static str,
     /// Hex-encoded SHA256 hash of the input bytes.
     pub source_hash: String,
-    /// Sanitize-stage diagnostics (accent decomposition notes) — born
-    /// BEFORE the parse; the parse of rewritten text cannot rediscover
+    /// Sanitize-stage diagnostics (accent decomposition notes) generated
+    /// before parsing, since parsing rewritten text cannot rediscover
     /// them. Spans are full-sanitized-text byte offsets.
     pub sanitize_diagnostics: Vec<AozoraSanitizeDiagnostic>,
     /// Sanitized source apparatus from `aozora_body_range`'s tail-start line,
@@ -90,11 +90,10 @@ pub struct DecodedSource {
     /// boundary line rather than the preceding blank lines trimmed from the
     /// body. Empty when no source tail boundary is recognized.
     pub sanitized_tail: String,
-    /// Byte offset of `sanitized_tail`'s start within the full SANITIZED
-    /// text (same coordinate system `sanitize_diagnostics` spans use —
-    /// composes through `span_ctx`'s `maps` directly, with NO
-    /// `body_offset` added, exactly like `diagnostics_json_from_bytes`'s
-    /// sanitize-stage rebase).
+    /// Byte offset of `sanitized_tail`'s start within full sanitized
+    /// text, using the same coordinate system as `sanitize_diagnostics`
+    /// (composes through `span_ctx`'s `maps` directly without adding
+    /// `body_offset`).
     pub tail_offset: usize,
     /// Sanitize offset maps + body offset + line index for span rebasing
     /// for full decoded-source offsets and real 1-based line numbers.
@@ -104,26 +103,22 @@ pub struct DecodedSource {
 }
 
 impl DecodedSource {
-    /// The three declared source regions, in DECODED-text coordinates.
+    /// The three declared source regions in decoded-text coordinates.
     ///
-    /// `aozora_body_range` runs over the *sanitized* text, so its boundaries
-    /// cannot be used verbatim: they are mapped back through `span_ctx` here.
-    /// That is the whole reason this derivation lives beside the mapping
-    /// rather than in `ab-source-syntax` — `SourceRegions::derive` is correct
-    /// only for a caller that has no sanitize map to compose through, and this
-    /// crate always does.
+    /// `aozora_body_range` runs over sanitized text, so its boundaries
+    /// are mapped back through `span_ctx` to decoded coordinates.
+    /// `SourceRegions::derive` applies only when no sanitize map exists,
+    /// whereas this crate always composes through one.
     ///
-    /// The body is `span_text` seen in decoded coordinates: its start is the
-    /// body-relative offset 0 mapped forward, and its end is `span_text.len()`
-    /// mapped forward. Everything before is header and everything after is
-    /// tail, so the three regions close the decoded file.
+    /// The body corresponds to `span_text` in decoded coordinates: its start
+    /// is body-relative offset 0 mapped forward, and its end is `span_text.len()`
+    /// mapped forward. Header precedes body start and tail follows body end.
     ///
     /// # Errors
     ///
-    /// Returns [`RegionError`] when the mapped boundaries do not partition the
-    /// decoded text — which would mean the sanitize map and the body range
-    /// disagree, and is a fail-closed condition rather than something to
-    /// round off.
+    /// Returns [`RegionError`] when mapped boundaries fail to partition the
+    /// decoded text, indicating a fail-closed disagreement between the sanitize
+    /// map and body range.
     pub fn source_regions(&self) -> Result<SourceRegions, RegionError> {
         let body_start = self.span_ctx.to_decoded(0);
         let body_end = self.span_ctx.to_decoded_end(self.span_text.len());

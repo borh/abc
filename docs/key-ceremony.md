@@ -4,8 +4,8 @@ The [snh specification](design/snh-protocol-v1.md) binds a publication chain to 
 disjoint Ed25519 roles at genesis. The RELEASE key is online and held by CI; it signs
 release manifests. The GOVERNANCE key is offline and owner-held; it signs the
 withdrawal and amendment events that are the only way to remove a published work.
-Neither pinned key can ever change: a different pinned set ends that chain and starts
-a new one with no continuity. This document is the procedure that establishes both
+Neither pinned key can change. Pinning different keys ends that chain and begins
+a new one without continuity. This document specifies the procedure that establishes both
 keys and the procedure that uses the governance key afterwards.
 
 To verify toolchain behavior before live operation, the ceremony signs a
@@ -38,11 +38,10 @@ repository:
 
 ## The offline machine
 
-Use a machine booted from a read-only live image with its root filesystem in RAM,
-with networking not merely disabled in software but physically absent or removed:
-no cable, no wireless module, no tethered device. The key material must never reside
-on a network-connected host, and a RAM-only root means the working copies disappear
-when the machine is powered off rather than persisting on an internal disk.
+Use a machine booted from a read-only live image with its root filesystem in RAM.
+Networking must be physically disconnected or absent: no ethernet cable, no
+wireless adapter, and no tethered devices. The key material must never touch a
+networked host, and a RAM root ensures working copies disappear upon power-off.
 
 The procedure needs OpenSSL 3, GNU coreutils and `cryptsetup`. Every step below uses
 only those. Run `umask 077` first, and work in a directory under `/run/user` or
@@ -91,15 +90,14 @@ test "$(wc -c < release.der)" -eq 48
 test "$(wc -c < governance.der)" -eq 48
 ```
 
-Each file is the 16-byte PKCS#8 prefix followed by the 32-byte seed. These two files
-are the key material. They are what goes onto the encrypted media, and they are what
-must never be copied anywhere else.
+Each file contains the 16-byte PKCS#8 prefix followed by the 32-byte seed. These two
+files constitute the private key material stored exclusively on the encrypted media.
 
 ## Public-key files and fingerprints
 
-The protocol's key-bytes file is exactly 65 bytes: 64 lowercase hex characters
-followed by one LF. The fingerprint is the lowercase sha256 hex over the *decoded* 32
-raw key bytes, never over the 65 file bytes.
+The protocol key-bytes file contains 64 lowercase hex characters followed by one
+LF (65 bytes total). The fingerprint is the lowercase sha256 hex digest of the
+decoded 32 raw key bytes, not the 65 file bytes.
 
 ```sh
 for role in release governance; do
@@ -126,8 +124,8 @@ serving trees contain no key copies at all.
 
 The declared inventory is exactly two encrypted offline media under separate physical
 custody, and the copy operation that creates the second is itself part of the
-inventory. Both media carry the same contents: both private keys and both public
-keys. The release key is backed up here because losing it would end the chain.
+inventory. Both media carry identical contents, storing both private keys and both
+public keys. The release key is backed up here because losing it terminates the chain.
 
 For each medium, with `dev` set to its whole-device path:
 
@@ -141,19 +139,16 @@ sha256sum /mnt/*.der /mnt/*.pub > /mnt/MANIFEST
 umount /mnt && cryptsetup close snh-ceremony
 ```
 
-The publication owner holds both media, at two separate physical locations, so that
-no single fire or theft takes both. This is what "separately controlled" means here:
-separate control domains for the media, with accountability for the halt rule below
-resting on one person who can actually answer for each medium. Adding a second
-custodian would improve survivability if the owner were unreachable, at the cost of
-making someone else's record-keeping a halt condition.
+The publication owner retains custody of both media across two distinct physical
+locations to mitigate single-site physical loss. "Separately controlled" means
+physically separate storage locations where a single custodian accounts for each
+medium under the halt rule below.
 
-Use a distinct passphrase per medium so that disclosure of one passphrase does not
-unlock the other, and make sure each passphrase is independently recoverable: the
-protocol tolerates one medium being destroyed and governance continuing on the
-other, which is only true if the surviving medium can still be opened. Custody of
-these passphrases is an operational matter that the specification places
-outside the wire protocol; record the arrangement in the inventory.
+Use a distinct passphrase for each medium so that disclosure of one does not
+compromise the other, and ensure each passphrase is independently recoverable
+because the protocol tolerates loss of one medium only if the surviving medium
+can still be unlocked. Custody of these passphrases is an operational matter that
+the specification places outside the wire protocol; record the arrangement in the inventory.
 
 After both media exist, reopen each one and confirm its `MANIFEST` still matches, so
 that the inventory records two copies that have both been read back rather than two

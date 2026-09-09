@@ -10,7 +10,7 @@ research result and does not alter admission.
 The commands below describe the current deployment. Storage locations and
 backup policy belong to the NixOS server configuration. They are not protocol
 requirements. Run kernel commands from a Soranoha checkout and pass absolute
-paths: the Nix wrapper changes its working directory.
+paths because the Nix wrapper changes its working directory.
 
 ## Prepare and inspect the whole corpus
 
@@ -78,13 +78,12 @@ can carry it, and before the first deposit there is none; serving injects it int
 every citation it renders. A malformed value is refused at activation rather than
 written into every work's citation record.
 
-Because the citations are generated files, the DOI is part of what an activation
-produces. Setting or changing it for a commit already exported makes the reuse
-check fail with `serving-tree-mismatch`: the existing tree's citations name a
-different DOI. Remove that tree and re-export.
+Because citations are generated files, the DOI is part of what activation
+produces. Setting or changing it for an already-exported commit causes the reuse
+check to fail with `serving-tree-mismatch` because the existing tree citations
+name a different DOI. To resolve this, remove that tree and re-export.
 
-To verify and activate the existing publication again, as the publisher with its
-configured SSH transport:
+To re-verify and activate the existing publication using the configured SSH transport:
 
 ```sh
 nix run .#soranoha-kernel -- serving-activate \

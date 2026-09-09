@@ -89,8 +89,8 @@ excludes writing the pages out.
 Rendering is per-work and independent, so it parallelizes if activation latency
 turns out to matter. It is sequential today because generation must produce
 byte-identical output on every activation for the reuse check to hold, and that
-property is easier to keep obviously true in one thread than to re-establish
-across a pool. Measure before changing it.
+property is easier to maintain deterministically in a single thread than across a
+worker pool. Measure before changing it.
 
 ### What the bulk archives cost an activation
 

@@ -10,11 +10,11 @@ independent fork of [P4suta/aozora](https://github.com/P4suta/aozora) at
 revision `1a4f864603970983719655aa4af4525958ac2d38`, dual-licensed MIT or
 Apache-2.0. Each carries `LICENSE-MIT`, `LICENSE-APACHE` and `NOTICE`, and
 each crate root names the upstream crate and that revision in a header. This
-is a methodological fact as well as a licence one: the forked code determines
+matters methodologically as well as legally because the forked code determines
 the transcription of every work Soranoha publishes.
 
-The `ab-aozora-` prefix marks that lineage. `ab-aozora` without a suffix is
-locally authored despite the name.
+The `ab-aozora-` prefix marks that lineage; `ab-aozora` without a suffix is
+locally authored.
 
 The [workspace crate guide](crates/README.md) describes the library boundaries
 and marks each crate as forked or local.

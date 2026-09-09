@@ -15,9 +15,9 @@ If you use the corpus in research, please cite it (see
 [citation](citation.md)). That is a scholarly norm here, not a licence
 condition.
 
-## Two layers, stated separately
+## Two distinct rights layers
 
-A published work has two rights layers, and they are not the same thing.
+A published work involves two distinct rights layers.
 
 **The underlying works** are texts from [Aozora
 Bunko](https://www.aozora.gr.jp/) whose copyright has expired. Soranoha
@@ -52,11 +52,10 @@ citation rather than enforced as a licence condition.
 | Protocol JSON Schemas: `soranoha/resources/snh/schemas/` | [CC0-1.0](../LICENSE-CC0) | Repository |
 | All source code | [Apache-2.0](../LICENSE) | Repository |
 
-The encoding vocabulary and the protocol schemas are CC0 so that an
-independent implementation can adopt them without inheriting an attribution
-obligation. The code is Apache-2.0 for its explicit patent grant: the snh
-protocol is specified for independent reimplementation, and a patent grant is
-what makes that invitation credible.
+The encoding vocabulary and protocol schemas are dedicated under CC0 so that
+independent implementations can adopt them without attribution obligations. The
+code is licensed under Apache-2.0 to provide an explicit patent grant
+protecting independent reimplementations of the snh protocol.
 
 ## The toolchain
 
@@ -65,12 +64,10 @@ fork of [P4suta/aozora](https://github.com/P4suta/aozora) at revision
 `1a4f864603970983719655aa4af4525958ac2d38`, dual-licensed **MIT OR
 Apache-2.0**. Its licence files and `NOTICE` are retained in the fork, and
 each crate root carries a header naming the upstream crate and revision. Only
-names with the trailing hyphen are forked:
-`ab-aozora` without a suffix is a locally authored harness binary, contains no
-lifted code, and carries no upstream attribution obligation. This matters to
-two kinds of reader: anyone assessing licence obligations before
-redistributing the tooling, and anyone assessing how the transcriptions were
-produced, for whom the parser's lineage is a methodological fact.
+names with a trailing hyphen are forked; `ab-aozora` without a suffix is a
+locally authored harness binary containing no lifted code. This distinction
+matters when assessing license obligations before redistributing tooling, and
+when auditing transcription methodology.
 
 Redistributing the *published corpus* does not carry the toolchain's
 obligations. Redistributing the *tooling* does.
@@ -94,9 +91,9 @@ In every signed release manifest:
 }
 ```
 
-In every published TEI file, one `licence` element per rights layer: the
-underlying work's standing carried by the Creative Commons Public Domain Mark,
-Soranoha's own encoding by CC0:
+In every published TEI file, one `licence` element covers each rights layer.
+The underlying work's status is represented by the Creative Commons Public
+Domain Mark, and Soranoha's encoding is dedicated under CC0:
 
 ```xml
 <publicationStmt>
@@ -119,10 +116,10 @@ signed off, the terms in the release record, and the terms inside a detached
 TEI file therefore cannot disagree. Where a copy nonetheless differs, the
 manifest field is authoritative because it is signed.
 
-The TEI profile enforces the grant's presence: `snh-publication-licence` in
-`soranoha/schemas/tei-profile.sch` rejects any Soranoha TEI file whose header
-lacks `publicationStmt/availability/licence` with a non-empty `@target`. A
-published work without stated terms is a validation failure, not an omission.
+The TEI profile enforces the presence of the grant. The
+`snh-publication-licence` rule in `soranoha/schemas/tei-profile.sch` rejects any
+Soranoha TEI file whose header lacks `publicationStmt/availability/licence` with
+a non-empty `@target`. Omitting stated terms causes validation failure.
 
 ## If you hold rights in a published work
 

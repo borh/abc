@@ -8,6 +8,10 @@ catalog snapshot was current when the sentence was written, then repeated across
 several files, and nothing re-measured them, so a drift stayed invisible until
 someone checked by hand. This checks two things instead.
 
+The checkout holds the snapshot the figures came from. Both digests the rights
+evidence records are recomputed before anything else, so a failing figure is
+never ambiguous between a mistake in the prose and a newer catalog.
+
 The figure still holds. Each entry names how it is derived, and the derivation
 runs against the catalog in the corpus checkout. An upstream catalog that has
 moved fails here with both numbers.
@@ -34,6 +38,7 @@ from __future__ import annotations
 import argparse
 import collections
 import csv
+import hashlib
 import io
 import os
 import re
@@ -63,9 +68,24 @@ PLAIN_EDITION_DATE = re.compile(r"^\d{4}（[^）]+）年\d+月\d+日")
 # The romanization `soranoha.za.naming/ascii-component` applies, reproduced
 # because the author-component figure describes what that function produces.
 TRANSLITERATIONS = {
-    "ł": "l", "Ł": "L", "ø": "o", "Ø": "O", "æ": "ae", "Æ": "Ae", "œ": "oe", "Œ": "Oe",
-    "ß": "ss", "đ": "d", "Đ": "D", "ð": "d", "Ð": "D", "þ": "th", "Þ": "Th",
-    "ı": "i", "İ": "I", "’": "'",
+    "ł": "l",
+    "Ł": "L",
+    "ø": "o",
+    "Ø": "O",
+    "æ": "ae",
+    "Æ": "Ae",
+    "œ": "oe",
+    "Œ": "Oe",
+    "ß": "ss",
+    "đ": "d",
+    "Đ": "D",
+    "ð": "d",
+    "Ð": "D",
+    "þ": "th",
+    "Þ": "Th",
+    "ı": "i",
+    "İ": "I",
+    "’": "'",
 }
 
 CITATION = "docs/citation.md"
@@ -79,6 +99,31 @@ WORKED_EXAMPLE = "docs/worked-example.md"
 
 Row = dict[str, str]
 Work = list[Row]
+
+
+class Digest(NamedTuple):
+    """The pinned snapshot the figures below were derived from."""
+
+    what: str
+    sha256: str
+    quoted_in: Sequence[str]
+
+
+# Checked first, and reported on its own, because one moved snapshot explains
+# every figure that follows: a reader who sees these two agree knows a failing
+# figure is a mistake in the prose and not a newer catalog.
+DIGESTS = [
+    Digest(
+        "the catalog archive",
+        "5ea13273dd457f89af31de39f559ea9c6f5435d9bda1ae3d46d6a683b8bc3c92",
+        [EVIDENCE],
+    ),
+    Digest(
+        "the catalog CSV",
+        "c0ace54c7ac037e5aebd045922c7879b9f7dc01f85b8f7483c8d4ecc29569ef4",
+        [EVIDENCE],
+    ),
+]
 
 
 class Figure(NamedTuple):
@@ -246,6 +291,26 @@ STEM_FIGURES = [
         [NAMING],
     ),
 ]
+
+
+def check_digests(aozora_root: Path) -> list[str]:
+    """Whether the checkout holds the snapshot the figures were derived from."""
+    archive_path = aozora_root / CATALOG_ARCHIVE
+    archive = zipfile.ZipFile(archive_path)
+    member = next(name for name in archive.namelist() if name.endswith(".csv"))
+    found = [
+        hashlib.sha256(archive_path.read_bytes()).hexdigest(),
+        hashlib.sha256(archive.read(member)).hexdigest(),
+    ]
+    problems = []
+    for digest, actual in zip(DIGESTS, found, strict=True):
+        if digest.sha256 != actual:
+            problems.append(f"{digest.what}: pinned {digest.sha256}, checkout has {actual}")
+            continue
+        for name in digest.quoted_in:
+            if digest.sha256 not in (ROOT / name).read_text(encoding="utf-8"):
+                problems.append(f"{digest.what}: {name} no longer states {digest.sha256}")
+    return problems
 
 
 def read_catalog(aozora_root: Path) -> dict[str, Work]:
@@ -440,6 +505,12 @@ def main() -> int:
         print(f"catalog-figures: no catalog at {aozora_root / CATALOG_ARCHIVE}", file=sys.stderr)
         return 2
 
+    problems = check_digests(aozora_root)
+    if problems:
+        for problem in problems:
+            print(f"catalog-figures: {problem}", file=sys.stderr)
+        return 1
+
     works = read_catalog(aozora_root)
     figures = list(FIGURES)
     measured = measure(works)
@@ -453,7 +524,7 @@ def main() -> int:
     if problems:
         return 1
     skipped = "" if arguments.stems else "; archive stems not checked, pass --stems"
-    print(f"checked {len(figures)} corpus figures against the pinned catalog{skipped}")
+    print(f"checked {len(DIGESTS)} catalog digests and {len(figures)} corpus figures{skipped}")
     return 0
 
 

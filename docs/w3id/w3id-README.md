@@ -2,7 +2,8 @@
 
 Permanent identifiers for [Soranoha](https://soranoha.org/), a conversion and
 signed-publication system that produces TEI P5 transcriptions and derived
-plaintext from [Aozora Bunko](https://www.aozora.gr.jp/) source markup.
+plaintext and Markdown from [Aozora Bunko](https://www.aozora.gr.jp/) source
+markup.
 
 These identifiers appear in published TEI bytes and in records that are
 content-addressed and signed, so they must remain stable independently of where

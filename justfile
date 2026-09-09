@@ -67,16 +67,27 @@ soranoha-tests:
 	{{nix_eval}} build ".#checks.$system.soranoha-tests" --print-build-logs
 
 # release-parser-reproducible: the two release binaries must rebuild
-# byte-identically. `nix build --rebuild` re-realizes each derivation and fails
-# if the freshly built output differs byte-for-byte from the cached path, so it
+# byte-identically. `nix build --rebuild` re-realizes a derivation and fails if
+# the freshly built output differs byte-for-byte from the cached path, so it
 # establishes reproducibility against the baseline built first. This needs the
 # Nix daemon (a sandboxed runCommand builder cannot invoke it), so it is a just
 # recipe rather than a checks.<system> derivation.
+#
+# Each derivation path is resolved once and the rebuild names it directly rather
+# than re-evaluating the flake attribute. A flake source in a dirty git tree
+# carries the working tree into the derivation hash, so an edit landing between
+# the two steps makes the second one name a derivation that was never built, and
+# nix then reports that it cannot check rather than that the bytes differ. That
+# red says nothing about reproducibility, and this gate is release evidence.
+# Pinning removes the failure outright: both steps address one derivation
+# whatever the tree does meanwhile, so no clean-tree precondition is needed.
 release-parser-reproducible:
-	{{nix_eval}} build ./ab-validator#ab-aozora ./ab-validator#ab-aat-to-parser-ir --no-link --print-build-logs
-	{{nix_eval}} build ./ab-validator#ab-aozora --rebuild --no-link --print-build-logs
-	{{nix_eval}} build ./ab-validator#ab-aat-to-parser-ir --rebuild --no-link --print-build-logs
-	@echo "release parser binaries rebuild reproducibly"
+	@aozora="$({{nix_eval}} eval --raw ./ab-validator#ab-aozora.drvPath)" \
+	&& parser_ir="$({{nix_eval}} eval --raw ./ab-validator#ab-aat-to-parser-ir.drvPath)" \
+	&& {{nix_eval}} build "$aozora^*" "$parser_ir^*" --no-link --print-build-logs \
+	&& {{nix_eval}} build "$aozora^*" --rebuild --no-link --print-build-logs \
+	&& {{nix_eval}} build "$parser_ir^*" --rebuild --no-link --print-build-logs \
+	&& echo "release parser binaries rebuild reproducibly"
 
 # Authenticate instrument policies against their declared source closure, and
 # establish that capture generation is deterministic, which is what makes a

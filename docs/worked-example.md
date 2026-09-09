@@ -55,7 +55,7 @@ You can run it yourself from a checkout; see
 
 ## The header
 
-The whole `teiHeader` for this work is 40 lines. Taking it block by block:
+The whole `teiHeader` for this work is 47 lines. Taking it block by block:
 
 ### titleStmt: work title and authorship
 
@@ -128,8 +128,8 @@ invented.
 ```xml
 <sourceDesc>
   <bibl><title>芥川龍之介全集2</title><publisher>ちくま文庫、筑摩書房</publisher><date>1986（昭和61）年10月28日</date><note type="input-edition">1996（平成8）年7月15日第11刷</note></bibl>
-  <bibl><idno type="source-content-hash">sha256:3c686946ec0a7f31f9de7a9a7231d93fe97c7323a5172c268a48f180fdb7bcac</idno></bibl>
   <bibl type="first-publication">「赤い鳥」1918（大正7）年7月</bibl>
+  <bibl><idno type="source-content-hash">sha256:ba7a3b91f4796022ff7b9d17712a0bdea92724e309ed2f4db9f17f151c8e0712</idno></bibl>
   <bibl><idno type="primary-text-hash">sha256:3c686946ec0a7f31f9de7a9a7231d93fe97c7323a5172c268a48f180fdb7bcac</idno></bibl>
 </sourceDesc>
 ```
@@ -158,15 +158,15 @@ result to be exactly reproducible, cite both.
     <taxonomy xml:id="ndc"><bibl>日本十進分類法 (Nippon Decimal Classification), as recorded by <title>青空文庫</title> in its 分類番号 field.</bibl></taxonomy>
     <taxonomy xml:id="aozora-orthography"><bibl><title>青空文庫</title> 文字遣い種別: the orthographic style Aozora Bunko records for the transcription.</bibl></taxonomy>
   </classDecl>
+  <refsDecl xml:id="source-spans">
+    <p>A note of type source-span has an xml:id of the form source-START-END, giving the extent in UTF-8 bytes of the decoded primary text identified in sourceDesc. <ptr target="https://w3id.org/soranoha/ns/tei"/></p>
+  </refsDecl>
   <charDecl>
     <char xml:id="gaiji-3-1-87-71">
       <mapping type="unicode">犍</mapping>
       <localProp name="rawMarker" value="特のへん＋廴＋聿"/>
     </char>
   </charDecl>
-  <refsDecl xml:id="source-spans">
-    <p>A note of type source-span has an xml:id of the form source-START-END, giving the extent in UTF-8 bytes of the decoded primary text identified in sourceDesc. <ptr target="https://w3id.org/soranoha/ns/tei"/></p>
-  </refsDecl>
 </encodingDesc>
 ```
 
@@ -347,8 +347,7 @@ travels with the text rather than staying in a log.
 
 ```
 一
-　ある日の事でございます。御釈迦様は極楽の蓮池のふちを、独りでぶらぶら御歩きに
-なっていらっしゃいました。…
+　ある日の事でございます。御釈迦様は極楽の蓮池のふちを、独りでぶらぶら御歩きになっていらっしゃいました。…
 ```
 
 Reading text only: ruby readings gone, gaiji present as their mapped

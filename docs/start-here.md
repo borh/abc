@@ -141,8 +141,8 @@ single-download option.
 ## Scale and coverage
 
 The source is Aozora Bunko's catalog of works whose copyright has expired in
-Japan, restricted to works with a downloadable text file: about 17,300 of them
-at the time of writing, contributed by about 1,050 authors, translators,
+Japan, restricted to works with a downloadable text file: about 17,600 of them
+at the time of writing, contributed by about 1,100 authors, translators,
 editors and collators. That number moves as Aozora adds works and as
 copyrights expire. Each release states its own count on the landing page and
 in `/catalog.json`; a release is a fixed set of works, not a live view.

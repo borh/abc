@@ -205,17 +205,30 @@ custody, and the copy operation that creates the second is itself part of the
 inventory. Both media carry identical contents, storing both private keys and both
 public keys. The release key is backed up here because losing it terminates the chain.
 
-For each medium, with `dev` set to its whole-device path:
+Identify the medium with `lsblk` and confirm the device before formatting;
+`luksFormat` destroys what is there. Use the whole device, not a partition.
 
 ```sh
+dev=/dev/sdX
+mnt=/run/ceremony/mnt
+mkdir -p "$mnt"
+
 cryptsetup luksFormat --type luks2 "$dev"
 cryptsetup open "$dev" snh-ceremony
-mkfs.ext4 -L snh "/dev/mapper/snh-ceremony"
-mount /dev/mapper/snh-ceremony /mnt
-install -m 0400 release.der governance.der release.pub governance.pub /mnt/
-sha256sum /mnt/*.der /mnt/*.pub > /mnt/MANIFEST
-umount /mnt && cryptsetup close snh-ceremony
+mkfs.ext4 -L snh /dev/mapper/snh-ceremony
+mount /dev/mapper/snh-ceremony "$mnt"
+install -m 0400 release.der governance.der release.pub governance.pub "$mnt/"
+(cd "$mnt" && sha256sum -- *.der *.pub > MANIFEST)
+umount "$mnt" && cryptsetup close snh-ceremony
 ```
+
+`cryptsetup open` is what creates `/dev/mapper/snh-ceremony`: its second
+argument is the mapper name, and the unlocked container appears under that name
+until `cryptsetup close` removes it. The mount point is created here rather
+than assumed, because a NixOS system has no `/mnt` unless something declares
+one, and this image declares nothing beyond what the ceremony needs.
+
+Repeat the block for the second medium, with `dev` set to that device.
 
 The publication owner retains custody of both media across two distinct physical
 locations to mitigate single-site physical loss. "Separately controlled" means
@@ -228,10 +241,22 @@ because the protocol tolerates loss of one medium only if the surviving medium
 can still be unlocked. Custody of these passphrases is an operational matter that
 the specification places outside the wire protocol; record the arrangement in the inventory.
 
+The manifest is written from inside the mount so that it names the four files
+and not the path they happened to be mounted at. A manifest carrying absolute
+paths would only check against the same mount point, which is exactly the
+condition a readback on another machine cannot rely on.
+
 After both media exist, reopen each one and confirm its `MANIFEST` still matches, so
 that the inventory records two copies that have both been read back rather than two
-copies that were both written. Then power the machine off, which discards the tmpfs
-working copies.
+copies that were both written:
+
+```sh
+cryptsetup open "$dev" snh-ceremony && mount /dev/mapper/snh-ceremony "$mnt"
+(cd "$mnt" && sha256sum -c MANIFEST)
+umount "$mnt" && cryptsetup close snh-ceremony
+```
+
+Then power the machine off, which discards the tmpfs working copies.
 
 ## The copy inventory
 
@@ -285,15 +310,15 @@ medium, constructing the message, producing 64 raw bytes, reading the result bac
 against a subject whose bytes are already fixed.
 
 ```sh
-cryptsetup open "$dev" snh-ceremony && mount /dev/mapper/snh-ceremony /mnt
+cryptsetup open "$dev" snh-ceremony && mount /dev/mapper/snh-ceremony "$mnt"
 event=bca7658ee4ae0316fc7304aa5e3657761c167592f8a67a33cdb661bb37e70a59
 printf 'snh-governance-event-sig/1:%s' "$event" > rehearsal.msg
-openssl pkeyutl -sign -rawin -inkey /mnt/governance.der -keyform DER \
+openssl pkeyutl -sign -rawin -inkey "$mnt/governance.der" -keyform DER \
   -in rehearsal.msg -out rehearsal.sig
-openssl pkey -inform DER -in /mnt/governance.der -pubout -out rehearsal.pubpem
+openssl pkey -inform DER -in "$mnt/governance.der" -pubout -out rehearsal.pubpem
 openssl pkeyutl -verify -rawin -pubin -inkey rehearsal.pubpem \
   -in rehearsal.msg -sigfile rehearsal.sig
-umount /mnt && cryptsetup close snh-ceremony
+umount "$mnt" && cryptsetup close snh-ceremony
 ```
 
 The signature must be 64 bytes and must verify. It is disposable ceremony evidence:
@@ -339,14 +364,18 @@ signing session runs on the image the keys were made on, not on whatever image i
 current at the time. Take a root shell as above, with the event file at `event.json`:
 
 ```sh
+dev=/dev/sdX                        # the medium being opened, per lsblk
+mnt=/run/ceremony/mnt
+mkdir -p "$mnt"
+
 cat event.json                      # read what is about to be authorized
 hex=$(sha256sum event.json | cut -d' ' -f1)
 printf 'snh-governance-event-sig/1:%s' "$hex" > event.msg
 test "$(wc -c < event.msg)" -eq 91
-cryptsetup open "$dev" snh-ceremony && mount /dev/mapper/snh-ceremony /mnt
-openssl pkeyutl -sign -rawin -inkey /mnt/governance.der -keyform DER \
+cryptsetup open "$dev" snh-ceremony && mount /dev/mapper/snh-ceremony "$mnt"
+openssl pkeyutl -sign -rawin -inkey "$mnt/governance.der" -keyform DER \
   -in event.msg -out event.sig
-umount /mnt && cryptsetup close snh-ceremony
+umount "$mnt" && cryptsetup close snh-ceremony
 test "$(wc -c < event.sig)" -eq 64
 ```
 

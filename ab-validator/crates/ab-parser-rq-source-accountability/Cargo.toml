@@ -9,7 +9,7 @@ publish = false
 ab-aat = { path = "../ab-aat" }
 ab-capture = { path = "../ab-capture" }
 ab-diff-utils = { path = "../ab-diff-utils" }
-ab-rq-artifact-store = { path = "../ab-rq-artifact-store" }
+ab-artifact-store = { path = "../ab-artifact-store" }
 anyhow.workspace = true
 clap.workspace = true
 jsonschema.workspace = true

@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::path::Path;
 
-use ab_rq_artifact_store::authenticate_blob;
+use ab_artifact_store::authenticate_blob;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 

@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::fs;
 use std::path::{Component, Path, PathBuf};
 
-use ab_rq_artifact_store::{publish_blob, write_atomic_summary};
+use ab_artifact_store::{publish_blob, write_atomic_summary};
 use anyhow::{Context, Result, bail};
 use serde::Serialize;
 use sha2::{Digest, Sha256};

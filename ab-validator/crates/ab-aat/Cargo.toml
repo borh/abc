@@ -24,7 +24,7 @@ ab-aozora-pipeline = { path = "../ab-aozora-pipeline" }
 # Shared body/tail boundary authority (aozora_body_range) — one cut for
 # parser and checker.
 ab-source-syntax = { path = "../ab-source-syntax" }
-ab-rq-artifact-store = { path = "../ab-rq-artifact-store" }
+ab-artifact-store = { path = "../ab-artifact-store" }
 serde_json = "1.0"
 sha2 = "0.10"
 jsonschema.workspace = true

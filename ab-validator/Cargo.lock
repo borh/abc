@@ -8,7 +8,7 @@ version = "0.6.0"
 dependencies = [
  "ab-aozora-facade",
  "ab-aozora-pipeline",
- "ab-rq-artifact-store",
+ "ab-artifact-store",
  "ab-source-syntax",
  "anyhow",
  "encoding_rs",
@@ -152,12 +152,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "ab-artifact-store"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "sha2 0.10.9",
+ "tempfile",
+]
+
+[[package]]
 name = "ab-capture"
 version = "0.6.0"
 dependencies = [
  "ab-aat",
  "ab-aozora-pipeline",
- "ab-rq-artifact-store",
+ "ab-artifact-store",
  "anyhow",
  "hegeltest",
  "jsonschema",
@@ -375,9 +384,9 @@ name = "ab-parser-rq-source-accountability"
 version = "0.1.0"
 dependencies = [
  "ab-aat",
+ "ab-artifact-store",
  "ab-capture",
  "ab-diff-utils",
- "ab-rq-artifact-store",
  "anyhow",
  "clap",
  "hegeltest",
@@ -396,15 +405,6 @@ dependencies = [
  "proptest",
  "serde",
  "serde_json",
-]
-
-[[package]]
-name = "ab-rq-artifact-store"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "sha2 0.10.9",
- "tempfile",
 ]
 
 [[package]]

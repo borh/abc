@@ -18,7 +18,7 @@ ab-aat = { path = "../ab-aat" }
 # ClassifiedSource* fact types, ConstructId, Span, lex.
 ab-aozora-pipeline = { path = "../ab-aozora-pipeline" }
 # publish_blob / PublishedBlob for the capture ledger.
-ab-rq-artifact-store = { path = "../ab-rq-artifact-store" }
+ab-artifact-store = { path = "../ab-artifact-store" }
 anyhow = "1.0"
 serde_json = "1.0"
 sha2 = "0.10"

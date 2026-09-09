@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
-use ab_rq_artifact_store::{
+use ab_artifact_store::{
     authenticate_blob, authenticate_blob_identity, publish_blob, write_atomic_summary,
 };
 use anyhow::Result;

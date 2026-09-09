@@ -64,9 +64,8 @@ without a suffix is locally authored, and is marked below.
 | `ab-capture` | Source capture, classified provenance, and lane recording. |
 | `ab-check` | CLI and backend for AAT schema validity, source projection, and parser invariants. |
 | `ab-coverage` | Coverage matrix tooling and merge CLI for Aozora syntax coverage data. |
-| `ab-parser-rq-source-accountability` | Research query tooling for source accountability and marker accounting. |
-| `ab-parser-rq-diagnostic-authorization` | Research validation for diagnostic authorization policies. |
-| `ab-rq-artifact-store` | Content-addressed storage backend for research run captures. |
+| `ab-parser-rq-source-accountability` | Release-qualification instrument for source accountability and marker accounting. Named for the `parser-rq-source-accountability-*` records it emits. |
+| `ab-parser-rq-diagnostic-authorization` | Release-qualification instrument for diagnostic authorization policies. Named for the `parser-rq-diagnostic-authorization-v1` instrument identity it publishes under. |
 
 ## Indexing and shared utilities
 
@@ -74,4 +73,5 @@ without a suffix is locally authored, and is marked below.
 | --- | --- |
 | `ab-index` | Feature-index builder and query CLI. |
 | `ab-diff-utils` | Shared first-difference, frequency-table, and hash helpers. |
+| `ab-artifact-store` | Authenticated content-addressed blob publication and retrieval. Used by the release-qualification instruments and by `ab-capture`, but tied to neither. |
 | `ab-notation-strategies` | Proptest strategies generating Aozora notation input, plus the shared proptest configuration. Dev-only. |

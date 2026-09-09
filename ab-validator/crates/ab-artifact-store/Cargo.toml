@@ -1,5 +1,5 @@
 [package]
-name = "ab-rq-artifact-store"
+name = "ab-artifact-store"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

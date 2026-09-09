@@ -1,7 +1,7 @@
 use std::fs;
 use std::sync::{Arc, Barrier};
 
-use ab_rq_artifact_store::{
+use ab_artifact_store::{
     AuthenticateErrorKind, authenticate_blob, authenticate_blob_identity, publish_blob,
     write_atomic_summary,
 };

@@ -1,13 +1,13 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use ab_artifact_store::publish_blob;
 use ab_capture::{CaptureGeneration, capture_generation_from_bytes};
 use ab_parser_rq_source_accountability::{
     RecognitionCorpusInput, RecognitionGenerationEntry, RecognitionGenerationIndex,
     RecognitionIndex, RecognitionStatus, RecognitionWorkRecord, aggregate_recognition,
     analyze_recognition_corpus, canonical_json, rfc8785_safe_integer_json,
 };
-use ab_rq_artifact_store::publish_blob;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 

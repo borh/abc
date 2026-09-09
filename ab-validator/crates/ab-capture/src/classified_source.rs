@@ -7,7 +7,7 @@ use ab_aozora_pipeline::{
     ClassifiedSourceDisposition, ClassifiedSourceEvidenceClass, ClassifiedSourceFact,
     ClassifiedSourceRole, ConstructId, lex,
 };
-use ab_rq_artifact_store::{PublishedBlob, publish_blob};
+use ab_artifact_store::{PublishedBlob, publish_blob};
 use anyhow::{Context, Result, ensure};
 use serde_json::{Map, Value, json};
 use sha2::{Digest, Sha256};

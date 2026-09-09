@@ -4,7 +4,8 @@
 # all plane 2 cells (第4水準). Cells whose canonical mapping is a combining
 # sequence (>1 codepoint) are listed separately in jisx0213-combo.tsv.
 # Format: plane<TAB>row<TAB>cell<TAB>codepoint_hex
-# Regenerate: see crates/aozora-xtask/src/gaiji_gen.rs.
+# Generated upstream by the aozora-xtask gaiji generator, which the fork
+# reduction did not carry: this tree holds the table, not its generator.
 1	2	15	FF07
 1	2	16	FF02
 1	2	17	FF0D

@@ -12,6 +12,7 @@ the published routes, and as the file name of a withdrawal record:
 
 ```
 https://soranoha.org/works/000092_000879/tei
+https://soranoha.org/works/000092_000879/markdown
 https://soranoha.org/works/000092_000879/plaintext
 https://soranoha.org/works/000092_000879/tei-validation
 https://soranoha.org/withdrawn/000092_000879.json
@@ -88,8 +89,9 @@ parts) rather than the assembled name, because a derived value stored beside
 its own inputs can disagree with them and the chain is append-only.
 
 The identifier is a component of the filename rather than an alternative to
-it. 470 author-and-title pairs are shared by 2357 works in the catalog this
-release builds from, so a name built from author and title alone would collide
-for about one work in ten of any bulk extraction, silently. Splitting a filename on its hyphens recovers the
+it. 470 author-and-title pairs are shared by 2357 of the 17655 works in the
+catalog this release builds from, so a name built from author and title alone
+would silently collide for more than one work in ten of any bulk extraction.
+Splitting a filename on its hyphens recovers the
 identifier as the last component; the bulk archives also carry it in
 `catalog.csv`.

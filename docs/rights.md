@@ -71,7 +71,7 @@ citation rather than enforced as a licence condition.
 | Protocol JSON Schemas: `soranoha/resources/snh/schemas/` | [CC0-1.0](../LICENSE-CC0) | Repository |
 | Locally authored source code | [Apache-2.0](../LICENSE) | Repository |
 | Forked parser core, eight crates | MIT OR Apache-2.0 | `ab-validator/crates/`, listed below |
-| Third-party data tables | Their own terms, in each file's header | `ab-validator/crates/*/data/` |
+| Data tables | Provenance, and terms where the source states them, in each file's header | `ab-validator/crates/*/data/` |
 
 The encoding vocabulary and protocol schemas are dedicated under CC0 so that
 independent implementations can adopt them without attribution obligations. The
@@ -85,12 +85,15 @@ dual-licensed, so those eight carry `MIT OR Apache-2.0` as an inherited
 obligation. Each states it in its own manifest rather than taking the
 workspace default.
 
-The data tables the tooling reads are third-party work under their own terms,
-each stated in the file's own header rather than gathered here, so a table
-stays interpretable when it is copied out on its own. The 外字注記辞書 mapping
-is CC0 through an upstream transcription; the JIS X 0213 table is Project
-X0213's, under its own permissive grant. Redistributing the tooling carries
-those headers with it.
+The data tables the tooling reads are mostly third-party work, and each file's
+own header names where it came from rather than this page gathering it, so a
+table stays interpretable when it is copied out on its own. The 外字注記辞書
+mapping is CC0 through an upstream transcription. The JIS X 0213 code table is
+Project X0213's, under its own permissive grant; the two gaiji-territory tables
+derived from it come from glibc's EUC-JISX0213 charmap and from the standard's
+Annex F, and their headers record that provenance rather than a grant of their
+own. The hand-curated gaiji aliases are Soranoha's. Redistributing the tooling
+carries those headers with it.
 
 ## The toolchain
 

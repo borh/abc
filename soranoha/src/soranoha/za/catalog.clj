@@ -21,7 +21,8 @@
 
 (defn- archive-stem
   "The Aozora archive's own name for the work's primary text member, without
-  its extension (`92_ruby_164.txt` becomes `92_ruby_164`). Aozora volunteers
+  its extension: `92_ruby_164.zip` holds `kumono_ito.txt`, so the stem is
+  `kumono_ito` and not the archive's own name. Aozora volunteers
   hand-curated these names with word boundaries, which is why the serving
   layer renders download filenames from this rather than from a mechanical
   romanization of the title reading. Every published work has exactly one

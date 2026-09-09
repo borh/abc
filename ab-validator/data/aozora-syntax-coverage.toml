@@ -578,6 +578,78 @@ evidence = "docs/aat-contract.md:122; docs/aat-contract.md:129"
 notes = "This matrix uses a combined priority-1 image/caption row; AAT has typed figure and caption nodes."
 
 [[syntax]]
+id = "figure.insertion_declaration"
+priority = 2
+category = "media"
+feature_keys = ["figure", "source_note"]
+reference_sources = ["references/aozorabunko/rules/kijyunn.html"]
+source_examples = [
+  "［＃図１入る］",
+  "［＃カット「焼夷弾の図」入る。16-上段］",
+  "［＃昭和新山の出来た経過を示す図入る］",
+]
+source_patterns = [
+  '^［＃図[0-9０-９]+入る］$',
+  '^［＃カット「[^「」］]+」入る(。[^。「」］]+)?］$',
+  '^［＃[^、（）()「」［］]+図入る(。[^。「」］]+)?］$',
+]
+ir_nodes = ["source-note"]
+aat_nodes = ["editorial_note"]
+tei_projection = "note type=figure-insertion"
+plaintext_projection = "source_note_or_drop_from_body_base_text"
+comparison_projection = "source_note_or_drop_from_body_base_text"
+validation_properties = ["source_note_label_preservation"]
+adapter_expectations = ["preserve the supplied figure name", "assert no image availability"]
+oracle_cases = []
+status = "covered"
+status_reason = "A figure the source places but does not supply. Read as an editorial note carrying the supplied name, because there is no asset to carry and inventing one would assert an availability the source denies."
+
+[syntax.parsers.aozora2]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Not measured. The reference implementations are not vendored here, and their image paths key on a filename this construction does not supply, so their behaviour cannot be inferred from the image rows above."
+
+[syntax.parsers.aozora-rs]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Not measured. Single::Figure parses caption（path、横W×縦H）入る, which requires the path this construction omits."
+
+[syntax.parsers.aozora2html]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Not measured."
+
+[syntax.adapters.aozora2]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Not measured."
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Not measured."
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Not measured."
+
+[syntax.corpus_prevalence]
+works_with_feature = 3
+total_occurrences = 16
+detector_id = "figure_insertion_declaration"
+coverage_basis = "full_corpus"
+sample_works = ["045340", "001255", "057309"]
+
+[syntax.representability]
+source_inventory_row = "figure.insertion_declaration"
+status = "typed"
+aat_nodes = ["editorial_note"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:122"
+notes = "Distinct from figure.image_caption, which supplies a file, and from the omission note, which states that a figure was left out rather than that one belongs here."
+
+[[syntax]]
 id = "break.page_line"
 priority = 1
 category = "milestone"

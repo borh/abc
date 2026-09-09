@@ -51,6 +51,12 @@ fn source_statements_preserve_assertion_kind_and_exact_marker() {
             "目次のページ数および「解題（大内兵衛）」「追記」は省略しました",
             "omission",
         ),
+        // A figure the source places but does not supply. Distinct from an
+        // omission: these say a figure belongs here, not that one was left out.
+        ("図１入る", "figure-insertion"),
+        ("図６入る", "figure-insertion"),
+        ("カット「焼夷弾の図」入る。16-上段", "figure-insertion"),
+        ("昭和新山の出来た経過を示す図入る", "figure-insertion"),
     ] {
         let marker = format!("［＃{statement}］");
         let source = format!("前{marker}後");
@@ -107,6 +113,19 @@ fn statement_like_prose_and_unknown_qualifiers_remain_distinct() {
         "［＃現代語訳「月は明るい］",
         "［＃現代語訳「月は明るい」か］",
         "［＃「現代語訳」は見出しらしい］",
+        // Reads a figure but supplies one, so it stays an illustration.
+        "［＃挿絵１（fig226_01.png、横570×縦829）入る］",
+        // Describes a figure rather than declaring that one belongs here. The
+        // `、` after the number opens the description, and this body ends in
+        // 入る only because its prose does.
+        "［＃図２、「のり」に丸囲みの手書き文字。「り」は小さく頭の部分が「の」の下隙間に入る］",
+        "［＃図１、工場内の見取り図］",
+        // Names nothing: a declaration must say which figure.
+        "［＃入る］",
+        "［＃図入る］",
+        // A locator tail must name somewhere, and only one may follow.
+        "［＃カット「焼夷弾の図」入る。］",
+        "［＃カット「焼夷弾の図」入る。16。上段］",
     ] {
         let aat: Value =
             serde_json::from_slice(&aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();

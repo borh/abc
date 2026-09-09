@@ -502,6 +502,10 @@ pub enum DirectiveKind {
     ExplanationNote,
     /// A supplied external table filename, without its content or resolution.
     ExternalTableReference,
+    /// A source statement that a named figure belongs at this point, supplying
+    /// no filename, dimensions or availability. Distinct from `OmissionNote`:
+    /// the source says a figure goes here, not that one was left out.
+    FigureInsertion,
     /// Ruby-presence editorial note (`［＃「X」にルビ］`): records that the run
     /// `X` carries a ruby gloss in the source. The gloss text itself is not in
     /// the directive; this is a proofreading marker, not renderable ruby.

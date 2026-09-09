@@ -85,7 +85,8 @@
    "external-table-reference" {:markers #{"CommandFullwidth" "CommandAscii"}
                                :families #{"structure.table"} :aspects #{"structure"}}
    "editorial-note" {:markers #{"CommandFullwidth" "CommandAscii"}
-                     :families #{"annotation.chuuki" "source.note_label"} :aspects #{"content" "structure"}}
+                     :families #{"annotation.chuuki" "source.note_label" "figure.insertion_declaration"}
+                     :aspects #{"content" "structure"}}
    "layout" {:markers #{"CommandFullwidth" "CommandAscii"}
              :families #{"decoration.keigakomi" "layout.yokogumi" "glyph.variant_note"} :aspects #{"layout"}}
    "line-layout" {:markers #{"CommandFullwidth" "CommandAscii"}

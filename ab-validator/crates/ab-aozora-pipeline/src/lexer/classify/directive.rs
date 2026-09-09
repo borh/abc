@@ -1112,6 +1112,8 @@ pub(super) fn editorial_note_kind(body: &str) -> Option<DirectiveKind> {
         Some(DirectiveKind::EditorNote)
     } else if is_omission_note_body(body) {
         Some(DirectiveKind::OmissionNote)
+    } else if is_figure_insertion_body(body) {
+        Some(DirectiveKind::FigureInsertion)
     } else if body == "未完" {
         Some(DirectiveKind::IncompletenessNote)
     } else if matches!(
@@ -1174,6 +1176,58 @@ fn is_omission_note_body(body: &str) -> bool {
             .strip_prefix("図が入るが省略。底本")
             .and_then(|body| body.strip_suffix("ページ"))
             .is_some_and(|page| !page.is_empty() && page.bytes().all(|b| b.is_ascii_digit()))
+}
+
+/// Whether `body` is a source-positioned figure insertion declaration: a
+/// statement that a named figure belongs at this point, supplying no filename,
+/// no dimensions and no claim that the figure is available.
+///
+/// Three shapes occur: `図１入る`, `カット「焼夷弾の図」入る。16-上段`, and a
+/// described figure such as `昭和新山の出来た経過を示す図入る`. A trailing
+/// `。<locator>` names a place in the base edition; it stays in the note text
+/// rather than being resolved, as the omission note's `底本43ページ` does.
+///
+/// Declines a parenthesised clause, which is the asset-backed illustration form
+/// and belongs to `Figure`, and declines a supplied name containing `、`, which
+/// opens a description of a figure rather than a declaration that one belongs
+/// here. `図が入るが省略` reaches `is_omission_note_body` first: the source says
+/// there that the figure was left out, which is a different statement.
+fn is_figure_insertion_body(body: &str) -> bool {
+    let head = match body.split_once('。') {
+        Some((head, locator)) => {
+            if locator.is_empty() || locator.contains(['。', '「', '」']) {
+                return false;
+            }
+            head
+        }
+        None => body,
+    };
+    let Some(named) = head.strip_suffix("入る") else {
+        return false;
+    };
+    if named.is_empty() || named.contains(['、', '（', '）', '(', ')', '［', '］', '\r', '\n'])
+    {
+        return false;
+    }
+    if let Some(number) = named.strip_prefix('図')
+        && !number.is_empty()
+        && number
+            .chars()
+            .all(|char| char.is_ascii_digit() || ('０'..='９').contains(&char))
+    {
+        return true;
+    }
+    if let Some(label) = named
+        .strip_prefix("カット「")
+        .and_then(|label| label.strip_suffix('」'))
+        && !label.is_empty()
+        && !label.contains(['「', '」'])
+    {
+        return true;
+    }
+    named
+        .strip_suffix('図')
+        .is_some_and(|described| !described.is_empty() && !described.contains(['「', '」']))
 }
 
 /// Whether `body` is exactly a ruby-presence note `「X」にルビ` (whole body, `X`

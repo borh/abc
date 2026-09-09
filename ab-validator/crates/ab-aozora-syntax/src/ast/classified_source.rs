@@ -94,6 +94,7 @@ pub enum ConstructId {
     IncompletenessNote,
     ExplanationNote,
     ExternalTableReference,
+    FigureInsertion,
     RubyAttached,
     RubyRetarget,
     RubyPairOpen,

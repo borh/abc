@@ -279,6 +279,12 @@ fn node_policy(node: Node) -> Option<(ConstructId, Role, Disposition, EvidenceCl
                 semantic,
                 typed,
             ),
+            DirectiveKind::FigureInsertion => (
+                ConstructId::FigureInsertion,
+                Role::SourceAnnotation,
+                semantic,
+                typed,
+            ),
             DirectiveKind::ExplanationNote => (
                 ConstructId::ExplanationNote,
                 Role::SourceAnnotation,

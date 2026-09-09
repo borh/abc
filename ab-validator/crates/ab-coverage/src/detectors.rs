@@ -214,6 +214,7 @@ fn lookup_named_detector(id: &str) -> Option<Rule> {
         "iteration_kunoji" => node(d_source_only),
         "accent_diacritic" => node(d_accent_kind),
         "figure_image_inline" => node(d_figure_image),
+        "figure_insertion_declaration" => node(d_figure_insertion_declaration),
 
         // ---- ruby.* + annotation.* + kunten.okurigana group ----
         "ruby_basic" => node(d_ruby_any),
@@ -358,6 +359,13 @@ fn d_gaiji_un_embed(n: &Value) -> bool {
 
 fn d_accent_kind(node: &Value) -> bool {
     node.get("kind").and_then(Value::as_str) == Some("accent")
+}
+
+fn d_figure_insertion_declaration(n: &Value) -> bool {
+    // A figure the source places without supplying it: an editorial note, not a
+    // figure node, because there is no image to carry.
+    n.get("kind").and_then(Value::as_str) == Some("editorial_note")
+        && n.get("note_kind").and_then(Value::as_str) == Some("figure-insertion")
 }
 
 fn d_figure_image(n: &Value) -> bool {

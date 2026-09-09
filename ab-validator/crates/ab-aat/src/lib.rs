@@ -3078,6 +3078,7 @@ fn directive_node(decoded: &DecodedSource, node: &AozoraNode, kind: DirectiveKin
         DirectiveKind::ExplanationNote => "explanation",
         DirectiveKind::Sic => "sic",
         DirectiveKind::ExternalTableReference => "external-table-reference",
+        DirectiveKind::FigureInsertion => "figure-insertion",
         _ => return raw_node(decoded, node, node.kind.as_str()),
     };
     let raw = source_slice(&decoded.span_text, &node.span);

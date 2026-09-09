@@ -32,10 +32,11 @@ Document, work, edition, and person identifiers are never substituted for one
 another. The relation remains explicit, including any stronger identity claim.
 
 The internal N-Quads export describes each claim using RDF reification and PROV
-attribution in its own content-addressed named graph. It does not emit the bare
-subject–relation–object triple. [RDF reification](https://www.w3.org/TR/rdf-schema/#ch_reification)
-describes a statement independently of asserting it. No automatic `owl:sameAs`
-relation or acceptance judgment is inferred.
+attribution in its own content-addressed named graph, so each statement is
+described rather than asserted; see
+[RDF reification](https://www.w3.org/TR/rdf-schema/#ch_reification). Acceptance
+and identity stay the consumer's explicit step, and `owl:sameAs` is never
+inferred.
 
 Assertion identity hashes canonical JSON of its typed targets, relation and
 attribution. Evidence ordering and duplicates do not change identity. Local IRIs

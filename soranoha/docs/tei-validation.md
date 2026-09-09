@@ -20,10 +20,11 @@ Custom profiles may omit generator metadata; omitted fields are not emitted as
 null placeholders.
 
 Validation results accompany the published TEI under the existing include-and-flag
-policy. A schema pass does not establish source fidelity or publication rights.
-The independent [source-accountability report](source-accountability.md) records
-lexical source occurrences and supports explicit interpretation claim accounting.
-It does not certify exported semantics; assessment evaluation controls admission.
+policy. A schema pass establishes conformance to the profile. Source fidelity is
+recorded separately by the independent
+[source-accountability report](source-accountability.md), which records lexical
+source occurrences and supports explicit interpretation claim accounting, and
+admission is controlled by assessment evaluation.
 
 The pinned generation recipe uses TEI P5 4.11.0 and TEI Stylesheets 7.60.0 with
 Saxon-HE. Run from the repository root after editing the ODD:

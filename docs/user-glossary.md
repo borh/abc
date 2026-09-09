@@ -53,9 +53,9 @@ retained from an earlier check cannot substitute for a current one.
 
 ## fidelity
 
-The proportion of source markup preserved in the resulting encoding. This
-is a measurement rather than a grade, and does not constitute a rights or
-correctness claim.
+The proportion of source markup preserved in the resulting encoding. It
+measures markup preservation and nothing else: rights standing comes from
+assessment, and correctness from validation.
 
 Two separate pieces of evidence about it are produced with every build. They
 are not part of a release: a release publishes the TEI edition and its three

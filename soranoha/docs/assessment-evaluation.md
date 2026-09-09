@@ -2,7 +2,7 @@
 
 Assessment source records describe owner-reviewed Aozora reliance declarations and independent findings with their precise premises. The evaluator regenerates the publication snapshot using the kernel's CAS and constructive traces. The committed source accepts reliance for reviewed corpus editions recorded in `soranoha/data/assessment-source.json`. The publication policy requires applicable assessment evidence; other candidates remain quarantined.
 
-The research outputs are TEI and visible-body plaintext. The rights snapshot describes admission evidence only; it does not certify transcription or markup fidelity. See [source accountability and review exports](source-accountability.md) for the separate build outputs and checks.
+The research outputs are TEI and visible-body plaintext. The rights snapshot describes admission evidence. Transcription and markup fidelity are covered separately by [source accountability and review exports](source-accountability.md).
 
 ## Prepare Aozora reliance evidence
 
@@ -24,7 +24,7 @@ Capture retains the official catalog, card, ZIP and applicable rules as exact re
 
 Review the generated declaration’s basis and dates, then evaluate it using the command below with `--assessment-source "$DRAFT_SOURCE" --evidence-root "$EVIDENCE_ROOT"`. To record a concrete unresolved exception, set that declaration’s `exception` to a nonempty explanation. Remove or revise declarations through the owner-controlled source workflow.
 
-Evidence supporting publication is retained indefinitely, separately from disposable computation caches. Soranoha accepts an explicit evidence directory and checks digests. The overall NixOS configuration chooses its storage path and owns backup and recovery. Raw retained evidence stays internal; public snapshot digest references do not promise a public evidence download service.
+Evidence supporting publication is retained indefinitely, separately from disposable computation caches. Soranoha accepts an explicit evidence directory and checks digests. The overall NixOS configuration chooses its storage path and owns backup and recovery. Raw retained evidence stays internal; a public snapshot carries digest references to it rather than a download endpoint.
 
 ## Evaluate a reviewed source
 
@@ -42,7 +42,7 @@ nix run .#soranoha-kernel -- assessment-evaluate \
 
 The Nix entry point supplies the toolchain identity. Direct library or Clojure CLI callers must supply it themselves. `assessment-evaluate` accepts draft inputs and never publishes. Retained-evidence observations also require `--evidence-root`, an explicit directory containing the retained bytes at their declared relative paths; digests are checked before evaluation. Evidence retention is independent of the disposable computation store.
 
-Author source records against [the closed schema](../resources/assessment/source-1.schema.json). `soranoha.assessment.records/encode` returns canonical bytes; decoding refuses unknown fields, duplicate keys and noncanonical encoding. Authored finding IDs must not use the reserved `jp-conservative-term/` rule namespace. [Synthetic evaluator fixtures](../test/soranoha/assessment/evaluate_test.clj) illustrate records and premise fingerprints. [The real-edition dossier](../data/dossiers/README.md) records observations only and makes no legal findings.
+Author source records against [the closed schema](../resources/assessment/source-1.schema.json). `soranoha.assessment.records/encode` returns canonical bytes; decoding refuses unknown fields, duplicate keys and noncanonical encoding. Authored finding IDs must not use the reserved `jp-conservative-term/` rule namespace. [Synthetic evaluator fixtures](../test/soranoha/assessment/evaluate_test.clj) illustrate records and premise fingerprints. [The real-edition dossier](../data/dossiers/README.md) records observations rather than findings.
 
 ## Dependency and authority boundaries
 
@@ -50,7 +50,7 @@ A fact is scoped by subject, predicate and jurisdiction. Person death years can 
 
 Premises default to `evidence-version`. A `value` or `set-membership` projection requires an explicit rationale and retains only the dependency it declares. Evaluation separates semantic identity from basis identity. A corrected citation updates provenance while unchanged conclusions can reuse downstream semantic computations. Source capture reads current checkout observations; changed or removed inputs make their actual dependent findings unavailable. Independent facts retain their identities and traces.
 
-Effective dates belong to findings. Derived dates are at least the latest consumed premise date; `--as-of` validates applicability without becoming every fact's identity. The implemented sufficient expiry rule covers the adopted Japanese assessment model for dates from 2018-12-29 onward. Failure to establish that rule does not establish copyright protection. Unsupported historical or rights cases remain not-evaluated; explicit reviewed status findings may record in-copyright or undetermined, but public-domain is derived only from the established rule. Conflicting applicable justifications, cycles and dangling controls are structural errors; unavailable support produces not-evaluated snapshot facts. This evaluator neither implements an OWL reasoner nor uses open-world inference to authorize publication.
+Effective dates belong to findings. Derived dates are at least the latest consumed premise date; `--as-of` validates applicability without becoming every fact's identity. The implemented sufficient expiry rule covers the adopted Japanese assessment model for dates from 2018-12-29 onward. Failure to establish that rule does not establish copyright protection. Unsupported historical or rights cases remain not-evaluated; explicit reviewed status findings may record in-copyright or undetermined, but public-domain is derived only from the established rule. Conflicting applicable justifications, cycles and dangling controls are structural errors; unavailable support produces not-evaluated snapshot facts. Publication is authorized only by this evaluator's closed acceptance rules over recorded findings.
 
 Review and commit the accepted source and regenerated snapshot before release. The release CLI requires source and snapshot bytes committed in the same Git checkout revision. The operator's owner-controlled Git workflow supplies acceptance authority; the assessor string is attribution, not an authenticated signature. After validating all file inputs, preflight captures local source identities. Before publication, the release evaluates current observations, byte-compares the regenerated snapshot, checks the consumed corpus content, performs current official applicability checks for reliance declarations, and rechecks committed assessment bytes. Any changed evaluation refuses the captured release. Unrelated owner-file changes do not invalidate the assessment. Review and commit regenerated snapshot changes before release.
 

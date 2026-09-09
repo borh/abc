@@ -47,7 +47,7 @@ two releases can be compared exactly. Cite the identifier for the work; cite
 the identifier plus `source_content_hash` when you need the precise bytes you
 read.
 
-**It is not promised to resolve forever.** Publication is append-only, but a
+**Withdrawal moves where it resolves.** Publication is append-only, but a
 work can be withdrawn. A withdrawn identifier stops appearing under `/works/`
 and appears under `/withdrawn/<identifier>.json`, which names the signed
 governance event carrying the public reason. The releases that included the

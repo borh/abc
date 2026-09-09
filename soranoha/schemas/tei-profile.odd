@@ -83,7 +83,7 @@
             Soranoha profile extensions use the namespace
             `https://w3id.org/soranoha/ns/tei` and require
             `snh:vocab-version` on generated TEI roots that carry Soranoha
-            extension attributes; the current vocabulary is `0`. The v0
+            extension attributes; the current vocabulary is `1`. The v1
             extension is attributes-only. It
             permits derived audit projections such as `snh:preservation-record`,
             `snh:accent-code`, `snh:style-source`, `snh:layout-kind`,
@@ -113,8 +113,10 @@
             enforces them. The Schematron rule therefore checks only that the
             attribute is present when extension attributes are used. Admitting
             a new vocabulary version is a single addition to that value list,
-            and older documents stay valid because the list grows rather than
-            being replaced.
+            and published documents stay valid because the list grows rather
+            than being replaced. The list starts at `1`: the vocabulary is
+            first published at genesis, and a version numbered `0` in
+            permanent, signed bytes would say the opposite.
           </p>
         </remarks>
 
@@ -159,7 +161,7 @@
             <attDef ident="vocab-version" mode="add" ns="https://w3id.org/soranoha/ns/tei" usage="opt">
               <desc>Soranoha TEI namespace vocabulary major version. This value list declares the permitted versions; add to it rather than replacing it.</desc>
               <valList type="closed">
-                <valItem ident="0"/>
+                <valItem ident="1"/>
               </valList>
             </attDef>
             <attDef ident="preservation-record" mode="add" ns="https://w3id.org/soranoha/ns/tei" usage="opt">

@@ -1,7 +1,7 @@
 {
   "generator": "TEI Stylesheets 7.60.0 with Saxon-HE 12.9",
-  "generator_build_hash": "sha256:ffe9bb8a9f506f3c36ac972068d05862de11ac42accb342dd4b0b7d73a6fdc50",
-  "odd_hash": "sha256:fc71db26f497d562c0cffd5e4dab7372eccf37c8fcd19cbed428e8e2556b51db",
-  "rng_hash": "sha256:710fa7a155713fe81aa8a9ebcf8fcb8b50938eae1b51ee938ddfe416418ad615",
+  "generator_build_hash": "sha256:1f59f8dadd580dc6f99303a4b18fc8b0997758372948a8a2550b32360165d3b4",
+  "odd_hash": "sha256:a7ae0446ffe8ed430813ac6b4e73d79b6983c9fce5b45bc6bcfeadeaed46b9cb",
+  "rng_hash": "sha256:bb1e5a925c9fd8b06fbafdf90e41d9762b24b41df5de3c947a7f7836a3666a24",
   "schematron_hash": "sha256:38fa0190b66c1039555da6bf3d92808271635713f42e89328730704670a91a7c"
 }

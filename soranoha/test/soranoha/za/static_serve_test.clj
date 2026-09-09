@@ -19,7 +19,8 @@
             [soranoha.za.naming :as naming]
             [soranoha.za.serve :as serve])
   (:import (java.net ServerSocket URI)
-           (java.net.http HttpClient HttpRequest HttpResponse$BodyHandlers)))
+           (java.net.http HttpClient HttpClient$Redirect HttpRequest
+                          HttpResponse$BodyHandlers)))
 
 (def ^:private slug-a "hashire_merosu_000035_1567")
 (def ^:private slug-b "kumo_no_ito_000879_92")
@@ -43,7 +44,14 @@
   (with-open [socket (ServerSocket. 0)]
     (.getLocalPort socket)))
 
-(def ^:private ^HttpClient client (HttpClient/newHttpClient))
+(def ^:private ^HttpClient client
+  ;; redirects are followed because part of what is under test is whether a
+  ;; permanent identifier lands somewhere: w3id.org sends a consumer to a path
+  ;; here, and a 301 to the canonical form of that path is a success, not an
+  ;; answer the consumer has to interpret
+  (-> (HttpClient/newBuilder)
+      (.followRedirects HttpClient$Redirect/NORMAL)
+      (.build)))
 
 (defn- http-get [port path]
   (let [request (-> (HttpRequest/newBuilder)
@@ -219,7 +227,8 @@
 
       (testing "the browse layer answers at the front door and at readable URLs"
         (doseq [path ["/" "/authors/" "/titles/" "/ndc/" "/rights" "/citation"
-                      "/start-here" "/vocabulary" "/schemas/tei-profile.odd"
+                      "/start-here" "/ns/tei" "/schemas/tei-profile.odd"
+                      "/schemas/person-record.schema.json"
                       "/license/cc0-1.0.txt"
                       "/style.css" "/search.js" "/search-index.json"]]
           (let [response (http-get port path)]
@@ -229,6 +238,19 @@
           (is (= 200 (:status response)))
           (is (string-body? response (str "/works/" slug-a "/tei"))
               "a work page links its own artifacts")))
+
+      (testing "and at every path the permanent identifier service redirects into"
+        ;; w3id.org/soranoha/{ns,schemas,works}/... redirect here, so a
+        ;; consumer dereferencing a namespace IRI or a record's schema id has
+        ;; to arrive at the document that defines it
+        (doseq [path ["/ns/tei"
+                      "/schemas/person-record.schema.json"
+                      "/schemas/metadata-record.schema.json"
+                      (str "/works/" slug-a)]]
+          (let [response (http-get port path)]
+            (is (= 200 (:status response)) path)))
+        (is (string-body? (http-get port "/ns/tei") "https://w3id.org/soranoha/ns/tei")
+            "the namespace IRI resolves to the vocabulary that defines it"))
 
       (testing "the citation records answer under the work's own prefix"
         ;; no route of their own: /works/* already carries the pointer layer's

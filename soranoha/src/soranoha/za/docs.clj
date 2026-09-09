@@ -23,8 +23,11 @@
 (def documents
   "The reader-facing documents, in the order the landing page lists them.
 
-  Route names are short and stable because they are cited: `/vocabulary` is
-  what the `w3id.org/soranoha/ns/tei` identifier resolves to.
+  Route names are short and stable because they are cited. `/ns/tei` is the
+  local form of the namespace IRI `https://w3id.org/soranoha/ns/tei` that every
+  published TEI root declares: the permanent identifier redirects to it, so a
+  consumer who dereferences the namespace arrives at the vocabulary that
+  defines it.
 
   Each entry carries a Japanese label for the site's own bilingual chrome. The
   English side is the document's own first heading, read from the file, so the
@@ -37,7 +40,7 @@
     :ja "用語集"}
    {:route "identifiers" :path "soranoha/docs/work-identifiers.md"
     :ja "作品識別子"}
-   {:route "vocabulary" :path "soranoha/docs/tei-vocabulary.md"
+   {:route "ns/tei" :path "soranoha/docs/tei-vocabulary.md"
     :ja "TEI 拡張語彙"}
    {:route "validation" :path "soranoha/docs/tei-validation.md"
     :ja "TEI の検証"}
@@ -78,7 +81,14 @@
    {:route "schemas/tei-profile-generation.json"
     :path "soranoha/schemas/tei-profile-generation.json"}
    {:route "schemas/source-1.schema.json"
-    :path "soranoha/resources/assessment/source-1.schema.json"}])
+    :path "soranoha/resources/assessment/source-1.schema.json"}
+   ;; these two are dereferenceable identifiers rather than documents a reader
+   ;; follows: every person and metadata record names its schema by an IRI
+   ;; under `w3id.org/soranoha/schemas/`, which redirects here
+   {:route "schemas/person-record.schema.json"
+    :path "soranoha/schemas/person-record.schema.json"}
+   {:route "schemas/metadata-record.schema.json"
+    :path "soranoha/schemas/metadata-record.schema.json"}])
 
 (def ^:private by-path
   (into {} (map (juxt :path identity)) (concat documents generated verbatim)))

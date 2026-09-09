@@ -17,7 +17,7 @@
 
 (defn- tei-document [header body]
   [:TEI {:xmlns/snh "https://w3id.org/soranoha/ns/tei"
-         :snh/vocab-version "0"}
+         :snh/vocab-version "1"}
    header
    body])
 

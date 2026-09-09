@@ -2,7 +2,7 @@
 
 Namespace IRI: `https://w3id.org/soranoha/ns/tei`
 Conventional prefix: `snh:`
-Current vocabulary version: `0`
+Current vocabulary version: `1`
 
 Soranoha publishes TEI P5. Where the source markup carries information TEI has
 no element for, that information is recorded as an attribute in this namespace
@@ -12,7 +12,7 @@ namespace and declares the vocabulary version:
 ```xml
 <TEI xmlns="http://www.tei-c.org/ns/1.0"
      xmlns:snh="https://w3id.org/soranoha/ns/tei"
-     snh:vocab-version="0">
+     snh:vocab-version="1">
 ```
 
 These attributes are derived audit projections. They record what the parser
@@ -34,7 +34,7 @@ profile edit, additive ones included, so they say which profile validated a
 document but cannot tell you whether an existing `snh:*` reader is still
 correct. That is what the vocabulary version is for.
 
-Version `0` contains attributes only. Custom elements in this namespace
+Version `1` contains attributes only. Custom elements in this namespace
 are not part of it.
 
 ## Attributes
@@ -45,7 +45,7 @@ declared for projections that are specified but not yet produced.
 
 | Attribute | Value | Meaning |
 |---|---|---|
-| `snh:vocab-version` | `0` | Vocabulary major version. Required on the root of any document carrying `snh:*` attributes. |
+| `snh:vocab-version` | `1` | Vocabulary major version. Required on the root of any document carrying `snh:*` attributes. |
 | `snh:layout-kind` | token, or space-separated tokens when scopes co-apply | Layout fact projected verbatim from the parser IR. Paragraph layouts are `burasage`, `chitsuki`, `jisage`, `jizume`, `line-jisage`; inline scopes are `baseline-position`, `chitsuki`, `emphasis`, `exponent`, `font-size`, `fraction`, `keigakomi`, `small-script`, `tcy`, `yokogumi`. |
 | `snh:layout-params` | `key=value` pairs joined by `;` | Parameters of the layout fact, for example `indent=2` or `align=right;offset-from-end=1`. |
 | `snh:preservation-record` | `r` followed by six digits | Record id in the publication-preservation sidecar. |
@@ -58,8 +58,10 @@ declared for projections that are specified but not yet produced.
 
 Permitted values of `snh:vocab-version` are declared once, in the attribute's
 value list in [the ODD](../schemas/tei-profile.odd), and the generated Relax NG
-enforces them. Admitting a new version is one addition to that list; older
-documents stay valid because the list grows rather than being replaced.
+enforces them. Admitting a new version is one addition to that list; published
+documents stay valid because the list grows rather than being replaced. The
+list starts at `1`: the vocabulary is first published at genesis, and a version
+numbered `0` in permanent, signed bytes would say the opposite.
 
 ## Schematron rule identifiers
 

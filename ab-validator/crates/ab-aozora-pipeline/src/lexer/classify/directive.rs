@@ -26,6 +26,7 @@ use ab_aozora_syntax::{
     CaptionScope, ColumnBlock, ColumnCount, DirectiveKind, EnclosureKind, FontShift, HeadingKind,
     HeadingStyle, HorizontalPresentation, IndentBlock, IndentLayout, Kumi, LineAlignment,
     LineFormat, LineWidth, QualitativeFontSize, RegionClose, RegionFormat, SectionKind, Span,
+    TableBlock,
 };
 
 use super::super::pair::PairEvent;
@@ -252,8 +253,6 @@ const fn body_family_mode(family: BodyFamily) -> MatchMode {
         | BodyFamily::LineWidthBlockEnd
         | BodyFamily::FormulaBlockOpen
         | BodyFamily::FormulaBlockEnd
-        | BodyFamily::TableBlockOpen
-        | BodyFamily::TableBlockEnd
         | BodyFamily::HorizontalBlockOpen
         | BodyFamily::HorizontalBlockEnd
         | BodyFamily::BanknoteTranslationOpen
@@ -273,6 +272,8 @@ const fn body_family_mode(family: BodyFamily) -> MatchMode {
         | BodyFamily::IndentBlockEnd
         | BodyFamily::IndentCompoundBlockEnd
         | BodyFamily::QuoteBlockEnd
+        | BodyFamily::TableBlockOpen
+        | BodyFamily::TableBlockEnd
         | BodyFamily::ParamBlockEnd
         | BodyFamily::OkuriganaPrefix
         | BodyFamily::TopIndentPrefix
@@ -386,20 +387,28 @@ static BODY_PATTERNS: &[BodyPattern] = &[
         needle: "ここで数式終わり",
         family: BodyFamily::FormulaBlockEnd,
     },
+    // The standalone table scope. Both sides read their whole body rather than
+    // matching a needle exactly, because the source can name an enclosure or a
+    // writing direction beside the role (`ここから表罫囲み`, `ここから横組みの表`)
+    // and the needle that wins is not the one that says which.
     BodyPattern {
         needle: "ここから表",
         family: BodyFamily::TableBlockOpen,
     },
     BodyPattern {
-        needle: "ここから表組",
+        needle: "ここから横組みの表",
         family: BodyFamily::TableBlockOpen,
     },
     BodyPattern {
-        needle: "ここで表終わり",
+        needle: "ここで表",
         family: BodyFamily::TableBlockEnd,
     },
     BodyPattern {
-        needle: "ここで表組終わり",
+        needle: "ここで横組みの表終わり",
+        family: BodyFamily::TableBlockEnd,
+    },
+    BodyPattern {
+        needle: "ここでプログラム",
         family: BodyFamily::TableBlockEnd,
     },
     BodyPattern {
@@ -1411,8 +1420,40 @@ pub(super) fn classify_annotation_body(
         }
         BodyFamily::FormulaBlockOpen => Some((EmitKind::BlockOpen(RegionFormat::Formula), None)),
         BodyFamily::FormulaBlockEnd => Some((EmitKind::BlockClose(RegionClose::Formula), None)),
-        BodyFamily::TableBlockOpen => Some((EmitKind::BlockOpen(RegionFormat::Table), None)),
-        BodyFamily::TableBlockEnd => Some((EmitKind::BlockClose(RegionClose::Table), None)),
+        BodyFamily::TableBlockOpen => parse_table_open(body, source, alloc)
+            .map(|block| (EmitKind::BlockOpen(RegionFormat::Table(block)), None)),
+        BodyFamily::TableBlockEnd => {
+            // A close that names an enclosure or a direction ends only a table
+            // that carries it; a bare `ここで表終わり` imposes nothing and ends
+            // any of them. `ここでプログラム（表罫囲み）終わり` restates the
+            // opener's own clauses, and the unread one among them is already
+            // retained there, so the close reads the table and the enclosure it
+            // names and adds no second claim.
+            let mut styles = BlockStyles::EMPTY;
+            match body {
+                "ここで表終わり" | "ここで表組終わり" | "ここで表組み終わり" =>
+                    {}
+                "ここで表罫囲み終わり" | "ここでプログラム（表罫囲み）終わり" =>
+                {
+                    styles.frame = Some(EnclosureKind::Rule);
+                }
+                "ここで横組みの表終わり" => {
+                    styles.horizontal = Some(HorizontalPresentation { align: None });
+                }
+                _ => {
+                    // The spelling the serializer writes back: the role word
+                    // followed by the clauses it carries, separated. Reading it
+                    // yields the same payload as the fused spellings above.
+                    let clauses = body
+                        .strip_prefix("ここで表、")
+                        .and_then(|rest| rest.strip_suffix("終わり"))?;
+                    for clause in clauses.split('、') {
+                        resolve_block_style(clause, &mut styles)?;
+                    }
+                }
+            }
+            Some((EmitKind::BlockClose(RegionClose::Table(styles)), None))
+        }
         BodyFamily::HorizontalBlockOpen => Some((
             EmitKind::BlockOpen(RegionFormat::Horizontal(HorizontalPresentation {
                 align: if body.ends_with("右揃えで") {
@@ -1622,7 +1663,14 @@ pub(super) fn classify_annotation_body(
                     },
                 )))
             } else {
-                let (n, tail) = parse_layout_count_prefix(rest)?;
+                let Some((n, tail)) = parse_layout_count_prefix(rest) else {
+                    // A clause list with no measure can still name a table
+                    // scope (`ここからプログラム、表罫囲み`). The indentation
+                    // reading has declined by this point, so it carries
+                    // nothing over; the whole body is read afresh.
+                    return parse_table_open(body, source, alloc)
+                        .map(|block| (EmitKind::BlockOpen(RegionFormat::Table(block)), None));
+                };
                 let tail = tail.trim_start_matches([' ', '　']);
                 if tail == "字下げ" {
                     Some(EmitKind::BlockOpen(RegionFormat::Indent(IndentBlock {
@@ -2486,6 +2534,46 @@ fn with_supplied_role(open: EmitKind, role: Option<BlockPurpose>) -> Option<Emit
         }
         _ => None,
     }
+}
+
+/// Read a standalone table opener into the role and whatever the source names
+/// beside it.
+///
+/// `ここから表罫囲み` names an enclosure, `ここから横組みの表` a writing
+/// direction, and `ここからプログラム、表罫囲み` a clause this does not read.
+/// Each lands on its own axis, so these differ from a bare `ここから表` only in
+/// what the source said. A clause that names no table leaves the marker
+/// declined: without the role there is no table scope for the rest to be about.
+fn parse_table_open(
+    body: &str,
+    source: &AnnotationBody<'_>,
+    alloc: &mut Allocator,
+) -> Option<TableBlock> {
+    let mut block = TableBlock::default();
+    match body {
+        "ここから表" | "ここから表組" | "ここから表組み" => return Some(block),
+        "ここから横組みの表" => {
+            block.styles.horizontal = Some(HorizontalPresentation { align: None });
+            return Some(block);
+        }
+        _ => {}
+    }
+    let after = body.strip_prefix("ここから")?;
+    let mut role = None;
+    let mut clauses = Vec::new();
+    for (segment, span) in source.clauses(after) {
+        if resolve_role_clause(segment, &mut role, &mut block.styles).is_none()
+            && resolve_block_style(segment, &mut block.styles).is_none()
+        {
+            clauses.push(span);
+        }
+    }
+    (role == Some(BlockPurpose::Table)).then(|| {
+        if !clauses.is_empty() {
+            block.partial = Some(alloc.partial_layout(source.text, clauses));
+        }
+        block
+    })
 }
 
 /// Interpret one role clause into the role the source names, and the enclosure

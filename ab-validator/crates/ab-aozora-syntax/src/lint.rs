@@ -40,10 +40,11 @@ const EXACT: &[(&str, &str)] = &[
     // 傍点 marker-suffix spellings → the canonical mark-prefix keyword.
     ("傍点（白丸）", "白丸傍点"),
     ("傍点◎", "二重丸傍点"),
-    // Region-close synonyms: okurigana drift / 文字下げ / 横書き=横組み /
-    // 横組みの表=表, all resolving to the canonical `ここで…終わり` close.
+    // Region-close synonyms: okurigana drift / 文字下げ / 横書き=横組み, all
+    // resolving to the canonical `ここで…終わり` close. `ここで横組みの表終わり`
+    // is not among them: it is read as a table close carrying the direction it
+    // names, and rewriting it to `ここで表終わり` would drop that direction.
     ("ここで左から右への横組み終わり", "ここで横組み終わり"),
-    ("ここで横組みの表終わり", "ここで表終わり"),
     // Misspelled end-alignment marker.
     ("こ地付き", "地付き"),
 ];
@@ -237,7 +238,6 @@ pub const CATALOGUE_SAMPLES: &[&str] = &[
     "「甫」に「ママ」と注記",
     // Region-close synonyms (EXACT + parameterized).
     "ここで左から右への横組み終わり",
-    "ここで横組みの表終わり",
     "ここで字下げ終わり」",
     // Region-open synonyms.
     "こ地付き",
@@ -404,13 +404,8 @@ mod tests {
 
     #[test]
     fn region_synonyms_resolve() {
-        for (v, c) in [
-            ("ここで横組みの表終わり", "ここで表終わり"),
-            ("こ地付き", "地付き"),
-        ] {
-            assert_eq!(canonical_directive(v).as_deref(), Some(c), "variant {v:?}");
-            assert_eq!(canonical_directive(c), None, "canonical {c:?} re-matched");
-        }
+        assert_eq!(canonical_directive("こ地付き").as_deref(), Some("地付き"));
+        assert_eq!(canonical_directive("地付き"), None, "canonical re-matched");
     }
 
     #[test]

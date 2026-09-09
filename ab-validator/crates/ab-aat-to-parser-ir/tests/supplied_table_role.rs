@@ -126,3 +126,76 @@ fn a_rule_absence_without_a_supplied_table_stays_an_unresolved_clause() {
         "the clause is retained as unresolved, not silently dropped"
     );
 }
+
+#[test]
+fn a_standalone_table_opener_keeps_the_axes_it_names_beside_the_role() {
+    for (body, expected) in [
+        (
+            "［＃ここから表罫囲み］\n甲　乙\n［＃ここで表罫囲み終わり］",
+            serde_json::json!({"kind":"keigakomi","border":"rule"}),
+        ),
+        (
+            "［＃ここからプログラム、表罫囲み］\n甲　乙\n［＃ここでプログラム（表罫囲み）終わり］",
+            serde_json::json!({"kind":"keigakomi","border":"rule"}),
+        ),
+    ] {
+        let ir = convert(body);
+        let scope = &ir["layout_blocks"][0];
+        assert_eq!(scope["role"], "table", "{body}");
+        assert!(
+            scope.get("indent").is_none(),
+            "no measure is invented: {body}"
+        );
+        assert_eq!(scope["typography"]["kind"], expected["kind"], "{body}");
+        assert_eq!(scope["typography"]["border"], expected["border"], "{body}");
+    }
+}
+
+#[test]
+fn a_horizontal_table_keeps_the_direction_the_source_fused_into_the_role_word() {
+    let ir = convert("［＃ここから横組みの表］\n甲　乙\n［＃ここで横組みの表終わり］");
+    let scope = &ir["layout_blocks"][0];
+    assert_eq!(scope["role"], "table");
+    assert_eq!(scope["direction"], "horizontal");
+    assert_eq!(ir["interpretation_problems"], serde_json::json!([]));
+}
+
+#[test]
+fn a_clause_the_table_reading_does_not_cover_stays_retained() {
+    // `プログラム` names what the enclosed lines are about. It is not a role,
+    // an enclosure or a direction, so it stays retained beside the table scope
+    // rather than being folded into one of them.
+    let ir = convert(
+        "［＃ここからプログラム、表罫囲み］\n甲　乙\n［＃ここでプログラム（表罫囲み）終わり］",
+    );
+    assert!(
+        ir["interpretation_problems"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|problem| problem["raw"] == "プログラム"),
+        "{:?}",
+        ir["interpretation_problems"]
+    );
+}
+
+#[test]
+fn a_table_close_naming_an_enclosure_does_not_end_a_scope_without_one() {
+    let ir = convert("［＃ここから表］\n甲　乙\n［＃ここで表罫囲み終わり］");
+    assert_eq!(ir["layout_blocks"], serde_json::json!([]));
+    assert!(!ir["interpretation_problems"].as_array().unwrap().is_empty());
+}
+
+#[test]
+fn a_ruled_partition_convention_stays_apparatus() {
+    // `罫仕切り` names a reading convention for the lines that follow: that a
+    // run of `----` bounds one partition. The partitions are not scopes the
+    // marker delimits, and deriving them would mean reading structure out of
+    // literal text the source keeps as text.
+    let ir = convert(
+        "［＃ここから罫仕切り、----で挾まれた部分が一つの仕切り内］\n----\n甲\n----\n［＃ここで罫仕切り終わり］",
+    );
+    assert_eq!(ir["layout_blocks"], serde_json::json!([]));
+    let text = serde_json::to_string(&ir["nodes"]).unwrap();
+    assert!(text.contains("罫仕切り"), "the marker is kept: {text}");
+}

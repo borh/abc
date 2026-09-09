@@ -130,11 +130,16 @@
     (is (= "beat\tbutu\n\nlaugh\twalahu" (projection/markdown (:view result))))
     (is (empty? (elements result "cell")))
     (is (empty? (get-in result [:ir "interpretation_problems"]))))
-  (doseq [body ["［＃ここから表組］\n甲"
-                "［＃ここから表組、不明］\n甲\n［＃ここで表組終わり］"]]
-    (let [result (transcribe (source body))]
-      (is (not-any? #(= "table" (attribute % "type")) (elements result "div")))
-      (is (seq (get-in result [:ir "interpretation_problems"]))))))
+  ;; An opener with no close names no scope, so nothing is typed from it.
+  (let [result (transcribe (source "［＃ここから表組］\n甲"))]
+    (is (not-any? #(= "table" (attribute % "type")) (elements result "div")))
+    (is (seq (get-in result [:ir "interpretation_problems"]))))
+  ;; A clause the table reading does not cover is retained beside the role
+  ;; rather than sinking the role the source did state.
+  (let [result (transcribe (source "［＃ここから表組、不明］\n甲\n［＃ここで表組終わり］"))]
+    (is (some #(= "table" (attribute % "type")) (elements result "div")))
+    (is (seq (filter #(= "不明" (get % "raw"))
+                     (get-in result [:ir "interpretation_problems"]))))))
 
 (deftest supplied-columns-retain-only-explicit-column-breaks
   (doseq [[body count text] [["甲乙" 0 "甲乙"] ["甲［＃改段］乙" 1 "甲\n乙"]]]
@@ -1364,6 +1369,25 @@
     (is (= "前。\n王朝　　年代\n西漢　　元始二年\n後。" (:plaintext result)))
     (is (empty? (get-in result [:ir "interpretation_problems"])))
     (is (= 2 (count (filter #(= "table" (get % "kind")) (get-in result [:ir "interpretation_facts"])))))))
+
+(deftest a-standalone-table-scope-keeps-the-axes-named-beside-the-role
+  (let [result (transcribe (source "前。\n［＃ここから横組みの表］\n甲　乙\n［＃ここで横組みの表終わり］\n後。"))
+        table (first (filter #(= "table" (attribute % "type")) (elements result "div")))]
+    (is (some? table))
+    ;; The direction is the source's; no indentation is invented for a scope
+    ;; whose marker states no measure.
+    (is (= "writing-mode: horizontal-tb" (attribute table "style")))
+    (is (empty? (elements result "table")))
+    (is (= "前。\n甲　乙\n後。" (:plaintext result)))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest a-clause-a-standalone-table-opener-does-not-cover-stays-source
+  (let [result (transcribe (source "［＃ここからプログラム、表罫囲み］\n甲　乙\n［＃ここでプログラム（表罫囲み）終わり］"))
+        table (first (filter #(= "table" (attribute % "type")) (elements result "div")))]
+    (is (some? table))
+    (is (= "border-style: solid" (attribute table "style")))
+    (is (seq (filter #(= "プログラム" (get % "raw"))
+                     (get-in result [:ir "interpretation_problems"]))))))
 
 (deftest supplied-absence-of-table-rules-is-stated-and-a-silence-is-not
   (let [ruleless (transcribe (source "［＃ここから１字下げ、表組み、罫無し］\n甲　乙\n［＃ここで字下げ終わり］"))

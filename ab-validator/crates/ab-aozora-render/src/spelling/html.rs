@@ -557,8 +557,10 @@ fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::R
         }
         RegionFormat::Formula => writer.write_str(r#"<div class="aozora-container" data-purpose="formula">"#),
         RegionFormat::BanknoteTranslation => writer.write_str(r#"<div class="aozora-container" data-purpose="translation" data-source-kind="banknote-text">"#),
-        RegionFormat::Table => {
-            writer.write_str(r#"<div class="aozora-container aozora-container-table">"#)
+        RegionFormat::Table(block) => {
+            writer.write_str(r#"<div class="aozora-container aozora-container-table"#)?;
+            render_block_style_classes(block.styles, writer)?;
+            writer.write_str("\">")
         }
         RegionFormat::Horizontal(presentation) => {
             writer.write_str(r#"<div class="aozora-container"#)?;

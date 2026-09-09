@@ -120,7 +120,12 @@ derived from them. A supplied `罫無し` is retained as `rend="table-rules(none
 an explicit absence of table rules distinct from a marker that says nothing
 about them, and independent of any frame drawn around the scope. A base-edition
 table description remains source apparatus and is not executed as current
-formatting.
+formatting. A standalone table opener carries the axes it names beside the role
+in the same way: `ここから表罫囲み` an enclosure and `ここから横組みの表` a
+writing direction, with no indentation invented for either. `罫仕切り` is not
+read as a table: it states a reading convention over the lines that follow,
+rather than delimiting the partitions it names, and the rules that bound them
+are literal text in the source.
 A supplied quotation or letter role is read the same way when the source writes
 it ahead of the measure that scopes it, as `［＃ここから引用文、３字下げ］` and
 `［＃これより手紙文、１字下げ］` do. The role and the indentation are both

@@ -764,6 +764,7 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
             let partial = match &kind {
                 ProjectedKind::Region(RegionFormat::Indent(block)) => block.partial,
                 ProjectedKind::Region(RegionFormat::Columns(block)) => block.partial,
+                ProjectedKind::Region(RegionFormat::Table(block)) => block.partial,
                 _ => None,
             };
             let layout_clauses = partial
@@ -5659,7 +5660,10 @@ fn layout_fields(kind: &ProjectedKind) -> Option<Value> {
                 LineAlignment::Center => "center",
             });
         }
-        ProjectedKind::Region(RegionFormat::Table) => fields["role"] = json!("table"),
+        ProjectedKind::Region(RegionFormat::Table(block)) => {
+            fields["role"] = json!("table");
+            apply_block_styles(&mut fields, block.styles)?;
+        }
         ProjectedKind::Region(RegionFormat::Formula) => fields["role"] = json!("formula"),
         ProjectedKind::Region(RegionFormat::Columns(block)) => {
             fields["column_count"] = json!(block.count.0.get());

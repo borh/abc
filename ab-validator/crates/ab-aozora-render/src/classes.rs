@@ -577,7 +577,7 @@ mod tests {
                 styles: BlockStyles::EMPTY,
                 partial: None,
             }),
-            RegionFormat::Table,
+            RegionFormat::Table(ab_aozora_syntax::TableBlock::default()),
             RegionFormat::BanknoteTranslation,
             RegionFormat::Horizontal(ab_aozora_syntax::HorizontalPresentation { align: None }),
             RegionFormat::FontSize(fs(2)),

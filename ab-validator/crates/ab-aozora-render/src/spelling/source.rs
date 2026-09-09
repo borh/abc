@@ -208,7 +208,7 @@ pub(crate) fn emit_container_open<W: Write>(
         },
         RegionFormat::Formula => out.write_str("［＃ここから数式］"),
         RegionFormat::BanknoteTranslation => out.write_str("［＃ここから紙幣の文字の訳文］"),
-        RegionFormat::Table => out.write_str("［＃ここから表］"),
+        RegionFormat::Table(block) => emit_table_open(block, store, out),
         RegionFormat::Horizontal(presentation) => match presentation.align {
             None => out.write_str("［＃ここから横組み］"),
             Some(ab_aozora_syntax::LineAlignment::Right) => {
@@ -337,6 +337,36 @@ fn emit_indent_open<W: Write>(block: IndentBlock, store: &NodeStore, out: &mut W
     out.write_str("］")
 }
 
+/// Write a standalone table opener back.
+///
+/// A fused source spelling (`表罫囲み`, `横組みの表`) is written as the separate
+/// clauses it was read as; re-parsing them yields the same payload. A marker
+/// carrying a clause the reading did not cover is written back verbatim, so
+/// nothing of it is lost to the round trip.
+fn emit_table_open<W: Write>(
+    block: ab_aozora_syntax::TableBlock,
+    store: &NodeStore,
+    out: &mut W,
+) -> fmt::Result {
+    if let Some(id) = block.partial {
+        return write!(
+            out,
+            "［＃{}］",
+            store.resolve_str(store.resolve_partial_layout(id).body)
+        );
+    }
+    out.write_str("［＃ここから表")?;
+    emit_block_styles(block.styles, out)?;
+    out.write_str("］")
+}
+
+/// Write a table close back, restating whatever axes it names.
+fn emit_table_close<W: Write>(styles: BlockStyles, out: &mut W) -> fmt::Result {
+    out.write_str("［＃ここで表")?;
+    emit_block_styles(styles, out)?;
+    out.write_str("終わり］")
+}
+
 fn emit_block_styles<W: Write>(styles: BlockStyles, out: &mut W) -> fmt::Result {
     let BlockStyles {
         gothic,
@@ -458,7 +488,7 @@ pub(crate) fn emit_container_close<W: Write>(close: RegionClose, out: &mut W) ->
         }
         RegionClose::Formula => out.write_str("［＃ここで数式終わり］"),
         RegionClose::BanknoteTranslation => out.write_str("［＃ここで訳文終わり］"),
-        RegionClose::Table => out.write_str("［＃ここで表終わり］"),
+        RegionClose::Table(styles) => emit_table_close(styles, out),
         RegionClose::Horizontal => out.write_str("［＃ここで横組み終わり］"),
         RegionClose::CombineUpright => out.write_str("［＃縦中横終わり］"),
         RegionClose::FontSize { larger, magnitude } => {

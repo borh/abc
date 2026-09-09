@@ -364,6 +364,23 @@ pub struct ColumnBlock {
     pub partial: Option<PartialLayoutId>,
 }
 
+/// The block-only payload of a table region.
+///
+/// A standalone `ここから表…` opener can name an enclosure or a writing
+/// direction alongside the role, the way a compound indentation marker's
+/// clauses do. Each lands on its own axis here, so a bare `ここから表` and a
+/// `ここから表罫囲み` differ only in what the source said. Nothing in either is
+/// derived from the enclosed lines: no cell, row, column or rule is read out of
+/// them.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct TableBlock {
+    /// Co-applied presentation, independent of the table role.
+    pub styles: BlockStyles,
+    /// Source clauses retained outside the table role.
+    pub partial: Option<PartialLayoutId>,
+}
+
 /// The block-only payload of an indent region.
 ///
 /// `wrap` / `layout` / `styles` live here rather than on the single-line
@@ -869,7 +886,7 @@ pub enum RegionFormat {
     /// 字詰め block (`［＃ここから N字詰め］ …`).
     LineWidth(LineWidth),
     /// 表 block.
-    Table,
+    Table(TableBlock),
     /// A supplied translation of banknote lettering.
     BanknoteTranslation,
     /// Text explicitly designated as a formula.
@@ -905,7 +922,7 @@ impl RegionFormat {
             Self::Indent(_) => Format::Indent,
             Self::AlignEnd { .. } => Format::AlignEnd,
             Self::LineWidth(_) => Format::LineWidth,
-            Self::Table => Format::Table,
+            Self::Table(_) => Format::Table,
             Self::BanknoteTranslation => Format::BanknoteTranslation,
             Self::Formula => Format::Formula,
             Self::Columns(block) => Format::Columns(block.count),
@@ -937,7 +954,7 @@ impl RegionFormat {
             Self::Italic { .. } => "italic",
             Self::Heading { .. } => "heading",
             Self::Columns(_) => "columns",
-            Self::Table => "table",
+            Self::Table(_) => "table",
             Self::BanknoteTranslation => "banknote-translation",
             Self::Formula => "formula",
             Self::Horizontal(_) => "horizontal",
@@ -966,7 +983,7 @@ impl RegionFormat {
             Self::Italic { .. } => "italic",
             Self::Heading { .. } => "heading",
             Self::Columns(_) => "columns",
-            Self::Table => "table",
+            Self::Table(_) => "table",
             Self::BanknoteTranslation => "banknote-translation",
             Self::Formula => "formula",
             Self::Horizontal(_) => "horizontal",
@@ -1049,7 +1066,10 @@ impl RegionFormat {
             styles: BlockStyles::EMPTY,
             partial: None,
         }),
-        Self::Table,
+        Self::Table(TableBlock {
+            styles: BlockStyles::EMPTY,
+            partial: None,
+        }),
         Self::BanknoteTranslation,
         Self::Formula,
         Self::Horizontal(HorizontalPresentation { align: None }),
@@ -1144,8 +1164,8 @@ pub enum RegionClose {
     },
     /// `段組終わり`, optionally restating the supplied column count.
     Columns(Option<ColumnCount>),
-    /// `表終わり`.
-    Table,
+    /// `表終わり`, carrying whatever the close spells alongside the role.
+    Table(BlockStyles),
     /// A supplied translation of banknote lettering.
     BanknoteTranslation,
     /// Text explicitly designated as a formula.
@@ -1205,7 +1225,7 @@ impl RegionClose {
                 padded,
             },
             RegionFormat::Columns(block) => Self::Columns(Some(block.count)),
-            RegionFormat::Table => Self::Table,
+            RegionFormat::Table(block) => Self::Table(block.styles),
             RegionFormat::BanknoteTranslation => Self::BanknoteTranslation,
             RegionFormat::Formula => Self::Formula,
             RegionFormat::Horizontal(_) | RegionFormat::RelativePlacement(_) => Self::Horizontal,
@@ -1237,7 +1257,7 @@ impl RegionClose {
             Self::Italic { .. } => "italic",
             Self::Heading { .. } => "heading",
             Self::Columns(_) => "columns",
-            Self::Table => "table",
+            Self::Table(_) => "table",
             Self::BanknoteTranslation => "banknote-translation",
             Self::Formula => "formula",
             Self::Horizontal => "horizontal",

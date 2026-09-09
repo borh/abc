@@ -3169,18 +3169,18 @@ priority = 2
 category = "structure"
 feature_keys = ["table", "table_group", "table_border"]
 reference_sources = ["references/aozorabunko/rules/kijyunn.html", "docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
-source_examples = ["［＃ここから表］", "［＃ここで表終わり］", "［＃ここから表組］", "［＃ここから１字下げ、表組み、罫無し］", "［＃ここから２字下げ、罫囲みの表］"]
-source_patterns = ['［＃ここから表(組|罫囲み)?］', '［＃ここで表(組|罫囲み)?終わり］', '［＃ここで字下げ、表罫囲み終わり］', '［＃ここからプログラム、表罫囲み］', '［＃ここでプログラム（表罫囲み）終わり］', '［＃[０-９0-9一二三四五六七八九十]+行目］', '［＃ここに表組入る、別ファイル（[^）]+）参照］', '［＃ここから横組みの表］', '［＃ここで横組みの表終わり］', '[＃、](罫囲みの表|表罫囲み|表組み|表組|図表|表)[、］]', '、罫(無|な)し[、］]']
+source_examples = ["［＃ここから表］", "［＃ここで表終わり］", "［＃ここから表組］", "［＃ここから１字下げ、表組み、罫無し］", "［＃ここから２字下げ、罫囲みの表］", "［＃ここから表罫囲み］", "［＃ここから横組みの表］", "［＃ここからプログラム、表罫囲み］", "［＃ここから罫仕切り、----で挾まれた部分が一つの仕切り内］"]
+source_patterns = ['［＃ここから表(組|組み|罫囲み)?］', '［＃ここで表(組|組み|罫囲み)?終わり］', '［＃ここ(から|で)罫仕切り[^］]*］', '［＃ここで字下げ、表罫囲み終わり］', '［＃ここからプログラム、表罫囲み］', '［＃ここでプログラム（表罫囲み）終わり］', '［＃[０-９0-9一二三四五六七八九十]+行目］', '［＃ここに表組入る、別ファイル（[^）]+）参照］', '［＃ここから横組みの表］', '［＃ここで横組みの表終わり］', '[＃、](罫囲みの表|表罫囲み|表組み|表組|図表|表)[、］]', '、罫(無|な)し[、］]']
 ir_nodes = ["Raw", "Block::Layout"]
 aat_nodes = ["raw", "layout_block"]
 tei_projection = "table"
 plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = ["block_scope_balance"]
-adapter_expectations = ["preserve the supplied table role and the enclosed lines; derive no cells, rows or rules"]
+adapter_expectations = ["preserve the supplied table role and the enclosed lines; derive no cells, rows or rules", "keep an enclosure or a writing direction the opener names beside the role rather than folded into it", "close a table scope only on a closer whose named axes the scope carries"]
 oracle_cases = []
 status = "partial"
-status_reason = "A supplied table role is typed on the scope it is supplied for, on its own marker and as a clause of a compound indentation marker, and 罫無し is retained as an explicit absence of table rules. The enclosed lines keep their own spelling and spacing: no cell, row or rule structure is derived from them, and marker forms outside the typed set stay source-derived raw evidence."
+status_reason = "A supplied table role is typed on the scope it is supplied for, on its own marker and as a clause of a compound indentation marker, and 罫無し is retained as an explicit absence of table rules. A standalone opener carries the axes it names beside the role: 表罫囲み an enclosure, 横組みの表 a writing direction, and a clause the reading does not cover, such as プログラム, stays retained on the same scope. The enclosed lines keep their own spelling and spacing: no cell, row or rule structure is derived from them. 罫仕切り stays apparatus: it states a reading convention over the following lines rather than delimiting the partitions it names, and the ---- runs that bound them are literal text."
 
 [syntax.parsers.aozora2]
 recognition = "unknown"

@@ -30,30 +30,106 @@ This document does not name the hardware. The ceremony records the following in 
 custody inventory at execution time, and the inventory is not kept in this
 repository:
 
-- the offline machine and the exact live image, identified by its published checksum;
+- the offline machine, and the ceremony image identified by the store path and
+  `sha256` recorded when it was built;
 - the two storage media, identified by manufacturer serial, and the physical custody
   location of each;
 - the passphrase custody arrangement for each medium;
 - the date, the operator, and any witness.
 
-## The offline machine
+## Build the ceremony image
 
-Use a machine booted from a read-only live image with its root filesystem in RAM.
-Networking must be physically disconnected or absent: no ethernet cable, no
-wireless adapter, and no tethered devices. The key material must never touch a
-networked host, and a RAM root ensures working copies disappear upon power-off.
+The ceremony runs from a NixOS image built for it, not from a stock installer ISO.
+Three properties of the installer profile make it the wrong image here, each
+checked rather than assumed:
 
-The procedure needs OpenSSL 3, GNU coreutils and `cryptsetup`. Every step below uses
-only those. Run `umask 077` first, and work in a directory under `/run/user` or
-another tmpfs so that nothing is written to persistent storage except the two media.
+- The `openssl` command-line tool is not in the installer's system packages. Every
+  signing step below needs it, and a machine with no network cannot fetch it, so a
+  stock image fails at the first step rather than at a recoverable one.
+- `services.openssh` is enabled and permits root login. That suits installing a
+  headless board and does not belong on a machine holding the governance key.
+- The image ships a network stack with wireless enabled, which contradicts the
+  requirement that the machine have no path to a network.
+
+Building the image instead of assembling one by hand also gives the ceremony
+parameters something better to record than a downloaded checksum: the image is a
+function of pinned inputs, so it can be rebuilt later and compared against what the
+inventory says was used.
+
+Add this module to the estate configuration, beside the other Soranoha profiles.
+Build it on a networked machine; nothing about the build touches key material.
+
+```nix
+# snh-ceremony-iso.nix
+{ lib, modulesPath, pkgs, ... }:
+{
+  imports = [ "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix" ];
+
+  # The whole toolchain the ceremony uses. cryptsetup is already in the
+  # installer's base profile; the openssl CLI is not, and an offline machine
+  # cannot fetch it. e2fsprogs is named explicitly so the image does not
+  # depend on mkfs.ext4 arriving through some other package's closure.
+  environment.systemPackages = [ pkgs.openssl pkgs.cryptsetup pkgs.e2fsprogs ];
+
+  # This image installs nothing and reaches nothing. The network options need
+  # mkForce rather than a plain false: the installer's network stack defines
+  # them at normal priority, so an ordinary definition fails evaluation with a
+  # conflicting-definition error rather than taking effect.
+  services.openssh.enable = false;
+  networking.networkmanager.enable = lib.mkForce false;
+  networking.wireless.enable = lib.mkForce false;
+
+  image.fileName = "snh-ceremony.iso";
+  system.stateVersion = "26.11";
+}
+```
+
+Expose it as a `nixosConfigurations` entry and build the image:
+
+```sh
+nix build .#nixosConfigurations.snh-ceremony.config.system.build.isoImage
+sha256sum result/iso/snh-ceremony.iso
+readlink -f result
+```
+
+The derivation keeps the upstream `nixos-minimal` name; `image.fileName` names the
+file inside it, which is what `result/iso/snh-ceremony.iso` above refers to.
+
+Record both the store path and the digest in the ceremony parameters, then write the
+image to the boot medium.
+
+## Boot the offline machine
+
+Boot the machine from the ceremony image. Networking must be physically disconnected
+or absent: no ethernet cable, no wireless adapter, and no tethered devices. Removing
+the network configuration from the image is defence in depth and does not replace
+this; only absent hardware makes a network unreachable.
+
+The image's root filesystem is a read-only squashfs with a tmpfs overlay, so a RAM
+root is a property of the image rather than something to arrange. Working copies
+disappear at power-off.
+
+The console logs in as the unprivileged `nixos` user. The steps below format and
+mount devices, so take a root shell and work in a directory on `/run`, which is
+tmpfs, so that nothing is written to persistent storage except the two media:
+
+```sh
+sudo -i
+umask 077
+mkdir -m 0700 /run/ceremony && cd /run/ceremony
+```
+
+The procedure needs only OpenSSL 3, GNU coreutils, `cryptsetup` and `e2fsprogs`, all
+of which the image carries.
 
 ## Prove the toolchain before generating anything
 
 The specification defines exact bytes, and a signing procedure that produces
 plausible-looking output over the wrong bytes is the failure this step exists to
 catch. Before any real key exists, reproduce a signature that is already checked into
-the repository. Carry `soranoha/resources/snh/vectors/signature-vectors.json` to the
-offline machine, or transcribe the three constants below from it.
+the repository. The three constants below are transcribed from
+`soranoha/resources/snh/vectors/signature-vectors.json`, so nothing needs to be
+carried to the offline machine for this step.
 
 ```sh
 umask 077
@@ -188,6 +264,19 @@ mismatched secret fails at preflight rather than producing an unverifiable relea
 
 The governance seed is never derived to hex and never leaves the media.
 
+## Install the pinned public keys
+
+The two `.pub` files become the deployment's pinned verifier configuration, installed
+as root-owned files that the publisher cannot write. In the estate configuration that
+is `environment.etc."soranoha/pinned/release.pub"` and its governance counterpart,
+whose contents are the 65-byte files produced above, hex plus one newline. These
+bytes are non-authenticating: they say which keys this deployment verifies against,
+and only the trust anchor says which key holds which role.
+
+Replacing the pins is part of the ceremony's aftermath rather than a later chore. Any
+key that was resident on CI during private testing is disposable, and leaving it
+pinned would mean verifying against a key whose exposure history is permanent.
+
 ## Rehearse governance signing
 
 Immediately after the media exist, and before genesis, sign a checked-in conformance
@@ -245,7 +334,9 @@ Carry the event *file* offline rather than only its hash: the object is under a 
 hundred bytes and is readable, and signing a bare hash means signing something you
 cannot check.
 
-On the offline machine, with the event file at `event.json`:
+Boot the same ceremony image, which is why its store path is in the inventory: the
+signing session runs on the image the keys were made on, not on whatever image is
+current at the time. Take a root shell as above, with the event file at `event.json`:
 
 ```sh
 cat event.json                      # read what is about to be authorized

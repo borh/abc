@@ -51,7 +51,7 @@
    {:route "annotation-layers" :path "docs/annotation-layers.md"
     :ja "注釈の層"}
    {:route "parser-invariants" :path "docs/parser-invariants.md"
-    :ja "解析器の不変条件"}
+    :ja "パーサの不変条件"}
    {:route "external-links" :path "soranoha/docs/external-links.md"
     :ja "外部リンク"}
    {:route "protocol" :path "docs/design/snh-protocol-v1.md"

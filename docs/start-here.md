@@ -165,10 +165,9 @@ Two boundaries exclude items present in upstream Aozora Bunko:
 
 **Publication is per work and gated on rights.** A work appears in a release
 only after its rights standing has been assessed against a recorded basis. The
-default basis relies on Aozora Bunko's published copyright-expired
-classification for that exact edition within Japan. This classification is recorded
-as an attributed upstream assertion rather than an independent legal determination by this
-project. A work whose basis does not hold is not published. See
+default basis is Aozora Bunko's public-domain catalog metadata for that exact
+edition within Japan, recorded per work as an attributed upstream assertion. A
+work whose basis does not hold is not published. See
 [admission and assessment](user-glossary.md#admission) for what those words
 mean here.
 

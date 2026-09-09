@@ -10,9 +10,6 @@ procedure.
 | Contents | The two role public keys and their role assignment | The signed manifest and the records it names |
 | Discovery | Listed as a work on the owner's ORCID record | Cited by version DOI in each work's citation |
 
-Genesis needs both, in that order: the anchor first, because a release cannot
-be verified without it.
-
 Both deposits are made by the publication owner under the Zenodo account
 `borh`, from a machine that is not release CI. Zenodo credentials are never
 available to the release workflow. This is deliberate: the release key signs
@@ -23,6 +20,22 @@ one place.
 Cite a **version** DOI, never the concept DOI, wherever the DOI has to resolve
 to fixed bytes. A concept DOI resolves to the latest version, so what it names
 changes underneath a citation.
+
+## The order, which is the part that goes wrong
+
+Each step below produces the input the next one needs, and the last three
+cannot be reordered without either an unverifiable release or a chain that has
+to be abandoned rather than corrected.
+
+1. The [key ceremony](key-ceremony.md) produces `release.pub` and
+   `governance.pub`.
+2. The anchor is deposited, and its **version** DOI recorded.
+3. That DOI is added as a work on <https://orcid.org/0000-0003-2246-8774>.
+4. Only then is the first release signed.
+
+A release signed ahead of the ORCID entry is not verifiable by the procedure
+the protocol specifies, and the chain is append-only, so there is no amendment
+that fixes it.
 
 ## The trust anchor
 
@@ -39,31 +52,51 @@ that the online release key is not authorized for governance. The role sets are
 disjoint, and the kernel rejects an overlapping or un-roled pinned
 configuration.
 
-Deposit exactly:
+### Contents
 
-- `release.pub` and `governance.pub`, the 65-byte hex-plus-newline files the
-  key ceremony produces. These are the same bytes deployment source carries as
-  non-authenticating pinned verifier configuration.
-- A short role-assignment statement naming each role, its key's hex, and its
-  fingerprint (`tail -c 32 "$role.pub.der" | sha256sum`), recorded during the
-  ceremony.
+Deposit exactly three files: the two 65-byte `.pub` files the ceremony
+produced, unchanged, and a role-assignment statement. Generate the statement
+rather than typing it, so that the fingerprints in the anchor cannot disagree
+with the keys beside them:
+
+```sh
+fingerprint() {
+  printf "$(printf '%s' "$(tr -d '\n' < "$1")" | sed 's/../\\x&/g')" \
+    | sha256sum | cut -d' ' -f1
+}
+
+{
+  printf 'soranoha snh/1 trust anchor\n\n'
+  for role in RELEASE GOVERNANCE; do
+    file="$(printf '%s' "$role" | tr 'A-Z' 'a-z').pub"
+    printf '%s\n  key         %s\n  fingerprint %s\n\n' \
+      "$role" "$(tr -d '\n' < "$file")" "$(fingerprint "$file")"
+  done
+  printf 'These two roles are disjoint. The release key is not authorized for\n'
+  printf 'governance events, and the governance key does not sign release\n'
+  printf 'manifests. No other key is pinned for this chain, and the pinned set\n'
+  printf 'cannot change.\n'
+} > role-assignment.txt
+```
+
+The fingerprint is the sha256 of the **decoded 32 raw key bytes**, which is why
+the hex is turned back into bytes before hashing rather than being hashed as
+text. Hashing the 65-byte file instead produces a plausible digest that matches
+nothing, and the ceremony record is where that error would be caught.
 
 Do not deposit private keys, medium passphrases, or the custody inventory. Do
 not deposit a second copy of the fingerprints anywhere else: the protocol
-publishes them in one place so that no two copies can drift.
+publishes them in one place so that no two copies can drift. Do not deposit the
+serving domain or any other location, because deposit files are immutable and a
+frozen file should not name something that can move.
 
-Record the resulting **version** DOI, then add it to the owner's ORCID record
-(<https://orcid.org/0000-0003-2246-8774>) as a work. That entry is the
-pre-release discovery channel: a verifier who knows only the project's name
-reaches the ORCID record, follows the one pointer to the anchor, and obtains
-the role assignment from an archive the publication channel does not control.
+### The ORCID entry
 
-The ORCID entry must exist before the first signed release. The ordering
-constraint is where this goes wrong: keys before anchor, anchor before ORCID
-entry, ORCID entry before genesis. A release signed ahead of the ORCID entry is
-not verifiable by the procedure the protocol specifies, and because the chain
-is append-only, correcting it means abandoning the chain rather than amending
-it.
+Add the anchor's version DOI as a work on the owner's ORCID record. That entry
+is the pre-release discovery channel: a verifier who knows only the project's
+name reaches the ORCID record, follows the one pointer to the anchor, and
+obtains the role assignment from an archive the publication channel does not
+control.
 
 The anchor is deposited once. Later releases do not update it, because the
 pinned set never changes: a lost medium leaves governance operating on the
@@ -77,19 +110,52 @@ reachable release is citable the moment it is reachable.
 Deposit the manifest and the records it names, which is what a verifier needs
 and is small enough to deposit every time. The published artifacts are not
 deposited: the corpus export is several gigabytes per release, and a reader who
-has an artifact can check it against the deposited manifest without it.
-
-From the chain clone, for the release at `releases/HEAD`:
-
-- `releases/<manifest-hex>.json`, the signed manifest.
-- `releases/<manifest-hex>.sig`, its detached release-key signature.
-- The three records the manifest names by content-addressed id, each read from
-  `blobs/sha256/`: the catalog (`catalog`), the assessment snapshot
-  (`admission.assessment_snapshot`), and the admission report
-  (`admission.admission_report`).
-
-Do not include the role public keys. They belong to the anchor, and a copy here
+has an artifact can check it against the deposited manifest without it. Do not
+include the role public keys either. They belong to the anchor, and a copy here
 would be a second place a verifier might take them from.
+
+### Assemble it
+
+The five files come out of a chain clone with no tooling beyond coreutils and
+`jq`. Every name below is a content-addressed digest, so the script checks each
+file against its own name as it goes; a mismatch means the clone is damaged and
+the deposit must not be made from it.
+
+```sh
+set -eu
+clone=/path/to/chain-clone
+out="$PWD/deposit"
+mkdir -p "$out"
+
+hex=$(tr -d '\n' < "$clone/releases/HEAD")
+test "$(sha256sum < "$clone/releases/$hex.json" | cut -d' ' -f1)" = "$hex"
+cp "$clone/releases/$hex.json" "$clone/releases/$hex.sig" "$out/"
+
+for field in .catalog .admission.assessment_snapshot .admission.admission_report; do
+  id=$(jq -r "$field" "$out/$hex.json")
+  blob=${id##*:}
+  src="$clone/blobs/sha256/$(printf '%s' "$blob" | cut -c1-2)/$blob"
+  test "$(sha256sum < "$src" | cut -d' ' -f1)" = "$blob"
+  cp "$src" "$out/$blob"
+done
+
+(cd "$out" && sha256sum -- * > SHA256SUMS)
+cat "$out/SHA256SUMS"
+```
+
+The three records keep their bare digest names, which are their identities. The
+manifest says which is which, by the `catalog`,
+`admission.assessment_snapshot` and `admission.admission_report` fields the
+script just read.
+
+### Upload it
+
+The upload itself is Zenodo's procedure and is not specified here; use the
+deposit form or the REST API under the `borh` account. Two things about it are
+Soranoha's and are fixed: the deposit is a **new version** of the release
+concept record rather than a new record, so that every release shares one
+concept DOI and each has its own version DOI, and the version DOI is what gets
+recorded below.
 
 ### Recording the DOI
 
@@ -101,34 +167,60 @@ Reserving a DOI and signing it into an immutable manifest fails permanently
 when the deposit is abandoned, whereas a DOI held outside simply does not
 render.
 
-So the DOI is deployment configuration. After the deposit, set `release-doi` in
-`/etc/soranoha/publisher.json` (or pass `--release-doi`) to the version DOI, and
-run `serving-activate`. Activation is idempotent, so a DOI recorded late is
-recovered by re-running it. A malformed value is refused at activation rather
-than rendered into every work's citation.
+So the DOI is deployment configuration. Set `release-doi` in
+`/etc/soranoha/publisher.json`, or pass `--release-doi`, and run
+`serving-activate`.
 
-Because citations are generated files, changing the DOI for a commit that was
-already exported makes the reuse check fail with `serving-tree-mismatch`: the
-existing tree's citations name a different DOI. Remove that tree and re-export.
+The value is the **bare DOI**, not a link. It is checked against
+`10.<4-9 digits>/<no whitespace>` before it reaches any citation, so
+`10.5281/zenodo.1234567` is accepted and `https://doi.org/10.5281/zenodo.1234567`
+is refused at activation. Refusing there costs one corrected flag; the
+alternative renders a dead pointer into the citation record of every work.
+
+Activation exports the tree, and the citations it generates name the DOI, so
+the DOI is an input to the export rather than a label applied after it. Setting
+or changing it for a commit that was already exported makes the reuse check
+fail closed with `serving-tree-mismatch`: the existing tree's citations name a
+different DOI. Remove that tree and re-export. Activation is otherwise
+idempotent, so a DOI recorded late is recovered by re-running it.
 
 Activation therefore depends on Zenodo being reachable. For a research corpus
 that delay is acceptable, and it is stated here as policy so that it is not
 discovered during a release.
 
-### Why an unsigned DOI mapping is still trustworthy
+## Checking a deposit you were given
 
 Nothing verifiable is lost by keeping the DOI outside the signed chain, because
 the deposit contains the manifest bytes. A reader who is given a DOI can check
-the correspondence themselves:
+the correspondence with `openssl` and coreutils alone, using only the release
+key published in the trust anchor:
 
-1. Download the deposit's `releases/<hex>.json`.
-2. Hash it. The sha256 must equal the `<hex>` in its name and the manifest id
-   the chain records.
-3. Verify `releases/<hex>.sig` against the release key from the trust anchor.
+```sh
+hex=<manifest digest, which is the .json file's name>
+pub=<64 hex characters of the release key, from the trust anchor>
 
-A DOI that names some other release fails at step 2, and one whose manifest was
-not signed by the pinned release key fails at step 3. The mapping is
-configuration, but the claim it makes is checkable against the chain.
+test "$(sha256sum < "$hex.json" | cut -d' ' -f1)" = "$hex"
+printf "$(printf '302a300506032b6570032100%s' "$pub" | sed 's/../\\x&/g')" > release.pub.der
+printf 'snh-manifest-sig/1:%s' "$hex" > manifest.msg
+openssl pkeyutl -verify -rawin -pubin -inkey release.pub.der -keyform DER \
+  -in manifest.msg -sigfile "$hex.sig"
+```
+
+`302a300506032b6570032100` is the fixed prefix of an Ed25519 public key in DER,
+so the `printf` turns 64 hex characters into the 44-byte key file OpenSSL reads.
+The message is exact ASCII with no trailing newline: 19 prefix characters plus
+64 hex characters is 83 bytes, and a trailing newline produces a verification
+failure rather than a warning.
+
+A DOI that names some other release fails the digest check. A manifest that was
+not signed by the pinned release key fails the signature check. The three
+records verify the same way, by hashing each file and comparing the digest with
+the id the manifest gives it. The mapping from DOI to release is configuration,
+but the claim it makes is checkable against the chain.
+
+The kernel's `archive-verify` is not this check. It runs the chain verifier over
+an archived *repository*, so it needs a git view rather than a directory of
+loose files, and a Zenodo deposit is the latter.
 
 ## See also
 

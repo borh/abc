@@ -165,4 +165,6 @@ fresh reviewed genesis from the final inputs, verify it, and independently
 deposit its exact manifest, signature and role-bound public key assignment in
 Zenodo. Add that deposit's version DOI to the owner's ORCID record before
 public exposure. Zenodo credentials remain separate from release CI. This gate
-does not prevent private testing or resets.
+does not prevent private testing or resets. The two deposits, their contents
+and their ordering are specified in [Zenodo deposits and ORCID
+anchoring](zenodo-deposits.md).

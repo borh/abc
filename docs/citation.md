@@ -200,7 +200,9 @@ d9f2a1c0e4b78356f1a2c9d0e5b4738a6c1f0e2d3b5a4978c6e1f0d2b3a495867.
 This is the most precise form of citation available. A reader can fetch the artifact, hash
 it, find that hash in the manifest, and verify the manifest's signature
 against the release key published in the trust anchor deposit. The procedure
-is specified in [`docs/design/snh-protocol-v1.md`](design/snh-protocol-v1.md).
+is specified in [`docs/design/snh-protocol-v1.md`](design/snh-protocol-v1.md),
+and [Zenodo deposits and ORCID anchoring](zenodo-deposits.md) describes what
+each deposit contains and how to check that a DOI names the release it claims.
 
 ## Citing the tooling
 

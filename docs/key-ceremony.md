@@ -118,7 +118,9 @@ The two `.pub` files are public. They are the bytes deposited in the trust ancho
 which is what authenticates the role assignment `RELEASE = {K_release}` and
 `GOVERNANCE = {K_governance}`, and they are the bytes carried in deployment source as
 non-authenticating pinned verifier configuration. Publication repositories and
-serving trees contain no key copies at all.
+serving trees contain no key copies at all. [Zenodo deposits and ORCID
+anchoring](zenodo-deposits.md) covers the deposit itself and the ORCID entry
+that must precede the first signed release.
 
 ## Create the two governance media
 

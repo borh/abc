@@ -80,6 +80,9 @@ cache, assessment, publication and serving boundaries, and the
 
 The [key ceremony](docs/key-ceremony.md) establishes the two pinned signing roles
 and the offline governance signing path used to withdraw or amend a published work.
+[Zenodo deposits and ORCID anchoring](docs/zenodo-deposits.md) covers the trust
+anchor that publishes the role assignment and the per-release deposit that makes
+a release citable.
 
 Published TEI carries a small extension vocabulary in the namespace
 `https://w3id.org/soranoha/ns/tei`, conventionally bound to `snh:`. See the

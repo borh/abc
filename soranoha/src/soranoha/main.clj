@@ -701,6 +701,46 @@
                      "commit" (:commit outcome)})))
     outcome))
 
+(defn governance-event-prepare!
+  "Turn candidate governance-event content into the exact bytes the offline
+  governance key will sign, and print their sha256.
+
+  This is the online half of the ceremony in docs/key-ceremony.md. It needs
+  no chain clone and no key material, so it is safe to run anywhere, and its
+  output is the one file the ceremony carries offline.
+
+  The candidate need not already be canonical: key order and surrounding
+  whitespace are decided by the canonicalization, not by the author, and
+  `--out` receives the canonical bytes. Everything the boundary decode can
+  reject about a lone event is rejected here instead of after an offline
+  signing session: a duplicate key, a non-integral number, a schema
+  violation, and entries that are not sorted by slug or repeat one.
+
+  Two conditions are not checked, because both need the chain: whether each
+  slug names a work the current release admits, and whether an amendment's
+  `amends` names an event the chain carries. The `governance` subcommand
+  checks those when it appends the signed event.
+
+  `input_was_canonical` reports whether the candidate file was already the
+  bytes to sign. When it is false the candidate's own sha256 is not the one
+  to sign, so carry `--out` rather than the file that produced it."
+  [{:keys [event out]}]
+  (require-flags! "governance-event-prepare" {"--event" event "--out" out})
+  (let [candidate (fs/read-all-bytes (str event))
+        ;; parse-value first so a duplicate key or a non-integral number is
+        ;; reported against the author's own bytes; encode then canonicalizes
+        ;; the parsed value and round-trips it through the full boundary decode.
+        value (decode/parse-value "governance-event" candidate)
+        {:keys [bytes hex id]} (decode/encode "governance-event" value)
+        report {"event" id
+                "sha256" hex
+                "kind" (get value "kind")
+                "entries" (count (get value "entries"))
+                "input_was_canonical" (= hex (hash/sha256-bytes candidate))}]
+    (fs/write-bytes (str out) bytes)
+    (println (record-json/write-deterministic-json-str report))
+    report))
+
 (defn governance!
   "Append one offline-signed governance event to the chain. The event and
   its detached 64-byte signature arrive as files and pass unchanged to the
@@ -925,6 +965,7 @@
           "release" (let [{:keys [outcome]} (release! opts)]
                       (when-not (#{:published :already-published} outcome)
                         (System/exit (if (= :requeue outcome) 3 1))))
+          "governance-event-prepare" (governance-event-prepare! opts)
           "governance" (let [{:keys [outcome]} (governance! opts)]
                          (when-not (#{:published :already-applied} outcome)
                            (System/exit 1)))
@@ -938,7 +979,7 @@
           "verify" (when-not (:ok? (verify! opts))
                      (System/exit 1))
           (do (binding [*out* *err*]
-                (println "usage: build|text-view|annotation-validate|tei-enrich|links-export|delta|release|governance|serving-tree|serving-activate|publication-init|assessment-evaluate|aozora-reliance-prepare|archive-verify|verify [--root R --aozora-root A --assets-root S ...]"))
+                (println "usage: build|text-view|annotation-validate|tei-enrich|links-export|delta|release|governance-event-prepare|governance|serving-tree|serving-activate|publication-init|assessment-evaluate|aozora-reliance-prepare|archive-verify|verify [--root R --aozora-root A --assets-root S ...]"))
               (System/exit 2))))
       (System/exit 0)
       (catch clojure.lang.ExceptionInfo e

@@ -216,10 +216,32 @@ just to be readable.
 ## Sign a governance event after genesis
 
 A withdrawal or amendment event is a small canonical JSON object whose id is the
-plain sha256 of its exact bytes. Prepare it online, where the kernel's schema and
-canonicalization rules apply, and carry the event *file* offline rather than only its
-hash: the object is under a few hundred bytes and is readable, and signing a bare
-hash means signing something you cannot check.
+plain sha256 of its exact bytes. Prepare it online with the kernel, which decides
+the canonical form so that the offline session does not discover it was wrong:
+
+```sh
+nix run .#soranoha-kernel -- governance-event-prepare \
+  --event "$PWD/candidate.json" --out "$PWD/event.json"
+```
+
+Write `candidate.json` however is convenient; key order and surrounding whitespace
+belong to the canonicalization rather than to the author. The command rejects
+anything the chain would later reject about the event on its own: a duplicate key,
+a non-integral number, a schema violation, an unrecognized reason code, and entries
+that are not sorted by slug or name one work twice. It needs no chain clone and no
+key material, and it prints the `sha256` that the next step signs alongside the
+event id. When it reports `"input_was_canonical": false`, `candidate.json` is not
+the file to carry; `event.json` is.
+
+Two conditions it cannot check need the chain: whether each slug names a work the
+current release admits, and whether an amendment's `amends` names an event the
+chain carries. The `governance` subcommand checks both when it appends the signed
+event, and neither depends on the signature, so a mistake there costs a corrected
+event rather than a repeated ceremony.
+
+Carry the event *file* offline rather than only its hash: the object is under a few
+hundred bytes and is readable, and signing a bare hash means signing something you
+cannot check.
 
 On the offline machine, with the event file at `event.json`:
 

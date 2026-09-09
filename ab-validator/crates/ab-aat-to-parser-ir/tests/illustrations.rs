@@ -161,3 +161,99 @@ fn image_lettering_edition_statement_stays_on_the_annotation_axis() {
     assert_eq!(note["source_span"], image["source_span"]);
     assert!(ir["interpretation_problems"].as_array().unwrap().is_empty());
 }
+
+#[test]
+fn asset_clause_shapes_are_distinguished_from_each_other() {
+    // The four shapes the archive actually contains. Only the last two are
+    // defective, and each is defective in its own clause: 018371 writes the
+    // dimensions clause and leaves it unfilled, and 045338 writes a stem where
+    // the filename belongs. Neither can be repaired without inventing the
+    // value the source failed to supply.
+    let well_formed = convert("［＃挿絵（fig_ok.png、横441×縦233）入る］");
+    let image = nodes(&well_formed)
+        .into_iter()
+        .find(|n| n["type"] == "image")
+        .unwrap();
+    assert_eq!(image["src"], "fig_ok.png");
+    assert_eq!(image["width"], 441);
+    assert!(image.get("src_source").is_none());
+    assert!(image.get("dimensions_source").is_none());
+    assert!(
+        well_formed["interpretation_problems"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+
+    // A dimensions clause the source simply does not write is absent, not
+    // defective, and says nothing about the work.
+    let absent = convert("［＃挿絵（fig_ok.png）入る］");
+    let image = nodes(&absent)
+        .into_iter()
+        .find(|n| n["type"] == "image")
+        .unwrap();
+    assert_eq!(image["src"], "fig_ok.png");
+    assert!(image.get("width").is_none());
+    assert!(image.get("dimensions_source").is_none());
+    assert!(
+        absent["interpretation_problems"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+
+    // Declared and left empty: the raw clause is kept and the layout aspect
+    // is uncertain, but the filename still resolves.
+    let empty_dimensions = convert(
+        "［＃「朝鮮慶州金冠塚發見の王冠」のキャプション付きの図（fig18371_01.png、横×縦）入る］",
+    );
+    let image = nodes(&empty_dimensions)
+        .into_iter()
+        .find(|n| n["type"] == "image")
+        .unwrap();
+    assert_eq!(image["src"], "fig18371_01.png");
+    assert!(image.get("width").is_none());
+    assert_eq!(image["dimensions_source"], "横×縦");
+    assert!(image.get("src_source").is_none());
+    assert_eq!(
+        empty_dimensions["interpretation_problems"][0]["aspects"],
+        json!(["layout"])
+    );
+
+    // A stem with no extension separator names no file, so the asset identity
+    // is the uncertain one and no `src` is asserted.
+    let stem_only = convert("［＃ひめだるまの写真（fig45338_01png、横441×縦233）入る］");
+    let image = nodes(&stem_only)
+        .into_iter()
+        .find(|n| n["type"] == "image")
+        .unwrap();
+    assert_eq!(image["src"], Value::Null);
+    assert_eq!(image["src_source"], "fig45338_01png");
+    assert_eq!(image["width"], 441);
+    assert_eq!(image["height"], 233);
+    assert_eq!(
+        stem_only["interpretation_problems"][0]["aspects"],
+        json!(["structure"])
+    );
+}
+
+#[test]
+fn both_clauses_can_be_defective_in_one_marker() {
+    // 018371 does this twice: an unfilled dimensions clause and a stem-only
+    // filename in the same marker. The aspects are reported together, in the
+    // schema's own order.
+    let ir =
+        convert("［＃「第五十圖　支那古錢」のキャプション付きの図（fig18371_48png、横×縦）入る］");
+    let image = nodes(&ir)
+        .into_iter()
+        .find(|n| n["type"] == "image")
+        .unwrap();
+    assert_eq!(image["src"], Value::Null);
+    assert_eq!(image["src_source"], "fig18371_48png");
+    assert_eq!(image["dimensions_source"], "横×縦");
+    assert!(image.get("width").is_none());
+    assert_eq!(
+        ir["interpretation_problems"][0]["aspects"],
+        json!(["structure", "layout"])
+    );
+}

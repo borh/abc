@@ -2152,6 +2152,11 @@ fn map_figure_to_node(
             result[key] = value.clone();
         }
     }
+    // The AAT calls the asset clause `filename`; the IR calls it `src`. The
+    // uninterpreted form follows its own field rather than the loop above.
+    if let Some(value) = node.get("filename_source") {
+        result["src_source"] = value.clone();
+    }
     for (input, output) in [
         ("caption", "caption_reference_children"),
         ("description_content", "description_children"),

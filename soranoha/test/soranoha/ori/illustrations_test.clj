@@ -82,3 +82,69 @@
         (is (= "warning" (get validated "status")))
         (is (= ["snh-figure-accessibility"] (mapv #(get % "rule_id") (get validated "findings")))))
       (finally (fs/delete-tree dir)))))
+
+(deftest unresolvable-asset-name-is-a-note-rather-than-a-graphic-url
+  ;; Four markers across three works write a stem with no extension separator
+  ;; where the filename belongs. The parser reports the text as `src_source`
+  ;; with a null `src`, and the figure must not turn that into a url: the
+  ;; source named no file, and a `graphic` would claim one.
+  (let [result (render/render-work
+                {:rights @fixture/grant
+                 :parser-ir {"nodes" [{"type" "image" "src" nil
+                                       "src_source" "fig45338_01png"
+                                       "alt" "ひめだるまの写真"
+                                       "width" 441 "height" 233}]}
+                 :metadata-record {"work" {"title" "試験" "work_id" "1" "aozora_modified" "2026-09-07"} "contributors" []}
+                 :persons-by-id {}})
+        reading (view/from-tei (:tei result))
+        ^Document doc (:view/document reading)]
+    (is (= 0 (.getLength (.getElementsByTagNameNS doc view/tei-namespace "graphic"))))
+    (is (= 1 (.getLength (.getElementsByTagNameNS doc view/tei-namespace "figure"))))
+    (let [notes (.getElementsByTagNameNS doc view/tei-namespace "note")
+          typed (into {} (for [i (range (.getLength notes))
+                               :let [^Element note (.item notes i)]]
+                           [(.getAttribute note "type") (.getTextContent note)]))]
+      (is (= "fig45338_01png" (get typed "uninterpreted-image-source"))))
+    (let [dir (fs/create-temp-dir {:prefix "unresolvable-asset"}) path (str (fs/path dir "tei.xml"))]
+      (try
+        (spit path (:tei result))
+        (let [validated (validation/tei-validation-result (validation/profile-paths ".") path)]
+          (is (= "passed" (get validated "status")) (pr-str (get validated "findings"))))
+        (finally (fs/delete-tree dir))))))
+
+(deftest an-unresolvable-asset-name-does-not-cost-the-work-its-analysis-eligibility
+  ;; The uncertainty is about the figure's own metadata, which `body-v1` omits.
+  ;; Reporting it as a content aspect would empty the eligible spans for the
+  ;; whole work over a fact that is not in the transcribed text at all.
+  (let [render (fn [aspects]
+                 (view/from-tei
+                  (:tei (render/render-work
+                         {:rights @fixture/grant
+                          :parser-ir {"nodes" [{"type" "text" "text" "本文"}
+                                               {"type" "image" "src" nil
+                                                "src_source" "fig45338_01png"}]
+                                      "interpretation_problems"
+                                      [{"kind" "uninterpreted-notation"
+                                        "code" "uninterpreted-notation"
+                                        "aspects" aspects
+                                        "raw" "［＃ひめだるまの写真（fig45338_01png）入る］"
+                                        "influence" {"kind" "document"}
+                                        "source_span" {"start" 0 "end" 1 "coordinate_system" "decoded_utf8"}}]}
+                          :metadata-record {"work" {"title" "試験" "work_id" "1" "aozora_modified" "2026-09-07"} "contributors" []}
+                          :persons-by-id {}}))))]
+    (is (seq (:view/eligible-spans (render ["structure"]))))
+    (is (empty? (:view/eligible-spans (render ["content"]))))))
+
+(deftest a-resolvable-asset-name-still-becomes-a-graphic-url
+  (let [result (render/render-work
+                {:rights @fixture/grant
+                 :parser-ir {"nodes" [{"type" "image" "src" "fig45338_01.png"
+                                       "alt" "ひめだるまの写真"
+                                       "width" 441 "height" 233}]}
+                 :metadata-record {"work" {"title" "試験" "work_id" "1" "aozora_modified" "2026-09-07"} "contributors" []}
+                 :persons-by-id {}})
+        reading (view/from-tei (:tei result))
+        ^Document doc (:view/document reading)
+        ^Element graphic (.item (.getElementsByTagNameNS doc view/tei-namespace "graphic") 0)]
+    (is (= "fig45338_01.png" (.getAttribute graphic "url")))
+    (is (= "441px" (.getAttribute graphic "width")))))

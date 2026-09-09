@@ -829,10 +829,11 @@
             "number":{"type":"string"},
             "width":{"type":"integer","minimum":0}, "height":{"type":"integer","minimum":0},
             "dimensions_source":{"type":"string"}, "caption_source":{"type":"string"}, "description_source":{"type":"string"},
+            "src_source":{"type":"string"},
             "description_children":{"type":"array","items":{"$ref":"#/$defs/annotationNode"}},
             "annotation_children":{"type":"array","items":{"$ref":"#/$defs/annotationNode"}},
             "caption_reference_children":{"type":"array","items":{"$ref":"#/$defs/annotationNode"}},
-            "src": { "type": "string" },
+            "src": { "type": ["string", "null"] },
             "alt": { "type": ["string", "null"] },
             "path_hint": { "type": ["string", "null"] }
           }

@@ -494,14 +494,21 @@
                                             (get node "description_children") depth)
         annotations (render-inline-children (assoc description :current-paragraph [])
                                             (get node "annotation_children") depth)
-        graphic (cond-> {:url (get node "src")}
-                  (some? (get node "width")) (assoc :width (str (get node "width") "px"))
-                  (some? (get node "height")) (assoc :height (str (get node "height") "px")))
-        figure (cond-> [:figure (cond-> {} (get node "number") (assoc :n (get node "number")))
-                        [:graphic graphic]]
+        ;; A source that writes a bare stem where the asset name belongs names
+        ;; no file. The parser hands that text over as `src_source` with a null
+        ;; `src`, and a `graphic` built from it would assert an asset the
+        ;; source never supplied, so the figure carries the text as a note and
+        ;; makes no url claim at all.
+        graphic (when-let [url (get node "src")]
+                  [:graphic (cond-> {:url url}
+                              (some? (get node "width")) (assoc :width (str (get node "width") "px"))
+                              (some? (get node "height")) (assoc :height (str (get node "height") "px")))])
+        figure (cond-> [:figure (cond-> {} (get node "number") (assoc :n (get node "number")))]
+                 graphic (conj graphic)
                  (and (present-text? (get node "alt")) (empty? (:current-paragraph description))) (conj [:figDesc (get node "alt")])
                  (seq (:current-paragraph description)) (conj (into [:note {:type "image-description"}] (:current-paragraph description)))
                  (seq (:current-paragraph rendered)) (conj (into [:note {:type "caption-reference"}] (:current-paragraph rendered)))
+                 (get node "src_source") (conj [:note {:type "uninterpreted-image-source"} (get node "src_source")])
                  (get node "description_source") (conj [:note {:type "uninterpreted-image-description"} (get node "description_source")])
                  (get node "caption_source") (conj [:note {:type "uninterpreted-caption-reference"} (get node "caption_source")])
                  (and (get node "dimensions_source") (nil? (get node "width")))

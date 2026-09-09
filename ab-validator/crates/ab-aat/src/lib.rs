@@ -3973,6 +3973,19 @@ fn push_concealment(content: &mut Vec<Value>, decoded: &DecodedSource, node: &Ao
     content.push(retained);
 }
 
+/// Whether an asset clause names a file rather than a bare stem.
+///
+/// Every well-formed figure filename in the archive carries an extension
+/// (4920 of 4924 markers, all `.png`); the four that do not have no separator
+/// at all. The test is the separator rather than a list of known extensions,
+/// because a new extension is an asset this project has not seen, while a
+/// missing separator is a filename that cannot resolve whatever follows it.
+fn names_a_file(filename: &str) -> bool {
+    filename
+        .rsplit_once('.')
+        .is_some_and(|(stem, extension)| !stem.is_empty() && !extension.is_empty())
+}
+
 fn illustration_node(decoded: &DecodedSource, node: &AozoraNode) -> Value {
     let ProjectedKind::Illustration {
         file,
@@ -3988,6 +4001,20 @@ fn illustration_node(decoded: &DecodedSource, node: &AozoraNode) -> Value {
     };
     let mut uncertain_aspects = Vec::new();
     let mut value = json!({"kind":"figure", "filename":file,"alt":description.as_deref().unwrap_or(""),"css_class":"illustration", "source":&decoded.span_text[node.span.start..node.span.end], "span":span_json(&node.span,&decoded.span_ctx)});
+    if !names_a_file(file) {
+        // The source wrote something in the asset position that names no file:
+        // in the present archive, four markers across three works give a stem
+        // with no extension separator. Keeping it in `filename` would publish
+        // an asset identity the source never supplied, so it moves to
+        // `filename_source` and the fact records the gap where it is.
+        value["filename_source"] = json!(file);
+        value["filename"] = Value::Null;
+        // `structure`, not `content`: this is the figure's own metadata, which
+        // the body-v1 analysis view omits, so nothing about the transcribed
+        // text became less certain. A `content` aspect would empty the whole
+        // work's eligible spans for a fact that is not in the text at all.
+        uncertain_aspects.push("structure");
+    }
     if let Some(span) = description_span {
         if let Some(children) = source_fragment(decoded, span.start..span.end) {
             if children.iter().any(|child| child["kind"] != "text") {

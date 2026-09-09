@@ -2226,7 +2226,54 @@ fn blocks_from_inline_content(content: Vec<Value>, decoded: &DecodedSource) -> V
         if let Some(close_index) = native_scopes.get(&index).copied()
             && let Some(attributes) = node.get("x-heading")
         {
-            let mut inner = content[index + 1..close_index].to_vec();
+            // A heading can own block layout containers: the source opens them
+            // inside the heading scope and closes them inside it in reverse
+            // order, so they state the geometry of the heading's own lines. A
+            // heading's content is inline and a container is a block, so the
+            // container cannot go in the content, and the assembly below never
+            // sees these markers. Wrapping the heading in them expresses the
+            // same scope with what the schema already has, keeps both marker
+            // spans of every container, and reaches a mapping that is already
+            // written: a layout scope whose range is a heading is rendered
+            // inside the head element rather than around it. Only a heading
+            // that stands as its own block can be wrapped, so an inline
+            // `dogyo` heading is left exactly as it was.
+            let mut containers: Vec<(Value, Value)> = Vec::new();
+            let (mut first, mut last) = (index + 1, close_index);
+            if attributes["style"] == "normal" {
+                // Each marker sits on its own source line, so the line breaks
+                // between them appear as text nodes on both sides of the pair
+                // being peeled. They are the same breaks `strip_boundary_newlines`
+                // drops from the heading's content below.
+                let blank = |node: &Value| {
+                    node["kind"] == "text"
+                        && node["value"]
+                            .as_str()
+                            .is_some_and(|value| value.chars().all(|char| char == '\n'))
+                };
+                loop {
+                    let mut open = first;
+                    while open < last && blank(&content[open]) {
+                        open += 1;
+                    }
+                    let mut end = last;
+                    while end > open && blank(&content[end - 1]) {
+                        end -= 1;
+                    }
+                    if open < end
+                        && content[open].get("x-layout").is_some()
+                        && content[open]["x-source-marker-kind"] == "containerOpen"
+                        && native_scopes.get(&open).copied() == Some(end - 1)
+                    {
+                        containers.push((content[open].clone(), content[end - 1].clone()));
+                        first = open + 1;
+                        last = end - 1;
+                    } else {
+                        break;
+                    }
+                }
+            }
+            let mut inner = content[first..last].to_vec();
             if attributes["style"] == "normal" {
                 strip_boundary_newlines(&mut inner, source);
             }
@@ -2242,7 +2289,17 @@ fn blocks_from_inline_content(content: Vec<Value>, decoded: &DecodedSource) -> V
                 paragraph.pop();
                 heading["indent"] = json!(indent);
             }
-            paragraph.push(heading);
+            if containers.is_empty() {
+                paragraph.push(heading);
+            } else {
+                // The wrapped heading is a block of its own, so the line break
+                // after its close marker belongs to the block boundary rather
+                // than to a paragraph of its own, the same as for any other
+                // container this loop closes.
+                strip_next_leading_newline = marker_ends_source_line(&content[close_index], source);
+                push_paragraph_if_not_empty(&mut blocks, mem::take(&mut paragraph));
+                blocks.push(wrap_in_layout_containers(heading, containers));
+            }
             index = close_index + 1;
             continue;
         }
@@ -2558,6 +2615,30 @@ fn blocks_inside_native_scope(
 
 /// Resolve native-established scope extents against this source-node sequence.
 /// Indexing exact spans once avoids rescanning siblings for each opening marker.
+/// Wrap a block in the layout containers the source opened around it, from the
+/// innermost outwards.
+///
+/// `containers` is in source order, outermost first, each entry the container's
+/// own open and close marker. Each becomes a `layout_block` carrying the
+/// geometry the marker states and both marker spans, over the extent the two
+/// markers delimit.
+fn wrap_in_layout_containers(block: Value, containers: Vec<(Value, Value)>) -> Value {
+    containers
+        .into_iter()
+        .rev()
+        .fold(block, |child, (open, close)| {
+            let mut container = open["x-layout"].clone();
+            container["kind"] = json!("layout_block");
+            container["span"] = json!({
+                "byte_start": open["span"]["byte_start"], "byte_end": close["span"]["byte_end"],
+                "line_start": open["span"]["line_start"], "line_end": close["span"]["line_end"]
+            });
+            container["interpretation_marker_spans"] = json!([open["span"], close["span"]]);
+            container["children"] = json!([child]);
+            container
+        })
+}
+
 fn native_scope_pairs(content: &[Value]) -> BTreeMap<usize, usize> {
     if !content
         .iter()
@@ -6566,6 +6647,54 @@ mod tests {
     /// and a structured `base_content` gaiji node (what ab-check's
     /// `gaiji_resolution` counts) instead of the verbatim `※［＃…］`
     /// marker text v1 emitted.
+    #[test]
+    fn layout_containers_inside_a_heading_become_scopes_around_it() {
+        let src = concat!(
+            "［＃ここから中見出し］\n",
+            "［＃ここから１２字詰め］\n",
+            "［＃ここから２字下げ、折り返して３字下げ］\n",
+            "キイツの艶書の競賣に附せらるるとき\n",
+            "［＃ここで字下げ終わり］\n",
+            "［＃ここで字詰め終わり］\n",
+            "［＃ここで中見出し終わり］\n"
+        );
+        let aat = aat_value_for(src);
+        assert!(
+            find_node(&aat, "raw").is_none(),
+            "no marker should survive as raw: {aat}"
+        );
+        let width = &aat["blocks"][0];
+        assert_eq!(width["kind"], "layout_block");
+        assert_eq!(width["width"], 12);
+        let indent = &width["children"][0];
+        assert_eq!(indent["kind"], "layout_block");
+        assert_eq!(indent["indent"], 2);
+        assert_eq!(indent["continuation_indent"], 3);
+        let heading = &indent["children"][0];
+        assert_eq!(heading["kind"], "heading");
+        assert_eq!(heading["level"], 2);
+        assert_eq!(heading["style"], "normal");
+        // Both markers of each container are kept, so the scope stays joinable
+        // to the exact source text that opened and closed it.
+        for container in [width, indent] {
+            assert_eq!(
+                container["interpretation_marker_spans"]
+                    .as_array()
+                    .map(Vec::len),
+                Some(2),
+                "{container}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_heading_without_layout_containers_is_left_where_it_was() {
+        let src = "［＃ここから中見出し］\nキイツ\n［＃ここで中見出し終わり］\n";
+        let aat = aat_value_for(src);
+        assert_eq!(aat["blocks"][0]["kind"], "heading");
+        assert!(find_node(&aat, "layout_block").is_none(), "{aat}");
+    }
+
     #[test]
     fn gaiji_base_ruby_resolves_base_and_emits_gaiji_base_content() {
         let src = "※［＃「木＋吶のつくり」、第3水準1-85-54］《かい》\n";

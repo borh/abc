@@ -158,6 +158,7 @@ enum BodyFamily {
     IndentBlockParamPrefix,   // ここから → ここから{N}字下げ
     AlignEndBlockParamPrefix, // ここから地から → ここから地から{N}字上げ
     IndentCompoundBlockEnd,   // ここで字下げ、 + supplied width or presentation
+    QuoteBlockEnd,            // 引用文終わり / ここで引用文終り
     OkuriganaPrefix,          // （ → kaeriten okurigana （X）
 
     // === Body-equals-pattern then parse from body[0] ===
@@ -271,6 +272,7 @@ const fn body_family_mode(family: BodyFamily) -> MatchMode {
         | BodyFamily::AlignEndBlockParamPrefix
         | BodyFamily::IndentBlockEnd
         | BodyFamily::IndentCompoundBlockEnd
+        | BodyFamily::QuoteBlockEnd
         | BodyFamily::ParamBlockEnd
         | BodyFamily::OkuriganaPrefix
         | BodyFamily::TopIndentPrefix
@@ -312,6 +314,13 @@ static BODY_PATTERNS: &[BodyPattern] = &[
         needle: "ここより",
         family: BodyFamily::IndentBlockParamPrefix,
     },
+    // `これより手紙文、{N}字下げ` is the same opener written with a different
+    // deictic. It carries no measure of its own, so it reaches the same body
+    // parse as `ここから` and `ここより` and declines the same way.
+    BodyPattern {
+        needle: "これより",
+        family: BodyFamily::IndentBlockParamPrefix,
+    },
     BodyPattern {
         needle: "ここから",
         family: BodyFamily::IndentBlockParamPrefix,
@@ -335,6 +344,17 @@ static BODY_PATTERNS: &[BodyPattern] = &[
     BodyPattern {
         needle: "字下げ終わり",
         family: BodyFamily::IndentBlockEnd,
+    },
+    // The quotation's own close, with or without the `ここで` prefix and with
+    // either 終わり spelling. It names the role it closes, so pairing checks the
+    // role rather than closing whichever indentation scope is innermost.
+    BodyPattern {
+        needle: "ここで引用文終",
+        family: BodyFamily::QuoteBlockEnd,
+    },
+    BodyPattern {
+        needle: "引用文終",
+        family: BodyFamily::QuoteBlockEnd,
     },
     // The 字組み compound closer carries the width (`ここで字下げ、20字組み終わり`). Distinct from the generic `ここで字下げ終わり` above: the char after
     // `ここで字下げ` is `、` vs `終`, so the two needles never overlap.
@@ -1337,7 +1357,7 @@ pub(super) fn classify_annotation_body(
             let mut purpose = None;
             if rest.strip_suffix("終わり").is_some_and(|clauses| {
                 clauses.split('、').all(|clause| {
-                    resolve_table_clause(clause, &mut purpose, &mut styles)
+                    resolve_role_clause(clause, &mut purpose, &mut styles)
                         .or_else(|| resolve_block_style(clause, &mut styles))
                         .is_some()
                 })
@@ -1373,6 +1393,21 @@ pub(super) fn classify_annotation_body(
                         None,
                     )
                 })
+        }
+        BodyFamily::QuoteBlockEnd => {
+            // The scope the quotation opener supplied is an indentation scope
+            // with a role on it, so its close is the indentation close carrying
+            // the same role. `おわり` is not accepted: it is not a spelling the
+            // corpus uses here, and admitting it would guess at the source.
+            matches!(&body[match_end..], "わり" | "り").then_some((
+                EmitKind::BlockClose(RegionClose::Indent {
+                    purpose: Some(BlockPurpose::Quotation),
+                    amount: None,
+                    kumi_width: None,
+                    styles: BlockStyles::EMPTY,
+                }),
+                None,
+            ))
         }
         BodyFamily::FormulaBlockOpen => Some((EmitKind::BlockOpen(RegionFormat::Formula), None)),
         BodyFamily::FormulaBlockEnd => Some((EmitKind::BlockClose(RegionClose::Formula), None)),
@@ -1552,6 +1587,12 @@ pub(super) fn classify_annotation_body(
         BodyFamily::IndentBlockParamPrefix => {
             // body == ここから{N}字下げ; remainder = body[match_end..]
             let rest = &body[match_end..];
+            // `ここから引用文、３字下げ`: the source names the role of the scope
+            // before the measure that scopes it. Read the leading role clause
+            // off here so the rest of the body is the ordinary measure-first
+            // body; without this the whole marker declines and the supplied
+            // indentation is lost along with the role.
+            let (role, rest) = split_leading_role(rest);
             let rest = rest.strip_prefix("改行").unwrap_or(rest);
             // ここから[改行]天付き、折り返して{M}字下げ: top-flush hanging
             // indent: the first line sits at the top margin (天付き = no
@@ -1560,13 +1601,13 @@ pub(super) fn classify_annotation_body(
             // shared 字下げ終わり (pairing is by family). Both the `改行天付き`
             // (corpus's most common top form) and the bare `天付き` spellings
             // appear; accept either before the leading-digit parse below.
-            if let Some(after) = rest
+            let opened = if let Some(after) = rest
                 .strip_prefix("天付き、折り返して")
                 .or_else(|| rest.strip_prefix("天付き折り返して"))
             {
-                let (m, tail2) = parse_layout_count_prefix(after)?;
-                return (tail2 == "字下げ").then_some((
-                    EmitKind::BlockOpen(RegionFormat::Indent(IndentBlock {
+                let (m, tail) = parse_layout_count_prefix(after)?;
+                (tail == "字下げ").then_some(EmitKind::BlockOpen(RegionFormat::Indent(
+                    IndentBlock {
                         purpose: None,
                         partial: None,
                         column_count: None,
@@ -1578,15 +1619,13 @@ pub(super) fn classify_annotation_body(
                         table_rules_absent: false,
                         layout: IndentLayout::None,
                         styles: BlockStyles::EMPTY,
-                    })),
-                    None,
-                ));
-            }
-            let (n, tail) = parse_layout_count_prefix(rest)?;
-            let tail = tail.trim_start_matches([' ', '　']);
-            if tail == "字下げ" {
-                Some((
-                    EmitKind::BlockOpen(RegionFormat::Indent(IndentBlock {
+                    },
+                )))
+            } else {
+                let (n, tail) = parse_layout_count_prefix(rest)?;
+                let tail = tail.trim_start_matches([' ', '　']);
+                if tail == "字下げ" {
+                    Some(EmitKind::BlockOpen(RegionFormat::Indent(IndentBlock {
                         purpose: None,
                         partial: None,
                         column_count: None,
@@ -1598,48 +1637,41 @@ pub(super) fn classify_annotation_body(
                         table_rules_absent: false,
                         layout: IndentLayout::None,
                         styles: BlockStyles::EMPTY,
-                    })),
-                    None,
-                ))
-            } else if let Some(after) = tail.strip_prefix("字下げ、").or_else(|| {
-                tail.strip_prefix("字下げ")
-                    .filter(|rest| rest.starts_with("折り返して"))
-            }) {
-                // Independent clauses share the supplied indentation scope;
-                // unresolved clauses retain their source rather than erasing it.
-                parse_indent_compound(n, after, source, alloc)
-                    .map(|block| (EmitKind::BlockOpen(RegionFormat::Indent(block)), None))
-            } else if tail == "字詰め" {
-                // ここから{N}字詰め: line-width container (字詰め): N
-                // full-width characters per line. Shares the `ここから`
-                // opener prefix with 字下げ; block-only, closes with
-                // `ここで字詰め終わり`. `NonZero` folds the `N >= 1` guard.
-                NonZeroU8::new(n).map(|w| {
-                    (
-                        EmitKind::BlockOpen(RegionFormat::LineWidth(LineWidth(w))),
-                        None,
-                    )
-                })
-            } else if let Some(after) = tail
-                .strip_prefix("段組み")
-                .or_else(|| tail.strip_prefix("段組"))
-            {
-                let count = ColumnCount(NonZeroU8::new(n)?);
-                let block = parse_column_compound(count, after, source, alloc)?;
-                Some((EmitKind::BlockOpen(RegionFormat::Columns(block)), None))
-            } else {
-                // ここから{N}段階大きな/小さな文字: block font-size shift.
-                // Shares the `ここから` prefix; closers supply direction and may
-                // restate the relative step count.
-                font_size_block_open_steps(tail, n)
-                    .and_then(NonZeroI8::new)
-                    .map(|s| {
-                        (
-                            EmitKind::BlockOpen(RegionFormat::FontSize(FontShift(s))),
-                            None,
-                        )
-                    })
-            }
+                    })))
+                } else if let Some(after) = tail.strip_prefix("字下げ、").or_else(|| {
+                    tail.strip_prefix("字下げ")
+                        .filter(|rest| rest.starts_with("折り返して"))
+                }) {
+                    // Independent clauses share the supplied indentation scope;
+                    // unresolved clauses retain their source rather than erasing it.
+                    parse_indent_compound(n, after, source, alloc)
+                        .map(|block| EmitKind::BlockOpen(RegionFormat::Indent(block)))
+                } else if tail == "字詰め" {
+                    // ここから{N}字詰め: line-width container (字詰め): N
+                    // full-width characters per line. Shares the `ここから`
+                    // opener prefix with 字下げ; block-only, closes with
+                    // `ここで字詰め終わり`. `NonZero` folds the `N >= 1` guard.
+                    NonZeroU8::new(n)
+                        .map(|w| EmitKind::BlockOpen(RegionFormat::LineWidth(LineWidth(w))))
+                } else if let Some(after) = tail
+                    .strip_prefix("段組み")
+                    .or_else(|| tail.strip_prefix("段組"))
+                {
+                    let count = ColumnCount(NonZeroU8::new(n)?);
+                    let block = parse_column_compound(count, after, source, alloc)?;
+                    Some(EmitKind::BlockOpen(RegionFormat::Columns(block)))
+                } else {
+                    // ここから{N}段階大きな/小さな文字: block font-size shift.
+                    // Shares the `ここから` prefix; closers supply direction and may
+                    // restate the relative step count.
+                    font_size_block_open_steps(tail, n)
+                        .and_then(NonZeroI8::new)
+                        .map(|s| EmitKind::BlockOpen(RegionFormat::FontSize(FontShift(s))))
+                }
+            };
+            opened
+                .and_then(|open| with_supplied_role(open, role))
+                .map(|open| (open, None))
         }
         BodyFamily::AlignEndBlockParamPrefix => {
             // body == ここから地から{N}字上げ; remainder = body[match_end..]
@@ -1671,6 +1703,22 @@ pub(super) fn classify_annotation_body(
                         amount: n,
                         end_offset: None,
                     })),
+                    None,
+                ))
+            } else if matches!(tail, "字下げここまで" | "字下げ終わり" | "字下げ終り")
+            {
+                // `［＃{N}字下げここまで］` / `［＃{N}字下げ終わり］`: the
+                // indentation close with the measure it ends restated. The
+                // measure is checked against the scope it closes rather than
+                // taken as a new one, so a restated measure that disagrees with
+                // the open leaves the pair unmatched instead of closing it.
+                Some((
+                    EmitKind::BlockClose(RegionClose::Indent {
+                        purpose: None,
+                        amount: Some(n),
+                        kumi_width: None,
+                        styles: BlockStyles::EMPTY,
+                    }),
                     None,
                 ))
             } else if let Some(lf) = parse_both_margin_tail(n, tail) {
@@ -2390,7 +2438,7 @@ fn resolve_indent_segment(segment: &str, block: &mut IndentBlock) -> Option<()> 
         block.layout = layout;
         return Some(());
     }
-    if resolve_table_clause(segment, &mut block.purpose, &mut block.styles).is_some() {
+    if resolve_role_clause(segment, &mut block.purpose, &mut block.styles).is_some() {
         return Some(());
     }
     // An explicit statement that the table carries no rules. Kept apart from
@@ -2403,15 +2451,54 @@ fn resolve_indent_segment(segment: &str, block: &mut IndentBlock) -> Option<()> 
     resolve_block_style(segment, &mut block.styles)
 }
 
-/// Interpret one table clause into the role the source names, and the
-/// enclosure a fused spelling names along with it.
+/// Split a role clause the source wrote ahead of the measure that scopes it.
+///
+/// `ここから引用文、３字下げ` and `これより手紙文、１字下げ` name what the scope
+/// is first and how far it is indented second. Only a leading clause that is
+/// entirely a role spelling is taken; anything else is left for the measure
+/// parse to accept or decline, so no marker loses its ordinary reading to this.
+fn split_leading_role(rest: &str) -> (Option<BlockPurpose>, &str) {
+    let Some((clause, after)) = rest.split_once('、') else {
+        return (None, rest);
+    };
+    let mut role = None;
+    let mut styles = BlockStyles::EMPTY;
+    match resolve_role_clause(clause, &mut role, &mut styles) {
+        Some(()) => (role, after),
+        None => (None, rest),
+    }
+}
+
+/// Attach a role the source named ahead of the measure.
+///
+/// The role is about the indentation scope this same marker opens. A marker
+/// that opens something else, or that names a second role among its trailing
+/// clauses, states two things about one scope; it is declined whole rather than
+/// one of the two being chosen and the other silently dropped.
+fn with_supplied_role(open: EmitKind, role: Option<BlockPurpose>) -> Option<EmitKind> {
+    let Some(role) = role else {
+        return Some(open);
+    };
+    match open {
+        EmitKind::BlockOpen(RegionFormat::Indent(mut block)) if block.purpose.is_none() => {
+            block.purpose = Some(role);
+            Some(EmitKind::BlockOpen(RegionFormat::Indent(block)))
+        }
+        _ => None,
+    }
+}
+
+/// Interpret one role clause into the role the source names, and the enclosure
+/// a fused spelling names along with it.
 ///
 /// `罫囲みの表` and `表罫囲み` say two things in one word: the scope is a table,
 /// and a ruled box is drawn around it. Both are recorded on their own axis, so
 /// the enclosure stays comparable with a `罫囲み` supplied as a separate clause
 /// and the role stays comparable with a bare `表組み`. Nothing here derives
-/// cells, columns or rules from the enclosed lines.
-fn resolve_table_clause(
+/// cells, columns or rules from the enclosed lines, and nothing about a quoted
+/// passage's own source, or a letter's correspondents, is derived either: the
+/// clause names what the scope is, and only that.
+fn resolve_role_clause(
     segment: &str,
     purpose: &mut Option<BlockPurpose>,
     styles: &mut BlockStyles,
@@ -2420,6 +2507,8 @@ fn resolve_table_clause(
         "表" | "表組" | "表組み" => (BlockPurpose::Table, None),
         "図表" => (BlockPurpose::FigureOrTable, None),
         "罫囲みの表" | "表罫囲み" => (BlockPurpose::Table, Some(EnclosureKind::Rule)),
+        "引用文" => (BlockPurpose::Quotation, None),
+        "手紙文" => (BlockPurpose::Letter, None),
         _ => return None,
     };
     if purpose.is_some() || (frame.is_some() && styles.frame.is_some()) {

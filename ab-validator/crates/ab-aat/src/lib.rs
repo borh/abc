@@ -1478,6 +1478,8 @@ enum EstablishedInterpretation {
     LineLayout,
     Formula,
     Table,
+    Quotation,
+    Letter,
     LayoutBreak,
 }
 
@@ -1633,6 +1635,8 @@ impl EstablishedInterpretation {
             Self::LineLayout => "line-layout",
             Self::Formula => "formula",
             Self::Table => "table",
+            Self::Quotation => "quotation",
+            Self::Letter => "letter",
             Self::LayoutBreak => "layout-break",
         }
     }
@@ -1645,6 +1649,8 @@ impl EstablishedInterpretation {
             | Self::Translation
             | Self::ExternalTableReference
             | Self::Formula
+            | Self::Quotation
+            | Self::Letter
             | Self::GlyphShapeAssertion => &["structure"],
             Self::Ruby | Self::GaijiRuby | Self::TextVariant | Self::EditorialNote => {
                 &["content", "structure"]
@@ -1713,7 +1719,7 @@ fn node_interpretations(
     interpretation: EstablishedInterpretation,
     font_formatting: bool,
     layout_formatting: bool,
-) -> [Option<EstablishedInterpretation>; 5] {
+) -> [Option<EstablishedInterpretation>; 6] {
     [
         Some(interpretation),
         font_formatting.then_some(EstablishedInterpretation::Emphasis),
@@ -1724,6 +1730,15 @@ fn node_interpretations(
             && !node["indent"].is_null()
             && matches!(node["role"].as_str(), Some("table" | "figure-table")))
         .then_some(EstablishedInterpretation::Table),
+        // A quotation or letter role always arrives on a scope that also
+        // supplies indentation, so it is only ever the second claim of the two.
+        (node["kind"] == "layout_block")
+            .then(|| match node["role"].as_str() {
+                Some("quotation") => Some(EstablishedInterpretation::Quotation),
+                Some("letter") => Some(EstablishedInterpretation::Letter),
+                _ => None,
+            })
+            .flatten(),
     ]
 }
 
@@ -5600,6 +5615,8 @@ fn layout_fields(kind: &ProjectedKind) -> Option<Value> {
                 Some(BlockPurpose::FigureOrTable) => {
                     fields["role"] = json!("figure-table");
                 }
+                Some(BlockPurpose::Quotation) => fields["role"] = json!("quotation"),
+                Some(BlockPurpose::Letter) => fields["role"] = json!("letter"),
                 None => {}
             }
             if block.table_rules_absent {

@@ -3105,18 +3105,18 @@ priority = 2
 category = "structure"
 feature_keys = ["quote_block", "letter_block"]
 reference_sources = ["docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
-source_examples = ["［＃ここから引用文、３字下げ］", "［＃引用文終わり］", "［＃これより手紙文、１字下げ］"]
-source_patterns = ['［＃ここから引用文、[０-９0-9]+字下げ(、[０-９0-9]+行アキ)?］', '［＃(引用文終わり|ここで引用文終り|ここで引用文終わり)］', '［＃(これより|ここより|ここから)手紙文、[０-９0-9]+字下げ］', '［＃ここから引用文、[０-９0-9]+字下げ、[^］]+］']
-ir_nodes = ["Raw"]
-aat_nodes = ["raw"]
+source_examples = ["［＃ここから引用文、３字下げ］", "［＃引用文終わり］", "［＃これより手紙文、１字下げ］", "［＃ここから引用文、一字下げ］", "［＃引用、終わり］"]
+source_patterns = ['［＃(ここから|ここより|これより)(引用文|手紙文)、[^］]+］', '［＃(ここで)?引用文終わ?り］', '［＃引用、終わり］']
+ir_nodes = ["Raw", "Block::Layout"]
+aat_nodes = ["raw", "layout_block"]
 tei_projection = "quote or div type=letter"
 plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = ["block_scope_balance"]
-adapter_expectations = ["preserve raw quote/letter block marker until typed AAT/parser-IR support lands"]
+adapter_expectations = ["read the role clause the opener writes ahead of the measure, and keep the supplied indentation on the same scope", "close a quotation scope only on a closer that names the quotation role", "retain a supplied vertical gap or a line-subset exception as an unresolved clause"]
 oracle_cases = []
-status = "not_modeled"
-status_reason = "Aozora quote and letter block markers have TEI P5 projections, but AAT/parser-IR currently only preserve them as source-derived raw marker evidence."
+status = "partial"
+status_reason = "The opener states a role and an indentation measure; both are carried on one layout_block, with role quotation or letter beside the indent. A closer that names the role closes only a scope carrying it. What stays uninterpreted is recorded on the marker: a supplied vertical gap (３行アキ), a line-subset exception (はじめの「一」のみ２字下げ), and ［＃引用、終わり］, which names no scope keyword and opens nothing in the work it appears in."
 
 [syntax.parsers.aozora2]
 recognition = "unknown"
@@ -3158,10 +3158,10 @@ sample_works = []
 [syntax.representability]
 source_inventory_row = "structure.quote_block"
 status = "raw_preserved"
-aat_nodes = ["raw"]
+aat_nodes = ["raw", "layout_block"]
 raw_fallback = true
-evidence = "data/aat-schema.json:277"
-notes = "TEI can represent source quote and letter blocks as quote or typed div material. The reviewed v1 guarantee is source-derived raw marker preservation until typed AAT/parser-IR structure lands."
+evidence = "data/aat-schema.json:270"
+notes = "TEI takes the supplied role as the div type, so a quotation reads as div type=quotation and a letter as div type=letter, with the supplied indentation beside it. Nothing about the quoted passage's own source, or a letter's correspondents, is derived from the marker. A marker that carries a clause the role reading does not cover keeps that clause as retained source."
 
 [[syntax]]
 id = "structure.table"

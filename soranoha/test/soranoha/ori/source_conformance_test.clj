@@ -1322,6 +1322,34 @@
     (is (empty? (get-in result [:ir "interpretation_problems"])))
     (is (= 2 (count (filter #(= "formula" (get % "kind")) (get-in result [:ir "interpretation_facts"])))))))
 
+(deftest quotation-role-keeps-the-supplied-indentation-and-the-role
+  (let [result (transcribe (source "前。\n［＃ここから引用文、３字下げ］\n引いた文\n［＃引用文終わり］\n後。"))
+        quote-div (first (filter #(= "quotation" (attribute % "type")) (elements result "div")))]
+    (is (some? quote-div))
+    (is (= "padding-inline-start: 3em" (attribute quote-div "style")))
+    (is (= "前。\n引いた文\n後。" (:plaintext result)))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))
+    ;; The marker states two things about one scope, and is accountable for both.
+    (is (= 2 (count (filter #(= "quotation" (get % "kind")) (get-in result [:ir "interpretation_facts"])))))
+    (is (seq (filter #(= "line-layout" (get % "kind")) (get-in result [:ir "interpretation_facts"]))))))
+
+(deftest a-letter-scope-keeps-its-own-role
+  (let [result (transcribe (source "［＃これより手紙文、１字下げ］\n拝啓\n［＃ここで字下げ終わり］"))
+        letter (first (filter #(= "letter" (attribute % "type")) (elements result "div")))]
+    (is (some? letter))
+    (is (= "padding-inline-start: 1em" (attribute letter "style")))
+    (is (empty? (filter #(= "quotation" (attribute % "type")) (elements result "div"))))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest a-supplied-gap-inside-a-quotation-stays-retained-source
+  ;; The source states a three-line gap the enclosed lines do not carry.
+  ;; Executing it would add blank lines the source does not have.
+  (let [result (transcribe (source "［＃ここから引用文、３字下げ、３行アキ］\n引いた文\n［＃引用文終わり］"))
+        quote-div (first (filter #(= "quotation" (attribute % "type")) (elements result "div")))]
+    (is (some? quote-div))
+    (is (= "引いた文" (:plaintext result)))
+    (is (seq (get-in result [:ir "interpretation_problems"])))))
+
 (deftest supplied-table-role-preserves-indentation-and-source-lines
   (let [result (transcribe (source "前。\n［＃ここから１字下げ、表組み］\n王朝　　年代\n西漢　　元始二年\n［＃ここで字下げ終わり］\n後。"))
         table (first (filter #(= "table" (attribute % "type")) (elements result "div")))

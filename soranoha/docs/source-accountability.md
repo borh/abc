@@ -99,6 +99,10 @@ TEI retains supplied line counts as `rend="line-count(N)"` and placement between
 the physical left and right page edges as `rend="page-horizontal-center"`.
 Page placement and text alignment remain independent.
 Consecutive indentation instructions replace the preceding indentation scope.
+An indentation close that restates its measure, as `［＃１字下げここまで］` and
+`［＃１字下げ終わり］` do, ends the scope that measure opened. A restated
+measure that disagrees with the open leaves the pair unmatched rather than
+closing at a boundary the source did not name.
 Page placement ends before the next supplied page break, which remains in TEI.
 Frame styles and co-applied typography share the same formatting vocabulary on
 TEI `div` and `hi` scopes. Supplied solid and dashed rules retain their border
@@ -114,6 +118,18 @@ an explicit absence of table rules distinct from a marker that says nothing
 about them, and independent of any frame drawn around the scope. A base-edition
 table description remains source apparatus and is not executed as current
 formatting.
+A supplied quotation or letter role is read the same way when the source writes
+it ahead of the measure that scopes it, as `［＃ここから引用文、３字下げ］` and
+`［＃これより手紙文、１字下げ］` do. The role and the indentation are both
+retained on that one scope, and TEI records the role as `div type="quotation"`
+or `div type="letter"`. The two stay apart because the source spells them apart:
+a letter is a document the text reproduces, not a passage it quotes. Nothing
+about the quoted passage's own source, or a letter's correspondents, is derived
+from the marker. A quotation's close is matched only against a scope carrying
+that role, so a closer never ends a plain indentation scope and thereby report
+its lines as quoted matter. Clauses the role reading does not cover stay retained
+source: a supplied vertical gap such as `３行アキ`, and a line-subset exception
+such as `はじめの「一」のみ２字下げ`.
 Qualitative font comparisons preserve direction and any supplied `やや` or
 `ひとまわり` qualifier, without a numbered size level. TEI records these as
 `font-size qualitative(smaller)` or `font-size qualitative(larger)` and an

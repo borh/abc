@@ -208,7 +208,8 @@ pub enum IndentLayout {
 /// marker. The variants stay as far apart as the source spellings do: `表組み`
 /// says the lines are a table, `図表` says the scope is an exhibit without
 /// saying whether it is a diagram or a table, and folding the second onto the
-/// first would assert a table the source never named.
+/// first would assert a table the source never named. `引用文` and `手紙文` are
+/// kept apart for the same reason.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum BlockPurpose {
@@ -221,6 +222,14 @@ pub enum BlockPurpose {
     /// `図表`: the source designates the scope as a figure or table exhibit
     /// without choosing between them.
     FigureOrTable,
+    /// `引用文`: the source designates the enclosed lines as quoted matter.
+    /// Whose words they are, and where they were quoted from, are not stated by
+    /// the marker and are not derived from it.
+    Quotation,
+    /// `手紙文`: the source designates the enclosed lines as a letter. A letter
+    /// is a document the text reproduces rather than a passage it quotes, and
+    /// the source names which of the two it means, so the two stay apart.
+    Letter,
 }
 
 impl BlockPurpose {
@@ -233,6 +242,8 @@ impl BlockPurpose {
             Self::Formula => None,
             Self::Table => Some("表組み"),
             Self::FigureOrTable => Some("図表"),
+            Self::Quotation => Some("引用文"),
+            Self::Letter => Some("手紙文"),
         }
     }
 }

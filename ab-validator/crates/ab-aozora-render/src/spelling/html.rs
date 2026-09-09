@@ -392,6 +392,12 @@ fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::R
                 Some(ab_aozora_syntax::BlockPurpose::FigureOrTable) => {
                     writer.write_str(" aozora-container-figure-table")?;
                 }
+                Some(ab_aozora_syntax::BlockPurpose::Quotation) => {
+                    writer.write_str(" aozora-container-quotation")?;
+                }
+                Some(ab_aozora_syntax::BlockPurpose::Letter) => {
+                    writer.write_str(" aozora-container-letter")?;
+                }
                 None => {}
             }
             // The source states the table has no rules; nothing draws them, so

@@ -96,6 +96,13 @@
               :families #{"structure.formula"} :aspects #{"structure"}}
    "table" {:markers #{"CommandFullwidth" "CommandAscii"}
             :families #{"structure.table"} :aspects #{"structure" "layout"}}
+   ;; One family covers both roles: the source spells them apart (引用文 vs
+   ;; 手紙文) and the claims stay apart, but the coverage row is the one that
+   ;; scans for either marker.
+   "quotation" {:markers #{"CommandFullwidth" "CommandAscii"}
+                :families #{"structure.quote_block"} :aspects #{"structure"}}
+   "letter" {:markers #{"CommandFullwidth" "CommandAscii"}
+             :families #{"structure.quote_block"} :aspects #{"structure"}}
    "layout-break" {:markers #{"CommandFullwidth" "CommandAscii"}
                    :families #{"break.page_line" "break.line_explicit"} :aspects #{"structure" "layout"}}
    "warichu" {:markers #{"CommandFullwidth" "CommandAscii"}

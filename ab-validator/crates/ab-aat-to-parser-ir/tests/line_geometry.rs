@@ -216,3 +216,34 @@ fn an_exception_naming_the_lines_it_applies_to_stays_unresolved() {
         );
     }
 }
+
+#[test]
+fn a_close_that_restates_its_measure_ends_the_scope_that_measure_opened() {
+    for closer in ["１字下げここまで", "1字下げ終わり", "１字下げ終り"] {
+        let ir = convert(&format!(
+            "［＃これより手紙文、１字下げ］\n拝啓\n［＃{closer}］\n地の文"
+        ));
+        let scope = &ir["layout_blocks"][0];
+        assert_eq!(scope["indent"], 1, "{closer}");
+        assert_eq!(scope["role"], "letter", "{closer}");
+        assert_eq!(
+            ir["interpretation_problems"],
+            serde_json::json!([]),
+            "{closer}"
+        );
+        // The close is where the source put it: the following line is outside.
+        let end = scope["node_range"]["end"].as_u64().unwrap() as usize;
+        let inside = serde_json::to_string(&ir["nodes"].as_array().unwrap()[..end]).unwrap();
+        assert!(!inside.contains("地の文"), "{closer}: {inside}");
+    }
+}
+
+#[test]
+fn a_restated_measure_that_disagrees_with_the_open_does_not_close_it() {
+    // The measure on the close is the source's own statement of which scope it
+    // ends. Closing a scope it does not name would move the boundary to a place
+    // the source did not put it.
+    let ir = convert("［＃ここから１字下げ］\n本文\n［＃３字下げここまで］");
+    assert_eq!(ir["layout_blocks"], serde_json::json!([]));
+    assert!(!ir["interpretation_problems"].as_array().unwrap().is_empty());
+}

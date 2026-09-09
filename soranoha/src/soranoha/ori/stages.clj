@@ -56,7 +56,7 @@
   "Work ZIP (by content hash) -> primary text bytes + source facts."
   [clj-toolchain-id]
   {:stage-id "extract"
-   :stage-version "1"
+   :stage-version "2"
    :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob-path]} inputs]
         (let [inspection (source-bundle/inspect-zip
@@ -75,7 +75,7 @@
   (let [schemas {:metadata (schema/read-schema (str (fs/path assets-root "schemas/metadata-record.schema.json")))
                  :person (schema/read-schema (str (fs/path assets-root "schemas/person-record.schema.json")))}]
     {:stage-id "metadata"
-     :stage-version "3"
+     :stage-version "4"
      :toolchain-id (core-hash/sha256-canonical-json
                     {"clj" clj-toolchain-id
                      "metadata-schema" (core-hash/sha256-canonical-json (:metadata schemas))
@@ -147,7 +147,7 @@
     (throw (ex-info "render stage requires the publication rights grant"
                     {:reason :missing-rights-grant})))
   {:stage-id "render"
-   :stage-version "47"
+   :stage-version "48"
    :toolchain-id (core-hash/sha256-canonical-json
                   {"clj" clj-toolchain-id "rights" rights})
    :f (fn [{:keys [blob]} inputs]
@@ -168,14 +168,14 @@
           {"tei" (utf8 (:tei rendered))}))})
 
 (defn plaintext-stage [clj-toolchain-id]
-  {:stage-id "plaintext" :stage-version "6" :toolchain-id clj-toolchain-id
+  {:stage-id "plaintext" :stage-version "7" :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob]} inputs]
         (let [reading (view/from-tei (String. ^bytes (blob (get inputs "tei")) "UTF-8"))]
           {"plaintext" (utf8 (projection/plaintext reading))
            "plaintext-projection" (json-bytes (projection/report :projection/plaintext reading))}))})
 
 (defn markdown-stage [clj-toolchain-id]
-  {:stage-id "markdown" :stage-version "7" :toolchain-id clj-toolchain-id
+  {:stage-id "markdown" :stage-version "8" :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob]} inputs]
         (let [reading (view/from-tei (String. ^bytes (blob (get inputs "tei")) "UTF-8"))]
           {"markdown" (utf8 (projection/markdown reading))
@@ -189,7 +189,7 @@
   change must invalidate its traces."
   [clj-toolchain-id profile]
   {:stage-id "validate-tei"
-   :stage-version "3"
+   :stage-version "4"
    :toolchain-id (core-hash/sha256-canonical-json
                   {"clj" clj-toolchain-id
                    "odd" (core-hash/sha256-file (:odd profile))

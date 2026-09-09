@@ -1,11 +1,16 @@
 # Rights and licensing
 
-This is the full statement referenced by every signed release manifest as
-`rights.statement_url` and by every published TEI file as
+This is the full statement that every signed release manifest names in
+`rights.statement_url`, and that every published TEI file names inside
 `publicationStmt/availability`, in both cases as
-<https://w3id.org/soranoha/rights>, which redirects here. Those bytes are
-signed and cannot be corrected later, so they name an identifier rather than
-whichever host is serving the corpus.
+<https://w3id.org/soranoha/rights>. Those bytes are signed and cannot be
+corrected later, so they name an identifier rather than whichever host is
+serving the corpus.
+
+> **Not yet resolvable.** The `w3id.org/soranoha/` redirects are registered as
+> a precondition of public genesis, and are not registered yet: this URL and
+> the publisher identifier both return 404 today. They are stated here in
+> their final form because that form is what the signed bytes will name.
 
 ## The short version
 
@@ -25,10 +30,22 @@ A published work involves two distinct rights layers.
 Bunko](https://www.aozora.gr.jp/) whose copyright has expired. Soranoha
 neither holds nor claims any right in them. Aozora's own handling rules
 ([取り扱い規準](https://www.aozora.gr.jp/guide/kijyunn.html)) state that files
-for copyright-expired works may be freely copied, redistributed, shared
-(commercial and non-commercial alike), and modified, and that attribution is 希望, requested rather
-than required. Soranoha publishes only works its assessment finds free to
-publish; the reasoning is recorded in
+for copyright-expired works may be freely copied, redistributed and shared,
+whether for payment or not, and freely performed, recited and adapted, with
+nothing owed to Aozora in permission or fee. Altering the text itself is
+allowed within the scope of Article 20(2)(iv) of the Copyright Act, which is
+what covers converting the file format, changing notation, and modernising
+旧字旧仮名.
+
+Two things the rules ask for rather than require: that the credit block naming
+the work, its contributors, its 底本 and its 入力者 and 校正者 not be removed
+(希望), and that a change of 底本 or notation be accompanied by a record of what
+was changed (期待). Soranoha does both. The credit block survives into every TEI
+file's `<back>` and onto every work page, and every work is published with its
+validation report and its recorded divergences from the source.
+
+Soranoha publishes only works its assessment finds free to publish; the
+reasoning is recorded in
 [`soranoha/docs/evidence/aozora-rights-source-contract.md`](../soranoha/docs/evidence/aozora-rights-source-contract.md).
 
 **Soranoha's encoding** (TEI markup, plaintext and Markdown
@@ -54,6 +71,7 @@ citation rather than enforced as a licence condition.
 | Protocol JSON Schemas: `soranoha/resources/snh/schemas/` | [CC0-1.0](../LICENSE-CC0) | Repository |
 | Locally authored source code | [Apache-2.0](../LICENSE) | Repository |
 | Forked parser core, eight crates | MIT OR Apache-2.0 | `ab-validator/crates/`, listed below |
+| Third-party data tables | Their own terms, in each file's header | `ab-validator/crates/*/data/` |
 
 The encoding vocabulary and protocol schemas are dedicated under CC0 so that
 independent implementations can adopt them without attribution obligations. The
@@ -66,6 +84,13 @@ The forked crates are the exception, and not a second choice. Upstream is
 dual-licensed, so those eight carry `MIT OR Apache-2.0` as an inherited
 obligation. Each states it in its own manifest rather than taking the
 workspace default.
+
+The data tables the tooling reads are third-party work under their own terms,
+each stated in the file's own header rather than gathered here, so a table
+stays interpretable when it is copied out on its own. The 外字注記辞書 mapping
+is CC0 through an upstream transcription; the JIS X 0213 table is Project
+X0213's, under its own permissive grant. Redistributing the tooling carries
+those headers with it.
 
 ## The toolchain
 
@@ -149,8 +174,11 @@ card, and the basis of the claim. A claim does not need to be a formal legal
 notice to be acted on.
 
 Withdrawal is recorded in public governance events rather than in-place modification.
-A signed event carries a `reason_code` (`rights` for a subsisting-rights claim,
-`takedown-request` for other grounds) and a public `statement`. The next release then:
+A signed event carries a public `statement` and one of four `reason_code`
+values. Two of them are for claims: `rights` for a subsisting-rights claim, and
+`takedown-request` for a removal asked for on other grounds. The other two,
+`data-defect` and `other`, exist for withdrawals that are not claims. The next
+release then:
 
 - removes the work from `works[]`, so its artifacts are no longer served at
   `/works/<identifier>/`;

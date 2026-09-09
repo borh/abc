@@ -1,9 +1,11 @@
 # w3id.org/soranoha registration
 
 Soranoha's published TEI declares the namespace `https://w3id.org/soranoha/ns/tei`,
-and its record schemas are identified under `https://w3id.org/soranoha/schemas/`.
-Those IRIs are in signed, content-addressed bytes, so they must stay stable
-independently of where the project is served. This directory holds the files
+its record schemas are identified under `https://w3id.org/soranoha/schemas/`,
+and every release manifest and TEI file names the rights statement as
+`https://w3id.org/soranoha/rights`. Those IRIs are in signed,
+content-addressed bytes, so they must stay stable independently of where the
+project is served. This directory holds the files
 submitted to [perma-id/w3id.org](https://github.com/perma-id/w3id.org) to make
 them resolve, kept here because the redirect map is a permanent commitment of
 the project rather than a one-time chore.
@@ -18,6 +20,7 @@ path, plus a bare `/soranoha/`:
 | Prefix | Denotes |
 |---|---|
 | `/soranoha/ns/` | TEI extension vocabulary namespaces |
+| `/soranoha/rights` | The published rights statement |
 | `/soranoha/schemas/` | Record schema identifiers embedded in published records |
 | `/soranoha/works/` | Landing pages for published works |
 
@@ -29,4 +32,6 @@ of an indirection service.
 
 Register `soranoha.org` and make it resolve before opening the pull request, so
 review does not encounter a dead redirect target. `https://w3id.org/soranoha/ns/tei`
-must resolve before genesis, because the IRI is already in published bytes.
+must resolve before genesis, because the IRI is already in published bytes,
+and so must `https://w3id.org/soranoha/rights`, which every manifest and every
+TEI file names.

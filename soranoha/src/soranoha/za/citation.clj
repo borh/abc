@@ -36,8 +36,9 @@
 (def ^:private site-origin
   "The origin a citation's landing-page URL points at.
 
-  The permanent identifier `w3id.org/soranoha/works/<id>` is registered for
-  exactly this and would survive a change of serving location, but it
+  The permanent identifier `w3id.org/soranoha/works/<id>` is claimed for
+  exactly this in the registration prepared under `docs/w3id/`, and would
+  survive a change of serving location, but it
   resolves only by redirecting here, and the citation already carries two
   identifiers that outlive the site: the work identifier and the release DOI.
   A second indirection on the convenience field would buy nothing and add a

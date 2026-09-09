@@ -402,7 +402,7 @@ reject a HEAD not matching a valid chain head):
   `entries` slugs exactly; each added `withdrawn[slug].event` equals
   this manifest's `governance_event`; unaffected `works` entries
   verbatim; publication coordinates (corpus, toolchain, admission,
-  selection_params) equal the predecessor's; the only `works` changes
+  selection_params, rights) equal the predecessor's; the only `works` changes
   are the affected slugs' removals.
 - kind `event-amendment` ⇒ changed `withdrawn` slugs equal
   the event's `entries` slugs exactly; for each, `amends ==
@@ -470,7 +470,7 @@ comparison against an independently obtained head or checkpoint.
    - Fetch and FULLY VERIFY the new accepted head; DISCARD the
      assembled M.
    - **Build:** recompute the desired projection `{corpus, toolchain,
-     selection_params, admission}`.
+     selection_params, admission, rights}`.
      - Projection DIFFERS from the head's → REQUEUE an ordinary build
        from the head. (The fresh build inherits the head's `withdrawn` by
        construction; a stale loser is never blindly published.)
@@ -491,8 +491,9 @@ comparison against an independently obtained head or checkpoint.
      an event.
 
 Scheduled-build no-op: publish only when the projection
-`{corpus, toolchain, selection_params, admission}` differs from the current
-head. The repeated build still checks inputs and determinism before converging.
+`{corpus, toolchain, selection_params, admission, rights}` differs from the
+current head. The repeated build still checks inputs and determinism before
+converging.
 Governance state is inherited and excluded from this projection.
 
 Nondeterministic output under identical coordinates HALTS as a

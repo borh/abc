@@ -156,7 +156,7 @@ result to be exactly reproducible, cite both.
   <styleDefDecl scheme="css"/>
   <classDecl>
     <taxonomy xml:id="ndc"><bibl>日本十進分類法 (Nippon Decimal Classification), as recorded by <title>青空文庫</title> in its 分類番号 field.</bibl></taxonomy>
-    <taxonomy xml:id="aozora-orthography"><bibl><title>青空文庫</title> 文字遣い種別: the orthographic style Aozora Bunko records for the transcription. An upstream classification, not a Soranoha judgement.</bibl></taxonomy>
+    <taxonomy xml:id="aozora-orthography"><bibl><title>青空文庫</title> 文字遣い種別: the orthographic style Aozora Bunko records for the transcription.</bibl></taxonomy>
   </classDecl>
   <charDecl>
     <char xml:id="gaiji-3-1-87-71">

@@ -237,13 +237,13 @@
   "The taxonomies the text classification points at, declared rather than
   named by a bare string, so a reader can tell who classified the work.
 
-  Both are upstream assertions recorded as such. Aozora assigns the NDC code
-  and the orthographic style; neither is a Soranoha judgement, and the
-  distinction matters most for 文字遣い種別, which is populated for every work
-  and partitions the corpus into 新字新仮名, 新字旧仮名, 旧字旧仮名,
-  旧字新仮名 and その他. A historical-kana study that silently mixes those is
-  invalid, and the value varies within one series — 銭形平次捕物控 001 to 004
-  are 旧字旧仮名 while 005 is 新字新仮名."
+  Aozora assigns both the NDC code and the orthographic style. Declaring the
+  taxonomies is what carries that provenance to a reader, and it matters most
+  for 文字遣い種別, which is populated for every work and partitions the corpus
+  into 新字新仮名, 新字旧仮名, 旧字旧仮名, 旧字新仮名 and その他. A
+  historical-kana study that silently mixes those is invalid, and the value
+  varies within one series: 銭形平次捕物控 001 to 004 are 旧字旧仮名 while 005
+  is 新字新仮名."
   [:classDecl
    [:taxonomy {:xml/id "ndc"}
     [:bibl "日本十進分類法 (Nippon Decimal Classification), as recorded by "
@@ -251,7 +251,7 @@
    [:taxonomy {:xml/id "aozora-orthography"}
     [:bibl [:title "青空文庫"]
      " 文字遣い種別: the orthographic style Aozora Bunko records for the "
-     "transcription. An upstream classification, not a Soranoha judgement."]]])
+     "transcription."]]])
 
 (defn- encoding-desc [declarations]
   (cond-> [:encodingDesc [:styleDefDecl {:scheme "css"}] class-decl]

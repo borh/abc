@@ -160,6 +160,7 @@ enum BodyFamily {
     AlignEndBlockParamPrefix, // ここから地から → ここから地から{N}字上げ
     IndentCompoundBlockEnd,   // ここで字下げ、 + supplied width or presentation
     QuoteBlockEnd,            // 引用文終わり / ここで引用文終り
+    LineAlignEndCompound,     // この行、下揃え、下から{N}字上げ、…
     OkuriganaPrefix,          // （ → kaeriten okurigana （X）
 
     // === Body-equals-pattern then parse from body[0] ===
@@ -272,6 +273,7 @@ const fn body_family_mode(family: BodyFamily) -> MatchMode {
         | BodyFamily::IndentBlockEnd
         | BodyFamily::IndentCompoundBlockEnd
         | BodyFamily::QuoteBlockEnd
+        | BodyFamily::LineAlignEndCompound
         | BodyFamily::TableBlockOpen
         | BodyFamily::TableBlockEnd
         | BodyFamily::ParamBlockEnd
@@ -682,6 +684,17 @@ static BODY_PATTERNS: &[BodyPattern] = &[
     BodyPattern {
         needle: "この行はゴシック体",
         family: BodyFamily::LineGothic,
+    },
+    // The line-scoped foot alignment written as a clause list, which is the
+    // only spelling that carries a type size beside the measure. Both needles
+    // lose to the longer `この行はゴシック体` and `この行は行末より` above.
+    BodyPattern {
+        needle: "この行、",
+        family: BodyFamily::LineAlignEndCompound,
+    },
+    BodyPattern {
+        needle: "この行はポイント",
+        family: BodyFamily::LineAlignEndCompound,
     },
     // Absolute font-size line directives (`大文字` … `特大文字、太字`). All four
     // size keywords anchor `LineFontSize`; `parse_line_font_size` re-reads the
@@ -1286,6 +1299,7 @@ pub(super) fn classify_annotation_body(
             EmitKind::Aozora(alloc.line(LineFormat::AlignEnd {
                 offset: 0,
                 gothic: false,
+                font: None,
             })),
             None,
         )),
@@ -1420,6 +1434,8 @@ pub(super) fn classify_annotation_body(
         }
         BodyFamily::FormulaBlockOpen => Some((EmitKind::BlockOpen(RegionFormat::Formula), None)),
         BodyFamily::FormulaBlockEnd => Some((EmitKind::BlockClose(RegionClose::Formula), None)),
+        BodyFamily::LineAlignEndCompound => parse_line_align_end_compound(body)
+            .map(|line| (EmitKind::Aozora(alloc.line(line)), None)),
         BodyFamily::TableBlockOpen => parse_table_open(body, source, alloc)
             .map(|block| (EmitKind::BlockOpen(RegionFormat::Table(block)), None)),
         BodyFamily::TableBlockEnd => {
@@ -1546,6 +1562,7 @@ pub(super) fn classify_annotation_body(
                         EmitKind::Aozora(alloc.line(LineFormat::AlignEnd {
                             offset: n,
                             gothic: false,
+                            font: None,
                         })),
                         None,
                     )
@@ -1558,6 +1575,7 @@ pub(super) fn classify_annotation_body(
                 EmitKind::Aozora(alloc.line(LineFormat::AlignEnd {
                     offset,
                     gothic: false,
+                    font: None,
                 })),
                 None,
             ))
@@ -1577,6 +1595,7 @@ pub(super) fn classify_annotation_body(
                 EmitKind::Aozora(alloc.line(LineFormat::AlignEnd {
                     offset,
                     gothic: true,
+                    font: None,
                 })),
                 None,
             ))
@@ -2534,6 +2553,72 @@ fn with_supplied_role(open: EmitKind, role: Option<BlockPurpose>) -> Option<Emit
         }
         _ => None,
     }
+}
+
+/// Read a line-scoped foot alignment written as a clause list.
+///
+/// `この行、下揃え、下から５字上げ、相対的に字が小さい` and
+/// `この行はポイントを下げて、地より２字上げ` state the same things in different
+/// words: the line sits against the foot edge, lifted by a measure, in type the
+/// source calls smaller. No magnitude is derived for the size, because the
+/// source states a direction and no degree.
+///
+/// A clause naming a target (`「…」は地より{N}字上げ`), or left truncated to a
+/// bare `は` with the target gone, is not read: the marker would then be about a
+/// piece of the line rather than the line, and which piece is not something the
+/// marker settles.
+fn parse_line_align_end_compound(body: &str) -> Option<LineFormat> {
+    let clauses = body
+        .strip_prefix("この行、")
+        .or_else(|| body.strip_prefix("この行は"))?;
+    let mut aligned = false;
+    let mut offset = None;
+    let mut font = None;
+    for clause in clauses.split('、') {
+        match clause {
+            // `下揃え` names the foot alignment this line form already is. It
+            // adds nothing to the measure clause beside it, and on its own it
+            // is the flush `地付き` the measure would otherwise lift off.
+            "下揃え" => aligned = true,
+            "相対的に字が小さい" | "ポイントを下げて" | "ポイントを下げ" => {
+                if font.replace(QualitativeFontSize::Smaller).is_some() {
+                    return None;
+                }
+            }
+            // The block clause spellings, which the serializer writes back for
+            // the sizes no marker here supplies.
+            "字のポイントはやや小さくしてある。" => {
+                if font.replace(QualitativeFontSize::SlightlySmaller).is_some() {
+                    return None;
+                }
+            }
+            "本文よりひとまわり大きい" => {
+                if font
+                    .replace(QualitativeFontSize::HitomawariLarger)
+                    .is_some()
+                {
+                    return None;
+                }
+            }
+            _ => {
+                let rest = clause
+                    .strip_prefix("下から")
+                    .or_else(|| clause.strip_prefix("地より"))?;
+                let (supplied, tail) = parse_layout_count_prefix(rest)?;
+                if supplied == 0
+                    || !matches!(tail, "字上げ" | "字上")
+                    || offset.replace(supplied).is_some()
+                {
+                    return None;
+                }
+            }
+        }
+    }
+    (aligned || offset.is_some()).then(|| LineFormat::AlignEnd {
+        offset: offset.unwrap_or(0),
+        gothic: false,
+        font,
+    })
 }
 
 /// Read a standalone table opener into the role and whatever the source names

@@ -1137,6 +1137,34 @@
     (is (not-any? #(not (string/blank? (attribute % "target"))) (elements result "note")))
     (is (= 2 (count (get-in result [:ir "interpretation_problems"]))))))
 
+(deftest a-line-foot-measure-holds-a-size-the-source-gives-no-degree-for
+  (doseq [[body offset] [["この行、下揃え、下から５字上げ、相対的に字が小さい" 5]
+                         ["この行はポイントを下げて、地より２字上げ" 2]]]
+    (let [result (transcribe (source (str "香港にて［＃" body "］")))
+          styled (first (filter #(string/includes? (attribute % "rend") "font-size qualitative")
+                                (elements result "div")))]
+      (is (some? styled) body)
+      (when styled
+        (let [rend (attribute styled "rend")
+              style (attribute styled "style")]
+          ;; The measure and the size are separate axes supplied by the one
+          ;; marker, so neither may displace the other.
+          (is (string/includes? rend "qualitative(smaller)") body)
+          (is (string/includes? style (str "padding-inline-end: " offset "em")) body)
+          (is (string/includes? style "text-align: right") body)
+          ;; The source states a direction and no degree, so no stage is invented.
+          (is (not (string/includes? rend "qualifier(")) body)))
+      (is (not (string/includes? (:tei result) "level=1")) body)
+      (is (= "香港にて" (:plaintext result)) body)
+      (is (empty? (get-in result [:ir "interpretation_problems"])) body))))
+
+(deftest a-line-measure-naming-a-target-stays-source-apparatus
+  ;; The marker is about a piece of the line rather than the line, and which
+  ;; piece is not something it settles.
+  (let [result (transcribe (source "香港にて［＃この行はポイントを下げ、「昔の武蔵野今は東京府下」は地より１１字上げ］"))]
+    (is (= "香港にて" (:plaintext result)))
+    (is (seq (get-in result [:ir "interpretation_problems"])))))
+
 (deftest qualitative-font-size-preserves-supplied-degree-without-numeric-stages
   (doseq [[clause direction qualifier]
           [["小さい活字" "smaller" nil]

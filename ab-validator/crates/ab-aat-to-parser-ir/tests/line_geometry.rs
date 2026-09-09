@@ -301,3 +301,61 @@ fn a_close_naming_scopes_no_block_opened_stays_unresolved() {
         ir["interpretation_problems"]
     );
 }
+
+#[test]
+fn a_line_holds_a_foot_measure_beside_a_size_the_source_gives_no_degree_for() {
+    for (body, offset) in [
+        ("この行、下揃え、下から５字上げ、相対的に字が小さい", 5),
+        ("この行はポイントを下げて、地より２字上げ", 2),
+    ] {
+        let ir = convert(&format!("香港にて［＃{body}］"));
+        let scope = &ir["layout_blocks"][0];
+        assert_eq!(scope["align"], "right", "{body}");
+        assert_eq!(scope["offset_from_end"], offset, "{body}");
+        assert_eq!(scope["typography"]["size_type"], "qualitative", "{body}");
+        assert_eq!(scope["typography"]["direction"], "smaller", "{body}");
+        // The source states a direction and no degree; none is derived.
+        assert!(scope["typography"].get("level").is_none(), "{body}");
+        assert_eq!(
+            ir["interpretation_problems"],
+            serde_json::json!([]),
+            "{body}"
+        );
+    }
+}
+
+#[test]
+fn a_foot_measure_naming_a_target_stays_unresolved() {
+    // The marker is then about a piece of the line rather than the line, and
+    // which piece is not something it settles. The truncated forms have lost
+    // the target entirely and leave a bare `は` with nothing before it.
+    for body in [
+        "この行はポイントを下げ、「昔の武蔵野今は東京府下」は地より１１字上げ",
+        "この行はポイントを下げ、は地より７字上げ",
+        "この行はポイントを上げ、は地より３字上げ",
+        // The spacing clause names 名前の部分 without locating it, and a line
+        // format holds no spacing for a part of the line it does not identify.
+        "この行は下揃え一字上げ、名前の部分は一字毎に空きあり",
+    ] {
+        let ir = convert(&format!("香港にて［＃{body}］"));
+        assert_eq!(ir["layout_blocks"], serde_json::json!([]), "{body}");
+        assert!(
+            !ir["interpretation_problems"].as_array().unwrap().is_empty(),
+            "{body}"
+        );
+    }
+}
+
+#[test]
+fn a_marker_that_changes_treatment_inside_its_own_line_stays_unresolved() {
+    // `この行ここまで…、ここからは…` ends one treatment and begins another at
+    // the marker's own position. A line format scopes a whole line and holds no
+    // boundary inside one, so reading it would move the boundary to a place the
+    // source did not put it.
+    let ir = convert(
+        "七月　日［＃この行ここまで相対的に字が小さい、ここからは下揃え、下から３字上げ］武　男",
+    );
+    assert_eq!(ir["layout_blocks"], serde_json::json!([]));
+    let text = serde_json::to_string(&ir["nodes"]).unwrap();
+    assert!(text.contains("ここまで相対的に字が小さい"), "kept: {text}");
+}

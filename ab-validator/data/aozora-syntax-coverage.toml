@@ -2729,7 +2729,7 @@ tei_projection = "p rend=chitsuki"
 plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = ["block_scope_balance"]
-adapter_expectations = ["preserve right-alignment magnitude and scope"]
+adapter_expectations = ["preserve right-alignment magnitude and scope", "hold a qualitative type size beside a line-scoped foot measure without deriving a magnitude for it"]
 oracle_cases = ["indentation.chitsuki.line"]
 status = "needs_research"
 status_reason = "right-alignment / jiage; not currently surfaced beyond indentation.basic"

@@ -74,21 +74,10 @@ pub(crate) fn emit_line<W: Write>(lf: LineFormat, out: &mut W) -> fmt::Result {
             end_offset: None,
         } => write!(out, "［＃{amount}字下げ］"),
         LineFormat::AlignEnd {
-            offset: 0,
-            gothic: false,
-        } => out.write_str("［＃地付き］"),
-        LineFormat::AlignEnd {
             offset,
-            gothic: false,
-        } => write!(out, "［＃地から{offset}字上げ］"),
-        LineFormat::AlignEnd {
-            offset: 0,
-            gothic: true,
-        } => out.write_str("［＃ゴシック体、地付き］"),
-        LineFormat::AlignEnd {
-            offset,
-            gothic: true,
-        } => write!(out, "［＃ゴシック体、地付き、地より{offset}字あげ］"),
+            gothic,
+            font,
+        } => emit_line_align_end(offset, gothic, font, out),
         LineFormat::Center { page: true } => out.write_str("［＃ページの左右中央］"),
         LineFormat::Center { page: false } => out.write_str("［＃中央揃え］"),
         LineFormat::Framed(_) => out.write_str("［＃罫囲み］"),
@@ -400,6 +389,49 @@ fn emit_block_styles<W: Write>(styles: BlockStyles, out: &mut W) -> fmt::Result 
         })?;
     }
     Ok(())
+}
+
+/// The line-clause spelling of a qualitative size supplied beside a foot
+/// measure.
+///
+/// Only `Smaller` is reachable from the classifier: every marker that states a
+/// size beside a foot measure says the type is smaller and none says by how
+/// much. The other two keep the block-clause spellings they already have, which
+/// the same clause list reads, so the round trip stays closed if a source ever
+/// supplies one.
+const fn line_qualitative_word(size: ab_aozora_syntax::QualitativeFontSize) -> &'static str {
+    use ab_aozora_syntax::QualitativeFontSize;
+    match size {
+        QualitativeFontSize::Smaller => "相対的に字が小さい",
+        QualitativeFontSize::SlightlySmaller => "字のポイントはやや小さくしてある。",
+        QualitativeFontSize::HitomawariLarger => "本文よりひとまわり大きい",
+    }
+}
+
+/// Write a line-scoped foot alignment back.
+///
+/// A supplied size can only be written as the clause list, because that is the
+/// only spelling the classifier reads one from; the bare `地付き` forms have
+/// nowhere to put it.
+fn emit_line_align_end<W: Write>(
+    offset: u8,
+    gothic: bool,
+    font: Option<ab_aozora_syntax::QualitativeFontSize>,
+    out: &mut W,
+) -> fmt::Result {
+    if let Some(font) = font {
+        out.write_str("［＃この行、下揃え")?;
+        if offset != 0 {
+            write!(out, "、下から{offset}字上げ")?;
+        }
+        return write!(out, "、{}］", line_qualitative_word(font));
+    }
+    match (offset, gothic) {
+        (0, false) => out.write_str("［＃地付き］"),
+        (offset, false) => write!(out, "［＃地から{offset}字上げ］"),
+        (0, true) => out.write_str("［＃ゴシック体、地付き］"),
+        (offset, true) => write!(out, "［＃ゴシック体、地付き、地より{offset}字あげ］"),
+    }
 }
 
 /// 小書き side keyword: `右` / `左`.

@@ -138,6 +138,14 @@ that role, so a closer never ends a plain indentation scope and thereby report
 its lines as quoted matter. Clauses the role reading does not cover stay retained
 source: a supplied vertical gap such as `３行アキ`, and a line-subset exception
 such as `はじめの「一」のみ２字下げ`.
+A line-scoped foot measure can carry a qualitative type size beside it, as
+`［＃この行、下揃え、下から５字上げ、相対的に字が小さい］` and
+`［＃この行はポイントを下げて、地より２字上げ］` do. The measure and the size are
+retained on the same line, and no magnitude is derived for the size: the source
+states a direction and no degree. A marker that names a target for the measure,
+or that has lost its target and leaves a bare `は`, stays retained source, and so
+does one that changes treatment at its own position inside the line rather than
+stating the whole line's.
 Qualitative font comparisons preserve direction and any supplied `やや` or
 `ひとまわり` qualifier, without a numbered size level. TEI records these as
 `font-size qualitative(smaller)` or `font-size qualitative(larger)` and an

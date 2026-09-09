@@ -772,6 +772,11 @@ pub enum LineFormat {
         offset: u8,
         /// A supplied Gothic typeface co-applied to the same line target.
         gothic: bool,
+        /// A qualitative type size co-applied to the same line target.
+        ///
+        /// The source states a direction (`相対的に字が小さい`,
+        /// `ポイントを下げて`) and no degree, so no magnitude is derived from it.
+        font: Option<QualitativeFontSize>,
     },
     /// `中央揃え` / `ページの左右中央`: centring.
     Center {

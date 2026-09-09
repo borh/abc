@@ -299,6 +299,7 @@ mod tests {
             a.line(LineFormat::AlignEnd {
                 offset: 0,
                 gothic: false,
+                font: None,
             }),
             &mut nodes,
         );
@@ -306,6 +307,7 @@ mod tests {
             a.line(LineFormat::AlignEnd {
                 offset: 2,
                 gothic: false,
+                font: None,
             }),
             &mut nodes,
         );

@@ -39,7 +39,8 @@ use ab_aozora_facade::{
 // drift from the parser's own cut.
 use ab_aozora_facade::syntax::{
     AbsoluteSize, BlockPurpose, BlockStyles, CaptionScope, EnclosureKind, HeadingStyle,
-    IndentLayout, LineAlignment, LineFormat, MarginNoteKind, MarginNotePosition, RelativePlacement,
+    IndentBlock, IndentLayout, LineAlignment, LineFormat, MarginNoteKind, MarginNotePosition,
+    RelativePlacement,
     accent::{compose_accent, compose_accent_dots, decompose_fragment},
     ast::{ContainerEnd, ContainerPair, Content, IterationMark, KuntenKind, Ruby, Segment},
 };
@@ -5607,50 +5608,60 @@ fn apply_block_styles(fields: &mut Value, block: BlockStyles) -> Option<()> {
     Some(())
 }
 
+/// The fields one indentation scope's own clauses supply.
+///
+/// Split out of [`layout_fields`] because the indentation marker carries more
+/// independent axes than every other scope put together; keeping them here
+/// leaves the dispatch above readable as the list of scopes it is.
+fn indent_layout_fields(fields: &mut Value, block: &IndentBlock) -> Option<()> {
+    match block.purpose {
+        Some(BlockPurpose::Formula) => fields["role"] = json!("formula"),
+        Some(BlockPurpose::Table) => fields["role"] = json!("table"),
+        Some(BlockPurpose::FigureOrTable) => {
+            fields["role"] = json!("figure-table");
+        }
+        Some(BlockPurpose::Quotation) => fields["role"] = json!("quotation"),
+        Some(BlockPurpose::Letter) => fields["role"] = json!("letter"),
+        None => {}
+    }
+    if block.table_rules_absent {
+        fields["table_rules"] = json!(false);
+    }
+    if let Some(columns) = block.column_count {
+        fields["column_count"] = json!(columns.0.get());
+    }
+    fields["indent"] = json!(block.amount);
+    if let Some(wrap) = block.wrap {
+        fields["continuation_indent"] = json!(wrap);
+    }
+    if block.page_horizontal_center {
+        fields["page_placement"] = json!("horizontal-center");
+    }
+    match block.align {
+        Some(LineAlignment::Center) => fields["align"] = json!("center"),
+        Some(LineAlignment::Right) => fields["align"] = json!("right"),
+        None => {}
+    }
+    if let Some(offset) = block.end_offset {
+        fields["offset_from_end"] = json!(offset);
+    }
+    match block.layout {
+        IndentLayout::None => {}
+        IndentLayout::LineWidth(width) => fields["width"] = json!(width.0.get()),
+        IndentLayout::Kumi(kumi) => {
+            fields["width"] = json!(kumi.width.get());
+            fields["line_count"] = json!(kumi.lines.get());
+        }
+    }
+    apply_block_styles(fields, block.styles)?;
+    Some(())
+}
+
 fn layout_fields(kind: &ProjectedKind) -> Option<Value> {
     let mut fields = json!({});
     match kind {
         ProjectedKind::Region(RegionFormat::Indent(block)) => {
-            match block.purpose {
-                Some(BlockPurpose::Formula) => fields["role"] = json!("formula"),
-                Some(BlockPurpose::Table) => fields["role"] = json!("table"),
-                Some(BlockPurpose::FigureOrTable) => {
-                    fields["role"] = json!("figure-table");
-                }
-                Some(BlockPurpose::Quotation) => fields["role"] = json!("quotation"),
-                Some(BlockPurpose::Letter) => fields["role"] = json!("letter"),
-                None => {}
-            }
-            if block.table_rules_absent {
-                fields["table_rules"] = json!(false);
-            }
-            if let Some(columns) = block.column_count {
-                fields["column_count"] = json!(columns.0.get());
-            }
-            fields["indent"] = json!(block.amount);
-            if let Some(wrap) = block.wrap {
-                fields["continuation_indent"] = json!(wrap);
-            }
-            if block.page_horizontal_center {
-                fields["page_placement"] = json!("horizontal-center");
-            }
-            match block.align {
-                Some(LineAlignment::Center) => fields["align"] = json!("center"),
-                Some(LineAlignment::Right) => fields["align"] = json!("right"),
-                None => {}
-            }
-            if let Some(offset) = block.end_offset {
-                fields["offset_from_end"] = json!(offset);
-            }
-            match block.layout {
-                IndentLayout::None => {}
-                IndentLayout::LineWidth(width) => fields["width"] = json!(width.0.get()),
-                IndentLayout::Kumi(kumi) => {
-                    fields["width"] = json!(kumi.width.get());
-                    fields["line_count"] = json!(kumi.lines.get());
-                }
-            }
-            apply_block_styles(&mut fields, block.styles)?;
+            indent_layout_fields(&mut fields, block)?;
         }
         ProjectedKind::Region(RegionFormat::Horizontal(presentation))
             if presentation.align.is_some() =>
@@ -5680,12 +5691,23 @@ fn layout_fields(kind: &ProjectedKind) -> Option<Value> {
             fields["align"] = json!("right");
             fields["offset_from_end"] = json!(offset);
         }
-        ProjectedKind::Line(LineFormat::AlignEnd { offset, gothic }) => {
+        ProjectedKind::Line(LineFormat::AlignEnd {
+            offset,
+            gothic,
+            font,
+        }) => {
             fields["align"] = json!("right");
             fields["offset_from_end"] = json!(offset);
-            if *gothic {
-                fields["formatting"] = formatting_fields(ForwardAttr::Gothic)?;
-            }
+            // The size and the typeface are separate statements about the same
+            // line; either can be supplied without the other.
+            apply_block_styles(
+                &mut fields,
+                BlockStyles {
+                    gothic: *gothic,
+                    font: *font,
+                    ..BlockStyles::EMPTY
+                },
+            )?;
         }
         ProjectedKind::Line(LineFormat::Center { page }) => {
             fields[if *page { "page_placement" } else { "align" }] =

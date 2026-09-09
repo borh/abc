@@ -695,13 +695,24 @@ pub(crate) fn render_line<W: Write>(lf: LineFormat, writer: &mut W) -> fmt::Resu
             writer,
             r#"<span class="aozora-indent aozora-indent-{amount} aozora-align-end aozora-align-end-{offset}" data-amount="{amount}" data-offset="{offset}"></span>"#,
         ),
-        LineFormat::AlignEnd { offset, gothic } => {
+        LineFormat::AlignEnd {
+            offset,
+            gothic,
+            font,
+        } => {
             writer.write_str(r#"<span class="aozora-align-end"#)?;
             if offset != 0 {
                 write!(writer, " aozora-align-end-{offset}")?;
             }
             if gothic {
                 writer.write_str(" aozora-line-goshikku")?;
+            }
+            if let Some(font) = font {
+                write!(
+                    writer,
+                    " aozora-font-{}",
+                    if font.larger() { "larger" } else { "smaller" }
+                )?;
             }
             write!(writer, r#"" data-offset="{offset}"></span>"#)
         }

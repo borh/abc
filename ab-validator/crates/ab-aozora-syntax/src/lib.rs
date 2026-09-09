@@ -744,11 +744,13 @@ mod tests {
         assert!(matches!(
             LineFormat::AlignEnd {
                 offset: 0,
-                gothic: false
+                gothic: false,
+                font: None
             },
             LineFormat::AlignEnd {
                 offset: 0,
-                gothic: false
+                gothic: false,
+                font: None
             }
         ));
         assert!(matches!(

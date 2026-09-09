@@ -73,6 +73,39 @@
     (is (empty? (get-in report ["occurrences" 1 "claims"])))
     (is (= ["emphasis.basic"] (get-in report ["occurrences" 1 "unaccounted_families"])))))
 
+(deftest published-coverage-keeps-the-exceptions-and-the-total-they-came-from
+  (let [marker (fn [start end] {"source_span" (span start end)
+                                "kind" "CommandFullwidth" "region" "body"
+                                "families" ["emphasis.basic"]})
+        fact (fn [start end] {"source_span" (span start end) "kind" "emphasis"
+                              "outcome" "established" "aspects" ["layout"]})
+        report (accountability/coverage-report
+                (oracle [(marker 15 30) (marker 0 9)])
+                (interpretation [(fact 0 9)]))
+        published (accountability/published-coverage report)]
+    (is (= "soranoha-interpretation-coverage/2" (get published "schema")))
+    (is (= 2 (get published "occurrence_count"))
+        "both occurrences are counted, whether or not either is listed")
+    (is (= [15] (mapv #(get-in % ["source_span" "start"])
+                      (get published "unaccounted_occurrences")))
+        "only the occurrence no claim accounted for is listed")
+    (is (nil? (get published "occurrences"))
+        "the claimed occurrences are visible as @source on the elements they produced")
+    (is (= {"interpreter_claimed" 1 "unaccounted" 1}
+           (get-in published ["families" "emphasis.basic"]))
+        "the family counts still cover every occurrence")
+    (is (= 0 (get published "unclassified_occurrence_count")))))
+
+(deftest published-coverage-lists-an-unclassified-occurrence
+  (let [unknown {"source_span" (span 0 9) "kind" "CommandFullwidth" "region" "body"
+                 "raw" "［＃］" "families" []}
+        published (accountability/published-coverage
+                   (accountability/coverage-report (oracle [unknown])
+                                                   (interpretation [])))]
+    (is (= 1 (get published "unclassified_occurrence_count")))
+    (is (= ["［＃］"] (mapv #(get % "raw") (get published "unaccounted_occurrences")))
+        "a marker with no families is an exception even though it has none to be unaccounted")))
+
 (deftest claims-need-compatible-kinds-and-spans-and-do-not-certify-semantics
   (let [ruby {"source_span" (span 6 21) "kind" "RubyImplicit" "region" "body"
               "raw" "《かんじ》" "families" ["ruby.basic"]}

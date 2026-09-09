@@ -28,14 +28,22 @@ per-edition source/export fidelity certificate.
 `interpretation-coverage.json` joins this lexical evidence to explicit native
 interpretation facts. Family counts distinguish `interpreter_claimed` from
 `unaccounted`; a claimed occurrence has at least one explicit compatible aspect,
-not necessarily every aspect. Individual claims list their established aspects
-and native source extent. Each claim must match the exact span and a compatible
-family of an independently scanned occurrence or nested component. Nested markers
-retain their own component spans. Source apparatus is kept
-separate. Missing facts and unclassified markers remain visible. Lossy decoding
-prevents positive claim accounting. Reported interpretation problems retain their
-original influence bounds alongside positive claims. A positive claim is not evidence that
-an overlapping or document-wide problem has been resolved.
+not necessarily every aspect. Each claim must match the exact span and a
+compatible family of an independently scanned occurrence or nested component.
+Nested markers retain their own component spans. Source apparatus is kept
+separate. Lossy decoding prevents positive claim accounting. Reported
+interpretation problems retain their original influence bounds alongside positive
+claims. A positive claim is not evidence that an overlapping or document-wide
+problem has been resolved.
+
+The published report states the counts and lists the exceptions. `families` and
+`interpretation_problems` cover every occurrence; `occurrence_count` and
+`unclassified_occurrence_count` give the totals; `unaccounted_occurrences` holds,
+whole, each occurrence with an unaccounted family or no recognized family at all.
+A claimed occurrence is not listed, because the correspondence is already
+published from the other direction: the TEI element the claim produced carries
+that occurrence's span in its `source` attribute. Nothing else published records
+which occurrences went unaccounted, so those are kept in full.
 
 ## Review exports
 

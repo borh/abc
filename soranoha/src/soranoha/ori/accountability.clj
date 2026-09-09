@@ -218,10 +218,37 @@
        "occurrences" results
        "interpretation_problems" problems})))
 
+(defn published-coverage
+  "The coverage report in the form it is published in: the family counts, the
+  interpretation problems, and the occurrences that were not fully accounted
+  for.
+
+  An occurrence the interpreter claimed is already visible from the other
+  direction, as the `source` attribute on the element the claim produced, so
+  listing every one of them here published the same correspondence twice. It
+  was not a small duplication: measured over the pre-genesis rebuild, this
+  report was 38% of every published byte and larger than the TEI it accounts
+  for, while 99.7% of its occurrences were cleanly claimed and said nothing a
+  reader could act on.
+
+  What is not recoverable from anything else published is which occurrences
+  went unaccounted, so those are kept whole, and the total they were drawn from
+  is stated so their number can be read as a proportion."
+  [report]
+  (let [occurrences (get report "occurrences")]
+    (-> report
+        (assoc "schema" "soranoha-interpretation-coverage/2"
+               "occurrence_count" (count occurrences)
+               "unclassified_occurrence_count" (get report "unclassified_occurrences")
+               "unaccounted_occurrences"
+               (filterv #(or (seq (get % "unaccounted_families")) (get % "unclassified"))
+                        occurrences))
+        (dissoc "occurrences" "unclassified_occurrences"))))
+
 (defn coverage-stage
   "Independent lexical oracle + parser IR -> explicit claim accounting."
   [clj-toolchain-id]
-  {:stage-id "interpretation-coverage" :stage-version "20" :toolchain-id clj-toolchain-id
+  {:stage-id "interpretation-coverage" :stage-version "21" :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob]} inputs]
         (let [input-bytes (into {} (map (fn [name] [name (blob (get inputs name))]))
                                 ["source-accountability" "parser-ir"])
@@ -231,4 +258,6 @@
                                                         [name (str "sha256:" (hash/sha256-bytes bytes))]))
                                               input-bytes))]
           {"interpretation-coverage"
-           (.getBytes ^String (record-json/write-deterministic-json-str report) "UTF-8")}))})
+           (.getBytes ^String (record-json/write-deterministic-json-str
+                               (published-coverage report))
+                      "UTF-8")}))})

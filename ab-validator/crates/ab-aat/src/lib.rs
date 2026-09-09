@@ -38,8 +38,8 @@ use ab_aozora_facade::{
 // so the checker's comparison source (`ab-check::body_text`) can never
 // drift from the parser's own cut.
 use ab_aozora_facade::syntax::{
-    AbsoluteSize, BlockStyles, CaptionScope, EnclosureKind, HeadingStyle, IndentLayout,
-    LineAlignment, LineFormat, MarginNoteKind, MarginNotePosition, RelativePlacement,
+    AbsoluteSize, BlockPurpose, BlockStyles, CaptionScope, EnclosureKind, HeadingStyle,
+    IndentLayout, LineAlignment, LineFormat, MarginNoteKind, MarginNotePosition, RelativePlacement,
     accent::{compose_accent, compose_accent_dots, decompose_fragment},
     ast::{ContainerEnd, ContainerPair, Content, IterationMark, KuntenKind, Ruby, Segment},
 };
@@ -876,7 +876,11 @@ fn expand_native_scopes(
     let complete = pairs
         .iter()
         .any(|pair| mem::discriminant(&pair.kind) == mem::discriminant(&original))
-        && (!matches!(original, RegionFormat::Indent(block) if block.purpose.is_some())
+        // Only 数式 is supplied as a nested pair inside the indentation scope,
+        // so only it requires a matching Formula close. A table role is a word
+        // in the opener and closes with the indentation.
+        && (!matches!(original, RegionFormat::Indent(block)
+                if block.purpose == Some(BlockPurpose::Formula))
             || pairs.iter().any(|pair| pair.kind == RegionFormat::Formula));
     let mut ordered = pairs.clone();
     ordered.sort_by_key(|pair| pair.close);
@@ -1557,7 +1561,13 @@ impl EstablishedInterpretation {
                 Some(Self::ExternalTableReference)
             }
             Some("editorial_note") => Some(Self::EditorialNote),
-            Some("layout_block") if node["role"] == "table" => Some(Self::Table),
+            // A block that supplies only a role has that role to claim. A block
+            // that also supplies indentation earns the line-layout claim its
+            // geometry stands for, and states the role as a further fact
+            // alongside it, the way a formula scope does.
+            Some("layout_block") if node["role"] == "table" && node["indent"].is_null() => {
+                Some(Self::Table)
+            }
             Some("layout_break") => Some(Self::LayoutBreak),
             Some("text")
                 if node["x-break-kind"] == "line"
@@ -1694,6 +1704,29 @@ fn gaiji_ruby_facts(ruby: &Value) -> Vec<Value> {
     facts
 }
 
+/// Every interpretation one node establishes: what the node is, plus the roles
+/// and formatting it supplies alongside that. A supplied role sits beside the
+/// geometry claim rather than replacing it, so a marker that states both is
+/// accountable for both.
+fn node_interpretations(
+    node: &Value,
+    interpretation: EstablishedInterpretation,
+    font_formatting: bool,
+    layout_formatting: bool,
+) -> [Option<EstablishedInterpretation>; 5] {
+    [
+        Some(interpretation),
+        font_formatting.then_some(EstablishedInterpretation::Emphasis),
+        layout_formatting.then_some(EstablishedInterpretation::Layout),
+        (node["kind"] == "layout_block" && node["role"] == "formula")
+            .then_some(EstablishedInterpretation::Formula),
+        (node["kind"] == "layout_block"
+            && !node["indent"].is_null()
+            && matches!(node["role"].as_str(), Some("table" | "figure-table")))
+        .then_some(EstablishedInterpretation::Table),
+    ]
+}
+
 fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
     let mut facts = Vec::new();
     let mut pending = blocks.iter().rev().collect::<Vec<_>>();
@@ -1720,13 +1753,8 @@ fn established_interpretations(blocks: &[Value]) -> Vec<Value> {
             facts.extend(gaiji_ruby_facts(node));
         }
         if let Some(interpretation) = interpretation {
-            let interpretations = [
-                Some(interpretation),
-                font_formatting.then_some(EstablishedInterpretation::Emphasis),
-                layout_formatting.then_some(EstablishedInterpretation::Layout),
-                (node["kind"] == "layout_block" && node["role"] == "formula")
-                    .then_some(EstablishedInterpretation::Formula),
-            ];
+            let interpretations =
+                node_interpretations(node, interpretation, font_formatting, layout_formatting);
             let mut spans = if node["kind"] == "kunten"
                 && let Some(markers) = node["interpretation_marker_spans"].as_array()
             {
@@ -5485,8 +5513,16 @@ fn layout_fields(kind: &ProjectedKind) -> Option<Value> {
     let mut fields = json!({});
     match kind {
         ProjectedKind::Region(RegionFormat::Indent(block)) => {
-            if block.purpose.is_some() {
-                fields["role"] = json!("formula");
+            match block.purpose {
+                Some(BlockPurpose::Formula) => fields["role"] = json!("formula"),
+                Some(BlockPurpose::Table) => fields["role"] = json!("table"),
+                Some(BlockPurpose::FigureOrTable) => {
+                    fields["role"] = json!("figure-table");
+                }
+                None => {}
+            }
+            if block.table_rules_absent {
+                fields["table_rules"] = json!(false);
             }
             if let Some(columns) = block.column_count {
                 fields["column_count"] = json!(columns.0.get());

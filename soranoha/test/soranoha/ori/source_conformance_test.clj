@@ -1322,6 +1322,51 @@
     (is (empty? (get-in result [:ir "interpretation_problems"])))
     (is (= 2 (count (filter #(= "formula" (get % "kind")) (get-in result [:ir "interpretation_facts"])))))))
 
+(deftest supplied-table-role-preserves-indentation-and-source-lines
+  (let [result (transcribe (source "前。\n［＃ここから１字下げ、表組み］\n王朝　　年代\n西漢　　元始二年\n［＃ここで字下げ終わり］\n後。"))
+        table (first (filter #(= "table" (attribute % "type")) (elements result "div")))
+        paragraphs (filter #(= "p" (view/local-name %)) (view/children table))]
+    (is (some? table))
+    (is (= "padding-inline-start: 1em" (attribute table "style")))
+    (is (= "" (attribute table "rend")))
+    ;; The lines keep the spacing the source aligned them with; no cell,
+    ;; row or column structure is derived from it.
+    (is (= ["王朝　　年代" "西漢　　元始二年"] (mapv view/visible-text paragraphs)))
+    (is (empty? (elements result "table")))
+    (is (= "前。\n王朝　　年代\n西漢　　元始二年\n後。" (:plaintext result)))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))
+    (is (= 2 (count (filter #(= "table" (get % "kind")) (get-in result [:ir "interpretation_facts"])))))))
+
+(deftest supplied-absence-of-table-rules-is-stated-and-a-silence-is-not
+  (let [ruleless (transcribe (source "［＃ここから１字下げ、表組み、罫無し］\n甲　乙\n［＃ここで字下げ終わり］"))
+        silent (transcribe (source "［＃ここから１字下げ、表組み］\n甲　乙\n［＃ここで字下げ終わり］"))
+        rend (fn [result] (attribute (first (filter #(= "table" (attribute % "type"))
+                                                    (elements result "div")))
+                                     "rend"))]
+    (is (= "table-rules(none)" (rend ruleless)))
+    (is (= "" (rend silent)))
+    (is (empty? (get-in ruleless [:ir "interpretation_problems"])))))
+
+(deftest a-figure-or-table-scope-keeps-its-own-role-and-supplied-direction
+  (let [result (transcribe (source "［＃ここから２字下げ、横組み、図表］\n太陽年　365日\n［＃ここで字下げ終わり］"))
+        scope (first (filter #(= "figure-table" (attribute % "type")) (elements result "div")))]
+    (is (some? scope))
+    (is (= "padding-inline-start: 2em; writing-mode: horizontal-tb" (attribute scope "style")))
+    (is (empty? (filter #(= "table" (attribute % "type")) (elements result "div"))))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest a-framed-table-keeps-the-frame-and-the-role-separately
+  (let [result (transcribe (source "［＃ここから２字下げ、罫囲みの表］\n甲　乙\n［＃ここで字下げ終わり］"))
+        scope (first (filter #(= "table" (attribute % "type")) (elements result "div")))]
+    (is (some? scope))
+    (is (= "padding-inline-start: 2em; border-style: solid" (attribute scope "style")))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest a-base-edition-table-description-stays-source-apparatus
+  (let [result (transcribe (source "［＃ここから２字下げ、底本では表組み］\n甲\n［＃ここで字下げ終わり］"))]
+    (is (empty? (filter #(#{"table" "figure-table"} (attribute % "type")) (elements result "div"))))
+    (is (= "甲" (:plaintext result)))))
+
 (deftest a-reading-variant-preserves-its-unselected-prefix
   (let [result (transcribe (source "懲々《こり／″＼》［＃ルビの「／″＼」は底本では「こり／＼」］"))]
     (is (= "懲々" (:plaintext result)))

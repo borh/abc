@@ -22,10 +22,10 @@ use core::num::{NonZeroI8, NonZeroU8};
 use ab_aozora_syntax::alloc::Allocator;
 use ab_aozora_syntax::ast::Directive;
 use ab_aozora_syntax::{
-    AbsoluteSize, BOUTEN_KINDS, BlockStyles, BoutenKind, BoutenPosition, CaptionScope, ColumnBlock,
-    ColumnCount, DirectiveKind, EnclosureKind, FontShift, HeadingKind, HeadingStyle,
-    HorizontalPresentation, IndentBlock, IndentLayout, Kumi, LineFormat, LineWidth,
-    QualitativeFontSize, RegionClose, RegionFormat, SectionKind, Span,
+    AbsoluteSize, BOUTEN_KINDS, BlockPurpose, BlockStyles, BoutenKind, BoutenPosition,
+    CaptionScope, ColumnBlock, ColumnCount, DirectiveKind, EnclosureKind, FontShift, HeadingKind,
+    HeadingStyle, HorizontalPresentation, IndentBlock, IndentLayout, Kumi, LineAlignment,
+    LineFormat, LineWidth, QualitativeFontSize, RegionClose, RegionFormat, SectionKind, Span,
 };
 
 use super::super::pair::PairEvent;
@@ -1296,6 +1296,7 @@ pub(super) fn classify_annotation_body(
                 page_horizontal_center: false,
                 align: None,
                 end_offset: None,
+                table_rules_absent: false,
                 layout: IndentLayout::None,
                 styles: BlockStyles::EMPTY,
             })),
@@ -1313,8 +1314,7 @@ pub(super) fn classify_annotation_body(
         BodyFamily::IndentBlockEnd => {
             // Formula has an independent endpoint, beyond matching the indentation family.
             let tail = &body[match_end..];
-            let purpose =
-                (tail == "、ここで数式終わり").then_some(ab_aozora_syntax::BlockPurpose::Formula);
+            let purpose = (tail == "、ここで数式終わり").then_some(BlockPurpose::Formula);
             (tail.is_empty() || (tail.starts_with('、') && tail.ends_with("終わり"))).then_some((
                 EmitKind::BlockClose(RegionClose::Indent {
                     purpose,
@@ -1334,14 +1334,17 @@ pub(super) fn classify_annotation_body(
         BodyFamily::IndentCompoundBlockEnd => {
             let rest = &body[match_end..];
             let mut styles = BlockStyles::EMPTY;
+            let mut purpose = None;
             if rest.strip_suffix("終わり").is_some_and(|clauses| {
-                clauses
-                    .split('、')
-                    .all(|clause| resolve_block_style(clause, &mut styles).is_some())
+                clauses.split('、').all(|clause| {
+                    resolve_table_clause(clause, &mut purpose, &mut styles)
+                        .or_else(|| resolve_block_style(clause, &mut styles))
+                        .is_some()
+                })
             }) {
                 return Some((
                     EmitKind::BlockClose(RegionClose::Indent {
-                        purpose: None,
+                        purpose,
                         amount: None,
                         kumi_width: None,
                         styles,
@@ -1378,9 +1381,9 @@ pub(super) fn classify_annotation_body(
         BodyFamily::HorizontalBlockOpen => Some((
             EmitKind::BlockOpen(RegionFormat::Horizontal(HorizontalPresentation {
                 align: if body.ends_with("右揃えで") {
-                    Some(ab_aozora_syntax::LineAlignment::Right)
+                    Some(LineAlignment::Right)
                 } else if body.ends_with("中央揃えで") {
-                    Some(ab_aozora_syntax::LineAlignment::Center)
+                    Some(LineAlignment::Center)
                 } else {
                     None
                 },
@@ -1538,6 +1541,7 @@ pub(super) fn classify_annotation_body(
                     page_horizontal_center: false,
                     align: None,
                     end_offset: None,
+                    table_rules_absent: false,
                     layout: IndentLayout::None,
                     styles: BlockStyles::EMPTY,
                 })),
@@ -1571,6 +1575,7 @@ pub(super) fn classify_annotation_body(
                         page_horizontal_center: false,
                         align: None,
                         end_offset: None,
+                        table_rules_absent: false,
                         layout: IndentLayout::None,
                         styles: BlockStyles::EMPTY,
                     })),
@@ -1590,6 +1595,7 @@ pub(super) fn classify_annotation_body(
                         page_horizontal_center: false,
                         align: None,
                         end_offset: None,
+                        table_rules_absent: false,
                         layout: IndentLayout::None,
                         styles: BlockStyles::EMPTY,
                     })),
@@ -2083,8 +2089,9 @@ fn font_size_block_open_steps(tail: &str, magnitude: u8) -> Option<i8> {
 }
 
 /// One independently supplied axis; disagreement never selects a value by order.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 enum ClauseAxis<T> {
+    #[default]
     Absent,
     Value(T, Span),
     Conflict(Span),
@@ -2115,6 +2122,105 @@ impl<T: Copy + PartialEq> ClauseAxis<T> {
     }
 }
 
+/// The independently supplied axes of one compound indentation marker.
+///
+/// Every axis records the first value it is given together with the clause span
+/// it came from, so a later clause that disagrees yields a conflict span rather
+/// than being resolved by clause order. Keeping them in one place means an
+/// added axis is a field, an [`IndentAxes::observe`] entry and an
+/// [`IndentAxes::settle`] line, rather than another local threaded through the
+/// clause loop.
+#[derive(Default)]
+struct IndentAxes {
+    purpose: ClauseAxis<BlockPurpose>,
+    wrap: ClauseAxis<u8>,
+    align: ClauseAxis<LineAlignment>,
+    horizontal_align: ClauseAxis<LineAlignment>,
+    end_offset: ClauseAxis<u8>,
+    layout: ClauseAxis<IndentLayout>,
+    font: ClauseAxis<QualitativeFontSize>,
+    frame: ClauseAxis<EnclosureKind>,
+    columns: ClauseAxis<ColumnCount>,
+    /// Where a supplied `罫無し` was written, held until it is known whether a
+    /// table role was supplied for it to be about.
+    table_rules: Option<Span>,
+}
+
+impl IndentAxes {
+    /// Record one clause's values, returning the span covering any disagreement.
+    fn observe(&mut self, candidate: &IndentBlock, span: Span) -> Option<Span> {
+        if candidate.table_rules_absent {
+            self.table_rules.get_or_insert(span);
+        }
+        [
+            candidate
+                .purpose
+                .and_then(|value| self.purpose.observe(value, span)),
+            candidate
+                .wrap
+                .and_then(|value| self.wrap.observe(value, span)),
+            candidate
+                .align
+                .and_then(|value| self.align.observe(value, span)),
+            candidate
+                .styles
+                .horizontal
+                .and_then(|value| value.align)
+                .and_then(|value| self.horizontal_align.observe(value, span)),
+            candidate
+                .end_offset
+                .and_then(|value| self.end_offset.observe(value, span)),
+            (!matches!(candidate.layout, IndentLayout::None))
+                .then(|| self.layout.observe(candidate.layout, span))
+                .flatten(),
+            candidate
+                .styles
+                .font
+                .and_then(|value| self.font.observe(value, span)),
+            candidate
+                .styles
+                .frame
+                .and_then(|value| self.frame.observe(value, span)),
+            candidate
+                .column_count
+                .and_then(|value| self.columns.observe(value, span)),
+        ]
+        .into_iter()
+        .flatten()
+        .reduce(|previous, conflict| {
+            Span::new(
+                previous.start.min(conflict.start),
+                previous.end.max(conflict.end),
+            )
+        })
+    }
+
+    /// Resolve the axes onto `block`, retaining any clause left unattached.
+    fn settle(self, block: &mut IndentBlock, clauses: &mut Vec<Span>) {
+        block.purpose = self.purpose.value();
+        block.wrap = self.wrap.value();
+        block.align = self.align.value();
+        if let Some(horizontal) = &mut block.styles.horizontal {
+            horizontal.align = self.horizontal_align.value();
+        }
+        block.end_offset = self.end_offset.value();
+        block.layout = self.layout.value().unwrap_or(IndentLayout::None);
+        block.styles.font = self.font.value();
+        block.styles.frame = self.frame.value();
+        block.column_count = self.columns.value();
+        // A rule absence is a statement about a table. Without a supplied table
+        // role there is nothing for it to be absent from, so the clause stays
+        // retained rather than becoming a free-floating assertion.
+        match (self.table_rules, block.purpose) {
+            (Some(_), Some(BlockPurpose::Table | BlockPurpose::FigureOrTable)) => {
+                block.table_rules_absent = true;
+            }
+            (Some(span), _) => clauses.push(span),
+            (None, _) => {}
+        }
+    }
+}
+
 /// Keep independent axes while retaining unsupported or contradictory clauses.
 fn parse_indent_compound(
     amount: u8,
@@ -2131,19 +2237,12 @@ fn parse_indent_compound(
         page_horizontal_center: false,
         align: None,
         end_offset: None,
+        table_rules_absent: false,
         layout: IndentLayout::None,
         styles: BlockStyles::EMPTY,
     };
     let mut block = initial;
-    let mut wrap = ClauseAxis::Absent;
-    let mut align = ClauseAxis::Absent;
-    let mut horizontal_align = ClauseAxis::Absent;
-    let mut end_offset = ClauseAxis::Absent;
-    let mut layout = ClauseAxis::Absent;
-    let mut font = ClauseAxis::Absent;
-    let mut frame = ClauseAxis::Absent;
-    let mut columns = ClauseAxis::Absent;
-    let mut purpose = ClauseAxis::Absent;
+    let mut axes = IndentAxes::default();
     let mut clauses = Vec::new();
     for (segment, span) in source.clauses(after) {
         let mut candidate = initial;
@@ -2154,66 +2253,20 @@ fn parse_indent_compound(
             }
             Some(span)
         } else {
-            let mut problem = None;
-            let conflicts = [
-                candidate
-                    .purpose
-                    .and_then(|value| purpose.observe(value, span)),
-                candidate.wrap.and_then(|value| wrap.observe(value, span)),
-                candidate.align.and_then(|value| align.observe(value, span)),
-                candidate
-                    .styles
-                    .horizontal
-                    .and_then(|value| value.align)
-                    .and_then(|value| horizontal_align.observe(value, span)),
-                candidate
-                    .end_offset
-                    .and_then(|value| end_offset.observe(value, span)),
-                (!matches!(candidate.layout, IndentLayout::None))
-                    .then(|| layout.observe(candidate.layout, span))
-                    .flatten(),
-                candidate
-                    .styles
-                    .font
-                    .and_then(|value| font.observe(value, span)),
-                candidate
-                    .styles
-                    .frame
-                    .and_then(|value| frame.observe(value, span)),
-                candidate
-                    .column_count
-                    .and_then(|value| columns.observe(value, span)),
-            ];
-            for conflict in conflicts.into_iter().flatten() {
-                problem = Some(problem.map_or(conflict, |previous: Span| {
-                    Span::new(
-                        previous.start.min(conflict.start),
-                        previous.end.max(conflict.end),
-                    )
-                }));
-            }
+            // Accumulating axes take the clause's value directly; the rest are
+            // independently supplied and go through the conflict check.
             block.styles.gothic |= candidate.styles.gothic;
             block.styles.bold |= candidate.styles.bold;
             block.page_horizontal_center |= candidate.page_horizontal_center;
             block.styles.horizontal =
                 merge_horizontal(block.styles.horizontal, candidate.styles.horizontal);
-            problem
+            axes.observe(&candidate, span)
         };
         if let Some(problem) = problem {
             clauses.push(problem);
         }
     }
-    block.wrap = wrap.value();
-    block.align = align.value();
-    if let Some(horizontal) = &mut block.styles.horizontal {
-        horizontal.align = horizontal_align.value();
-    }
-    block.end_offset = end_offset.value();
-    block.layout = layout.value().unwrap_or(IndentLayout::None);
-    block.styles.font = font.value();
-    block.styles.frame = frame.value();
-    block.column_count = columns.value();
-    block.purpose = purpose.value();
+    axes.settle(&mut block, &mut clauses);
     if !clauses.is_empty() {
         block.partial = Some(alloc.partial_layout(source.text, clauses));
     }
@@ -2271,7 +2324,7 @@ fn parse_column_compound(
 /// Interpret one independent `字下げ、` clause into a fresh candidate payload.
 fn resolve_indent_segment(segment: &str, block: &mut IndentBlock) -> Option<()> {
     if segment == "ここから数式" {
-        block.purpose = Some(ab_aozora_syntax::BlockPurpose::Formula);
+        block.purpose = Some(BlockPurpose::Formula);
         return Some(());
     }
     let column_clause = segment.strip_prefix("ここから").unwrap_or(segment);
@@ -2299,18 +2352,18 @@ fn resolve_indent_segment(segment: &str, block: &mut IndentBlock) -> Option<()> 
     if matches!(segment, "横組み右揃えで" | "横組み中央揃えで") {
         block.styles.horizontal = Some(HorizontalPresentation {
             align: Some(if segment == "横組み右揃えで" {
-                ab_aozora_syntax::LineAlignment::Right
+                LineAlignment::Right
             } else {
-                ab_aozora_syntax::LineAlignment::Center
+                LineAlignment::Center
             }),
         });
         return Some(());
     }
     if matches!(segment, "中央揃え" | "右揃え") {
         block.align = Some(if segment == "中央揃え" {
-            ab_aozora_syntax::LineAlignment::Center
+            LineAlignment::Center
         } else {
-            ab_aozora_syntax::LineAlignment::Right
+            LineAlignment::Right
         });
         return Some(());
     }
@@ -2333,7 +2386,46 @@ fn resolve_indent_segment(segment: &str, block: &mut IndentBlock) -> Option<()> 
         block.layout = layout;
         return Some(());
     }
+    if resolve_table_clause(segment, &mut block.purpose, &mut block.styles).is_some() {
+        return Some(());
+    }
+    // An explicit statement that the table carries no rules. Kept apart from
+    // an unstated absence, and from the enclosure axis: `罫囲み` draws a box
+    // around the scope, `罫無し` says the table inside it is unruled.
+    if matches!(segment, "罫無し" | "罫なし") {
+        block.table_rules_absent = true;
+        return Some(());
+    }
     resolve_block_style(segment, &mut block.styles)
+}
+
+/// Interpret one table clause into the role the source names, and the
+/// enclosure a fused spelling names along with it.
+///
+/// `罫囲みの表` and `表罫囲み` say two things in one word: the scope is a table,
+/// and a ruled box is drawn around it. Both are recorded on their own axis, so
+/// the enclosure stays comparable with a `罫囲み` supplied as a separate clause
+/// and the role stays comparable with a bare `表組み`. Nothing here derives
+/// cells, columns or rules from the enclosed lines.
+fn resolve_table_clause(
+    segment: &str,
+    purpose: &mut Option<BlockPurpose>,
+    styles: &mut BlockStyles,
+) -> Option<()> {
+    let (role, frame) = match segment {
+        "表" | "表組" | "表組み" => (BlockPurpose::Table, None),
+        "図表" => (BlockPurpose::FigureOrTable, None),
+        "罫囲みの表" | "表罫囲み" => (BlockPurpose::Table, Some(EnclosureKind::Rule)),
+        _ => return None,
+    };
+    if purpose.is_some() || (frame.is_some() && styles.frame.is_some()) {
+        return None;
+    }
+    *purpose = Some(role);
+    if frame.is_some() {
+        styles.frame = frame;
+    }
+    Some(())
 }
 
 fn merge_horizontal(

@@ -373,6 +373,7 @@ fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::R
             page_horizontal_center,
             align,
             end_offset,
+            table_rules_absent,
             layout,
             styles,
         }) => {
@@ -381,8 +382,22 @@ fn render_container_open<W: Write>(kind: RegionFormat, writer: &mut W) -> fmt::R
                 writer,
                 r#"<div class="aozora-container aozora-container-indent aozora-container-indent-{amount}"#,
             )?;
-            if purpose.is_some() {
-                writer.write_str(" aozora-formula")?;
+            match purpose {
+                Some(ab_aozora_syntax::BlockPurpose::Formula) => {
+                    writer.write_str(" aozora-formula")?;
+                }
+                Some(ab_aozora_syntax::BlockPurpose::Table) => {
+                    writer.write_str(" aozora-container-table")?;
+                }
+                Some(ab_aozora_syntax::BlockPurpose::FigureOrTable) => {
+                    writer.write_str(" aozora-container-figure-table")?;
+                }
+                None => {}
+            }
+            // The source states the table has no rules; nothing draws them, so
+            // the class exists to keep the assertion visible in the markup.
+            if table_rules_absent {
+                writer.write_str(" aozora-table-rules-none")?;
             }
             if wrap.is_some() {
                 writer.write_str(" aozora-container-wrap-indent")?;

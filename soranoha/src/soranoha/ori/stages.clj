@@ -147,7 +147,7 @@
     (throw (ex-info "render stage requires the publication rights grant"
                     {:reason :missing-rights-grant})))
   {:stage-id "render"
-   :stage-version "48"
+   :stage-version "49"
    :toolchain-id (core-hash/sha256-canonical-json
                   {"clj" clj-toolchain-id "rights" rights})
    :f (fn [{:keys [blob]} inputs]

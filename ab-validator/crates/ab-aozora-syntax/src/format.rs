@@ -202,11 +202,39 @@ pub enum IndentLayout {
 }
 
 /// Semantic purpose explicitly supplied for an indented source scope.
+///
+/// A purpose is what the source *calls* the scope, and it is independent of the
+/// geometry, direction and frame clauses that may sit beside it in the same
+/// marker. The variants stay as far apart as the source spellings do: `表組み`
+/// says the lines are a table, `図表` says the scope is an exhibit without
+/// saying whether it is a diagram or a table, and folding the second onto the
+/// first would assert a table the source never named.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum BlockPurpose {
     /// The source designates the enclosed text as a formula.
     Formula,
+    /// `表` / `表組` / `表組み`: the source designates the enclosed lines as a
+    /// table. The lines keep their own spelling and spacing; no cell or column
+    /// grid is derived from them.
+    Table,
+    /// `図表`: the source designates the scope as a figure or table exhibit
+    /// without choosing between them.
+    FigureOrTable,
+}
+
+impl BlockPurpose {
+    /// The clause spelling this purpose is written back as, inside a compound
+    /// indentation marker. `Formula` has none: it is supplied as a nested
+    /// `ここから数式` / `ここで数式終わり` pair rather than a clause word.
+    #[must_use]
+    pub const fn clause_keyword(self) -> Option<&'static str> {
+        match self {
+            Self::Formula => None,
+            Self::Table => Some("表組み"),
+            Self::FigureOrTable => Some("図表"),
+        }
+    }
 }
 
 /// Independent presentation attributes supplied on a block-layout opener.
@@ -348,6 +376,13 @@ pub struct IndentBlock {
     pub align: Option<LineAlignment>,
     /// Full-width characters left empty at the line's end margin.
     pub end_offset: Option<u8>,
+    /// The source states that a supplied table has no rules (`罫無し`).
+    ///
+    /// An explicit absence, not an unstated one: `false` means the source said
+    /// nothing about rules, and `true` means it said there are none. This is a
+    /// statement about the table's own ruling and is independent of
+    /// [`BlockStyles::frame`], which is the enclosure drawn around the scope.
+    pub table_rules_absent: bool,
     /// Secondary line-layout clause; see [`IndentLayout`].
     pub layout: IndentLayout,
     /// Co-applied decorative styles (`ゴシック体` / `横書き` / `罫囲み` /
@@ -976,6 +1011,7 @@ impl RegionFormat {
             page_horizontal_center: false,
             align: None,
             end_offset: None,
+            table_rules_absent: false,
             layout: IndentLayout::None,
             styles: BlockStyles::EMPTY,
         }),
@@ -1316,6 +1352,7 @@ mod tests {
             page_horizontal_center: false,
             align: None,
             end_offset: None,
+            table_rules_absent: false,
             layout: IndentLayout::Kumi(Kumi {
                 lines: NonZeroU8::MIN,
                 width: NonZeroU8::new(20).unwrap(),
@@ -1340,6 +1377,7 @@ mod tests {
             page_horizontal_center: false,
             align: None,
             end_offset: None,
+            table_rules_absent: false,
             layout: IndentLayout::None,
             styles: BlockStyles::EMPTY,
         });

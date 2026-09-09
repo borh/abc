@@ -3169,18 +3169,18 @@ priority = 2
 category = "structure"
 feature_keys = ["table", "table_group", "table_border"]
 reference_sources = ["references/aozorabunko/rules/kijyunn.html", "docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
-source_examples = ["［＃ここから表］", "［＃ここで表終わり］", "［＃ここから表組］"]
-source_patterns = ['［＃ここから表(組|罫囲み)?］', '［＃ここで表(組|罫囲み)?終わり］', '［＃ここで字下げ、表罫囲み終わり］', '［＃ここからプログラム、表罫囲み］', '［＃ここでプログラム（表罫囲み）終わり］', '［＃[０-９0-9一二三四五六七八九十]+行目］', '［＃ここに表組入る、別ファイル（[^）]+）参照］', '［＃ここから横組みの表］', '［＃ここで横組みの表終わり］']
-ir_nodes = ["Raw"]
-aat_nodes = ["raw"]
+source_examples = ["［＃ここから表］", "［＃ここで表終わり］", "［＃ここから表組］", "［＃ここから１字下げ、表組み、罫無し］", "［＃ここから２字下げ、罫囲みの表］"]
+source_patterns = ['［＃ここから表(組|罫囲み)?］', '［＃ここで表(組|罫囲み)?終わり］', '［＃ここで字下げ、表罫囲み終わり］', '［＃ここからプログラム、表罫囲み］', '［＃ここでプログラム（表罫囲み）終わり］', '［＃[０-９0-9一二三四五六七八九十]+行目］', '［＃ここに表組入る、別ファイル（[^）]+）参照］', '［＃ここから横組みの表］', '［＃ここで横組みの表終わり］', '[＃、](罫囲みの表|表罫囲み|表組み|表組|図表|表)[、］]', '、罫(無|な)し[、］]']
+ir_nodes = ["Raw", "Block::Layout"]
+aat_nodes = ["raw", "layout_block"]
 tei_projection = "table"
 plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = ["block_scope_balance"]
-adapter_expectations = ["preserve raw table marker until typed AAT/parser-IR table support lands"]
+adapter_expectations = ["preserve the supplied table role and the enclosed lines; derive no cells, rows or rules"]
 oracle_cases = []
-status = "not_modeled"
-status_reason = "Aozora table blocks have a TEI P5 projection, but AAT/parser-IR currently only preserve them as source-derived raw marker evidence."
+status = "partial"
+status_reason = "A supplied table role is typed on the scope it is supplied for, on its own marker and as a clause of a compound indentation marker, and 罫無し is retained as an explicit absence of table rules. The enclosed lines keep their own spelling and spacing: no cell, row or rule structure is derived from them, and marker forms outside the typed set stay source-derived raw evidence."
 
 [syntax.parsers.aozora2]
 recognition = "unknown"
@@ -3222,10 +3222,10 @@ sample_works = []
 [syntax.representability]
 source_inventory_row = "structure.table"
 status = "raw_preserved"
-aat_nodes = ["raw"]
+aat_nodes = ["raw", "layout_block"]
 raw_fallback = true
 evidence = "data/aat-schema.json:277"
-notes = "TEI P5 can represent tables directly, but AAT/parser-IR do not yet have typed table nodes. The reviewed v1 guarantee is source-derived raw marker preservation."
+notes = "TEI P5 can represent tables directly, but AAT/parser-IR have no typed table, row or cell node, and none is derived from the enclosed lines. What is typed is the role the source supplies for the scope, on a layout block; every other marker form falls back to source-derived raw marker preservation, which remains the reviewed v1 guarantee."
 
 [[syntax]]
 id = "warigaki.parenthetical"

@@ -267,7 +267,8 @@
         "line_count": {"type":"integer","minimum":1},
         "column_count":{"type":"integer","minimum":1},
         "column_rule":{"const":true},
-        "role":{"enum":["table","formula"]},
+        "role":{"enum":["table","formula","figure-table"]},
+        "table_rules":{"const":false},
         "page_placement": {"const":"horizontal-center"},
         "direction":{"enum":["horizontal","vertical"]},
         "relative_placement":{"$ref":"#/$defs/relativePlacement"},
@@ -278,6 +279,7 @@
       },
       "allOf": [
         {"if":{"required":["column_rule"]},"then":{"required":["column_count"],"properties":{"kind":{"const":"layout_block"}}}},
+        {"if":{"required":["table_rules"]},"then":{"required":["role"],"properties":{"kind":{"const":"layout_block"},"role":{"enum":["table","figure-table"]}}}},
         {"if":{"anyOf":[{"required":["direction"]},{"required":["align"]},{"required":["continuation_indent"]},{"required":["offset_from_end"]},{"required":["line_count"]},{"required":["page_placement"]},{"required":["source_end"]}]},"then":{"properties":{"kind":{"const":"layout_block"}}}},
         {"if":{"properties":{"kind":{"const":"layout_block"}}},"then":{"required":["span","interpretation_marker_spans"],"anyOf":[{"required":["indent"]},{"required":["width"]},{"required":["offset_from_end"]},{"required":["align"]},{"required":["page_placement"]},{"required":["column_count"]},{"required":["role"]},{"required":["direction"]},{"required":["formatting"]}]}},
         {"if":{"properties":{"kind":{"const":"typography_block"}}},"then":{"required":["formatting","span","interpretation_marker_spans"]}},

@@ -728,6 +728,9 @@
                placement (conj "placement-below" (str "anchor-kind(" (get placement "anchor_kind") ")"))
                (contains? placement "offset_chars") (conj (str "anchor-offset-chars(" (get placement "offset_chars") ")"))
                (get block "column_rule") (conj "column-rule")
+               ;; An explicit `罫無し`: the source states the table has no rules.
+               ;; Absent when the source said nothing, so silence stays silence.
+               (false? (get block "table_rules")) (conj "table-rules(none)")
                (get block "typography") (into (keep inline-layout-rend) attributes)
                (get block "page_placement") (conj "page-horizontal-center")
                (get block "line_count") (conj (str "line-count(" (get block "line_count") ")")))]

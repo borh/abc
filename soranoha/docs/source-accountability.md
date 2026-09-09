@@ -103,6 +103,17 @@ Page placement ends before the next supplied page break, which remains in TEI.
 Frame styles and co-applied typography share the same formatting vocabulary on
 TEI `div` and `hi` scopes. Supplied solid and dashed rules retain their border
 style; framing alone does not establish an independent embedded text.
+A supplied table role is retained on the scope the source supplies it for, both
+on its own marker and as a clause of a compound indentation marker, alongside
+that marker's independent indentation, direction and frame. TEI records it as
+`div type="table"`, and `図表` as `type="figure-table"`, because that spelling
+names an exhibit without choosing between a diagram and a table. The enclosed
+lines keep their own spelling and spacing; no cell, row or column structure is
+derived from them. A supplied `罫無し` is retained as `rend="table-rules(none)"`,
+an explicit absence of table rules distinct from a marker that says nothing
+about them, and independent of any frame drawn around the scope. A base-edition
+table description remains source apparatus and is not executed as current
+formatting.
 Qualitative font comparisons preserve direction and any supplied `やや` or
 `ひとまわり` qualifier, without a numbered size level. TEI records these as
 `font-size qualitative(smaller)` or `font-size qualitative(larger)` and an

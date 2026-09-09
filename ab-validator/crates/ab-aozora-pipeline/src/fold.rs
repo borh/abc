@@ -485,9 +485,14 @@ impl<'src> Normalizer<'src> {
                 }
             }
             SpanKind::BlockOpen(container) => {
+                // `ここから数式` opens a formula scope nested inside the
+                // indentation, so one source marker owns two logical scopes. A
+                // table role is a clause on the indentation marker itself and
+                // opens nothing of its own, so it stays on the indent payload.
                 if let RegionFormat::Indent(mut indent) = *container
-                    && indent.purpose.take().is_some()
+                    && indent.purpose == Some(ab_aozora_syntax::BlockPurpose::Formula)
                 {
+                    indent.purpose = None;
                     let source_nodes = self.recorder.source_nodes.len();
                     self.emit_block_open(span.source_span, RegionFormat::Formula);
                     self.emit_block_open(span.source_span, RegionFormat::Indent(indent));
@@ -589,7 +594,7 @@ impl<'src> Normalizer<'src> {
 
     fn emit_block_close(&mut self, span: Span, close: RegionClose) {
         if let RegionClose::Indent {
-            purpose: Some(_),
+            purpose: Some(ab_aozora_syntax::BlockPurpose::Formula),
             amount,
             kumi_width,
             styles,

@@ -534,6 +534,7 @@ fn map_block_content(
                     "column_count",
                     "column_rule",
                     "role",
+                    "table_rules",
                     "page_placement",
                     "relative_placement",
                     "direction",

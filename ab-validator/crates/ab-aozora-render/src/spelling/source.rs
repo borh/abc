@@ -6,8 +6,8 @@ use ab_aozora_syntax::ast::NodeStore;
 use core::fmt::{self, Write};
 
 use ab_aozora_syntax::{
-    BlockStyles, BoutenPosition, CaptionScope, ForwardAttr, HeadingKind, HeadingStyle, IndentBlock,
-    IndentLayout, LineFormat, RegionClose, RegionFormat, SectionKind,
+    BlockPurpose, BlockStyles, BoutenPosition, CaptionScope, ForwardAttr, HeadingKind,
+    HeadingStyle, IndentBlock, IndentLayout, LineFormat, RegionClose, RegionFormat, SectionKind,
 };
 
 /// The source text of the container **open** marker for `open`.
@@ -264,6 +264,7 @@ fn emit_indent_open<W: Write>(block: IndentBlock, store: &NodeStore, out: &mut W
         page_horizontal_center,
         align,
         end_offset,
+        table_rules_absent,
         layout,
         styles,
     } = block;
@@ -282,6 +283,7 @@ fn emit_indent_open<W: Write>(block: IndentBlock, store: &NodeStore, out: &mut W
     // The idiomatic no-number `［＃ここから字下げ］` form is reserved for a bare
     // single-char indent with no clauses; anything else takes the numbered form.
     let bare = purpose.is_none()
+        && !table_rules_absent
         && column_count.is_none()
         && wrap.is_none()
         && !page_horizontal_center
@@ -320,7 +322,15 @@ fn emit_indent_open<W: Write>(block: IndentBlock, store: &NodeStore, out: &mut W
     if let Some(columns) = column_count {
         write!(out, "、{}段組み", columns.0)?;
     }
-    if purpose.is_some() {
+    // A fused source spelling (`罫囲みの表`, `表罫囲み`) is written back as the
+    // separate clauses it was read as; re-parsing them yields the same payload.
+    if let Some(keyword) = purpose.and_then(BlockPurpose::clause_keyword) {
+        write!(out, "、{keyword}")?;
+    }
+    if table_rules_absent {
+        out.write_str("、罫無し")?;
+    }
+    if purpose == Some(BlockPurpose::Formula) {
         out.write_str("、ここから数式")?;
     }
     emit_block_styles(styles, out)?;
@@ -405,9 +415,13 @@ pub(crate) fn emit_container_close<W: Write>(close: RegionClose, out: &mut W) ->
             if let Some(width) = kumi_width {
                 write!(out, "、{}字組み", width.0)?;
             }
+            if let Some(keyword) = purpose.and_then(BlockPurpose::clause_keyword) {
+                write!(out, "、{keyword}")?;
+            }
             emit_block_styles(styles, out)?;
             out.write_str("終わり")?;
-            if purpose.is_some() {
+            // 数式 closes as its own nested pair, after the indentation close.
+            if purpose == Some(BlockPurpose::Formula) {
                 out.write_str("、ここで数式終わり")?;
             }
             out.write_str("］")

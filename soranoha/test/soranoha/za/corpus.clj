@@ -215,6 +215,7 @@
    :metadata metadata-stage
    :parse parse-stage
    :convert convert-stage
+   :render-ir (stages/render-ir-stage fixture-toolchain)
    :render render-stage
    :plaintext (stages/plaintext-stage fixture-toolchain)
    :markdown (stages/markdown-stage fixture-toolchain)

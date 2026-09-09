@@ -146,7 +146,13 @@
   `interpretation_problems` is deliberately retained: render writes those into
   TEI notes. A future render consumer of `interpretation_facts` must restore the
   field here and bump this stage-version; the render-equivalence test in
-  `soranoha.ori.render-ir-test` clamps that invariant."
+  `soranoha.ori.render-ir-test` clamps that invariant.
+
+  The bytes are compact rather than indented, and sorted-key rather than RFC
+  8785: nobody reads this blob, it carries no protocol identity, and it is
+  already most of a second copy of the parser IR in the store, so the
+  indentation `write-deterministic-json-str` adds for human readers is pure
+  cost here. Sorting is what makes it stable; that is all this needs."
   [clj-toolchain-id]
   {:stage-id "render-ir"
    :stage-version "1"
@@ -154,7 +160,9 @@
    :f (fn [{:keys [blob]} inputs]
         (let [parser-ir (json/read-json (String. ^bytes (blob (get inputs "parser-ir")) "UTF-8"))
               projected (dissoc parser-ir "interpretation_facts")]
-          {"parser-ir" (json-bytes projected)}))})
+          {"parser-ir" (utf8 (json/write-json-str
+                              (record-json/prepare-deterministic-json projected)
+                              :escape-slash false :escape-unicode false))}))})
 
 (defn render-stage
   "parser-IR + metadata record + persons + publication identifier -> TEI bytes.

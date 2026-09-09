@@ -142,7 +142,8 @@
                                         {"source-accountability" (get (:outputs accountability-r) "source-accountability")
                                          "parser-ir" (get (:outputs convert-r) "parser-ir")}))
         results (cond-> {:extract extract-r :metadata metadata-r :parse parse-r
-                         :convert convert-r :render render-r :plaintext plaintext-r
+                         :convert convert-r :render-ir render-ir-r :render render-r
+                         :plaintext plaintext-r
                          :markdown markdown-r :validate validate-r}
                   accountability-r (assoc :accountability accountability-r)
                   coverage-r (assoc :coverage coverage-r))

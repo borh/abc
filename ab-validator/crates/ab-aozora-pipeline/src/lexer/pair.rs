@@ -45,8 +45,15 @@
 //!   preventing closure at `］`, which would otherwise cause the bracket
 //!   never to close and sink the rest of the document to plain text. A balanced
 //!   body never triggers it, except a closing delimiter quoted as a single glyph. That
-//!   glyph is text when immediately followed by its quote closer. A `」`
-//!   still cannot cross a bracket downward; only `］` gets this scope.
+//!   glyph is text when immediately followed by its quote closer.
+//! * **A non-bracket closer is a hard scope for plain brackets opened inside
+//!   it**, but only inside an annotation body: when the nearest enclosing open
+//!   of that kind sits inside a bracket itself and has nothing but plain
+//!   brackets stacked above it. This resolves a `［` quoted verbatim in a body
+//!   (`［＃「［あ」は底本では「（あ」］`), which has no closer of its own and
+//!   would otherwise absorb the annotation's `］`. A nested `［＃` is excluded:
+//!   it is an annotation in its own right and closes at its own `］`. Outside
+//!   an annotation body a closer still cannot cross a bracket downward.
 
 use core::iter::Peekable;
 use core::mem;
@@ -259,6 +266,31 @@ where
         &self.links
     }
 
+    /// Close the open frame at `open_pos`, force-resolving everything stacked
+    /// above it as `Unclosed` first.
+    ///
+    /// Pops top-first so the innermost dangling open surfaces first, matching
+    /// the EOF-drain order in `next`. `pending` is left holding
+    /// [`PairEvent::Unclosed`]… (innermost-first) then
+    /// [`PairEvent::PairClose`]; the head is returned and `next` drains the
+    /// tail in order.
+    fn close_through(&mut self, kind: PairKind, open_pos: usize, close: Span) -> PairEvent {
+        while self.stack.len() > open_pos + 1 {
+            let (k, open_span, _) = self.stack.pop().expect("len > open_pos + 1");
+            self.diagnostics
+                .push(Diagnostic::unclosed_bracket(open_span, k));
+            self.pending.push(PairEvent::Unclosed {
+                kind: k,
+                span: open_span,
+            });
+        }
+        let (_, open_span, _) = self.stack.pop().expect("open frame at open_pos");
+        self.links.push(PairLink::new(kind, open_span, close));
+        self.pending
+            .push(PairEvent::PairClose { kind, span: close });
+        self.pending.remove(0)
+    }
+
     fn classify_trigger(&mut self, kind: TriggerKind, span: Span) -> PairEvent {
         if let Some(pair_kind) = open_kind_of(kind) {
             self.stack.push((pair_kind, span, 0));
@@ -294,12 +326,12 @@ where
 
             // A `］` treats its bracket as a *hard pairing scope*: it closes
             // the nearest enclosing `［`, force-resolving any non-bracket opens
-            // stacked above that bracket as `Unclosed` (innermost-first). This
-            // is what stops an unbalanced `「` inside a directive body (e.g.
-            // `［＃「…（fig）入る］` or the composed-glyph gaiji
-            // `［＃「口＋「皐」…］`) from burying the `］` so the bracket never
-            // closes and the classifier sinks the rest of the document to plain.
-            // A quoted scalar closer is already retained as text above.
+            // stacked above that bracket as `Unclosed` (innermost-first) before
+            // the close. This is what stops an unbalanced `「` inside a
+            // directive body (e.g. `［＃「…（fig）入る］` or the composed-glyph
+            // gaiji `［＃「口＋「皐」…］`) from burying the `］` so the bracket
+            // never closes and the classifier sinks the rest of the document to
+            // plain. A quoted scalar closer is already retained as text above.
             if pair_kind == PairKind::Bracket
                 && let Some(bracket_pos) = self
                     .stack
@@ -307,28 +339,38 @@ where
                     .rposition(|&(k, _, _)| k == PairKind::Bracket)
             {
                 // Everything above `bracket_pos` is non-bracket by construction
-                // (it is the top-most bracket). Pop those top-first so the
-                // innermost dangling open surfaces first, matching the EOF-drain
-                // order (`next`), then close the bracket itself.
-                while self.stack.len() > bracket_pos + 1 {
-                    let (k, open_span, _) = self.stack.pop().expect("len > bracket_pos + 1");
-                    self.diagnostics
-                        .push(Diagnostic::unclosed_bracket(open_span, k));
-                    self.pending.push(PairEvent::Unclosed {
-                        kind: k,
-                        span: open_span,
-                    });
-                }
-                let (_, open_span, _) = self.stack.pop().expect("bracket at bracket_pos");
-                self.links
-                    .push(PairLink::new(PairKind::Bracket, open_span, span));
-                self.pending.push(PairEvent::PairClose {
-                    kind: PairKind::Bracket,
-                    span,
-                });
-                // `pending` now holds [Unclosed…(innermost-first), PairClose];
-                // surface the head and let `next` drain the rest in order.
-                return self.pending.remove(0);
+                // (it is the top-most bracket).
+                return self.close_through(pair_kind, bracket_pos, span);
+            }
+
+            // The mirror of that rule, for the one shape it cannot reach: a
+            // quoted `［` inside an annotation body. Bodies quote source text
+            // verbatim (`［＃「［あ」は底本では「（あ」］`), so a `［` the quote
+            // opened is data and has no closer of its own. Left on the stack it
+            // becomes the nearest enclosing bracket, so the rule above closes
+            // *it* rather than the annotation, and the annotation's own bracket
+            // survives to the newline expiry, taking every marker within its
+            // allowance down with it.
+            //
+            // A non-bracket closer is therefore a hard scope for brackets
+            // opened inside it, under the conditions that make that reading
+            // unambiguous. The opener is itself inside a bracket, which is what
+            // makes this an annotation body rather than running text, so a
+            // crossing in prose (`「あ［い」う］`) is left alone. And the only
+            // opens above it are PLAIN brackets, carrying no directive newline
+            // allowance: a nested `［＃` is an annotation in its own right and
+            // closes at its own `］`, so a body that quotes a chain of gaiji
+            // annotations (`［＃「※［＃「麾」の「毛」に代えて「手」」、42-8］…」に白丸傍点］`)
+            // keeps the reading it had.
+            if let Some(open_pos) = self.stack.iter().rposition(|&(k, _, _)| k == pair_kind)
+                && self.stack[open_pos + 1..]
+                    .iter()
+                    .all(|&(k, _, allowance)| k == PairKind::Bracket && allowance == 0)
+                && self.stack[..open_pos]
+                    .iter()
+                    .any(|&(k, _, _)| k == PairKind::Bracket)
+            {
+                return self.close_through(pair_kind, open_pos, span);
             }
 
             self.diagnostics
@@ -508,6 +550,106 @@ mod tests {
         assert!(events.iter().any(
             |event| matches!(event, PairEvent::Text { range } if range.slice(source) == "］")
         ));
+    }
+
+    #[test]
+    fn a_quoted_opening_bracket_does_not_absorb_the_annotation_close() {
+        // The body quotes source text that contains a `［` with no partner. The
+        // annotation's own `］` has to close the annotation, not the quoted
+        // glyph, or the annotation bracket survives to the newline expiry and
+        // takes every later marker with it.
+        let source = "［＃「［あ」は底本では「（あ」］";
+        let (events, _) = run(source);
+        let close = events
+            .iter()
+            .filter_map(|event| match *event {
+                PairEvent::PairClose {
+                    kind: PairKind::Bracket,
+                    span,
+                } => Some(span),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(close.len(), 1, "{events:?}");
+        assert_eq!(usize::try_from(close[0].end).unwrap(), source.len());
+    }
+
+    #[test]
+    fn a_balanced_quoted_bracket_pair_still_closes_as_itself() {
+        // The same shape with the quoted bracket balanced: the inner pair
+        // resolves on its own before the quote closes, so the new rule never
+        // fires and both brackets close where they stand.
+        let source = "［＃「［あ］」は底本では「（あ）」］";
+        let (events, diagnostics) = run(source);
+        assert!(diagnostics.is_empty(), "{diagnostics:?}");
+        let close = events
+            .iter()
+            .filter_map(|event| match *event {
+                PairEvent::PairClose {
+                    kind: PairKind::Bracket,
+                    span,
+                } => Some(usize::try_from(span.end).unwrap()),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(close, vec!["［＃「［あ］".len(), source.len()]);
+    }
+
+    #[test]
+    fn a_nested_annotation_in_a_body_still_closes_at_its_own_bracket() {
+        // Each gaiji description here ends in a doubled quote closer, so the
+        // outer body's quote closes while the nested annotation's bracket is
+        // still open. That bracket is a directive and resolves at its own `］`,
+        // so it is not one the closer may force.
+        let source = "［＃「※［＃「麾」の「毛」に代えて「手」」、42-8］」に白丸傍点］";
+        let (events, _) = run(source);
+        let close = events
+            .iter()
+            .filter_map(|event| match *event {
+                PairEvent::PairClose {
+                    kind: PairKind::Bracket,
+                    span,
+                } => Some(usize::try_from(span.end).unwrap()),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(
+            close,
+            vec![
+                "［＃「※［＃「麾」の「毛」に代えて「手」」、42-8］".len(),
+                source.len()
+            ],
+            "{events:?}"
+        );
+    }
+
+    #[test]
+    fn a_quoted_opening_bracket_outside_an_annotation_body_is_left_alone() {
+        // Running text, not an annotation body: the quote's opener is not
+        // inside a bracket, so the crossing keeps the reading it had, with the
+        // `］` closing the `［` and the `」` unmatched.
+        let source = "「あ［い」う］";
+        let (events, _) = run(source);
+        assert!(
+            events.iter().any(|event| matches!(
+                event,
+                PairEvent::Unmatched {
+                    kind: PairKind::Quote,
+                    ..
+                }
+            )),
+            "{events:?}"
+        );
+        assert!(
+            events.iter().any(|event| matches!(
+                event,
+                PairEvent::PairClose {
+                    kind: PairKind::Bracket,
+                    ..
+                }
+            )),
+            "{events:?}"
+        );
     }
 
     #[test]

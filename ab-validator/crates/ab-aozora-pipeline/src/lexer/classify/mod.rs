@@ -1177,6 +1177,16 @@ where
                         .pending_refmark
                         .take()
                         .map_or(span.start, |rm| rm.start);
+                    // A bracket after an explicit `｜` is held open as a
+                    // possible continuation of the base, because that is what
+                    // `｜漢字［＃「漢字」に傍点］` is. A LITERAL bracket ends
+                    // that possibility, and the base's spans start before the
+                    // plain run this is about to flush: emitting the plain
+                    // first would put the base's own text after text that
+                    // follows it in the source.
+                    if let Some(pending) = self.pending_ruby_base.take() {
+                        self.emit_pending_base(pending);
+                    }
                     self.flush_plain_up_to(pre_open);
                     self.push_plain(span, PlainProvenance::RecoveredVerbatim);
                     self.streaming = Some(StreamingFrame { kind, depth: 1 });

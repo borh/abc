@@ -1,8 +1,11 @@
-# Parser validation and source research
+# The Aozora parser, and the research that checks it
 
-`ab-validator` contains the Rust Aozora parser, AAT-to-parser-IR conversion,
-source-authority measurement, and morphology tools. Soranoha consumes the
-`ab-aozora` and `ab-aat-to-parser-ir` executables for publication. Research
+`ab-validator` builds the Rust Aozora parser. Its primary output is two
+executables, `ab-aozora` and `ab-aat-to-parser-ir`, which Soranoha runs on
+every source it publishes, so the parser's reading of a source is the edition's
+reading of it. The name records the activity that grew up around the
+parser rather than the parser itself: validation, source-authority measurement,
+and morphology tools all exist to establish that the reading is right. Research
 adapters, schemas, fixtures, and reports live under `research/`.
 
 The parser core is not original work. Eight crates are an independent fork of

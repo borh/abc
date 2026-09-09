@@ -4,9 +4,10 @@ This repository is the Soranoha monorepo. It contains two components:
 
 - `soranoha/`: publication build kernel, TEI/plaintext conversion, record schemas,
   TEI profile, assessment evaluation, and the snh protocol.
-- `ab-validator/`: Rust adapters, parser/IR validation, source-authority research,
-  corpus measurement, and report tooling. Retained research tools and fixtures live
-  under `ab-validator/research/`.
+- `ab-validator/`: the Rust Aozora parser, whose two executables read every
+  source Soranoha publishes, and the adapters, parser/IR validation, source-authority
+  research, corpus measurement, and report tooling built around it. Retained
+  research tools and fixtures live under `ab-validator/research/`.
 
 ## Working Rules
 
@@ -56,6 +57,6 @@ nix build ./ab-validator#checks.x86_64-linux.cargo-fmt
   conformance vectors (`soranoha/resources/snh/vectors/`), boundary decode, wire
   encodings, and admission-evidence formats. Frozen protocol changes require a
   permanent architectural decision record describing the changed contract and rationale.
-- ab-validator owns parser/adaptor measurement, AAT evidence, parser-IR conversion evidence, and corpus reports.
+- ab-validator owns the parser itself, along with parser/adaptor measurement, AAT evidence, parser-IR conversion evidence, and corpus reports.
 - Parser outputs are supporting evidence; source-authority measurements are the authority for Aozora markup coverage.
 - Plaintext output should remain visible body text only; ruby, source apparatus, provenance, and other metadata belong in TEI/custom sidecars.

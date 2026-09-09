@@ -130,6 +130,32 @@
               {"parser-ir" (fs/read-all-bytes parser-ir-file)
                "divergence" (fs/read-all-bytes divergence-file)}))))})
 
+(defn render-ir-stage
+  "Full parser-IR (by content hash) -> the IR shape render consumes.
+
+  Render reads every parser-IR field except `interpretation_facts`, which only
+  the coverage stage consumes. Binding render's `parser-ir` input to this
+  projection decouples render's derivation key from facts-only converter
+  output: a change confined to `interpretation_facts` changes the full parser-IR
+  blob but leaves the projected bytes identical, so render's cache key is
+  unchanged and TEI rendering is skipped while coverage (which reads the full
+  IR directly) still refreshes. The projection is a traced, content-addressed
+  derivation rather than an unrecorded byte rewrite, so it is reproducible and
+  monitored like every other stage.
+
+  `interpretation_problems` is deliberately retained: render writes those into
+  TEI notes. A future render consumer of `interpretation_facts` must restore the
+  field here and bump this stage-version; the render-equivalence test in
+  `soranoha.ori.render-ir-test` clamps that invariant."
+  [clj-toolchain-id]
+  {:stage-id "render-ir"
+   :stage-version "1"
+   :toolchain-id clj-toolchain-id
+   :f (fn [{:keys [blob]} inputs]
+        (let [parser-ir (json/read-json (String. ^bytes (blob (get inputs "parser-ir")) "UTF-8"))
+              projected (dissoc parser-ir "interpretation_facts")]
+          {"parser-ir" (json-bytes projected)}))})
+
 (defn render-stage
   "parser-IR + metadata record + persons + publication identifier -> TEI bytes.
 

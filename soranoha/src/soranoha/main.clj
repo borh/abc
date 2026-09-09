@@ -79,6 +79,7 @@
      :metadata (stages/metadata-stage clj-toolchain-id assets-root)
      :parse (stages/parse-stage adapter)
      :convert (stages/convert-stage adapter)
+     :render-ir (stages/render-ir-stage clj-toolchain-id)
      :render (stages/render-stage clj-toolchain-id (build-rights-grant opts))
      :plaintext (stages/plaintext-stage clj-toolchain-id)
      :markdown (stages/markdown-stage clj-toolchain-id)
@@ -97,7 +98,7 @@
   Returns {:slug :zip-hex :source-facts
   :outputs {stage-key {name hex}} :cached {stage-key bool}
   :trace-keys {stage-key derivation-key-hex}}."
-  [store {:keys [extract metadata parse convert render plaintext markdown validate accountability coverage]}
+  [store {:keys [extract metadata parse convert render-ir render plaintext markdown validate accountability coverage]}
    {:keys [slug row file]} catalog-rows]
   (let [zip-hex (cas/put-file! (:cas-dir store) file)
         extract-r (engine/run-stage! store extract {"zip" zip-hex})
@@ -113,8 +114,11 @@
                                      {"aat" (get (:outputs parse-r) "aat")
                                       "work_content_hash"
                                       (get facts "work_content_hash")})
+        render-ir-r (engine/run-stage! store render-ir
+                                       {"parser-ir" (get (:outputs convert-r)
+                                                         "parser-ir")})
         render-r (engine/run-stage! store render
-                                    {"parser-ir" (get (:outputs convert-r)
+                                    {"parser-ir" (get (:outputs render-ir-r)
                                                       "parser-ir")
                                      "metadata-record" (get (:outputs metadata-r)
                                                             "metadata-record")

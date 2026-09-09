@@ -167,3 +167,59 @@
       (is (string/includes? (get-in frame [1 :rend]) (str "border(" border ")")))
       (is (string/includes? (get-in frame [1 :rend]) "gothic"))
       (is (= 4 (count (rendered-paragraphs frame)))))))
+
+(deftest a-layout-scope-over-only-a-heading-keeps-the-heading-inside-it
+  ;; The shape a heading produces when the source opens a width and a hanging
+  ;; indent inside the heading scope and closes them inside it: two scopes over
+  ;; the heading node alone, written innermost first, as the converter emits
+  ;; them from the nested containers. Both endpoints fall on paragraph
+  ;; boundaries, so these are structural scopes and render as divisions around
+  ;; the head rather than as segments inside it.
+  (let [ir {"nodes" [{"type" "text" "text" "前"}
+                     {"type" "heading" "text" "章" "level" 2 "style" "normal"}
+                     {"type" "text" "text" "後"}]
+            "paragraphs" [{"role" "body" "node_range" {"start" 0 "end" 1}}
+                          {"role" "body" "node_range" {"start" 2 "end" 3}}]
+            "layout_blocks" [{"node_range" {"start" 1 "end" 2} "indent" 2
+                              "continuation_indent" 3
+                              "source_pointer" "blocks[0].children[0]"}
+                             {"node_range" {"start" 1 "end" 2} "width" 12
+                              "source_pointer" "blocks[0]"}]}
+        body (:body (tei/render ir))
+        scopes (filterv #(and (vector? %) (= :div (first %))
+                              (= "layout" (get-in % [1 :type])))
+                        (tree-seq vector? seq body))]
+    ;; Source containment order is kept: the width the source opened first is
+    ;; the outer scope, and the indent it opened inside that is the inner one.
+    (is (= 2 (count scopes)) (pr-str body))
+    (is (= "inline-size: 12em" (get-in scopes [0 1 :style])))
+    (is (= "padding-inline-start: 3em; text-indent: -1em" (get-in scopes [1 1 :style])))
+    ;; The heading is inside both and is still a head, not a paragraph.
+    (is (some #{[:head {:n "2"} "章"]} (tree-seq vector? seq (second scopes))))
+    (is (not-any? #{[:p "章"]} (tree-seq vector? seq body)))
+    ;; The prose on either side stays outside the scopes.
+    (is (not-any? #{[:p "前"] [:p "後"]} (tree-seq vector? seq (first scopes))))))
+
+(deftest a-layout-scope-over-only-a-heading-satisfies-the-publication-profile
+  (let [ir {"nodes" [{"type" "text" "text" "前"}
+                     {"type" "heading" "text" "章" "level" 2 "style" "normal"}
+                     {"type" "text" "text" "後"}]
+            "paragraphs" [{"role" "body" "node_range" {"start" 0 "end" 1}}
+                          {"role" "body" "node_range" {"start" 2 "end" 3}}]
+            "layout_blocks" [{"node_range" {"start" 1 "end" 2} "indent" 2
+                              "continuation_indent" 3
+                              "source_pointer" "blocks[0].children[0]"}
+                             {"node_range" {"start" 1 "end" 2} "width" 12
+                              "source_pointer" "blocks[0]"}]}
+        dir (fs/create-temp-dir {:prefix "heading-scope"})
+        xml-path (str (fs/path dir "tei.xml"))
+        result (render/render-work
+                {:rights @fixture/grant
+                 :parser-ir ir
+                 :metadata-record {"work" {"title" "試験" "aozora_modified" "2026-09-06"} "contributors" []}
+                 :persons-by-id {}})]
+    (try
+      (spit xml-path (:tei result))
+      (is (empty? (:violations (rng/validate! {:schema-path "schemas/tei-profile.rng"
+                                               :xml-path xml-path :label "heading scope"}))))
+      (finally (fs/delete-tree dir)))))

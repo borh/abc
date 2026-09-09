@@ -2248,12 +2248,13 @@ fn blocks_from_inline_content(content: Vec<Value>, decoded: &DecodedSource) -> V
             // heading's content is inline and a container is a block, so the
             // container cannot go in the content, and the assembly below never
             // sees these markers. Wrapping the heading in them expresses the
-            // same scope with what the schema already has, keeps both marker
-            // spans of every container, and reaches a mapping that is already
-            // written: a layout scope whose range is a heading is rendered
-            // inside the head element rather than around it. Only a heading
-            // that stands as its own block can be wrapped, so an inline
-            // `dogyo` heading is left exactly as it was.
+            // same scope with what the schema already has and keeps both marker
+            // spans of every container. Each becomes a layout scope whose range
+            // is the heading node alone, and the publisher renders those as
+            // nested divisions around the head, outermost container outermost,
+            // each carrying its own source span. Only a heading that stands as
+            // its own block can be wrapped, so an inline `dogyo` heading is
+            // left exactly as it was.
             let mut containers: Vec<(Value, Value)> = Vec::new();
             let (mut first, mut last) = (index + 1, close_index);
             if attributes["style"] == "normal" {

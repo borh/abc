@@ -325,3 +325,33 @@
       (is (= rend (get-in hi [1 :rend])))
       (is (= params (get-in hi [1 :snh/layout-params])))
       (is (= [:rb "字"] (some #(when (and (vector? %) (= :rb (first %))) %) (hiccup-nodes hi)))))))
+
+(deftest quotation-delimiters-render-as-text-not-as-quote-elements-test
+  (testing "a quote marker is one delimiter character, so it is text"
+    ;; The parser IR emits one `quote` node per delimiter, carrying
+    ;; `marker_type` and the single character. Rendering that as TEI `<quote>`
+    ;; said the delimiter was the quoted passage and the speech beside it was
+    ;; not, which inverts what the source means.
+    (let [result (parser-ir-tei/render
+                  {"nodes" [{"type" "quote"
+                             "span" {"start" 0 "end" 3
+                                     "coordinate_system" "decoded_utf8"}
+                             "marker_type" "open"
+                             "text" "「"}
+                            {"type" "text"
+                             "span" {"start" 3 "end" 12
+                                     "coordinate_system" "decoded_utf8"}
+                             "text" "新小説"}
+                            {"type" "quote"
+                             "span" {"start" 12 "end" 15
+                                     "coordinate_system" "decoded_utf8"}
+                             "marker_type" "close"
+                             "text" "」"}]
+                   "paragraphs" [{"node_range" {"start" 0 "end" 3}}]})
+          tags (into #{} (comp (filter vector?) (map first))
+                     (hiccup-nodes (:body result)))
+          text (apply str (filter string? (hiccup-nodes (:body result))))]
+      (is (not (contains? tags :quote))
+          "no element may claim the delimiter is the quotation")
+      (is (= "「新小説」" text)
+          "every character of the source reaches the reader"))))

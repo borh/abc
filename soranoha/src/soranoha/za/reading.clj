@@ -291,7 +291,6 @@
       "lb" [:br]
       ("pb" "cb") [:span (element-attrs element ["pb"] (attr element "n"))]
       "gap" [:span (element-attrs element ["gap"] (attr element "reason")) "〔欠〕"]
-      "quote" (into [:blockquote (element-attrs element ["quote"])] (kids))
       "g" (gaiji declarations element)
 
       ("hi" "seg")

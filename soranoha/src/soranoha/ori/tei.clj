@@ -512,9 +512,16 @@
                           (sourced node [:seg {:type "caption"}]))))
 
 (defn- render-quote-node
-  ([acc node _depth]
+  ([acc node depth]
+   ;; The parser IR's `quote` node is one quotation delimiter, carrying
+   ;; `marker_type` open or close and the single character as its text. It is
+   ;; a marker, not a container: the quoted passage is a sibling. Rendering it
+   ;; as TEI `<quote>` said the delimiter was the quotation and the speech was
+   ;; not, which is the opposite of what the source means. The character is
+   ;; source text and carries the information on its own, so it is emitted the
+   ;; same way any other text run is.
    (if (present-text? (get node "text"))
-     (append-inline acc (sourced node [:quote (get node "text")]))
+     (render-text-node acc node depth)
      (mark-omitted acc "quote"))))
 
 (defn- render-source-note-node

@@ -126,3 +126,93 @@ fn generic_frame_closer_preserves_the_openers_supplied_rule_pattern() {
         "unspecified"
     );
 }
+
+#[test]
+fn a_line_measure_keeps_its_dimensions_whichever_order_the_source_writes_them() {
+    // `{W}字組み` with no line count states the measure `{W}字詰め` states,
+    // and `{W}字詰×{L}行` states the pair `{L}行{W}字組み` states.
+    for (clause, width, lines) in [
+        ("２０字組み", 20, None),
+        ("２０字詰め", 20, None),
+        ("１５字詰×５行", 15, Some(5)),
+        ("５行１５字組みで", 15, Some(5)),
+    ] {
+        let ir = convert(&format!(
+            "［＃ここから３字下げ、{clause}］\n本文\n［＃ここで字下げ終わり］"
+        ));
+        let scope = &ir["layout_blocks"][0];
+        assert_eq!(scope["indent"], 3, "{clause}");
+        assert_eq!(scope["width"], width, "{clause}");
+        match lines {
+            Some(count) => assert_eq!(scope["line_count"], count, "{clause}"),
+            None => assert!(scope.get("line_count").is_none(), "{clause}"),
+        }
+        assert_eq!(
+            ir["interpretation_problems"],
+            serde_json::json!([]),
+            "{clause}"
+        );
+    }
+}
+
+#[test]
+fn a_foot_margin_stated_of_the_block_reads_as_the_margin_it_names() {
+    for clause in ["地は本文より２字上", "地より２字上げ", "地から２字上げ"]
+    {
+        let ir = convert(&format!(
+            "［＃ここから４字下げ、{clause}］\n本文\n［＃ここで字下げ終わり］"
+        ));
+        let scope = &ir["layout_blocks"][0];
+        assert_eq!(scope["indent"], 4, "{clause}");
+        assert_eq!(scope["offset_from_end"], 2, "{clause}");
+        assert_eq!(
+            ir["interpretation_problems"],
+            serde_json::json!([]),
+            "{clause}"
+        );
+    }
+}
+
+#[test]
+fn a_margin_clause_whose_verb_contradicts_its_edge_stays_unresolved() {
+    // `地から３字下げ` names the foot edge and then moves away from it. Reading
+    // it as a foot margin would choose an intent the spelling does not state,
+    // so the indentation is kept and the clause is retained as it stands.
+    let ir = convert("［＃ここから２字下げ、地から３字下げ］\n本文\n［＃ここで字下げ終わり］");
+    let scope = &ir["layout_blocks"][0];
+    assert_eq!(scope["indent"], 2);
+    assert!(scope.get("offset_from_end").is_none());
+    assert!(
+        ir["interpretation_problems"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|problem| problem["raw"] == "地から３字下げ"),
+        "{ir}"
+    );
+}
+
+#[test]
+fn an_exception_naming_the_lines_it_applies_to_stays_unresolved() {
+    // The source names a subset of the enclosed lines and gives it a different
+    // indentation. Which lines those are is not recoverable without reading the
+    // text, so the supplied scope indentation stands and the clause is kept.
+    for clause in [
+        "ただし冒頭の歌記号のみは２字下げ",
+        "ただし改行行頭の「・」のみ１字下げ",
+        "一つの行が複数行に渡る場合は２行目から２字下げ",
+    ] {
+        let ir = convert(&format!(
+            "［＃ここから３字下げ、{clause}］\n本文\n［＃ここで字下げ終わり］"
+        ));
+        assert_eq!(ir["layout_blocks"][0]["indent"], 3, "{clause}");
+        assert!(
+            ir["interpretation_problems"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|problem| problem["raw"] == clause),
+            "{clause}"
+        );
+    }
+}

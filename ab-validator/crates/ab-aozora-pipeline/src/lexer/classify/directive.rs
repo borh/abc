@@ -2370,9 +2370,13 @@ fn resolve_indent_segment(segment: &str, block: &mut IndentBlock) -> Option<()> 
     if let Some(rest) = segment
         .strip_prefix("地より")
         .or_else(|| segment.strip_prefix("地から"))
+        // `地は本文より{N}字上`: the same foot-edge margin, stated of the
+        // block's own foot rather than as an instruction. The body is the
+        // measure the other two spellings take implicitly.
+        .or_else(|| segment.strip_prefix("地は本文より"))
     {
         let (offset, tail) = parse_layout_count_prefix(rest)?;
-        if tail != "字上げ" {
+        if !matches!(tail, "字上げ" | "字上") {
             return None;
         }
         block.end_offset = Some(offset);
@@ -2521,6 +2525,22 @@ fn parse_indent_line_layout(after: &str) -> Option<IndentLayout> {
     let lead = NonZeroU8::new(lead)?; // folds the `lead >= 1` guard
     if rest == "字詰め" {
         return Some(IndentLayout::LineWidth(LineWidth(lead)));
+    }
+    // `{W}字組み` with no leading line count states the measure `{W}字詰め`
+    // states: characters per line. It is the spelling the compound closer
+    // already carries (`ここで字下げ、{W}字組み終わり`), read from the opener.
+    if matches!(rest, "字組み" | "字組みで" | "字組") {
+        return Some(IndentLayout::LineWidth(LineWidth(lead)));
+    }
+    // `{W}字詰\u{d7}{L}行`: the two dimensions of `{L}行{W}字組み` written
+    // width first. Neither spelling derives anything from the enclosed text.
+    if let Some(after_width) = rest
+        .strip_prefix("字詰め\u{d7}")
+        .or_else(|| rest.strip_prefix("字詰\u{d7}"))
+    {
+        let (lines, tail) = parse_decimal_u8_prefix(after_width)?;
+        let lines = NonZeroU8::new(lines)?;
+        return (tail == "行").then_some(IndentLayout::Kumi(Kumi { lines, width: lead }));
     }
     // `{L}行{W}字組み[で]`: the leading number is the line count.
     let after_lines = rest.strip_prefix('行')?;

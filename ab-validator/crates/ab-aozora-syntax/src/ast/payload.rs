@@ -14,7 +14,7 @@ use ab_aozora_encoding::gaiji::{GaijiCanonical, MenKuTen, Resolved};
 use crate::format::{ForwardAttr, ForwardOrigin, LineFormat};
 use crate::{
     Container, DirectiveKind, HeadingKind, HeadingStyle, MarginNoteKind, MarginNotePosition,
-    RubySide, SectionKind,
+    MarkAnchor, RubySide, SectionKind,
 };
 
 use super::intern::StrId;
@@ -249,6 +249,10 @@ pub struct MarginNote {
     pub kind: MarginNoteKind,
     /// Physical side explicitly supplied by the source; bare に supplies none.
     pub position: Option<MarginNotePosition>,
+    /// Where along the base the source located the mark, when it said so.
+    /// `None` is a mark accompanying the base as a whole, not a default
+    /// position.
+    pub anchor: Option<MarkAnchor>,
     /// Exact annotation-text extent in native source coordinates, when sourced.
     pub note_span: Option<NonEmptySpan>,
     /// Exact literal target extent when the native resolver established one.

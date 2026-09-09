@@ -1948,6 +1948,9 @@ fn map_annotated_text(
     if let Some(position) = node.get("position") {
         result["position"] = position.clone();
     }
+    if let Some(anchor) = node.get("anchor") {
+        result["anchor"] = anchor.clone();
+    }
     nodes.push(result);
     Ok(end)
 }

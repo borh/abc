@@ -753,6 +753,13 @@ impl RecogniseCtx<'_, '_> {
         close_idx: usize,
     ) -> Option<(Node, u32, ForwardDiag)> {
         if let Some(selection) = extract_bouten_selection(view, self.source, open_idx, close_idx) {
+            // `の間に` locates a mark at a junction rather than selecting a
+            // range to decorate, so it produces a note rather than emphasis.
+            if let Some(mark) = between_mark_keyword(selection.suffix) {
+                return self
+                    .classify_between_mark(view, open_idx, close_idx, &selection, mark)
+                    .map(|(node, start)| (node, start, ForwardDiag::None));
+            }
             return self.classify_selected_bouten(view, open_idx, close_idx, &selection);
         }
         let extracted = extract_forward_quote_targets(view, self.source, open_idx, close_idx)?;
@@ -814,6 +821,67 @@ impl RecogniseCtx<'_, '_> {
             diag
         };
         Some((node, consume_start, diag))
+    }
+
+    /// Classify `［＃「X」と「Y」の間に<mark>］`: a mark the source places at the
+    /// junction of two adjacent runs.
+    ///
+    /// The result is a note rather than emphasis, because the source states a
+    /// position and not a range: there is nothing for a decoration to cover.
+    /// The two runs together become the base, so the position stays
+    /// addressable, and no principal character is derived from a marker that
+    /// names neither.
+    fn classify_between_mark(
+        &mut self,
+        view: BodyView<'_>,
+        open_idx: usize,
+        close_idx: usize,
+        selection: &BoutenSelection<'_>,
+        mark: &str,
+    ) -> Option<(Node, u32)> {
+        let PairEvent::PairOpen { span: open, .. } = view.events[open_idx] else {
+            return None;
+        };
+        let PairEvent::PairClose { .. } = view.events[close_idx] else {
+            return None;
+        };
+        let start = self.pending_plain_start?;
+        let spans = selection.resolve(
+            self.source,
+            Span::new(start, open.start),
+            SelectionSense::Named,
+        )?;
+        // A junction exists only where the runs meet. Runs the source names
+        // with anything between them locate no single position, so the marker
+        // stays unread rather than picking one of the gaps.
+        let [first, second] = spans.as_slice() else {
+            return None;
+        };
+        if first.end != second.start {
+            return None;
+        }
+        let base_span = Span::new(first.start, second.end);
+        // The mark keyword is a literal substring of the marker, so the note
+        // text is source text with an exact extent rather than a name supplied
+        // for it here.
+        let note_start = mark.as_ptr().addr() - self.source.as_ptr().addr();
+        let note_span = Span::new(
+            u32::try_from(note_start).ok()?,
+            u32::try_from(note_start + mark.len()).ok()?,
+        );
+        let left = self
+            .alloc
+            .content_plain(&self.source[first.start as usize..first.end as usize]);
+        let right = self
+            .alloc
+            .content_plain(&self.source[second.start as usize..second.end as usize]);
+        let note = self.alloc.content_plain(mark);
+        let mut result = self.alloc.between_mark(left, right, note, note_span);
+        if let Node::MarginNote(note) = &mut result {
+            note.target_span =
+                Some(NonEmptySpan::new(base_span).expect("resolved junction base is nonempty"));
+        }
+        Some((result, base_span.start))
     }
 
     fn classify_selected_bouten(
@@ -931,6 +999,16 @@ impl BoutenSelection<'_> {
         }
         Some(spans)
     }
+}
+
+/// The mark keyword of a `の間に<mark>` suffix, as a substring of the source.
+///
+/// Only spellings the mark vocabulary already recognises are read. The keyword
+/// is returned rather than its parsed kind because the note carries the
+/// source's own word, with the exact extent it occupies in the marker.
+fn between_mark_keyword(suffix: &str) -> Option<&str> {
+    let mark = suffix.strip_prefix("の間に")?;
+    bouten_kind_from_suffix(mark).map(|_| mark)
 }
 
 /// The ranges of `context` that `excluded` does not cover.

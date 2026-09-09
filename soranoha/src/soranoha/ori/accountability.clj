@@ -78,8 +78,12 @@
                    :families #{"annotation.chuuki"} :aspects #{"content" "structure"}}
    "glyph-shape-assertion" {:markers #{"CommandFullwidth" "CommandAscii"}
                             :families #{"glyph.variant_note"} :aspects #{"structure"}}
+   ;; A mark the source places between two characters is spelled with the
+   ;; emphasis vocabulary, so the coverage row that scans for it is the
+   ;; emphasis one even though what it publishes is a note and not emphasis.
    "supplied-mark" {:markers #{"CommandFullwidth" "CommandAscii"}
-                    :families #{"glyph.variant_note"} :aspects #{"structure" "layout"}}
+                    :families #{"glyph.variant_note" "emphasis.basic"}
+                    :aspects #{"structure" "layout"}}
    "annotated-text" {:markers #{"CommandFullwidth" "CommandAscii"}
                      :families #{"annotation.chuuki" "annotation.bouki" "reference.frontref" "source.page_reference"} :aspects #{"content" "structure" "layout"}}
    "external-table-reference" {:markers #{"CommandFullwidth" "CommandAscii"}

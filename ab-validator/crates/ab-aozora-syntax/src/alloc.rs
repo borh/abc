@@ -30,7 +30,7 @@ use ab_aozora_encoding::gaiji::GaijiCanonical;
 use crate::format::{ForwardAttr, ForwardOrigin, LineFormat};
 use crate::{
     BoutenKind, BoutenPosition, Container, DirectiveKind, HeadingKind, HeadingStyle,
-    MarginNoteKind, MarginNotePosition, RubySide, SectionKind,
+    MarginNoteKind, MarginNotePosition, MarkAnchor, RubySide, SectionKind,
 };
 
 use super::ast::{
@@ -316,8 +316,46 @@ impl Allocator {
         Node::MarginNote(MarginNote {
             kind,
             position,
+            anchor: None,
             note_span: note_span
                 .map(|span| NonEmptySpan::new(span).expect("annotation source extent is nonempty")),
+            target_span: None,
+            origin: ForwardOrigin::Reclaimed,
+            base,
+            note,
+        })
+    }
+
+    /// Retain a mark the source placed at the junction of two adjacent runs.
+    ///
+    /// The two runs stay separate base entries because the source names them
+    /// separately and the junction is where they meet. Concatenating them here
+    /// would print the same characters but would no longer say where between
+    /// them the mark sits, and the anchor is one byte in existing padding
+    /// whereas an offset beside it would grow every `Node` in every document.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `note` or the mark's source extent is empty.
+    pub fn between_mark(
+        &mut self,
+        left: Content,
+        right: Content,
+        note: Content,
+        note_span: crate::Span,
+    ) -> Node {
+        let base = self.store.push_contents(&[left, right]);
+        let note = self.push_nonempty(
+            note,
+            "classify stage must emit MarginNote with non-empty note",
+        );
+        Node::MarginNote(MarginNote {
+            kind: MarginNoteKind::SuppliedMark,
+            position: Some(MarginNotePosition::Right),
+            anchor: Some(MarkAnchor::Between),
+            note_span: Some(
+                NonEmptySpan::new(note_span).expect("mark keyword source extent is nonempty"),
+            ),
             target_span: None,
             origin: ForwardOrigin::Reclaimed,
             base,

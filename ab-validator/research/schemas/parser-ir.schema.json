@@ -519,6 +519,7 @@
       "properties":{
         "type":{"const":"annotated-text"}, "span":{"$ref":"#/$defs/span"}, "source_span":{"$ref":"#/$defs/sourceSpan"},
         "text":{"type":"string"}, "note_kind":{"enum":["gloss","marginal","cross-reference","base-edition","source-concealment","annotation-number","author-note","glyph-shape","supplied-mark"]}, "position":{"enum":["left","right"]},
+        "anchor":{"description":"Where along the target the source located the mark. Independent of position, which is the physical side: the source states the two separately. Absent when the mark accompanies the target as a whole.","enum":["between"]},
         "inline_children":{"type":"array","items":{"$ref":"#/$defs/inlineNode"}},
         "annotation_children":{"type":"array","minItems":1,"items":{"$ref":"#/$defs/annotationNode"}}
       }

@@ -40,9 +40,12 @@ use ab_aozora_facade::{
 use ab_aozora_facade::syntax::{
     AbsoluteSize, BlockPurpose, BlockStyles, CaptionScope, EnclosureKind, HeadingStyle,
     IndentBlock, IndentLayout, LineAlignment, LineFormat, MarginNoteKind, MarginNotePosition,
-    RelativePlacement,
+    MarkAnchor, RelativePlacement,
     accent::{compose_accent, compose_accent_dots, decompose_fragment},
-    ast::{ContainerEnd, ContainerPair, Content, IterationMark, KuntenKind, Ruby, Segment},
+    ast::{
+        ContainerEnd, ContainerPair, Content, ContentRange, IterationMark, KuntenKind, NodeStore,
+        Ruby, Segment,
+    },
 };
 use ab_source_syntax::{RegionError, SourceRegions, aozora_body_range};
 
@@ -301,6 +304,8 @@ enum ProjectedKind {
     MarginNote {
         kind: MarginNoteKind,
         position: Option<MarginNotePosition>,
+        /// Where along the target the source located the mark, when it said so.
+        anchor: Option<MarkAnchor>,
         target: String,
         note_span: Option<Span>,
         target_span: Option<Span>,
@@ -624,11 +629,8 @@ fn node_projection(tree: &LexOutput) -> Vec<AozoraNode> {
                 | NodeRef::BlockLeaf(Node::MarginNote(note)) => ProjectedKind::MarginNote {
                     kind: note.kind,
                     position: note.position,
-                    target: tree
-                        .store
-                        .content_range_as_plain(note.base)
-                        .unwrap_or_default()
-                        .to_owned(),
+                    anchor: note.anchor,
+                    target: margin_note_target(&tree.store, note.base),
                     note_span: note.note_span.map(|span| span.span().into()),
                     target_span: note.target_span.map(|span| span.span().into()),
                 },
@@ -4039,10 +4041,30 @@ fn illustration_node(decoded: &DecodedSource, node: &AozoraNode) -> Value {
     value
 }
 
+/// The text a margin note accompanies, joined across the entries of its base.
+///
+/// A mark the source places at a junction keeps the two runs it names as
+/// separate entries, so the joined text is what the note accompanies while the
+/// entries stay available to say where between them the mark sits.
+/// `content_range_as_plain` deliberately returns `None` for anything but a
+/// single plain entry, and gaiji-base ruby depends on that `None` to reach the
+/// path that resolves its glyph, so the join belongs here and not there.
+fn margin_note_target(store: &NodeStore, base: ContentRange) -> String {
+    store
+        .resolve_content_range(base)
+        .iter()
+        .filter_map(|content| match content {
+            Content::Plain(id) => Some(store.resolve_str(*id)),
+            _ => None,
+        })
+        .collect()
+}
+
 fn push_annotated_text(content: &mut Vec<Value>, decoded: &DecodedSource, node: &AozoraNode) {
     let ProjectedKind::MarginNote {
         kind,
         position,
+        anchor,
         target,
         note_span,
         target_span,
@@ -4072,6 +4094,14 @@ fn push_annotated_text(content: &mut Vec<Value>, decoded: &DecodedSource, node: 
             value["position"] = json!(match position {
                 MarginNotePosition::Left => "left",
                 MarginNotePosition::Right => "right",
+            });
+        }
+        // The side and the anchor are separate axes: the source can state one
+        // without the other, so neither is derived from the other here.
+        if let Some(anchor) = anchor {
+            value["anchor"] = json!(match anchor {
+                MarkAnchor::Between => "between",
+                _ => unreachable!("known mark anchor"),
             });
         }
         value

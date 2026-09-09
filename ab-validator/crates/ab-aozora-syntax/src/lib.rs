@@ -278,6 +278,23 @@ pub enum MarginNotePosition {
     Right,
 }
 
+/// Where along the run it accompanies a supplied mark sits.
+///
+/// Independent of [`MarginNotePosition`], which is the physical side. The
+/// source states the two separately and can state either without the other:
+/// every 傍点 sits on the right, and `の間に` says where along the line rather
+/// than which side of it. A mark with no anchor accompanies its run as a
+/// whole.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[non_exhaustive]
+pub enum MarkAnchor {
+    /// `「X」と「Y」の間に`: at the junction of the two adjacent runs the source
+    /// names, and on neither of them. The source states no principal character
+    /// and none is derived.
+    Between,
+}
+
 /// Annotation type carried by an `ast::MarginNote`.
 ///
 /// A note attached to a preceding run, with its source relationship retained.

@@ -417,6 +417,7 @@
         "annotation_content":{"type":"array","minItems":1,"items":{"oneOf":[{"$ref":"#/$defs/inline"},{"$ref":"#/$defs/gap"}]}},
         "note_kind":{"enum":["gloss","marginal","cross-reference","base-edition","source-concealment","annotation-number","author-note","glyph-shape","supplied-mark"]},
         "position":{"enum":["left","right"]},
+        "anchor":{"description":"Where along the target the source located the mark. Independent of position, which is the physical side: the source states the two separately. Absent when the mark accompanies the target as a whole.","enum":["between"]},
         "span":{"$ref":"#/$defs/span"}
       }
     },

@@ -101,6 +101,16 @@ marker points at. A run the target does not contain, or one that covers the
 whole target, leaves the marker unread rather than marking a range the source
 did not select.
 
+A marker with two operands can also state a position rather than a range.
+`［＃「自」と「然」の間に白三角傍点］` places a mark at the junction of two
+adjacent characters and marks neither of them, so it publishes a supplied mark
+anchored between them rather than emphasis over a span. The mark's side and its
+anchor stay separate: every such mark sits on the right, and `の間に` says where
+along the line rather than which side of it. The note carries the source's own
+word for the mark, with the extent that word occupies in the marker. Operands
+the source names with anything between them, or in an order the text does not
+have, locate no junction and leave the marker unread.
+
 Supplied block geometry retains indentation, continuation indentation, line width,
 and distance from the line end independently. Hanging indentation uses the
 continuation padding and the difference between first and continuation indents.

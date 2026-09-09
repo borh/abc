@@ -321,18 +321,18 @@ feature_keys = ["boten", "bosen", "bold", "italic", "sesame"]
 reference_sources = [
   "references/aozorabunko/rules/kijyunn.html",
 ]
-source_examples = ["［＃「語」に傍点］", "［＃太字］", "［＃白ゴマ傍点］", "［＃「自律・自由・人格・性格」の「・」を除く部分に傍点］"]
-source_patterns = ['［＃「[^」]+」に傍点］|［＃傍点］', '［＃「[^」]+」に傍線］|［＃傍線］', '［＃「[^」]+」は太字］|［＃太字］', '［＃「[^」]+」は斜体］|［＃斜体］', '白ゴマ傍点|黒ゴマ傍点|丸傍点', '［＃「[^」]+」(?:[のと]?「[^」]+」)+(?:を除く部分)?に[^］]*傍点］']
+source_examples = ["［＃「語」に傍点］", "［＃太字］", "［＃白ゴマ傍点］", "［＃「自律・自由・人格・性格」の「・」を除く部分に傍点］", "［＃「自」と「然」の間に白三角傍点］"]
+source_patterns = ['［＃「[^」]+」に傍点］|［＃傍点］', '［＃「[^」]+」に傍線］|［＃傍線］', '［＃「[^」]+」は太字］|［＃太字］', '［＃「[^」]+」は斜体］|［＃斜体］', '白ゴマ傍点|黒ゴマ傍点|丸傍点', '［＃「[^」]+」(?:[のと]?「[^」]+」)+(?:を除く部分|の間)?に[^］]*傍点］']
 ir_nodes = ["Inline::Style"]
 aat_nodes = ["style"]
 tei_projection = "hi with rendition"
 plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = ["style_scope_balance"]
-adapter_expectations = ["preserve style variant", "preserve style scope", "mark every range a selector leaves and no range it cuts out"]
+adapter_expectations = ["preserve style variant", "preserve style scope", "mark every range a selector leaves and no range it cuts out", "retain a mark placed between two operands without adopting either as its target"]
 oracle_cases = ["emphasis.boten.basic"]
 status = "partial"
-status_reason = "style variants are not yet matrix-keyed in validation reports. A selector with two quoted operands is matched here whether it names the range to mark or the range to cut out, since both are read. The placement form 「X」と「Y」の間に, which locates a mark between two operands rather than selecting a range, is a separate source shape and is deliberately not matched by these patterns while it stays unread."
+status_reason = "style variants are not yet matrix-keyed in validation reports. A marker with two quoted operands is matched here whether it names the range to mark, the range to cut out, or a position between the operands, since all three are read. The third states a position and not a range, so it publishes a supplied mark at the junction rather than emphasis over a span, and it is matched here because the source spells it with the same mark vocabulary."
 
 [syntax.parsers.aozora2]
 recognition = "parsed"

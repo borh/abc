@@ -707,6 +707,20 @@ fn emit_side_note<W: Write>(s: &MarginNote, store: &NodeStore, out: &mut W) -> f
         emit_content_range(s.base, store, out)?;
     }
     out.write_str("［＃「")?;
+    if s.anchor == Some(ab_aozora_syntax::MarkAnchor::Between) {
+        // The base holds the two runs the source named, in that order, so the
+        // marker round-trips as the pair it was written as.
+        let [left, right] = store.resolve_content_range(s.base) else {
+            return Err(fmt::Error);
+        };
+        let (left, right) = (*left, *right);
+        emit_content_one(left, store, out)?;
+        out.write_str("」と「")?;
+        emit_content_one(right, store, out)?;
+        out.write_str("」の間に")?;
+        emit_content_range(s.note, store, out)?;
+        return out.write_char('］');
+    }
     emit_content_range(s.base, store, out)?;
     if matches!(
         s.kind,

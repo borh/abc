@@ -1663,6 +1663,39 @@
       (is (= [plain] (texts result "p")) body)
       (is (empty? (get-in result [:ir "interpretation_problems"])) body))))
 
+(deftest a-mark-between-two-characters-belongs-to-neither-of-them
+  ;; Three of these sit on one line of the source, so each has to claim only
+  ;; the pair it names.
+  (let [result (transcribe (source (str "自然［＃「自」と「然」の間に白三角傍点］"
+                                        "はう［＃「は」と「う」の間に白三角傍点］"
+                                        "たふ［＃「た」と「ふ」の間に白三角傍点］")))
+        notes (filterv #(= "supplied-mark" (attribute % "type")) (elements result "note"))]
+    (is (= "自然はうたふ" (:plaintext result)))
+    (is (= 3 (count notes)))
+    (doseq [note notes]
+      ;; The side and the anchor are separate axes and occupy separate
+      ;; attributes; neither is derived from the other.
+      (is (= "right" (attribute note "place")))
+      (is (= "between" (attribute note "subtype"))))
+    ;; The note's own text is the source's word for the mark. It is read
+    ;; through the DOM rather than the body view, which excludes notes.
+    (is (= ["白三角傍点" "白三角傍点" "白三角傍点"]
+           (mapv #(.getTextContent ^Node %) notes)))
+    ;; No character is adopted as the mark's target: the pair carries it.
+    (is (= ["自然" "はう" "たふ"]
+           (mapv view/visible-text
+                 (filterv #(= "annotated-text" (attribute % "type"))
+                          (elements result "seg")))))
+    (is (empty? (get-in result [:ir "interpretation_problems"])))))
+
+(deftest a-mark-naming-runs-that-do-not-meet-stays-source-apparatus
+  (doseq [body ["自X然［＃「自」と「然」の間に白三角傍点］"
+                "自然他［＃「自」と「然」の間に白三角傍点］"
+                "自然は［＃「自」と「然」と「は」の間に白三角傍点］"]]
+    (let [result (transcribe (source body))]
+      (is (empty? (filterv #(= "supplied-mark" (attribute % "type")) (elements result "note"))) body)
+      (is (seq (get-in result [:ir "interpretation_problems"])) body))))
+
 (deftest a-cut-out-the-target-does-not-hold-leaves-the-selector-unread
   ;; Marking the whole target would be a guess about what the source meant by a
   ;; run that is not in it, so the marker stays source apparatus instead.

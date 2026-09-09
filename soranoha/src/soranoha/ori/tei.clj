@@ -341,7 +341,11 @@
         attributes (if (contains? #{"annotation-number" "author-note"} kind)
                      {:type "source-role" :subtype kind}
                      (cond-> {:type kind}
-                       (get node "position") (assoc :place (get node "position"))))
+                       (get node "position") (assoc :place (get node "position"))
+                       ;; The side and the anchor are separate axes the source
+                       ;; states independently, so they occupy separate
+                       ;; attributes rather than one combined value.
+                       (get node "anchor") (assoc :subtype (get node "anchor"))))
         note (into [:note attributes]
                    (:current-paragraph annotation))]
     (append-inline (assoc annotation :current-paragraph before)

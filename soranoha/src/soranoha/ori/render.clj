@@ -26,8 +26,12 @@
         decoding (get-in parser-ir ["source" "decode_outcome"])
         diagnostics (concat (get parser-ir "warnings") (get parser-ir "errors"))]
     (into (into (cond-> []
-                  (some? complete) (conj [:note {:type "parser-completion" :n (str complete)}
-                                          "Parser completion does not establish exhaustive markup interpretation."])
+                  (some? complete)
+                  (conj [:note {:type "parser-completion" :n (str complete)}
+                         "The n attribute is true when no parser diagnostic of "
+                         "error severity was raised for this source. What the "
+                         "converter could not interpret is recorded in the "
+                         "interpretation-problem and parser-diagnostic notes."])
                   decoding (conj [:note {:type "source-decoding"} decoding]))
                 (map (fn [problem]
                        [:note {:type "interpretation-problem"}

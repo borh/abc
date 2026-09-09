@@ -329,9 +329,9 @@ The colophon and the transcribers' note are the source's own back matter, kept
 as it was written. The `source-span` notes are the offset table. Also here,
 when the converter has anything to declare, are `note` elements of type
 `interpretation-problem`, `parser-diagnostic` and `parser-completion`: what the
-converter could not interpret, and its own statement that a completed parse is
-not proof of exhaustive interpretation. They are in the file so that a doubt
-recorded during conversion travels with the text rather than staying in a log.
+converter could not interpret, and whether any diagnostic reached error
+severity. They are in the file so that a doubt recorded during conversion
+travels with the text rather than staying in a log.
 
 ## The plaintext
 

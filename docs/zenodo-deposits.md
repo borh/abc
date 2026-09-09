@@ -59,7 +59,19 @@ produced, unchanged, and a role-assignment statement. Generate the statement
 rather than typing it, so that the fingerprints in the anchor cannot disagree
 with the keys beside them:
 
+Run this in the directory holding the two `.pub` files.
+
 ```sh
+set -eu
+
+# Check both keys before writing anything. A missing or malformed file must
+# stop the run: a command substitution's failure does not, so the check
+# cannot live inside the statement that generates the document.
+for file in release.pub governance.pub; do
+  test "$(wc -c < "$file")" -eq 65
+  tr -d '\n' < "$file" | grep -qE '^[0-9a-f]{64}$'
+done
+
 fingerprint() {
   printf "$(printf '%s' "$(tr -d '\n' < "$1")" | sed 's/../\\x&/g')" \
     | sha256sum | cut -d' ' -f1
@@ -77,7 +89,18 @@ fingerprint() {
   printf 'manifests. No other key is pinned for this chain, and the pinned set\n'
   printf 'cannot change.\n'
 } > role-assignment.txt
+
+cat role-assignment.txt
 ```
+
+Read the result against the fingerprints recorded by hand during the ceremony
+before depositing it. The guard above exists because the unguarded form fails
+in the worst available way: with one `.pub` file missing it wrote a complete
+and plausible anchor whose governance key was empty and whose fingerprint was
+`e3b0c442...`, the sha256 of no bytes, with the error on stderr and the
+document on stdout. An anchor is the permanent authority for the chain, so it
+is the last artifact that should be able to come out looking finished when it
+is not.
 
 The fingerprint is the sha256 of the **decoded 32 raw key bytes**, which is why
 the hex is turned back into bytes before hashing rather than being hashed as
@@ -196,8 +219,9 @@ the correspondence with `openssl` and coreutils alone, using only the release
 key published in the trust anchor:
 
 ```sh
-hex=<manifest digest, which is the .json file's name>
-pub=<64 hex characters of the release key, from the trust anchor>
+set -eu
+hex=...    # the manifest's digest, which is also its .json file name
+pub=...    # the release key's 64 hex characters, from the trust anchor
 
 test "$(sha256sum < "$hex.json" | cut -d' ' -f1)" = "$hex"
 printf "$(printf '302a300506032b6570032100%s' "$pub" | sed 's/../\\x&/g')" > release.pub.der

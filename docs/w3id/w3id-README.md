@@ -11,6 +11,7 @@ the project is served.
 | Prefix | Denotes |
 |---|---|
 | `/soranoha/ns/` | TEI extension vocabulary namespaces |
+| `/soranoha/rights` | The rights statement every release and file cites |
 | `/soranoha/schemas/` | Record schema identifiers embedded in published records |
 | `/soranoha/works/` | Landing pages for published works |
 

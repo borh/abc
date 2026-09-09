@@ -157,10 +157,15 @@
 
   `@ref` rather than a `pubPlace`: a downloaded file should resolve to its
   publisher without a lookup, and a corpus published only on the web has no
-  place of publication that would not be invented."
+  place of publication that would not be invented.
+
+  The `@ref` is the w3id prefix, not the serving host: these bytes are signed
+  and the chain is append-only, so a hostname written here could never be
+  corrected. `docs/w3id/htaccess` redirects it, as it does the vocabulary IRI
+  and the rights statement beside it."
   [work slug rights-grant]
   (cond-> [:publicationStmt
-           [:publisher {:ref "https://soranoha.org"} "Soranoha"]]
+           [:publisher {:ref "https://w3id.org/soranoha/"} "Soranoha"]]
     slug (conj [:idno {:type "soranoha-work-identifier"} slug])
     true (conj [:idno {:type "aozora-work-id"} (get work "work_id")])
     (get work "card_url") (conj [:idno {:type "aozora-card-url"} (get work "card_url")])

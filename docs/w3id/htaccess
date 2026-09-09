@@ -4,6 +4,7 @@
 # system for Aozora Bunko texts as TEI P5.
 #
 # https://w3id.org/soranoha/ns/...       TEI extension vocabulary namespaces
+# https://w3id.org/soranoha/rights       the published rights statement
 # https://w3id.org/soranoha/schemas/...  record schema identifiers
 # https://w3id.org/soranoha/works/...    published work landing pages
 #
@@ -18,6 +19,7 @@
 RewriteEngine on
 
 RewriteRule ^ns/(.*)$      https://soranoha.org/ns/$1      [R=302,L]
+RewriteRule ^rights$       https://soranoha.org/rights     [R=302,L]
 RewriteRule ^schemas/(.*)$ https://soranoha.org/schemas/$1 [R=302,L]
 RewriteRule ^works/(.*)$   https://soranoha.org/works/$1   [R=302,L]
 RewriteRule ^$             https://soranoha.org/           [R=302,L]

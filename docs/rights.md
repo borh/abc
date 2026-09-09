@@ -2,8 +2,10 @@
 
 This is the full statement referenced by every signed release manifest as
 `rights.statement_url` and by every published TEI file as
-`publicationStmt/availability`. It is served at
-<https://soranoha.org/rights>.
+`publicationStmt/availability`, in both cases as
+<https://w3id.org/soranoha/rights>, which redirects here. Those bytes are
+signed and cannot be corrected later, so they name an identifier rather than
+whichever host is serving the corpus.
 
 ## The short version
 
@@ -102,7 +104,7 @@ In every signed release manifest:
 "rights": {
   "works": "public-domain",
   "encoding": "CC0-1.0",
-  "statement_url": "https://soranoha.org/rights"
+  "statement_url": "https://w3id.org/soranoha/rights"
 }
 ```
 
@@ -120,7 +122,7 @@ Domain Mark, and Soranoha's encoding is dedicated under CC0:
     <licence target="https://creativecommons.org/publicdomain/zero/1.0/">Soranoha's
       encoding of this work, and the artifacts derived from it, are dedicated to
       the public domain under CC0-1.0. Attribution is requested, not required.
-      Full rights statement: <ptr target="https://soranoha.org/rights"/></licence>
+      Full rights statement: <ptr target="https://w3id.org/soranoha/rights"/></licence>
   </availability>
 </publicationStmt>
 ```

@@ -12,7 +12,7 @@ Submission adds `ids/soranoha/.htaccess` and `ids/soranoha/README.md` to that
 repository. `htaccess` and `w3id-README.md` here are those two files; the local
 names avoid a dotfile and a second README in this tree.
 
-Three prefixes are claimed, each redirecting to the corresponding `soranoha.org`
+Four prefixes are claimed, each redirecting to the corresponding `soranoha.org`
 path, plus a bare `/soranoha/`:
 
 | Prefix | Denotes |

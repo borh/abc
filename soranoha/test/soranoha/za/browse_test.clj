@@ -44,7 +44,7 @@
 (def ^:private rights
   {"works" "public-domain"
    "encoding" "CC0-1.0"
-   "statement_url" "https://soranoha.org/rights"})
+   "statement_url" "https://w3id.org/soranoha/rights"})
 
 (defn- tei-for
   "Published TEI for a fixture work, rendered by the same path that produces
@@ -278,7 +278,7 @@
       (let [rights-page (page pages "rights.html")]
         (is (string/includes? rights-page "https://creativecommons.org/publicdomain/zero/1.0/"))
         (is (string/includes? rights-page "https://creativecommons.org/publicdomain/mark/1.0/"))
-        (is (string/includes? rights-page "https://soranoha.org/rights"))
+        (is (string/includes? rights-page "https://w3id.org/soranoha/rights"))
         (testing "and then carries the statement itself, once"
           (is (string/includes? rights-page "id=\"two-distinct-rights-layers\""))
           (is (string/includes? rights-page "id=\"no-warranty\""))

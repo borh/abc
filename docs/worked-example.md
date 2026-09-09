@@ -89,14 +89,14 @@ did not grant.
 
 ```xml
 <publicationStmt>
-  <publisher ref="https://soranoha.org">Soranoha</publisher>
+  <publisher ref="https://w3id.org/soranoha/">Soranoha</publisher>
   <idno type="soranoha-work-identifier">000092_000879</idno>
   <idno type="aozora-work-id">000092</idno>
   <idno type="aozora-card-url">https://www.aozora.gr.jp/cards/000879/card92.html</idno>
   <date when="2014-09-17">2014-09-17</date>
   <availability status="free">
     <licence target="https://creativecommons.org/publicdomain/mark/1.0/">The underlying work is in the public domain; Soranoha asserts no rights over it.</licence>
-    <licence target="https://creativecommons.org/publicdomain/zero/1.0/">Soranoha's encoding of this work, and the artifacts derived from it, are dedicated to the public domain under CC0-1.0. Attribution is requested, not required. Full rights statement: <ptr target="https://soranoha.org/rights"/></licence>
+    <licence target="https://creativecommons.org/publicdomain/zero/1.0/">Soranoha's encoding of this work, and the artifacts derived from it, are dedicated to the public domain under CC0-1.0. Attribution is requested, not required. Full rights statement: <ptr target="https://w3id.org/soranoha/rights"/></licence>
   </availability>
 </publicationStmt>
 ```

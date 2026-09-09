@@ -171,7 +171,7 @@
                       "test-runtime"
                       {"works" "public-domain"
                        "encoding" "CC0-1.0"
-                       "statement_url" "https://soranoha.org/rights"})
+                       "statement_url" "https://w3id.org/soranoha/rights"})
         plain-stage (publication-stages/plaintext-stage "test-runtime")
         enrich-stage (stages/enrichment-stage "test-runtime")]
     (try

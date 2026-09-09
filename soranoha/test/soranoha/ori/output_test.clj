@@ -101,3 +101,24 @@
         (is (= tei (slurp (str (fs/path out "work" "tei.xml")))))
         (is (fs/exists? (fs/path out "work" "source-accountability.json"))))
       (finally (engine/close-store! store) (fs/delete-tree dir)))))
+
+(deftest permanent-pointers-in-published-bytes-survive-a-move-of-the-site
+  ;; The publisher pointer and the vocabulary IRI are both written into every
+  ;; published file, and the chain that carries them is append-only, so neither
+  ;; can be corrected after genesis. Both therefore name w3id rather than the
+  ;; host currently serving the corpus: `docs/w3id/htaccess` redirects them,
+  ;; and moving the corpus is a change to a redirect rule instead of a pointer
+  ;; that published files can never follow. A serving hostname reaching these
+  ;; two places is the regression this guards.
+  (let [tei (:tei (render/render-work
+                   {:rights @fixture/grant
+                    :parser-ir {"source" {"work_content_hash" (str "sha256:" (apply str (repeat 64 "a")))}
+                                "nodes" [{"type" "text" "text" "本文"}]}
+                    :metadata-record {"work" {"work_id" "1" "title" "試験"
+                                              "aozora_modified" "2026-09-07"}
+                                      "contributors" []}
+                    :persons-by-id {}}))]
+    (is (re-find #"<publisher ref=\"https://w3id\.org/soranoha/\">" tei))
+    (is (re-find #"xmlns:snh=\"https://w3id\.org/soranoha/ns/tei\"" tei))
+    (is (nil? (re-find #"soranoha\.org" tei))
+        "no serving host reaches bytes that can never be corrected")))

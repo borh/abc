@@ -92,8 +92,8 @@
   {:relation-to-work <role-string> :person <person-body-map>}.
 
   Four title forms where the catalog carries them. The subtitle matters for
-  identification, not decoration: author and title alone leave 1966 works in
-  the Aozora catalog ambiguous, and adding 副題 cuts that to 562. The original
+  identification, not decoration: author and title alone leave 2357 works in
+  the Aozora catalog ambiguous, and adding 副題 cuts that to 882. The original
   title of a translated work carries no language attribute because the catalog
   records no source language, and guessing one from the string would be an
   assertion this project cannot support."

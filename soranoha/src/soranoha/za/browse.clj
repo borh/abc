@@ -773,11 +773,11 @@
    "title" "蜘蛛の糸"
    "title_reading" "くものいと"
    "orthographic_style" "新字新仮名"
-   "source_editions" [{"title" "芥川龍之介全集　第三巻"
-                       "publisher" "筑摩書房"
-                       "first_edition_year" "1971（昭和46）年8月10日改版"}]
+   "source_editions" [{"title" "芥川龍之介全集2"
+                       "publisher" "ちくま文庫、筑摩書房"
+                       "first_edition_year" "1986（昭和61）年10月28日"}]
    "contributors" [{"person_id" "000879"
-                    "family_name" "芥川" "given_name" "龍之介"
+                    "family_name" "芥川" "given_name" "竜之介"
                     "family_name_romaji" "Akutagawa" "given_name_romaji" "Ryunosuke"
                     "relation_to_work" "著者"}]})
 

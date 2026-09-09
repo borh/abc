@@ -12,9 +12,10 @@
   exactly why it does not live in the chain.
 
   Two things every form carries. The **identifier**, because a description
-  does not identify a work: measured over the Aozora catalog, author and title
-  leave 1966 works ambiguous, and author, title, 副題, 文字遣い種別, 底本名
-  and 初出 together still leave 16. And the **release**, because the corpus is
+  does not identify a work: measured over the Aozora catalog this release
+  builds from, author and title leave 2357 works ambiguous, and author, title,
+  副題, 文字遣い種別, 底本名 and 初出 together still leave 16. Both counts
+  move with the upstream catalog. And the **release**, because the corpus is
   versioned and a citation that does not say which release was read does not
   name the bytes that were read.
 
@@ -64,17 +65,17 @@
   "The Gregorian year of the 底本's first edition, as a number.
 
   Aozora's 底本初版発行年 is not a year. It is a free-form publication
-  history: 17712 of 18808 recorded values read `1981（昭和56）年3月20日`, and
-  914 carry a printing history on top of that, as in `1948（昭和23）年5月15日、
-  1963（昭和38）年5月16日第20刷改版`. Every one of the 18914 values across
-  both edition slots contains a four-digit Gregorian year, and in all but one
-  it leads the string.
+  history: 17747 of the 18780 recorded values read `1981（昭和56）年3月20日`,
+  and of the 1033 that do not, 667 append a printing history, as in
+  `1948（昭和23）年5月15日、1963（昭和38）年5月16日第20刷改版`. Every one of
+  the 18886 values across both edition slots contains a four-digit Gregorian
+  year, and in all but one it leads the string.
 
   Taking the first year is the semantically correct reading, not just the
   convenient one: the field is 初版発行年, so where a printing history lists
   several years the earliest is the first edition's, which is the year a
   bibliography wants. Month and day are dropped: a book is cited by year,
-  and the 914 irregular values have no dependable month to take.
+  and the 1033 irregular values have no dependable month to take.
 
   The full string is not discarded; it is what the work page and the TEI
   header show. This is only for the fields that must hold a date."

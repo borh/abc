@@ -11,18 +11,22 @@ added as their assessment completes, encoding improves, and a work can be
 withdrawn. A citation that names only "Soranoha" does not identify the bytes
 you read.
 
-Every release is identified three ways, and a citation should carry the ones
+Every release is identified two ways, and a citation should carry the ones
 its context allows:
 
 | Identifier | Form | Where |
 |---|---|---|
 | Release head | 64-character hex | `https://soranoha.org/releases/HEAD` |
-| Manifest | `snh:1:release-manifest:<sha256>` | `manifest_id` in the release record |
 | Version DOI | `10.5281/zenodo.<n>` | The Zenodo deposit for that release |
 
 The version DOI is the one to put in a bibliography: it resolves to exactly
 the bytes cited, and it survives the site. The head is what a reader uses to
 re-verify the chain independently.
+
+The head is the sha256 of the release manifest's own canonical bytes, so it
+identifies the manifest as well as the release: it names `releases/<head>.json`
+in the chain and is the `manifest_id` the publishing command reports. There is
+no third identifier to cite.
 
 The forms below are templates: they show where each component goes. The same
 forms filled in for the release you are reading are on the served
@@ -54,8 +58,11 @@ BibLaTeX:
 }
 ```
 
-`CITATION.cff` in the repository root carries the same record in machine-readable
-form; GitHub-compatible forges and Zenodo read it directly.
+`CITATION.cff` in the repository root carries the corpus-level record in
+machine-readable form, and GitHub-compatible forges and Zenodo read it
+directly. It describes the work rather than one release: the head and the
+version DOI change with every release and are not in it, so fill those in from
+the release you read.
 
 To cite the corpus across releases rather than one of them, use the Zenodo
 *concept* DOI, which always resolves to the latest version. Do not use it when
@@ -64,10 +71,11 @@ reproducibility matters: it does not name specific bytes.
 ## Citing one work
 
 A work needs both a readable description and its identifier: measured over the
-Aozora catalog, author plus title leaves 1966 works ambiguous, and author,
-title, 副題, 文字遣い種別, 底本名 and 初出 together still leave 16. The
-identifier `000092_000879` disambiguates all of them. It is stable across
-releases; see [work identifiers](../soranoha/docs/work-identifiers.md).
+Aozora catalog this release builds from, author plus title leaves 2357 works
+ambiguous, and author, title, 副題, 文字遣い種別, 底本名 and 初出 together
+still leave 16. Those counts move with the upstream catalog. The identifier
+`000092_000879` disambiguates all of them, and is stable across releases; see
+[work identifiers](../soranoha/docs/work-identifiers.md).
 
 Every work page carries both forms below, ready to copy, and offers the same
 record as CSL-JSON and BibLaTeX. Everything shown here is generated from the
@@ -78,33 +86,41 @@ second metadata source.
 ### For a Japanese bibliography
 
 ```
-芥川 龍之介「蜘蛛の糸」（新字新仮名）、底本『芥川龍之介全集　第三巻』筑摩書房、
-1971年。Soranoha Aozora TEI Corpus, 000092_000879, release <release head>.
+芥川 竜之介「蜘蛛の糸」（新字新仮名）、底本『芥川龍之介全集2』ちくま文庫、筑摩書房、
+1986年。Soranoha Aozora TEI Corpus, 000092_000879,
+release <first 12 characters of the head>…
 https://doi.org/10.5281/zenodo.<version deposit>
 ```
 
 ### For an English bibliography
 
 ```
-Akutagawa Ryunosuke. “蜘蛛の糸” (新字新仮名). In 芥川龍之介全集　第三巻.
-筑摩書房, 1971. Soranoha Aozora TEI Corpus, 000092_000879,
-release <release head>. https://doi.org/10.5281/zenodo.<version deposit>
+Akutagawa Ryunosuke. “蜘蛛の糸” (新字新仮名). In 芥川龍之介全集2.
+ちくま文庫、筑摩書房, 1986. Soranoha Aozora TEI Corpus, 000092_000879,
+release <first 12 characters of the head>…
+https://doi.org/10.5281/zenodo.<version deposit>
 ```
 
 The author is in Latin script because the catalog publishes romanized name
 parts. The titles are not; see below for why.
 
+Both lines abbreviate the head to its first 12 characters. That is what a
+bibliography can carry without becoming unreadable, and it is enough to find
+the release. The full 64 characters are in every machine-readable form:
+`version` in BibLaTeX, the `Release` sentence in the CSL note, and the
+`release` column of `catalog.csv`.
+
 ### What each component is for
 
 | Component | Example | Why it is there |
 |---|---|---|
-| Author | `芥川 龍之介` / `Akutagawa Ryunosuke` | Who wrote it. Not sufficient to identify the work. |
-| Title, with 副題 | `蜘蛛の糸` | What it is. Not sufficient either: 1966 works share an author-and-title pair. |
+| Author | `芥川 竜之介` / `Akutagawa Ryunosuke` | Who wrote it. Not sufficient to identify the work. |
+| Title, with 副題 | `蜘蛛の糸` | What it is. Not sufficient either: 2357 works share an author-and-title pair with another work. |
 | 文字遣い種別 | `新字新仮名` | Which orthographic transcription. Aozora often publishes the same work in two, and they are different texts. |
-| 底本 | `『芥川龍之介全集　第三巻』筑摩書房、1971年` | The printed book the transcription was made from. Two transcriptions of one work from different 底本 are different texts. |
+| 底本 | `『芥川龍之介全集2』ちくま文庫、筑摩書房、1986年` | The printed book the transcription was made from. Two transcriptions of one work from different 底本 are different texts. |
 | Corpus name | `Soranoha Aozora TEI Corpus` | Which corpus, distinguishing this encoding from Aozora Bunko's own files. |
 | **Work identifier** | `000092_000879` | **Identifies the work.** Stable across releases. The one component that makes the citation unambiguous. |
-| **Release** | `release <release head>` | **Identifies the bytes.** The corpus is versioned; a citation without it does not name what was read. |
+| **Release** | `release <first 12 characters of the head>` | **Identifies the bytes.** The corpus is versioned; a citation without it does not name what was read. |
 | Version DOI | `https://doi.org/10.5281/zenodo.<version deposit>` | Resolves to exactly those bytes, and survives the site. |
 
 The identifier and the release are the two components that are never
@@ -123,19 +139,20 @@ Work pages also embed [COinS](https://en.wikipedia.org/wiki/COinS), so the
 Zotero browser connector saves a correctly typed record in one click without
 being told this site exists.
 
-All three describe a work as an `@incollection` / CSL `chapter`, an item
-inside its 底本, rather than as a book of its own, so a bibliography built
-from them keeps the source edition. That subtype is why the page embeds COinS
-rather than Highwire `citation_*` meta tags, which cannot express it.
+All three type a work as an item inside its 底本 rather than as a book of its
+own: CSL `chapter`, BibLaTeX `@incollection`, COinS `genre=bookitem`. A
+bibliography built from any of them keeps the source edition. That subtype is
+why the page embeds COinS rather than Highwire `citation_*` meta tags, which
+cannot express it.
 
 ```bibtex
 @incollection{soranoha-000092_000879,
-  author = {芥川, 龍之介},
+  author = {芥川, 竜之介},
   title = {蜘蛛の糸},
   titleaddon = {くものいと},
-  booktitle = {芥川龍之介全集　第三巻},
-  publisher = {筑摩書房},
-  date = {1971},
+  booktitle = {芥川龍之介全集2},
+  publisher = {ちくま文庫、筑摩書房},
+  date = {1986},
   language = {japanese},
   langid = {japanese},
   eprinttype = {Soranoha Aozora TEI Corpus},
@@ -162,11 +179,13 @@ becomes a bibliography in a spreadsheet.
 
 ### The edition year
 
-`date = {1971}` is extracted, not recorded. Aozora's 底本初版発行年 is a
-free-form publication history rather than a year: 17712 of 18808 recorded
-values read like `1981（昭和56）年3月20日`, and 914 carry a printing history
-on top of that. The first Gregorian year is taken, which is the field's own
-meaning: where several years appear, the earliest is the first edition's.
+`date = {1986}` is extracted, not recorded. Aozora's 底本初版発行年 is a
+free-form publication history rather than a year: 17747 of the 18780 recorded
+values read like `1981（昭和56）年3月20日`, and of the 1033 that do not, 667
+append a printing history, as in
+`1948（昭和23）年5月15日、1963（昭和38）年5月16日第20刷改版`. The first
+Gregorian year is taken, which is the field's own meaning: where several years
+appear, the earliest is the first edition's.
 Work pages show the recorded string in full; only the machine-readable fields
 carry the extracted year.
 
@@ -182,9 +201,11 @@ standard reference managers.
 
 ### Romanization
 
-Romanized titles are not published in any format. Because kana readings lack
-word boundaries, automated transliteration cannot reliably generate valid
-Hepburn romanization. Supply the Japanese title and its reading, and let your
+Romanized titles are not published in any citation format. Because kana
+readings lack word boundaries, automated transliteration cannot reliably
+generate valid Hepburn romanization. The romanized element in a download
+filename is Aozora's own archive stem, hand-curated with word boundaries, not
+a romanization this project generated. Supply the Japanese title and its reading, and let your
 journal's style (Hepburn with or without macrons, ALA-LC) govern the
 romanization. The 文字遣い種別 values are Aozora's own classification and are left
 in Japanese for the same reason.

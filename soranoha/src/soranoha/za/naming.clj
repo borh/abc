@@ -10,9 +10,9 @@
 
   A download filename is a convenience. The citable thing is the identifier,
   which is why it is a component of every filename rather than an alternative
-  to one: 372 author-and-title pairs are shared by 1966 works in the Aozora
+  to one: 470 author-and-title pairs are shared by 2357 works in the Aozora
   catalog, so a name built from author and title alone would silently
-  overwrite about one work in seven of any bulk extraction.
+  overwrite about one work in ten of any bulk extraction.
 
   Pure: same catalog entry in, same name out, with no clock, environment or
   filesystem in the path. The browse layer's pages carry these names, and the

@@ -83,8 +83,8 @@ parts) rather than the assembled name, because a derived value stored beside
 its own inputs can disagree with them and the chain is append-only.
 
 The identifier is a component of the filename rather than an alternative to
-it. 372 author-and-title pairs are shared by 1966 works, so a name built from
-author and title alone would collide for about one work in seven of any bulk
-extraction, silently. Splitting a filename on its hyphens recovers the
+it. 470 author-and-title pairs are shared by 2357 works in the catalog this
+release builds from, so a name built from author and title alone would collide
+for about one work in ten of any bulk extraction, silently. Splitting a filename on its hyphens recovers the
 identifier as the last component; the bulk archives also carry it in
 `catalog.csv`.

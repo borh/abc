@@ -107,7 +107,7 @@
 (def ^:private fully-described-work
   "A work carrying every catalog field the header can express. Measured over
   the Aozora catalog, these are what make a work identifiable: author plus
-  title leaves 1966 works ambiguous, and 副題, 文字遣い種別, 底本名 and 初出
+  title leaves 2357 works ambiguous, and 副題, 文字遣い種別, 底本名 and 初出
   narrow that to 16."
   {"work_id" "000092"
    "title" "蜘蛛の糸"

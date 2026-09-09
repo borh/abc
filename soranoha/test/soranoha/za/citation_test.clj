@@ -39,7 +39,7 @@
       (is (string/starts-with? line "芥川 龍之介「蜘蛛の糸」（新字新仮名）、底本『芥川龍之介全集　第三巻』筑摩書房、1971年。")))
 
     (testing "and then the two things that make it identify a work"
-      ;; author and title leave 1966 works ambiguous, and the corpus is
+      ;; author and title leave 2357 works ambiguous, and the corpus is
       ;; versioned, so neither the identifier nor the release is optional
       (is (string/includes? line "000092_000879"))
       (is (string/includes? line "release dddddddddddd…"))

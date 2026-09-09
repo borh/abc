@@ -213,8 +213,10 @@ for almost every element of the published TEI.
 
 Offsets let a claim about the corpus be stated against the source rather than
 against a particular tool's output, and checked by someone who has never seen
-that tool. Each offset names the exact text it indexes by hash, so it cannot
-be applied to the wrong bytes without the mismatch being visible.
+that tool. The text they index is named once per document rather than once per
+offset: `primary-text-hash` in `<sourceDesc>` is the sha256 of the Aozora text
+member as distributed, and the offsets index its UTF-8 decoding, so applying
+them to the wrong bytes makes the mismatch visible.
 
 ## snh
 

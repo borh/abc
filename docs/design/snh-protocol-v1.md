@@ -1,7 +1,7 @@
 # snh protocol v1
 
 This specification defines the publication protocol's semantic and state
-invariants. The four executable JSON Schemas govern structure; conformance
+invariants. The five executable JSON Schemas govern structure; conformance
 vectors demonstrate both. Changes to these contracts require a permanent
 architectural decision record. A disagreement among the specification, schemas
 and vectors is a defect; no artifact silently overrides another.

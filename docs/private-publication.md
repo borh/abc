@@ -47,9 +47,9 @@ establish their current applicability. Preparation does not publish anything.
 The build log names the generated JSON report under `production/root/runs`.
 The new export directory contains each work's TEI, plaintext, Markdown, validation,
 projection and fidelity reports, including works whose assessment does not permit publication.
-Markdown is now a published per-work artifact alongside TEI and plaintext
-(`snh-manifest/2`); its projection report remains an experimental review
-artifact outside the signed set.
+Markdown is a published per-work artifact alongside TEI and plaintext
+(`snh-manifest/2`); its projection report is an experimental review artifact
+outside the signed set.
 Each TEI header carries the rights grant read from
 `soranoha/data/publication-policy.edn` under `--assets-root`, which is the same
 document the release hashes as `admission.policy_hash`, so a review export shows
@@ -63,10 +63,11 @@ Dispatch `.forgejo/workflows/scheduled-release.yml` at that commit through
 Forgejo Actions. The workflow uses the existing release secret without exposing
 it to build children, publishes with both role pins, and installs a verified
 serving tree. Inspect `/releases/HEAD`, the corresponding manifest and signature,
-and the work links named by that manifest. The root URL now serves the generated
-browse layer (a landing page, author, title and NDC indexes, one page per
-work, and the project's reader-facing documents), providing presentation over
-the same release without being named by a manifest. The document pages are
+and the work links named by that manifest. The root URL serves the generated
+browse layer (a landing page, author, title and NDC indexes, a bibliography and
+a reading view per work, the rights and citation pages, and the project's
+reader-facing documents), providing presentation over the same release without
+any of it being hashed into the chain. The document pages are
 rendered from the repository files themselves, which the Nix wrapper supplies
 through `SORANOHA_SITE_DOCS`; `soranoha.za.docs` lists which files are served
 and at which routes.

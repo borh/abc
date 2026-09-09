@@ -57,10 +57,13 @@ An export holds two kinds of file, and the distinction is the boundary that keep
 presentation out of verification. Chain content (manifests, signatures, blobs,
 governance events, the head pointer) is copied byte for byte, and the work-facing
 routes are names over it. The browse layer is generated: a landing page, author,
-title and NDC indexes, one page per work, a reading view per work, and a page for
-each withdrawn work. Nothing in it is named by a manifest, hashed into the chain,
-or checked by a verifier; it exists so the corpus has an entry point that is not
-a 64-character hex string. Because generation is a pure function of the release
+title and NDC indexes, one page per work, a reading view per work, a page for
+each withdrawn work, the rights and citation pages, the project's own
+documentation, and a search index the pages query in the browser. None of it is
+hashed into the chain or checked by a verifier, and no manifest names a browse
+file, although the rights grant's `statement_url` is a route the browse layer
+answers. It exists so the corpus has an entry point that is not a 64-character
+hex string. Because generation is a pure function of the release
 being exported, the exporter's reuse check covers those pages exactly as it
 covers chain content, and the same commit re-exports byte-identically. Serving
 stays one static tree with no application runtime.
@@ -74,11 +77,15 @@ updates without republishing the corpus. A rendering that lives in the serving
 layer is replaced at the next activation. It states the
 release it was rendered from and links the artifact it was rendered out of, so
 a reader who doubts the rendering can check it against the bytes. It also selects
-the same text that the published plaintext projection selects (such as one lemma from an
-apparatus or the first supported branch of a choice), ensuring the two projections of a
-work cannot disagree about what the work says. Private experimental lineages may be explicitly reset; a public
-lineage requires a fresh reviewed genesis and the independent authorship checkpoint
-described in the [deployment guide](../private-publication.md).
+the same text the published plaintext projection selects, one lemma from an
+apparatus and the first supported branch of a choice, so the two cannot disagree
+about which reading the work carries. They still differ in what surrounds that
+text: plaintext drops ruby readings and notes for analysis workflows that consume
+base text, and the reading view shows them.
+
+Private experimental lineages may be explicitly reset; a public lineage requires
+a fresh reviewed genesis and the independent authorship checkpoint described in
+the [deployment guide](../private-publication.md).
 
 Protocol semantic changes require a permanent architectural decision record with
 the changed contract and rationale, together with corresponding specification,

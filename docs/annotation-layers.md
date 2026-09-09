@@ -28,9 +28,10 @@ does not certify its linguistic conclusions.
 All offsets must fall on UTF-8 boundaries within eligible ranges. Producer inputs
 include the code, model, dictionary and configuration actually used, as applicable.
 Because masks are computation inputs, changing eligibility can invalidate analysis even
-when text remains equal. A completed empty result differs from failed, partial and unrun
-execution. Failed and unrun layers cannot carry claims. Competing tokenizations or
-entity labels are separate artifacts, not replacements of shared records.
+when text remains equal. A completed empty result differs from `failed`, `partial`
+and `not-run` execution. A `failed` or `not-run` layer cannot carry claims.
+Competing tokenizations or entity labels are separate artifacts, not replacements
+of shared records.
 
 The computation identity excludes resulting claims and source-edition attachment.
 The layer identity includes its claims and execution outcome. Assemblies select exact

@@ -50,9 +50,12 @@ carries no archival guarantee and cannot be cited as part of a release. The
 catalog is the part of the record a reader is most likely to cite and least
 able to re-derive.
 
-Measured cost: roughly 3.4 MB for 17308 works against the 8.95 MB manifest;
-affordable, but large enough to belong as a separate artifact rather than
-inflated into the manifest.
+Size: roughly 14 MB of canonical JSON for 17308 works, projected from the
+bibliographic fields the pinned catalog supplies, against the 8.95 MB manifest
+that prompted this. The catalog is larger than the manifest it accompanies, and
+that is what settles the packaging: carried inline, those fields would be paid
+again on every manifest download, while a separate artifact is fetched only by
+readers who want it.
 
 ## Why all three changes in one bump
 

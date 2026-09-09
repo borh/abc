@@ -829,9 +829,13 @@ impl RecogniseCtx<'_, '_> {
         let PairEvent::PairClose { span: close, .. } = view.events[close_idx] else {
             return None;
         };
-        let kind = bouten_kind_from_suffix(selection.suffix.strip_prefix("に")?)?;
+        let (sense, suffix) = match selection.suffix.strip_prefix("を除く部分に") {
+            Some(rest) => (SelectionSense::Complement, rest),
+            None => (SelectionSense::Named, selection.suffix.strip_prefix("に")?),
+        };
+        let kind = bouten_kind_from_suffix(suffix)?;
         let start = self.pending_plain_start?;
-        let spans = selection.resolve(self.source, Span::new(start, open.start))?;
+        let spans = selection.resolve(self.source, Span::new(start, open.start), sense)?;
         let contents: Vec<_> = spans
             .iter()
             .map(|span| {
@@ -871,20 +875,42 @@ enum BoutenTargets<'a> {
     Within { context: &'a str, target: &'a str },
 }
 
+/// Which side of the inner operand the source asked for.
+///
+/// The connector settles that one quoted operand sits inside the other; it
+/// does not settle whether the inner one is the selection or the cut-out.
+/// Only the suffix says that, so the two senses are read there.
+#[derive(Clone, Copy)]
+enum SelectionSense {
+    /// `の「Y」に…`: the range Y names.
+    Named,
+    /// `の「Y」を除く部分に…`: the context apart from what Y names.
+    Complement,
+}
+
 impl BoutenSelection<'_> {
-    fn resolve(&self, source: &str, pending: Span) -> Option<Vec<Span>> {
+    fn resolve(&self, source: &str, pending: Span, sense: SelectionSense) -> Option<Vec<Span>> {
         let text = &source[pending.start as usize..pending.end as usize];
         if text.contains(['\n', '\r']) {
             return None;
         }
         if let BoutenTargets::Within { context, target } = &self.targets {
             let context_start = text.strip_suffix(context)?.len();
-            let offset = unique_selected_offset(context, target)?;
-            let start = pending.start + u32::try_from(context_start + offset).ok()?;
-            return Some(vec![Span::new(
-                start,
-                start + u32::try_from(target.len()).ok()?,
-            )]);
+            let base = pending.start + u32::try_from(context_start).ok()?;
+            return match sense {
+                SelectionSense::Named => {
+                    let offset = unique_selected_offset(context, target)?;
+                    let start = base + u32::try_from(offset).ok()?;
+                    Some(vec![Span::new(
+                        start,
+                        start + u32::try_from(target.len()).ok()?,
+                    )])
+                }
+                SelectionSense::Complement => complement_spans(base, context, target),
+            };
+        }
+        if matches!(sense, SelectionSense::Complement) {
+            return None;
         }
         let BoutenTargets::Disjoint(targets) = &self.targets else {
             return None;
@@ -905,6 +931,30 @@ impl BoutenSelection<'_> {
         }
         Some(spans)
     }
+}
+
+/// The ranges of `context` that `excluded` does not cover.
+///
+/// The source names what to leave out rather than what to mark, and it names
+/// it once for every occurrence: `「自律・自由・人格・性格」の「・」を除く部分`
+/// leaves out all three separators, not the first one only. A gap of no
+/// length contributes no range, so an excluded run at either edge, or two of
+/// them in a row, adds nothing to select. A cut-out the context does not
+/// contain leaves the marker unread rather than selecting the whole context.
+fn complement_spans(base: u32, context: &str, excluded: &str) -> Option<Vec<Span>> {
+    if excluded.is_empty() || !context.contains(excluded) {
+        return None;
+    }
+    let mut spans = Vec::new();
+    let mut cursor = 0usize;
+    for piece in context.split(excluded) {
+        if !piece.is_empty() {
+            let start = base + u32::try_from(cursor).ok()?;
+            spans.push(Span::new(start, start + u32::try_from(piece.len()).ok()?));
+        }
+        cursor += piece.len() + excluded.len();
+    }
+    (!spans.is_empty()).then_some(spans)
 }
 
 fn unique_selected_offset(text: &str, target: &str) -> Option<usize> {

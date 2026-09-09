@@ -1647,3 +1647,28 @@
       (is (= selected (texts result "hi")))
       (is (= [plain] (texts result "p")))
       (is (empty? (get-in result [:ir "interpretation_problems"]))))))
+
+(deftest an-emphasis-selector-may-name-the-range-to-leave-out
+  ;; The cut-out is named once and applies to every occurrence of itself, and
+  ;; the characters it names stay in the text unmarked.
+  (doseq [[body plain selected]
+          [["行・実践［＃「行・実践」の「・」を除く部分に傍点］後" "行・実践後" ["行" "実践"]]
+           ["自律・自由・人格・性格［＃「自律・自由・人格・性格」の「・」を除く部分に傍点］後"
+            "自律・自由・人格・性格後" ["自律" "自由" "人格" "性格"]]
+           ["自分＝モラル＝文学［＃「自分＝モラル＝文学」の「＝」を除く部分に傍点］後"
+            "自分＝モラル＝文学後" ["自分" "モラル" "文学"]]]]
+    (let [result (transcribe (source body))]
+      (is (= plain (:plaintext result)) body)
+      (is (= selected (texts result "hi")) body)
+      (is (= [plain] (texts result "p")) body)
+      (is (empty? (get-in result [:ir "interpretation_problems"])) body))))
+
+(deftest a-cut-out-the-target-does-not-hold-leaves-the-selector-unread
+  ;; Marking the whole target would be a guess about what the source meant by a
+  ;; run that is not in it, so the marker stays source apparatus instead.
+  (doseq [body ["行・実践［＃「行・実践」の「＝」を除く部分に傍点］後"
+                "行・実践［＃「行・実践」の「行・実践」を除く部分に傍点］後"]]
+    (let [result (transcribe (source body))]
+      (is (= "行・実践後" (:plaintext result)) body)
+      (is (empty? (texts result "hi")) body)
+      (is (seq (get-in result [:ir "interpretation_problems"])) body))))

@@ -92,6 +92,15 @@ addressing an interior letter retains its original marker separately as source
 apparatus. This is transcription of supplied marks, not an editorial correction
 or an inferred transliteration. Unresolved selectors retain explicit uncertainty.
 
+An emphasis selector may name the range to mark or the range to leave out.
+`［＃「自律・自由・人格・性格」の「・」を除く部分に傍点］` marks every part of
+the target the named run does not cover, once for every occurrence of that run
+rather than the first alone, and the cut-out characters remain unmarked body
+text in their source position. The claim covers the marker, not the ranges the
+marker points at. A run the target does not contain, or one that covers the
+whole target, leaves the marker unread rather than marking a range the source
+did not select.
+
 Supplied block geometry retains indentation, continuation indentation, line width,
 and distance from the line end independently. Hanging indentation uses the
 continuation padding and the difference between first and continuation indents.

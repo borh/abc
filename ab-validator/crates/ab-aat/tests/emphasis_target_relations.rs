@@ -49,6 +49,13 @@ fn source_relations_keep_unselected_text_and_exact_marker_facts() {
             vec!["生", "息", "行", "意気"],
             "生、息、行、意気後",
         ),
+        // The operand names what to leave out, and it leaves out every
+        // occurrence of itself rather than the first alone.
+        (
+            "行・実践［＃「行・実践」の「・」を除く部分に傍点］後",
+            vec!["行", "実践"],
+            "行・実践後",
+        ),
     ] {
         let source = format!("題\n著者\n\n{body}\n\n底本：本\n");
         let aat: Value =

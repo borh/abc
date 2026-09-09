@@ -9,6 +9,7 @@
             [soranoha.ori.fixture :as fixture]
             [soranoha.ori.render :as render]
             [soranoha.za.browse :as browse]
+            [soranoha.za.docs :as docs]
             [soranoha.za.html :as html]))
 
 (def ^:private head-hex (apply str (repeat 64 "a")))
@@ -98,6 +99,12 @@
                     "ndc/index.html" "rights.html" "citation.html"
                     "style.css" "search.js" "search-index.json"]]
         (is (contains? pages path) path)))
+
+    (testing "so is every document, and every file the documents send a reader to"
+      (doseq [{:keys [route]} docs/documents]
+        (is (contains? pages (str route ".html")) route))
+      (doseq [{:keys [route]} docs/verbatim]
+        (is (contains? pages route) route)))
 
     (testing "a work is reachable from the title index by the row of its reading"
       (is (string/includes? (page pages "titles/index.html") "/titles/ka"))
@@ -247,6 +254,26 @@
     (doseq [path ["index.html" "works/000092_000879/index.html"]]
       (is (string/includes? (page pages path) "/catalog.json") path)
       (is (string/includes? (page pages path) (str "/releases/" head-hex ".json")) path))
+    (testing "a document page carries the document, its links and its neighbours"
+      (let [glossary (page pages "glossary.html")]
+        (is (string/includes? glossary "<h1"))
+        (is (string/includes? glossary "id=\"reliance\"")
+            "headings carry the identifier the documents link to")
+        (is (string/includes? glossary "href=\"/identifiers\"")
+            "a link to a served document becomes a link to its route")
+        (is (string/includes? glossary "class=\"siblings\""))
+        (is (not (string/includes? glossary ".md\""))
+            "no page links a Markdown file the site does not serve"))
+      (let [rights-doc (page pages "start-here.html")]
+        (is (string/includes? rights-doc "href=\"/glossary\"")))
+      (testing "and a repository file the site does not serve is named, not linked"
+        (let [validation (page pages "validation.html")]
+          (is (string/includes? validation "href=\"/schemas/tei-profile.odd\"")
+              "the profile is served, so it is a link")
+          (is (string/includes? (page pages "assessment.html")
+                                "soranoha/test/soranoha/assessment/evaluate_test.clj")
+              "a test file is not served, so its path is shown instead"))))
+
     (testing "and the rights page states the grant the manifest carries"
       (let [rights-page (page pages "rights.html")]
         (is (string/includes? rights-page "https://creativecommons.org/publicdomain/zero/1.0/"))

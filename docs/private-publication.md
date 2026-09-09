@@ -61,8 +61,12 @@ Forgejo Actions. The workflow uses the existing release secret without exposing
 it to build children, publishes with both role pins, and installs a verified
 serving tree. Inspect `/releases/HEAD`, the corresponding manifest and signature,
 and the work links named by that manifest. The root URL now serves the generated
-browse layer (a landing page, author, title and NDC indexes, and one page per
-work), providing presentation over the same release without being named by a manifest.
+browse layer (a landing page, author, title and NDC indexes, one page per
+work, and the project's reader-facing documents), providing presentation over
+the same release without being named by a manifest. The document pages are
+rendered from the repository files themselves, which the Nix wrapper supplies
+through `SORANOHA_SITE_DOCS`; `soranoha.za.docs` lists which files are served
+and at which routes.
 Follow `/catalog.json` for the signed discovery record.
 
 The NixOS publisher profile provisions the source and chain clones, shared serving

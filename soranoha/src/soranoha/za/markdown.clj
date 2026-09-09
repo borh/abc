@@ -12,16 +12,27 @@
   ordered lists, no raw HTML blocks and no reference links in any served
   document.
 
-  Two failures are loud rather than silent. An unterminated code fence throws,
-  because the alternative is a page whose remainder is swallowed into a code
-  block. A link to a path that does not exist throws, because a reader-facing
-  site with a dead link is worse than a build that stops.
+  An unterminated code fence throws rather than being tolerated, because the
+  alternative is a page whose remainder is swallowed into a code block.
 
-  A link to a path that exists but is not served renders as text naming the
-  repository path. That keeps the documents readable in the repository without
-  the website dictating how they are written, and it produces no broken
-  anchors."
+  How a link target becomes a URL is the caller's decision, passed in as
+  `link`. When it answers with a string instead of attributes, the link is
+  rendered as its label followed by that string in code, which is how a
+  reference to a repository file the site does not serve reaches the reader:
+  named, and not as an anchor to nothing."
   (:require [clojure.string :as string]))
+
+(defn slug
+  "The fragment identifier a heading gets, in the form the documents already
+  write when they link to one: lowercased, punctuation dropped, runs of
+  whitespace turned into hyphens. Characters outside ASCII are kept, so a
+  Japanese heading gets a usable identifier rather than an empty one."
+  [text]
+  (-> text
+      string/lower-case
+      (string/replace #"[^\p{L}\p{N}\p{M}\s_-]" "")
+      string/trim
+      (string/replace #"\s+" "-")))
 
 (defn- heading-line [line]
   (when-let [[_ hashes text] (re-matches #"(#{1,6}) (.*)" line)]
@@ -191,7 +202,12 @@
         (heading-line line)
         (let [[level text] (heading-line line)]
           (recur (rest lines)
-                 (conj out (into [(keyword (str "h" (min 6 (inc level))))]
+                 ;; The id is what makes a link to a section resolve. Both the
+                 ;; documents' own cross-references and a reader's bookmark
+                 ;; depend on it, so it is derived from the heading rather
+                 ;; than counted, and survives a section moving.
+                 (conj out (into [(keyword (str "h" (min 6 (inc level))))
+                                  {:id (slug text)}]
                                  (inline text link)))))
 
         (fence-line? line)

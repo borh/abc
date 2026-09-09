@@ -190,7 +190,7 @@ prose description with, usually, a JIS X 0213 code point:
 Published TEI carries both halves: the character the converter resolved it to,
 and the original marker verbatim, so the resolution can be checked or
 disagreed with. See
-[the worked example](worked-example.md#encodingdesc--the-gaiji-declarations).
+[the worked example](worked-example.md#encodingdesc-taxonomies-and-gaiji-declarations).
 
 ## ruby (ルビ)
 

@@ -21,6 +21,9 @@ python-quality:
 comment-hygiene:
 	@bash scripts/comment-hygiene-check.sh
 
+docs-links:
+	@python scripts/docs-link-check.py
+
 nix-format-check:
 	@find . \
 		-path './.git' -prune -o \
@@ -47,7 +50,7 @@ tei-eaj-reports-with-probes *args:
 validate-eval-cache-smoke:
 	@bash tests/validate-eval-cache-smoke.sh
 
-check-no-build: runtime-config-smoke active-path-hygiene root-flake-output-contract tei-version-coherence flake-input-policy python-quality nix-format-check validate-eval-cache-smoke root-flake-check-no-build
+check-no-build: runtime-config-smoke active-path-hygiene root-flake-output-contract tei-version-coherence flake-input-policy python-quality docs-links nix-format-check validate-eval-cache-smoke root-flake-check-no-build
 	@(cd ab-validator && AB_WORKSPACE_ROOT="$(pwd)/.." {{nix_eval}} flake check --no-build)
 
 # Publication tests and generated TEI profile must match their checked-in sources.

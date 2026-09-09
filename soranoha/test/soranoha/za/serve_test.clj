@@ -139,7 +139,8 @@
       (is (pos? (:pages result)))
       (doseq [rel ["index.html" "style.css" "search.js" "search-index.json"
                    "authors/index.html" "titles/index.html" "ndc/index.html"
-                   "rights.html" "citation.html"]]
+                   "rights.html" "citation.html" "start-here.html" "vocabulary.html"
+                   "schemas/tei-profile.odd" "license/cc0-1.0.txt"]]
         (is (fs/regular-file? (fs/path out rel)) rel))
       (let [landing (String. (tree-bytes out "index.html") "UTF-8")]
         (is (str/includes? landing (:head result))

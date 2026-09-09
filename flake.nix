@@ -82,6 +82,29 @@
             + builtins.hashString "sha256" "${pkgs.clojure}\n${depsCache}\n${builtins.hashFile "sha256" ./soranoha/deps.edn}";
         };
 
+      # The documents the browse layer serves, laid out exactly as they sit in
+      # the repository, so one repository-relative path names a file for both
+      # the served site and the link check. A developer running from the
+      # `soranoha` directory reaches the same layout through the default root
+      # of `..`; the wrapper below points SORANOHA_SITE_DOCS at this instead,
+      # because a Nix store path has no repository around it.
+      siteDocsFor =
+        system:
+        let
+          pkgs = pkgsFor system;
+        in
+        pkgs.runCommand "soranoha-site-docs" { } ''
+          mkdir -p "$out/soranoha"
+          cp -R ${./docs} "$out/docs"
+          cp -R ${./soranoha/docs} "$out/soranoha/docs"
+          cp -R ${./soranoha/schemas} "$out/soranoha/schemas"
+          mkdir -p "$out/soranoha/resources/assessment"
+          cp ${./soranoha/resources/assessment/source-1.schema.json} \
+            "$out/soranoha/resources/assessment/source-1.schema.json"
+          cp ${./LICENSE} "$out/LICENSE"
+          cp ${./LICENSE-CC0} "$out/LICENSE-CC0"
+        '';
+
       # Maven model validation shares a mutable ID cache. Resolve dependencies
       # on one worker; publication stage concurrency is independent.
       mkSoranohaApp =
@@ -117,6 +140,7 @@
               name = "aat-to-parser-ir-mapping-v2.json";
             }
           }"
+          export SORANOHA_SITE_DOCS="${siteDocsFor system}"
           export HOME="${kernelDepsCache}"
           export JAVA_TOOL_OPTIONS="-Duser.home=${kernelDepsCache}"
           export CLJ_CONFIG="$HOME/.clojure"
@@ -325,6 +349,7 @@
                   abValidatorPackages."ab-source-inventory"
                 }/bin/ab-source-inventory"
                 export AB_AOZORA_SYNTAX_MATRIX="${ab-validator}/data/aozora-syntax-coverage.toml"
+                export SORANOHA_SITE_DOCS="${siteDocsFor system}"
                 export CLJ_CONFIG="$HOME/.clojure"
                 export CLJ_CACHE="$TMPDIR/cp-cache"
                 export XDG_CONFIG_HOME="$TMPDIR/xdg-config"

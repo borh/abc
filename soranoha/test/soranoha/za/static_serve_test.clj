@@ -219,6 +219,8 @@
 
       (testing "the browse layer answers at the front door and at readable URLs"
         (doseq [path ["/" "/authors/" "/titles/" "/ndc/" "/rights" "/citation"
+                      "/start-here" "/vocabulary" "/schemas/tei-profile.odd"
+                      "/license/cc0-1.0.txt"
                       "/style.css" "/search.js" "/search-index.json"]]
           (let [response (http-get port path)]
             (is (= 200 (:status response)) path)

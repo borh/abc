@@ -44,7 +44,7 @@ http://{$SORANOHA_SERVE_LISTEN} {
 	# generated presentation: a projection of this release, replaced whole at
 	# the next activation, so it is cached like the pointer layer and never
 	# like a digest-addressed file
-	@browse path / /index.html /style.css /search.js /search-index.json /authors /authors/* /titles /titles/* /ndc /ndc/* /bulk/* /rights /citation
+	@browse path / /index.html /style.css /search.js /search-index.json /authors /authors/* /titles /titles/* /ndc /ndc/* /bulk/* /rights /citation /start-here /example /glossary /identifiers /vocabulary /validation /accountability /assessment /annotation-layers /parser-invariants /external-links /protocol /license/* /schemas/*
 	header @browse Cache-Control "public, max-age=60"
 
 	try_files {path} {path}.html

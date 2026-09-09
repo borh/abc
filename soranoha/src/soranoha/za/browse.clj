@@ -22,7 +22,9 @@
             [soranoha.core.rights :as rights]
             [soranoha.snh.verify :as verify]
             [soranoha.za.citation :as citation]
+            [soranoha.za.docs :as docs]
             [soranoha.za.html :as html]
+            [soranoha.za.markdown :as markdown]
             [soranoha.za.naming :as naming]
             [soranoha.za.reading :as reading]))
 
@@ -67,6 +69,22 @@
     "  border: 1px solid var(--rule); background: #fff; }"
     "#results:empty { display: none; }"
     "@media (max-width: 32rem) { dl.facts { grid-template-columns: 1fr; } ul.cols { columns: 1; } }"
+
+    ;; the documentation pages. Prose the project wrote, so unlike the reading
+    ;; view these are ordinary elements and take ordinary rules.
+    "main.doc h3 { font-size: 1.05rem; margin: 1.5rem 0 .5rem; }"
+    "main.doc table { border-collapse: collapse; width: 100%; font-size: .9rem;"
+    "  display: block; overflow-x: auto; }"
+    "main.doc th, main.doc td { border: 1px solid var(--rule); padding: .3rem .5rem;"
+    "  text-align: start; vertical-align: top; }"
+    "main.doc th { background: #f2efe8; }"
+    "main.doc pre { background: #f2efe8; padding: .6rem .8rem; border-radius: 3px;"
+    "  overflow-x: auto; font-size: .85rem; line-height: 1.5; }"
+    "main.doc pre code { font-size: 1em; overflow-wrap: normal; }"
+    "main.doc blockquote { margin: 1rem 0; padding-inline-start: 1rem;"
+    "  border-inline-start: 3px solid var(--rule); color: var(--muted); }"
+    "nav.siblings { margin-top: 3rem; border-top: 1px solid var(--rule); padding-top: 1rem;"
+    "  font-size: .9rem; }"
 
     ;; the reading view. Everything below styles TEI that has been projected
     ;; into HTML by soranoha.za.reading; the class names are that projection's
@@ -210,6 +228,7 @@
        [:a {:href "/authors/"} (bilingual "著者" "Authors")]
        [:a {:href "/titles/"} (bilingual "作品名" "Titles")]
        [:a {:href "/ndc/"} (bilingual "分類" "NDC")]
+       [:a {:href "/start-here"} (bilingual "解説" "Docs")]
        [:a {:href "/rights"} (bilingual "権利" "Rights")]
        [:a {:href "/citation"} (bilingual "引用" "Citation")]]]
      (into [:main (cond-> {} main-class (assoc :class main-class))] body)
@@ -339,7 +358,38 @@
     [:dt (bilingual "目録" "Catalog")]
     [:dd [:a {:href "/catalog.json"} "/catalog.json"]]]])
 
-(defn- landing [head-hex works withdrawn-count]
+(defn- document-entries
+  "Every served document with its own text and its own English title.
+
+  Read once per activation and passed around, because the landing page, the
+  page itself and every page's sibling list all name the same set, and a
+  document read twice could be read twice differently."
+  []
+  (mapv (fn [document]
+          (let [text (docs/read-text (:path document))]
+            (assoc document :text text :en (markdown/title text))))
+        docs/documents))
+
+(defn- sibling-nav [entries current]
+  [:nav {:class "siblings"}
+   [:p (bilingual "ほかの解説:" "Other documents:")]
+   [:p (interpose
+        " · "
+        (for [{:keys [route ja en]} entries
+              :when (not= route current)]
+          [:a {:href (str "/" route)} (bilingual ja en)]))]])
+
+(defn- document-page [entries {:keys [route path text ja en]}]
+  (chrome
+   ja
+   {:main-class "doc"}
+   (concat [[:h1 (bilingual ja en)]]
+           (markdown/render {:text text
+                             :source path
+                             :link (partial docs/resolve-link path)})
+           [(sibling-nav entries route)])))
+
+(defn- landing [head-hex works withdrawn-count entries]
   (chrome
    "青空文庫 TEI コーパス"
    [[:h1 (bilingual "青空文庫 TEI コーパス" "Aozora Bunko TEI corpus")]
@@ -368,6 +418,15 @@
       [:a {:href "/authors/"} (bilingual "著者" "authors")] "、"
       [:a {:href "/titles/"} (bilingual "作品名の読み" "title readings")] "、"
       [:a {:href "/ndc/"} (bilingual "NDC 分類" "NDC classes")] "。"]]
+
+    [:section
+     [:h2 (bilingual "解説" "Documentation")]
+     [:p (bilingual
+          "何がどう符号化されているか、識別子の読み方、公開可否の判断まで、この site で説明しています。初めての方は「はじめに」から。"
+          "How the texts are encoded, how to read an identifier, and how publication is assessed, all documented here. Start with Start here.")]
+     [:ul {:class "cols plain"}
+      (for [{:keys [route ja en]} entries]
+        [:li [:a {:href (str "/" route)} (bilingual ja en)]])]]
 
     [:section
      [:h2 (bilingual "そのまま使う" "Use it directly")]
@@ -854,12 +913,13 @@
                                 (get work "slug")])
         page (fn [path ^String content] [path (utf8 content)])
         by-kana (group-by kana-row-key works)
-        by-ndc (group-by ndc-class-key works)]
+        by-ndc (group-by ndc-class-key works)
+        entries (document-entries)]
     (concat
      [(page "style.css" stylesheet)
       (page "search.js" search-js)
       (page "search-index.json" (search-index head-hex works))
-      (page "index.html" (landing head-hex works (count withdrawn)))
+      (page "index.html" (landing head-hex works (count withdrawn) entries))
       (page "rights.html" (rights-page (get head "rights")))
       (page "citation.html" (citation-page release))
 
@@ -883,6 +943,13 @@
             (ndc-index (mapv (fn [[key ja en]]
                                {:key key :ja ja :en en :count* (count (get by-ndc key))})
                              ndc-classes)))]
+
+     ;; the project's own documentation, rendered from the repository files it
+     ;; is reviewed in, and the files those documents send a reader to
+     (map (fn [entry] (page (str (:route entry) ".html") (document-page entries entry)))
+          entries)
+
+     (map (fn [{:keys [route path]}] [route (docs/read-bytes path)]) docs/verbatim)
 
      (map (fn [[id {:keys [person by-relation]}]]
             (page (str "authors/" id ".html")

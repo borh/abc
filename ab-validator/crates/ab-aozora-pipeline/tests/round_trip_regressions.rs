@@ -14,23 +14,22 @@ fn directive_count(out: &ab_aozora_pipeline::LexOutput) -> usize {
         .count()
 }
 
-/// The serializer pads a block directive with blank lines. On input whose
-/// brackets do not balance, those newlines expire the open brackets that the
-/// first parse still had on its stack, so a later `］` that closed a real
-/// bracket in the first parse is an unmatched close in the second. An
-/// unmatched close does not pop, by design, so the quote frames it would have
-/// force-resolved stay open and bury the directive that follows them inside a
-/// body: the first parse sees one directive and the second sees none.
+/// A `｜` with no `《》` after it opens a ruby base that never ends. The
+/// serializer emits the run it collected first and the unterminated `｜`
+/// after it, which moves the text across the marker: `｜［＃］漢字` comes
+/// back as `漢字｜［＃］`. In the reordered form the `［＃］` no longer sits
+/// inside the ruby base, so the following `［` opens a bracket that swallows
+/// it and the directive the first parse registered is gone from the second.
 ///
 /// Both parses are locally consistent with their own input. Fixing this means
-/// deciding whether serializing malformed input may introduce newlines that
-/// change its bracket structure, which is a question about the serializer's
-/// padding rule rather than about the pair stage, so the test records the
-/// disagreement instead of asserting either answer.
+/// deciding what an unterminated `｜` base owns when it is written back out,
+/// which is a question about the ruby emitter rather than about the pair
+/// stage, so the test records the disagreement instead of asserting either
+/// answer.
 #[test]
-#[ignore = "known defect: block-directive padding changes bracket structure on malformed input"]
-fn directive_after_unmatched_closes_survives_block_directive_padding() {
-    let source = "［［》》［＃ここから字下げ］《《≪≪］］［＃改］］";
+#[ignore = "known defect: an unterminated ruby base reorders its text on serialize"]
+fn directive_inside_an_unterminated_ruby_base_keeps_its_place() {
+    let source = "｜［＃］漢字［《≫》";
     let first = lex(source);
     let second = lex(&serialize(&first));
     assert_eq!(

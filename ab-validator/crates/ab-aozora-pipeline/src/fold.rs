@@ -904,6 +904,29 @@ pub(crate) fn scope_closer_matches(open: RegionFormat, close: RegionClose) -> bo
     }
 }
 
+/// Whether the normalizer wrote a blank line on each side of this node's
+/// sentinel.
+///
+/// The padding is an internal device: the line-oriented recognizers that run
+/// over the normalized text need a boundary around a block marker, and the
+/// normalizer supplies one whether or not the source had it. It is not part of
+/// the source the node came from, so anything reconstructing source from the
+/// normalized text has to take it back off. Leaving it on is not cosmetic: a
+/// synthesized newline expires an open bracket in the pair stage, so it can
+/// change the bracket structure the next parse sees.
+#[must_use]
+pub fn sentinel_is_blank_line_padded(node: NodeRef) -> bool {
+    match node {
+        NodeRef::BlockLeaf(node) => is_standalone_block_for_render(node),
+        NodeRef::BlockOpen(open) => !open.is_inline(),
+        NodeRef::BlockClose(close) => !close.is_inline(),
+        // `NodeRef::Inline`, plus the `#[non_exhaustive]` forward-compat
+        // arm: an inline sentinel is written where it stands, and an
+        // unrecognized entry is not known to be padded.
+        _ => false,
+    }
+}
+
 /// Whether an owned AST node is a standalone block (renders on its own line, no
 /// surrounding plain-text context required). Pinned by variant kind so adding a
 /// new standalone-block variant only needs updating here.

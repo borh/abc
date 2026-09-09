@@ -50,7 +50,7 @@ pub use ab_aozora_syntax::ast::{
     ClassifiedSourceRole, ConstructId, LexOutput, NodeRef, SourceNode,
     canonicalize_classified_source_facts,
 };
-pub use fold::lex;
+pub use fold::{lex, sentinel_is_blank_line_padded};
 pub use pipeline::{Paired, Pipeline, Sanitized, Source, Tokenized};
 
 /// Eagerly initialise every lazily-built parser table.

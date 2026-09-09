@@ -8,24 +8,26 @@
 //! [`SegRange`](ab_aozora_syntax::ast::SegRange) against the [`NodeStore`].
 //!
 //! The container-marker spelling (`emit_container_open` / `emit_container_close`)
-//! and newline capping (`NewlineCappedWriter`) are
-//! **reused** from [`crate::spelling::source`] — they read only `Copy` `RegionFormat`
-//! / `RegionClose` discriminants, so there is a single byte-spelling authority.
-//! Only the AST-reading emitters live here.
+//! is **reused** from [`crate::spelling::source`] — those emitters read only
+//! `Copy` `RegionFormat` / `RegionClose` discriminants, so there is a single
+//! byte-spelling authority. Only the AST-reading emitters live here.
 //!
 //! It runs a decorative-rule isolate post-pass so `serialize ∘ parse` is
 //! a round-trip fixed point.
 
 use ab_aozora_spec::NormalizedOffset;
 use core::fmt::{self, Write};
+use core::mem;
 use std::collections::BTreeMap;
 
 use crate::spelling::source::{
-    NewlineCappedWriter, emit_container_close, emit_container_open, emit_line, emit_section_break,
-    heading_level_word, heading_style_keyword,
+    emit_container_close, emit_container_open, emit_line, emit_section_break, heading_level_word,
+    heading_style_keyword,
 };
 use crate::walk::{SentinelKind, WalkSink, walk};
-use ab_aozora_pipeline::{has_long_rule_line, isolate_decorative_rules};
+use ab_aozora_pipeline::{
+    has_long_rule_line, isolate_decorative_rules, sentinel_is_blank_line_padded,
+};
 use ab_aozora_syntax::accent::ACCENT_TABLE;
 use ab_aozora_syntax::ast::{
     AngleQuote, ContainerEnd, Content, ContentRange, Directive, ForwardFormat, Gaiji,
@@ -107,9 +109,9 @@ pub fn serialize(out: &LexOutput) -> String {
 /// Does not panic in normal use: `String` cannot fail as a [`Write`] sink.
 #[must_use]
 pub fn serialize_with(out: &LexOutput, opts: SerializeOptions) -> String {
-    let mut s = NewlineCappedWriter::with_capacity(out.normalized.len().saturating_mul(2));
-    serialize_into_with(out, &mut s, opts).expect("writing to NewlineCappedWriter never fails");
-    let raw = s.into_string();
+    let mut s = String::with_capacity(out.normalized.len().saturating_mul(2));
+    serialize_into_with(out, &mut s, opts).expect("writing to a String never fails");
+    let raw = s;
     if has_long_rule_line(&raw) {
         isolate_decorative_rules(&raw)
     } else {
@@ -152,6 +154,8 @@ pub fn serialize_into_with<W: Write>(
         out: writer,
         directives: opts.directives,
         source_boundaries: source_boundary_emissions(out),
+        held_newlines: 0,
+        drop_newlines: 0,
     };
     walk(out, &mut sink)
 }
@@ -186,30 +190,44 @@ struct SerializeSink<'a, W: Write> {
     /// Which notation-hygiene tiers to apply to `DirectiveKind::Unknown`
     /// near-misses (`Off` = verbatim; `Canonical` = Tier1; `Degraded` = Tier1+Tier2).
     directives: DirectiveNormalization,
+    /// Newlines read from the normalized text and not yet written, held back so
+    /// the next block marker can reclaim the blank line the normalizer put in
+    /// front of it. See [`Self::unpad`].
+    held_newlines: usize,
+    /// Newlines still to be dropped from the front of the next plain run: the
+    /// blank line the normalizer put after a block marker.
+    drop_newlines: usize,
 }
 
-impl<W: Write> WalkSink for SerializeSink<'_, W> {
-    // Serialization copies `\n` verbatim, so it is not a structural event.
-    const WANTS_NEWLINES: bool = false;
-
-    fn on_text(&mut self, text: &str) -> fmt::Result {
-        self.out.write_str(text)
+impl<W: Write> SerializeSink<'_, W> {
+    fn write_held(&mut self) -> fmt::Result {
+        for _ in 0..mem::take(&mut self.held_newlines) {
+            self.out.write_char('\n')?;
+        }
+        Ok(())
     }
 
-    fn on_node_at(
-        &mut self,
-        position: NormalizedOffset,
-        kind: SentinelKind,
-        node: NodeRef,
-    ) -> fmt::Result {
-        if let Some(source) = self.source_boundaries.get(&position) {
-            self.out.write_str(source)
+    /// Take the normalizer's blank-line padding back off around one marker.
+    ///
+    /// `lex` writes `\n\n` on each side of a block sentinel so that the
+    /// line-oriented recognizers have a boundary to work with, whether or not
+    /// the source had one. Those newlines are not source. Writing them out
+    /// makes `serialize` insert blank lines the author never wrote, and on
+    /// input whose brackets do not balance it makes it insert *parse-relevant*
+    /// ones: the pair stage expires an open bracket at a newline, so a bracket
+    /// the first parse still held is gone by the time the next parse reaches
+    /// the `］` that closed it, and a directive that was at top level ends up
+    /// buried in a body.
+    fn unpad(&mut self, padded: bool) {
+        if padded {
+            self.held_newlines = self.held_newlines.saturating_sub(2);
+            self.drop_newlines = 2;
         } else {
-            self.on_node(kind, node)
+            self.drop_newlines = 0;
         }
     }
 
-    fn on_node(&mut self, kind: SentinelKind, node: NodeRef) -> fmt::Result {
+    fn emit(&mut self, kind: SentinelKind, node: NodeRef) -> fmt::Result {
         match (kind, node) {
             (SentinelKind::Inline, NodeRef::Inline(n))
             | (SentinelKind::BlockLeaf, NodeRef::BlockLeaf(n)) => {
@@ -225,6 +243,59 @@ impl<W: Write> WalkSink for SerializeSink<'_, W> {
             // kind/variant mismatch — best-effort skip.
             _ => Ok(()),
         }
+    }
+}
+
+impl<W: Write> WalkSink for SerializeSink<'_, W> {
+    // Serialization copies `\n` verbatim, so it is not a structural event.
+    const WANTS_NEWLINES: bool = false;
+
+    fn on_text(&mut self, mut text: &str) -> fmt::Result {
+        while self.drop_newlines > 0 {
+            match text.strip_prefix('\n') {
+                Some(rest) => {
+                    text = rest;
+                    self.drop_newlines -= 1;
+                }
+                None => self.drop_newlines = 0,
+            }
+        }
+        let body = text.trim_end_matches('\n');
+        // A run that is only newlines joins the held count whole, so padding
+        // written either side of an empty run still cancels exactly.
+        if body.is_empty() {
+            self.held_newlines += text.len();
+            return Ok(());
+        }
+        self.write_held()?;
+        self.out.write_str(body)?;
+        self.held_newlines = text.len() - body.len();
+        Ok(())
+    }
+
+    fn on_node_at(
+        &mut self,
+        position: NormalizedOffset,
+        kind: SentinelKind,
+        node: NodeRef,
+    ) -> fmt::Result {
+        self.unpad(sentinel_is_blank_line_padded(node));
+        self.write_held()?;
+        if let Some(source) = self.source_boundaries.get(&position) {
+            self.out.write_str(source)
+        } else {
+            self.emit(kind, node)
+        }
+    }
+
+    fn on_node(&mut self, kind: SentinelKind, node: NodeRef) -> fmt::Result {
+        self.unpad(sentinel_is_blank_line_padded(node));
+        self.write_held()?;
+        self.emit(kind, node)
+    }
+
+    fn finish(&mut self) -> fmt::Result {
+        self.write_held()
     }
 }
 

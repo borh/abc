@@ -20,9 +20,7 @@
 
 use std::str;
 
-use ab_aozora_spec::{
-    ALL_SENTINELS, TriggerKind, classify_trigger_bytes, trigger::ALL_TRIGGER_TRIGRAMS,
-};
+use ab_aozora_spec::{ALL_SENTINELS, trigger::ALL_TRIGGER_TRIGRAMS};
 use proptest::prelude::*;
 use proptest::sample::select;
 
@@ -132,25 +130,17 @@ pub fn pathological_aozora(max_depth: usize) -> impl Strategy<Value = String> {
     prop::collection::vec(select(atoms), 0..=max_depth).prop_map(|pieces| pieces.concat())
 }
 
-/// Every trigger character doubled, except the bracket open.
+/// Every trigger character doubled.
 ///
 /// Doubling is what makes an atom reliably unbalanced: two of a delimiter
 /// cannot both find a partner in a fragment assembled from other doubled
-/// atoms. `［` is held back: a doubled bracket open reaches a known defect
-/// where the blank lines the serializer pads a block directive with expire
-/// brackets the first parse still had open, so the second parse reads a
-/// different bracket structure. Including it makes this generator fail
-/// within a hundred cases and mask every other shape behind it. The
-/// reproducer is the ignored test in
-/// `ab-aozora-pipeline/tests/round_trip_regressions.rs`; restore the glyph
-/// here once that test passes.
+/// atoms.
 fn doubled_trigger_glyphs() -> Vec<String> {
     ALL_TRIGGER_TRIGRAMS
         .iter()
-        .filter(|trigram| classify_trigger_bytes(**trigram) != Some(TriggerKind::BracketOpen))
         .map(|trigram| {
             str::from_utf8(trigram)
-                .expect("every trigger trigram is a BMP codepoint's UTF-8 encoding")
+                .expect("every trigram is a BMP codepoint's UTF-8 encoding")
                 .repeat(2)
         })
         .collect()

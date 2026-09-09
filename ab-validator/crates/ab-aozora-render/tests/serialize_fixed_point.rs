@@ -4,6 +4,11 @@
 //! Contract: for every input that the lexer can ingest, running
 //! `serialize ∘ parse` once produces a string `s`. A second pass —
 //! `serialize ∘ parse(s)` — must produce the same `s` byte-for-byte.
+//!
+//! Some inputs are pinned to the stronger statement that the first pass
+//! already reproduces the source: the normalizer's blank-line padding around
+//! a block sentinel is internal, and adding it to the output changed what the
+//! next parse saw.
 
 use ab_aozora_pipeline::lex;
 use ab_aozora_render::serialize;
@@ -18,6 +23,36 @@ fn fixed_point(src: &str) -> bool {
     let one = round_trip(src);
     let two = round_trip(&one);
     one == two
+}
+
+/// The normalizer writes a blank line either side of a block sentinel so the
+/// line-oriented recognizers have a boundary to work with. Those newlines are
+/// not source: writing them out inserts blank lines the author never wrote.
+#[test]
+fn a_block_directive_keeps_the_lines_the_source_gave_it() {
+    for source in [
+        "前\n［＃改ページ］\n後",
+        "前\n\n［＃改ページ］\n\n後",
+        "前\n\n\n\n［＃改ページ］\n\n\n\n後",
+        "［＃ここから2字下げ］\n本文\n［＃ここで字下げ終わり］",
+    ] {
+        assert_eq!(
+            round_trip(source),
+            source,
+            "serialize changed the blank lines"
+        );
+    }
+}
+
+/// On input whose brackets do not balance, the padding was parse-relevant:
+/// the pair stage expires an open bracket at a newline, so a bracket the
+/// first parse still held was gone by the time the next parse reached the `］`
+/// that closed it, and the trailing directive ended up buried in a body
+/// instead of at top level.
+#[test]
+fn a_block_directive_in_unbalanced_brackets_keeps_the_lines_the_source_gave_it() {
+    let source = "［［》》［＃ここから字下げ］《《≪≪］］［＃改］］";
+    assert_eq!(round_trip(source), source, "serialize introduced newlines");
 }
 
 #[test]

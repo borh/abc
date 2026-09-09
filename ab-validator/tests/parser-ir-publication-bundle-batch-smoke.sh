@@ -111,10 +111,10 @@ JSON
 
   cat > "$publication_dir/tei.xml" <<XML
 <?xml version="1.0" encoding="UTF-8"?>
-<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:abc="https://w3id.org/abc/ns/tei" abc:vocab-version="0">
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:snh="https://w3id.org/soranoha/ns/tei" snh:vocab-version="1">
   <text>
     <body>
-      <p>吾輩<ruby xml:id="tei-r000001" abc:preservation-record="r000001"><rb>猫</rb><rt>$reading</rt></ruby></p>
+      <p>吾輩<ruby xml:id="tei-r000001" snh:preservation-record="r000001"><rb>猫</rb><rt>$reading</rt></ruby></p>
     </body>
     <back>
       <div type="source"><note type="source-attribution">$source_note</note></div>

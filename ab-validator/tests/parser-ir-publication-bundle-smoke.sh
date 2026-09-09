@@ -132,10 +132,10 @@ TXT
 
 cat > "$bundle_dir/tei.xml" <<'XML'
 <?xml version="1.0" encoding="UTF-8"?>
-<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:abc="https://w3id.org/abc/ns/tei" abc:vocab-version="0">
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:snh="https://w3id.org/soranoha/ns/tei" snh:vocab-version="1">
   <text>
     <body>
-      <p>吾輩<ruby xml:id="tei-r000001" abc:preservation-record="r000001"><rb>猫</rb><rt>ねこ</rt></ruby><hi rend="text-combine-upright" abc:layout-kind="tcy">10</hi></p>
+      <p>吾輩<ruby xml:id="tei-r000001" snh:preservation-record="r000001"><rb>猫</rb><rt>ねこ</rt></ruby><hi rend="text-combine-upright" snh:layout-kind="tcy">10</hi></p>
     </body>
     <back>
       <div type="source"><note type="source-attribution">（古伝説と、シルレルの詩から。）</note></div>
@@ -231,6 +231,10 @@ smoke_jq '.validated_bundle.plaintext.hash == "'"$plain_hash"'"' "$summary_json"
 smoke_jq '.structure_check_candidates.tei_manifest_references_preservation == true' "$summary_json"
 smoke_jq '.structure_check_candidates.tei_manifest_references_validation_result == true' "$summary_json"
 smoke_jq '.structure_check_candidates.tei_abc_projection_resolves_to_sidecar == true' "$summary_json"
+# the check above is vacuously true when no projection attribute is found, which
+# is how it went on reporting success after the TEI extension namespace changed
+# under it. Assert that the fixture's projection was actually seen.
+smoke_jq '.counts.tei_preservation_references > 0' "$summary_json"
 smoke_jq '.structure_check_candidates.preservation_tei_pointers_resolve == true' "$summary_json"
 smoke_jq '.structure_check_candidates.preservation_source_pointers_resolve == true' "$summary_json"
 smoke_jq '.structure_check_candidates.plaintext_body_only == true' "$summary_json"

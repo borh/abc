@@ -36,7 +36,14 @@ PASSED_VERDICT = "PUBLICATION_BUNDLE_VALIDATION_PASSED"
 FAILED_VERDICT = "PUBLICATION_BUNDLE_VALIDATION_FAILED"
 BATCH_PASSED_VERDICT = "PUBLICATION_BUNDLE_BATCH_VALIDATION_PASSED"
 BATCH_FAILED_VERDICT = "PUBLICATION_BUNDLE_BATCH_VALIDATION_FAILED"
-ABC_NS = "{https://w3id.org/abc/ns/tei}"
+# Soranoha's TEI extension namespace, and the retired one that preceded it.
+# Both are read because this tool is run over archived capture bundles as well
+# as current output, and a bundle captured under the old namespace is still a
+# valid bundle. Only the first is emitted today.
+EXTENSION_NAMESPACES = (
+    "{https://w3id.org/soranoha/ns/tei}",
+    "{https://w3id.org/abc/ns/tei}",
+)
 XML_ID = "{http://www.w3.org/XML/1998/namespace}id"
 STRUCTURE_CHECK_CANDIDATES = (
     "tei_profile_valid",
@@ -153,9 +160,10 @@ def tei_id_set(root: ET.Element) -> set[str]:
 def preservation_record_refs(root: ET.Element) -> list[str]:
     refs: list[str] = []
     for element in root.iter():
-        value = element.attrib.get(f"{ABC_NS}preservation-record")
-        if value:
-            refs.extend(token for token in value.split() if token)
+        for namespace in EXTENSION_NAMESPACES:
+            value = element.attrib.get(f"{namespace}preservation-record")
+            if value:
+                refs.extend(token for token in value.split() if token)
     return refs
 
 

@@ -54,6 +54,12 @@
 //!   would otherwise absorb the annotation's `］`. A nested `［＃` is excluded:
 //!   it is an annotation in its own right and closes at its own `］`. Outside
 //!   an annotation body a closer still cannot cross a bracket downward.
+//! * **A plain `［` opened directly in a directive body is text**, with no
+//!   quote around it to scope it (`［＃［愛」に「ママ」の注記］`, a source typo
+//!   for `「愛」`). It has no closer of its own, so pairing it would hand the
+//!   annotation's `］` to the stray opener. The two readings are
+//!   indistinguishable at that `］`, so the decision is taken at the open,
+//!   where one trigger of lookahead separates a nested `［＃` from a stray `［`.
 
 use core::iter::Peekable;
 use core::mem;
@@ -293,6 +299,36 @@ where
 
     fn classify_trigger(&mut self, kind: TriggerKind, span: Span) -> PairEvent {
         if let Some(pair_kind) = open_kind_of(kind) {
+            // A plain `［` opened directly in a directive body is data, not
+            // structure. Bodies quote source text, and a source that writes
+            // `［愛」` where it meant `「愛」` leaves an opener with no partner.
+            // Pushed on the stack it becomes the nearest enclosing bracket, so
+            // the annotation's own `］` closes *it*, and the annotation itself
+            // survives to the newline expiry and takes every marker within its
+            // allowance down with it. The rule below cannot reach this shape:
+            // there is no quote around the stray opener to scope it, and no
+            // reading of the closing `］` can distinguish the two, since they
+            // differ only in whether a second `］` follows before the line ends.
+            //
+            // Deciding it at the open instead needs no lookahead beyond the
+            // next trigger, and forfeits nothing that occurs. Across 17,877
+            // corpus archives this is the only position where an unquoted `［`
+            // opens directly inside a directive body, and that one instance is
+            // the malformed one; a balanced pair in this position is unattested.
+            // A nested `［＃` is excluded, being an annotation in its own right,
+            // and a `［` opened inside a quote in the body still belongs to the
+            // rule below.
+            if pair_kind == PairKind::Bracket
+                && self
+                    .stack
+                    .last()
+                    .is_some_and(|&(top, _, allowance)| top == PairKind::Bracket && allowance > 0)
+                && !matches!(self.tokens.peek(), Some(Token::Trigger {
+                    kind: TriggerKind::Hash, span: hash,
+                }) if hash.start == span.end)
+            {
+                return PairEvent::Text { range: span };
+            }
             self.stack.push((pair_kind, span, 0));
             return PairEvent::PairOpen {
                 kind: pair_kind,
@@ -650,6 +686,77 @@ mod tests {
             )),
             "{events:?}"
         );
+    }
+
+    #[test]
+    fn an_unquoted_opening_bracket_in_a_body_does_not_absorb_the_annotation_close() {
+        // Work 000662 writes `［愛」` where it meant `「愛」`. The stray opener
+        // has no quote around it, so the rule for quoted openers cannot scope
+        // it, and pairing it would hand the annotation's `］` away and expire
+        // the annotation at the newline, taking the markers on the lines it
+        // covers by then with it.
+        let source = "［＃［愛」に「ママ」の注記］";
+        let (events, _) = run(source);
+        let close = events
+            .iter()
+            .filter_map(|event| match *event {
+                PairEvent::PairClose {
+                    kind: PairKind::Bracket,
+                    span,
+                } => Some(usize::try_from(span.end).unwrap()),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(close, vec![source.len()], "{events:?}");
+        assert!(
+            events.iter().any(
+                |event| matches!(event, PairEvent::Text { range } if range.slice(source) == "［")
+            ),
+            "{events:?}"
+        );
+    }
+
+    #[test]
+    fn a_nested_directive_open_in_a_body_is_still_a_bracket() {
+        // The same position, but the opener is `［＃`: an annotation in its own
+        // right, closing at its own `］`. One trigger of lookahead is the whole
+        // of what separates it from the stray opener above.
+        let source = "［＃注［＃「あ」に傍点］］";
+        let (events, diagnostics) = run(source);
+        assert!(diagnostics.is_empty(), "{diagnostics:?}");
+        let close = events
+            .iter()
+            .filter_map(|event| match *event {
+                PairEvent::PairClose {
+                    kind: PairKind::Bracket,
+                    span,
+                } => Some(usize::try_from(span.end).unwrap()),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(close, vec!["［＃注［＃「あ」に傍点］".len(), source.len()]);
+    }
+
+    #[test]
+    fn a_plain_bracket_nested_in_a_plain_bracket_still_pairs() {
+        // Not a directive body: the enclosing `［` carries no newline
+        // allowance, so the rule reaches neither running text nor a gloss.
+        let source = "［あ［い］う］";
+        let (events, diagnostics) = run(source);
+        assert!(diagnostics.is_empty(), "{diagnostics:?}");
+        let closes = events
+            .iter()
+            .filter(|event| {
+                matches!(
+                    event,
+                    PairEvent::PairClose {
+                        kind: PairKind::Bracket,
+                        ..
+                    }
+                )
+            })
+            .count();
+        assert_eq!(closes, 2, "{events:?}");
     }
 
     #[test]

@@ -37,12 +37,14 @@ the contract and should not be treated as version-stable adapter APIs.
 
 ## Parser core and facade
 
-The `ab-aozora-` prefix identifies forked crates. These seven crates are lifted from
+Eight crates are lifted from
 [P4suta/aozora](https://github.com/P4suta/aozora) at revision
 `1a4f864603970983719655aa4af4525958ac2d38`, dual-licensed MIT or Apache-2.0,
 and each carries `LICENSE-MIT`, `LICENSE-APACHE` and `NOTICE` beside its
-sources. Although the prefix marks forked crates, `ab-aozora` without a suffix is
-locally authored and is indicated in the table below.
+sources. Seven of them keep the `ab-aozora-` prefix; `ab-notation-strategies`
+descends from upstream's `aozora-proptest` and kept its licence obligation
+through the rename. `ab-aozora` without a suffix is locally authored. The
+Origin column below is the authority, not the name.
 
 | Crate | Origin | Purpose |
 | --- | --- | --- |
@@ -54,6 +56,7 @@ locally authored and is indicated in the table below.
 | `ab-aozora-render` | fork | Structured AST render target and HTML emission. |
 | `ab-aozora-facade` | fork | High-level parser facade, AST document container, and incremental splice engine. |
 | `ab-aozora-corpus` | fork | Archive indexing and parallel corpus processing helpers. |
+| `ab-notation-strategies` | fork | Proptest strategies generating Aozora notation input, plus the shared proptest configuration the workspace's property suites run under. Dev-only. Descends from upstream's `aozora-proptest`. |
 
 ## Evaluation, conversion, and research harness
 
@@ -74,4 +77,3 @@ locally authored and is indicated in the table below.
 | `ab-index` | Feature-index builder and query CLI. |
 | `ab-diff-utils` | Shared first-difference, frequency-table, and hash helpers. |
 | `ab-artifact-store` | Authenticated content-addressed blob publication and retrieval. Used by the release-qualification instruments and by `ab-capture`, but tied to neither. |
-| `ab-notation-strategies` | Proptest strategies generating Aozora notation input, plus the shared proptest configuration. Dev-only. |

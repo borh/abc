@@ -59,15 +59,22 @@ protecting independent reimplementations of the snh protocol.
 
 ## The toolchain
 
-The Rust parser core under `ab-validator/crates/ab-aozora-*` is an independent
-fork of [P4suta/aozora](https://github.com/P4suta/aozora) at revision
+The Rust parser core under `ab-validator/crates/` is an independent fork of
+[P4suta/aozora](https://github.com/P4suta/aozora) at revision
 `1a4f864603970983719655aa4af4525958ac2d38`, dual-licensed **MIT OR
 Apache-2.0**. Its licence files and `NOTICE` are retained in the fork, and
-each crate root carries a header naming the upstream crate and revision. Only
-names with a trailing hyphen are forked; `ab-aozora` without a suffix is a
-locally authored harness binary containing no lifted code. This distinction
-matters when assessing license obligations before redistributing tooling, and
-when auditing transcription methodology.
+each crate root carries a header naming the upstream crate and revision.
+
+Eight crates are forked: `ab-aozora-corpus`, `ab-aozora-encoding`,
+`ab-aozora-facade`, `ab-aozora-pipeline`, `ab-aozora-render`, `ab-aozora-spec`,
+`ab-aozora-syntax` and `ab-notation-strategies`. The last of these does not
+carry the prefix: it descends from upstream's `aozora-proptest` and was renamed
+when the fork was reduced, which changed its name and not its licence. Read the
+crate-root header rather than the name. `ab-aozora` without a suffix is a
+locally authored harness binary containing no lifted code.
+
+This distinction matters when assessing license obligations before
+redistributing tooling, and when auditing transcription methodology.
 
 Redistributing the *published corpus* does not carry the toolchain's
 obligations. Redistributing the *tooling* does.

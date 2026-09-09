@@ -14,8 +14,9 @@ This is the canonical monorepo for the conversion and validation system. It
 contains:
 
 - `ab-validator/`: Rust adapters, parser/IR validation, corpus measurement, and
-  report tooling. Its parser core, the `ab-aozora-*` crates, is an independent
-  fork of [P4suta/aozora](https://github.com/P4suta/aozora) at revision
+  report tooling. Its parser core, the `ab-aozora-*` crates plus
+  `ab-notation-strategies`, is an independent fork of
+  [P4suta/aozora](https://github.com/P4suta/aozora) at revision
   `1a4f864603970983719655aa4af4525958ac2d38`, dual-licensed MIT or Apache-2.0,
   and it determines the transcription of every work in the corpus.
 - `soranoha/`: publication, TEI/plaintext conversion, schemas, validation, and the snh protocol, including

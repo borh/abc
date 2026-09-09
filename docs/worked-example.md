@@ -12,7 +12,8 @@ through the same pipeline you get the same bytes.
 
 Aozora Bunko distributes the text as a Shift_JIS file inside a ZIP, with its
 own annotation notation carried inline. Four lines from across the file, which
-between them cover most of what the converter has to do:
+between them cover most of what the converter has to do (the middle two run on
+past what is shown here):
 
 ```
 ［＃８字下げ］一［＃「一」は中見出し］
@@ -24,8 +25,9 @@ between them cover most of what the converter has to do:
 
 - `《…》` marks ruby, indicating a reading printed above or beside the preceding characters.
 - `※［＃「…」、第3水準1-87-71］` is a **gaiji**: a character not in the source
-  file's encoding, described in prose and given a JIS X 0213 plane-row-cell
-  number. Here it is 犍, the first character of the thief's name 犍陀多.
+  file's encoding, described in prose and located in JIS X 0213 by its level
+  (第3水準) and its plane-row-cell number (plane 1, row 87, cell 71). Here it is
+  犍, the first character of the thief's name 犍陀多.
 - `［＃８字下げ］…［＃「一」は中見出し］` is layout plus a structural claim: indent
   eight characters, and the run 一 is a middle-level heading.
 - `［＃地から１字上げ］` sets the line flush to the end of the line, one character
@@ -55,7 +57,10 @@ You can run it yourself from a checkout; see
 
 ## The header
 
-The whole `teiHeader` for this work is 47 lines. Taking it block by block:
+The whole `teiHeader` for this work is 46 lines. Taking it block by block. The
+excerpts are wrapped for reading, where the published file puts an `<author>`,
+a `<taxonomy>` or a `<ruby>` on one line; inside `<ruby>` that wrapping would
+be text, so do not copy it back.
 
 ### titleStmt: work title and authorship
 
@@ -141,9 +146,13 @@ Four separate statements of source, at four levels:
 - **original publication**, identifying where the text first appeared (here, the July
   1918 issue of 「赤い鳥」). This entry is distinguished from the transcribed edition and
   marked `type="first-publication"` to keep the two claims distinct;
-- `source-content-hash`, recording the canonical digest of the Aozora source bundle,
-  which changes if Aozora reissues the file;
-- `primary-text-hash`, the hash of the text member itself.
+- `source-content-hash`, the digest of the bundle's canonical member listing
+  rather than of the ZIP file: the sha256 of
+  `{"construction":"abc-source-bundle-v1","members":[{"member_hash":…,"path":…}],"primary_text_member":…}`
+  in RFC 8785 form. Repackaging the same members leaves it unchanged; a
+  reissued member changes it;
+- `primary-text-hash`, the sha256 of the text member as distributed, which is
+  Shift_JIS bytes rather than the decoded text.
 
 The identifier `000092_000879` denotes the work and stays put across releases;
 these hashes are how you say *which text under that identifier*. If you need a
@@ -179,9 +188,11 @@ references it. The declaration carries both halves of the fact:
   radical of 特, plus 廴, plus 聿"). Retaining this text allows users to verify
   or adjust the character mapping without re-inspecting the upstream source file.
 
-The `xml:id` encodes the JIS plane-row-cell number from the marker
-(`3-1-87-71` = plane 3, 1-87-71), so the same character resolves to the same
-declaration everywhere.
+The `xml:id` carries the marker's JIS X 0213 coordinates with everything
+outside `[A-Za-z0-9_.-]` folded to hyphens, so `第3水準1-87-71` becomes
+`3-1-87-71`: the leading 3 is the level, and `1-87-71` is the plane, row and
+cell. The same character therefore resolves to the same declaration
+everywhere.
 
 `<styleDefDecl scheme="css"/>` declares that `@style` attributes in the
 body contain CSS properties. These record source layout details that lack
@@ -210,11 +221,14 @@ under その他 rather than under 9 文学 in the site's NDC index.
 `新字新仮名` is the orthography of the transcription: modern characters,
 modern kana. This is the single most consequential field for anyone studying
 the language rather than the story. It is populated for every work, and the
-corpus divides into 新字新仮名 (8812), 新字旧仮名 (3817), 旧字旧仮名 (1783),
-旧字新仮名 (23) and その他 (17). A historical-kana study that mixes them is
-not measuring what it thinks it is measuring, and the value varies inside a
-single series: 銭形平次捕物控 001 through 004 are 旧字旧仮名 while 005 is
-新字新仮名.
+corpus divides into 新字新仮名 (10791), 新字旧仮名 (4569), 旧字旧仮名 (2183),
+旧字新仮名 (93) and その他 (19), counted over the 17,655 catalog works that have
+a text file. Those counts move with the upstream catalog. A historical-kana
+study that mixes the values is not measuring what it thinks it is measuring,
+and one text can exist in two of them: 銭形平次捕物控 001 金色の処女 is in the
+archive twice, as 旧字旧仮名 under work id 054695 and as 新字新仮名 under
+056372, and so are episodes 002, 003, 004 and 006. Each such pair is two works
+with two identifiers, and this is the field that tells them apart.
 
 Both `scheme` attributes reference taxonomies declared in `encodingDesc`
 rather than bare string identifiers, making the authority explicit. In both
@@ -303,12 +317,20 @@ for the whole document, by the `primary-text-hash` in `sourceDesc`:
 <idno type="primary-text-hash">sha256:3c686946ec0a7f31f9de7a9a7231d93fe97c7323a5172c268a48f180fdb7bcac</idno>
 ```
 
-Naming the hash once rather than on every note is what keeps offsets from being
-applied to mismatched bytes without repeating 64 characters several thousand
-times per file. For example:
+That hash covers the member as distributed, and the offsets index its UTF-8
+decoding, so the two are one step apart: decode with the encoding named in
+`<note type="source-decoding">` at the end of `<back>`, re-encode to UTF-8,
+then slice. Naming the hash once rather than on every note is what keeps
+offsets from being applied to mismatched bytes without repeating 64 characters
+several thousand times per file:
 
 ```python
-source = open("kumono_ito.txt", "rb").read().decode("cp932")
+import hashlib
+
+raw = open("kumono_ito.txt", "rb").read()   # the ZIP's one member
+assert hashlib.sha256(raw).hexdigest() == (
+    "3c686946ec0a7f31f9de7a9a7231d93fe97c7323a5172c268a48f180fdb7bcac")
+source = raw.decode("cp932")                # windows-31j, from source-decoding
 assert source.encode("utf-8")[694:733].decode("utf-8") == "　ある日の事でございます。"
 ```
 
@@ -332,16 +354,22 @@ and verified independently without specialized pipeline tooling.
     <note type="source-span" xml:id="source-10080-10141" n="36"/>
     …
   </div>
+  <note type="parser-completion" n="true">The n attribute is true when no parser diagnostic of error severity was raised for this source. …</note>
+  <note type="source-decoding">windows-31j</note>
 </back>
 ```
 
 The colophon and the transcribers' note are the source's own back matter, kept
-as it was written. The `source-span` notes are the offset table. Also here,
-when the converter has anything to declare, are `note` elements of type
-`interpretation-problem`, `parser-diagnostic` and `parser-completion`: what the
-converter could not interpret, and whether any diagnostic reached error
-severity. They are in the file so that a doubt recorded during conversion
-travels with the text rather than staying in a log.
+as it was written. The `source-span` notes are the offset table, and
+`source-decoding` names the encoding the source was read as, which is what
+makes the offsets reproducible.
+
+`parser-completion` is always present: its `@n` is true when no parser
+diagnostic of error severity was raised, so a clean conversion says so rather
+than saying nothing. `interpretation-problem` and `parser-diagnostic` notes
+appear only when the converter has something to declare, and record what it
+could not interpret. They are in the file so that a doubt recorded during
+conversion travels with the text rather than staying in a log.
 
 ## The plaintext
 
@@ -367,7 +395,7 @@ does not parse XML still gets the readings:
 ```markdown
 ## 一
 
-ある日の事でございます。<ruby><rb>御釈迦様</rb><rt>おしゃかさま</rt></ruby>は極楽の<ruby><rb>蓮池</rb><rt>はすいけ</rt></ruby>のふちを、
+ある日の事でございます。<ruby><rb>御釈迦様</rb><rt>おしゃかさま</rt></ruby>は極楽の<ruby><rb>蓮池</rb><rt>はすいけ</rt></ruby>のふちを、…
 ```
 
 Where the source used an emphasis mark, the Markdown projection emits a `<span>`
@@ -376,8 +404,9 @@ example, 白ゴマ傍点 is represented as `text-emphasis-style: open sesame` ra
 generic bold text.
 
 `tei-validation` is a JSON report naming the profile the file was checked
-against by hash, the Relax NG and Schematron layers, and every rule that fired
-with its identifier and severity. A pass is evidence about the XML, not about
+against by hash, the status of each of the three layers (well-formedness,
+Relax NG, Schematron), and every rule that fired with its identifier and
+severity. A pass is evidence about the XML, not about
 the transcription: see
 [TEI validation](../soranoha/docs/tei-validation.md) for what each layer does
 and does not establish.
@@ -391,7 +420,9 @@ import xml.etree.ElementTree as ET
 
 TEI = "{http://www.tei-c.org/ns/1.0}"
 XML = "{http://www.w3.org/XML/1998/namespace}"
-tree = ET.parse("000092_000879.xml")
+# The work page's TEI download is named for the author, Aozora's own stem for
+# the text, and the identifier.
+tree = ET.parse("Akutagawa_Ryunosuke-kumono_ito-000092_000879.xml")
 
 def text(node):
     """All text under a node, descending into ruby bases and gaiji."""
@@ -448,6 +479,8 @@ def extent(reference):
     _, start, end = reference.lstrip("#").split("-")
     return int(start), int(end)
 
+# The source bytes the offsets index, opened again as in "Source offsets".
+source = open("kumono_ito.txt", "rb").read().decode("cp932")
 body = tree.find(f"{TEI}text/{TEI}body")
 for seg in body.iter(f"{TEI}seg"):
     ref = seg.get("source")
@@ -459,7 +492,10 @@ for seg in body.iter(f"{TEI}seg"):
 
 The reference is the extent, so nothing needs looking up. The `source-span`
 notes in `<back>` are there to be pointed at, and to carry the source line in
-`@n`; the offsets are in their identifiers.
+`@n`; the offsets are in their identifiers. On the body elements shown here
+`@source` holds one reference, but a `<note>` that closes a span carries two,
+space-separated, so split on whitespace first if you widen the loop past
+`<seg>`.
 
 **And if all you want is the text**, take the `plaintext` artifact rather than
 re-deriving it. It is published beside the TEI, generated under the documented

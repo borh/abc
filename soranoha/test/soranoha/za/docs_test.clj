@@ -24,11 +24,21 @@
 (defn- links [text]
   (map (fn [[_ _ target]] target) (re-seq #"\[([^\]]+)\]\(([^)]+)\)" text)))
 
+(def ^:private served
+  "Every document the site renders, however its page is assembled."
+  (concat docs/documents docs/generated))
+
 (def ^:private routes
-  (into #{} (map :route) (concat docs/documents docs/verbatim)))
+  (into #{} (map :route) (concat served docs/verbatim)))
+
+(deftest a-generated-page-starts-its-document-at-a-heading-it-has
+  (doseq [{:keys [route path from]} docs/generated]
+    (testing route
+      (is (contains? (headings (docs/read-text path)) from)
+          "the page carries the document from this heading onward"))))
 
 (deftest every-served-file-is-present-and-titled
-  (doseq [{:keys [route path]} docs/documents]
+  (doseq [{:keys [route path]} served]
     (testing route
       (is (fs/exists? (fs/file (docs/root) path)) path)
       (is (string? (markdown/title (docs/read-text path))))))
@@ -37,16 +47,16 @@
       (is (fs/exists? (fs/file (docs/root) path)) path))))
 
 (deftest routes-are-distinct-and-usable-as-paths
-  (is (= (count routes) (+ (count docs/documents) (count docs/verbatim)))
+  (is (= (count routes) (+ (count served) (count docs/verbatim)))
       "two entries would otherwise overwrite each other in the serving tree")
   (doseq [route routes]
     (is (re-matches #"[a-z0-9][a-z0-9./-]*" route) route)
     (is (not (string/includes? route "..")) route)))
 
 (deftest every-link-in-a-served-document-resolves
-  (let [by-route (into {} (map (juxt :route text-of)) docs/documents)
+  (let [by-route (into {} (map (juxt :route text-of)) served)
         sections (update-vals by-route headings)]
-    (doseq [{:keys [route path] :as document} docs/documents
+    (doseq [{:keys [route path] :as document} served
             target (links (text-of document))
             :let [resolved (docs/resolve-link path target)]]
       (testing (str route " -> " target)

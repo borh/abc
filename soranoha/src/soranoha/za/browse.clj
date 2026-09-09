@@ -723,48 +723,45 @@
        " " [:a {:href (str "/releases/" last-release ".json")} [:code last-release]]])
     [:p [:a {:href "/rights"} (bilingual "権利について" "Rights statement")]]]))
 
-(defn- rights-page [{:strs [works encoding statement_url]}]
+(defn- generated-page
+  "One of the two pages that state facts read from the release and then carry
+  their document.
+
+  The opening is the page's own, bilingual and short, because a reader who
+  arrives from a manifest's `statement_url` or from a citation needs the
+  answer before the detail. Everything after it is the repository document,
+  started at the heading that follows what the opening already said, so the
+  two cannot drift apart."
+  [{:keys [path ja from]} title lead]
   (chrome
-   "権利について"
-   [[:h1 (bilingual "権利について" "Rights")]
-    [:p (bilingual
+   ja
+   {:main-class "doc"}
+   (concat [[:h1 (bilingual ja title)]] lead
+           (markdown/render {:text (docs/read-text path)
+                             :source path
+                             :from from
+                             :link (partial docs/resolve-link path)}))))
+
+(defn- rights-page [document {:strs [works encoding statement_url]}]
+  (generated-page
+   document
+   "Rights and licensing"
+   [[:p (bilingual
          "複製、再配布、翻案、翻訳、機械可読な解析、再公開のいずれも、営利非営利を問わず自由に行えます。許諾も支払いも不要です。表示は要望であって条件ではありません。"
          "You may copy, redistribute, adapt, translate, mine and republish everything here, commercially or not, without asking and without payment. Attribution is requested, not required.")]
-
-    [:section
-     [:h2 (bilingual "二つの層" "Two layers")]
-     [:p (bilingual
-          "底本となる青空文庫の作品は著作権が消滅しており、Soranoha は何の権利も主張しません。青空文庫の取り扱い規準も、複製・再配布・改変を自由とし、表示を「希望」としています。"
-          "The underlying Aozora Bunko works are out of copyright, and Soranoha claims no right in them. Aozora's own handling rules permit free copying, redistribution and modification, and treat attribution as requested rather than required.")]
-     [:p (bilingual
-          "TEI 符号化、プレーンテキストと Markdown の投影、検証レポート、目録、マニフェストは Soranoha の成果物であり、CC0 1.0 で公有に供します。"
-          "The TEI encoding, the plain-text and Markdown projections, the validation reports, the catalog and the manifests are Soranoha's own work, dedicated to the public domain under CC0 1.0.")]
-     [:dl {:class "facts"}
-      [:dt (bilingual "底本の状態" "Underlying works")]
-      [:dd [:a {:href (rights/works-uri works)} works]]
-      [:dt (bilingual "符号化の licence" "Encoding licence")]
-      [:dd [:a {:href (rights/licence-uri encoding)} encoding]]
-      [:dt (bilingual "この文書" "This statement")]
-      [:dd [:a {:href statement_url} statement_url]]]
-     [:p (bilingual
-          "同じ内容は各版のマニフェストの rights 欄と、各 TEI ファイルの publicationStmt/availability にも記録されています。署名されているのはマニフェストです。"
-          "The same grant is recorded in every manifest's rights field and in every TEI file's publicationStmt/availability. The manifest is the signed one.")]]
-
-    [:section
-     [:h2 (bilingual "変換ソフトウェア" "The toolchain")]
-     [:p (bilingual
-          "コードは Apache-2.0、TEI カスタマイズとプロトコルスキーマは CC0 1.0 です。解析器の中核は P4suta/aozora の fork で、MIT または Apache-2.0 の二重ライセンスです。コーパスを再配布する場合にこれらの義務は生じませんが、ソフトウェアを再配布する場合は生じます。"
-          "The code is Apache-2.0; the TEI customisation and the protocol schemas are CC0 1.0. The parser core is a fork of P4suta/aozora, dual-licensed MIT or Apache-2.0. Redistributing the corpus does not carry the toolchain's obligations; redistributing the software does.")]]
-
-    [:section
-     [:h2 (bilingual "権利者の方へ" "If you hold rights in a work")]
-     [:p (bilingual
-          "公開しているのは権利が消滅したと判断した作品のみですが、この規模では判断を誤ることがあります。作品の識別子（URL に現れる 000092_000879 の形）または青空文庫のカードと、主張の根拠をお知らせください。正式な法的通知である必要はありません。"
-          "Only works assessed as free of subsisting rights are published, but a corpus this size will eventually be wrong about one. Send the work identifier (the 000092_000879 form visible in the URL) or the Aozora card, together with the basis of the claim. It does not need to be a formal legal notice.")]
-     [:p [:a {:href "https://orcid.org/0000-0003-2246-8774"} "https://orcid.org/0000-0003-2246-8774"]]
-     [:p (bilingual
-          "取り下げは署名された記録として公開されます。作品は現在の版から外れ、目録からも消え、取り下げ記録が /withdrawn/<識別子>.json に残ります。追記のみの記録なので、過去の版は書き換えません。"
-          "A withdrawal is published as a signed record: the work leaves the current release and its catalog, and the governing statement stays at /withdrawn/<identifier>.json. The record is append-only, so earlier releases are not rewritten.")]]]))
+    ;; the grant as this release states it, rather than as this document
+    ;; describes it: a served page that disagreed with the signed manifest
+    ;; would be the one thing a rights statement may not do
+    [:dl {:class "facts"}
+     [:dt (bilingual "底本の状態" "Underlying works")]
+     [:dd [:a {:href (rights/works-uri works)} works]]
+     [:dt (bilingual "符号化の licence" "Encoding licence")]
+     [:dd [:a {:href (rights/licence-uri encoding)} encoding]]
+     [:dt (bilingual "この文書" "This statement")]
+     [:dd [:a {:href statement_url} statement_url]]]
+    [:p (bilingual
+         "上の三つはこの版のマニフェストから読んだものです。以下は権利の全文です。"
+         "Those three are read from this release's own manifest. The full statement follows.")]]))
 
 (def ^:private example-work
   "The work the how-to-cite page is worked through. A literal rather than a
@@ -784,54 +781,27 @@
                     "family_name_romaji" "Akutagawa" "given_name_romaji" "Ryunosuke"
                     "relation_to_work" "著者"}]})
 
-(defn- citation-page [{:keys [head-hex doi] :as release}]
-  (chrome
-   "引用のしかた"
-   [[:h1 (bilingual "引用のしかた" "How to cite")]
-    [:p (bilingual
+(defn- citation-page [document {:keys [head-hex doi] :as release}]
+  (generated-page
+   document
+   "Citing Soranoha"
+   [[:p (bilingual
          "すべて CC0 なので引用は義務ではありません。それでも、版を明示した引用をお願いします。"
          "Everything here is CC0, so citation is not required. Please cite anyway, and name the release.")]
-
-    [:section
-     [:h2 (bilingual "版を引く" "Cite a release")]
-     [:p (bilingual
-          "コーパスは版ごとに変わります。作品が加わり、符号化が改良され、取り下げも起こります。「Soranoha」とだけ書いた引用は、読んだバイト列を特定しません。"
-          "The corpus changes between releases: works are added, the encoding improves, and a work can be withdrawn. A citation naming only the corpus does not identify the bytes you read.")]
-     [:p [:code {:class "citation"}
-          (str site-name " Aozora TEI Corpus. Release " head-hex "."
-               (when doi (str " https://doi.org/" doi)))]]]
-
-    [:section
-     [:h2 (bilingual "作品を引く" "Cite one work")]
-     [:p (bilingual
-          "作品名と著者名だけでは足りません。青空文庫の目録では、著者名と作品名が一致する作品が 1966 件あります。識別子と版を必ず含めてください。各作品の頁に、そのまま貼り付けられる引用が日本語用と英語用の両方あります。"
-          "Title and author are not enough: 1966 works in the Aozora catalog share an author-and-title pair. Always include the identifier and the release. Every work page carries both forms, ready to copy: one for a Japanese bibliography and one for an English one.")]
-     [:p [:code {:class "citation" :lang "ja"}
-          (citation/rendered release example-work)]]
-     [:p [:code {:class "citation"}
-          (citation/rendered-en release example-work)]]
-     [:p (bilingual
-          "作品名のローマ字表記は提供していません。読みには語の切れ目がなく、機械的な変換では正しいヘボン式になりません。日本語の作品名と読みをそのまま示し、翻字は投稿先の様式に従ってください。英語用の形でも作品名は日本語のままです。"
-          "Romanized titles are not published: the reading carries no word boundaries, so a mechanical transliteration is not correct Hepburn. Take the Japanese title and its reading, and follow your journal's style. The English form leaves the titles in Japanese for the same reason.")]]
-
-    [:section
-     [:h2 (bilingual "文献管理ソフトで読む" "For reference managers")]
-     [:p (bilingual
-          "各作品は同じ記録を CSL-JSON と BibLaTeX でも配信しています。作品頁には COinS を埋め込んであるので、Zotero の拡張機能はこの site を知らなくても正しい種別で保存します。"
-          "Each work serves the same record as CSL-JSON and as BibLaTeX. Work pages embed COinS, so the Zotero browser connector saves a correctly typed record in one click without being told this site exists.")]
-     [:p [:code "/works/<識別子>/citation.json"] " · "
-      [:code "/works/<識別子>/citation.bib"]]
-     [:p (bilingual
-          "どちらも作品を底本の一部（CSL の chapter、BibLaTeX の @incollection）として記述します。単独の書物として記述すると底本が失われるためです。まとめて必要な場合は、各 ZIP の catalog.csv に同じ項目が列として入っています。"
-          "Both describe a work as an item inside its 底本 (CSL chapter, BibLaTeX @incollection) rather than as a book of its own, which would lose the source edition. For many works at once, every bulk archive's catalog.csv carries the same fields as columns.")]]
-
-    [:section
-     [:h2 (bilingual "バイト列を引く" "Cite exact bytes")]
-     [:p (bilingual
-          "再現性が要る場合は成果物を内容アドレスで引いてください。各成果物には snh:1:<種別>:<sha256> 形式の識別子があり、それを収めるマニフェストは署名されています。"
-          "For work that must be reproducible, cite the artifact by content address: every artifact has an id of the form snh:1:<type>:<sha256>, and the manifest naming it is signed.")]
-     [:p [:a {:href "/catalog.json"} "/catalog.json"] " · "
-      [:a {:href (str "/releases/" head-hex ".json")} (str "/releases/" head-hex ".json")]]]]))
+    ;; the templates below are the document's; these are this release's, which
+    ;; is the one thing a reader cannot fill in from a repository checkout
+    [:p [:code {:class "citation"}
+         (str site-name " Aozora TEI Corpus. Release " head-hex "."
+              (when doi (str " https://doi.org/" doi)))]]
+    [:p [:code {:class "citation" :lang "ja"}
+         (citation/rendered release example-work)]]
+    [:p [:code {:class "citation"}
+         (citation/rendered-en release example-work)]]
+    [:p (bilingual
+         "上はこの版のもので、作品の例は「蜘蛛の糸」です。各作品の頁にはその作品の形が同じように載っています。以下は、それぞれの要素が何のためにあるかの説明です。"
+         "Those are this release, with 蜘蛛の糸 as the worked example; every work page carries the same forms for its own work. What each component is for follows.")]
+    [:p [:a {:href "/catalog.json"} "/catalog.json"] " · "
+     [:a {:href (str "/releases/" head-hex ".json")} (str "/releases/" head-hex ".json")]]]))
 
 (defn- utf8 ^bytes [^String s] (.getBytes s "UTF-8"))
 
@@ -914,14 +884,15 @@
         page (fn [path ^String content] [path (utf8 content)])
         by-kana (group-by kana-row-key works)
         by-ndc (group-by ndc-class-key works)
-        entries (document-entries)]
+        entries (document-entries)
+        by-route (into {} (map (juxt :route identity)) docs/generated)]
     (concat
      [(page "style.css" stylesheet)
       (page "search.js" search-js)
       (page "search-index.json" (search-index head-hex works))
       (page "index.html" (landing head-hex works (count withdrawn) entries))
-      (page "rights.html" (rights-page (get head "rights")))
-      (page "citation.html" (citation-page release))
+      (page "rights.html" (rights-page (by-route "rights") (get head "rights")))
+      (page "citation.html" (citation-page (by-route "citation") release))
 
       (page "authors/index.html"
             (author-index (mapv (fn [[id {:keys [person by-relation]}]]

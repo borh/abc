@@ -24,6 +24,11 @@ The version DOI is the one to put in a bibliography: it resolves to exactly
 the bytes cited, and it survives the site. The head is what a reader uses to
 re-verify the chain independently.
 
+The forms below are templates: they show where each component goes. The same
+forms filled in for the release you are reading are on the served
+[citation page](https://soranoha.org/citation), and every work page carries
+its own, ready to copy.
+
 > **Not yet minted.** The Zenodo concept and version DOIs are created at
 > public genesis. Until then the DOI lines below are shown in their intended
 > form with a placeholder, and the head is the only stable release
@@ -33,8 +38,8 @@ re-verify the chain independently.
 
 ```
 Hodošček, Bor. Soranoha Aozora TEI Corpus. Release
-d9f2a1c0e4b78356f1a2c9d0e5b4738a6c1f0e2d3b5a4978c6e1f0d2b3a495867.
-https://doi.org/10.5281/zenodo.XXXXXXX
+<release head, 64 hex characters>.
+https://doi.org/10.5281/zenodo.<version deposit>
 ```
 
 BibLaTeX:
@@ -43,8 +48,8 @@ BibLaTeX:
 @dataset{soranoha,
   author  = {Hodošček, Bor},
   title   = {Soranoha Aozora TEI Corpus},
-  version = {d9f2a1c0e4b78356f1a2c9d0e5b4738a6c1f0e2d3b5a4978c6e1f0d2b3a495867},
-  doi     = {10.5281/zenodo.XXXXXXX},
+  version = {<release head, 64 hex characters>},
+  doi     = {10.5281/zenodo.<version deposit>},
   url     = {https://soranoha.org},
 }
 ```
@@ -74,8 +79,8 @@ second metadata source.
 
 ```
 芥川 龍之介「蜘蛛の糸」（新字新仮名）、底本『芥川龍之介全集　第三巻』筑摩書房、
-1971年。Soranoha Aozora TEI Corpus, 000092_000879, release d9f2a1c0e4b7….
-https://doi.org/10.5281/zenodo.XXXXXXX
+1971年。Soranoha Aozora TEI Corpus, 000092_000879, release <release head>.
+https://doi.org/10.5281/zenodo.<version deposit>
 ```
 
 ### For an English bibliography
@@ -83,7 +88,7 @@ https://doi.org/10.5281/zenodo.XXXXXXX
 ```
 Akutagawa Ryunosuke. “蜘蛛の糸” (新字新仮名). In 芥川龍之介全集　第三巻.
 筑摩書房, 1971. Soranoha Aozora TEI Corpus, 000092_000879,
-release d9f2a1c0e4b7…. https://doi.org/10.5281/zenodo.XXXXXXX
+release <release head>. https://doi.org/10.5281/zenodo.<version deposit>
 ```
 
 The author is in Latin script because the catalog publishes romanized name
@@ -99,8 +104,8 @@ parts. The titles are not; see below for why.
 | 底本 | `『芥川龍之介全集　第三巻』筑摩書房、1971年` | The printed book the transcription was made from. Two transcriptions of one work from different 底本 are different texts. |
 | Corpus name | `Soranoha Aozora TEI Corpus` | Which corpus, distinguishing this encoding from Aozora Bunko's own files. |
 | **Work identifier** | `000092_000879` | **Identifies the work.** Stable across releases. The one component that makes the citation unambiguous. |
-| **Release** | `release d9f2a1c0e4b7…` | **Identifies the bytes.** The corpus is versioned; a citation without it does not name what was read. |
-| Version DOI | `https://doi.org/10.5281/zenodo.XXXXXXX` | Resolves to exactly those bytes, and survives the site. |
+| **Release** | `release <release head>` | **Identifies the bytes.** The corpus is versioned; a citation without it does not name what was read. |
+| Version DOI | `https://doi.org/10.5281/zenodo.<version deposit>` | Resolves to exactly those bytes, and survives the site. |
 
 The identifier and the release are the two components that are never
 optional. Everything above them is description; those two are identity.
@@ -135,9 +140,9 @@ rather than Highwire `citation_*` meta tags, which cannot express it.
   langid = {japanese},
   eprinttype = {Soranoha Aozora TEI Corpus},
   eprint = {000092_000879},
-  version = {d9f2a1c0e4b78356f1a2c9d0e5b4738a6c1f0e2d3b5a4978c6e1f0d2b3a495867},
+  version = {<release head, 64 hex characters>},
   url = {https://soranoha.org/works/000092_000879/},
-  doi = {10.5281/zenodo.XXXXXXX},
+  doi = {10.5281/zenodo.<version deposit>},
   note = {新字新仮名; 初出: 「赤い鳥」1918（大正7）年7月},
 }
 ```
@@ -194,7 +199,7 @@ signed:
 ```
 Soranoha Aozora TEI Corpus, work 000092_000879, TEI artifact
 snh:1:tei:6f0b1c…, in release
-d9f2a1c0e4b78356f1a2c9d0e5b4738a6c1f0e2d3b5a4978c6e1f0d2b3a495867.
+<release head, 64 hex characters>.
 ```
 
 This is the most precise form of citation available. A reader can fetch the artifact, hash

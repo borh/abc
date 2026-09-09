@@ -54,6 +54,19 @@
    {:route "protocol" :path "docs/design/snh-protocol-v1.md"
     :ja "snh プロトコル v1"}])
 
+(def generated
+  "Documents whose page the browse layer assembles itself, because the page
+  states facts it reads from the release: the rights grant the head manifest
+  carries, and the head and DOI a citation has to name.
+
+  The page opens in its own words and then carries the document from `:from`
+  onward, so the opening is stated once. These resolve like any other served
+  document: a link to `rights.md` reaches `/rights`."
+  [{:route "rights" :path "docs/rights.md"
+    :ja "権利について" :from "two-distinct-rights-layers"}
+   {:route "citation" :path "docs/citation.md"
+    :ja "引用のしかた" :from "cite-a-release-not-the-corpus"}])
+
 (def verbatim
   "Files served as themselves rather than as pages. Their routes keep the
   extension a reader's tool needs to recognise them."
@@ -68,7 +81,7 @@
     :path "soranoha/resources/assessment/source-1.schema.json"}])
 
 (def ^:private by-path
-  (into {} (map (juxt :path identity)) (concat documents verbatim)))
+  (into {} (map (juxt :path identity)) (concat documents generated verbatim)))
 
 (defn root
   "The directory the served files are read from."

@@ -278,7 +278,19 @@
       (let [rights-page (page pages "rights.html")]
         (is (string/includes? rights-page "https://creativecommons.org/publicdomain/zero/1.0/"))
         (is (string/includes? rights-page "https://creativecommons.org/publicdomain/mark/1.0/"))
-        (is (string/includes? rights-page "https://soranoha.org/rights"))))))
+        (is (string/includes? rights-page "https://soranoha.org/rights"))
+        (testing "and then carries the statement itself, once"
+          (is (string/includes? rights-page "id=\"two-distinct-rights-layers\""))
+          (is (string/includes? rights-page "id=\"no-warranty\""))
+          (is (not (string/includes? rights-page "id=\"the-short-version\""))
+              "the page opens in its own words, so the document's opening is skipped"))))
+
+    (testing "and the citation page fills the document's templates with this release"
+      (let [citation-page (page pages "citation.html")]
+        (is (string/includes? citation-page head-hex))
+        (is (string/includes? citation-page "id=\"cite-a-release-not-the-corpus\""))
+        (is (string/includes? citation-page "release head, 64 hex characters")
+            "the document's own template is carried, and stays a template")))))
 
 (deftest html-rendering-escapes-every-untrusted-position-test
   (is (= "<p class=\"a&quot;b\">&lt;x&gt;&amp;</p>"

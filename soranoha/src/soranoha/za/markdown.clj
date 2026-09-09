@@ -114,9 +114,14 @@
                      code [:code code]
                      label (let [resolved (link target)
                                  shown (inline label link)]
-                             (if (string? resolved)
-                               (list shown " (" [:code resolved] ")")
-                               [:a resolved shown]))
+                             (cond
+                               (not (string? resolved)) [:a resolved shown]
+                               ;; the label is already the path, as it is
+                               ;; whenever a document names a file in
+                               ;; backticks; saying it twice helps nobody
+                               (= (string/replace label "`" "") resolved)
+                               [:code resolved]
+                               :else (list shown " (" [:code resolved] ")")))
                      autolink [:a {:href autolink} autolink]
                      bold (into [:strong] (inline bold link))
                      italic (into [:em] (inline italic link)))]
@@ -206,8 +211,7 @@
                  ;; documents' own cross-references and a reader's bookmark
                  ;; depend on it, so it is derived from the heading rather
                  ;; than counted, and survives a section moving.
-                 (conj out (into [(keyword (str "h" (min 6 (inc level))))
-                                  {:id (slug text)}]
+                 (conj out (into [(keyword (str "h" level)) {:id (slug text)}]
                                  (inline text link)))))
 
         (fence-line? line)
@@ -236,13 +240,26 @@
   "Render `text` as hiccup. `link` resolves a Markdown link target; `source` is
   the document's repository path, used only in error data.
 
-  Headings shift down one level and the document's own leading `# Title` is
-  dropped, because the page renders that title as its `h1` and a document has
-  one title rather than two."
-  [{:keys [text link source]}]
+  Rendering starts after the document's own leading `# Title`, because the
+  page renders that title as its `h1` and a document has one title rather than
+  two. Heading levels below it are kept, so a document's `##` sections are the
+  page's `h2` sections.
+
+  `from` names a heading by its identifier and starts there instead, which is
+  how a page that already states a document's opening in its own words carries
+  the rest of that document without repeating it. A `from` that names no
+  heading throws rather than silently rendering nothing."
+  [{:keys [text link source from]}]
   (let [lines (string/split-lines text)
-        after-title (drop-while (complement heading-line) lines)]
-    (blocks (rest after-title) link source)))
+        after-title (rest (drop-while (complement heading-line) lines))]
+    (if from
+      (let [tail (drop-while #(not= from (some-> (heading-line %) second slug))
+                             after-title)]
+        (when (empty? tail)
+          (throw (ex-info "document has no heading to start from"
+                          {:reason :unknown-start-heading :source source :from from})))
+        (blocks tail link source))
+      (blocks after-title link source))))
 
 (defn title
   "The document's first ATX heading, which is what the page is called."

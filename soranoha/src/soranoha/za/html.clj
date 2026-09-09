@@ -10,7 +10,13 @@
   Escaping is not optional and has no opt-out. Every string in the tree is
   text, never markup; attribute values are escaped separately from element
   content. Corpus metadata is upstream data, and an entity in a title must
-  reach the reader as an entity rather than as markup."
+  reach the reader as an entity rather than as markup.
+
+  Replicant was measured against this namespace and rejected on that last
+  point: `replicant.string/render` 2026.07.1 emits a double quote as `&#39;`,
+  which is an apostrophe, in both attribute values and text content. A corpus
+  of Japanese literature carries quotation marks, and a renderer that turns
+  one character into another is not usable here whatever else it offers."
   (:require [clojure.string :as string]))
 
 (def ^:private void-elements

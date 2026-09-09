@@ -46,7 +46,7 @@
                 (catch clojure.lang.ExceptionInfo e (:reason (ex-data e))))))))
 
 (deftest a-filename-collides-with-nothing
-  ;; 900 Aozora stems are shared by 2124 works and 470 author-and-title pairs
+  ;; 802 Aozora stems are shared by 1908 works and 470 author-and-title pairs
   ;; by 2357 works, so uniqueness has to come from the identifier component
   ;; and from nowhere else
   (let [author (person "000879" "芥川" "龍之介" "Akutagawa" "Ryunosuke")

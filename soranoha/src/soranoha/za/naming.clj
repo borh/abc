@@ -32,8 +32,8 @@
 
 (defn person-label
   "Japanese name where there is one, romaji otherwise. A catalog entry can
-  carry either alone — 115 works have no given-name romaji, and some
-  contributors are recorded only in one script — so neither is required."
+  carry either alone: of the catalog's 1334 people, 73 have no given-name
+  romaji, so neither script is required."
   [person]
   (or (person-name-ja person) (person-name-romaji person) "—"))
 
@@ -70,9 +70,9 @@
   "One filename component: Latin letters, digits and apostrophes, with word
   boundaries as underscores.
 
-  Apostrophes are kept because they are meaningful — 231 Aozora stems use
-  Hepburn's n' disambiguation (ippon'ashino_heitai) — and shells handle them
-  with ordinary quoting. Hyphens fold to underscores, which is what keeps the
+  Apostrophes are kept because they are meaningful: 204 Aozora stems use
+  Hepburn's n' disambiguation, as in `ippon'ashino_heitai`, and shells handle
+  them with ordinary quoting. Hyphens fold to underscores, which is what keeps the
   three components of a filename separable by splitting on the hyphen."
   [s]
   (if (string/blank? s)
@@ -87,7 +87,7 @@
 
 (defn- author-component
   "The first 著者 in the catalog's own order, or the first contributor of any
-  relation when a work records none. One name, not all of them: 402 works
+  relation when a work records none. One name, not all of them: 422 works
   have several authors, and a filename that grew with the contributor list
   would be unbounded. The person id is the fallback when nothing Latin
   survives, so the name still resolves through /authors/<id>."

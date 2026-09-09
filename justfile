@@ -24,6 +24,13 @@ comment-hygiene:
 docs-links:
 	@python scripts/docs-link-check.py
 
+# Re-derive every corpus figure quoted in prose from the pinned Aozora catalog.
+# Not part of any bundled gate: it needs a corpus checkout, which the sandboxed
+# checks do not have. Set CORPUS_CHECKOUT, or pass --aozora-root. `--stems`
+# adds the figures that need a pass over every work archive.
+catalog-figures *args:
+	@python scripts/catalog-figures-check.py {{args}}
+
 nix-format-check:
 	@find . \
 		-path './.git' -prune -o \

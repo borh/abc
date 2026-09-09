@@ -47,7 +47,7 @@ curl -O https://soranoha.org/works/000092_000879/Akutagawa_Ryunosuke-kumono_ito-
 
 The name is `<author>-<Aozora stem>-<identifier>.<ext>`. The middle part is
 Aozora Bunko's own filename for the text, which its volunteers wrote with word
-boundaries by hand. **The filename is a convenience, whereas the identifier is the citable reference.** The identifier is included in every filename because title and author alone do not uniquely identify a work: 2353 works in the corpus share an author and title with another work. Without the identifier, those files would overwrite each other during bulk extraction. Every work page shows both forms.
+boundaries by hand. **The filename is a convenience, whereas the identifier is the citable reference.** The identifier is included in every filename because title and author alone do not uniquely identify a work: 2357 works in the Aozora catalog share an author and title with another work. Without the identifier, those files would overwrite each other during bulk extraction. Every work page shows both forms.
 
 To read it rather than download it, open
 `https://soranoha.org/works/000092_000879/` for the bibliography and

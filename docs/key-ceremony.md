@@ -117,7 +117,14 @@ tmpfs, so that nothing is written to persistent storage except the two media:
 sudo -i
 umask 077
 mkdir -m 0700 /run/ceremony && cd /run/ceremony
+mkdir -m 0700 /run/ceremony/mnt
 ```
+
+Every block below that opens a medium mounts it at `/run/ceremony/mnt`, which
+is why it is created once here. The path is written out rather than held in a
+variable so that each block stands on its own: the only thing a block needs
+from outside itself is the device, and each one sets that explicitly, because
+which medium is being opened is the one decision no default can make.
 
 The procedure needs only OpenSSL 3, GNU coreutils, `cryptsetup` and `e2fsprogs`, all
 of which the image carries.
@@ -209,17 +216,16 @@ Identify the medium with `lsblk` and confirm the device before formatting;
 `luksFormat` destroys what is there. Use the whole device, not a partition.
 
 ```sh
-dev=/dev/sdX
-mnt=/run/ceremony/mnt
-mkdir -p "$mnt"
+dev=/dev/sdX                        # this medium, confirmed with lsblk
 
 cryptsetup luksFormat --type luks2 "$dev"
 cryptsetup open "$dev" snh-ceremony
 mkfs.ext4 -L snh /dev/mapper/snh-ceremony
-mount /dev/mapper/snh-ceremony "$mnt"
-install -m 0400 release.der governance.der release.pub governance.pub "$mnt/"
-(cd "$mnt" && sha256sum -- *.der *.pub > MANIFEST)
-umount "$mnt" && cryptsetup close snh-ceremony
+mount /dev/mapper/snh-ceremony /run/ceremony/mnt
+install -m 0400 release.der governance.der release.pub governance.pub \
+  /run/ceremony/mnt/
+(cd /run/ceremony/mnt && sha256sum -- *.der *.pub > MANIFEST)
+umount /run/ceremony/mnt && cryptsetup close snh-ceremony
 ```
 
 `cryptsetup open` is what creates `/dev/mapper/snh-ceremony`: its second
@@ -228,7 +234,8 @@ until `cryptsetup close` removes it. The mount point is created here rather
 than assumed, because a NixOS system has no `/mnt` unless something declares
 one, and this image declares nothing beyond what the ceremony needs.
 
-Repeat the block for the second medium, with `dev` set to that device.
+Repeat the block for the second medium, with `dev` set to that device. Nothing
+else in it changes: both media carry identical contents.
 
 The publication owner retains custody of both media across two distinct physical
 locations to mitigate single-site physical loss. "Separately controlled" means
@@ -251,9 +258,11 @@ that the inventory records two copies that have both been read back rather than 
 copies that were both written:
 
 ```sh
-cryptsetup open "$dev" snh-ceremony && mount /dev/mapper/snh-ceremony "$mnt"
-(cd "$mnt" && sha256sum -c MANIFEST)
-umount "$mnt" && cryptsetup close snh-ceremony
+dev=/dev/sdX                        # the medium being read back
+
+cryptsetup open "$dev" snh-ceremony && mount /dev/mapper/snh-ceremony /run/ceremony/mnt
+(cd /run/ceremony/mnt && sha256sum -c MANIFEST)
+umount /run/ceremony/mnt && cryptsetup close snh-ceremony
 ```
 
 Then power the machine off, which discards the tmpfs working copies.
@@ -310,15 +319,18 @@ medium, constructing the message, producing 64 raw bytes, reading the result bac
 against a subject whose bytes are already fixed.
 
 ```sh
-cryptsetup open "$dev" snh-ceremony && mount /dev/mapper/snh-ceremony "$mnt"
+dev=/dev/sdX                        # the medium being rehearsed
+
+cryptsetup open "$dev" snh-ceremony && mount /dev/mapper/snh-ceremony /run/ceremony/mnt
 event=bca7658ee4ae0316fc7304aa5e3657761c167592f8a67a33cdb661bb37e70a59
 printf 'snh-governance-event-sig/1:%s' "$event" > rehearsal.msg
-openssl pkeyutl -sign -rawin -inkey "$mnt/governance.der" -keyform DER \
+openssl pkeyutl -sign -rawin -inkey /run/ceremony/mnt/governance.der -keyform DER \
   -in rehearsal.msg -out rehearsal.sig
-openssl pkey -inform DER -in "$mnt/governance.der" -pubout -out rehearsal.pubpem
+openssl pkey -inform DER -in /run/ceremony/mnt/governance.der -pubout \
+  -out rehearsal.pubpem
 openssl pkeyutl -verify -rawin -pubin -inkey rehearsal.pubpem \
   -in rehearsal.msg -sigfile rehearsal.sig
-umount "$mnt" && cryptsetup close snh-ceremony
+umount /run/ceremony/mnt && cryptsetup close snh-ceremony
 ```
 
 The signature must be 64 bytes and must verify. It is disposable ceremony evidence:
@@ -326,8 +338,8 @@ record that it verified, and do not check it in. The signature that belongs to t
 vector in `soranoha/resources/snh/vectors/signature-vectors.json` is the fixture
 signature under the fixture key, and a ceremony signature never replaces it.
 
-Rehearse the second medium the same way. Both media must be demonstrated to sign, not
-just to be readable.
+Rehearse the second medium the same way, with `dev` set to that device. Both media
+must be demonstrated to sign, not just to be readable.
 
 ## Sign a governance event after genesis
 
@@ -365,17 +377,15 @@ current at the time. Take a root shell as above, with the event file at `event.j
 
 ```sh
 dev=/dev/sdX                        # the medium being opened, per lsblk
-mnt=/run/ceremony/mnt
-mkdir -p "$mnt"
 
 cat event.json                      # read what is about to be authorized
 hex=$(sha256sum event.json | cut -d' ' -f1)
 printf 'snh-governance-event-sig/1:%s' "$hex" > event.msg
 test "$(wc -c < event.msg)" -eq 91
-cryptsetup open "$dev" snh-ceremony && mount /dev/mapper/snh-ceremony "$mnt"
-openssl pkeyutl -sign -rawin -inkey "$mnt/governance.der" -keyform DER \
+cryptsetup open "$dev" snh-ceremony && mount /dev/mapper/snh-ceremony /run/ceremony/mnt
+openssl pkeyutl -sign -rawin -inkey /run/ceremony/mnt/governance.der -keyform DER \
   -in event.msg -out event.sig
-umount "$mnt" && cryptsetup close snh-ceremony
+umount /run/ceremony/mnt && cryptsetup close snh-ceremony
 test "$(wc -c < event.sig)" -eq 64
 ```
 

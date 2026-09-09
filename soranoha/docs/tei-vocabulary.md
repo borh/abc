@@ -4,6 +4,12 @@ Namespace IRI: `https://w3id.org/soranoha/ns/tei`
 Conventional prefix: `snh:`
 Current vocabulary version: `1`
 
+> **Not yet resolvable.** The `w3id.org/soranoha/` redirects are registered as
+> a precondition of public genesis, and are not registered yet, so the
+> namespace IRI returns 404 today. It is stated here in its final form because
+> that form is what the published bytes carry: a namespace IRI identifies the
+> vocabulary whether or not it dereferences.
+
 Soranoha publishes TEI P5. Where the source markup carries information TEI has
 no element for, that information is recorded as an attribute in this namespace
 rather than by inventing an element. Every published TEI root binds the
@@ -95,6 +101,8 @@ that note carries its extent as JSON in its content.
 
 Constraint violations are published in each work's `tei-validation.json` as
 `findings[].rule_id`. The identifiers are stable names, not sequence numbers.
+Every identifier below comes from the Schematron layer; a Relax NG failure is
+reported with the constant `rule_id` `relax-ng` instead.
 
 | Rule ID | Severity | Requires |
 |---|---|---|

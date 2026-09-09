@@ -7,8 +7,12 @@ header metadata, and preservation-record shape. The generated
 [RNG](../schemas/tei-profile.rng) and [Schematron](../schemas/tei-profile.sch)
 are derived from that ODD.
 
-The `tei-validation.json` output records both layers, rule IDs, severities, and
-whether warnings are allowed. Its profile identity is the ODD hash. Toolchain
+The `tei-validation.json` output records three layers, not two. `relax_ng` and
+`schematron` are the profile's; `well_formed_xml` is the serializer's own
+report that it produced parseable XML, always passed, and it does not
+contribute to the overall status. Each finding carries `rule_id`, `severity`,
+the `layer` it came from, and `allowed`, which is false exactly for the
+severities that fail the work. Its profile identity is the ODD hash. Toolchain
 metadata binds the exact ODD, RNG, and Schematron hashes, with generator identity
 from [tei-profile-generation.json](../schemas/tei-profile-generation.json).
 Generation metadata whose hashes disagree with the supplied profile is rejected.
@@ -26,12 +30,21 @@ Saxon-HE. Run from the repository root after editing the ODD:
 
 ```sh
 nix run .#regenerate-tei-profile
-nix build .#checks.x86_64-linux.tei-profile-drift
-just soranoha-tests
+just evidence-gate
 ```
+
+`regenerate-tei-profile` rewrites the RNG, the Schematron and
+`tei-profile-generation.json` in place; `evidence-gate` runs the drift check
+and the test suite for the current system, so neither step names a platform.
+An edit to the ODD's prose alone moves `odd_hash` and leaves the other two
+hashes as they were.
 
 The drift check compares generated artifacts and their provenance with the
 checked-in profile. Runtime validation uses Jing for Relax NG and ph-schematron's
-XSLT backend for Schematron. Rule IDs are `snh-*` and are published in each
-work's `tei-validation.json`; the [extension vocabulary](tei-vocabulary.md)
-documents them alongside the `snh:` attributes they constrain.
+XSLT backend for Schematron. Schematron rule IDs are `snh-*` and are published
+in each work's `tei-validation.json`. A Relax NG failure is also a finding, but its
+`rule_id` is the constant `relax-ng` rather than an `snh-*` name, because the
+grammar reports a structural violation without a named rule; a consumer that
+filters on the `snh-` prefix drops those. The
+[extension vocabulary](tei-vocabulary.md) documents the `snh-*` identifiers
+alongside the `snh:` attributes they constrain.

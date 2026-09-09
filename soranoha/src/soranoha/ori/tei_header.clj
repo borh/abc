@@ -254,26 +254,19 @@
      "transcription."]]])
 
 (def ^:private source-refs-decl
-  "How to read a `source-span` reference.
+  "Where a `source-span` reference's two numbers are measured from.
 
-  Each `note` of type `source-span` in the back matter stands for one extent
-  of the source text, and carries only what its reference does not already
-  give: the line number. Declaring the rest once is what lets the notes be
-  empty. Without this a reader would have to infer that the two numbers in the
-  id are offsets, and into which text."
-  ;; Plain text rather than the tagdocs elements gi and att: the publication
-  ;; profile does not admit them, and naming the elements in prose reads the
-  ;; same to the person this paragraph is for.
+  That is the one fact a reader cannot recover from the document itself: the
+  extent is in the note's own id, the line is in its `n`, and the text is the
+  one `sourceDesc` already names. What remains is the unit, and a pointer to
+  the vocabulary for anything further. The convention is documented at the
+  namespace IRI rather than restated in each of tens of thousands of files;
+  a published file is the text and its evidence, not a manual."
   [:refsDecl {:xml/id "source-spans"}
-   [:p "Each note of type source-span in the back matter identifies one extent "
-    "of the source text. Its xml:id has the form source-START-END, where START "
-    "and END are byte offsets into the decoded UTF-8 primary text named by the "
-    "idno of type primary-text-hash in sourceDesc. Its n attribute is the line "
-    "the extent begins on, and is absent when the line is not recorded. "
-    "Elements point at these extents through their source attribute. Notes "
-    "whose xml:id begins parser-source belong to a parser diagnostic instead, "
-    "and carry their extent as JSON because their identifier does not encode "
-    "it."]])
+   [:p "A note of type source-span has an xml:id of the form source-START-END, "
+    "giving the extent in UTF-8 bytes of the decoded primary text identified in "
+    "sourceDesc. "
+    [:ptr {:target "https://w3id.org/soranoha/ns/tei"}]]])
 
 (defn- encoding-desc [declarations]
   (cond-> [:encodingDesc [:styleDefDecl {:scheme "css"}] class-decl source-refs-decl]

@@ -63,6 +63,34 @@ documents stay valid because the list grows rather than being replaced. The
 list starts at `1`: the vocabulary is first published at genesis, and a version
 numbered `0` in permanent, signed bytes would say the opposite.
 
+## Source spans
+
+Most elements in a published body carry `@source`, pointing at a `note` of
+type `source-span` in the back matter. Those notes are the offset table: they
+say which run of the source text an element came from.
+
+A note is empty, because everything about the extent is in its reference:
+
+```xml
+<note type="source-span" xml:id="source-694-733" n="20"/>
+```
+
+- `xml:id` has the form `source-START-END`. `START` and `END` are offsets in
+  UTF-8 bytes into the decoded primary text, which `sourceDesc` identifies by
+  its `idno` of type `primary-text-hash`. Decode the source archive's text
+  member, encode it as UTF-8, and slice.
+- `n` is the line the extent begins on. It is absent when the source did not
+  record one, rather than carrying a placeholder.
+
+The header declares the unit and nothing else, in a `refsDecl` pointing back
+at this document. The alternative was a paragraph of prose repeated in every
+published file, which is a manual rather than evidence.
+
+One kind of note breaks the pattern and says so. A note whose `xml:id` begins
+`parser-source` belongs to a parser diagnostic, not to an element of the text;
+its identifier is assigned by the diagnostic and does not encode an extent, so
+that note carries its extent as JSON in its content.
+
 ## Schematron rule identifiers
 
 Constraint violations are published in each work's `tei-validation.json` as

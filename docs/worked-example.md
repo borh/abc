@@ -164,6 +164,9 @@ result to be exactly reproducible, cite both.
       <localProp name="rawMarker" value="特のへん＋廴＋聿"/>
     </char>
   </charDecl>
+  <refsDecl xml:id="source-spans">
+    <p>A note of type source-span has an xml:id of the form source-START-END, giving the extent in UTF-8 bytes of the decoded primary text identified in sourceDesc. <ptr target="https://w3id.org/soranoha/ns/tei"/></p>
+  </refsDecl>
 </encodingDesc>
 ```
 
@@ -183,6 +186,10 @@ declaration everywhere.
 `<styleDefDecl scheme="css"/>` declares that `@style` attributes in the
 body contain CSS properties. These record source layout details that lack
 native TEI attributes, such as character-width indents, measures, and text alignment.
+
+`<refsDecl>` says what unit the `@source` references that most elements carry
+are measured in, and points at the vocabulary for the rest. The offsets section
+below works through one of them.
 
 ### profileDesc: language and classification
 
@@ -284,26 +291,29 @@ in `<back>`:
 ```
 
 ```xml
-<note type="source-span" xml:id="source-694-733"
-      corresp="urn:sha256:3c686946ec0a7f31f9de7a9a7231d93fe97c7323a5172c268a48f180fdb7bcac">{
-  "coordinate_system": "decoded_utf8",
-  "end": 733,
-  "line": 20,
-  "start": 694
-}</note>
+<note type="source-span" xml:id="source-694-733" n="20"/>
 ```
 
-`start` and `end` are byte offsets into the decoded UTF-8 source text. The `corresp`
-attribute references the exact text indexed via the `primary-text-hash` declared in the
-header, preventing offsets from being applied to mismatched bytes. For example:
+The note is empty because its identifier is the extent: `source-694-733` gives
+the start and end byte offsets into the decoded UTF-8 source text, and `n` is
+the line the extent begins on. Which text those offsets index is stated once
+for the whole document, by the `primary-text-hash` in `sourceDesc`:
+
+```xml
+<idno type="primary-text-hash">sha256:3c686946ec0a7f31f9de7a9a7231d93fe97c7323a5172c268a48f180fdb7bcac</idno>
+```
+
+Naming the hash once rather than on every note is what keeps offsets from being
+applied to mismatched bytes without repeating 64 characters several thousand
+times per file. For example:
 
 ```python
 source = open("kumono_ito.txt", "rb").read().decode("cp932")
 assert source.encode("utf-8")[694:733].decode("utf-8") == "　ある日の事でございます。"
 ```
 
-That is 39 bytes for 13 characters, and the 13th is the leading ideographic
-space: the span covers the source's indent character together with the text,
+That is 39 bytes for 13 characters, the first of which is the leading
+ideographic space: the span covers the source's indent character together with the text,
 because the paragraph's `text-indent` was derived from it. Offsets index the
 source, not the output.
 
@@ -319,7 +329,7 @@ and verified independently without specialized pipeline tooling.
   <div type="source">
     <note type="source-attribution" source="#source-11510-11785"><seg type="source-line">底本：「芥川龍之介全集2」ちくま文庫、筑摩書房</seg><lb/>…</note>
     <note type="transcriber-note" source="#source-11785-12154"><seg type="source-line">入力：平山誠、野口英司</seg><lb/>…</note>
-    <note type="source-span" xml:id="source-10080-10141" …>…</note>
+    <note type="source-span" xml:id="source-10080-10141" n="36"/>
     …
   </div>
 </back>
@@ -435,16 +445,22 @@ for g in tree.iter(f"{TEI}g"):
 **A passage and where it came from:**
 
 ```python
-spans = {n.get(f"{XML}id"): n.text
-         for n in tree.iter(f"{TEI}note") if n.get("type") == "source-span"}
+def extent(reference):
+    _, start, end = reference.lstrip("#").split("-")
+    return int(start), int(end)
 
 body = tree.find(f"{TEI}text/{TEI}body")
 for seg in body.iter(f"{TEI}seg"):
     ref = seg.get("source")
     if ref:
-        print(text(seg), spans[ref.lstrip("#")])
+        start, end = extent(ref)
+        print(text(seg), source.encode("utf-8")[start:end].decode("utf-8"))
         break
 ```
+
+The reference is the extent, so nothing needs looking up. The `source-span`
+notes in `<back>` are there to be pointed at, and to carry the source line in
+`@n`; the offsets are in their identifiers.
 
 **And if all you want is the text**, take the `plaintext` artifact rather than
 re-deriving it. It is published beside the TEI, generated under the documented

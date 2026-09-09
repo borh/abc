@@ -50,12 +50,20 @@ citation rather than enforced as a licence condition.
 | TEI, plaintext, Markdown, validation reports, catalog, manifests | [CC0-1.0](../LICENSE-CC0) | Published bytes |
 | TEI customisation: `soranoha/schemas/tei-profile.{odd,rng,sch}` | [CC0-1.0](../LICENSE-CC0) | Repository |
 | Protocol JSON Schemas: `soranoha/resources/snh/schemas/` | [CC0-1.0](../LICENSE-CC0) | Repository |
-| All source code | [Apache-2.0](../LICENSE) | Repository |
+| Locally authored source code | [Apache-2.0](../LICENSE) | Repository |
+| Forked parser core, eight crates | MIT OR Apache-2.0 | `ab-validator/crates/`, listed below |
 
 The encoding vocabulary and protocol schemas are dedicated under CC0 so that
 independent implementations can adopt them without attribution obligations. The
 code is licensed under Apache-2.0 to provide an explicit patent grant
-protecting independent reimplementations of the snh protocol.
+protecting independent reimplementations of the snh protocol. MIT is not
+offered as an alternative, because it carries no patent grant: a recipient who
+elected it would lose the protection the choice of Apache-2.0 exists to give.
+
+The forked crates are the exception, and not a second choice. Upstream is
+dual-licensed, so those eight carry `MIT OR Apache-2.0` as an inherited
+obligation. Each states it in its own manifest rather than taking the
+workspace default.
 
 ## The toolchain
 

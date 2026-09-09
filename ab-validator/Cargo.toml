@@ -44,7 +44,12 @@ exclude = [
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
-license = "MIT OR Apache-2.0"
+# Apache-2.0 for its explicit patent grant: the snh protocol is specified for
+# independent reimplementation, and MIT grants no patent rights, so offering it
+# as an alternative would hand back the thing the choice exists to provide.
+# The forked crates set their own `MIT OR Apache-2.0` because upstream's dual
+# licence is inherited rather than chosen; see docs/rights.md.
+license = "Apache-2.0"
 
 # Member crates opt into these lints with `[lints] workspace = true`.
 [workspace.lints.rust]

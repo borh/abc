@@ -42,6 +42,12 @@
                            "../crates/ab-aozora-spec/src/diagnostic.rs")
         notice-paths (mapv #(str "../crates/" % "/NOTICE") forked-crates)
         cargo-paths (mapv #(str "../crates/" % "/Cargo.toml") forked-crates)
+        locally-authored-cargo-paths (->> (fs/list-dir (fs/file "../crates"))
+                                          (filter fs/directory?)
+                                          (map fs/file-name)
+                                          (remove (set forked-crates))
+                                          sort
+                                          (mapv #(str "../crates/" % "/Cargo.toml")))
         sources (mapv files/read-text source-paths)
         notices (mapv files/read-text notice-paths)
         cargos (mapv files/read-text cargo-paths)]
@@ -58,6 +64,13 @@
     ;; rather than inherit it.
     (doseq [[path text] (map vector cargo-paths cargos)]
       (is (str/includes? text (str "license = \"" licence "\"")) path))
+    ;; The converse of the check above. Locally authored code is Apache-2.0 for
+    ;; its patent grant, and offering MIT alongside would hand back exactly what
+    ;; that grant provides, so no crate outside the fork may declare the dual
+    ;; licence. Inheriting the workspace default is how a local crate states it.
+    (doseq [[path text] (map vector locally-authored-cargo-paths
+                             (mapv files/read-text locally-authored-cargo-paths))]
+      (is (not (str/includes? text licence)) path))
     ;; The checks above prove that every crate this test names carries its
     ;; provenance. This one proves the test names every forked crate: without
     ;; it, adding a lifted crate and forgetting to list it here would leave

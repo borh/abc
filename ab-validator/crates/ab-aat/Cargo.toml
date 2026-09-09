@@ -3,7 +3,7 @@ name = "ab-aat"
 description = "AAT (Adapter Abstract Tree) emission from typed Aozora Bunko parser values"
 version = "0.6.0"
 edition.workspace = true
-license = "MIT OR Apache-2.0"
+license.workspace = true
 publish = false
 
 [lints]

@@ -1,4 +1,4 @@
-//! End alignment owns the supplied target without swallowing preceding prose.
+//! End alignment owns the supplied target without consuming preceding prose.
 use ab_aat::aat_json_from_bytes;
 use serde_json::Value;
 

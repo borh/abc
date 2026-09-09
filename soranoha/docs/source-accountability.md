@@ -34,7 +34,7 @@ family of an independently scanned occurrence or nested component. Nested marker
 retain their own component spans. Source apparatus is kept
 separate. Missing facts and unclassified markers remain visible. Lossy decoding
 prevents positive claim accounting. Reported interpretation problems retain their
-original influence bounds alongside positive claims: a claim is not evidence that
+original influence bounds alongside positive claims. A positive claim is not evidence that
 an overlapping or document-wide problem has been resolved.
 
 ## Review exports

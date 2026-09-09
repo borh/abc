@@ -118,8 +118,8 @@ fn assert_annotation_invariants(source: &str) {
     // actually exercised the catch-all so a future generator change
     // that stops producing Unknown annotations is visible.
     if has_annotation(&out_a) {
-        // Sanity: the annotated case re-lexed must still see at least
-        // one annotation (catch-all is stable across passes).
+        // Stability check: re-lexing the annotated output must still observe
+        // at least one annotation (catch-all is stable across passes).
         assert!(
             has_annotation(&out_b),
             "annotation present in first pass but vanished in second for source {source:?}\n\

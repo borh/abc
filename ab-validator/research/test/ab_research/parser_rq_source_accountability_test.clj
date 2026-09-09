@@ -86,10 +86,10 @@
 (deftest predicate-set-predeclares-the-metadata-attribution-threshold
   ;; The other half of the same act, 2026-07-31: `:= 1.0` over the metadata
   ;; CONTENT denominator, predeclared after the exploratory campaign rather
-  ;; than inherited from anything. The threshold currently refuses nothing --
-  ;; both exploratory samples read 1.0 everywhere -- and that is its designed
-  ;; property: it fails the gate the first time a work carries packaging the
-  ;; classifiers do not understand.
+  ;; than inherited from anything. The threshold currently rejects nothing
+  ;; because both exploratory samples read 1.0 everywhere. By design,
+  ;; it fails the qualification gate whenever a work carries packaging that
+  ;; the classifiers do not understand.
   (let [predicates (files/read-edn "data/parser-release-qualification-predicates.edn")
         declared (->> (:predicates predicates)
                       (filter #(= :metadata_attribution (:observed_key %)))
@@ -413,15 +413,15 @@
            ;; body satisfies both `header.end = body.start` and
            ;; `body.end = tail.start` while running backwards.
            ;;
-           ;; These are regression cases, not a demonstration that the
-           ;; ordering clause in the validator is what stops them: this side
-           ;; computes in bignums and the schema floors every byte count at
-           ;; zero, so an inverted region can never satisfy
-           ;; `eligible_bytes = body.end - body.start` and is refused whether
-           ;; or not the ordering is stated. The clause earns its keep in the
-           ;; Rust validator, where the same subtraction runs in u64 and
-           ;; wraps. It is stated on both sides so the two validators declare
-           ;; one contract rather than two that happen to agree.
+           ;; These are regression cases rather than a demonstration that the
+           ;; ordering clause in the Clojure validator is what rejects them. This
+           ;; implementation computes with arbitrary-precision integers and the schema
+           ;; floors every byte count at zero, so an inverted region can never satisfy
+           ;; `eligible_bytes = body.end - body.start`; it is rejected regardless
+           ;; of the ordering clause. The clause is essential in the Rust validator,
+           ;; where the same subtraction runs in u64 and wraps on underflow.
+           ;; It is declared on both sides so the two implementations enforce
+           ;; an identical validation contract.
            ["record inverted body region"
             {:record #(assoc % :regions {:header {:start 0 :end 10}
                                          :body {:start 10 :end 5}
@@ -546,10 +546,10 @@
 (defn- retired-p1-aggregate-value
   "A P1 aggregate in its retired v1 shape.
 
-  Nothing produces this any more -- the aggregate went with the node-span
-  coverage quantity it totalled. The one test below still needs *some*
+  Nothing produces this format any longer; the aggregate was retired alongside
+  the node-span coverage quantity it totaled. The one test below still needs *some*
   non-recognition payload to stand in for a P0-only capture, and this remains
-  the historically accurate thing for such a capture to have contained."
+  the historically accurate format for such a capture."
   []
   {:schema_version "abc/parser-rq-source-accountability-aggregate/v1"
    :identity_ref identity-ref
@@ -1208,9 +1208,9 @@
             (str (.getPath ^java.io.File file) " no longer validates against " schema-path))))))
 
 (deftest the-frozen-v1-schemas-are-frozen-copies-and-not-aliases
-  ;; A freeze that is a `$ref` to the live schema is not a freeze -- it tracks
-  ;; whatever the live schema becomes. These must be standalone documents that
-  ;; still require the retired fields.
+  ;; A frozen schema implemented as a `$ref` to the live schema is not truly
+  ;; frozen, as it would track live schema modifications. These must be
+  ;; standalone documents that still require the retired fields.
   (doseq [[path required]
           [["schemas/parser-rq-source-accountability-work-v1.schema.json"
             ["coverage_basis" "covered_eligible_bytes" "uncovered_eligible_bytes"

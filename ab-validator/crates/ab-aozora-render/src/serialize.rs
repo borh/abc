@@ -48,26 +48,26 @@ use ab_aozora_syntax::{
 /// depends on the catalogue.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum DirectiveNormalization {
-    /// Verbatim / inert — the byte-identical default.
+    /// Preserves verbatim byte-identical output without alterations.
     #[default]
     Off,
-    /// Tier1 only: rewrite verified zero-false-positive near-misses (per
-    /// [`canonical_directive`]) to canonical form. The level `fmt --fix`
-    /// and `render --normalize` use.
+    /// Tier1 only. Rewrites verified zero-false-positive near-misses (per
+    /// [`canonical_directive`]) to canonical form. Used by `fmt --fix`
+    /// and `render --normalize`.
     Canonical,
-    /// Tier1 + Tier2: also reduce the lossy / judgment degraded forms
-    /// (per [`degraded_directive`]) Tier1 refuses. Constructed **only** by the
-    /// opt-in renderer ([`crate::render_html_normalized`] via `render --degraded`),
-    /// never by a persistent-write path, so a Tier2 misfire can reach only
-    /// `--degraded` render output — never source.
+    /// Tier1 and Tier2. Also reduces lossy or judgment-based degraded forms
+    /// (per [`degraded_directive`]) that Tier1 refuses. This variant is constructed
+    /// only by the opt-in renderer ([`crate::render_html_normalized`] via `render --degraded`),
+    /// never by persistent-write paths, ensuring Tier2 reductions affect only
+    /// `--degraded` render output rather than modifying source.
     Degraded,
 }
 
 /// Options controlling how the AST is re-emitted to Aozora source.
 ///
-/// The default (`directives: Off`) preserves the strong contract that every
-/// directive round-trips its `raw` bytes verbatim — including the
-/// `DirectiveKind::Unknown` near-misses the notation-hygiene lint flags.
+/// The default (`directives: Off`) preserves the contract that every
+/// directive round-trips its `raw` bytes verbatim, including
+/// `DirectiveKind::Unknown` near-misses flagged by notation-hygiene lints.
 /// Opting in (`aozora fmt --fix` = `Canonical`) lets the serializer
 /// rewrite those flagged near-misses to their canonical spelling via the single
 /// [`canonical_directive`] authority.

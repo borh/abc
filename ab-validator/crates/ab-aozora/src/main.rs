@@ -1,8 +1,8 @@
 //! Permanent stdin→AAT harness-edge binary (executable-boundary contract).
 //! ab-check spawns `<adapter> --mode aat` and probes `<adapter> --version`.
 //! Exit 0 = success, 1 = fatal. Exit 2 is reserved by the wire contract but
-//! is not emitted: the frozen adapter never exits 2 and the
-//! conformance harness treats nonzero as adapter error.
+//! is never emitted because the frozen adapter never exits 2 and the
+//! conformance harness treats any non-zero exit code as an adapter error.
 use std::env;
 use std::io::{self, Read, Write};
 use std::process::ExitCode;

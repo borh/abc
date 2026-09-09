@@ -464,12 +464,12 @@
     (and (nil? (schema/validation-errors @recognition-work-schema record))
          (some? regions) (some? metadata)
          ;; The whole ordered chain, not three adjacency equalities.
-         ;; Adjacency alone admits an inverted region -- header 0..10,
-         ;; body 10..5, tail 5..5 satisfies both equalities -- and the
-         ;; subtractions below would then run on a region that runs
-         ;; backwards. Clojure gives a negative rather than a wrap, so the
-         ;; totals would merely disagree; stating the ordering makes the
-         ;; rejection a contract instead of an accident of arithmetic.
+         ;; Adjacency alone admits an inverted region (such as header 0..10,
+         ;; body 10..5, and tail 5..5 satisfying both equalities), which would
+         ;; cause downstream subtractions to operate on an inverted interval.
+         ;; Clojure gives a negative number rather than a wrap, so totals would
+         ;; merely disagree; explicitly stating the ordering makes rejection
+         ;; an enforceable contract rather than an accident of arithmetic.
          (<= 0
              (get-in regions [:header :start])
              header-end

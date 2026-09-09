@@ -582,8 +582,8 @@ mod tests {
             "refactored adjudicate must byte-for-byte match the pre-refactor reference"
         );
 
-        // Sanity on the fixture itself, so a broken fixture can't make the
-        // differential comparison above vacuously trivial.
+        // Validates fixture assumptions directly to prevent trivial false passes
+        // in the differential comparison above.
         assert_eq!(reference.len(), 2, "base A fully matches and emits nothing");
         assert_eq!(reference[0].losing_analyzers, vec!["vaporetto".to_owned()]);
         assert_eq!(

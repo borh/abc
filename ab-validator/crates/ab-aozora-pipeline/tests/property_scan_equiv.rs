@@ -27,12 +27,11 @@
 //!    A regression that emitted a trigger in the normalized output
 //!    where none existed in source would shift this delta.
 //!
-//! Both properties are stated as inequalities rather than equalities:
-//! the sanitize stage can drop bytes (BOM, CR) and rewrite sequences
-//! (`〔NFC〕` → combining), so a strict "trigger count is equal"
-//! property would produce false positives. The inequality
-//! properties remain decisive: any regression that *adds* triggers
-//! during normalization fails them under shrinking.
+//! Both properties are stated as inequalities rather than equalities
+//! because the sanitize stage can drop bytes (BOM, CR) and rewrite sequences
+//! (`〔NFC〕` → combining), making a strict equality check prone to false
+//! positives. The inequality properties remain decisive: any regression
+//! that adds triggers during normalization fails under test shrinking.
 
 use ab_aozora_pipeline::lex;
 use ab_aozora_pipeline::lexer::trigger_scan::naive_scan_offsets;

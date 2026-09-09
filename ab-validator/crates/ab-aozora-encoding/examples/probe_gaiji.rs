@@ -27,14 +27,14 @@ fn main() {
         ("丂", Some("第4水準2-16-1")),
         ("畺", Some("第4水準2-45-30")),
         ("龔", Some("第4水準2-77-60")),
-        // Plane-1 sanity (known to resolve):
+        // Plane-1 control case (known to resolve):
         ("木＋吶のつくり", Some("第3水準1-85-54")),
-        // Plane-2 first-cell sanity:
+        // Plane-2 first-cell baseline:
         ("人の異体", Some("第4水準2-1-1")),
         // Description fallback (no mencode):
         ("木＋吶のつくり", None),
         // Canonical chuki naming: 鄧 = 登 + おおざと radical (阝).
-        // Literal "邦＋登" is NOT in the dict — the convention is
+        // Literal "邦＋登" is not in the dictionary because the convention is
         // <left-component> + <right-radical-name>. Both forms
         // probed below to make the difference obvious in the
         // output.

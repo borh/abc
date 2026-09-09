@@ -37,7 +37,7 @@
 //!
 //! # Internal variant
 //!
-//! The four library-bug sanity checks
+//! The four library-bug consistency checks
 //! (`ResidualAnnotationMarker`, `UnregisteredSentinel`,
 //! `RegistryOutOfOrder`, `RegistryPositionMismatch`) live as a single
 //! [`Diagnostic::Internal`] variant whose `code` field
@@ -193,7 +193,7 @@ impl Severity {
 }
 
 /// Origin of a [`Diagnostic`], distinguishing user-input issues from
-/// library-internal sanity-check failures.
+/// library-internal consistency check failures.
 ///
 /// Production parses on well-formed input never emit `Internal`
 /// diagnostics. An `Internal` diagnostic indicates a bug in
@@ -224,7 +224,7 @@ impl DiagnosticSource {
     }
 }
 
-/// Identifier of a specific pipeline-internal sanity check.
+/// Identifier of a specific pipeline-internal consistency check.
 ///
 /// Carried by the [`Diagnostic::Internal`] variant. Tooling that
 /// wants per-check assertions matches on this enum; legacy callers
@@ -720,7 +720,7 @@ pub enum Diagnostic {
         span: Span,
     },
 
-    /// Pipeline-internal sanity-check failure; production parses on
+    /// Pipeline-internal consistency check failure; production parses on
     /// well-formed input never emit this. The [`check`](Self::Internal)
     /// payload identifies the specific check via the typed
     /// [`InternalCheckCode`] enum; tooling that prefers the stable
@@ -733,7 +733,7 @@ pub enum Diagnostic {
         code("aozora::internal"),
         url("https://p4suta.github.io/aozora/notation/diagnostics.html#internal"),
         help(
-            "this is a pipeline-internal sanity check; appearance \
+            "this is a pipeline-internal consistency check; appearance \
              indicates a bug in aozora; please report at \
              https://github.com/P4suta/aozora/issues with the source \
              that triggered it"

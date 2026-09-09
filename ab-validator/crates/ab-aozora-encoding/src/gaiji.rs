@@ -790,7 +790,7 @@ const COLUMN_MARKERS: [&str; 6] = ["上段", "中段", "下段", "上", "中", "
 /// These near-misses collide with proofreader / 段組 directive tails, so
 /// [`parse_gaiji_body`] admits a near-miss-only token only when the run is
 /// also anchored by a real mencode token. A bare 段 register (`上段`) is
-/// not accepted: it is a 段組 directive operand, not a page-line part.
+/// rejected because it functions as a 段組 directive operand rather than a page-line component.
 fn is_near_miss_page_line_shaped(s: &str) -> bool {
     is_page_line_shaped(s)
         || (!s.is_empty() && s.split(['-', '－']).all(is_near_miss_page_line_part))

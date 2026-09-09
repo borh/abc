@@ -6085,18 +6085,18 @@ mod tests {
         );
     }
 
-    /// `preserve_order` tripwire: `aat_json_from_bytes` builds its
+    /// Regression guard for `preserve_order`: `aat_json_from_bytes` builds its
     /// `serde_json::Value` output via object literals (`json!` macro
-    /// insertion order), so if `serde_json/preserve_order` ever leaks into
+    /// insertion order). If `serde_json/preserve_order` ever leaks into
     /// this crate's compiled feature graph, `Value`'s map switches from
     /// `BTreeMap` (alphabetical-by-key serialization) to `IndexMap`
-    /// (insertion-order serialization) and this exact-byte assertion goes
-    /// red — a parsed/`Value`-equality check would NOT catch this, since
+    /// (insertion-order serialization) and this exact-byte assertion
+    /// fails. A parsed `Value` equality check would not catch this change, since
     /// `Value::eq` for objects is order-independent.
     ///
     /// Expected output re-pasted 2026-07-12 (`ab-aozora` `0.5.0` →
-    /// `0.6.0` — the C5 identity bump; no functional change, only the
-    /// version string) via:
+    /// `0.6.0`, the C5 identity bump; only the version string changed,
+    /// with no functional change) via:
     /// ```text
     /// export RUSTC_WRAPPER= SCCACHE_DISABLE=1
     /// cd ab-validator
@@ -7157,7 +7157,7 @@ mod tests {
         let mut decoded = decode_source_bytes(b"foo\n").unwrap();
         assert!(
             decoded.sanitized_tail.is_empty(),
-            "sanity: no real tail in this input"
+            "precondition: no real tail in this input"
         );
         decoded.sanitized_tail = "何かの一行\n底本：「X」Y社\n".to_owned();
         decoded.tail_offset = 0;

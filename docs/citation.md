@@ -171,14 +171,14 @@ CSL has no field for a kana reading, and multiscript support in CSL and Zotero
 is weak, so 作品名読み does not round-trip through CSL-JSON. It is recorded in
 the `note` field so that it is not lost, but a reference manager will not treat
 it as a reading. BibLaTeX puts it in `titleaddon`, and the authoritative copy is
-in the TEI header and the catalog either way. This is documented rather than
-worked around: inventing a CSL extension field would produce records that only
-Soranoha can read.
+in the TEI header and the catalog either way. This limitation is documented rather than obscured with custom workarounds, because
+inventing a non-standard CSL extension field would yield records unreadable by
+standard reference managers.
 
 ### Romanization
 
-Romanized titles are not published in any format: kana readings carry no
-word boundaries, so mechanical transliteration cannot reliably produce valid
+Romanized titles are not published in any format. Because kana readings lack
+word boundaries, automated transliteration cannot reliably generate valid
 Hepburn romanization. Supply the Japanese title and its reading, and let your
 journal's style (Hepburn with or without macrons, ALA-LC) govern the
 romanization. The 文字遣い種別 values are Aozora's own classification and are left
@@ -197,7 +197,7 @@ snh:1:tei:6f0b1c…, in release
 d9f2a1c0e4b78356f1a2c9d0e5b4738a6c1f0e2d3b5a4978c6e1f0d2b3a495867.
 ```
 
-This is the strongest form available: a reader can fetch the artifact, hash
+This is the most precise form of citation available. A reader can fetch the artifact, hash
 it, find that hash in the manifest, and verify the manifest's signature
 against the release key published in the trust anchor deposit. The procedure
 is specified in [`docs/design/snh-protocol-v1.md`](design/snh-protocol-v1.md).

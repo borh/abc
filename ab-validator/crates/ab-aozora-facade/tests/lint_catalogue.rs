@@ -348,7 +348,7 @@ fn tier1_never_overrides_parser_spelling_preservation() {
         html.contains("aozora-directive"),
         "parser must keep {preserved:?} Unknown to preserve its scope"
     );
-    // Tier1 must NOT resolve it (that would launder the dropped 最後まで scope).
+    // Tier1 must not resolve it, as that would discard the dropped 最後まで scope without explicit degradation opt-in.
     assert_eq!(
         canonical_directive(preserved),
         None,

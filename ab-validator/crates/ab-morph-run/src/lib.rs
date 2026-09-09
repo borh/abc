@@ -748,7 +748,7 @@ impl WarehouseFeaturePatternAccumulator {
 
         for run in keyed.chunk_by(|a, b| a.0 == b.0) {
             let group = &run[0].0;
-            // Dev tripwire: chunk_by only guarantees adjacent runs differ, so
+            // Development invariant check: `chunk_by` only guarantees adjacent runs differ, so
             // a group key reappearing in a *later*, non-adjacent run means
             // `keyed` was not in maximal contiguous runs. Release builds rely
             // solely on the region_index monotonicity guard above (checked in
@@ -2925,7 +2925,7 @@ mod tests {
     }
 
     /// Shared invariant check used both by the hand-crafted differential test
-    /// (as a fixture sanity check) and by the producer-invariant CI guard
+    /// (as a fixture validation check) and by the producer-invariant CI guard
     /// (against the real `push_region_rows` output): `region_index` must be
     /// monotone non-decreasing, and no `WarehouseFeatureGroupKey` may recur
     /// in a non-adjacent run.
@@ -3191,7 +3191,7 @@ mod tests {
             crate::warehouse::rows::nway_fact_rows("run-a", "source-a", source_text, &analyses)
                 .unwrap();
 
-        // Sanity: the fixture is not vacuous -- it actually spans multiple
+        // Precondition check: the fixture is non-trivial, spanning multiple
         // regions and multiple scope types.
         assert!(
             facts
@@ -3268,9 +3268,9 @@ mod tests {
         let facts =
             crate::warehouse::rows::nway_fact_rows("run-a", "source-a", source_text, &analyses)
                 .unwrap();
-        // Sanity: the fixture's non-core key actually reaches `feature_diffs`
-        // (i.e. it forms a real >=2-value `NwayFeatureGroup`), so the
-        // core-key filter below is exercised on a real row, not a no-op.
+        // Precondition check: the fixture's non-core key reaches `feature_diffs`
+        // (forming a `>=2`-value `NwayFeatureGroup`), ensuring the core-key filter
+        // below is tested against real data rather than operating as a no-op.
         assert!(
             facts
                 .feature_diffs

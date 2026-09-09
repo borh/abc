@@ -1193,7 +1193,7 @@ where
                 // implicit trailing-kanji). We DON'T flush
                 // `pending_plain_start` here so `try_ruby_emit` can
                 // walk the preceding source bytes and decide how much
-                // of the plain run the ruby actually swallows.
+                // of the plain run the ruby actually consumes.
                 //
                 // Bracket joins the same list: forward-reference
                 // `［＃「X」に傍点］` / `…は縦中横］` classifiers need
@@ -2004,11 +2004,11 @@ where
     }
 
     fn process_event(&mut self, event: PairEvent) {
-        // Frame buffering comes first: checked before `streaming` so a
-        // sub-frame opened mid-stream for a nested Ruby / AngleQuote
-        // (`《…》` / `≪…≫` inside a `「…」` quote, see
-        // `handle_stream_event`) actually accumulates its body instead of
-        // the quote's stream-through path swallowing it. Once the
+        // Frame buffering takes precedence. It is checked before `streaming`
+        // so that a sub-frame opened mid-stream for nested ruby or angle quotes
+        // (`《…》` / `≪…≫` inside a `「…」` quote; see
+        // `handle_stream_event`) accumulates its body instead of
+        // the quote's stream-through path consuming it. Once the
         // sub-frame's outer pair closes, recognition runs and the frame
         // clears, so `streaming` resumes on the next event.
         if self.frame.is_some() {

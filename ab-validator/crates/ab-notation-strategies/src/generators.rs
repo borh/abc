@@ -65,10 +65,10 @@ const FILLER: &[&str] = &[
 /// Runs of the three characters `CommonMark` reads as a setext underline or a
 /// thematic break.
 ///
-/// These are the bait for the sanitize stage's decorative-rule isolation: a
-/// 底本 that draws a divider as a row of hyphens must stay a paragraph
-/// followed by a rule, not turn the paragraph above it into a heading. The
-/// lengths straddle the point where a row stops looking incidental.
+/// These patterns exercise the sanitize stage's decorative-rule isolation. A
+/// 底本 that draws a divider as a row of hyphens must remain a paragraph
+/// followed by a rule, rather than turning the preceding paragraph into a heading.
+/// The lengths test thresholds above which a row is treated as a structural divider.
 fn decorative_rule_rows() -> Vec<String> {
     ["-", "=", "_"]
         .into_iter()

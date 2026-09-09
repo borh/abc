@@ -1840,12 +1840,12 @@ impl RecogniseCtx<'_, '_> {
 /// `classify_forward_heading`: the suffix after the target must start with
 /// `は`, and the keyword selects 太字 (`<b>`) or 斜体 (`<i>`).
 ///
-/// Single-target only: `「A」「B」は太字` is not a real Aozora shape and
-/// would not round-trip byte-exactly, so it falls through to
+/// Applies to single targets only. `「A」「B」は太字` is not a valid Aozora
+/// pattern and would not round-trip byte-exactly, so it falls through to
 /// `Directive{Unknown}`. The `forward_target_is_preceded` gate rejects a
-/// target with no referent (emphasis over nothing); the
-/// `find_immediate_predecessor_target_position` pull-back swallows the
-/// immediately-preceding literal (the dominant
+/// target with no referent (emphasis over nothing). The
+/// `find_immediate_predecessor_target_position` pull-back incorporates the
+/// immediately preceding literal (the dominant
 /// `作者附記［＃「作者附記」は太字］` shape) so the `<b>` / `<i>` is its sole
 /// rendered copy.
 impl RecogniseCtx<'_, '_> {
@@ -1972,7 +1972,7 @@ impl RecogniseCtx<'_, '_> {
 /// [`Self::classify_forward_emphasis`]. The `は「` prefix + `」囲み` suffix shape
 /// excludes every `の注記` / `のルビ` / `に…` form; only the canonical `□`
 /// (U+25A1) glyph is claimed; any other glyph stays `Directive{Unknown}` until
-/// it earns its own [`EnclosureKind`] member.
+/// a corresponding [`EnclosureKind`] member is added.
 impl RecogniseCtx<'_, '_> {
     fn classify_forward_box_enclosure(
         &mut self,

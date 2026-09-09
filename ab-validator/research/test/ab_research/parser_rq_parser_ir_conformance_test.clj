@@ -222,11 +222,10 @@
   ;; 2/3 is the smallest ratio this instrument can produce where the two division
   ;; paths disagree: `(double (/ 2 3))` builds an exact Ratio and rounds it
   ;; through BigDecimal at DECIMAL64, landing on 0.6666666666666667, while IEEE
-  ;; `(/ 2.0 3.0)` gives 0.6666666666666666. Every other language's division --
-  ;; including the Python capture driver that writes this value into
-  ;; content-addressed evidence -- does the IEEE one, so the two must agree
-  ;; exactly. The twin of this guard is in
-  ;; parser_rq_diagnostic_completeness_test.clj.
+  ;; `(/ 2.0 3.0)` gives 0.6666666666666666. Other environments (including the
+  ;; Python capture driver that writes this value into content-addressed
+  ;; evidence) use IEEE division, so both implementations must agree exactly.
+  ;; The twin of this guard is in parser_rq_diagnostic_completeness_test.clj.
   ;;
   ;; The committed corpus currently measures 1.0, which is exact under either
   ;; path; that is why the defect was invisible in the report rather than absent.

@@ -525,12 +525,12 @@ fn build_level_table(path: &std::path::Path) -> LevelTable {
             }
         }
 
-        // Register every `Fullwidth: U+YYYY` alias at the cell's level:
-        // the primary is the ASCII form (e.g. `|` U+007C) but the
+        // Register every `Fullwidth: U+YYYY` alias at the cell's level.
+        // Although the primary entry is the ASCII form (e.g. `|` U+007C), the
         // full-width form (｜ U+FF5C, a notation marker) is what appears
-        // in real text and must classify as in-JIS. `Windows:` aliases
-        // are not registered: they are the non-portable
-        // CP932 variants that should surface as 機種依存文字.
+        // in source text and must classify as in-JIS. `Windows:` aliases
+        // are omitted because they represent non-portable CP932 variants
+        // that should surface as 機種依存文字.
         for note in &notes {
             if let Some(rest) = note.trim().strip_prefix("Fullwidth:")
                 && let Some(codepoint) = parse_single_u_plus(rest)

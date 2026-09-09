@@ -21,9 +21,9 @@ path, plus a bare `/soranoha/`:
 | `/soranoha/schemas/` | Record schema identifiers embedded in published records |
 | `/soranoha/works/` | Landing pages for published works |
 
-Redirects are 302 rather than 301 throughout: the target is a current serving
-location, and permanent client-side caching would defeat the point of an
-indirection service.
+Redirects are 302 rather than 301 throughout because the target is a current
+serving location, and permanent client-side caching would defeat the purpose
+of an indirection service.
 
 ## Ordering
 

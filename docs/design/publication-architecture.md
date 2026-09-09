@@ -69,13 +69,13 @@ The reading view renders each work's published TEI into HTML at export time
 from that work's own artifact bytes, rather than using a stylesheet reference
 inside the published file. An `<?xml-stylesheet?>` processing instruction would
 change every TEI artifact's bytes, moving presentation into the artifact ids,
-the conformance vectors, and genesis -- which would prevent presentation
+the conformance vectors, and genesis. That tight coupling would prevent presentation
 updates without republishing the corpus. A rendering that lives in the serving
 layer is replaced at the next activation. It states the
 release it was rendered from and links the artifact it was rendered out of, so
-a reader who doubts the rendering can check it against the bytes, and it selects
-the same text the published plaintext projection selects — one lemma from an
-apparatus, the first supported branch of a choice — so the two projections of a
+a reader who doubts the rendering can check it against the bytes. It also selects
+the same text that the published plaintext projection selects (such as one lemma from an
+apparatus or the first supported branch of a choice), ensuring the two projections of a
 work cannot disagree about what the work says. Private experimental lineages may be explicitly reset; a public
 lineage requires a fresh reviewed genesis and the independent authorship checkpoint
 described in the [deployment guide](../private-publication.md).

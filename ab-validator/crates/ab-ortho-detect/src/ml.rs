@@ -22,7 +22,7 @@ pub struct MlModel {
 /// SHA-256 hex digest of the model's weight bytes in little-endian f32.
 /// NOT a debug-format string. The digest covers
 /// weights followed by intercept (both as LE f32); threshold is excluded
-/// (it is a runtime knob, not a learned parameter).
+/// (it is a runtime configuration parameter rather than a learned weight).
 #[must_use]
 pub fn model_hash(model: &MlModel) -> String {
     let mut bytes = Vec::with_capacity(model.weights.len() * 4 + 4);

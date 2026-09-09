@@ -13,7 +13,7 @@ The passages below were inspected in the aozorabunko Git checkout at revision
 published guidance; current reliance also checks live official responses.
 
 - [`soramoyou/soramoyou2011.html`, 2011-01-13 entry](https://github.com/aozorabunko/aozorabunko/blob/0e9ea3e586eb0aa34039fabfc85a407d2f98b165/soramoyou/soramoyou2011.html)
-  introduces the extended CSV: the work flag is `あり` if any contributing
+  introduces the extended CSV, where the work flag is `あり` if any contributing
   person's flag is `あり`. The announcement describes a provisional format,
   with comments invited until 2011-03-15.
 - [`guide/kijyunn.html`](https://github.com/aozorabunko/aozorabunko/blob/0e9ea3e586eb0aa34039fabfc85a407d2f98b165/guide/kijyunn.html)

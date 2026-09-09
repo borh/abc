@@ -1288,7 +1288,7 @@ fn relexed_is_balanced(nodes: &[SourceNode]) -> bool {
 ///   `cached`, out-of-bounds edit, or no interior safe cut);
 /// - `cached` carries a globally-unbalanced delimiter
 ///   ([`Diagnostic::UnclosedBracket`] / [`Diagnostic::UnmatchedClose`]) whose
-///   open/close half swallows or strays across region boundaries;
+///   open/close half extends across region boundaries;
 /// - the edited bytes carry document structure ([`carries_structure`]) or sit
 ///   inside an open `［…］` directive; that the edit changes only bytes inside
 ///   `edit_old` (truly transforming `cached.sanitized` into `new_sanitized`) is
@@ -1316,11 +1316,12 @@ fn splice_prologue<S: SanitizedSrc>(
     // A globally-unbalanced delimiter in `cached` (an unclosed open
     // `UnclosedBracket` or a stray close `UnmatchedClose`) makes the whole
     // document's classification depend on a span that crosses region
-    // boundaries: an unclosed `《` swallows every following `《…》` so the
-    // whole-document parse classifies no ruby there, yet a region re-lexed in
-    // isolation (balanced on its own) would invent them. These are not in the
-    // whole-document-scoped diagnostic set (they have no partner span to pair),
-    // so guard them explicitly here: O(1) flag read (was an O(#diags) scan).
+    // boundaries. Specifically, an unclosed `《` suppresses subsequent `《…》`
+    // pairs across the rest of the document, so the whole-document parse
+    // classifies no ruby there; re-lexing the region in isolation
+    // (where delimiters balance locally) would erroneously produce them.
+    // These are not in the whole-document-scoped diagnostic set (they have no
+    // partner span to pair), so guard them explicitly with an O(1) flag read.
     if base.pieces.has_unbalanced_delimiter() {
         return None;
     }

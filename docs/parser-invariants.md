@@ -1,12 +1,12 @@
 # Parser and rendering invariants
 
-Names for parser and rendering invariants shared across modules. These are
-internal terms: they name behaviour the converter must preserve, and they are
-used in code comments and commit messages so one invariant has one name.
+Names for parser and rendering invariants shared across modules. These
+internal terms name converter behaviors that must be preserved. They provide
+consistent names for use in code comments and commit messages.
 
-Looking for the vocabulary of the published corpus — admission, assessment,
-manifest, chain, fidelity, work and edition? That is the
-[glossary for readers of the corpus](user-glossary.md).
+For the vocabulary of the published corpus (such as admission, assessment,
+manifest, chain, fidelity, work, and edition), see the
+[reader glossary](user-glossary.md).
 
 ## double-render invariant
 
@@ -17,7 +17,7 @@ duplicate appears in output.
 
 ## gothic/太字 distinction
 
-ゴシック体 (gothic typeface) is a first-class construct distinct from
+ゴシック体 (gothic typeface) is a distinct syntax construct from
 太字 (bold). The parser keeps them separate; non-canonical corpus
 variants (ゴチック, etc.) decline to `Directive{Unknown}` with a lint
 suggesting the canonical form.

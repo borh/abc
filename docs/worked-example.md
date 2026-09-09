@@ -1,8 +1,6 @@
 # A worked example: 蜘蛛の糸
 
-This follows one text — Akutagawa Ryūnosuke's 蜘蛛の糸 (1918), Soranoha
-identifier `000092_000879` — from the Aozora Bunko source file through to the
-published TEI and plaintext, and then loads it in Python.
+This walkthrough follows Akutagawa Ryūnosuke's 蜘蛛の糸 (1918, identifier `000092_000879`) from its Aozora Bunko source file through the published TEI and plaintext representations, concluding with Python loading examples.
 
 Every excerpt below is real output, produced by the conversion pipeline from
 the Aozora file at
@@ -24,7 +22,7 @@ between them cover most of what the converter has to do:
 ［＃地から１字上げ］（大正七年四月十六日）
 ```
 
-- `《…》` is ruby — a reading printed above (or beside) the characters before it.
+- `《…》` marks ruby, indicating a reading printed above or beside the preceding characters.
 - `※［＃「…」、第3水準1-87-71］` is a **gaiji**: a character not in the source
   file's encoding, described in prose and given a JIS X 0213 plane-row-cell
   number. Here it is 犍, the first character of the thief's name 犍陀多.
@@ -59,7 +57,7 @@ You can run it yourself from a checkout; see
 
 The whole `teiHeader` for this work is 40 lines. Taking it block by block:
 
-### titleStmt — what the work is and who made it
+### titleStmt: work title and authorship
 
 ```xml
 <titleStmt>
@@ -75,11 +73,11 @@ The whole `teiHeader` for this work is 40 lines. Taking it block by block:
 
 The title's kana reading is a separate `<title>` rather than an attribute,
 because it is a title of the work in another script, not a property of the
-first one. The author has three `<persName>` forms — kanji, kana, romaji —
-each marked with the script it is in, so a tool can pick the one it can sort
-or display. All of it comes from Aozora's catalog, and is kept as the catalog
-has it rather than normalised: the given name is 竜之介 here, whereas the
-printed edition in the next block uses 龍之介.
+first one. The author record includes three `<persName>` forms covering kanji, kana,
+and romaji. Each entry specifies its script so applications can sort or display
+the appropriate representation. All three originate from Aozora's catalog and preserve
+its recorded spelling without normalisation. For example, the given name is recorded as
+竜之介 here, whereas the printed edition cited in the next block uses 龍之介.
 
 The person `<idno>` names whoever issued the identifier, the same way the
 publication identifiers below do. `aozora-person-id` is Aozora's six-digit
@@ -87,7 +85,7 @@ publication identifiers below do. `aozora-person-id` is Aozora's six-digit
 id under `soranoha-person-id`, so no identifier claims a provenance Aozora
 did not grant.
 
-### publicationStmt — who published this file, under what terms
+### publicationStmt: publication details and terms
 
 ```xml
 <publicationStmt>
@@ -103,12 +101,12 @@ did not grant.
 </publicationStmt>
 ```
 
-Three identifiers, and the `type` says who issued each. Soranoha issues the
-publication identifier — the same `000092_000879` that appears in every URL
-for this work — which is why it is not labelled `aozora-*`: Aozora issues the
-work id and the card, not the pair. It is in the file so that a downloaded
-`.xml`, read years later with no site around it, can still say what to cite it
-as.
+The record contains three identifiers, with the `type` attribute specifying the issuing
+authority. Soranoha issues the publication identifier (`000092_000879`), which
+appears in every URL for the work. This identifier is not labeled `aozora-*` because
+Aozora issues the work identifier and card number separately rather than as a joined pair.
+Embedding this identifier enables an isolated `.xml` file to remain citable without
+reference to the original server.
 
 The date is Aozora's last-modified date for the catalog entry, not a date of
 composition or of Soranoha's own processing.
@@ -125,7 +123,7 @@ publisher without a lookup. There is no `<pubPlace>`, because a corpus
 published only on the web has no place of publication that would not be
 invented.
 
-### sourceDesc — which printed edition, and which exact bytes
+### sourceDesc: printed edition and source byte hashes
 
 ```xml
 <sourceDesc>
@@ -140,18 +138,18 @@ Four separate statements of source, at four levels:
 
 - the **printed edition** the volunteer transcribed from, including which
   printing was used for input;
-- **where the text first appeared** — a magazine issue, here 「赤い鳥」 of July
-  1918 — which is a different claim from the edition that was keyed, and is
-  marked `type="first-publication"` so the two are not confused;
-- `source-content-hash`, the canonical identity of the Aozora source bundle —
-  this is what changes when Aozora reissues the text;
+- **original publication**, identifying where the text first appeared (here, the July
+  1918 issue of 「赤い鳥」). This entry is distinguished from the transcribed edition and
+  marked `type="first-publication"` to keep the two claims distinct;
+- `source-content-hash`, recording the canonical digest of the Aozora source bundle,
+  which changes if Aozora reissues the file;
 - `primary-text-hash`, the hash of the text member itself.
 
 The identifier `000092_000879` denotes the work and stays put across releases;
 these hashes are how you say *which text under that identifier*. If you need a
 result to be exactly reproducible, cite both.
 
-### encodingDesc — the taxonomies and the gaiji declarations
+### encodingDesc: taxonomies and gaiji declarations
 
 ```xml
 <encodingDesc>
@@ -174,19 +172,19 @@ references it. The declaration carries both halves of the fact:
 
 - `<mapping type="unicode">` is the character the converter resolved it to.
   It is a claim, made from the JIS X 0213 code point in the marker.
-- `rawMarker` is what the source actually said — `特のへん＋廴＋聿`, "the left
-  radical of 特, plus 廴, plus 聿". It is kept verbatim so you can check the
-  mapping, or disagree with it, without going back to Aozora.
+- `rawMarker` preserves the source notation verbatim (`特のへん＋廴＋聿`, "the left
+  radical of 特, plus 廴, plus 聿"). Retaining this text allows users to verify
+  or adjust the character mapping without re-inspecting the upstream source file.
 
 The `xml:id` encodes the JIS plane-row-cell number from the marker
 (`3-1-87-71` = plane 3, 1-87-71), so the same character resolves to the same
 declaration everywhere.
 
-`<styleDefDecl scheme="css"/>` declares that the `@style` attributes in the
-body are CSS. They carry source-derived geometry that TEI has no attribute
-for — indents in character widths, measures, alignment.
+`<styleDefDecl scheme="css"/>` declares that `@style` attributes in the
+body contain CSS properties. These record source layout details that lack
+native TEI attributes, such as character-width indents, measures, and text alignment.
 
-### profileDesc — language and classification
+### profileDesc: language and classification
 
 ```xml
 <profileDesc>
@@ -211,9 +209,9 @@ not measuring what it thinks it is measuring, and the value varies inside a
 single series: 銭形平次捕物控 001 through 004 are 旧字旧仮名 while 005 is
 新字新仮名.
 
-Both `scheme` attributes point at a taxonomy declared in `encodingDesc`
-rather than naming a scheme in a bare string, so a reader can see who did the
-classifying — Aozora Bunko, in both cases, not Soranoha.
+Both `scheme` attributes reference taxonomies declared in `encodingDesc`
+rather than bare string identifiers, making the authority explicit. In both
+cases, the classification originates from Aozora Bunko rather than Soranoha.
 
 ## The body
 
@@ -229,8 +227,8 @@ classifying — Aozora Bunko, in both cases, not Soranoha.
 `@rend` records which side of the line the source put it on. A projection that
 wants base text takes `<rb>` and drops `<rt>`; that is what `plaintext` does.
 
-A ruby base can itself contain markup — the thief's name is a gaiji followed
-by ordinary characters:
+A ruby base can itself contain child markup, as when the thief's name combines a gaiji
+with standard characters:
 
 ```xml
 <ruby type="furigana" rend="right" source="#source-1856-1942">
@@ -264,9 +262,9 @@ header when you want the original marker instead.
 
 Two separate facts, kept separate. The outer `<div type="layout">` is the
 source's ８字下げ instruction, expressed as geometry. The inner `<head n="2">`
-is the structural claim the source made with 中見出し — a middle-level
-heading. Layout is not inferred from structure, and structure is not inferred
-from layout; the source stated both, so both are recorded.
+represents the structural heading indicated by the source's 中見出し markup.
+Layout is not inferred from structure, and structure is not inferred from layout;
+because the source specified both independently, both are recorded.
 
 The dateline at the end is layout only:
 
@@ -295,10 +293,9 @@ in `<back>`:
 }</note>
 ```
 
-`start` and `end` are **byte** offsets into the source text after decoding
-Shift_JIS to UTF-8, and `corresp` names the exact text they index — the same
-`primary-text-hash` from the header, so an offset can never be silently
-applied to different bytes. Check one:
+`start` and `end` are byte offsets into the decoded UTF-8 source text. The `corresp`
+attribute references the exact text indexed via the `primary-text-hash` declared in the
+header, preventing offsets from being applied to mismatched bytes. For example:
 
 ```python
 source = open("kumono_ito.txt", "rb").read().decode("cp932")
@@ -310,10 +307,10 @@ space: the span covers the source's indent character together with the text,
 because the paragraph's `text-indent` was derived from it. Offsets index the
 source, not the output.
 
-This is the feature that makes the corpus usable as evidence rather than only
-as reading matter. Any annotation you compute over the text — a token span, an
-alignment, a named entity — can be stated against the source bytes and checked
-against them by someone who has never seen your tooling.
+Byte offsets allow the corpus to serve as verifiable evidence rather than
+reading matter alone. Annotations computed over the text, such as token spans,
+alignments, or named entities, can be referenced directly against source bytes
+and verified independently without specialized pipeline tooling.
 
 ### What is at the end
 
@@ -348,10 +345,10 @@ Reading text only: ruby readings gone, gaiji present as their mapped
 characters, headings on their own lines, the source's own indent characters
 preserved. Editorial notes, apparatus and the offset table are not in it.
 
-The plaintext is generated from the TEI's reading of itself, under one
-documented policy — when the encoding offers alternatives, one lemma from an
-apparatus and one branch of an editorial choice — so the plaintext and the
-reading view on the site cannot disagree about what the text says.
+Plaintext is generated from the TEI representation under a single documented
+policy: when the encoding contains alternatives, the generator selects one lemma
+from an apparatus and one branch of an editorial choice. This guarantees that the
+plaintext and the website reading view present identical text.
 
 ## The other two projections
 
@@ -364,9 +361,10 @@ does not parse XML still gets the readings:
 ある日の事でございます。<ruby><rb>御釈迦様</rb><rt>おしゃかさま</rt></ruby>は極楽の<ruby><rb>蓮池</rb><rt>はすいけ</rt></ruby>のふちを、
 ```
 
-Where the source used an emphasis mark, the Markdown carries a `<span>` with
-the source's own `@rend` recorded and CSS that draws that mark — 白ゴマ傍点
-becomes `text-emphasis-style: open sesame`, not a generic bold.
+Where the source used an emphasis mark, the Markdown projection emits a `<span>`
+containing the original `@rend` attribute and corresponding CSS styling. For
+example, 白ゴマ傍点 is represented as `text-emphasis-style: open sesame` rather than
+generic bold text.
 
 `tei-validation` is a JSON report naming the profile the file was checked
 against by hash, the Relax NG and Schematron layers, and every rule that fired
@@ -417,12 +415,11 @@ rubies = [(text(r.find(f"{TEI}rb")), text(r.find(f"{TEI}rt")))
 
 print(len(rubies))            # 68
 print(rubies[:3])             # [('御釈迦様', 'おしゃかさま'), ('蓮池', 'はすいけ'), ('蓮', 'はす')]
-print(rubies[18])             # ('犍陀多', 'かんだた')  — gaiji inside the base
+print(rubies[18])             # ('犍陀多', 'かんだた')  (gaiji inside the base)
 ```
 
-A furigana list like this is the reason to take TEI rather than plaintext:
-the readings are an editorial layer the source carried, and the plaintext
-omits them.
+Extracting furigana illustrates why TEI is preferred over plaintext for structured
+analysis, because plaintext omits ruby readings and editorial markup.
 
 **Every gaiji, with the marker the source used:**
 
@@ -461,10 +458,7 @@ body = urllib.request.urlopen(
 
 ## Where to go next
 
-- [Start here](start-here.md) — the corpus, its scale, and getting all of it.
-- [Glossary](user-glossary.md) — admission, manifest, chain, fidelity, and the
-  work/edition/document distinction.
-- [TEI extension vocabulary](../soranoha/docs/tei-vocabulary.md) — the `snh:`
-  attributes and the validation rule identifiers in `tei-validation`.
-- [TEI validation](../soranoha/docs/tei-validation.md) — what the profile
-  checks, and what a schema pass does and does not establish.
+- [Start here](start-here.md) covers corpus scope and bulk access.
+- [Glossary](user-glossary.md) defines admission, manifests, cryptographic chains, and work-edition-document distinctions.
+- [TEI extension vocabulary](../soranoha/docs/tei-vocabulary.md) specifies `snh:` attributes and validation rule identifiers.
+- [TEI validation](../soranoha/docs/tei-validation.md) explains validation profiles and schema coverage.

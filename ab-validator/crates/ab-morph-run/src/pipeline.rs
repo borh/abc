@@ -802,11 +802,11 @@ pub(crate) fn run_analyze_aat_serial(
             }
         };
         // Honor the adapter's parse-completeness signal. An AAT with
-        // meta.parse_complete == false is a failed/aborted parse (e.g. the
-        // aozora2html gem crashing mid-document) that leaves empty or truncated
+        // `meta.parse_complete == false` represents a failed or aborted parse (such
+        // as an adapter crash mid-document) that leaves empty or truncated
         // blocks. Route it to the errors lane instead of analyzing it as a
-        // normal source, which would launder an ingest failure into a
-        // valid-but-empty source row and inflate source_count. A missing flag
+        // normal source, which would convert an ingest failure into a
+        // seemingly valid empty source row and inflate `source_count`. A missing flag
         // (older adapters that never emit it) is treated as complete.
         let parse_incomplete = aat
             .get("meta")

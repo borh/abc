@@ -483,18 +483,18 @@ fn normalization_entry(
 ///
 /// **A continuation is bounded by the run it sits in, not by what it says.**
 /// It must be indented and it must reach a field line above it without crossing
-/// a blank line. The tail's other unindented lines -- the transcriber's `※`
-/// remarks, the distribution notice, the file's own dating lines -- are not
+/// a blank line. The tail's other unindented lines (the transcriber's `※`
+/// remarks, the distribution notice, and the file's own dating lines) are not
 /// continuations of anything and stay unattributed. Testing the text instead
-/// would be worse in both directions: one continuation in the 597-work sample
+/// would be worse in both directions. One continuation in the 597-work sample
 /// is a citation whose title opens with a `※［＃...］` gaiji annotation, so a
 /// producer that declined `※` lines by shape would decline a real one.
 ///
-/// The distribution notice must be tested before the colophon field: one notice
-/// line in the corpus writes its URL with a fullwidth `http：//`, which makes
-/// the whole sentence a non-empty key, a fullwidth colon, and a value -- matching
-/// `is_colophon_field`. Testing the notice first prevents misclassifying that
-/// notice line as a colophon field due to a fullwidth colon typo.
+/// The distribution notice must be tested before the colophon field because
+/// one notice line in the corpus writes its URL with a fullwidth `http：//`.
+/// That fullwidth colon causes the line to match `is_colophon_field` (a
+/// non-empty key, a colon, and a value). Testing the notice first prevents
+/// misclassifying that notice line as a colophon field.
 ///
 /// The header's editorial legend block and bibliographic block have producers
 /// of their own, `legend_entries` and `bibliographic_entries`.
@@ -784,10 +784,10 @@ struct RegionLine {
 ///
 /// The trimmed `content` still drives every form test, and the symmetry there
 /// is the point. Stripping only the indentation left a line's classification
-/// depending on whether the transcriber happened to leave a trailing space:
-/// measured across a 597-work sample, exactly one legend line carried one, and
-/// it fell through every form test to unattributed because `）` was no longer
-/// the last character.
+/// dependent on whether the transcriber happened to leave a trailing space.
+/// Measured across a 597-work sample, exactly one legend line carried trailing
+/// whitespace, falling through every form test to unattributed because `）`
+/// was no longer the last character.
 ///
 /// `trim` here is Unicode whitespace, so the fullwidth `　` that Aozora indents
 /// colophon continuations with is treated exactly as an ASCII space would be.
@@ -810,10 +810,10 @@ fn region_lines(text: &str, region_start: usize) -> Vec<RegionLine> {
 
 /// One classified line of a metadata region.
 ///
-/// Every metadata producer emits the same shape: a structural-control claim
-/// over the line's span, witnessed by the line as written. The witness is what
-/// lets a reader of the ledger check the claim against the source without
-/// re-deriving the region.
+/// Every metadata producer emits a consistent record structure comprising
+/// a structural-control claim over the line's span, witnessed by the line as
+/// written. The witness is what lets a reader of the ledger check the claim
+/// against the source without re-deriving the region.
 fn region_fact(line: &RegionLine, construct: &str, role: &str) -> Value {
     json!({
         "start": line.start,
@@ -946,21 +946,22 @@ fn is_legend_heading(line: &str) -> bool {
 /// **The block is what bounds this producer, not the shape of a line.** The
 /// block is the run of lines from the start of the header to the first blank
 /// line, separator rule or bracketed editorial heading, whichever comes first.
-/// Across a 597-work sample of the pinned corpus that run is 1 to 6 lines --
-/// 437 works have exactly the two of title and author -- and no header carries
-/// a further non-blank line between the blank and the legend fence, so the
-/// blank line is a real terminator rather than a convenient one. The 40 works
-/// with no run at all have a zero-byte header: there is nothing to classify.
+/// Across a 597-work sample of the pinned corpus that run is 1 to 6 lines
+/// (437 works have exactly the two lines of title and author), and no header
+/// carries a further non-blank line between the blank line and the legend fence,
+/// so the blank line is a genuine terminator. The 40 works with no run at all
+/// have a zero-byte header, with nothing to classify.
 ///
-/// No claim is made about WHICH bibliographic item a line is. Line 1 is usually
-/// the title and the last is usually a translator, but subtitles and original
-/// titles break the ordering and reading it off the position would be a guess
-/// dressed as a fact. What is claimed is block membership: these bytes are the
-/// work's front matter, not body text, not legend, not transcriber prose.
+/// No claim is made about which specific bibliographic role a line represents.
+/// Line 1 is usually the title and the last is usually a translator, but
+/// subtitles and original titles vary the ordering, making positional inference
+/// unreliable. What is claimed is block membership: these bytes constitute
+/// the work's front matter, rather than body text, notation legend, or
+/// transcriber prose.
 ///
 /// Shape is not consulted inside the block, and one work in the sample shows
 /// why. Its title is `※［＃「氓のへん／（虫＋虫）」、第3水準1-91-58］の囁き`
-/// -- a title whose first character is a gaiji annotation. A producer that
+/// (a title whose first character is a gaiji annotation). A producer that
 /// declined `※` lines as transcriber remarks by shape would have declined a
 /// title. The two bracketed-heading forms are excluded as terminators of the
 /// block rather than as forms within it, because `【テキスト中に現れる記号に
@@ -1003,10 +1004,10 @@ fn is_bracketed_heading(line: &str) -> bool {
 
 /// A legend entry: a notation symbol, a fullwidth colon, then its explanation.
 ///
-/// Shape-identical to `is_colophon_field`, but kept as a separate function:
-/// the two share a syntax pattern but carry different semantics in
-/// different regions. Combining them would allow unintended reuse where
-/// the region distinction is lost.
+/// Although syntactically identical to `is_colophon_field`, this is kept as
+/// a separate function. The two share a syntax pattern but carry different
+/// semantics in different regions. Combining them would allow unintended
+/// reuse where the region distinction is lost.
 fn is_legend_entry(line: &str) -> bool {
     let Some((symbol, _explanation)) = line.split_once('：') else {
         return false;
@@ -1087,13 +1088,13 @@ fn build_ledger(
     );
     let parser = member_identity("json", parser_output);
     let output = lex(&decoded.span_text);
-    // Accent-rewritten `〔…〕` spans need no fact reconciliation: the sanitize
-    // offset map records one edit per digraph site, so every classifier fact
-    // inside a rewritten span rebases to its exact source range — delimiters
-    // stay individual recoveries and interiors stay typed, exactly as in a
-    // span the sanitizer never touched. The whole-span reconciliation this
-    // replaced existed to paper over a whole-span offset edit that collapsed
-    // all interior facts onto the span start.
+    // Accent-rewritten `〔…〕` spans require no fact reconciliation. The sanitize
+    // offset map records one edit per digraph site, allowing every classifier fact
+    // inside a rewritten span to rebase to its exact source range. Delimiters
+    // remain individual recoveries and interiors remain typed, matching the behavior
+    // of spans untouched by the sanitizer. The former whole-span reconciliation
+    // existed to compensate for an earlier offset edit that collapsed all interior
+    // facts onto the span start.
     let mut entries = output
         .classified_source_facts
         .into_iter()

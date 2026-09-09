@@ -363,9 +363,9 @@
               #(do (fs/delete (fs/path tree "releases/latest"))
                    (fs/create-sym-link (fs/path tree "releases/latest")
                                        (str (:head first-result) ".json")))]
-             ;; a bulk archive is streamed rather than held in memory, so its
-             ;; three ways of differing — content, short, long — are checked
-             ;; separately from the byte-array comparison every other file gets
+             ;; A bulk archive is streamed rather than held in memory, so its
+             ;; three failure modes (content modification, truncation, and trailing bytes)
+             ;; are checked separately from the byte-array comparison used for other files.
              ["changed archive bytes"
               #(fs/write-bytes archive (doto (aclone ^bytes archive-bytes)
                                          (aset 40 (unchecked-byte

@@ -109,9 +109,8 @@
      :observation (diagnostic/derive-observation governing hash-a aggregate)}))
 
 (deftest a-clean-corpus-passes-by-matching-its-expectation-not-by-vacuity
-  ;; On a corpus where every work
-  ;; expects nothing and emits nothing the outcome is unchanged -- but it is
-  ;; now 3/3 works matching, not a constant nobody derived.
+  ;; On a corpus where every work expects nothing and emits nothing, the outcome
+  ;; is unchanged; it represents 3/3 matching works rather than an arbitrary constant.
   (let [{:keys [aggregate observation]}
         (measure {"a" [] "b" [] "c" []} {"a" [] "b" [] "c" []})]
     (is (= 1.0 (:diagnostic_completeness aggregate)))

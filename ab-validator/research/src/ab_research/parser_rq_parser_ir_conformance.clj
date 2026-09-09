@@ -196,10 +196,10 @@
              {:status "measured"
               ;; IEEE division of two doubles, not `(double (/ int int))`. The
               ;; latter builds an exact Ratio and rounds it through BigDecimal,
-              ;; which differs from every other language's division in the last
-              ;; bit -- 2/3 becomes ...667 here and ...666 in the Python capture
-              ;; driver. This value lands in content-addressed evidence, so the
-              ;; two must agree exactly. Same reasoning, same shape, as
+              ;; which differs from other languages' division in the last
+              ;; bit (for example, 2/3 becomes ...667 here and ...666 in the Python capture
+              ;; driver). This value lands in content-addressed evidence, so both
+              ;; implementations must agree exactly. Same reasoning and shape as
               ;; `parser-rq-diagnostic-completeness/aggregate`.
               :parser_ir_schema_validation (/ (double valid)
                                               (double generated))}))))

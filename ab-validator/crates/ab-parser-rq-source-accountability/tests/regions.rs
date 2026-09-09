@@ -450,17 +450,17 @@ fn a_fenced_block_without_a_heading_is_declined_rather_than_guessed_at() {
 ///
 /// Every construct here is decided by the run it sits in. `1999年1月20日作成`
 /// carries no indentation, so it is not a continuation of the `入力：` field
-/// above it -- it opens as the file's own dating line, under its own role,
-/// because it dates the FILE and not the publication. The `※` line opens a
+/// above it; instead, it opens as the file's own dating line under its own role,
+/// because it dates the file rather than the publication. The `※` line opens a
 /// remark run and the indented line below continues it, so the same
 /// indentation that would mean "continues the field" means "continues the
 /// remark" three lines later. Position, not shape.
 ///
-/// Declining the last line maintains the strict boundary of the measure:
-/// it follows a blank, so no run is open; it opens none itself; and nothing
-/// claims it. A producer that claimed it would be claiming by position alone,
-/// and the measure would drift toward 1.0 by widening the claim rather than by
-/// verifying more of the packaging.
+/// Declining the last line maintains the strict boundary of the measure.
+/// Because it follows a blank line, no run is open; it opens none itself, and
+/// nothing claims it. A producer that claimed it would be claiming by position
+/// alone, causing the measure to drift toward 1.0 by widening the claim rather
+/// than by verifying more of the packaging.
 #[test]
 fn the_bibliographic_block_and_the_colophon_run_are_bounded_by_position() {
     assert_eq!(
@@ -550,11 +550,11 @@ fn the_bibliographic_block_and_the_colophon_run_are_bounded_by_position() {
 /// Every one of the 597 sampled headers separates its bibliography from the
 /// legend with a blank line, so on that corpus the blank alone would do. The
 /// separator rule and the bracketed heading are kept as terminators anyway,
-/// because a header written without that blank would otherwise swallow the
-/// fence, the `【...】` heading and the legend body into the bibliographic
-/// block -- confidently, and with the wrong role on every line. The failure a
-/// guard prevents is worth a test even where the corpus has not yet produced
-/// it, or the guard is one refactor from being deleted as unreachable.
+/// because a header written without that blank line would otherwise
+/// incorporate the fence, the `【...】` heading, and the legend body into the
+/// bibliographic block, misclassifying the role of every subsequent line.
+/// The failure a guard prevents is worth testing even where the corpus has
+/// not yet produced it, or the guard risks being removed as seemingly unreachable.
 #[test]
 fn the_bibliographic_block_ends_at_the_legend_even_with_no_blank_line() {
     for (label, source, expected) in [
@@ -703,7 +703,7 @@ fn eligibility_is_the_body_and_the_two_populations_still_sum_to_the_file() {
 #[test]
 fn body_intervals_never_escape_the_body_region() {
     // Every published body interval lies inside the body. Facts do fall
-    // outside it -- see the CRLF test below -- so this holds because the
+    // outside it (see the CRLF test below), so this holds because the
     // measure intersects against the region, not because the producer happens
     // to stay inside it.
     let root = temp("containment");
@@ -732,7 +732,7 @@ fn crlf_sources_carry_facts_outside_the_body_and_lf_sources_do_not() {
     // body. A body denominator cannot include every accounted interval.
     //
     // So a body-region denominator must not assume the body contains every
-    // accounted interval -- it does not, on any real CRLF work -- and a
+    // accounted interval (which is false for any real CRLF work), and a
     // metadata fact producer must not re-derive these newlines, or two
     // producers will double-count the same bytes.
     //
@@ -898,8 +898,8 @@ fn tail_constructs(source: &str) -> Vec<(String, String)> {
 /// The corpus has four indented `※` tail lines. Three are `底本の親本`
 /// citations whose title happens to begin with a gaiji annotation, and this is
 /// one of them verbatim. Reading `※` without reading the column would relabel
-/// them as remarks -- the exact failure the bibliographic producer already
-/// avoids by not consulting shape inside its block.
+/// them as remarks (the same misclassification the bibliographic producer avoids by
+/// omitting shape checks inside its block).
 ///
 /// Both readings attribute the byte, so this costs the measure nothing either
 /// way. What it costs is the ledger's truthfulness about what the line is.
@@ -923,10 +923,10 @@ fn an_indented_gaiji_citation_continues_the_field_and_does_not_open_a_remark() {
 
 /// A remark runs on until something else opens, and a field is something else.
 ///
-/// The continuation lines carry no marker of their own -- `その際、以下の置き
-/// 換えをおこないました。` is an ordinary sentence -- so what makes them
-/// continuations is the remark above and the absence of a new opener. `入力：`
-/// is an opener, and it ends the run rather than being swallowed by it.
+/// The continuation lines carry no marker of their own (such as the sentence
+/// `その際、以下の置き換えをおこないました。`), so what makes them continuations
+/// is the preceding remark and the absence of a new opener. An opener like
+/// `入力：` ends the run rather than being subsumed into it.
 #[test]
 fn a_remark_runs_until_the_next_opener_and_a_field_ends_it() {
     assert_eq!(
@@ -1011,8 +1011,8 @@ fn a_licence_statement_is_recognized_before_a_remark() {
 /// remark run.
 ///
 /// `底本の親本「テスト百合子全集　第六巻」河出書房` is a colophon field whose
-/// separator is a quote rather than a colon -- 56 such lines corpus-wide, every
-/// one a real field name. `繰返し記号「ゝ」「ゞ」は、仮名に書き換えました。`
+/// separator is a quote rather than a colon (56 such lines occur corpus-wide,
+/// each representing a real field name). `繰返し記号「ゝ」「ゞ」は、仮名に書き換えました。`
 /// has the identical shape and is a transcriber's sentence. Nothing in either
 /// line's text tells them apart; the run above each does.
 ///

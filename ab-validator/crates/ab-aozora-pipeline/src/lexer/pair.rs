@@ -42,9 +42,9 @@
 //!   [`PairEvent::PairClose`]. This keeps an unbalanced `「` inside a
 //!   directive body (an image caption `［＃「…（fig）入る］`, a composed-glyph
 //!   gaiji `［＃「口＋「皐」…］`, a typo-note quoting literal quotes) from
-//!   swallowing the `］` so the bracket never closes and the classifier
-//!   sinks the rest of the document to plain. A balanced body never
-//!   triggers it, except a closing delimiter quoted as a single glyph. That
+//!   preventing closure at `］`, which would otherwise cause the bracket
+//!   never to close and sink the rest of the document to plain text. A balanced
+//!   body never triggers it, except a closing delimiter quoted as a single glyph. That
 //!   glyph is text when immediately followed by its quote closer. A `」`
 //!   still cannot cross a bracket downward; only `］` gets this scope.
 
@@ -65,8 +65,8 @@ pub use ab_aozora_spec::{PairKind, PairLink};
 /// How many newlines a `［＃` DIRECTIVE bracket may span before the
 /// newline expiry reclaims it. Legitimate multi-line directives exist
 /// but are bounded (the corpus maximum is a 12-line ［＃入力者註：…］
-/// editorial note); a stray unclosed ［＃ typo must not swallow the
-/// document, only at most this many lines.
+/// editorial note); a stray unclosed ［＃ typo must not span the entire
+/// document, but at most this many lines.
 const MULTILINE_DIRECTIVE_NEWLINE_ALLOWANCE: u8 = 32;
 
 /// One event in the pair-stage stream.
@@ -906,7 +906,7 @@ mod tests {
             again.is_empty(),
             "second take_diagnostics must return empty after the prior drain, got {again:?}"
         );
-        // Sanity: at least one diagnostic surfaced overall (the
+        // Baseline check: at least one diagnostic surfaced overall (the
         // unclosed bracket synthesis), proving the assertion above is
         // about drain semantics not absence of diagnostics.
         assert!(

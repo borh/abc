@@ -23,8 +23,8 @@ transcription.
 ## Versioning
 
 The namespace IRI identifies the extension and never changes. The vocabulary's
-major version is not implied by that IRI, which is why `snh:vocab-version`
-carries it separately: a breaking vocabulary change increments it, while an
+major version is not implied by that IRI, so `snh:vocab-version`
+carries it separately. A breaking vocabulary change increments this version, whereas an
 additive attribute may keep the same major version when compatibility is
 documented.
 
@@ -68,7 +68,7 @@ Constraint violations are published in each work's `tei-validation.json` as
 
 | Rule ID | Severity | Requires |
 |---|---|---|
-| `snh-tei-header-title` | error | A main title in `teiHeader/fileDesc/titleStmt` — a `title` that is not one of the subordinate forms `sub`, `sub-reading`, `reading` or `original`. |
+| `snh-tei-header-title` | error | A main title in `teiHeader/fileDesc/titleStmt` (a `title` that is not one of the subordinate forms `sub`, `sub-reading`, `reading`, or `original`). |
 | `snh-tei-header-source-work-id` | error | An Aozora work ID or source work identifier in the header. |
 | `snh-header-language-declared` | error | At least one `profileDesc/langUsage/language` with a non-empty `@ident`. |
 | `snh-publication-licence` | error | A rights grant in `publicationStmt/availability/licence` with a non-empty `@target`. |
@@ -89,11 +89,12 @@ Constraint violations are published in each work's `tei-validation.json` as
 ## Rights in the header
 
 Every published work states its own terms in
-`fileDesc/publicationStmt/availability`, one `licence` element per rights
-layer: the underlying work's public-domain standing, and Soranoha's CC0 grant
-over the encoding, which also carries a `ptr` to the full statement. Both are
-rendered from the one publication policy the release manifest hashes, so a
-detached TEI file and the signed release record cannot state different terms.
+`fileDesc/publicationStmt/availability`, with one `licence` element per rights
+layer (one for the underlying work's public-domain standing, and one for
+Soranoha's CC0 grant over the encoding, which also carries a `ptr` to the full
+statement). Both are rendered from the one publication policy the release
+manifest hashes, so a detached TEI file and the signed release record cannot
+state different terms.
 `snh-publication-licence` makes their absence a validation failure. See
 [rights and licensing](../../docs/rights.md).
 

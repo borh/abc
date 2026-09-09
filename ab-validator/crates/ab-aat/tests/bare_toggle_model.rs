@@ -257,16 +257,15 @@ fn canonicalize(v: &Value) -> Value {
 /// four marker literals AND whose span lies ENTIRELY on `line`, in
 /// document order.
 ///
-/// Restricted to marker-literal raw nodes (not generic text/gap nodes):
-/// a marker always becomes its own parser node with a tight span
-/// (`bare_toggle_marker`'s subject), so it never straddles a line
-/// boundary. A generic filler/gap `text` node CAN straddle a boundary
-/// (`push_source_gap` merges a maximal run with no recognized node in
-/// between, which spans the embedded `\n` when neither line contains a
-/// marker) — using marker-literal raw nodes as the isolation witness
-/// sidesteps that merging entirely, which is exactly what `line_isolation`
-/// needs to check (the bare-toggle classifier's decisions, not the
-/// unrelated gap-merging behavior).
+/// Collection is restricted to marker-literal raw nodes rather than generic
+/// text or gap nodes. A marker always becomes its own parser node with a tight
+/// span (`bare_toggle_marker`'s subject), so it never straddles a line
+/// boundary. In contrast, a generic filler or gap `text` node can straddle a
+/// boundary (`push_source_gap` merges a maximal run with no recognized node
+/// in between, spanning the embedded `\n` when neither line contains a
+/// marker). Using marker-literal raw nodes as the isolation witness avoids
+/// that merging entirely, isolating the bare-toggle classifier's decisions
+/// from unrelated gap-merging behavior for `line_isolation` testing.
 fn collect_marker_raw_on_line(v: &Value, line: u64, out: &mut Vec<String>) {
     if let Some(obj) = v.as_object() {
         if obj.get("kind").and_then(Value::as_str) == Some("raw")

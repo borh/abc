@@ -412,14 +412,14 @@ fn lower_spans(
             let back_is_plain = matches!(back.kind, SpanKind::Plain(_));
             let (ss, se) = (span.source_span.start, span.source_span.end);
             if ss <= bs && be <= se && (ss < bs || se > be) {
-                // Full superset: `span` reclaimed all of `back` (a promoted
-                // heading swallowing its referent line). Drop `back`.
+                // Full superset. `span` reclaimed all of `back` (for example, a promoted
+                // heading subsuming its referent line). Drop `back`.
                 out.pop();
             } else if back_is_plain && bs < ss && ss < be {
-                // Partial overlap: `span` (a `Reclaimed` forward node) pulled its
-                // source region back into the *tail* of a committed plain run:
-                // truncate the plain so the literal is emitted once, by the node
-                // (issue, unbounded growth).
+                // Partial overlap. When `span` (a `Reclaimed` forward node) pulls its
+                // source region back into the tail of a committed plain run,
+                // truncate the plain run so the literal is emitted once by the node,
+                // preventing duplicate emission and unbounded growth.
                 if let Some(last) = out.last_mut() {
                     last.source_span.end = ss;
                 }
@@ -770,8 +770,8 @@ const fn attr_decorates_ruby_base(attr: ForwardAttr) -> bool {
 /// `Referenced` (serializes the bracket verbatim, renders nothing), so serialize
 /// stays byte-identical.
 ///
-/// Target resolution requires strict uniqueness, rather than nearest-ruby
-/// matching: the target must match **exactly one** preceding ruby base and
+/// Target resolution requires strict uniqueness rather than nearest-ruby
+/// matching. The target must match **exactly one** preceding ruby base and
 /// **no** preceding plain-text run anywhere in the look-back (a plain copy that
 /// precedes the ruby, cross-line or same-line out of the classifier's reset
 /// window, is a competing referent). If a competing referent exists, we decline

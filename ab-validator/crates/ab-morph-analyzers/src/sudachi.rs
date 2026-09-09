@@ -24,9 +24,9 @@ const SUDACHI_SETTINGS_FILE: &str = "sudachi.json";
 ///
 /// The `sudachi` crate resolves these relative to the `CARGO_MANIFEST_DIR` it
 /// was compiled under, which is a build-sandbox path for nix-built binaries and
-/// a cargo checkout path for local builds. `AB_SUDACHI_RESOURCE_DIR` at run
-/// time wins; otherwise the value the packager baked in at compile time; and
-/// only then the crate's own default.
+/// a cargo checkout path for local builds. The runtime variable
+/// `AB_SUDACHI_RESOURCE_DIR` takes precedence, followed by any compile-time
+/// value configured by the packager, and finally the crate default.
 fn sudachi_resource_dir() -> Option<PathBuf> {
     if let Some(dir) = std::env::var_os("AB_SUDACHI_RESOURCE_DIR") {
         return Some(PathBuf::from(dir));

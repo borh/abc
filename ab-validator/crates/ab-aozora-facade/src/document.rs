@@ -24,14 +24,13 @@ use ab_aozora_syntax::ast::ContainerPair;
 
 /// Diagnostic policy applied at parse time.
 ///
-/// Diagnostics are always collected best-effort — the lexer never
-/// aborts mid-stream — but the policy controls whether the
-/// returned [`Tree::diagnostics`] slice retains every entry,
-/// drops library-internal sanity-check failures, or short-circuits
-/// after the first source-side error.
+/// Diagnostics are always collected on a best-effort basis without aborting the
+/// lexer mid-stream. The policy controls whether the returned
+/// [`Tree::diagnostics`] slice retains every entry, drops library-internal
+/// consistency check failures, or short-circuits after the first source-side error.
 ///
-/// `#[non_exhaustive]` — future policies (e.g. severity-only filters)
-/// land here as minor releases.
+/// Marked `#[non_exhaustive]` so future policies (such as severity-only filters)
+/// can be added in minor releases.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[non_exhaustive]
 pub enum DiagnosticPolicy {
@@ -42,8 +41,8 @@ pub enum DiagnosticPolicy {
     CollectAll,
     /// Drop diagnostics whose [`Diagnostic::source`] is
     /// [`DiagnosticSource::Internal`](ab_aozora_spec::DiagnosticSource::Internal).
-    /// Library bugs (the four legacy internal sanity checks) are
-    /// hidden from the result; CLI / batch consumers that prefer a
+    /// Internal errors (such as the four legacy internal consistency checks) are
+    /// excluded from the result; CLI and batch consumers that prefer a
     /// terser stream can opt in.
     DropInternal,
 }

@@ -128,7 +128,7 @@ pub fn is_platform_dependent(c: char) -> bool {
     !had_errors && bytes.len() >= 2
 }
 
-/// `(第1+第2水準 cells, 第3水準 cells, 第4水準 cells)` baked into the
+/// `(第1+第2水準 cells, 第3水準 cells, 第4水準 cells)` compiled into the
 /// reverse table. Surfaced for the gatekeeper size pins (see
 /// `tests/gatekeeper.rs`); not part of the everyday classifier surface.
 #[must_use]

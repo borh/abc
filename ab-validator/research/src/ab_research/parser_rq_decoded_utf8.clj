@@ -53,9 +53,9 @@
   The three-argument arity takes a byte COUNT and frames the intervals as
   [0, eligible-bytes). That is correct only when the measured region starts
   at zero. The four-argument arity takes the region's own absolute bounds and
-  is the form to use once a region can start anywhere -- an interval is an
-  offset into the decoded file, a count is not a bound, and conflating the
-  two is the defect the region partition exists to remove."
+  is the form to use once a region can start anywhere. Because an interval is an
+  offset into the decoded file and a count is not an absolute bound, conflating the
+  two is the defect the region partition exists to prevent."
   ([label intervals eligible-bytes]
    (canonical-interval-errors label intervals 0 eligible-bytes))
   ([label intervals region-start region-end]

@@ -7,8 +7,8 @@ use proptest::test_runner::FileFailurePersistence;
 
 /// The settings every property suite in the workspace runs under.
 ///
-/// Draws 128 cases unless `AOZORA_PROPTEST_CASES` parses as a case count,
-/// which is the knob for a longer soak run without editing test sources.
+/// Draws 128 cases unless `AOZORA_PROPTEST_CASES` specifies an explicit count,
+/// allowing extended test runs without modifying test source code.
 /// Failing inputs persist to a `proptest-regressions/` file beside the test
 /// that found them, so a shrunk counterexample becomes a checked-in
 /// regression rather than a one-off console line.

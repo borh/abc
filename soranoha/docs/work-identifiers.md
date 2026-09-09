@@ -1,7 +1,7 @@
 # Work identifiers
 
-Every published work has one identifier, of the form
-`<work-id>_<card-directory>`: six digits, an underscore, six digits:
+Every published work has one identifier of the form
+`<work-id>_<card-directory>`, consisting of six digits, an underscore, and six digits:
 
 ```
 000092_000879
@@ -39,9 +39,9 @@ was.
 
 **It denotes the work, not a particular file.** If Aozora repackages the
 archive, re-proofreads the text, or publishes a corrected edition, the
-identifier stays the same and the text under it changes. What changed is
-recorded, not hidden: the manifest carries `source_content_hash` per work, over
-the canonical identity of the source bundle rather than a raw archive hash, so
+identifier stays the same and the text under it changes. Changes are
+recorded explicitly rather than hidden. The manifest carries `source_content_hash` per work
+over the canonical identity of the source bundle rather than a raw archive hash, so
 two releases can be compared exactly. Cite the identifier for the work; cite
 the identifier plus `source_content_hash` when you need the precise bytes you
 read.
@@ -69,17 +69,16 @@ those.
 
 ## The identifier and the download filename
 
-Every artifact is served twice: once at `/works/<identifier>/<type>`, which is
-constructible from the identifier and is what a citation points at, and once
-at `/works/<identifier>/<author>-<stem>-<identifier>.<ext>`, which is what a
-browser save or `curl -O` writes to disk. The two names resolve to the same
-blob.
+Every artifact is served at two locations. Citations use `/works/<identifier>/<type>`, which can be
+constructed directly from the work identifier. Browser downloads and `curl -O`
+receive `/works/<identifier>/<author>-<stem>-<identifier>.<ext>`. Both paths
+resolve to the same blob.
 
-The filename is a convenience and the identifier is the citable thing. The
-filename is a serving-layer rendering: it can be corrected in a later release,
-its author component picks one contributor out of a work that may record
+The filename is a convenience, whereas the identifier is the citable reference. The
+filename is a serving-layer projection. It can be corrected in a later release,
+its author component selects one contributor out of a work that may record
 several, and its middle component is Aozora Bunko's own archive stem rather
-than anything this project assigns. The signed catalog carries the inputs (`archive_stem` and the romanized name
+than an identifier assigned by this project. The signed catalog carries the inputs (`archive_stem` and the romanized name
 parts) rather than the assembled name, because a derived value stored beside
 its own inputs can disagree with them and the chain is append-only.
 

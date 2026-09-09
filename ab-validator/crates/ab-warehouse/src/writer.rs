@@ -19,8 +19,8 @@ use crate::schema::{
     RunAnalyzerRow, RunRow, SourceRow, WarehousePaths, WarehouseTable,
 };
 // `MorphemeFeatureRow` (the `Vec<Row>` intermediate) is retained only for the
-// `#[cfg(test)]` reference-transposition path -- see
-// `append_morpheme_features_reference` and `MorphemeFeaturesColumns`.
+// `#[cfg(test)]` reference-transposition path (see
+// `append_morpheme_features_reference` and `MorphemeFeaturesColumns`).
 #[cfg(test)]
 use crate::schema::MorphemeFeatureRow;
 
@@ -330,7 +330,7 @@ impl WarehouseWriter {
     /// to characterize byte-identity against the direct-builder path (see
     /// [`append_morpheme_feature_columns`](Self::append_morpheme_feature_columns)).
     /// Production code no longer allocates a `Vec<MorphemeFeatureRow>` for
-    /// this table -- the producer appends straight into a
+    /// this table; the producer appends directly into a
     /// [`MorphemeFeaturesColumns`] builder instead.
     #[cfg(test)]
     fn append_morpheme_features_reference(&mut self, rows: &[MorphemeFeatureRow]) -> Result<()> {
@@ -359,10 +359,10 @@ impl WarehouseWriter {
     /// Write a finished [`MorphemeFeaturesColumns`] builder as a single
     /// `RecordBatch`. Producers (see `ab-morph-run`'s
     /// `push_morpheme_features_for_range`) append each morpheme-feature
-    /// directly into the builder's Arrow buffers, so this table never
-    /// materializes a `Vec<MorphemeFeatureRow>` on the production path -- the
-    /// highest-row-volume warehouse table, where the per-row `Arc::clone`
-    /// bumps that entailed mattered at billions-of-rows scale.
+    /// directly into the builder's Arrow buffers. Consequently, this table never
+    /// materializes a `Vec<MorphemeFeatureRow>` on the production path (this is the
+    /// highest-row-volume warehouse table, where per-row `Arc::clone` operations
+    /// become significant at scale).
     ///
     /// # Errors
     ///
@@ -463,8 +463,8 @@ impl WarehouseWriter {
 
     /// Row-based `Vec<Row>` -> transposed-arrays implementation. `nway_feature_diffs`
     /// production writes no longer go through this path (see
-    /// [`append_nway_feature_diff_columns`](Self::append_nway_feature_diff_columns) --
-    /// `ab-morph-run`'s n-way batch driver appends straight into a
+    /// [`append_nway_feature_diff_columns`](Self::append_nway_feature_diff_columns);
+    /// `ab-morph-run`'s n-way batch driver appends directly into a
     /// [`NwayFeatureDiffsColumns`] builder instead, since this is the
     /// highest-row-volume warehouse table). Unlike `morpheme_features`'s
     /// equivalent reference path, this method stays a regular (non-
@@ -472,7 +472,7 @@ impl WarehouseWriter {
     /// (`summary/summary_body.rs`, `summary/interesting.rs`) construct
     /// `NwayFeatureDiffRow` literals and call this method across the crate
     /// boundary, where a `#[cfg(test)]` item in this crate would not be
-    /// visible -- `#[cfg(test)]` gates compilation per-crate, not
+    /// visible because `#[cfg(test)]` gates compilation per-crate rather than
     /// per-workspace. It also still functions as this crate's own byte-identity
     /// reference (see `nway_feature_diffs_direct_builder_matches_reference_bytes`).
     pub fn append_nway_feature_diffs(&mut self, rows: &[NwayFeatureDiffRow]) -> Result<()> {
@@ -505,9 +505,9 @@ impl WarehouseWriter {
     /// `RecordBatch`. Producers (see `ab-morph-run`'s `push_region_rows`)
     /// append each n-way feature-diff directly into the builder's Arrow
     /// buffers, so this table never materializes a `Vec<NwayFeatureDiffRow>`
-    /// on the production path -- `nway_feature_diffs` is the
-    /// highest-row-volume warehouse table (~23.4B rows), where the per-row
-    /// `Arc::clone` bumps this refactor eliminates mattered most.
+    /// on the production path. Because `nway_feature_diffs` is the
+    /// highest-row-volume warehouse table (~23.4B rows), eliminating per-row
+    /// `Arc::clone` operations was necessary.
     ///
     /// # Errors
     ///
@@ -682,10 +682,10 @@ impl WarehouseWriter {
 /// `morpheme_features_schema()` order). Producers append each
 /// morpheme-feature directly into this builder's Arrow buffers via
 /// [`push_row`](Self::push_row) instead of collecting a
-/// `Vec<MorphemeFeatureRow>` first -- `morpheme_features` is the
-/// highest-row-volume warehouse table, so skipping the per-row `Arc::clone`
-/// bumps (previously ~5 per row: 4 id columns + the feature key) and the
-/// intermediate `Vec` allocation matters at billions-of-rows scale.
+/// `Vec<MorphemeFeatureRow>` first. Because `morpheme_features` is the
+/// highest-row-volume warehouse table, skipping per-row `Arc::clone` operations
+/// (previously ~5 per row: 4 ID columns plus the feature key) and intermediate
+/// `Vec` allocations is essential at scale.
 pub struct MorphemeFeaturesColumns {
     run_id: StringBuilder,
     source_id: StringBuilder,
@@ -771,8 +771,8 @@ impl Default for MorphemeFeaturesColumns {
 
 /// Column-oriented builder for the `nway_feature_diffs` table (10 columns, in
 /// `nway_feature_diffs_schema()` order). `nway_feature_diffs` is the
-/// highest-row-volume warehouse table (~23.4B rows), so -- as with
-/// [`MorphemeFeaturesColumns`] -- producers append each feature-diff directly
+/// highest-row-volume warehouse table (~23.4B rows), so (as with
+/// [`MorphemeFeaturesColumns`]) producers append each feature-diff directly
 /// into this builder's Arrow buffers via [`push_row`](Self::push_row) instead
 /// of collecting a `Vec<NwayFeatureDiffRow>` first, skipping the per-row
 /// `Arc::clone` bumps that Vec would otherwise require (6 `Arc<str>`/
@@ -1782,7 +1782,7 @@ mod tests {
     #[test]
     fn morpheme_features_direct_builder_matches_reference_bytes() {
         // Covers: repeated ids across rows, a `None` feature_value, and
-        // multiple analyzers/morphemes -- exercising the byte layout the
+        // multiple analyzers/morphemes, exercising the byte layout the
         // 7-column schema must preserve.
         let run_id: Arc<str> = Arc::from("run-a");
         let source_id: Arc<str> = Arc::from("source-a");
@@ -1882,7 +1882,7 @@ mod tests {
     fn nway_feature_diffs_direct_builder_matches_reference_bytes() {
         // Covers: `None` scope_position (whole_region scope), `None`
         // scope_surface (whole_region/token_position scopes), `None`
-        // feature_value, and multiple analyzers per value-group -- exercising
+        // feature_value, and multiple analyzers per value-group, exercising
         // the null handling and byte layout the 10-column schema must
         // preserve.
         let run_id: Arc<str> = Arc::from("run-a");

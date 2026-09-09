@@ -257,17 +257,17 @@ pub const CATALOGUE_SAMPLES: &[&str] = &[
 /// - **Editorial prose**: bibliographic / collation / conjecture / semantic
 ///   notes (edition names, `では`, `誤記か`, `伏字`, `注釈番号`, `正字`) and
 ///   free-form spatial-layout descriptions (`上に…付き`, `右側に…形で`) for which
-///   the core models no construct. Matching one would launder an editor's note
-///   into a directive.
+///   the core models no construct. Matching one would misclassify an editor's note
+///   as a directive.
 /// - **Multi-axis compounds**: `、`-joined directives whose reduction
 ///   would drop an axis.
 /// - **Gaiji-composition descriptions**: `「X」の下に「Y」` glyph builds, owned
 ///   by the 外字 layer, not the directive catalogues.
 ///
 /// The `catalogue_refuses_every_editorial_body` self-test in the `aozora` crate
-/// asserts both catalogues return `None` for every entry; each catalogue-growth
-/// PR adds the adjacent editorial bodies its new rule sits near, so a future
-/// rule that over-generalises fails here instead of laundering prose.
+/// asserts both catalogues return `None` for every entry. Catalog additions include
+/// adjacent editorial bodies, ensuring a future rule that over-generalizes fails
+/// this check rather than misclassifying prose.
 pub const EDITORIAL_MUST_STAY_UNKNOWN: &[&str] = &[
     // Editorial prose: bibliographic / collation / conjecture / semantic.
     "底本では「蒼空」",

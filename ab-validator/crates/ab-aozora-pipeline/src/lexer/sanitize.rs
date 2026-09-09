@@ -980,11 +980,11 @@ mod tests {
     // Background: Aozora Bunko prose frequently inserts
     // `---------------------------------------------------------`
     // as a visual separator between front matter and body. Without
-    // this pass, CommonMark would swallow the front-matter paragraph
-    // into an H2. These tests pin both halves of the contract: long
-    // runs are isolated, short runs (the genuine setext idiom) are
-    // untouched, so future refactors cannot silently regress either
-    // direction.
+    // this pass, CommonMark would interpret the front-matter paragraph
+    // as a level-2 heading. These tests verify both aspects of the contract.
+    // Long runs are isolated, whereas short runs (standard setext underlines)
+    // are preserved untouched so that future refactors do not silently
+    // regress either behavior.
     // -------------------------------------------------------------
 
     #[test]

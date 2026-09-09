@@ -213,10 +213,10 @@
                ;; there was nothing to measure.
                ;; IEEE division of two doubles, not `(double (/ int int))`.
                ;; The latter builds an exact Ratio and rounds through
-               ;; BigDecimal, which differs from every other language's
-               ;; division in the last bit -- 2/3 becomes ...667 here and
-               ;; ...666 in the Python capture driver. This value lands in
-               ;; content-addressed evidence, so the two must agree exactly.
+               ;; BigDecimal, which differs from other languages'
+               ;; division in the last bit (for example, 2/3 becomes ...667 here and
+               ;; ...666 in the Python capture driver). This value lands in
+               ;; content-addressed evidence, so both implementations must agree exactly.
                :diagnostic_completeness (/ (double matching-works)
                                            (double (count expected-work-ids)))
                :matching_works matching-works

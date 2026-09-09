@@ -101,15 +101,15 @@ pub struct SourceAnnotationsBoth<'a> {
 
 /// The three declared regions of an Aozora source, in one coordinate.
 ///
-/// The body is the work: prose and annotations. The header and tail are
-/// metadata *about* the work. They are two populations, not two candidate
+/// The body constitutes the work (both prose and annotations). The header and tail
+/// contain metadata *about* the work. They are two populations, not two candidate
 /// denominators for one ratio, and measuring their union averages parser
 /// fidelity against packaging attribution and can mean neither.
 ///
 /// The regions are derived from [`aozora_body_range`] alone; no separator or
 /// `底本：` heuristic is maintained anywhere else. The tail is anchored on
-/// the body **end**, not on the tail start that function returns: `body_end`
-/// is trim-adjusted for trailing newlines and `tail_start` is not, so anchoring
+/// the body **end**, rather than on the returned tail start. Because `body_end`
+/// is trim-adjusted for trailing newlines and `tail_start` is not, anchoring
 /// on the latter would leave the blank lines between them in no region at all.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SourceRegions {
@@ -1459,9 +1459,9 @@ mod tests {
         // Recorded because it decides which region a bare-CR work's colophon
         // lands in, and the answer is "the body". `split_inclusive('\n')`
         // yields one line for the whole file, so the 底本： line is never seen
-        // at a line start. The partition still conserves -- the tail is simply
-        // empty -- but a metadata predicate over the tail measures nothing
-        // here, and that is a property of the input, not of the partition.
+        // at a line start. The partition still conserves (the tail is simply
+        // empty), but a metadata predicate over the tail measures nothing
+        // here; that is a property of the input rather than of the partition.
         let src = "本文です。\r底本：底本社\r";
         let (body, tail_start) = aozora_body_range(src);
         assert_eq!(body, 0..src.len());

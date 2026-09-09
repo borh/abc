@@ -1,8 +1,8 @@
 # Glossary
 
 The words this project uses for its own output, in the sense it uses them.
-Several are ordinary English words used narrowly here, which is exactly when a
-glossary earns its place.
+Several are ordinary English words used narrowly here, which is why this
+glossary defines their specific meanings within the project.
 
 For the internal names of parser and rendering behaviour, see
 [parser and rendering invariants](parser-invariants.md).
@@ -13,10 +13,10 @@ The decision to include a work in a release. A work is admitted when its
 rights standing has been established against a recorded basis and that basis
 still holds at the moment of publication.
 
-Admission is not a judgement about the quality of the encoding, and passing
-validation does not admit a work. The two are distinct: a work
-can be encoded perfectly and not be published, and being published says
-nothing about how good the encoding is.
+Admission is not a judgment about encoding quality, and passing
+validation does not admit a work. Admission and validation are independent: a work
+can pass validation without being published, and publication does not
+guarantee encoding quality.
 
 Each release's manifest records the admission evidence it relied on, so "why
 was this work in that release" has an answer years later.
@@ -28,10 +28,10 @@ work's rights standing, on what evidence, effective from when, and in which
 jurisdiction (Japan).
 
 Assessment records **facts with premises**, not verdicts. A fact says what was
-established, from which evidence, as of which date. If the evidence changes or
-becomes unreachable, the fact becomes unavailable rather than silently
-staying true — which is why a work can leave a release without anyone having
-made a new claim about it.
+established, from which evidence, as of which date. If evidence changes or
+becomes unreachable, the fact becomes unavailable rather than remaining asserted
+by default. Consequently, a work can drop out of a release without any new claim
+having been registered against it.
 
 Assessment is not legal advice and Soranoha is not a rights clearinghouse. See
 [reliance](#reliance) for the basis used for most works.
@@ -53,8 +53,9 @@ retained from an earlier check cannot substitute for a current one.
 
 ## fidelity
 
-How much of the source's markup survived into the encoding — a measurement,
-not a grade, and not a rights or correctness claim.
+The proportion of source markup preserved in the resulting encoding. This
+is a measurement rather than a grade, and does not constitute a rights or
+correctness claim.
 
 The corpus publishes two separate pieces of evidence about it:
 
@@ -73,16 +74,16 @@ log.
 
 ## work, edition, document
 
-Three different things that are easy to conflate, kept apart throughout:
+Three different concepts that are easy to conflate, kept apart throughout:
 
-- **work** — the intellectual work. 蜘蛛の糸 is one work regardless of which
-  book it is printed in. This is what a Soranoha identifier denotes.
-- **edition** — a particular source: a printed edition, or the Aozora
-  transcription made from it. `source_content_hash` in the manifest, and
-  `<sourceDesc>` in each TEI file, identify the edition.
-- **document** — a particular file of bytes. Identified by its SHA-256. Two
-  releases of the same work from the same edition can still be different
-  documents, because the converter improved.
+- **work**: The intellectual work. For example, 蜘蛛の糸 is one work regardless of
+  the edition in which it appears. A Soranoha identifier denotes a work.
+- **edition**: A specific source, such as a printed edition or the Aozora
+  transcription derived from it. The `source_content_hash` in the manifest and
+  `<sourceDesc>` in each TEI file identify the edition.
+- **document**: A specific byte sequence identified by its SHA-256 digest. Two
+  releases of the same work from the same edition may produce different
+  documents as conversion tooling evolves.
 
 Cite the identifier for the work, the identifier plus `source_content_hash`
 for the edition, and the artifact id for exact bytes. See
@@ -110,9 +111,9 @@ identifier, its `source_content_hash`, and the id and byte length of each of
 its four artifacts; the rights grant those artifacts are published under; the
 admission evidence relied on; the release catalog; and the previous manifest.
 
-The manifest is the authority. The site's pages, indexes and reading views are
-generated from it and are not part of it — if a page and a manifest disagree,
-the manifest is right. `https://soranoha.org/releases/latest` serves the
+The manifest is authoritative. The website's pages, indexes, and reading views are
+generated downstream from the manifest. If a web page and a manifest disagree,
+the manifest governs. `https://soranoha.org/releases/latest` serves the
 current one.
 
 ## chain
@@ -141,10 +142,10 @@ does not identify the bytes you read; a citation that names the release does.
 
 ## catalog
 
-The bibliography of every work in one release — identifiers, titles and their
-readings, contributors, first publication, orthography, NDC class, Aozora card
-URL and printed source edition — as one JSON file at
-`https://soranoha.org/catalog.json`.
+The bibliography of every work in a release, including identifiers, titles,
+readings, contributors, first publication details, orthographic style, NDC
+classification, Aozora card URL, and printed source edition. It is published as a
+single JSON file at `https://soranoha.org/catalog.json`.
 
 The catalog is part of the signed release, not a convenience export. It
 carries facts, not renderings: no download filenames, no formatted citation
@@ -193,7 +194,7 @@ disagreed with. See
 
 ## ruby (ルビ)
 
-A reading printed alongside or above the characters it applies to — furigana.
+A reading printed alongside or above the characters to which it applies (furigana).
 In the source it is written `蓮池《はすいけ》`; in TEI it is `<ruby>` with an
 `<rb>` base and an `<rt>` reading.
 

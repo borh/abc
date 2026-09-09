@@ -2,7 +2,7 @@ use std::{collections::BTreeSet, fmt};
 
 use crate::matrix::{CoverageMatrix, Recognition, RepresentabilityStatus, Row, RowAatFidelity};
 
-/// Knobs for `SchemaValidator::validate`.
+/// Options for `SchemaValidator::validate`.
 #[derive(Debug, Clone, Copy)]
 pub struct ValidationOptions {
     /// If true, `recognition = "unknown"` and `aat_fidelity = "unknown"` are

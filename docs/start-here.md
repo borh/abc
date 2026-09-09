@@ -20,19 +20,16 @@ Every work is published in four files, all reachable from its identifier:
 
 | File | What it is |
 |---|---|
-| `tei` | TEI P5 XML. The edition: ruby, gaiji, emphasis, indentation, headings, the source colophon, and a byte offset into the Aozora source for almost every run of text. |
-| `plaintext` | The reading text alone, UTF-8. Ruby readings, editorial notes and apparatus are not in it — they are in the TEI. |
-| `markdown` | CommonMark: the same reading text with headings, plus ruby as inline HTML `<ruby>` and emphasis carrying the source's own mark as CSS. For tools and pipelines that want light structure without an XML parser. |
-| `tei-validation` | A JSON report: which schema rules the TEI file passed, at which severities, against which version of the profile. |
+| `tei` | TEI P5 XML edition containing ruby, gaiji, emphasis, indentation, headings, the source colophon, and byte offsets into the Aozora source. |
+| `plaintext` | Reading text alone in UTF-8. Ruby readings, editorial notes, and apparatus remain in the TEI edition rather than this projection. |
+| `markdown` | CommonMark containing the reading text with headings, ruby as inline HTML `<ruby>`, and CSS emphasis marks. |
+| `tei-validation` | JSON report recording schema validation passes, rule severities, and profile version. |
 
-TEI is the edition; the other three are projections of it. When they disagree,
-the TEI is right — the projections are generated from it, so they cannot
-disagree by accident, only by a defect.
+TEI is the authoritative edition, and the other three files are downstream projections. When they disagree, the TEI file governs because the projections are generated directly from it.
 
 ## Get one text
 
-Every work has an identifier of the form `<work-id>_<card-directory>` — six
-digits, an underscore, six digits. Akutagawa Ryūnosuke's 蜘蛛の糸 is
+Every work has an identifier of the form `<work-id>_<card-directory>`, consisting of six digits, an underscore, and six digits. Akutagawa Ryūnosuke's 蜘蛛の糸 is
 `000092_000879`.
 
 ```sh
@@ -50,11 +47,7 @@ curl -O https://soranoha.org/works/000092_000879/Akutagawa_Ryunosuke-kumono_ito-
 
 The name is `<author>-<Aozora stem>-<identifier>.<ext>`. The middle part is
 Aozora Bunko's own filename for the text, which its volunteers wrote with word
-boundaries by hand. **The filename is a convenience; the identifier is the
-citable thing.** It is inside every filename because title and author alone do
-not identify a work — about one work in seven of the corpus shares an
-author-and-title pair with another — so a name without it would silently
-overwrite files in a bulk extraction. Every work page shows both forms.
+boundaries by hand. **The filename is a convenience, whereas the identifier is the citable reference.** The identifier is included in every filename because title and author alone do not uniquely identify a work; approximately one work in seven in the corpus shares an author and title with another work. Without the identifier, files could overwrite each other during bulk extraction. Every work page shows both forms.
 
 To read it rather than download it, open
 `https://soranoha.org/works/000092_000879/` for the bibliography and
@@ -71,11 +64,8 @@ what that promises and what it does not.
 
 ## Find a text
 
-- `https://soranoha.org/` — search by title or author, or browse by author, by
-  the kana reading of the title, or by NDC class.
-- `https://soranoha.org/catalog.json` — the bibliography of every work in the
-  current release, as one JSON file. This is the file to use from a script.
-  It is part of the signed record, not a convenience export.
+- Search by title, author, kana title reading, or NDC class at `https://soranoha.org/`.
+- Retrieve the bibliography of every work in the current release as a single JSON file at `https://soranoha.org/catalog.json`. This file forms part of the signed record rather than a convenience export.
 
 A catalog entry gives you the identifier, the title and its reading, the
 author and other contributors, the first-publication note, the orthography
@@ -117,8 +107,7 @@ without opening a single TEI file, and enough to get back to the record:
 `identifier` and `release` together name the bytes, and `url` resolves to the
 page that serves them. The filename is a convenience; the citable columns are
 `identifier`, `source_content_hash` and `release`. From a script, read it with
-`encoding="utf-8-sig"` — it carries a byte-order mark so that Excel does not
-mangle the Japanese titles.
+`encoding="utf-8-sig"`. The file contains a byte-order mark so that applications like Excel preserve Japanese titles without encoding errors.
 
 `source_edition_year` is the Gregorian year of the 底本's first edition,
 taken from Aozora's 初版発行年. That field is a free-form publication history
@@ -126,7 +115,7 @@ rather than a year, as in `1981（昭和56）年3月20日`, sometimes with a
 printing history after it. The year is extracted for the machine-readable
 columns, while the work page shows the recorded string in full.
 
-To fetch works one at a time instead — a filtered subset, say:
+To fetch works individually, such as a filtered subset:
 
 ```python
 import json, urllib.request, pathlib
@@ -145,9 +134,9 @@ for work in catalog["works"]:
 ```
 
 Be polite about rate: this is one small server, and the corpus is tens of
-thousands of files. If you want everything, take the archive above instead —
-it is one request and the same bytes. The release archive on Zenodo, once it
-exists, is another one-download route to the same thing.
+thousands of files. Downloading the complete archive above requires only a single
+request for the same bytes. The release archive on Zenodo provides an equivalent
+single-download option.
 
 ## Scale and coverage
 
@@ -158,17 +147,17 @@ editors and collators. That number moves as Aozora adds works and as
 copyrights expire. Each release states its own count on the landing page and
 in `/catalog.json`; a release is a fixed set of works, not a live view.
 
-Contributors are recorded with the role Aozora gives them — 著者, 翻訳者,
-校訂者, 編者 — and a work can have several. The site indexes people by all of
-their roles, not only authorship.
+Contributors are recorded with their upstream Aozora roles, such as 著者, 翻訳者,
+校訂者, or 編者. A work can have several contributors, and the site indexes individuals
+across all assigned roles rather than authorship alone.
 
 Two boundaries exclude items present in upstream Aozora Bunko:
 
 **Publication is per work and gated on rights.** A work appears in a release
 only after its rights standing has been assessed against a recorded basis. The
-default basis is reliance on Aozora Bunko's own published copyright-expired
-classification for that exact edition, scoped to Japan — an attributed
-upstream assertion, recorded as such, not an independent legal finding by this
+default basis relies on Aozora Bunko's published copyright-expired
+classification for that exact edition within Japan. This classification is recorded
+as an attributed upstream assertion rather than an independent legal determination by this
 project. A work whose basis does not hold is not published. See
 [admission and assessment](user-glossary.md#admission) for what those words
 mean here.
@@ -180,9 +169,9 @@ reference and its caption; the image itself is not published.
 ## Licence
 
 The underlying works are out of copyright and are not Soranoha's to license.
-Soranoha's own work — the TEI encoding, the plaintext and Markdown
-projections, the validation reports, the catalog and the manifests — is
-dedicated to the public domain under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+Soranoha's own contributions, including the TEI encoding, plaintext and Markdown
+projections, validation reports, catalog, and manifests, are dedicated to the public domain
+under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
 
 You may copy, redistribute, adapt, translate, mine and republish all of it,
 commercially or not, without asking and without payment. Attribution is
@@ -190,9 +179,9 @@ requested, not required, which mirrors Aozora Bunko's own posture.
 
 [Rights](rights.md) is the full statement, including what applies if you
 redistribute the software rather than the corpus, and how a rights holder asks
-for a work to be withdrawn. [Citing Soranoha](citation.md) gives the citation
-forms — and the short version is: name the release, and name the identifier,
-because title and author alone do not identify a work.
+for a work to be withdrawn. [Citing Soranoha](citation.md) details citation formats.
+Citations should name both the release and the identifier, because title and author
+alone do not uniquely identify a work.
 
 ## What "signed" means, and why you might care
 
@@ -202,8 +191,8 @@ release cannot be silently altered or removed after the fact, and anyone can
 check that the file they downloaded is the file the release says it published.
 
 For most work you can ignore this entirely. It matters when you need a result
-to be reproducible years later: cite the release, and the exact bytes you read
-stay identifiable even if the corpus changes underneath. The
+to remain reproducible over time. Citing the release keeps the exact bytes you
+analyzed identifiable even if subsequent releases change the corpus. The
 [glossary](user-glossary.md) explains manifest, chain and admission without
 assuming any of the cryptography; the
 [protocol specification](design/snh-protocol-v1.md) is the full contract for
@@ -211,12 +200,8 @@ anyone implementing a verifier.
 
 ## Where to go next
 
-- [A worked example](worked-example.md) — one text from Aozora source to TEI
-  and plaintext, with every header block explained and code that loads it.
-- [Glossary](user-glossary.md) — the words this project uses for its own
-  output, in the sense it uses them.
-- [Work identifiers](../soranoha/docs/work-identifiers.md) — the form, what it
-  promises across releases, and where exact edition identity lives.
-- [TEI extension vocabulary](../soranoha/docs/tei-vocabulary.md) — the `snh:`
-  attributes in published files and the validation rules that constrain them.
+- [A worked example](worked-example.md) walks through one text from Aozora source to TEI and plaintext, explaining each header block and providing loader code.
+- [Glossary](user-glossary.md) defines terminology used across project outputs.
+- [Work identifiers](../soranoha/docs/work-identifiers.md) explains identifier structure, stability across releases, and edition tracking.
+- [TEI extension vocabulary](../soranoha/docs/tei-vocabulary.md) specifies `snh:` attributes in published files and their schema validation constraints.
 - [Rights](rights.md) and [Citing Soranoha](citation.md).

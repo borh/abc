@@ -261,8 +261,8 @@ pub const fn ruby_base_class(ch: char) -> Option<RubyBaseClass> {
     })
 }
 
-/// Returns true when `ch` functions as (part of) an implicit-ruby *kanji* base:
-/// predicate is shared with the implicit-base classifier.
+/// Returns true when `ch` functions as (part of) an implicit-ruby *kanji* base.
+/// This predicate is shared with the implicit-base classifier.
 #[must_use]
 pub const fn is_ruby_base_char(ch: char) -> bool {
     matches!(ruby_base_class(ch), Some(RubyBaseClass::Kanji))
@@ -278,7 +278,7 @@ pub enum MarginNotePosition {
     Right,
 }
 
-/// Which annotation flavour an `ast::MarginNote` carries.
+/// Annotation type carried by an `ast::MarginNote`.
 ///
 /// A note attached to a preceding run, with its source relationship retained.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]

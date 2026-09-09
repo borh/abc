@@ -89,8 +89,8 @@ use the same target parser-IR schema. Version-suffixed mapping files preserve
 published registry coordinates; the unsuffixed files select the current mapping.
 Use the artifact itself for its version and canonical hash.
 
-A generation is frozen the moment its hash is cited by a registry row —
-copy it to a version-suffixed file (as `0.3.0` and `0.4.0` were) before
+A generation is frozen as soon as its hash is cited by a registry row.
+Copy it to a version-suffixed file (as was done for `0.3.0` and `0.4.0`) before
 continuing to edit the live file for the next generation.
 
 Converter subcommands that load a mapping accept

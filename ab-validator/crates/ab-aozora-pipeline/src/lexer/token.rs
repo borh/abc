@@ -46,7 +46,7 @@ mod tests {
 
     #[test]
     fn single_char_trigger_byte_lens_match_utf8() {
-        // Sanity that the re-export still works the same.
+        // Verifies that the re-exported functions produce identical results.
         assert_eq!(TriggerKind::Bar.source_byte_len(), 3);
         assert_eq!(TriggerKind::AngleQuoteOpen.source_byte_len(), 3);
     }

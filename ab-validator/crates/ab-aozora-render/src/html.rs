@@ -32,11 +32,11 @@ use crate::walk::{SentinelKind, WalkSink, walk};
 /// the notation-hygiene catalogue.
 ///
 /// Opting in ([`render_html_normalized`]) reinterprets near-misses as their
-/// canonical spelling — reached *transitively* through the formatter rewrite,
-/// never a second copy of the catalogue — so a known 揺れ renders as a real
-/// element instead of a hidden directive span. `Canonical` consults Tier1 only
-/// (`render --normalize`); `Degraded` also reduces the lossy / judgment
-/// Tier2 forms (`render --degraded`).
+/// canonical spelling, resolved transitively through the formatter rewrite
+/// rather than duplicating the catalog. Consequently, a known 揺れ renders as an
+/// active HTML element instead of a hidden directive span. `Canonical` consults
+/// Tier1 only (`render --normalize`), whereas `Degraded` also reduces lossy or
+/// judgment-based Tier2 forms (`render --degraded`).
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct RenderOptions {
     /// Which notation-hygiene tiers to apply to `DirectiveKind::Unknown`

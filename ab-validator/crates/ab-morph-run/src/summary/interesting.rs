@@ -255,11 +255,11 @@ pub struct InterestingSummary {
     pub anomalies: Vec<AnomalyRow>,
 }
 
-/// Every knob affecting cross-run comparability. Two runs are comparable
+/// Configuration parameters affecting cross-run comparability. Two runs are comparable
 /// only when all fields match (spec §Score Versioning).
 ///
 /// `rank_scope`, `score_mode`, and `sample_seed` were added after v1
-/// shipped (the calibration knobs). Pre-calibration artifacts predate these
+/// shipped as calibration parameters. Pre-calibration artifacts predate these
 /// fields and omit them entirely; their `#[serde(default = ...)]`
 /// fallbacks encode what those artifacts actually were (within-kind
 /// pooling, RRF scoring, no sampling seed), so such artifacts deserialize

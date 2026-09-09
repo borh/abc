@@ -81,10 +81,10 @@
 
 (def ^:private safe-declaration
   "The TEI emitter writes `@style` for the source-derived geometry it cannot
-  express in TEI attributes — indents, measures, column counts, alignment.
-  Every value in it comes from the parser's own bounded vocabulary, but this
-  rendering re-checks the shape rather than trusting the check upstream: a
-  declaration that does not match is dropped, not passed through."
+  express in TEI attributes, such as indents, measures, column counts, and
+  alignment. Every value in it comes from the parser's own bounded vocabulary,
+  but this rendering re-checks the shape rather than trusting the upstream
+  check; declarations that do not match are dropped instead of passed through."
   #"[a-z-]+: -?[0-9]+(?:\.[0-9]+)?(?:em|px)?|[a-z-]+: [a-z][a-z-]*")
 
 (def ^:private ignored-properties
@@ -155,9 +155,9 @@
 (defn- geometry
   "The layout facts that are geometry rather than appearance, as inline CSS.
   Indents and measures are recorded in source characters, and a character is
-  one `em` in either writing direction — the one place this rendering can be
-  exact rather than approximate, which is why it is computed here instead of
-  guessed at in a stylesheet."
+  one `em` in either writing direction. Because this rendering can be exact here
+  rather than approximate, values are computed directly instead of approximated
+  in a stylesheet."
   [^Element element]
   (let [kinds (layout-kinds element)
         params (layout-params element)
@@ -225,9 +225,9 @@
 
 (defn- required-child
   "The child an element's reading depends on. `soranoha.annotations.view`
-  refuses a document without it and the profile forbids one, so reaching this
-  means the published TEI is not what the pipeline says it is — which is worth
-  a named failure rather than a null pointer somewhere downstream."
+  refuses a document without it and the profile forbids one. Reaching this point
+  indicates the published TEI violates pipeline invariants, warranting an explicit
+  named exception instead of a downstream null pointer."
   [element names]
   (or (some #(child-named element %) names)
       (throw (ex-info "TEI element has no readable child"
@@ -327,9 +327,9 @@
          (render-nodes declarations (view/children chosen))])
 
       "figure"
-      ;; the image itself is not published — Aozora's illustrations are not
-      ;; part of the grant — so the figure is a placeholder with whatever
-      ;; the source said about it
+      ;; The image itself is not published because Aozora illustrations are not
+      ;; part of the rights grant; the figure is a placeholder with the source
+      ;; description.
       (into [:figure (element-attrs element ["figure"])
              [:span {:class "figure-mark"} "〔図〕"]]
             (kids))
@@ -368,9 +368,9 @@
 (defn render
   "Published TEI to `{:front :body :back}`, each a vector of hiccup nodes.
 
-  `:body` is the work. `:front` and `:back` are what the source itself says
-  around it — Aozora's notes on the text, and the colophon naming the printed
-  edition the transcription came from. The colophon is the one piece of
+  `:body` is the work. `:front` and `:back` contain surrounding source material,
+  specifically Aozora's notes on the text and the colophon naming the printed
+  edition from which the transcription was made. The colophon is the one piece of
   bibliographic evidence a reader cannot reconstruct from the catalog, so it
   is rendered rather than dropped; the parser's own audit notes are dropped,
   because they are published in full as the work's validation report."

@@ -1028,9 +1028,9 @@ impl RegionFormat {
 /// `NonZero` / `bool` make the former `width: 0` / `steps: ±1` / `lines: 0`
 /// placeholder states unrepresentable, which was Pillar 1's actual goal.
 ///
-/// It stays meaningfully smaller than [`RegionFormat`] (the indent, line-width,
-/// columns, align-end, and font-size closes all shed payload), so the separate
-/// type still earns its keep.
+/// Because closing markers omit the indent, line-width, column, align-end,
+/// and font-size payloads, this enum has a substantially smaller memory footprint
+/// than [`RegionFormat`], justifying a distinct type.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[non_exhaustive]

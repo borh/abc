@@ -102,7 +102,10 @@ Consecutive indentation instructions replace the preceding indentation scope.
 An indentation close that restates its measure, as `［＃１字下げここまで］` and
 `［＃１字下げ終わり］` do, ends the scope that measure opened. A restated
 measure that disagrees with the open leaves the pair unmatched rather than
-closing at a boundary the source did not name.
+closing at a boundary the source did not name. A close that names scopes no
+block opened, such as `［＃字下げ、地付きここまで］` following line-scoped
+`次行は…で` instructions, stays retained source rather than ending scopes that
+do not exist.
 Page placement ends before the next supplied page break, which remains in TEI.
 Frame styles and co-applied typography share the same formatting vocabulary on
 TEI `div` and `hi` scopes. Supplied solid and dashed rules retain their border

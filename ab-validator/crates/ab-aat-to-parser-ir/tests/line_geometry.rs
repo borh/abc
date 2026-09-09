@@ -247,3 +247,57 @@ fn a_restated_measure_that_disagrees_with_the_open_does_not_close_it() {
     assert_eq!(ir["layout_blocks"], serde_json::json!([]));
     assert!(!ir["interpretation_problems"].as_array().unwrap().is_empty());
 }
+
+#[test]
+fn a_measured_close_reads_its_measure_in_either_numeral_spelling() {
+    for (open, close, indent) in [
+        ("ここから１字下げ", "ここで１字下げ終わり", 1),
+        ("ここから二字下げ", "ここで二字下げ終わり", 2),
+        ("ここから３字下げ", "ここで３字下げ終わり", 3),
+    ] {
+        let ir = convert(&format!("［＃{open}］\n本文\n［＃{close}］"));
+        assert_eq!(ir["layout_blocks"][0]["indent"], indent, "{close}");
+        assert_eq!(
+            ir["interpretation_problems"],
+            serde_json::json!([]),
+            "{close}"
+        );
+    }
+}
+
+#[test]
+fn an_indent_applied_at_every_break_stays_unresolved() {
+    // `改行ごとに二字下げ` indents at each line break. Whether the scope's own
+    // first line counts as following a break is what the source leaves open,
+    // and a layout scope cannot carry a continuation indent without also
+    // stating the indent of the first line. Choosing either reading would put a
+    // measure on a line the source did not measure, so both markers are kept.
+    let ir = convert("［＃改行ごとに二字下げ］前略我等両人［＃二字下げ終わり］");
+    assert_eq!(ir["layout_blocks"], serde_json::json!([]));
+    let problems = ir["interpretation_problems"].as_array().unwrap();
+    assert_eq!(problems.len(), 2, "{problems:?}");
+    let text = serde_json::to_string(&ir["nodes"]).unwrap();
+    assert!(
+        text.contains("前略我等両人"),
+        "the enclosed text is kept: {text}"
+    );
+}
+
+#[test]
+fn a_close_naming_scopes_no_block_opened_stays_unresolved() {
+    // `次行は…で` measures one named line and opens no scope. The close that
+    // follows names an indentation and a foot alignment that were never opened
+    // as blocks, so reading it as a close would end scopes that do not exist.
+    let ir = convert(
+        "［＃次行は三字下げ、九字空き地付きで］\n一金一百円也\n［＃字下げ、地付きここまで］",
+    );
+    assert!(
+        ir["interpretation_problems"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|problem| problem["raw"] == "［＃字下げ、地付きここまで］"),
+        "{:?}",
+        ir["interpretation_problems"]
+    );
+}

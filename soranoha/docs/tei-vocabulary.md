@@ -4,10 +4,7 @@ Namespace IRI: `https://w3id.org/soranoha/ns/tei`
 Conventional prefix: `snh:`
 Current vocabulary version: `1`
 
-The IRI above is the one published TEI carries, whether or not it dereferences
-at the moment you try it: a namespace IRI identifies a vocabulary, and
-resolution is a convenience over that. Registering the `w3id.org/soranoha/`
-redirects so that it does resolve is a precondition of public genesis.
+Published TEI documents bind this namespace IRI on the root element.
 
 Soranoha publishes TEI P5. Where the source markup carries information TEI has
 no element for, that information is recorded as an attribute in this namespace
@@ -61,12 +58,9 @@ declared for projections that are specified but not yet produced.
 | `snh:style-source` | string | Aozora Bunko style source marker. |
 | `snh:figure-class` | string | Aozora Bunko figure class. |
 
-Permitted values of `snh:vocab-version` are declared once, in the attribute's
-value list in [the ODD](../schemas/tei-profile.odd), and the generated Relax NG
-enforces them. Admitting a new version is one addition to that list; published
-documents stay valid because the list grows rather than being replaced. The
-list starts at `1`: the vocabulary is first published at genesis, and a version
-numbered `0` in permanent, signed bytes would say the opposite.
+Permitted values of `snh:vocab-version` are declared in
+[the ODD](../schemas/tei-profile.odd) and enforced by the generated Relax NG schema.
+The initial version is `1`.
 
 ## Source spans
 
@@ -87,14 +81,10 @@ A note is empty, because everything about the extent is in its reference:
 - `n` is the line the extent begins on. It is absent when the source did not
   record one, rather than carrying a placeholder.
 
-The header declares the unit and nothing else, in a `refsDecl` pointing back
-at this document. The alternative was a paragraph of prose repeated in every
-published file, which is a manual rather than evidence.
+The header declares this unit in a `refsDecl` pointing back at this document.
 
-One kind of note breaks the pattern and says so. A note whose `xml:id` begins
-`parser-source` belongs to a parser diagnostic, not to an element of the text;
-its identifier is assigned by the diagnostic and does not encode an extent, so
-that note carries its extent as JSON in its content.
+Notes with `xml:id` prefixed by `parser-source` belong to parser diagnostics
+rather than body elements; they carry their byte extent as JSON in element content.
 
 ## Schematron rule identifiers
 

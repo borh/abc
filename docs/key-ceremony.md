@@ -344,8 +344,8 @@ must be demonstrated to sign, not just to be readable.
 ## Sign a governance event after genesis
 
 A withdrawal or amendment event is a small canonical JSON object whose id is the
-plain sha256 of its exact bytes. Prepare it online with the kernel, which decides
-the canonical form so that the offline session does not discover it was wrong:
+plain sha256 of its exact bytes. Prepare it online with the kernel, which
+formats the canonical JSON and validates invariants before moving to the offline session:
 
 ```sh
 nix run .#soranoha-kernel -- governance-event-prepare \

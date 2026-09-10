@@ -415,21 +415,17 @@ three consequences follow:
 - The 30-minute bound on an unchanged invocation is crossed near chain length
   680, against 190 before. At 227 releases a year, which is the current upstream
   push rate, that is year three rather than year two.
-- Verifying a finished 5,476-release chain once costs on the order of 4 hours,
-  against 14 before. That is the figure a third party pays, and it is the one
-  that decides whether anyone outside the project checks the corpus.
-- Building that chain no longer costs the sum of a per-release cost that
-  grows. While each release re-verified the whole chain, a backfill of 5,476
-  was on the order of 1.3 years of compute, against nine years before the
-  increment check and five and a half after it. Carrying the head proof
-  forward, as the section above measures, makes publication constant per
-  release, so a run publishing many of them in one process sums linearly
-  rather than quadratically. Measured at the production work count that
-  constant is 16.4 seconds a release, or 45.9 under the same calibration,
-  which puts a full backfill near three days. What stands between the project
-  and one is now the assessment snapshot each historical revision needs, not
-  the compute. A scheduled job publishing a single release holds no proof to
-  carry and still pays the 2.7 seconds of growth above.
+- Verifying a finished 5,476-release chain costs approximately 4 hours,
+  compared to 14 previously. This verification cost determines whether
+  independent external parties can routinely audit the corpus.
+- Building that chain no longer scales quadratically. Carrying the head proof
+  forward makes publication cost constant per release during batch processing.
+  Measured at the production work count, publication requires 16.4 seconds per
+  release (or 45.9 seconds under calibrated single-core execution), placing a
+  full 5,476-release backfill at roughly three days of compute. Historical
+  backfill is constrained by historical assessment snapshot availability rather
+  than publication compute. A single-release scheduled job holds no prior proof
+  and pays the 2.7-second incremental growth.
 
 The measurement that mattered most is the one that came back better than the
 ledger recorded. The publication rearchitecture ledger measured an unchanged
@@ -503,10 +499,9 @@ commit with no grant costs 24.6 seconds and each further release in a run costs
 | 1,000 | 44.5 min | 5.9 min | 3.1 min | 1.7 min |
 | 5,476, one release per upstream commit | 4.0 h | 31 min | 15 min | 8 min |
 
-A third party checking the whole corpus waits minutes rather than an afternoon,
-and that wait was the figure deciding whether anyone outside the project ever
-checks it. The 5,476-release row stays inside the range the model was validated
-over: at 32 runs each run is 171 releases.
+Independent auditors can verify the entire corpus in minutes rather than hours,
+removing latency barriers to third-party verification. The 5,476-release row
+stays inside the validated range: at 32 runs, each run processes 171 releases.
 
 ### What an origin holding the chain costs to keep and to hand out
 
@@ -543,8 +538,7 @@ objects, and repacking took 67, 127 and 321 ms at the three work counts.
 These are extrapolations from a synthetic chain with small work artifacts,
 fitted across a sixteenfold range of manifest sizes but stopping about four
 times short of the real one, and they do not include the peak RSS of a
-repack. `soranoha-vvr` acceptance 4 asks for the same measurements on the
-real origin, which is where they have to be confirmed.
+repack. These measurements should be confirmed on the real origin once populated.
 
 ### Reproducing it
 

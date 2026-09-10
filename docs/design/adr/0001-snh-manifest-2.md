@@ -101,8 +101,8 @@ leaves the closed schema provider-neutral.
 
 - **Unsigned serving-layer index.** Ships immediately and does not block
   genesis, but is not part of the citable record.
-- **The catalog as CSV bytes**, like `tei` and `plaintext`. The file a bulk user
-  wants would then be the signed artifact itself, but it would be the first
+- **The catalog as CSV bytes**, like `tei` and `plaintext`. The file needed for
+  bulk consumers would then be the signed artifact itself, but it would be the first
   release-level type with no schema and no boundary decode, governed by prose
   alone. The CSV is a serving projection instead.
 - **Sharded catalog artifacts.** Permanent shard-boundary rules in the wire

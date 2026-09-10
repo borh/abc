@@ -37,14 +37,11 @@ the contract and should not be treated as version-stable adapter APIs.
 
 ## Parser core and facade
 
-Eight crates are lifted from
-[P4suta/aozora](https://github.com/P4suta/aozora) at revision
-`1a4f864603970983719655aa4af4525958ac2d38`, dual-licensed MIT or Apache-2.0,
-and each carries `LICENSE-MIT`, `LICENSE-APACHE` and `NOTICE` beside its
-sources. Seven of them keep the `ab-aozora-` prefix; `ab-notation-strategies`
-descends from upstream's `aozora-proptest` and kept its licence obligation
-through the rename. `ab-aozora` without a suffix is locally authored. The
-Origin column below is the authority, not the name.
+Eight crates are forked from [P4suta/aozora](https://github.com/P4suta/aozora)
+(revision `1a4f864603970983719655aa4af4525958ac2d38`), dual-licensed MIT OR
+Apache-2.0. Upstream licence files and notices are retained beside each crate's
+sources. Seven retain the `ab-aozora-` prefix; `ab-notation-strategies` descends
+from upstream's `aozora-proptest`. The CLI entry point `ab-aozora` is locally authored.
 
 | Crate | Origin | Purpose |
 | --- | --- | --- |

@@ -1,16 +1,8 @@
 # Rights and licensing
 
-This is the full statement that every signed release manifest names in
-`rights.statement_url`, and that every published TEI file names inside
-`publicationStmt/availability`, in both cases as
-<https://w3id.org/soranoha/rights>. Those bytes are signed and cannot be
-corrected later, so they name an identifier rather than whichever host is
-serving the corpus.
-
-Registering the `w3id.org/soranoha/` redirects, so that the identifier and the
-publisher identifier both resolve, is a precondition of public genesis. They
-are written here in the form the signed bytes name, which is the form that has
-to hold whether or not it resolves at the moment you try it.
+Every signed release manifest names this statement in `rights.statement_url`,
+and every published TEI file names it in `publicationStmt/availability`, at
+<https://w3id.org/soranoha/rights>.
 
 ## The short version
 
@@ -28,21 +20,11 @@ A published work involves two distinct rights layers.
 
 **The underlying works** are texts from [Aozora
 Bunko](https://www.aozora.gr.jp/) whose copyright has expired. Soranoha
-neither holds nor claims any right in them. Aozora Bunko's own handling rules
-([取り扱い規準](https://www.aozora.gr.jp/guide/kijyunn.html)) state that files
-for copyright-expired works may be freely copied, redistributed and shared,
-whether for payment or not, and freely performed, recited and adapted, with
-nothing owed to Aozora Bunko in permission or fee. Altering the text itself is
-allowed within the scope of Article 20(2)(iv) of the Copyright Act, which is
-what covers converting the file format, changing notation, and modernising
-旧字旧仮名.
-
-Two things the rules ask for rather than require: that the credit block naming
-the work, its contributors, its 底本 and its 入力者 and 校正者 not be removed
-(希望), and that a change of 底本 or notation be accompanied by a record of what
-was changed (期待). Soranoha does both. The credit block survives into every TEI
-file's `<back>` and onto every work page, and every work is published with its
-validation report and its recorded divergences from the source.
+neither holds nor claims any right in them. Aozora Bunko's [handling rules](https://www.aozora.gr.jp/guide/kijyunn.html)
+permit free copying, redistribution, adaptation, and format conversion.
+The rules request preserving contributor credits and recording textual
+modifications; Soranoha preserves contributor credits in each TEI `<back>`
+and publishes every work alongside its validation report and recorded divergences.
 
 Soranoha publishes only works its assessment finds free to publish; the
 reasoning is recorded in
@@ -52,14 +34,12 @@ reasoning is recorded in
 projections, validation reports, catalog, and release manifests)
 is dedicated to the public domain under [CC0
 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/). Where that
-encoding attracts copyright or a database right at all, those rights are
-waived.
+encoding attracts copyright or a database right, those rights are waived.
 
-CC0 rather than CC BY was selected because TEI transcription is largely
-a mechanical conversion of Aozora Bunko's markup. An attribution requirement would
-add obligations for downstream combiners while resting on limited creative
-originality. Credit is requested through `CITATION.cff` and standard scholarly
-citation rather than enforced as a licence condition.
+CC0 was chosen because TEI transcription is largely a mechanical conversion
+of Aozora Bunko markup. Dedicated public domain avoids imposing attribution
+obligations downstream. Scholarly attribution is requested through `CITATION.cff`
+and standard citation practice (see [citation](citation.md)).
 
 ## What covers what
 
@@ -73,52 +53,33 @@ citation rather than enforced as a licence condition.
 | Forked parser core, eight crates | MIT OR Apache-2.0 | `ab-validator/crates/`, listed below |
 | Data tables | Provenance, and terms where the source states them, in each file's header | `ab-validator/crates/*/data/` |
 
-The encoding vocabulary and protocol schemas are dedicated under CC0 so that
-independent implementations can adopt them without attribution obligations. The
-code is licensed under Apache-2.0 to provide an explicit patent grant
-protecting independent reimplementations of the snh protocol. MIT is not
-offered as an alternative, because it carries no patent grant: a recipient who
-elected it would lose the protection the choice of Apache-2.0 exists to give.
+The encoding vocabulary and protocol schemas are dedicated under CC0. Locally authored source
+code is licensed under Apache-2.0 to provide an explicit patent grant. The forked
+parser crates retain upstream's dual MIT/Apache-2.0 licence.
 
-The forked crates are the exception, and not a second choice. Upstream is
-dual-licensed, so those eight carry `MIT OR Apache-2.0` as an inherited
-obligation. Each states it in its own manifest rather than taking the
-workspace default.
-
-The data tables the tooling reads are mostly third-party work, and each file's
-own header names where it came from rather than this page gathering it, so a
-table stays interpretable when it is copied out on its own. The 外字注記辞書
-mapping is CC0 through an upstream transcription. The JIS X 0213 code table is
-Project X0213's, under its own permissive grant, and the two gaiji-territory
-tables are generated from it, so they inherit that grant and say so. The
-hand-curated gaiji aliases are Soranoha's. Redistributing the tooling carries
-those headers with it.
+Data tables in `ab-validator/crates/*/data/` document their provenance and terms
+in each file header. The gaiji character dictionary (`外字注記辞書`) mapping is CC0.
+The JIS X 0213 code tables follow Project X0213's permissive terms. Gaiji alias mappings
+are locally authored.
 
 ## The toolchain
 
-The Rust parser core under `ab-validator/crates/` is an independent fork of
-[P4suta/aozora](https://github.com/P4suta/aozora) at revision
-`1a4f864603970983719655aa4af4525958ac2d38`, dual-licensed **MIT OR
-Apache-2.0**. Its licence files and `NOTICE` are retained in the fork, and
-each crate root carries a header naming the upstream crate and revision.
+The parser core under `ab-validator/crates/` is forked from
+[P4suta/aozora](https://github.com/P4suta/aozora) (revision
+`1a4f864603970983719655aa4af4525958ac2d38`), dual-licensed **MIT OR Apache-2.0**.
+Upstream licence files, notices, and source headers are preserved.
 
 Eight crates are forked: `ab-aozora-corpus`, `ab-aozora-encoding`,
 `ab-aozora-facade`, `ab-aozora-pipeline`, `ab-aozora-render`, `ab-aozora-spec`,
-`ab-aozora-syntax` and `ab-notation-strategies`. The last of these does not
-carry the prefix: it descends from upstream's `aozora-proptest` and was renamed
-when the fork was reduced, which changed its name and not its licence. Read the
-crate-root header rather than the name. `ab-aozora` without a suffix is a
-locally authored harness binary containing no lifted code.
+`ab-aozora-syntax`, and `ab-notation-strategies` (forked from `aozora-proptest`).
+The CLI binary `ab-aozora` is locally authored.
 
-This distinction matters when assessing license obligations before
-redistributing tooling, and when auditing transcription methodology.
+Redistributing published corpus artifacts carries only the CC0 encoding
+dedication and public domain terms. Redistributing the toolchain carries the
+toolchain's licenses.
 
-Redistributing the *published corpus* does not carry the toolchain's
-obligations. Redistributing the *tooling* does.
-
-The Aozora Bunko catalog CSV that Soranoha reads bibliographic metadata from is
-published by Aozora Bunko under CC BY 4.0. That licence covers catalog reuse;
-it grants nothing over the works themselves.
+The Aozora Bunko catalog CSV used for bibliographic metadata is published by
+Aozora Bunko under CC BY 4.0.
 
 ## Machine-readable form
 
@@ -154,56 +115,30 @@ Domain Mark, and Soranoha's encoding is dedicated under CC0:
 </publicationStmt>
 ```
 
-Both come from one document, `soranoha/data/publication-policy.edn`, whose
-bytes each manifest already hashes as `admission.policy_hash`. The terms
-signed off, the terms in the release record, and the terms inside a detached
-TEI file therefore cannot disagree. Where a copy nonetheless differs, the
-manifest field is authoritative because it is signed.
-
-The TEI profile enforces the presence of the grant. The
-`snh-publication-licence` rule in `soranoha/schemas/tei-profile.sch` rejects any
-Soranoha TEI file whose header lacks `publicationStmt/availability/licence` with
-a non-empty `@target`. Omitting stated terms causes validation failure.
+Both definitions originate in `soranoha/data/publication-policy.edn`, hashed into each
+manifest as `admission.policy_hash`. The signed manifest is authoritative. The
+TEI Schematron rule `snh-publication-licence` in `soranoha/schemas/tei-profile.sch`
+rejects files missing `publicationStmt/availability/licence` with a `@target`.
 
 ## If you hold rights in a published work
 
-Soranoha publishes only works its assessment finds to be free of subsisting
-rights, but a corpus of this size will eventually be wrong about one.
+To report a copyright concern or request removal of a published work,
+contact the maintainer via <https://orcid.org/0000-0003-2246-8774> with the
+work identifier (e.g. `000092_000879`) or Aozora Bunko card number and the
+basis of the claim.
 
-Write to the address on <https://orcid.org/0000-0003-2246-8774>, naming the
-work identifier (the `000092_000879` form, visible in the URL) or the Aozora Bunko
-card, and the basis of the claim. A claim does not need to be a formal legal
-notice to be acted on.
+Withdrawal is recorded through signed governance events:
 
-Withdrawal is recorded in public governance events rather than in-place modification.
-A signed event carries a public `statement` and one of four `reason_code`
-values. Two of them are for claims: `rights` for a subsisting-rights claim, and
-`takedown-request` for a removal asked for on other grounds. The other two,
-`data-defect` and `other`, exist for withdrawals that are not claims. Appending
-the signed event is itself a release, and it does not wait for a corpus release.
-That release:
+- The work is removed from active distribution (`works[]` in the manifest) and from the published catalog.
+- The work is recorded in `withdrawn[]`, referencing the signed governance event served at `/withdrawn/<identifier>.json`.
+- **Append-only history**: Earlier releases containing the work remain in the signed chain; withdrawal ceases current distribution without rewriting historical releases.
+- **Irreversible withdrawal**: A withdrawal statement may be amended via `event-amendment`, but amendments cannot reverse the withdrawal itself.
 
-- removes the work from `works[]`, so its artifacts are no longer served at
-  `/works/<identifier>/`;
-- publishes a new catalog that no longer describes it, since a manifest may
-  not name a catalog describing a work that release withdrew;
-- adds it to `withdrawn[]` pointing at the governing event, which is served at
-  `/withdrawn/<identifier>.json`.
-
-Withdrawal operates under two constraints:
-- **Append-only history**: earlier releases containing the work remain in the
-  signed chain; withdrawal ceases current distribution without rewriting historical releases.
-- **Irreversible withdrawal**: a withdrawal statement may be amended via `event-amendment`,
-  but amendments cannot reverse the withdrawal itself.
-
-The mechanism is specified in
-[`docs/design/snh-protocol-v1.md`](design/snh-protocol-v1.md) and its schema in
+See [`docs/design/snh-protocol-v1.md`](design/snh-protocol-v1.md) and
 `soranoha/resources/snh/schemas/snh-governance-event-1.schema.json`.
 
 ## No warranty
 
-Soranoha publishes transcriptions with their validation reports and their
-divergences from the source recorded, not a guarantee of fidelity. The corpus
-is provided as-is. Do not rely on it for a legal, medical, or safety purpose
-without independent verification against the source edition each work names in
-its `sourceDesc`.
+Soranoha publishes transcriptions alongside validation reports and recorded
+divergences. The corpus is provided as-is without guarantee of textual fidelity.
+Verify critical citations against the source edition named in the TEI `sourceDesc`.

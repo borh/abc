@@ -13,14 +13,13 @@ which requires no Nix, Clojure, or TEI background, followed by
 This is the canonical monorepo for the conversion and validation system. It
 contains:
 
-- `ab-validator/`: the Rust Aozora parser, and the validation, corpus
-  measurement, and report tooling built around it. Soranoha runs its two
-  executables on every source it publishes. The parser core, the
-  `ab-aozora-*` crates plus `ab-notation-strategies`, is an independent fork of
-  [P4suta/aozora](https://github.com/P4suta/aozora) at revision
-  `1a4f864603970983719655aa4af4525958ac2d38`, dual-licensed MIT or Apache-2.0,
-  and it determines the transcription of every work in the corpus.
-- `soranoha/`: publication, TEI/plaintext conversion, schemas, validation, and the snh protocol, including
+- `ab-validator/`: the Rust Aozora parser, validation, corpus measurement, and
+  report tooling. The parser core (`ab-aozora-*` crates and
+  `ab-notation-strategies`) is forked from
+  [P4suta/aozora](https://github.com/P4suta/aozora) (`1a4f864603970983719655aa4af4525958ac2d38`,
+  MIT or Apache-2.0).
+- `soranoha/`: publication kernel, TEI/plaintext conversion, record schemas,
+  validation, and the snh protocol, including
   [assessment evaluation and experimental RDF](soranoha/docs/assessment-evaluation.md).
 
 ## Development

@@ -1,18 +1,15 @@
 # Start here
 
-Soranoha is a TEI edition of Aozora Bunko. It takes the copyright-expired
-Japanese texts that Aozora Bunko distributes as annotated plain text, converts
-their markup into TEI P5 XML, and publishes each work in four forms with a
-signed record of exactly which bytes were published.
+Soranoha publishes TEI P5 editions of public-domain Japanese texts from Aozora
+Bunko. Each work is published in four formats alongside a signed cryptographic
+record of the published bytes.
 
-You do not need Nix, Clojure or TEI to use it. This page gets you one text,
-then all of them, and tells you what you are holding.
+This guide covers retrieving individual works, downloading the full corpus, and
+navigating published formats.
 
-> **Pre-genesis.** The public release has not been made yet. The URLs below
-> are the ones the first release will serve; the shapes of the files, the
-> identifiers and the licence are settled and will not change. Until the first
-> release, follow [the worked example](worked-example.md), which builds one
-> text from Aozora Bunko source and shows the same output.
+> **Pre-genesis**: The URLs below reflect the upcoming first public release.
+> Identifiers, schemas, and licenses are fixed. For local builds before
+> genesis, see [the worked example](worked-example.md).
 
 ## What you get
 
@@ -25,7 +22,7 @@ Every work is published in four files, all reachable from its identifier:
 | `markdown` | CommonMark containing the reading text with headings, ruby as inline HTML `<ruby>`, and CSS emphasis marks. |
 | `tei-validation` | JSON report recording each validation layer's result, every rule finding with its severity, and the sha256 of the TEI profile the file was checked against. |
 
-TEI is the authoritative edition, and the other three files are downstream projections. When they disagree, the TEI file governs because the projections are generated directly from it.
+The TEI edition is canonical; plaintext, Markdown, and validation reports are generated from it.
 
 ## Get one text
 
@@ -45,9 +42,9 @@ readable name, which is what a browser save or `curl -O` writes to disk:
 curl -O https://soranoha.org/works/000092_000879/Akutagawa_Ryunosuke-kumono_ito-000092_000879.xml
 ```
 
-The name is `<author>-<Aozora Bunko stem>-<identifier>.<ext>`. The middle part is
-Aozora Bunko's own filename for the text, which its volunteers wrote with word
-boundaries by hand. **The filename is a convenience, whereas the identifier is the citable reference.** The identifier is included in every filename because title and author alone do not uniquely identify a work: 2357 works in the Aozora Bunko catalog share an author and title with another work. Without the identifier, those files would overwrite each other during bulk extraction. Every work page shows both forms.
+The filename structure is `<author>-<stem>-<identifier>.<ext>`. The slug
+identifier is canonical and disambiguates works that share titles or authors;
+the filename is a convenience for human downloads. Every work page shows both forms.
 
 To read it rather than download it, open
 `https://soranoha.org/works/000092_000879/` for the bibliography and
@@ -112,12 +109,9 @@ carrying the structured citation fields for exactly the works inside it:
     source_edition_title, source_edition_publisher, source_edition_year,
     filename, source_content_hash, url, release, doi
 
-That is enough to turn a whole selection into a bibliography in a spreadsheet
-without opening a single TEI file, and enough to get back to the record:
-`identifier` and `release` together name the bytes, and `url` resolves to the
-page that serves them. The filename is a convenience; the citable columns are
-`identifier`, `source_content_hash` and `release`. From a script, read it with
-`encoding="utf-8-sig"`. The file contains a byte-order mark so that applications like Excel preserve Japanese titles without encoding errors.
+This CSV provides bibliographic records for spreadsheet or script ingestion.
+The canonical fields are `identifier`, `source_content_hash`, and `release`.
+Read with `utf-8-sig` to handle the UTF-8 byte-order mark.
 
 `source_edition_year` is the Gregorian year of the 底本's first edition,
 taken from Aozora Bunko's 初版発行年. That field is a free-form publication history
@@ -144,10 +138,8 @@ for work in catalog["works"]:
     time.sleep(0.5)
 ```
 
-Be polite about rate: this is one small server, and the corpus is tens of
-thousands of files. Downloading the complete archive above requires only a single
-request for the same bytes. The release archive on Zenodo provides an equivalent
-single-download option.
+Rate-limit automated requests when fetching individual texts, or use the bulk
+archives or Zenodo deposits for complete corpus downloads.
 
 ## Scale and coverage
 
@@ -164,13 +156,10 @@ across all assigned roles rather than authorship alone.
 
 Two boundaries exclude items present in upstream Aozora Bunko:
 
-**Publication is per work and gated on rights.** A work appears in a release
-only after its rights standing has been assessed against a recorded basis. The
-default basis is Aozora Bunko's public-domain catalog metadata for that exact
-edition within Japan, recorded per work as an attributed upstream assertion. A
-work whose basis does not hold is not published. See
-[admission and assessment](user-glossary.md#admission) for what those words
-mean here.
+**Publication is gated on rights assessment.** A work is admitted to a release
+only when its rights evaluation passes against recorded evidence, defaulting to
+Aozora Bunko's catalog metadata. See
+[admission and assessment](user-glossary.md#admission).
 
 **Illustrations are not included.** Aozora Bunko's image files are outside the
 grant. Where the source references an illustration, the TEI records the
@@ -200,12 +189,9 @@ of each of its four files. The manifests form an append-only chain, so a
 release cannot be silently altered or removed after the fact, and anyone can
 check that the file they downloaded is the file the release says it published.
 
-Every release the chain holds is listed at
-`https://soranoha.org/history`, newest first, with the Aozora Bunko revisions
-it stands for and how many works it added, removed or re-encoded against the
-release before it. Those numbers are recomputed from the published manifests,
-so you can derive them yourself from the same files rather than taking the
-page's word for them.
+Every release in the chain is listed at `https://soranoha.org/history`, newest
+first, with its upstream Aozora Bunko revisions and added, removed, or
+re-encoded work counts derived directly from published manifests.
 
 For most work you can ignore this entirely. It matters when you need a result
 to remain reproducible over time. Citing the release keeps the exact bytes you

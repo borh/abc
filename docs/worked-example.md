@@ -45,12 +45,11 @@ Aozora Bunko ZIP  →  primary text  →  AAT  →  parser IR  →  TEI  →  pl
                                                           →  validation report
 ```
 
-The first three steps are the Rust converter: it lexes the Aozora Bunko notation
+The first three steps are the Rust converter: it lexes Aozora Bunko notation
 into an annotated syntax tree (AAT), then maps that to a parser intermediate
-representation which records, for every node, the byte span in the decoded
-source that produced it. The last steps are Clojure: the parser IR plus the
-work's catalog metadata become TEI, and the three other artifacts are derived
-from the TEI's own reading of itself.
+representation recording byte spans in the decoded source for every node.
+The Clojure kernel combines the parser IR with catalog metadata to produce TEI,
+and projects the three remaining artifacts from the TEI representation.
 
 You can run it yourself from a checkout; see
 [the repository README](../README.md) for the development shell.
@@ -244,9 +243,9 @@ cases, the classification originates from Aozora Bunko rather than Soranoha.
 </ruby>
 ```
 
-`<rb>` is the base text, `<rt>` the reading, exactly as in HTML's `<ruby>`.
-`@rend` records which side of the line the source put it on. A projection that
-wants base text takes `<rb>` and drops `<rt>`; that is what `plaintext` does.
+`<rb>` is the base text, `<rt>` the reading, as in HTML `<ruby>`.
+`@rend` records which side of the line the source placed it on. Plaintext
+projections extract `<rb>` and drop `<rt>`.
 
 A ruby base can itself contain child markup, as when the thief's name combines a gaiji
 with standard characters:
@@ -364,12 +363,11 @@ as it was written. The `source-span` notes are the offset table, and
 `source-decoding` names the encoding the source was read as, which is what
 makes the offsets reproducible.
 
-`parser-completion` is always present: its `@n` is true when no parser
-diagnostic of error severity was raised, so a clean conversion says so rather
-than saying nothing. `interpretation-problem` and `parser-diagnostic` notes
-appear only when the converter has something to declare, and record what it
-could not interpret. They are in the file so that a doubt recorded during
-conversion travels with the text rather than staying in a log.
+`parser-completion` is always present: its `@n` attribute is `true` when no
+parser diagnostic of error severity was raised. `interpretation-problem` and
+`parser-diagnostic` notes appear when the converter encounters ambiguities or
+uninterpreted syntax, embedding diagnostics directly in the TEI file rather
+than discarding them to build logs.
 
 ## The plaintext
 

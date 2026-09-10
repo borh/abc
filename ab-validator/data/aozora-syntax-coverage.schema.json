@@ -199,7 +199,7 @@
           "type": "array",
           "items": { "type": "string" },
           "maxItems": 5,
-          "description": "Up to 5 representative work ids exhibiting this feature."
+          "description": "Up to 5 representative work ids showing this feature."
         }
       },
       "additionalProperties": false

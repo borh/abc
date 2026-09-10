@@ -24,22 +24,15 @@ signed nor schema-frozen. Reports have no ordering contract, so there is no
 "latest" one, and a later failed observation does not by itself invalidate an
 earlier successful one.
 
-## The chain repository has to be publicly cloneable first
+## The chain repository must be publicly cloneable
 
-Software Heritage archives an origin by cloning the URL it is given, so the
-publication repository has to be reachable and anonymously cloneable at a
-stable public URL before any of this can run.
+Software Heritage archives an origin by cloning a provided URL. The Git
+repository holding the signed chain must be reachable and anonymously
+cloneable at a stable public URL.
 
-It is not today. The origin is SSH-authenticated and reachable only on the
-project's private network, so an anonymous clone cannot reach it at all. This
-is a separate requirement from serving the corpus publicly: that is the browse
-layer and the work-facing routes, while this is the Git repository holding the
-signed chain. Publishing the serving tree does not make the chain repository
-cloneable, and the two are configured independently.
-
-The URL is also the archive's identity for this project. It appears in the
-`origin` qualifier of every archived identifier below, so it should be chosen
-once and not moved.
+This requirement is distinct from public HTTP serving of corpus artifacts.
+The Git URL serves as the archive's origin identity across all SWHID qualifiers
+and must remain stable.
 
 ## Making an observation
 

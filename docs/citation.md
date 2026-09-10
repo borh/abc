@@ -1,8 +1,8 @@
 # Citing Soranoha
 
-Citation is a scholarly norm here, not a licence condition: everything
-Soranoha publishes is CC0, so you may reuse it without attribution. Please
-cite anyway; see [rights](rights.md) for why credit is secured this way.
+Corpus artifacts and metadata are dedicated to the public domain under CC0.
+Citation is requested as a scholarly norm rather than enforced as a licence
+condition (see [rights](rights.md)).
 
 ## Cite a release, not "the corpus"
 
@@ -220,24 +220,17 @@ carry the extracted year.
 
 ### What CSL cannot carry
 
-CSL has no field for a kana reading, and multiscript support in CSL and Zotero
-is weak, so 作品名読み does not round-trip through CSL-JSON. It is recorded in
-the `note` field so that it is not lost, but a reference manager will not treat
-it as a reading. BibLaTeX puts it in `titleaddon`, and the authoritative copy is
-in the TEI header and the catalog either way. This limitation is documented rather than obscured with custom workarounds, because
-inventing a non-standard CSL extension field would yield records unreadable by
-standard reference managers.
+CSL has no field for kana readings, and multiscript support in CSL and Zotero
+remains limited; 作品名読み is recorded in `note`. BibLaTeX stores it in
+`titleaddon`. The authoritative copy remains in the TEI header and catalog JSON.
 
 ### Romanization
 
-Romanized titles are not published in any citation format. Because kana
-readings lack word boundaries, automated transliteration cannot reliably
-generate valid Hepburn romanization. The romanized element in a download
-filename is Aozora Bunko's own archive stem, hand-curated with word boundaries, not
-a romanization this project generated. Supply the Japanese title and its reading, and let your
-journal's style (Hepburn with or without macrons, ALA-LC) govern the
-romanization. The 文字遣い種別 values are Aozora Bunko's own classification and are left
-in Japanese for the same reason.
+Romanized titles are not published in citation formats. Kana readings lack
+word boundaries, making automated transliteration unreliable. Download filenames
+use Aozora Bunko's hand-curated archive stems. Authors should romanize the
+Japanese title according to target style guides (Hepburn, ALA-LC). Orthographic
+classifications (`文字遣い種別`) are retained in Japanese.
 
 ## Citing an exact byte sequence
 
@@ -263,7 +256,6 @@ To reach the same artifact through the archive rather than through this site,
 
 ## Citing the tooling
 
-The conversion and publication code is a separate work from the corpus, under
-a separate licence, and includes a forked parser core; see
-[rights](rights.md#the-toolchain). Cite it when the method rather than the
-texts is what your work depends on.
+The conversion and publication codebase is licensed separately from the corpus
+(see [rights](rights.md#the-toolchain)). Cite the tooling when research depends
+on the conversion pipeline or parser implementation rather than the corpus text.

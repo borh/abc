@@ -281,26 +281,19 @@ All eight runs executed zero stages and preserved manifest
 `027f578070ab4e1ba1458583ca65e874d3f0154960c880058dc8c165093f2e2b`, publication commit
 `394ffce2eb50fc4c5493f16fb9c772a2c42a0e06`, and the reused verified export.
 
-## Publication cost grows with chain length in two places, not one
+## Publication cost grows with chain length, and all of it is chain verification
 
 Publishing a release verifies the whole chain. `transact/publish-build!` resolves
 the head through `verify/verify-repository-at` before it assembles anything, so
-release *n* verifies *n* manifests. That much was known. Measuring the whole
-publication rather than the verification alone shows a second term of the same
-size sitting next to it.
+release *n* verifies *n* manifests. Two rounds of measurement narrowed what that
+costs: the first found publication paying for the walk twice, the second found
+most of one walk going somewhere other than verification.
 
 `soranoha.snh.chain-bench` builds a synthetic chain at the production work
 count, so no corpus is needed and the repository path is what is timed. Ten
 releases over 17,602 works, three works moving per release so the verifier's
 reuse grant applies to the rest, as it does when an upstream commit touches a
-median of two works:
-
-| Chain length | No-op invocation | Full-chain verification | Publication, end to end |
-| ---: | ---: | ---: | ---: |
-| 1 | 18.4 s | 10.8 s | 23.4 s |
-| 5 | 30.4 s | 22.9 s | 53.2 s |
-| 10 | 47.4 s | 40.8 s | 83.1 s |
-| **Growth per release** | **3.2 s** | **3.3 s** | **6.6 s** |
+median of two works.
 
 The no-op is the quantity the prerequisite is stated against, because a job that
 fires on every upstream commit spends most of its runs discovering it has
@@ -308,12 +301,13 @@ nothing to do. It is measured by repeating a release with its projection
 unchanged, which is what `decide-against-head` no-ops on, so it is the cost of
 resolving the head and deciding, with no assembly.
 
-Publication used to grow at twice the rate of the verification inside it,
-because `publish-build!` verified the chain twice: once on the fetched head
-before assembling, and once more on the newly written commit before pushing.
-The no-op path returns at `decide-against-head` before the second call, which is
-why the no-op tracked a single verification at 3.2 seconds against 3.3 while
-publication was 6.6.
+### The walk was being paid for twice
+
+Publication grew at twice the rate of the verification inside it, because
+`publish-build!` verified the chain twice: once on the fetched head before
+assembling, and once more on the newly written commit before pushing. The no-op
+path returns at `decide-against-head` before the second call, which is why the
+no-op tracked a single verification while publication tracked two.
 
 The second walk re-verified a prefix the same process had verified moments
 earlier under the same pinned keys, when only the new commit was unestablished.
@@ -322,20 +316,51 @@ forward. The assembly was never a factor: the benchmark's assembler is a pure
 function of the head's withdrawn set and a fixed slug list, so it builds the
 same 17,602 work entries at every chain length.
 
-Measured over the same ten-release chain before and after, by least squares:
+### Most of a walk was not verification
 
-| Growth per release | Before | After |
+Verifying one commit at this work count cost about 3.2 seconds. Timing the parts
+of it found where that went, over a 10.7 MB manifest and a 10.1 MB catalog:
+
+| Per commit | Before | After |
 | --- | ---: | ---: |
-| No-op invocation | 3.1 s | 3.5 s |
-| Full-chain verification | 3.1 s | 3.2 s |
-| Publication, end to end | 6.3 s | 4.1 s |
+| Manifest canonicalization | 760 ms | 67 ms |
+| Manifest boundary decode, in full | 960 ms | 262 ms |
+| Catalog boundary decode, in full | 1076 ms | 266 ms |
 
-Most of the doubling is gone and the full walk is untouched, which is what
-should have happened. Publication did not fall all the way to the no-op rate,
-though: about 0.6 seconds per release remains unaccounted for, and ten releases
-with one visibly noisy row cannot separate a real write-path term from run
-variance. That residual is worth another measurement before anyone claims the
-growth outside verification is zero.
+The two boundary decodes were about two thirds of verifying one commit, and
+reading the JSON was 34 ms of that. The rest was producing the canonical form to
+compare the stored bytes against, and it was slow for two reasons that have
+nothing to do with what the canonical form is. Every object and array was
+assembled with `str` and `join`, so the document was copied again at each
+nesting level on the way out; and each of its several hundred thousand strings
+went through a general JSON writer that pays its setup per call. Filling one
+buffer in place, and writing out the escaping that RFC 8785 inherits from RFC
+8259, left every output byte unchanged and took canonicalization to a ninth of
+what it was. Schema validation, at 142 ms, is now the largest part of a decode.
+
+### The three measurements together
+
+Growth per additional release, by least squares over the same ten-release chain
+at each stage:
+
+| Growth per release | Two walks | One walk | One walk, faster canonical form |
+| --- | ---: | ---: | ---: |
+| No-op invocation | 3.1 s | 3.5 s | 0.93 s |
+| Full-chain verification | 3.1 s | 3.2 s | 0.95 s |
+| Publication, end to end | 6.3 s | 4.1 s | 0.97 s |
+
+The three now agree, which is the result to read. Publication grows at the rate
+of the one verification inside it, so nothing outside verification grows with
+chain length in a way this benchmark can see.
+
+That corrects a residual reported here earlier. Publication was said to run about
+0.6 seconds per release above the no-op, possibly a real write-path term. It was
+an artefact of taking the slope from the endpoints: the genesis release has no
+head to verify and sits well below the line, and including it inflates the
+publication slope alone. Fitting over chain lengths 2 to 10 puts publication
+about 40 milliseconds per release above the no-op, which ten releases cannot
+distinguish from noise. What separates them is a constant, not a slope: assembly
+and the repository write cost about 9 seconds at every chain length.
 
 ### What that costs on the real corpus
 
@@ -346,18 +371,22 @@ with concurrency 16 and a warm cache, took 68.6 seconds. The same point on the
 synthetic chain is 24.4 seconds, so the real corpus costs about 2.8 times the
 synthetic one at equal chain length.
 
-That single-point calibration is the weakest step here. Taking it, the real
-figures per additional release are roughly 9 seconds of no-op and 19 seconds of
-publication, and three consequences follow:
+That single-point calibration is the weakest step here, and it was taken before
+the canonicalization work, which will have moved the real side too. Taking it
+unchanged, so that the real figures are if anything pessimistic, each additional
+release costs roughly 2.6 seconds of no-op and 2.7 seconds of publication, and
+three consequences follow:
 
 - The 30-minute bound on an unchanged invocation is crossed near chain length
-  190. At 227 releases a year, which is the current upstream push rate, that is
-  inside year two.
-- Verifying a finished 5,476-release chain once costs on the order of 14 hours.
-- Building that chain costs the sum over its releases. At the rate before the
-  increment check it was on the order of nine years of compute, and at the rate
-  after it, nearer five and a half. Neither is a viable backfill, and nothing a
-  third party has to check changed between them.
+  680, against 190 before. At 227 releases a year, which is the current upstream
+  push rate, that is year three rather than year two.
+- Verifying a finished 5,476-release chain once costs on the order of 4 hours,
+  against 14 before. That is the figure a third party pays, and it is the one
+  that decides whether anyone outside the project checks the corpus.
+- Building that chain costs the sum over its releases: on the order of 1.3
+  years of compute, against nine before the increment check and five and a half
+  after it. A backfill is now within reach of a decision about how to schedule
+  it rather than out of the question.
 
 The measurement that mattered most is the one that came back better than the
 ledger recorded. The publication rearchitecture ledger measured an unchanged

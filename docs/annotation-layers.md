@@ -72,6 +72,7 @@ have these transformations:
 | Bold and italic | `strong` and `em` |
 | Named sesame, circle, triangle, double-circle, bullseye and cross dots | CSS text emphasis preserving the named shape; source-right marks above, source-left below |
 | Solid, double and wavy side lines | CSS text decoration; source-right below, source-left above, both on both sides |
+| Lowered baseline and exponent | `vertical-align: sub` and `vertical-align: super`, both at the inherited font size, because the source states a position and not a size |
 | Inline horizontal text and vertical text combination | `writing-mode: horizontal-tb` and `text-combine-upright: all`; already horizontal text stays horizontal |
 | An unqualified inline box | A solid one-pixel border; no claim of the source's exact stroke width |
 

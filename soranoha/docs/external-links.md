@@ -39,8 +39,10 @@ and identity stay the consumer's explicit step, and `owl:sameAs` is never
 inferred.
 
 Assertion identity hashes canonical JSON of its typed targets, relation and
-attribution. Evidence ordering and duplicates do not change identity. Local IRIs
-use the supplied slash-terminated base, entity kind, and escaped local identifier.
+attribution. Evidence ordering and duplicates do not change identity. A local
+entity resolves to `<base>entities/<kind>/<percent-escaped id>` and its named
+graph to `<base>assertions/<assertion id>`, so the base has to end in a slash
+and carry no query or fragment, and a local identifier cannot be `.` or `..`.
 The base is a deployment choice; assertion content IDs do not depend on it.
 Exports sort and deduplicate N-Quads lines, so input-file order cannot change bytes.
 The export command refuses to overwrite an existing file.

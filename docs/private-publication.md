@@ -86,11 +86,18 @@ its `source_content_hash`. A work under `documents-changed` has an unchanged
 source hash and moved artifact ids: the same edition converted again, which
 yields new documents and never a new edition. The stages whose closure hash or
 code version moved are listed separately, so a source change is never
-attributed to the toolchain or the reverse. `unexplained` lists works whose
-documents moved while both the source hash and every stage coordinate stood
-still, which is the one condition here that nothing else reports: the
-transaction's determinism halt cannot see it, because that fires only when the
-whole projection matches and an advanced corpus revision means it does not.
+attributed to the toolchain or the reverse. `unexplained` narrows
+`documents-changed` to the works for which no declared input moved either. A
+document is a function of more than its source and the stages that convert it:
+the metadata record comes from the catalog rows and the rights block reaches
+the header, so `catalog` and `rights` are reported beside the toolchain and all
+three have to stand still. Without that the field would fire on every
+catalog-only revision that edited a published work's metadata, which is about
+one in ten of them. What is left is bytes that moved while everything declared
+about how they are produced stood still: between adjacent releases the
+transaction's determinism halt should already have refused to publish it, and
+between releases that are not adjacent this is the only place the question is
+asked.
 
 `corpus-delta` answers the neighbouring question: how the corpus in a local
 Aozora Bunko checkout differs from what a release published. No release was

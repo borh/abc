@@ -811,9 +811,10 @@
   `--to` defaults to the head and `--from` to the release before it, so the
   usual question, what the newest release changed, needs neither flag.
 
-  A source change and a toolchain change are reported apart and never merged;
-  see `soranoha.snh.release-delta` for why that distinction is load-bearing
-  and what `unexplained` means."
+  A source change and a toolchain change are reported apart and never merged,
+  and the catalog and rights the release declared are reported beside them
+  because a document depends on those too; see `soranoha.snh.release-delta`
+  for why the distinction is load-bearing and what `unexplained` means."
   [{:keys [chain-clone branch release-pub governance-pub from to]}]
   (require-flags! "release-delta"
                   {"--chain-clone" chain-clone

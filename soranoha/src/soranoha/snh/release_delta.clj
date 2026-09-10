@@ -17,11 +17,29 @@
   edition, which is the distinction the published glossary draws between a
   work, an edition and a document. Reporting both as `changed` would lose it.
 
-  `:unexplained` is the one finding here that nothing else in the system
-  reports: documents that moved while both the source hash and every stage
-  coordinate stood still. The transaction's determinism halt cannot see it,
-  because that fires only when the whole projection matches, and a release
-  whose corpus revision advanced does not match.
+  `:unexplained` narrows `:documents-changed` to the works for which no
+  declared input moved either. A document is a function of more than its
+  source and the stages that convert it: the metadata record comes from the
+  catalog rows, and the rights block reaches the header. Both are manifest
+  fields, `catalog` as the published catalog's content id and `rights`
+  verbatim, so both are reported here beside the toolchain and all three have
+  to stand still before a work counts as unexplained. Without that the field
+  would fire on every catalog-only revision that edited a published work's
+  metadata, which `release-needed!` puts at about one in ten of them: the
+  field would be noise long before it ever carried a real signal.
+
+  The catalog id is release-wide. A moved catalog therefore withdraws the
+  claim for every work rather than attributing any one work's change to its
+  own metadata, which would need a per-work metadata identity that
+  `snh-manifest/3` does not carry.
+
+  What is left is a genuine determinism finding: bytes that moved while
+  everything declared about how they are produced stood still. Between two
+  adjacent releases the transaction should already have refused to publish
+  it, since a matching projection and differing derived content is exactly
+  its determinism halt, so finding one here says the halt did not hold.
+  Between releases that are not adjacent, or in a chain the reader did not
+  watch being built, this is the only place the question is asked.
 
   Any two manifests may be compared. Adjacency is not required and is not
   checked, so the corpus range reported is the pair of revisions rather than
@@ -36,6 +54,15 @@
 
 (defn- sorted-vec [slugs]
   (vec (sort slugs)))
+
+(defn- moved
+  "A declared manifest input, reported as the pair it moved between. Always
+  present, moved or not: `:unexplained` is decided on these standing still, so
+  a reader who has the report can see for themselves why it is empty."
+  [earlier later key]
+  {:from (get earlier key) :to (get later key)})
+
+(defn- unmoved? [{:keys [from to]}] (= from to))
 
 (defn- toolchain-delta
   "Stage coordinates that moved, keyed by stage. A stage present on one side
@@ -69,6 +96,8 @@
   Returns
 
     {:corpus {:from <upstream_rev> :to <upstream_rev>}
+     :catalog {:from <catalog id> :to <catalog id>}
+     :rights {:from <rights> :to <rights>}
      :toolchain {<stage> {:from <coordinate> :to <coordinate>}}
      :works {:added [slug] :withdrawn [slug] :dropped [slug]
              :source-changed [slug] :documents-changed [slug]
@@ -88,9 +117,13 @@
         stages (toolchain-delta earlier later)
         buckets (group-by #(classify (get a %) (get b %))
                           (set/intersection (set (keys a)) (set (keys b))))
-        documents-changed (sorted-vec (:documents-changed buckets))]
+        documents-changed (sorted-vec (:documents-changed buckets))
+        catalog (moved earlier later "catalog")
+        rights (moved earlier later "rights")]
     {:corpus {:from (get-in earlier ["corpus" "upstream_rev"])
               :to (get-in later ["corpus" "upstream_rev"])}
+     :catalog catalog
+     :rights rights
      :toolchain stages
      :works {:added (sorted-vec (set/difference (set (keys b)) (set (keys a))))
              :withdrawn (sorted-vec (filter withdrawn gone))
@@ -99,7 +132,9 @@
              :documents-changed documents-changed
              :layers-changed (sorted-vec (:layers-changed buckets))
              :unchanged (count (:unchanged buckets))}
-     :unexplained (if (empty? stages) documents-changed [])}))
+     :unexplained (if (and (empty? stages) (unmoved? catalog) (unmoved? rights))
+                    documents-changed
+                    [])}))
 
 (defn report
   "`delta` as the deterministic JSON value the CLI and the serving layer both
@@ -110,6 +145,12 @@
           {"corpus" (into (sorted-map)
                           {"from" (get-in d [:corpus :from])
                            "to" (get-in d [:corpus :to])})
+           "catalog" (into (sorted-map)
+                           {"from" (get-in d [:catalog :from])
+                            "to" (get-in d [:catalog :to])})
+           "rights" (into (sorted-map)
+                          {"from" (get-in d [:rights :from])
+                           "to" (get-in d [:rights :to])})
            "toolchain" (into (sorted-map)
                              (map (fn [[stage {:keys [from to]}]]
                                     [stage (into (sorted-map)

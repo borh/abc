@@ -40,7 +40,7 @@
     ;; in the corpus record one person in two relations; keying on the person
     ;; refused every one of them.
     (let [entry (#'catalog/work-entry
-                 "002259_000235" (apply str (repeat 64 "a"))
+                 "002259_000235" (apply str (repeat 64 "a")) "public-domain"
                  {"work" {"title" "海潮音" "orthographic_style" "旧字旧仮名"
                           "card_url" "https://www.aozora.gr.jp/cards/000235/card2259.html"
                           "source_editions" []}
@@ -55,3 +55,21 @@
           ;; code-point order, the same comparator the semantic check applies,
           ;; which puts 翻 (U+7FFB) ahead of 著 (U+8457)
           "sorted by the pair, so two relations of one person have an order"))))
+
+(deftest an-entry-carries-the-standing-the-work-is-published-under
+  ;; A client selecting works by their terms reads this column. Without it the
+  ;; only published copy of the standing is inside each work's TEI header, so
+  ;; the question costs one file per work instead of one file.
+  (testing "the standing selection admitted the work under reaches the catalog"
+    (doseq [standing ["public-domain" "CC-BY-2.1-JP" "CC-BY-4.0"]]
+      (is (= standing
+             (get (#'catalog/work-entry
+                   "054333_001657" (apply str (repeat 64 "a")) standing
+                   {"work" {"title" "食品の変造"
+                            "orthographic_style" "新字新仮名"
+                            "card_url" "https://www.aozora.gr.jp/cards/001657/card54333.html"
+                            "source_editions" []}
+                    "contributors" []}
+                   {}
+                   "shokuhin.txt")
+                  "rights"))))))

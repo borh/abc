@@ -12,7 +12,10 @@ whether or not they resolve at the moment you try them.
 
 You may copy, redistribute, adapt, translate, mine, and republish everything
 Soranoha publishes, for any purpose, commercial or not, without asking and
-without payment. Attribution is requested, not required.
+without payment. For almost every work, attribution is requested, not required.
+For the works whose rightsholder publishes them under a Creative Commons
+Attribution licence, attribution is a condition of that licence. Each work
+states which of the two it is, on its page and in its TEI header.
 
 If you use the corpus in research, please cite it (see
 [citation](citation.md)). That is a scholarly norm here, not a licence
@@ -23,8 +26,9 @@ condition.
 A published work involves two distinct rights layers.
 
 **The underlying works** are texts from [Aozora
-Bunko](https://www.aozora.gr.jp/) whose copyright has expired. Soranoha
-neither holds nor claims any right in them. Aozora Bunko's [handling rules](https://www.aozora.gr.jp/guide/kijyunn.html)
+Bunko](https://www.aozora.gr.jp/), under one of two standings. Almost all of
+them are works whose copyright term has expired and whose rights have lapsed.
+Soranoha neither holds nor claims any right in those. Aozora Bunko's [handling rules](https://www.aozora.gr.jp/guide/kijyunn.html)
 permit free copying, redistribution, performance, and adaptation of
 copyright-expired files, with nothing owed in permission or fee. Altering the
 text itself is permitted within the scope of Article 20(2)(iv) of the Copyright
@@ -34,8 +38,18 @@ The rules request preserving contributor credits and recording textual
 modifications; Soranoha preserves contributor credits in each TEI `<back>`
 and publishes every work alongside its validation report and recorded divergences.
 
-Soranoha publishes only works its assessment finds free to publish; the
-reasoning is recorded in
+The rest are works whose copyright subsists and whose rightsholder publishes
+them on Aozora Bunko under a Creative Commons Attribution licence. Aozora
+Bunko's catalog records that copyright subsists but not under what terms, so
+the licence is read from the notice the rightsholder wrote into the colophon.
+Soranoha publishes such a work only where attribution is the sole condition:
+a licence adding NonCommercial, NoDerivatives, or ShareAlike is refused at
+selection, and the work does not enter the corpus. The standing each work was
+admitted under travels with it, in `works[].rights` in the manifest, in the
+catalog, and in the work's own TEI header.
+
+Soranoha publishes only works its assessment finds free to publish on these
+terms; the reasoning is recorded in
 [`soranoha/docs/evidence/aozora-rights-source-contract.md`](../soranoha/docs/evidence/aozora-rights-source-contract.md).
 
 **Soranoha's encoding** (TEI markup, plaintext and Markdown
@@ -53,7 +67,7 @@ and standard citation practice (see [citation](citation.md)).
 
 | Scope | Licence | Where |
 |---|---|---|
-| Underlying works | Public domain (copyright expired) | Not Soranoha's to license |
+| Underlying works | Public domain (copyright expired), or CC BY where the rightsholder licensed it | Not Soranoha's to license; recorded per work as `works[].rights` |
 | TEI, plaintext, Markdown, validation reports, catalog, manifests | [CC0-1.0](../LICENSE-CC0) | Published bytes |
 | TEI customisation: `soranoha/schemas/tei-profile.{odd,rng,sch}` | [CC0-1.0](../LICENSE-CC0) | Repository |
 | Protocol JSON Schemas: `soranoha/resources/snh/schemas/` | [CC0-1.0](../LICENSE-CC0) | Repository |
@@ -94,19 +108,30 @@ Aozora Bunko under CC BY 4.0.
 Each published artifact carries its own terms, so a file stays interpretable
 once detached from this site.
 
-In every signed release manifest:
+In every signed release manifest, the grant Soranoha makes over its own layer,
+which is the same for the whole release:
 
 ```json
 "rights": {
-  "works": "public-domain",
   "encoding": "CC0-1.0",
   "statement_url": "https://w3id.org/soranoha/rights"
 }
 ```
 
+and, beside each work, the standing that work was admitted under:
+
+```json
+"works": [
+  { "slug": "000092_000879", "rights": "public-domain" },
+  { "slug": "054333_001657", "rights": "CC-BY-2.1-JP" }
+]
+```
+
 In every published TEI file, one `licence` element covers each rights layer.
-The underlying work's status is represented by the Creative Commons Public
-Domain Mark, and Soranoha's encoding is dedicated under CC0:
+Below, the underlying work is out of copyright, so its status is represented by
+the Creative Commons Public Domain Mark; for a work under CC BY the first
+`licence` names that licence instead and states attribution as its condition.
+Soranoha's encoding is dedicated under CC0 either way:
 
 ```xml
 <publicationStmt>

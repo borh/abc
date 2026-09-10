@@ -79,11 +79,16 @@
 
 (defn work-entry
   "One catalog entry from a work's metadata record, person records and the
-  source facts its extract stage produced."
-  [slug source-content-hash metadata-record persons primary-text-member]
+  source facts its extract stage produced.
+
+  `rights` is the standing the underlying work is published under. The catalog
+  carries it so that selecting works by their terms costs one file rather than
+  one file per work: the only other published copy is inside each TEI header."
+  [slug source-content-hash rights metadata-record persons primary-text-member]
   (let [work (get metadata-record "work")]
     {"slug" slug
      "source_content_hash" source-content-hash
+     "rights" rights
      "title" (get work "title")
      "title_reading" (get work "title_reading")
      "subtitle" (get work "subtitle")
@@ -111,7 +116,7 @@
    "works"
    (mapv (fn [slug]
            (let [{:keys [metadata-record persons primary-text-member
-                         source-content-hash]}
+                         source-content-hash rights]}
                  (or (get outputs slug)
                      (fail! :catalog-work-not-built {:slug slug}))]
              (work-entry slug
@@ -120,6 +125,8 @@
                                       second)
                              (fail! :malformed-source-content-hash
                                     {:slug slug :value source-content-hash}))
+                         (or rights (fail! :catalog-work-rights-missing
+                                           {:slug slug}))
                          (cas-json cas-dir metadata-record
                                    :missing-metadata-record {:slug slug})
                          (cas-json cas-dir persons

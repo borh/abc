@@ -16,6 +16,7 @@
         "required": [
           "slug",
           "source_content_hash",
+          "rights",
           "title",
           "title_reading",
           "subtitle",
@@ -31,6 +32,7 @@
         "properties": {
           "slug": { "$ref": "#/$defs/slug" },
           "source_content_hash": { "$ref": "#/$defs/hex64" },
+          "rights": { "$ref": "#/$defs/works-standing" },
           "title": { "type": "string", "minLength": 1 },
           "title_reading": { "$ref": "#/$defs/nullableString" },
           "subtitle": { "$ref": "#/$defs/nullableString" },
@@ -83,6 +85,10 @@
   },
   "$defs": {
     "hex64": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "works-standing": {
+      "type": "string",
+      "enum": ["public-domain", "CC-BY-2.1-JP", "CC-BY-3.0", "CC-BY-4.0"]
+    },
     "slug": { "type": "string", "pattern": "^[0-9a-z_-]+$" },
     "nullableString": {
       "oneOf": [{ "type": "null" }, { "type": "string", "minLength": 1 }]

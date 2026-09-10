@@ -344,8 +344,8 @@
      (into [:main (cond-> {} main-class (assoc :class main-class))] body)
      [:footer
       [:p (bilingual
-           "本文は著作権の消滅した青空文庫の作品、符号化データは CC0 1.0。署名はマニフェストと各ファイルにかかり、このサイトはそれを表示しています。"
-           "Texts are public-domain works from Aozora Bunko; the encoding is CC0 1.0. The signature covers the manifest and the artifact files, and this site displays them.")]
+           "本文は青空文庫の作品、符号化データは CC0 1.0。作品ごとの権利の状態は各作品のページにあります。署名はマニフェストと各ファイルにかかり、このサイトはそれを表示しています。"
+           "Texts are works from Aozora Bunko; the encoding is CC0 1.0. Each work's page states the rights standing of that work. The signature covers the manifest and the artifact files, and this site displays them.")]
       [:p [:a {:href "/catalog.json"} "/catalog.json"] " · "
        [:a {:href "/releases/HEAD"} "/releases/HEAD"] " · "
        [:a {:href "https://www.aozora.gr.jp/"} "青空文庫"]]]
@@ -583,8 +583,8 @@
     [:section
      [:h2 (bilingual "権利と引用" "Rights and citation")]
      [:p (bilingual
-          "底本は著作権の消滅した作品、Soranoha の符号化データは CC0 1.0。クレジットの表示はお願いであって、条件ではありません。"
-          "The underlying works are out of copyright and Soranoha's encoding is CC0 1.0. Attribution is requested, not required.")]
+          "底本は、著作権の消滅した作品か、権利者がクリエイティブ・コモンズ 表示ライセンスの下で公開している作品です。Soranoha の符号化データは CC0 1.0。作品ごとの権利の状態は catalog.csv の rights 列にあります。"
+          "Each underlying work is either out of copyright or published by its rightsholder under a Creative Commons Attribution licence; Soranoha's encoding is CC0 1.0. The rights column of catalog.csv carries each work's own standing.")]
      [:p [:a {:href "/rights"} (bilingual "権利について" "Rights statement")] " · "
       [:a {:href "/citation"} (bilingual "引用のしかた" "How to cite")]]]
 
@@ -687,7 +687,8 @@
   (let [{:keys [head-hex]} release
         {:strs [slug title title_reading subtitle original_title first_published
                 orthographic_style ndc card_url source_content_hash
-                contributors source_editions]} work]
+                contributors source_editions]} work
+        works-standing (get work "rights")]
     (chrome
      title
      [[:h1 title]
@@ -714,6 +715,18 @@
        (when (seq source_editions)
          (list [:dt (bilingual "底本" "Source edition")]
                (into [:dd] (interpose [:br] (map source-edition-line source_editions)))))
+       ;; the site-wide statement covers almost every work, and a reader who
+       ;; saw only it would take attribution for a request on the works where
+       ;; it is a licence condition. So the condition is stated here, on the
+       ;; page of the work it binds.
+       (when-not (string/blank? works-standing)
+         (list [:dt (bilingual "底本の権利" "Rights in the source text")]
+               [:dd [:a {:href (rights/works-uri works-standing)} works-standing] " "
+                (if (= "public-domain" works-standing)
+                  (bilingual "著作権の存続期間が満了しています。"
+                             "The copyright term has expired.")
+                  (bilingual "クレジットの表示はこのライセンスの条件です。"
+                             "Attribution is a condition of this licence."))]))
        (when-not (string/blank? card_url)
          (list [:dt (bilingual "青空文庫" "Aozora Bunko card")]
                [:dd [:a {:href card_url} card_url]]))
@@ -1018,8 +1031,8 @@
    document
    "Rights and licensing"
    [[:p (bilingual
-         "複製、再頒布、翻案、翻訳、情報解析、公衆送信のいずれも、営利非営利を問わず自由に行えます。許諾を得る必要も、対価を支払う必要もありません。クレジットの表示はお願いであって、利用の条件ではありません。"
-         "You may copy, redistribute, adapt, translate, mine and republish everything here, commercially or not, without asking and without payment. Attribution is requested, not required.")]
+         "複製、再頒布、翻案、翻訳、情報解析、公衆送信のいずれも、営利非営利を問わず自由に行えます。許諾を得る必要も、対価を支払う必要もありません。ほとんどの作品では、クレジットの表示はお願いであって利用の条件ではありません。権利者がクリエイティブ・コモンズ 表示ライセンスの下で公開している作品に限り、クレジットの表示はそのライセンスの条件です。どの作品がどちらにあたるかは、その作品のページに書いてあります。"
+         "You may copy, redistribute, adapt, translate, mine and republish everything here, commercially or not, without asking and without payment. For almost every work, attribution is requested rather than required. For the works whose rightsholder publishes them under a Creative Commons Attribution licence, attribution is a condition of that licence. Each work's own page says which of the two it is.")]
     ;; the grant as this release states it, rather than as this document
     ;; describes it: a served page that disagreed with the signed manifest
     ;; would be the one thing a rights statement may not do
@@ -1035,13 +1048,19 @@
      [:dt (bilingual "この文書" "This statement")]
      [:dd [:a {:href statement_url} statement_url]]]
     [:p (bilingual
-         "上の三つは、この版のマニフェストに書かれている値です。"
-         "Those three are read from this release's own manifest.")]
+         "上の各項目は、この版のマニフェストに書かれている値です。底本の権利状態は作品ごとに記録しているので、この版に含まれるものをすべて挙げています。"
+         "Every row above is read from this release's own manifest. The standing of the underlying works is recorded per work, so the row lists each one the release publishes under.")]
 
     [:h2 (bilingual "権利の二つの層" "Two rights layers")]
     [:p (bilingual
-         "底本は、著作権の存続期間が満了して権利が消滅した青空文庫の作品です。Soranoha は底本について著作権その他の権利を有しておらず、主張もしません。青空文庫の「収録ファイルの取り扱い規準」は、著作権の消滅した作品のファイルを、有償無償を問わず自由に複製・再頒布・翻案してよいとしています。"
-         "The underlying texts are copyright-expired works from Aozora Bunko. Soranoha neither holds nor claims any right in them. Aozora Bunko's handling rules allow files for expired works to be copied, redistributed and adapted freely, whether for payment or not.")]
+         "底本のほとんどは、著作権の存続期間が満了して権利が消滅した青空文庫の作品です。Soranoha はこれらについて著作権その他の権利を有しておらず、主張もしません。青空文庫の「収録ファイルの取り扱い規準」は、著作権の消滅した作品のファイルを、有償無償を問わず自由に複製・再頒布・翻案してよいとしています。"
+         "Most of the underlying texts are Aozora Bunko works whose copyright term has expired and whose rights have therefore lapsed. Soranoha neither holds nor claims any right in them. Aozora Bunko's handling rules allow files for expired works to be copied, redistributed and adapted freely, whether for payment or not.")]
+    ;; the second regime. Aozora Bunko has no licence column, so these works
+    ;; are identified from the notice their rightsholder wrote into the
+    ;; colophon, and that notice is what the standing beside each work records.
+    [:p (bilingual
+         "残りは、著作権が存続しており、権利者がクリエイティブ・コモンズ 表示ライセンス（CC BY）の下で青空文庫に公開している作品です。これらも同じく自由に利用できますが、クレジットの表示は権利者が付した条件です。どのバージョンのライセンスによるかは、作品ページと TEI ファイルの双方に記載しています。Soranoha が公開するのは、表示のみを条件とするライセンスの作品に限られます。非営利、改変禁止、継承のいずれかを課すライセンスの作品は収録していません。"
+         "The rest are works whose copyright subsists and whose rightsholder publishes them on Aozora Bunko under a Creative Commons Attribution licence. They may be used just as freely, but attribution is a condition their rightsholder set rather than a request. Each work's page and its TEI header name the version of the licence it is under. Soranoha publishes such a work only where attribution is the sole condition: a work under a licence adding NonCommercial, NoDerivatives or ShareAlike is not in the corpus.")]
     [:p (bilingual
          "Soranoha 自身の符号化（TEI マークアップ、プレーンテキストと Markdown への投影、検証レポート、目録、リリースマニフェスト）は、CC0-1.0 によりパブリックドメインで提供します。符号化に著作権および関連する権利（データベースに関する権利を含む）が生じる範囲では、これを放棄します。"
          "Soranoha's own encoding (the TEI markup, the plaintext and Markdown projections, the validation reports, the catalog and the release manifests) is dedicated to the public domain under CC0-1.0. Where that encoding attracts copyright or a database right at all, those rights are waived.")]
@@ -1061,8 +1080,8 @@
 
     [:h2 (bilingual "公開作品に権利をお持ちの方へ" "If you hold rights in a published work")]
     [:p (bilingual
-         "Soranoha が公開するのは、著作権が存続していないと判断した作品だけです。ただし、この規模のコーパスであれば、いずれどれか一つは判断を誤ります。"
-         "Soranoha publishes only works its assessment finds to be free of subsisting rights. Over a corpus this size we will eventually get one wrong.")]
+         "Soranoha が公開するのは、著作権が消滅したと判断した作品と、権利者が表示のみを条件とするライセンスの下で公開している作品だけです。ただし、この規模のコーパスであれば、いずれどれか一つは判断を誤ります。"
+         "Soranoha publishes only works its assessment finds to be out of copyright, and works their rightsholder publishes under a licence whose sole condition is attribution. Over a corpus this size we will eventually get one wrong.")]
     [:p (bilingual
          (str "作品識別子（URL に見える " example-identifier " の形）または青空文庫の図書カードと、権利主張の根拠を添えて、"
               orcid-url " に記載の連絡先までご連絡ください。正式な法的通知の形式による必要はありません。")

@@ -121,9 +121,10 @@
   and bound to the same source hashes, which is what the verifier checks."
   [entries]
   {"schema" "snh-catalog/1"
-   "works" (mapv (fn [{:strs [slug source_content_hash]}]
+   "works" (mapv (fn [{:strs [slug source_content_hash rights]}]
                    {"slug" slug
                     "source_content_hash" source_content_hash
+                    "rights" rights
                     "title" (str "fixture:" slug)
                     "title_reading" nil
                     "subtitle" nil

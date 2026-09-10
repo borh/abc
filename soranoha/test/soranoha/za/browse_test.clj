@@ -29,8 +29,9 @@
    "covers_from" covers-from})
 
 (defn- work
-  [slug title reading & {:keys [ndc contributors]
+  [slug title reading & {:keys [ndc contributors work-rights]
                          :or {ndc "NDC 913"
+                              work-rights "public-domain"
                               contributors [{"person_id" "000879"
                                              "family_name" "芥川"
                                              "given_name" "龍之介"
@@ -39,6 +40,7 @@
                                              "relation_to_work" "著者"}]}}]
   {"slug" slug
    "source_content_hash" (apply str (repeat 64 "1"))
+   "rights" work-rights
    "title" title
    "title_reading" reading
    "subtitle" nil
@@ -82,8 +84,7 @@
     ;; supplies it: `pages` must not depend on getting one sequence back
     :manifest-seq
     (fn []
-      [[head-hex {"works" (mapv #(assoc (select-keys % ["slug" "source_content_hash"])
-                                        "rights" "public-domain")
+      [[head-hex {"works" (mapv #(select-keys % ["slug" "source_content_hash" "rights"])
                                 works)
                   "withdrawn" withdrawn
                   "governance_event" (when (seq withdrawn)
@@ -446,3 +447,31 @@
           "and once in each relation it was named under")
       (is (= "著者" (get person "relation_to_work"))
           "the person record is the first row that named them"))))
+
+(deftest a-work-page-states-the-terms-that-work-is-under-test
+  (let [pd (work "000092_000879" "蜘蛛の糸" "くものいと")
+        by (work "054333_001657" "食品の変造" "しょくひんのへんぞう"
+                 :work-rights "CC-BY-2.1-JP")
+        pages (pages (inputs [pd by]))
+        page-of (fn [w] (page pages (str "works/" (get w "slug") "/index.html")))]
+    (testing "the public-domain work says the term expired"
+      (is (string/includes? (page-of pd) "著作権の存続期間が満了しています"))
+      (is (string/includes? (page-of pd)
+                            "https://creativecommons.org/publicdomain/mark/1.0/")))
+    (testing "the licensed work names its licence and states the condition"
+      (is (string/includes? (page-of by) "CC-BY-2.1-JP"))
+      (is (string/includes? (page-of by)
+                            "https://creativecommons.org/licenses/by/2.1/jp/"))
+      (is (string/includes? (page-of by) "クレジットの表示はこのライセンスの条件です"))
+      (is (string/includes? (page-of by) "Attribution is a condition of this licence.")))
+    (testing "neither page claims the other's terms"
+      (is (not (string/includes? (page-of pd) "condition of this licence")))
+      (is (not (string/includes? (page-of by) "著作権の存続期間が満了しています"))))
+    (testing "the rights page lists both regimes rather than one"
+      (let [rights-page (page pages "rights.html")]
+        (is (string/includes? rights-page "public-domain"))
+        (is (string/includes? rights-page "CC-BY-2.1-JP"))
+        (is (not (string/includes?
+                  rights-page
+                  "クレジットの表示はお願いであって、利用の条件ではありません"))
+            "the corpus-wide claim is false once one work is licensed")))))

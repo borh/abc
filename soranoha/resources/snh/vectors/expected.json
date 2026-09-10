@@ -3,7 +3,7 @@
     {
       "file": "release-manifest-valid.json",
       "type": "release-manifest",
-      "id": "snh:1:release-manifest:ea76bbb59c8841d64478bac9b7d858865621beb7d9a311edbea2f06d386e873d"
+      "id": "snh:1:release-manifest:2b1bbd500a18eaab33cb324c74ebf506a1d540ba6e46abbca0c44e22a3bf4061"
     },
     {
       "file": "assessment-snapshot-valid.json",
@@ -28,7 +28,7 @@
     {
       "file": "catalog-valid.json",
       "type": "catalog",
-      "id": "snh:1:catalog:0f5a0af764ce7852d2427f4dd94aac68e6d662e2bd746a40698e38a32c3ab749"
+      "id": "snh:1:catalog:e7d0a2fe998a26aaa01d91eb92be7d6ec36132b9720741994e4cb00a5d360ca1"
     }
   ],
   "reject": [

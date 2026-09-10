@@ -4,11 +4,10 @@ Namespace IRI: `https://w3id.org/soranoha/ns/tei`
 Conventional prefix: `snh:`
 Current vocabulary version: `1`
 
-> **Not yet resolvable.** The `w3id.org/soranoha/` redirects are registered as
-> a precondition of public genesis, and are not registered yet, so the
-> namespace IRI returns 404 today. It is stated here in its final form because
-> that form is what the published bytes carry: a namespace IRI identifies the
-> vocabulary whether or not it dereferences.
+The IRI above is the one published TEI carries, whether or not it dereferences
+at the moment you try it: a namespace IRI identifies a vocabulary, and
+resolution is a convenience over that. Registering the `w3id.org/soranoha/`
+redirects so that it does resolve is a precondition of public genesis.
 
 Soranoha publishes TEI P5. Where the source markup carries information TEI has
 no element for, that information is recorded as an attribute in this namespace

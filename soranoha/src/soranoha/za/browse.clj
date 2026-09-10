@@ -20,6 +20,7 @@
   (:require [clojure.string :as string]
             [soranoha.core.json :as json]
             [soranoha.core.rights :as rights]
+            [soranoha.za.maturity :as maturity]
             [soranoha.snh.verify :as verify]
             [soranoha.za.citation :as citation]
             [soranoha.za.docs :as docs]
@@ -71,6 +72,10 @@
     "  border-block-end: 1px solid var(--rule); padding-block-end: .25rem; }"
     ".en { color: var(--muted); font-weight: normal; }"
     ".reading { color: var(--muted); margin-block: 0 1rem; }"
+    ;; set off by a rule rather than by a colour: this says what stage the
+    ;; corpus is at, and a warning colour would say the bytes are provisional
+    ".maturity { border-inline-start: 3px solid var(--rule); padding-inline-start: .75rem;"
+    "  font-size: .95rem; }"
     ".stats { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 1.5rem; }"
     ".stats li { margin: 0; }"
     ".stats .n { font-size: 1.5rem; display: block; }"
@@ -531,7 +536,19 @@
                              :source path
                              :link (partial docs/resolve-link path)}))))
 
-(defn- landing [head-hex works withdrawn-count]
+(defn- maturity-notice
+  "The corpus's maturity, said once where a reader arrives, rather than in the
+  chrome of every page. It is a statement about the corpus's stage, not about
+  the release being viewed, and repeating it on every page would read as a
+  warning about the bytes on that page instead."
+  [release-name {:keys [ja en note-ja note-en]}]
+  [:p {:class "maturity"}
+   [:strong (bilingual (str (when release-name (str release-name " · ")) ja)
+                       (str (when release-name (str release-name " · ")) en))]
+   " "
+   (bilingual note-ja note-en)])
+
+(defn- landing [head-hex works withdrawn-count release-name maturity]
   (chrome
    "青空文庫 TEI コーパス"
    [[:h1 (bilingual "青空文庫 TEI コーパス" "Aozora Bunko TEI corpus")]
@@ -541,6 +558,7 @@
          (str "Public-domain works from Aozora Bunko converted to TEI P5 and published as "
               "signed, content-addressed releases. Every work carries TEI, plain text, "
               "Markdown and a validation report."))]
+    (when maturity (maturity-notice release-name maturity))
     [:ul {:class "stats"}
      [:li [:span {:class "n"} (str (count works))] (bilingual "作品" "works")]
      [:li [:span {:class "n"} "4"] (bilingual "形式" "formats")]
@@ -1135,13 +1153,28 @@
                     "family_name_romaji" "Akutagawa" "given_name_romaji" "Ryunosuke"
                     "relation_to_work" "著者"}]})
 
-(defn- citation-page [document {:keys [head-hex doi] :as release}]
+(defn- citation-page [document {:keys [head-hex doi] :as release} release-name maturity]
   (generated-page
    document
    "Citing Soranoha"
    [[:p (bilingual
          "すべて CC0 なので、引用はライセンス上の条件ではなく学術上の慣行です。版を明示して引用してください。"
          "Everything here is CC0, so citation is a scholarly norm rather than a licence condition. Cite the release by name.")]
+    ;; the corpus name is not what a citation carries, and saying so here is
+    ;; the point of mentioning it at all: a reader who has seen `v0.1` on the
+    ;; front page would otherwise write it down and cite a name that stands
+    ;; for many releases
+    (when release-name
+      [:p (bilingual
+           (str "コーパス全体の呼び名は " release-name
+                (when maturity (str "（" (:ja maturity) "）"))
+                "ですが、引用に書くのは以下のリリースのハッシュです。"
+                "この呼び名は一つの版ではなく、この段階のコーパス全体を指します。")
+           (str "The corpus as a whole is called " release-name
+                (when maturity (str ", " (:en maturity)))
+                ", but what a citation carries is the release head below. "
+                "The name stands for the corpus at this stage rather than for "
+                "any one release."))])
     ;; the templates below are the document's; these are this release's, which
     ;; is the one thing a reader cannot fill in from a repository checkout.
     ;; The head is abbreviated the way every other citation on the site
@@ -1252,8 +1285,9 @@
   the whole export and would cost the chain's length times that. Each caller
   asks for its own sequence, walks it once and lets it go, which bounds the
   chain's contribution to what one manifest costs."
-  [{:keys [head-hex manifest-seq catalog events tei doi]}]
+  [{:keys [head-hex manifest-seq catalog events tei doi release-name maturity]}]
   (let [release {:head-hex head-hex :doi doi}
+        maturity (maturity/label! maturity)
         head (second (first (manifest-seq)))
         works (get catalog "works")
         by-slug (into {} (map (juxt #(get % "slug") identity)) works)
@@ -1271,11 +1305,11 @@
       (page "search.js" search-js)
       (page "copy.js" copy-js)
       (page "search-index.json" (search-index head-hex works))
-      (page "index.html" (landing head-hex works (count withdrawn)))
+      (page "index.html" (landing head-hex works (count withdrawn) release-name maturity))
       (page "rights.html" (rights-page (by-route "rights")
                                        (works-standings head)
                                        (get head "rights")))
-      (page "citation.html" (citation-page (by-route "citation") release))
+      (page "citation.html" (citation-page (by-route "citation") release release-name maturity))
       (page "history.html" (history-page manifest-seq events))
 
       (page "authors/index.html"

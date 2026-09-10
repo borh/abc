@@ -154,8 +154,8 @@ Follow `/catalog.json` for the signed discovery record.
 The NixOS publisher profile provisions the source and chain clones, shared serving
 directories, SSH transport, and `/etc/soranoha/publisher.json`. The workflow reads
 that configuration through `--deployment`; explicit CLI flags override configured
-values. Configuration contains paths, repository coordinates and the release DOI,
-never signing keys. Apply the NixOS configuration before dispatching a workflow
+values. Configuration contains paths, repository coordinates, the release DOI and the
+corpus's name and maturity label, never signing keys. Apply the NixOS configuration before dispatching a workflow
 that consumes it.
 
 `release-doi` (equivalently `--release-doi`) is the release's Zenodo version DOI,
@@ -164,10 +164,31 @@ can carry it, and before the first deposit there is none; serving injects it int
 every citation it renders. A malformed value is refused at activation rather than
 written into every work's citation record.
 
-Because citations are generated files, the DOI is part of what activation
-produces. Setting or changing it for an already-exported commit causes the reuse
-check to fail with `serving-tree-mismatch` because the existing tree citations
-name a different DOI. To resolve this, remove that tree and re-export.
+`release-name` and `release-maturity` (equivalently `--release-name` and
+`--release-maturity`) name the corpus and say what stage it is at. Both are
+optional and neither reaches a manifest: every other field a release publishes
+is derived from its inputs, while these two are editorial judgements that
+signed append-only bytes could not correct.
+
+`release-name` is a dotted numeric name such as `v0.1`, checked for shape. It
+names the corpus at this stage of its life rather than the individual release:
+releases are minted whenever the upstream corpus moves, so a name that
+incremented per release would reach three digits without saying anything the
+release head does not. The head remains the identity, and citations name it;
+the served citation page says so, so that a reader who saw the name on the
+front page does not write it into a bibliography instead.
+
+`release-maturity` is a key into a closed vocabulary, `early` or `stable`,
+rather than free text. The site is bilingual, so a label has to exist in both
+languages to be rendered at all, and a configuration string could supply only
+one of them; `soranoha.za.maturity` holds the vocabulary and an unknown key
+stops the export naming the keys this build can render.
+
+Because citations and the pages that carry these strings are generated files,
+all three are part of what activation produces. Setting or changing one for an
+already-exported commit causes the reuse check to fail with
+`serving-tree-mismatch` because the existing tree names a different value. To
+resolve this, remove that tree and re-export.
 
 To re-verify and activate the existing publication using the configured SSH transport:
 

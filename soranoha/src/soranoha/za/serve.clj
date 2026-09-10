@@ -106,8 +106,13 @@
   reuse check compares those pages byte for byte. Setting or changing a DOI
   for a commit that has already been exported makes reuse fail closed with
   :serving-tree-mismatch rather than serve two different citations for one
-  tree; the operator removes that tree and re-exports."
-  [{:keys [clone pinned-keys out-dir release-doi]} commit reuse?]
+  tree; the operator removes that tree and re-exports.
+
+  `release-name` and `maturity` are deployment configuration for the same
+  reason and behave the same way under reuse: they are editorial judgements
+  about the corpus rather than facts derived from the release, so no manifest
+  carries them, and changing one for an exported commit fails closed."
+  [{:keys [clone pinned-keys out-dir release-doi release-name maturity]} commit reuse?]
   (let [v (view/git-view clone)
         chain-result (verify/verify-repository-at v commit pinned-keys)]
     (when (:empty chain-result)
@@ -307,7 +312,9 @@
                                                                           (read! (verify/event-path hex))))]))
                                                      event-hexes)
                                        :tei (fn [slug] (artifact! slug "tei"))
-                                       :doi release-doi})]
+                                       :doi release-doi
+                                       :release-name release-name
+                                       :maturity maturity})]
                                (write! path bytes)
                                (vswap! page-count inc))
                              (doseq [[path produce] (bundle/archives

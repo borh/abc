@@ -37,6 +37,7 @@
             [soranoha.aozora.csv :as csv]
             [soranoha.yomi.catalog :as catalog]
             [soranoha.yomi.select :as select]
+            [soranoha.za.maturity :as maturity]
             [soranoha.za.oracle :as oracle]
             [soranoha.za.release :as za-release]
             [soranoha.za.scaffold :as scaffold]
@@ -1020,7 +1021,8 @@
   "Export the serving tree (blobs/, releases/, governance/, plus the
   work-facing symlink layer works/, withdrawn/, releases/latest) from
   the verified chain into --out, which must not yet exist."
-  [{:keys [chain-clone branch out release-pub governance-pub release-doi]}]
+  [{:keys [chain-clone branch out release-pub governance-pub release-doi
+           release-name release-maturity]}]
   (require-flags! "serving-tree"
                   {"--chain-clone" chain-clone
                    "--out" out
@@ -1032,6 +1034,8 @@
                  :pinned-keys (pinned-keys-from-files release-pub
                                                       governance-pub)
                  :release-doi (release-doi! release-doi)
+                 :release-name (maturity/release-name! release-name)
+                 :maturity (do (maturity/label! release-maturity) release-maturity)
                  :out-dir (str out)})]
     (println (record-json/write-deterministic-json-str
               {"head" (:head result)
@@ -1041,13 +1045,16 @@
 
 (defn serving-activate!
   "Activate a verified export under the deployment's provisioned serving root."
-  [{:keys [chain-clone branch serve-root release-pub governance-pub release-doi]}]
+  [{:keys [chain-clone branch serve-root release-pub governance-pub release-doi
+           release-name release-maturity]}]
   (require-flags! "serving-activate"
                   {"--chain-clone" chain-clone "--serve-root" serve-root
                    "--release-pub" release-pub "--governance-pub" governance-pub})
   (let [result (serve/activate!
                 {:clone chain-clone :branch branch :serve-root serve-root
                  :release-doi (release-doi! release-doi)
+                 :release-name (maturity/release-name! release-name)
+                 :maturity (do (maturity/label! release-maturity) release-maturity)
                  :pinned-keys (pinned-keys-from-files release-pub governance-pub)})]
     (println (record-json/write-deterministic-json-str
               {"head" (:head result) "commit" (:commit result)
@@ -1062,7 +1069,7 @@
   (if-let [path (:deployment opts)]
     (let [allowed #{"root" "aozora-root" "chain-clone" "branch" "upstream-origin"
                     "evidence-root" "serve-root" "release-pub" "governance-pub"
-                    "release-doi"}
+                    "release-doi" "release-name" "release-maturity"}
           values (json/read-json (slurp path))]
       (when-not (and (map? values)
                      (every? (fn [[k v]] (and (contains? allowed k)
@@ -1152,6 +1159,8 @@
    :out {:coerce :string}
    :serve-root {:coerce :string}
    :release-doi {:coerce :string}
+   :release-name {:coerce :string}
+   :release-maturity {:coerce :string}
    :deployment {:coerce :string}
    :archive {:coerce :string}
    :commit {:coerce :string}

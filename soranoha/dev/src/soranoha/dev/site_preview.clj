@@ -100,6 +100,10 @@
         exported (serve/export-tree! {:clone (str clone) :branch "main"
                                       :pinned-keys (pinned-keys)
                                       :release-doi nil
+                                      ;; the preview shows what the deployment
+                                      ;; serves, so it carries the same label
+                                      :release-name (or (System/getenv "SORANOHA_RELEASE_NAME") "v0.1")
+                                      :maturity (or (System/getenv "SORANOHA_RELEASE_MATURITY") "early")
                                       :out-dir (str tree)})]
     (println (str "works: " (count slugs)
                   " blobs: " (:blobs exported)

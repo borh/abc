@@ -60,6 +60,15 @@ figure-quotes:
 site-preview works="8" port="8787":
 	@bash scripts/site-preview.sh {{works}} {{port}}
 
+# Regenerate the compiled TEI profile from soranoha/schemas/tei-profile.odd.
+# ori/validate.clj holds the recorded odd, rng and schematron hashes against
+# the files on disk, so the ODD cannot move on its own: editing it without
+# running this fails every validation test with :profile-generation-mismatch.
+# The generator is pinned in nix/tei-profile-artifacts.nix, so the output is a
+# function of the ODD and that recipe alone.
+regenerate-tei-profile:
+	@out="$(nix build --no-link --print-out-paths .#tei-profile-artifacts)" && 		install -m 0644 "$out/tei-profile.rng" "$out/tei-profile.sch" 			"$out/tei-profile-generation.json" soranoha/schemas/ && 		echo "regenerated from $out"
+
 nix-format-check:
 	@find . \
 		-path './.git' -prune -o \

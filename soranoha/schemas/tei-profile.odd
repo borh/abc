@@ -6,7 +6,7 @@
   <teiHeader>
     <fileDesc>
       <titleStmt>
-        <title>Soranoha Aozora TEI Profile v0</title>
+        <title>Soranoha Aozora Bunko TEI Profile v0</title>
       </titleStmt>
       <editionStmt>
         <edition>Profile v0 with TEI P5 4.11.0 ruby support.</edition>

@@ -575,9 +575,20 @@
         let
           pkgs = pkgsFor system;
           tei = import ./nix/tei.nix { inherit pkgs tei-p5; };
+          profile = import ./nix/tei-profile-artifacts.nix {
+            inherit pkgs;
+            odd = ./soranoha/schemas/tei-profile.odd;
+          };
         in
         {
           tei-p5-reference = tei.reference;
+          # The compiled profile, exposed so the checked-in artifacts can be
+          # regenerated. `apps` and `checks` import the same derivation, but
+          # only to consume it; without a package output there was no way to
+          # build the files that ori/validate.clj holds the ODD's hashes
+          # against, and editing the ODD failed 22 tests with no stated remedy.
+          # `just regenerate-tei-profile` copies this output into place.
+          tei-profile-artifacts = profile.artifacts;
         }
       );
 

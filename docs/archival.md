@@ -30,12 +30,12 @@ Software Heritage archives an origin by cloning the URL it is given, so the
 publication repository has to be reachable and anonymously cloneable at a
 stable public URL before any of this can run.
 
-It is not today. The origin is
-`ssh://forgejo@speely.hyakutake-barbel.ts.net:63333/bor/soranoha-chain.git`,
-which is SSH-authenticated and bound to Tailscale. This is a separate
-requirement from serving the corpus publicly: that is the browse layer and the
-work-facing routes, while this is the Git repository holding the signed chain.
-Publishing the serving tree does not make the chain repository cloneable.
+It is not today. The origin is SSH-authenticated and reachable only on the
+project's private network, so an anonymous clone cannot reach it at all. This
+is a separate requirement from serving the corpus publicly: that is the browse
+layer and the work-facing routes, while this is the Git repository holding the
+signed chain. Publishing the serving tree does not make the chain repository
+cloneable, and the two are configured independently.
 
 The URL is also the archive's identity for this project. It appears in the
 `origin` qualifier of every archived identifier below, so it should be chosen
@@ -44,7 +44,7 @@ once and not moved.
 ## Making an observation
 
 Software Heritage's own procedures are not restated here; use Save Code Now and
-the Vault under the project's account. Three things are Soranoha's and fixed.
+the Vault under the project's account. Four things are Soranoha's and fixed.
 
 **Archive the origin, not a copy of it.** Submit the public chain URL. A
 snapshot of some other clone is not an observation of the published chain.
@@ -93,7 +93,7 @@ proving the repository closes.
 ## Resolving a citation through the archive
 
 A citation names a release head and a work. Reaching the archived bytes takes
-four steps, none of which need the live site.
+three steps, none of which need the live site, and one thing not to get wrong.
 
 **Map the identifier to an in-repo path.** The chain's layout is fixed:
 
@@ -104,10 +104,12 @@ four steps, none of which need the live site.
 | Governance event `<hex>` | `governance/<hex>.json` |
 | Current head pointer | `releases/HEAD` |
 
-**Find the publication commit.** The manifest at `releases/<hex>.json` is
-reachable from the commit whose `releases/HEAD` names that head. Walking back
-from the archived branch tip through `prev_manifest` reaches every earlier
-release, which is what the chain being append-only buys.
+**Find the publication commit.** A manifest is read at the commit that
+published it, which is the one whose `releases/HEAD` names its head. Walk
+parents back from the archived branch tip until `releases/HEAD` reads the head
+you want. That the walk terminates at the right place is checkable as you go:
+each manifest's `prev_manifest` names the head its parent commit carried, so
+the two walks agree at every step or the chain is broken.
 
 **Name the archived object.** With the commit `C`, the snapshot `S` and the
 origin URL, a fully qualified identifier for one file is:

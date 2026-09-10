@@ -42,6 +42,11 @@ gaiji-table-drift:
 catalog-figures *args:
 	@python scripts/catalog-figures-check.py {{args}}
 
+# The half of that check which needs no corpus, so it can be gated: every file
+# recorded as quoting a figure still quotes the same number.
+figure-quotes:
+	@python scripts/catalog-figures-check.py --quotes-only
+
 # Build a browsable preview of the public serving tree and serve it on
 # 127.0.0.1:PORT. Not a release: the chain is local and throwaway, signed with
 # the checked-in conformance fixture keys, and the assessment snapshot is
@@ -78,7 +83,7 @@ tei-eaj-reports-with-probes *args:
 validate-eval-cache-smoke:
 	@bash tests/validate-eval-cache-smoke.sh
 
-check-no-build: runtime-config-smoke active-path-hygiene root-flake-output-contract tei-version-coherence flake-input-policy schema-hash-coherence python-quality docs-links gaiji-table-drift nix-format-check validate-eval-cache-smoke root-flake-check-no-build
+check-no-build: runtime-config-smoke active-path-hygiene root-flake-output-contract tei-version-coherence flake-input-policy schema-hash-coherence figure-quotes python-quality docs-links gaiji-table-drift nix-format-check validate-eval-cache-smoke root-flake-check-no-build
 	@(cd ab-validator && AB_WORKSPACE_ROOT="$(pwd)/.." {{nix_eval}} flake check --no-build)
 
 # Publication tests and generated TEI profile must match their checked-in sources.

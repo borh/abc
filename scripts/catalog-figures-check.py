@@ -30,7 +30,13 @@ from. The published population itself is not available without a release run.
 Reading archive members costs a pass over every ZIP in the checkout, so the
 figures that need it are skipped unless `--stems` is given.
 
+Only the re-derivation needs a corpus. `--quotes-only` runs the agreement half
+against the prose alone, which is what the bundled gates can afford: the
+sandboxed checks have no checkout, so without it an edit that stops quoting a
+figure goes unnoticed until someone runs the full check by hand.
+
     python scripts/catalog-figures-check.py --aozora-root "$CORPUS_CHECKOUT"
+    python scripts/catalog-figures-check.py --quotes-only
 """
 
 from __future__ import annotations
@@ -320,11 +326,17 @@ def check_digests(aozora_root: Path) -> list[str]:
     for digest, actual in zip(DIGESTS, found, strict=True):
         if digest.sha256 != actual:
             problems.append(f"{digest.what}: pinned {digest.sha256}, checkout has {actual}")
-            continue
-        for name in digest.quoted_in:
-            if digest.sha256 not in (ROOT / name).read_text(encoding="utf-8"):
-                problems.append(f"{digest.what}: {name} no longer states {digest.sha256}")
-    return problems
+    return problems or digest_quotes()
+
+
+def digest_quotes() -> list[str]:
+    """Whether every file that cites a pinned digest still states it."""
+    return [
+        f"{digest.what}: {name} no longer states {digest.sha256}"
+        for digest in DIGESTS
+        for name in digest.quoted_in
+        if digest.sha256 not in (ROOT / name).read_text(encoding="utf-8")
+    ]
 
 
 def read_catalog(aozora_root: Path) -> dict[str, Work]:
@@ -500,8 +512,28 @@ def quotes(path: Path, value: int) -> bool:
     )
 
 
+def figure_quotes(figures: Sequence[Figure]) -> list[str]:
+    """Whether every file that cites a figure still states the same number.
+
+    This half needs no corpus, which is why it is separable: a figure that has
+    stopped being quoted where it was recorded, or that two files now disagree
+    about, is visible from the prose alone. Only this half can run in the
+    bundled gates, because the corpus half needs a checkout the sandboxed
+    checks do not have. Editing an em-dash out of source prose once put a comma
+    against a figure and dropped it out of coverage, and only a hand run of the
+    full check noticed.
+    """
+    return [
+        f"{figure.key}: {name} no longer states {figure.quoted}"
+        for figure in figures
+        for name in figure.quoted_in
+        if not quotes(ROOT / name, figure.quoted)
+    ]
+
+
 def check(figures: Sequence[Figure], measured: dict[tuple[str, str], int]) -> list[str]:
     problems = []
+    still_derived = []
     for figure in figures:
         derived = measured[figure.key, figure.population]
         if derived != figure.quoted:
@@ -510,10 +542,8 @@ def check(figures: Sequence[Figure], measured: dict[tuple[str, str], int]) -> li
                 f" ({figure.what}, over {figure.population})"
             )
             continue
-        for name in figure.quoted_in:
-            if not quotes(ROOT / name, figure.quoted):
-                problems.append(f"{figure.key}: {name} no longer states {figure.quoted}")
-    return problems
+        still_derived.append(figure)
+    return problems + figure_quotes(still_derived)
 
 
 def main() -> int:
@@ -524,7 +554,23 @@ def main() -> int:
         action="store_true",
         help="also check the figures that need a pass over every work archive",
     )
+    parser.add_argument(
+        "--quotes-only",
+        action="store_true",
+        help="check only that the prose still states each recorded figure, without a corpus",
+    )
     arguments = parser.parse_args()
+    if arguments.quotes_only:
+        figures = list(FIGURES) + list(STEM_FIGURES)
+        problems = digest_quotes() + figure_quotes(figures)
+        for problem in problems:
+            print(f"catalog-figures: {problem}", file=sys.stderr)
+        if problems:
+            return 1
+        cited = sum(len(figure.quoted_in) for figure in figures)
+        cited += sum(len(digest.quoted_in) for digest in DIGESTS)
+        print(f"checked {cited} citations of {len(figures)} figures; nothing re-derived")
+        return 0
     if not arguments.aozora_root:
         print("catalog-figures: --aozora-root or CORPUS_CHECKOUT is required", file=sys.stderr)
         return 2

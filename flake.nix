@@ -189,6 +189,7 @@
             bash scripts/monorepo-tei-version-coherence.sh
             python scripts/monorepo-flake-input-policy.py
             python scripts/monorepo-schema-hash-coherence.py
+            python scripts/catalog-figures-check.py --quotes-only
             nix flake check --no-build "$@"
             (
               cd "$workspace_root/ab-validator"
@@ -392,6 +393,14 @@
               ]
               ''
                 python scripts/monorepo-schema-hash-coherence.py "$src"
+              '';
+          monorepo-figure-quotes =
+            mkMonorepoCheck "soranoha-monorepo-figure-quotes"
+              [
+                pkgs.python3
+              ]
+              ''
+                python scripts/catalog-figures-check.py --quotes-only
               '';
           monorepo-runtime-config =
             mkMonorepoCheck "soranoha-monorepo-runtime-config"

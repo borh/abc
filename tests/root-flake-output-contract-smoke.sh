@@ -44,6 +44,7 @@ expected = {
         "monorepo-active-path-hygiene",
         "monorepo-batch-run-staleness",
         "monorepo-fidelity-lock-idempotency",
+        "monorepo-figure-quotes",
         "monorepo-flake-input-policy",
         "monorepo-nix-format",
         "monorepo-python-quality",

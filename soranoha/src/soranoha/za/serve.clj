@@ -205,6 +205,35 @@
                                      (read! (verify/manifest-path hex)))
                              (write! (verify/manifest-sig-path hex)
                                      (read! (verify/manifest-sig-path hex))))
+                           ;; A citation carries the head abbreviated to twelve
+                           ;; characters, because 64 in a bibliography is
+                           ;; unreadable, so that abbreviation has to resolve or
+                           ;; the citation names bytes a reader cannot reach.
+                           ;; These are the same two files under their short
+                           ;; name, in a directory of their own: a name directly
+                           ;; under `releases/` is its own sha256, and an alias
+                           ;; there would cost a reader that check.
+                           ;;
+                           ;; Ambiguity is refused rather than resolved by
+                           ;; guesswork. 48 bits over one chain makes a shared
+                           ;; prefix vanishingly unlikely, and if two releases
+                           ;; ever did share one, silently pointing at whichever
+                           ;; was written last is the one outcome a
+                           ;; content-addressed citation may not have.
+                           (let [short-of (fn [hex] (subs hex 0 12))
+                                 collisions (->> chain
+                                                 (group-by short-of)
+                                                 (filter #(< 1 (count (val %)))))]
+                             (when (seq collisions)
+                               (throw (ex-info "release heads share a short prefix"
+                                               {:reason :ambiguous-release-prefix
+                                                :prefixes (into (sorted-map) collisions)})))
+                             (doseq [hex chain
+                                     :let [short (short-of hex)]]
+                               (link! (fs/path staging "releases" "short" (str short ".json"))
+                                      (str "../" hex ".json"))
+                               (link! (fs/path staging "releases" "short" (str short ".sig"))
+                                      (str "../" hex ".sig"))))
                            (doseq [hex blob-hexes]
                              (write! (verify/blob-path hex) (read! (verify/blob-path hex))))
                            (doseq [hex event-hexes]

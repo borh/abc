@@ -71,7 +71,7 @@ reproducibility matters: it does not name specific bytes.
 ## Citing one work
 
 A work needs both a readable description and its identifier: measured over the
-Aozora catalog this release builds from, author plus title leaves 2357 works
+Aozora Bunko catalog this release builds from, author plus title leaves 2357 works
 ambiguous, and author, title, 副題, 文字遣い種別, 底本名 and 初出 together
 still leave 16. Those counts move with the upstream catalog. The identifier
 `000092_000879` disambiguates all of them, and is stable across releases; see
@@ -105,10 +105,14 @@ The author is in Latin script because the catalog publishes romanized name
 parts. The titles are not; see below for why.
 
 Both lines abbreviate the head to its first 12 characters. That is what a
-bibliography can carry without becoming unreadable, and it is enough to find
-the release. The full 64 characters are in every machine-readable form:
-`version` in BibLaTeX, the `Release` sentence in the CSL note, and the
-`release` column of `catalog.csv`.
+bibliography can carry without becoming unreadable, and it resolves: the
+abbreviation is served as a name of its own, so
+`https://soranoha.org/releases/short/8b259c55e63a.json` reaches the same
+manifest as the full 64-character name. It sits in its own directory because a
+name directly under `releases/` is the sha256 of its own bytes, which is a
+check worth keeping. The full 64 characters are in every
+machine-readable form: `version` in BibLaTeX, the `Release` sentence in the CSL
+note, and the `release` column of `catalog.csv`.
 
 ### What each component is for
 
@@ -116,7 +120,7 @@ the release. The full 64 characters are in every machine-readable form:
 |---|---|---|
 | Author | `芥川 竜之介` / `Akutagawa Ryunosuke` | Who wrote it. Not sufficient to identify the work. |
 | Title, with 副題 | `蜘蛛の糸` | What it is. Not sufficient either: 2357 works share an author-and-title pair with another work. |
-| 文字遣い種別 | `新字新仮名` | Which orthographic transcription. Aozora often publishes the same work in two, and they are different texts. |
+| 文字遣い種別 | `新字新仮名` | Which orthographic transcription. Aozora Bunko often publishes the same work in two, and they are different texts. |
 | 底本 | `『芥川龍之介全集2』ちくま文庫、筑摩書房、1986年` | The printed book the transcription was made from. Two transcriptions of one work from different 底本 are different texts. |
 | Corpus name | `Soranoha Aozora TEI Corpus` | Which corpus, distinguishing this encoding from Aozora Bunko's own files. |
 | **Work identifier** | `000092_000879` | **Identifies the work.** Stable across releases. The one component that makes the citation unambiguous. |
@@ -179,7 +183,7 @@ becomes a bibliography in a spreadsheet.
 
 ### The edition year
 
-`date = {1986}` is extracted, not recorded. Aozora's 底本初版発行年 is a
+`date = {1986}` is extracted, not recorded. Aozora Bunko's 底本初版発行年 is a
 free-form publication history rather than a year: 17747 of the 18780 recorded
 values read like `1981（昭和56）年3月20日`, and of the 1033 that do not, 667
 append a printing history, as in
@@ -204,10 +208,10 @@ standard reference managers.
 Romanized titles are not published in any citation format. Because kana
 readings lack word boundaries, automated transliteration cannot reliably
 generate valid Hepburn romanization. The romanized element in a download
-filename is Aozora's own archive stem, hand-curated with word boundaries, not
+filename is Aozora Bunko's own archive stem, hand-curated with word boundaries, not
 a romanization this project generated. Supply the Japanese title and its reading, and let your
 journal's style (Hepburn with or without macrons, ALA-LC) govern the
-romanization. The 文字遣い種別 values are Aozora's own classification and are left
+romanization. The 文字遣い種別 values are Aozora Bunko's own classification and are left
 in Japanese for the same reason.
 
 ## Citing an exact byte sequence

@@ -95,6 +95,22 @@
         (is (= (fs/file-name rel)
                (hash/sha256-bytes (fs/read-all-bytes rel))))))
 
+    (testing "the abbreviated head a citation carries resolves to its manifest"
+      (doseq [hex chain
+              :let [short (subs hex 0 12)]]
+        (doseq [ext [".json" ".sig"]]
+          (let [alias (fs/path out "releases" "short" (str short ext))]
+            (is (fs/sym-link? alias))
+            ;; sha256 rather than the arrays themselves: = on byte[] is
+            ;; reference equality and would pass for any two files
+            (is (= (hash/sha256-bytes (fs/read-all-bytes
+                                       (fs/path out (str "releases/" hex ext))))
+                   (hash/sha256-bytes (fs/read-all-bytes alias)))))))
+      ;; the alias lives beside the content-addressed names rather than among
+      ;; them, so a name directly under releases/ is still its own sha256
+      (is (empty? (filter #(= 12 (count (fs/strip-ext (fs/file-name (str %)))))
+                          (fs/glob out "releases/*.json")))))
+
     (testing "the withdrawn work stays served under its historical manifest"
       (let [genesis (manifest-at (last chain))
             withdrawn-artifacts (for [work (get genesis "works")
@@ -137,11 +153,20 @@
 
     (testing "the browse layer is generated presentation over the same release"
       (is (pos? (:pages result)))
-      (doseq [rel ["index.html" "style.css" "search.js" "search-index.json"
+      (doseq [rel ["index.html" "style.css" "search.js" "copy.js"
+                   "search-index.json"
                    "authors/index.html" "titles/index.html" "ndc/index.html"
-                   "rights.html" "citation.html" "start-here.html" "ns/tei.html"
+                   "rights.html" "citation.html" "ns/tei.html"
                    "schemas/tei-profile.odd" "license/cc0-1.0.txt"]]
         (is (fs/regular-file? (fs/path out rel)) rel))
+      ;; the reader-facing documents are held back until they are trimmed and
+      ;; checked, so the site must not be publishing them
+      (doseq [rel ["start-here.html" "example.html" "glossary.html"
+                   "identifiers.html" "protocol.html" "assessment.html"
+                   "accountability.html" "validation.html"
+                   "annotation-layers.html" "parser-invariants.html"
+                   "external-links.html"]]
+        (is (not (fs/exists? (fs/path out rel))) rel))
       (let [landing (String. (tree-bytes out "index.html") "UTF-8")]
         (is (str/includes? landing (:head result))
             "the landing page names the release it was generated from")

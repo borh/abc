@@ -418,10 +418,18 @@ three consequences follow:
 - Verifying a finished 5,476-release chain once costs on the order of 4 hours,
   against 14 before. That is the figure a third party pays, and it is the one
   that decides whether anyone outside the project checks the corpus.
-- Building that chain costs the sum over its releases: on the order of 1.3
-  years of compute, against nine before the increment check and five and a half
-  after it. A backfill is now within reach of a decision about how to schedule
-  it rather than out of the question.
+- Building that chain no longer costs the sum of a per-release cost that
+  grows. While each release re-verified the whole chain, a backfill of 5,476
+  was on the order of 1.3 years of compute, against nine years before the
+  increment check and five and a half after it. Carrying the head proof
+  forward, as the section above measures, makes publication constant per
+  release, so a run publishing many of them in one process sums linearly
+  rather than quadratically. Measured at the production work count that
+  constant is 16.4 seconds a release, or 45.9 under the same calibration,
+  which puts a full backfill near three days. What stands between the project
+  and one is now the assessment snapshot each historical revision needs, not
+  the compute. A scheduled job publishing a single release holds no proof to
+  carry and still pays the 2.7 seconds of growth above.
 
 The measurement that mattered most is the one that came back better than the
 ledger recorded. The publication rearchitecture ledger measured an unchanged
@@ -499,6 +507,44 @@ A third party checking the whole corpus waits minutes rather than an afternoon,
 and that wait was the figure deciding whether anyone outside the project ever
 checks it. The 5,476-release row stays inside the range the model was validated
 over: at 32 runs each run is 171 releases.
+
+### What an origin holding the chain costs to keep and to hand out
+
+Software Heritage archives an origin by cloning the URL it is given, so what
+the origin costs to hold is also what an archive has to ingest. Two of its
+limits are hard rather than merely expensive: the loader does not archive an
+object over 100 MB, and its pack-size threshold is around 4 GiB.
+
+Neither is reached, because consecutive manifests delta-compress. A manifest
+lists every published work, so two consecutive ones differ in a few entries
+out of tens of thousands. `chain-bench --repo-stats` repacks the origin and
+reports what each manifest then occupies:
+
+| Works | One manifest | Eight, apparent | In the pack | Each, as a share of itself |
+| ---: | ---: | ---: | ---: | ---: |
+| 300 | 187 KB | 1,495,616 B | 67,314 B | 4.50% |
+| 1,200 | 744 KB | 5,952,416 B | 247,187 B | 4.15% |
+| 4,800 | 2,972 KB | 23,779,616 B | 964,307 B | 4.06% |
+
+The share falls as manifests grow. Fitted over these three, a manifest costs
+its own size to the power 0.962 in the pack. At the current corpus, where a
+manifest is about 10.7 MB, that is roughly 0.41 MB each, so 5,476 releases
+carry about 2.2 GB of manifests and one year at the current push rate carries
+under 0.1 GB.
+
+The per-object limit is not close either. The largest object a release
+publishes is its manifest at about 10.7 MB, with the catalog blob behind it at
+10.1 MB. Both grow with the work count, and neither is within an order of
+magnitude of 100 MB.
+
+Maintenance is not a factor at these sizes: eight releases leave 228 loose
+objects, and repacking took 67, 127 and 321 ms at the three work counts.
+
+These are extrapolations from a synthetic chain with small work artifacts,
+fitted across a sixteenfold range of manifest sizes but stopping about four
+times short of the real one, and they do not include the peak RSS of a
+repack. `soranoha-vvr` acceptance 4 asks for the same measurements on the
+real origin, which is where they have to be confirmed.
 
 ### Reproducing it
 

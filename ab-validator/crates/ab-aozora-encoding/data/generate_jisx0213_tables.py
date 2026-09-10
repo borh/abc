@@ -85,19 +85,31 @@ COMBO_GROUPS = {
 
 
 def read_cells() -> tuple[list[str], list[str]]:
-    """Return the single-codepoint and combining-sequence rows, in source order."""
+    """Return the single-codepoint and combining-sequence rows, in source order.
+
+    Every data line is accounted for. A line that is neither a mapped cell nor a
+    reserved one raises, because the alternative is a table that silently shrinks
+    when the source's format moves and still looks like a valid table.
+    """
     single: list[str] = []
     combo: list[str] = []
-    for line in SOURCE.read_text(encoding="utf-8").splitlines():
+    for number, line in enumerate(SOURCE.read_text(encoding="utf-8").splitlines(), start=1):
         if line.startswith("##") or not line.strip():
             continue
         fields = line.split("\t")
-        if len(fields) < 2:
-            continue
-        cell = JIS_CELL.match(fields[0])
-        if cell is None:
-            continue
+        cell = JIS_CELL.match(fields[0]) if fields else None
+        if cell is None or len(fields) < 2:
+            raise ValueError(f"{SOURCE.name}:{number}: not a JIS X 0213 cell line: {line!r}")
         note = "\t".join(fields[2:])
+        mapping = fields[1].strip()
+        if not mapping:
+            # A cell the standard leaves unassigned. The source marks these
+            # `<reserved>` and there is nothing to map.
+            if "<reserved>" not in note:
+                raise ValueError(f"{SOURCE.name}:{number}: empty mapping is not reserved: {line!r}")
+            continue
+        if not mapping.startswith("U+"):
+            raise ValueError(f"{SOURCE.name}:{number}: mapping is not a codepoint: {mapping!r}")
         plane = 1 if cell.group(1) == "3" else 2
         if plane == 1 and "[2000]" not in note and "[2004]" not in note:
             continue
@@ -106,9 +118,6 @@ def read_cells() -> tuple[list[str], list[str]]:
         fullwidth = FULLWIDTH.search(note)
         if fullwidth is not None:
             single.append(f"{plane}\t{row}\t{column}\t{fullwidth.group(1).lstrip('0')}")
-            continue
-        mapping = fields[1].strip()
-        if not mapping.startswith("U+"):
             continue
         points = mapping[2:].split("+")
         if len(points) == 1:
@@ -124,14 +133,23 @@ def render(header: str, rows: list[str]) -> str:
 
 
 def render_combo(rows: list[str]) -> str:
-    """Render the combining table with a blank line and a label opening each group."""
+    """Render the combining table with a blank line and a label opening each group.
+
+    A label whose cell is no longer produced raises rather than disappearing, so
+    the groups cannot quietly stop describing what follows them.
+    """
     lines: list[str] = []
+    unused = set(COMBO_GROUPS)
     for row in rows:
-        label = COMBO_GROUPS.get(row.rsplit("\t", 1)[0])
+        key = row.rsplit("\t", 1)[0]
+        label = COMBO_GROUPS.get(key)
         if label is not None:
+            unused.discard(key)
             lines.append("")
             lines.append(f"# {label}")
         lines.append(row)
+    if unused:
+        raise ValueError(f"group labels name cells the source no longer produces: {sorted(unused)}")
     return COMBO_HEADER + "\n".join(lines) + "\n"
 
 

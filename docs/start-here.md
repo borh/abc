@@ -195,6 +195,23 @@ Every release in the chain is listed at `https://soranoha.org/history`, newest
 first, with its upstream Aozora Bunko revisions and added, removed, or
 re-encoded work counts derived directly from published manifests.
 
+To ask what has changed since some earlier point in Aozora Bunko's own
+history, check that history out and compare it against a release. From a
+checkout of this repository:
+
+```sh
+nix run .#soranoha-kernel -- corpus-delta \
+  --chain-clone /path/to/a/clone/of/the/chain \
+  --aozora-root /path/to/aozorabunko/checked/out/at/the/revision/you/mean \
+  --release-pub release.pub --governance-pub governance.pub
+```
+
+It names the works whose source differs, the works only one side has, and the
+works a governance event withdrew. Nothing is parsed and nothing is rebuilt,
+because a release records each work's source identity, so the answer takes
+seconds. It is your computation, not ours: the chain is verified against the
+published keys first, and the corpus side is your own checkout.
+
 For most work you can ignore this entirely. It matters when you need a result
 to remain reproducible over time. Citing the release keeps the exact bytes you
 analyzed identifiable even if subsequent releases change the corpus. The

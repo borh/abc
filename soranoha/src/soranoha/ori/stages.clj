@@ -57,17 +57,27 @@
   "Work ZIP (by content hash) -> primary text bytes + source facts."
   [clj-toolchain-id]
   {:stage-id "extract"
-   :stage-version "2"
+   :stage-version "3"
    :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob-path]} inputs]
         (let [inspection (source-bundle/inspect-zip
                           (io/file (str (blob-path (get inputs "zip")))))]
           {"primary-text" (:primary-text-bytes inspection)
-           "source-facts" (json-bytes
-                           {"work_content_hash" (:bundle-hash inspection)
-                            "archive_hash" (:archive-hash inspection)
-                            "primary_text_member" (:primary-text-member inspection)
-                            "primary_text_hash" (:primary-text-hash inspection)})}))})
+           "source-facts"
+           (json-bytes
+            (cond-> {"work_content_hash" (:bundle-hash inspection)
+                     "archive_hash" (:archive-hash inspection)
+                     "primary_text_member" (:primary-text-member inspection)
+                     "primary_text_hash" (:primary-text-hash inspection)}
+              ;; How many bytes follow the archive proper. The bundle reader
+              ;; finds them by retrying at earlier end-of-central-directory
+              ;; records, so the member comes out whole; unzip trusts the
+              ;; decoy record among them and refuses the file. Recorded here
+              ;; because the count is known only while the archive is being
+              ;; read, and the work page needs it to explain the refusal.
+              (:trailing-garbage-trimmed inspection)
+              (assoc "trailing_bytes_after_archive"
+                     (:trailing-garbage-trimmed inspection))))}))})
 
 (defn metadata-stage
   "Work-local catalog rows and work id -> validated metadata and person records.

@@ -55,7 +55,9 @@
                       :persons (get work "persons")
                       :primary-text-member (get work "primary_text_member")
                       :source-content-hash (get work "source_content_hash")
-                      :rights (get work "rights")}]))
+                      :rights (get work "rights")
+                      :trailing-bytes-after-archive
+                      (get work "trailing_bytes_after_archive")}]))
         (get report "works")))
 
 (defn- report-toolchain

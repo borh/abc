@@ -83,28 +83,36 @@
 
   `rights` is the standing the underlying work is published under. The catalog
   carries it so that selecting works by their terms costs one file rather than
-  one file per work: the only other published copy is inside each TEI header."
-  [slug source-content-hash rights metadata-record persons primary-text-member]
+  one file per work: the only other published copy is inside each TEI header.
+
+  `trailing-bytes-after-archive` is present only for a work whose Aozora Bunko
+  archive carries bytes after its end. One work of 17,531 does. It is here and
+  not in a note because a reader who runs unzip on that archive is told it is
+  corrupt, and the catalog is what a page can read to say otherwise."
+  [slug source-content-hash rights metadata-record persons primary-text-member
+   trailing-bytes-after-archive]
   (let [work (get metadata-record "work")]
-    {"slug" slug
-     "source_content_hash" source-content-hash
-     "rights" rights
-     "title" (get work "title")
-     "title_reading" (get work "title_reading")
-     "subtitle" (get work "subtitle")
-     "original_title" (get work "original_title")
-     "first_published" (get work "first_published")
-     "orthographic_style" (get work "orthographic_style")
-     "ndc" (get work "ndc")
-     "card_url" (get work "card_url")
-     "archive_stem" (archive-stem slug primary-text-member)
-     ;; by the pair, because the pair is the entry's identity: sorting on the
-     ;; person alone left two relations of one person in whatever order the
-     ;; metadata record happened to carry them, which is not an order
-     "contributors" (vec (sort-by (juxt #(get % "person_id") #(get % "relation_to_work"))
-                                  (map #(contributor-entry slug persons %)
-                                       (get metadata-record "contributors"))))
-     "source_editions" (mapv source-edition-entry (get work "source_editions"))}))
+    (cond-> {"slug" slug
+             "source_content_hash" source-content-hash
+             "rights" rights
+             "title" (get work "title")
+             "title_reading" (get work "title_reading")
+             "subtitle" (get work "subtitle")
+             "original_title" (get work "original_title")
+             "first_published" (get work "first_published")
+             "orthographic_style" (get work "orthographic_style")
+             "ndc" (get work "ndc")
+             "card_url" (get work "card_url")
+             "archive_stem" (archive-stem slug primary-text-member)
+             ;; by the pair, because the pair is the entry's identity: sorting on the
+             ;; person alone left two relations of one person in whatever order the
+             ;; metadata record happened to carry them, which is not an order
+             "contributors" (vec (sort-by (juxt #(get % "person_id") #(get % "relation_to_work"))
+                                          (map #(contributor-entry slug persons %)
+                                               (get metadata-record "contributors"))))
+             "source_editions" (mapv source-edition-entry (get work "source_editions"))}
+      trailing-bytes-after-archive
+      (assoc "trailing_bytes_after_archive" trailing-bytes-after-archive))))
 
 (defn catalog-value
   "The snh-catalog/1 value for `published` slugs, in the manifest's order.
@@ -116,7 +124,7 @@
    "works"
    (mapv (fn [slug]
            (let [{:keys [metadata-record persons primary-text-member
-                         source-content-hash rights]}
+                         source-content-hash rights trailing-bytes-after-archive]}
                  (or (get outputs slug)
                      (fail! :catalog-work-not-built {:slug slug}))]
              (work-entry slug
@@ -131,5 +139,6 @@
                                    :missing-metadata-record {:slug slug})
                          (cas-json cas-dir persons
                                    :missing-person-records {:slug slug})
-                         primary-text-member)))
+                         primary-text-member
+                         trailing-bytes-after-archive)))
          published)})

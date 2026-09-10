@@ -42,6 +42,11 @@
           "ndc": { "$ref": "#/$defs/nullableString" },
           "card_url": { "type": "string", "minLength": 1 },
           "archive_stem": { "type": "string", "pattern": "^[!-~]+$" },
+          "trailing_bytes_after_archive": {
+            "description": "Bytes following the end of this work's Aozora Bunko archive. Absent for an archive that has none, which is almost all of them. Present when standard zip readers refuse the archive on account of them while the members themselves are intact.",
+            "type": "integer",
+            "minimum": 1
+          },
           "contributors": {
             "type": "array",
             "minItems": 1,

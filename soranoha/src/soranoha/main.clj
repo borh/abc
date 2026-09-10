@@ -326,7 +326,10 @@
                                                  (:accountability outputs)
                                                  (assoc "source-accountability" (get-in outputs [:accountability "source-accountability"]))
                                                  (:coverage outputs)
-                                                 (assoc "interpretation-coverage" (get-in outputs [:coverage "interpretation-coverage"])))]))
+                                                 (assoc "interpretation-coverage" (get-in outputs [:coverage "interpretation-coverage"]))
+                                                 (get source-facts "trailing_bytes_after_archive")
+                                                 (assoc "trailing_bytes_after_archive"
+                                                        (get source-facts "trailing_bytes_after_archive")))]))
                                   results)}
             report-path (str (fs/path root "runs" (str "run-" started ".json")))]
         (fs/create-dirs (fs/parent report-path))

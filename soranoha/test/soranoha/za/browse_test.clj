@@ -30,7 +30,7 @@
    "covers_from" covers-from})
 
 (defn- work
-  [slug title reading & {:keys [ndc contributors work-rights]
+  [slug title reading & {:keys [ndc contributors work-rights trailing-bytes]
                          :or {ndc "NDC 913"
                               work-rights "public-domain"
                               contributors [{"person_id" "000879"
@@ -39,22 +39,23 @@
                                              "family_name_romaji" "Akutagawa"
                                              "given_name_romaji" "Ryunosuke"
                                              "relation_to_work" "著者"}]}}]
-  {"slug" slug
-   "source_content_hash" (apply str (repeat 64 "1"))
-   "rights" work-rights
-   "title" title
-   "title_reading" reading
-   "subtitle" nil
-   "original_title" nil
-   "first_published" "「新思潮」1918(大正7)年"
-   "orthographic_style" "新字新仮名"
-   "ndc" ndc
-   "card_url" "https://www.aozora.gr.jp/cards/000879/card92.html"
-   "archive_stem" "92_ruby_164"
-   "contributors" contributors
-   "source_editions" [{"title" "芥川龍之介全集　第三巻"
-                       "publisher" "筑摩書房"
-                       "first_edition_year" "1971"}]})
+  (cond-> {"slug" slug
+           "source_content_hash" (apply str (repeat 64 "1"))
+           "rights" work-rights
+           "title" title
+           "title_reading" reading
+           "subtitle" nil
+           "original_title" nil
+           "first_published" "「新思潮」1918(大正7)年"
+           "orthographic_style" "新字新仮名"
+           "ndc" ndc
+           "card_url" "https://www.aozora.gr.jp/cards/000879/card92.html"
+           "archive_stem" "92_ruby_164"
+           "contributors" contributors
+           "source_editions" [{"title" "芥川龍之介全集　第三巻"
+                               "publisher" "筑摩書房"
+                               "first_edition_year" "1971"}]}
+    trailing-bytes (assoc "trailing_bytes_after_archive" trailing-bytes)))
 
 (def ^:private rights
   {"encoding" "CC0-1.0"
@@ -485,3 +486,22 @@
                   rights-page
                   "クレジットの表示はお願いであって、利用の条件ではありません"))
             "the corpus-wide claim is false once one work is licensed")))))
+
+(deftest a-work-page-names-the-bytes-that-follow-its-source-archive
+  ;; Standard zip readers refuse 058100_001505's archive: 984 bytes follow
+  ;; the archive proper, and the decoy record in them is what the reader
+  ;; trusts and then rejects. The members are intact and are what the
+  ;; edition was built from, so the page has to say that where a reader
+  ;; checking against the source will meet it.
+  (let [trailing (work "058100_001505" "ちょび髭サミュエルの話" "ちょびひげさみゅえるのはなし"
+                       :trailing-bytes 984)
+        ordinary (work "000092_000879" "蜘蛛の糸" "くものいと")
+        pages (pages (inputs [trailing ordinary]))
+        page-of (fn [w] (page pages (str "works/" (get w "slug") "/index.html")))]
+    (testing "the affected work states the count and that the text survived it"
+      (is (string/includes? (page-of trailing) "底本アーカイブ"))
+      (is (string/includes? (page-of trailing) "984 バイトが続いています"))
+      (is (string/includes? (page-of trailing) "984 bytes after the archive proper")))
+    (testing "and every other work says nothing, because nothing is wrong with theirs"
+      (is (not (string/includes? (page-of ordinary) "底本アーカイブ")))
+      (is (not (string/includes? (page-of ordinary) "Source archive"))))))

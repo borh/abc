@@ -688,7 +688,8 @@
         {:strs [slug title title_reading subtitle original_title first_published
                 orthographic_style ndc card_url source_content_hash
                 contributors source_editions]} work
-        works-standing (get work "rights")]
+        works-standing (get work "rights")
+        trailing-bytes (get work "trailing_bytes_after_archive")]
     (chrome
      title
      [[:h1 title]
@@ -733,7 +734,23 @@
        [:dt (bilingual "識別子" "Identifier")]
        [:dd [:code slug]]
        [:dt (bilingual "底本ハッシュ" "Source hash")]
-       [:dd [:code (str "sha256:" source_content_hash)]]]
+       [:dd [:code (str "sha256:" source_content_hash)]]
+       ;; Standard zip readers refuse an archive that carries bytes past its
+       ;; end, so a reader who goes to check this transcription against its
+       ;; source meets the refusal first. The count sits next to the hash of
+       ;; the bytes we read because together they say where the fault is: in
+       ;; the file Aozora Bunko ships, not in what was published from it.
+       (when trailing-bytes
+         (list [:dt (bilingual "底本アーカイブ" "Source archive")]
+               [:dd (bilingual
+                     (str "青空文庫のこの ZIP には、アーカイブ本体の後ろに "
+                          trailing-bytes " バイトが続いています。"
+                          "unzip などの一般的なツールはこれを理由にファイルを開けません。"
+                          "収録されている本文自体は無傷で、本サイトはそれを読み取っています。")
+                     (str "Aozora Bunko's archive for this work carries "
+                          trailing-bytes " bytes after the archive proper. "
+                          "unzip and other standard tools refuse the file on account of them. "
+                          "The members themselves are intact, and are what this edition was built from."))]))]
 
       [:section
        [:h2 (bilingual "本文を読む" "Read the text")]

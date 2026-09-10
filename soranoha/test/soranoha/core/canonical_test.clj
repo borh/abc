@@ -45,6 +45,26 @@
                      (canonical/rfc8785-safe-integer-json-string-v1 s)))
                 strings))))
 
+(deftest escaping-agrees-on-multi-character-strings
+  ;; the single-character sweep above cannot reach the fast path, which
+  ;; copies the run before the first character needing an escape and then
+  ;; escapes the rest. Escapes at the front, in the middle, at the end and
+  ;; back to back are where a boundary would be off by one.
+  (let [alphabet (concat [\" \\ \newline \return \tab \formfeed \backspace
+                          (char 0x00) (char 0x0b) (char 0x1f) \/ (char 0x7f)
+                          \a \z (char 0x2028)]
+                         [\日 \本 \語])
+        random (java.util.Random. 20260910)
+        sample (fn [n] (apply str (repeatedly n #(nth alphabet (.nextInt random (count alphabet))))))
+        strings (concat ["" "\"" "\"a" "a\"" "a\"b" "\"\"" "a\\\nb" "\u0000\u0000a"]
+                        (map sample (repeatedly 400 #(inc (.nextInt random 24)))))]
+    (doseq [candidate strings]
+      (is (= (json/write-json-str candidate :escape-slash false
+                                  :escape-unicode false
+                                  :escape-js-separators false)
+             (canonical/rfc8785-safe-integer-json-string-v1 candidate))
+          (pr-str candidate)))))
+
 (deftest malformed-utf16-rejection-retains-location
   (doseq [s [(str (char 0xD800)) (str (char 0xDC00)) (str (char 0xD800) "x")]
           [value path position] [[{"nested" [s]} ["nested" 0] :value]

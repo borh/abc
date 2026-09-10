@@ -30,7 +30,7 @@
    "covers_from" covers-from})
 
 (defn- work
-  [slug title reading & {:keys [ndc contributors work-rights trailing-bytes]
+  [slug title reading & {:keys [ndc contributors work-rights trailing-bytes first-published]
                          :or {ndc "NDC 913"
                               work-rights "public-domain"
                               contributors [{"person_id" "000879"
@@ -46,7 +46,7 @@
            "title_reading" reading
            "subtitle" nil
            "original_title" nil
-           "first_published" "「新思潮」1918(大正7)年"
+           "first_published" (or first-published "「新思潮」1918(大正7)年")
            "orthographic_style" "新字新仮名"
            "ndc" ndc
            "card_url" "https://www.aozora.gr.jp/cards/000879/card92.html"
@@ -505,3 +505,16 @@
     (testing "and every other work says nothing, because nothing is wrong with theirs"
       (is (not (string/includes? (page-of ordinary) "底本アーカイブ")))
       (is (not (string/includes? (page-of ordinary) "Source archive"))))))
+
+(deftest a-collection-lists-each-first-publication-rather-than-running-them-together
+  ;; Aozora Bunko's 初出 for a collection names one appearance per
+  ;; constituent piece, separated in its catalog by a literal <br>. 156
+  ;; works carry several, the longest 414.
+  (let [collection (work "001790_000067" "宿命" "しゅくめい"
+                         :first-published "ああ固い氷を破つて「新しき欲情」1922年4月刊\n婦人と雨「新しき欲情」1922年4月刊")
+        pages (pages (inputs [collection]))
+        html (page pages "works/001790_000067/index.html")]
+    (testing "each statement stands on its own"
+      (is (string/includes? html "<dd>ああ固い氷を破つて「新しき欲情」1922年4月刊</dd><dd>婦人と雨「新しき欲情」1922年4月刊</dd>")))
+    (testing "and the reader is never shown the separator the catalog used"
+      (is (not (string/includes? html "&lt;br&gt;"))))))

@@ -133,6 +133,17 @@
     :metadata-record {"work" fully-described-work "contributors" []}
     :persons-by-id {}}))
 
+(defn- render-work-fields
+  "The fully described work with `overrides` applied, rendered."
+  [overrides]
+  (render/render-work
+   {:rights @fixture/grant
+    :slug "000092_000879"
+    :parser-ir {"nodes" [{"type" "text" "text" "　本文。"}]
+                "paragraphs" [{"id" "p1" "role" "body" "node_range" {"start" 0 "end" 1}}]}
+    :metadata-record {"work" (merge fully-described-work overrides) "contributors" []}
+    :persons-by-id {}}))
+
 (defn- render-with-contributors [contributors persons]
   (render/render-work
    {:rights @fixture/grant
@@ -196,6 +207,14 @@
     (testing "where the text first appeared, kept apart from what was keyed"
       (is (has? "<bibl type=\"first-publication\">「赤い鳥」1918(大正7)年7月</bibl>")))
 
+    (testing "a collection names one appearance per constituent piece, so it
+              gets one bibl per statement rather than one holding them all"
+      (let [collection (:tei (render-work-fields
+                              {"first_published" "甲「新潮」1918年\n乙「改造」1922年"}))]
+        (is (string/includes? collection "<bibl type=\"first-publication\">甲「新潮」1918年</bibl>"))
+        (is (string/includes? collection "<bibl type=\"first-publication\">乙「改造」1922年</bibl>"))
+        (is (= 2 (count (re-seq #"type=\"first-publication\"" collection))))))
+
     (testing "both classifications point at a declared taxonomy"
       (is (has? "<taxonomy xml:id=\"aozora-orthography\">"))
       (is (has? "<classCode scheme=\"#ndc\">913</classCode>"))
@@ -212,6 +231,25 @@
                           (:findings (schematron/validate!
                                       {:schema-path "schemas/tei-profile.sch"
                                        :xml-path xml-path :label "full header"})))))
+      (finally (fs/delete-tree dir)))))
+
+(deftest a-header-naming-several-first-publications-still-validates
+  ;; 156 published works name more than one, the largest 414, so the
+  ;; repetition has to be something the profile admits rather than
+  ;; something that happens to work on the two-element case.
+  (let [dir (fs/create-temp-dir {:prefix "tei-header-first-publications"})
+        xml-path (str (fs/path dir "tei.xml"))
+        statements (string/join "\n" (map #(str "作品" % "「新潮」1918年") (range 414)))]
+    (try
+      (spit xml-path (:tei (render-work-fields {"first_published" statements})))
+      (is (empty? (:violations (rng/validate! {:schema-path "schemas/tei-profile.rng"
+                                               :xml-path xml-path
+                                               :label "many first publications"}))))
+      (is (empty? (remove #(= :warning (:severity %))
+                          (:findings (schematron/validate!
+                                      {:schema-path "schemas/tei-profile.sch"
+                                       :xml-path xml-path
+                                       :label "many first publications"})))))
       (finally (fs/delete-tree dir)))))
 
 (deftest a-header-with-only-subordinate-titles-is-refused

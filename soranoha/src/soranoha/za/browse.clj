@@ -725,8 +725,13 @@
                contributors)
        (when-not (string/blank? original_title)
          (list [:dt (bilingual "原題" "Original title")] [:dd original_title]))
+       ;; A collection carries one statement per constituent piece, up to
+       ;; 414 of them. One `dd` each, so a reader can see where each ends
+       ;; rather than reading them as one sentence.
        (when-not (string/blank? first_published)
-         (list [:dt (bilingual "初出" "First published")] [:dd first_published]))
+         (cons [:dt (bilingual "初出" "First published")]
+               (map (fn [statement] [:dd statement])
+                    (string/split-lines first_published))))
        (when-not (string/blank? orthographic_style)
          (list [:dt (bilingual "文字遣い" "Orthography")] [:dd orthographic_style]))
        (when-not (string/blank? ndc)

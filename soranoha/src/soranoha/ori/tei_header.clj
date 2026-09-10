@@ -198,14 +198,19 @@
   notes, its content being bibliographic, and because a first-publication
   statement is a reference to another appearance of the work, which is what a
   `bibl` is for. It is distinguished from the transcribed editions by its
-  type: it describes where the text was first printed, not what was keyed."
+  type: it describes where the text was first printed, not what was keyed.
+  A work that carries several such statements gets several `bibl`s."
   [work source-content-hash primary-text-hash]
   (let [editions (get work "source_editions")]
     (cond-> (if (seq editions)
               (into [:sourceDesc] (mapv bibl-edition editions))
               [:sourceDesc (fallback-source-bibl work)])
+      ;; One `bibl` per line. A collection's 初出 names where each
+      ;; constituent piece first appeared, and holding all of those in a
+      ;; single element would say they are one reference to one appearance.
       (get work "first_published")
-      (conj [:bibl {:type "first-publication"} (get work "first_published")])
+      (into (map (fn [statement] [:bibl {:type "first-publication"} statement]))
+            (string/split-lines (get work "first_published")))
       source-content-hash (conj [:bibl [:idno {:type "source-content-hash"} source-content-hash]])
       primary-text-hash (conj [:bibl [:idno {:type "primary-text-hash"} primary-text-hash]]))))
 

@@ -686,6 +686,13 @@ relation_to_work}`. One person may hold more than one relation to a work, so
 the pair is the entry's identity rather than the person. `source_editions` entries are
 `{title, publisher, first_edition_year}`.
 
+`first_published` may hold more than one statement. Aozora Bunko treats a
+collection as one work and its 初出 names where each constituent piece first
+appeared; the statements are separated by a line feed, one per line, and no
+statement is empty. The upstream catalog separates them with a literal `<br>`,
+which is markup from its card pages rather than text from a work, and which no
+published field carries.
+
 `archive_stem` is the Aozora Bunko archive's own name for the work's primary text
 member, without its extension. Every published work has exactly one such
 member (the source bundle fails closed on none and on several), so the value

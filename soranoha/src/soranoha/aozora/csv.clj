@@ -186,6 +186,25 @@
 (defn- nonblank [s]
   (when (and s (not= "" s)) s))
 
+(defn- first-publication
+  "Aozora Bunko's 初出 column, with its line breaks written as line breaks.
+
+  A collection is one work in that catalog, and its 初出 names where each
+  constituent piece first appeared. The catalog separates those statements
+  with a literal `<br>`, which is markup from the card pages the CSV is built
+  alongside rather than text from a work: 166 rows carry it, one of them 414
+  statements long. No 初出 value contains a newline of its own, so reading
+  the tag as the break it stands for loses nothing and leaves nothing
+  downstream having to know the tag exists."
+  [value]
+  (some-> (nullable value)
+          (string/replace #"<br\s*/?>" "\n")
+          string/split-lines
+          (->> (map string/trim)
+               (remove string/blank?)
+               (string/join "\n"))
+          nonblank))
+
 (defn- parse-bool-flag
   "Decode the catalog's attributed copyright flag: なし is true, あり false.
   This lexical value is not an independent rights assessment."
@@ -231,7 +250,7 @@
      "subtitle" (nullable (get row "副題"))
      "subtitle_reading" (nullable (get row "副題読み"))
      "original_title" (nullable (get row "原題"))
-     "first_published" (nullable (get row "初出"))
+     "first_published" (first-publication (get row "初出"))
      "ndc" (let [v (some-> (get row "分類番号") nfc string/trim)]
              (when (and v (re-matches #"NDC [0-9A-Z]+( [0-9A-Z]+)*" v))
                v))

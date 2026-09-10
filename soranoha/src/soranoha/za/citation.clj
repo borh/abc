@@ -47,6 +47,14 @@
 
 (defn- blank->nil [s] (when-not (string/blank? s) s))
 
+(defn- statements
+  "A field whose lines are separate bibliographic statements, as one line of
+  running text. 初出 is the field that does this: a collection names where
+  each constituent piece first appeared, and the citation forms have nowhere
+  to put a line break."
+  [value]
+  (string/join "; " (string/split-lines value)))
+
 (defn- short-release
   "The release's short name: the first twelve characters of its head hash,
   which `/releases/short/<prefix>.json` resolves. The forms a reader sees
@@ -203,7 +211,7 @@
                               (when-let [style (blank->nil orthographic_style)]
                                 (str "文字遣い種別: " style "."))
                               (when-let [first-pub (blank->nil first_published)]
-                                (str "初出: " first-pub "."))
+                                (str "初出: " (statements first-pub) "."))
                               (str "Release " head-hex ".")]))}
       edition (assoc "container-title" (get edition "title"))
       (blank->nil (get edition "publisher"))
@@ -296,7 +304,8 @@
                                                        (when original_title
                                                          (str "原題: " original_title))
                                                        (when first_published
-                                                         (str "初出: " first_published))]))))
+                                                         (str "初出: "
+                                                              (statements first_published)))]))))
          "}\n")))
 
 (defn- urlencode [s]
@@ -349,7 +358,9 @@
                 first_published source_content_hash]} work
         edition (primary-edition work)]
     [slug title subtitle title_reading (naming/byline work)
-     orthographic_style ndc first_published
+     ;; A spreadsheet cell holding 414 lines is a row that spans 414 of
+     ;; them, so the statements are run together here.
+     orthographic_style ndc (some-> first_published statements)
      (get edition "title") (get edition "publisher") (edition-year work)
      filename (str "sha256:" source_content_hash) (work-url work)
      head-hex doi]))

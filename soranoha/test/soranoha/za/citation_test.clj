@@ -223,3 +223,18 @@
       (let [entry (citation/biblatex release with-sub)]
         (is (string/includes? entry "title = {蜘蛛の糸},"))
         (is (string/includes? entry "subtitle = {序},"))))))
+
+(deftest a-citation-note-runs-several-first-publications-into-one-line
+  ;; A citation form has nowhere to put a line break, so the statements are
+  ;; joined. What must not happen is that they are run together with no
+  ;; separator at all, which would read as one publication.
+  (let [collection (assoc kumo "first_published" "甲「新潮」1918年\n乙「改造」1922年")]
+    (is (string/includes? (get (citation/csl-json-value release collection) "note")
+                          "初出: 甲「新潮」1918年; 乙「改造」1922年."))
+    (is (string/includes? (citation/biblatex release collection)
+                          "初出: 甲「新潮」1918年; 乙「改造」1922年"))
+    (testing "and the spreadsheet column holds one line, not 414"
+      (let [row (citation/csv-values release collection "kumo.md")
+            cell (nth row (.indexOf ^java.util.List citation/csv-columns "first_published"))]
+        (is (= "甲「新潮」1918年; 乙「改造」1922年" cell))
+        (is (not (string/includes? cell "\n")))))))

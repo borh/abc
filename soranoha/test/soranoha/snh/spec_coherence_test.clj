@@ -18,6 +18,7 @@
             [clojure.test :refer [deftest is testing]]
             [soranoha.snh.schema :as schema]
             [soranoha.snh.verify :as verify]
+            [soranoha.za.naming :as naming]
             [soranoha.za.docs :as docs]))
 
 (def ^:private spec-path "docs/design/snh-protocol-v1.md")
@@ -164,3 +165,26 @@
       (is (empty? unwritten)
           (str "a release may carry these and the spec never states them: "
                (pr-str unwritten))))))
+
+(defn- registry-parts
+  "Section 2's two lists, split where it turns from per-work types to
+  release-level ones."
+  [spec]
+  (let [section (some #(when (str/starts-with? % "2. ") %) (str/split spec #"(?m)^## "))
+        [per-work release-level] (str/split section #"Release-level types:" 2)]
+    [per-work release-level]))
+
+(defn- plain-code-spans
+  "The code spans naming a bare type, so `snh-manifest/3` and `works[].artifacts`
+  are read as the things they are rather than as registry entries."
+  [text]
+  (set (map second (re-seq #"`([a-z][a-z-]*)`" text))))
+
+(deftest the-closed-registry-lists-the-types-this-build-registers
+  ;; Section 2 is the only list the spec calls closed, and a consumer written
+  ;; against it is entitled to meet no other member.
+  (let [[per-work release-level] (registry-parts (docs/read-text spec-path))]
+    (is (= (set naming/artifact-kinds) (plain-code-spans per-work))
+        "the per-work types the registry permits are not the ones a work carries")
+    (is (= (set (keys schema/schema-resources)) (plain-code-spans release-level))
+        "the release-level types the registry lists are not the ones that resolve to a schema")))

@@ -55,8 +55,10 @@ Per-work types (the only types permitted in `works[].artifacts`):
 `markdown`, `tei`, `plaintext`, `tei-validation`.
 Release-level types: `release-manifest`, `assessment-snapshot`,
 `admission-report`, `catalog`, `governance-event`.
-Any addition or removal is wire version `snh-manifest/3`; closed-schema
-v2 consumers must never meet unknown members.
+The schema pins each artifact slot to its exact type, so adding or removing
+a type is a new manifest wire version and cannot be done inside
+`snh-manifest/3`. That is what closing the registry buys: a consumer written
+against the closed schema never meets a member it does not know.
 
 ## 3. `snh-manifest/3`
 

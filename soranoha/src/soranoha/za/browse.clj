@@ -80,6 +80,9 @@
     "ul.works, ul.plain { list-style: none; padding: 0; }"
     "ul.works li { padding: .35rem 0; border-bottom: 1px solid var(--rule); }"
     "ul.works .by { color: var(--muted); font-size: .9rem; }"
+    ;; smaller than the byline, since it is only needed on the rows that
+    ;; would otherwise look identical
+    "ul.works .variant { color: var(--muted); font-size: .85rem; }"
     "ul.cols { list-style: none; padding: 0; columns: 2; }"
     "ul.plain li.evidence { margin-block-start: .5rem; padding-block-start: .5rem;"
     "  border-block-start: 1px solid var(--rule); }"
@@ -408,16 +411,57 @@
         head (when-not (string/blank? code) (str (first code)))]
     (if (some #(= head (first %)) (butlast ndc-classes)) head "other")))
 
-(defn- work-link [work]
+(defn- source-edition-title [work]
+  (get (first (get work "source_editions")) "title"))
+
+(defn- variant-facts
+  "The facts that distinguish works a list would otherwise print identically.
+
+  Aozora Bunko carries several transcriptions of one text: 樋口一葉's わかれ道
+  is keyed three times. They differ in the edition they were keyed from and in
+  whether that edition modernized the orthography, so those are the two facts
+  that separate them.
+
+  Orthography alone separates most groups; the source edition is added only
+  where it does not."
+  [works]
+  (let [styles (mapv #(get % "orthographic_style") works)]
+    (if (or (apply distinct? styles) (= 1 (count styles)))
+      [:orthographic_style]
+      [:orthographic_style :source-edition])))
+
+(defn- variant-label [work facts]
+  (let [parts (keep (fn [fact]
+                      (case fact
+                        :orthographic_style (get work "orthographic_style")
+                        :source-edition (source-edition-title work)))
+                    facts)]
+    (when (seq parts)
+      (str "（" (string/join "・" parts) "）"))))
+
+(defn- work-link [work facts]
   (let [slug (get work "slug")]
     [:li
      [:a {:href (str "/works/" slug "/")} (get work "title")]
      (when-let [by (byline work)]
-       [:span {:class "by"} (str " — " by)])]))
+       [:span {:class "by"} (str " — " by)])
+     (when-let [label (and facts (variant-label work facts))]
+       [:span {:class "variant"} (str " " label)])]))
 
-(defn- work-list [works]
+(defn- work-list
+  "One row per work. A title and byline do not identify a work uniquely.
+  Where the same pair names more than one work in a list, each row also shows
+  what separates it, so that three rows reading わかれ道 — 樋口 一葉 are not
+  read as one row repeated three times."
+  [works]
   (if (seq works)
-    (into [:ul {:class "works"}] (map work-link works))
+    (let [ambiguous (into {}
+                          (keep (fn [[key group]]
+                                  (when (< 1 (count group))
+                                    [key (variant-facts group)])))
+                          (group-by (juxt #(get % "title") byline) works))]
+      (into [:ul {:class "works"}]
+            (map #(work-link % (get ambiguous [(get % "title") (byline %)])) works)))
     [:p (bilingual "該当する作品はありません。" "No works here.")]))
 
 (defn- archive-label [artifact-type]

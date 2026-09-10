@@ -55,8 +55,9 @@ To read it rather than download it, open
 all, in horizontal or vertical setting.
 
 If you have an Aozora Bunko card URL, you already have the identifier. The card
-`https://www.aozora.gr.jp/cards/000879/card92.html` is card directory `000879`
-and work id `92`; pad each to six digits and join them with an underscore.
+`https://www.aozora.gr.jp/cards/000879/card92.html` gives work id `92` and card
+directory `000879`; pad each to six digits and join them in that order, work id
+first, giving `000092_000879`.
 
 Identifiers are stable across releases and denote the work, not a particular
 file. [Work identifiers](../soranoha/docs/work-identifiers.md) states exactly

@@ -5,6 +5,7 @@
             [soranoha.core.rights :as rights]
             [soranoha.ori.stages :as stages]
             [soranoha.ori.tei-header :as tei-header]
+            [soranoha.snh.schema :as snh-schema]
             [soranoha.za.release :as za-release]))
 
 (def ^:private policy-path "data/publication-policy.edn")
@@ -98,3 +99,29 @@
                (:reason (ex-data (try (rights/work-terms grant standing)
                                       (catch clojure.lang.ExceptionInfo e e)))))
             (pr-str standing))))))
+
+(defn- schema-standings
+  "The standings each protocol schema will accept for a work, by schema. Read
+  out of the schemas rather than listed here, so a schema that starts carrying
+  the vocabulary is compared without this test being told about it."
+  []
+  (into {}
+        (keep (fn [type]
+                (when-let [enum (get-in (snh-schema/schema-for type)
+                                        ["$defs" "works-standing" "enum"])]
+                  [type (set enum)])))
+        (keys snh-schema/schema-resources)))
+
+(deftest every-statement-of-the-standings-a-work-may-carry-is-the-same-one
+  ;; The set is written out three times: the map this build renders from, and
+  ;; a closed enum in each of the two payloads that name a work's standing.
+  ;; Adding a licence to the code alone would render terms the manifest
+  ;; rejects; adding it to one schema alone would admit a catalog entry whose
+  ;; work the manifest refuses. Neither is visible until a release is
+  ;; assembled, which is where the artifact-set version of this went wrong.
+  (let [by-schema (schema-standings)]
+    (is (= #{"release-manifest" "catalog"} (set (keys by-schema)))
+        "these are the payloads that carry a work's standing")
+    (doseq [[type standings] (sort by-schema)]
+      (is (= (rights/standings) (into (sorted-set) standings))
+          (str type " admits a different set of standings than this build can state")))))

@@ -81,6 +81,8 @@
     "ul.works li { padding: .35rem 0; border-bottom: 1px solid var(--rule); }"
     "ul.works .by { color: var(--muted); font-size: .9rem; }"
     "ul.cols { list-style: none; padding: 0; columns: 2; }"
+    "ul.plain li.evidence { margin-block-start: .5rem; padding-block-start: .5rem;"
+    "  border-block-start: 1px solid var(--rule); }"
     "code.citation { display: block; white-space: pre-wrap; overflow-wrap: anywhere;"
     "  padding: .6em .8em; background: var(--panel); border-radius: 3px; }"
     "code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .85em;"
@@ -99,8 +101,12 @@
     "button.copy:hover, button.copy:focus-visible { color: var(--ink);"
     "  background: var(--panel); }"
     "button.copy.done { color: var(--link); border-color: var(--link); }"
+    ;; beside a short value the button sits inline, but these two are blocks
+    ;; the full width of the column, so the button goes under the block it
+    ;; copies and against its trailing edge, where it still reads as belonging
+    ;; to that block rather than floating loose beneath it
     "pre + button.copy, code.citation + button.copy { display: block;"
-    "  margin: .4rem 0 0; margin-inline-start: 0; }"
+    "  width: fit-content; margin: .4rem 0 0; margin-inline-start: auto; }"
     "@media (max-width: 32rem) { dl.facts { grid-template-columns: 1fr; } ul.cols { columns: 1; } }"
 
     ;; the documentation pages. Prose the project wrote, so unlike the reading
@@ -127,6 +133,12 @@
     "p.controls label { cursor: pointer; }"
     "details.front { margin-block: 0 2rem; font-size: .9rem; color: var(--muted); }"
     "details.front summary { cursor: pointer; }"
+    "details.bibtex summary { cursor: pointer; color: var(--muted); font-size: .9rem; }"
+    ;; the entry wraps rather than scrolls: a reader is here to select it, and
+    ;; a line running off the edge is the one thing that makes that harder
+    "details.bibtex pre { margin: .5rem 0 0; padding: .6em .8em; background: var(--panel);"
+    "  border-radius: 3px; font-family: ui-monospace, Menlo, Consolas, monospace;"
+    "  font-size: .85em; white-space: pre-wrap; overflow-wrap: anywhere; }"
     ".colophon, .provenance { font-size: .9rem; }"
     ".tei { line-height: 2; }"
     ".tei section { margin-block: 0 1.5rem; }"
@@ -677,14 +689,18 @@
       [:section
        [:h2 (bilingual "ダウンロード" "Downloads")]
        (into [:ul {:class "plain"}]
-             (map (fn [[artifact-type label]]
+             (map (fn [[artifact-type label class]]
                     (let [name (naming/filename work artifact-type)]
-                      [:li [:a {:href (str "/works/" slug "/" name) :download name} label]
+                      [:li (cond-> {} class (assoc :class class))
+                       [:a {:href (str "/works/" slug "/" name) :download name} label]
                        [:span {:class "by"} " " [:code name]]]))
+                  ;; the first three are the work itself in three forms; the
+                  ;; report is evidence about them, so it sits below a rule
+                  ;; rather than reading as a fourth copy of the text
                   [["tei" "TEI XML"]
                    ["plaintext" (bilingual "プレーンテキスト" "Plain text")]
                    ["markdown" "Markdown"]
-                   ["tei-validation" (bilingual "検証レポート" "Validation report")]]))
+                   ["tei-validation" (bilingual "検証レポート" "Validation report") "evidence"]]))
        [:p (bilingual
             (str "引用には識別子を使ってください。ファイル名は便宜のためのものです。"
                  "同じバイト列は、末尾に種別名を置いた URL からも取得できます。この URL は識別子から組み立てられ、版をまたいでも同じです。")
@@ -714,6 +730,12 @@
         " · "
         [:a {:href (str "/works/" slug "/citation.bib") :download (str slug ".bib")}
          "BibLaTeX"]]
+       ;; a download is the wrong shape for the common case, which is pasting
+       ;; one entry into a .bib file already open in an editor. Folded away,
+       ;; because a reader who wants the file still wants the link above.
+       [:details {:class "bibtex"}
+        [:summary (bilingual "BibLaTeX をそのままコピーする" "Copy the BibLaTeX entry")]
+        [:pre (citation/biblatex release work)]]
        ;; COinS: an empty span whose title is an OpenURL context object. This
        ;; is the one metadata form a browser connector reads without being
        ;; told the site exists, and `genre=bookitem` is what makes it save the

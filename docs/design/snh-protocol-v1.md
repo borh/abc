@@ -459,10 +459,19 @@ comparison against an independently obtained head or checkpoint.
 4. Create commit C′ with EXACTLY ONE parent, C (never a merge):
    M's blobs, `releases/<manifest_id>.json` + `.sig`,
    `releases/HEAD` = M's manifest_id.
-5. VERIFY C′ with the §8 primitive BEFORE pushing: an invalid
-   candidate (a bad signature, a missing blob, or any violated
-   invariant) must never reach the origin ref. Then push with C as
-   the expected ref value.
+5. VERIFY C′ BEFORE pushing: an invalid candidate (a bad signature, a
+   missing blob, or any violated invariant) must never reach the origin
+   ref. Either apply the §8 primitive to C′, or establish the §8
+   invariants for C′ ALONE against step 2's result for C. The second
+   form is equivalent HERE AND ONLY HERE: step 2 verified C with the
+   primitive in this same transaction, and a commit id fixes its entire
+   history, so the prefix cannot differ without C differing. It MUST
+   bind to C's exact commit id and to the head C carries, MUST establish
+   at C′ everything the primitive would, and is available ONLY to a
+   party holding its own §8 result for C. A verifier presented with a
+   repository holds no such result and MUST walk.
+   See `adr/0002-increment-verification-before-push.md`. Then push with
+   C as the expected ref value.
 6. UNKNOWN result: if M is on the accepted manifest chain (walked from
    the current `releases/HEAD`): success. If M is ABSENT, proceed
    exactly as for REJECTION (step 7); the two cases converge.

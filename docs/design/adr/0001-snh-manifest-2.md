@@ -5,7 +5,11 @@ Status: accepted, 2026-09-08. Pre-genesis; no public chain carries
 
 The snh protocol specification requires a permanent architectural decision
 record for any change to its contracts. This is the first, and it establishes
-`docs/design/adr/` as where they live.
+`docs/design/adr/` as where they live. Nothing else belongs there: a record is
+written here only for a change to the protocol's contracts that has been made,
+because the chain is append-only and a verifier needs the reason permanently.
+Every other design decision lives in the issue tracker while it is open and in
+the code once it is settled.
 
 ## Context
 

@@ -39,6 +39,18 @@
          (mapcat (comp walk schema/schema-for))
          (filter (comp seq :required)))))
 
+(defn- schema-enums
+  "Every closed vocabulary the schemas define, as value sets."
+  []
+  (letfn [(walk [node]
+            (cond
+              (map? node) (concat (when (sequential? (get node "enum"))
+                                    [(set (get node "enum"))])
+                                  (mapcat walk (vals node)))
+              (sequential? node) (mapcat walk node)
+              :else nil))]
+    (distinct (mapcat (comp walk schema/schema-for) (keys schema/schema-resources)))))
+
 (def ^:private restatable-sets
   "The field sets the spec may restate, and where each one is defined."
   (delay
@@ -89,6 +101,14 @@
       (let [always (set (map second (remove #(nth % 2) parsed)))]
         (when (seq always) always)))))
 
+(defn- restated-enum
+  "The values a braced list of quoted strings states, or nil when its members
+  are not all quoted strings and it is therefore not restating a vocabulary."
+  [inside]
+  (let [parsed (map #(re-matches #"\"([^\"]+)\"" (str/trim %)) (members inside))]
+    (when (and (seq parsed) (every? some? parsed))
+      (set (map second parsed)))))
+
 (defn- nearest
   "The defined set closest to `claimed`, so a failure says which way the two
   moved apart rather than only that they did."
@@ -121,3 +141,26 @@
       (is (empty? unnamed)
           (str "these may appear in a published payload and the spec never "
                "names them: " (pr-str unnamed))))))
+
+(deftest every-vocabulary-the-spec-restates-is-one-a-schema-defines
+  (let [spec (docs/read-text spec-path)
+        defined (set (schema-enums))]
+    (doseq [[line inside] (brace-spans spec)
+            :let [claimed (restated-enum inside)]
+            :when claimed]
+      (is (contains? defined claimed)
+          (str spec-path ":" line " offers " (pr-str (sort claimed))
+               " and no schema defines that vocabulary")))))
+
+(deftest every-value-a-schema-will-accept-is-written-in-the-spec
+  ;; Written as itself, in a code span or in quotes, rather than merely used in
+  ;; a sentence: a value that reads as an ordinary word would otherwise count
+  ;; itself present in prose that is not about it.
+  (let [spec (docs/read-text spec-path)
+        written? #(or (str/includes? spec (str "`" % "`"))
+                      (str/includes? spec (str "\"" % "\"")))]
+    (doseq [values (schema-enums)
+            :let [unwritten (sort (remove written? values))]]
+      (is (empty? unwritten)
+          (str "a release may carry these and the spec never states them: "
+               (pr-str unwritten))))))

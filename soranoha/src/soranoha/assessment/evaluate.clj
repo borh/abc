@@ -312,7 +312,24 @@
                                                 (some #(get-in obs [% :reason]) (get identity "evidence"))
                                                 (get-in obs [ref :reason]))
                                               :assessment/stale-premise))
-                 :dependencies (vec (:dependencies result))}))
+                 ;; What this premise's match rested on, for the RDF provenance
+                 ;; view to trace a finding back through. A fact premise passes
+                 ;; on the referenced fact's own grounding. An identity premise
+                 ;; matches only when every evidence observation is available
+                 ;; and its fingerprint is minted over all of them, so each one
+                 ;; is an edge; without them a finding resting on a minted
+                 ;; identity could not be traced to the evidence that grounded
+                 ;; it, which is the premise kind whose grounding is least
+                 ;; visible. An observation premise names its observation in
+                 ;; `ref`, which the projection already carries, and an
+                 ;; observation rests on nothing further, so it adds no edge.
+                 :dependencies (if (= kind "identity")
+                                 (mapv (fn [id]
+                                         {:observation id
+                                          :state (get-in obs [id :state])
+                                          :reason (get-in obs [id :reason])})
+                                       (get identity "evidence"))
+                                 (vec (:dependencies result)))}))
             (resolve-finding [finding]
               (let [id (get finding "id")
                     edges (mapv resolve-premise (get finding "premises"))

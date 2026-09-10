@@ -9,7 +9,7 @@
             [soranoha.core.hash :as hash]
             [soranoha.kura.engine :as engine]))
 
-(def ^:private fragment-versions {"finding" "2" "conclusion" "1" "reliance" "1"})
+(def ^:private fragment-versions {"finding" "3" "conclusion" "1" "reliance" "1"})
 (def ^:private assembly-version "2")
 
 (def default-mapping-profile {"vocabulary" "urn:soranoha:assessment:"})
@@ -35,7 +35,29 @@
      (quad id (str vocabulary "value") (value-term value) graph)
      (quad id (str vocabulary "effectiveDate") (literal date (str xsd "date")) graph)]))
 
-(defn- finding-quads [base vocabulary {:keys [record state reason]}]
+(defn- grounding-quads
+  "The observations a premise's match consumed, as edges from the review that
+  made it.
+
+  A premise names one thing in `ref`, and for most kinds that is also the
+  thing the match read: an observation premise refers to its observation, a
+  fact premise to a fact whose own review is in the graph already. An identity
+  premise is the exception. Its fingerprint is minted over several evidence
+  observations and it matches only when every one of them is available, so
+  `ref` names the identity and nothing names what the identity was minted
+  from. Those are the premises whose grounding is least visible, and without
+  these edges a finding resting on one could not be traced through the graph
+  to the evidence that carried it."
+  [base vocabulary activity usage observation-ids]
+  (mapcat (fn [observation-id]
+            (let [entity (str base "observation/" (component observation-id))]
+              [(quad activity (str prov "used") (iri entity) nil)
+               (quad usage (str vocabulary "groundedIn") (iri entity) nil)
+               (quad entity (str rdf "type") (iri (str prov "Entity")) nil)
+               (quad entity (str vocabulary "observationId") (value-term observation-id) nil)]))
+          observation-ids))
+
+(defn- finding-quads [base vocabulary {:keys [record state reason grounding]}]
   (let [id (claim-iri base record)
         activity (str id "/review")
         assessor (str base "agent/" (component (get record "assessor")))]
@@ -58,14 +80,16 @@
         (let [usage (str activity "/usage/" index)
               evidence (str "urn:sha256:" (get premise "fingerprint"))
               projection (get premise "projection" "evidence-version")]
-          [(quad activity (str prov "used") (iri evidence) nil)
-           (quad activity (str prov "qualifiedUsage") (iri usage) nil)
-           (quad usage (str rdf "type") (iri (str prov "Usage")) nil)
-           (quad usage (str prov "entity") (iri evidence) nil)
-           (quad usage (str prov "hadRole") (iri (str vocabulary projection)) nil)
-           (quad usage (str vocabulary "premiseKind") (value-term (get premise "kind")) nil)
-           (quad usage (str vocabulary "premiseReference") (value-term (get premise "ref")) nil)
-           (quad evidence (str rdf "type") (iri (str prov "Entity")) nil)]))
+          (concat
+           [(quad activity (str prov "used") (iri evidence) nil)
+            (quad activity (str prov "qualifiedUsage") (iri usage) nil)
+            (quad usage (str rdf "type") (iri (str prov "Usage")) nil)
+            (quad usage (str prov "entity") (iri evidence) nil)
+            (quad usage (str prov "hadRole") (iri (str vocabulary projection)) nil)
+            (quad usage (str vocabulary "premiseKind") (value-term (get premise "kind")) nil)
+            (quad usage (str vocabulary "premiseReference") (value-term (get premise "ref")) nil)
+            (quad evidence (str rdf "type") (iri (str prov "Entity")) nil)]
+           (grounding-quads base vocabulary activity usage (get grounding index)))))
       (map-indexed vector (get record "premises"))))))
 
 (defn- dependency-input [edge]
@@ -80,8 +104,12 @@
                     {:reason :invalid-assessment-view})))
   {"reliances" (mapv (fn [[slug payload]] {"slug" slug "payload" payload}) (sort-by key (:reliances view)))
    "controls" (get-in view [:source "controls"])
-   "findings" (mapv (fn [{:keys [record state reason]}]
-                      {"record" record "state" (evaluate/state->wire state) "reason" (evaluate/reason->wire reason)})
+   "findings" (mapv (fn [{:keys [record state reason dependencies]}]
+                      ;; `dependencies` is one edge per premise, in the order
+                      ;; the record lists them, so the observations each
+                      ;; premise's match consumed stay aligned with it by index
+                      {"record" record "state" (evaluate/state->wire state) "reason" (evaluate/reason->wire reason)
+                       "grounding" (mapv #(vec (keep :observation (:dependencies %))) dependencies)})
                     (:findings view))
    "facts" (mapv (fn [[fact result]]
                    {"fact" fact "state" (evaluate/state->wire (:state result)) "value" (:value result)
@@ -180,7 +208,8 @@
   (let [vocabulary (get profile "vocabulary")
         accepted (str base "accepted")
         findings (map #(hash-map :record (get % "record") :state (get % "state")
-                                 :reason (get % "reason")) (get input "findings"))
+                                 :reason (get % "reason") :grounding (get % "grounding"))
+                      (get input "findings"))
         by-id (into {} (map (fn [{:keys [record]}] [(get record "id") record]) findings))]
     (apply str
            (sort
@@ -219,7 +248,8 @@
                              "finding" (finding-quads base vocabulary
                                                       {:record (get payload "record")
                                                        :state (get payload "state")
-                                                       :reason (get payload "reason")})
+                                                       :reason (get payload "reason")
+                                                       :grounding (get payload "grounding")})
                              "conclusion" (conclusion-quads base vocabulary (str base "accepted")
                                                             (get payload "supports") (get payload "result")))]
                  {"fragment" (.getBytes ^String (apply str (sort (distinct quads))) "UTF-8")}))}

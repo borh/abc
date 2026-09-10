@@ -106,6 +106,27 @@
         (is (= nq (rdf/nquads (evaluate-view store (update (source) "findings" #(vec (reverse %))))
                               options)))))))
 
+(deftest an-identity-premise-is-traceable-to-the-evidence-it-was-minted-over
+  (with-store
+    (fn [store]
+      (let [identity {"id" "soranoha-example" "assessor" "Synthetic reviewer"
+                      "basis" "Synthetic identity evidence" "evidence" ["evidence"]}
+            minted (-> (source)
+                       (assoc "identities" [identity])
+                       (update-in ["findings" 0 "premises"] conj
+                                  {"kind" "identity" "ref" "soranoha-example"
+                                   "fingerprint" (evaluate/identity-fingerprint
+                                                  identity {"evidence" captured-evidence})}))
+            nq (rdf/nquads (evaluate-view store minted) options)
+            plain (rdf/nquads (evaluate-view store (source)) options)]
+        (testing "an identity premise names the identity, and nothing else names what it was minted from"
+          (is (str/includes? nq "\"soranoha-example\"")))
+        (testing "so the review carries an edge to each evidence observation"
+          (is (str/includes? nq "<https://example.invalid/assessment/observation/evidence>"))
+          (is (str/includes? nq "<urn:soranoha:assessment:groundedIn>")))
+        (testing "and a premise with no such grounding gains no edge"
+          (is (not (str/includes? plain "groundedIn"))))))))
+
 (deftest projection-inputs-do-not-change-snapshot
   (with-store
     (fn [store]

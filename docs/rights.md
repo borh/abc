@@ -179,8 +179,9 @@ Withdrawal is recorded in public governance events rather than in-place modifica
 A signed event carries a public `statement` and one of four `reason_code`
 values. Two of them are for claims: `rights` for a subsisting-rights claim, and
 `takedown-request` for a removal asked for on other grounds. The other two,
-`data-defect` and `other`, exist for withdrawals that are not claims. The next
-release then:
+`data-defect` and `other`, exist for withdrawals that are not claims. Appending
+the signed event is itself a release, and it does not wait for a corpus release.
+That release:
 
 - removes the work from `works[]`, so its artifacts are no longer served at
   `/works/<identifier>/`;

@@ -848,6 +848,13 @@
     [:p (bilingual
          "Soranoha 自身の符号化（TEI マークアップ、プレーンテキストと Markdown への投影、検証レポート、目録、リリースマニフェスト）は CC0-1.0 で公共領域に献呈されています。符号化に著作権やデータベース権が生じる範囲では、それを放棄します。"
          "Soranoha's own encoding (the TEI markup, the plaintext and Markdown projections, the validation reports, the catalog and the release manifests) is dedicated to the public domain under CC0-1.0. Where that encoding attracts copyright or a database right at all, those rights are waived.")]
+    ;; the two requests are not conditions on the grant, so they belong on
+    ;; the served page as what they are: a redistributor who reads only this
+    ;; page would otherwise never learn that anything was asked
+    [:p (bilingual
+         "青空文庫は義務ではなく二つのことを求めています。作品名・著者・底本・入力者・校正者を記したクレジット表記を削らないこと、そして底本や表記を変更した場合はその記録を添えることです。Soranoha はどちらも行っており、クレジットは各 TEI ファイルの back と各作品ページに、変更の記録は検証レポートと底本との差異に残しています。再配布される方にも同じ扱いをお願いします。"
+         "Aozora Bunko asks two things without requiring them: that the credit block naming the work, its author, its source edition and the people who keyed and proofread it not be removed, and that a change of source edition or notation come with a record of what changed. Soranoha does both: the credit block survives into every TEI file's back matter and onto every work page, and the record is the validation report and the divergences from the source published with each work. We ask the same of anyone redistributing these files.")]
+
     ;; the split a redistributor actually needs: the corpus and the program
     ;; that made it are under different terms, and the page a manifest points
     ;; at is where someone checks before redistributing
@@ -865,9 +872,12 @@
          (str "Write to the address on " orcid-url ", naming the work identifier (the "
               example-identifier " form, visible in the URL) or the Aozora Bunko card, and the "
               "basis of the claim. A claim does not need to be a formal legal notice to be acted on."))]
+    ;; the event's own release is the one that removes the work, so a
+    ;; rights holder is not waiting on a corpus release that may be weeks
+    ;; away; `transact/successor-for-event` builds that manifest
     [:p (bilingual
-         "取り下げは、公開されたガバナンスイベントとして記録されます。次のリリースでその作品は works[] から外れ、目録からも消え、取り下げを定めたイベントを指す withdrawn[] に入ります。署名済みの履歴は追記のみなので、過去のリリースは書き換わりません。"
-         "A withdrawal is recorded as a public governance event. In the next release the work leaves works[], the catalog no longer describes it, and it appears in withdrawn[] pointing at the event that governs it. The signed history is append-only, so earlier releases are not rewritten.")]
+         "取り下げは、公開されたガバナンスイベントとして記録されます。そのイベントを追記すること自体が一つのリリースであり、そこで作品は works[] から外れ、そのリリースの目録からも消え、取り下げを定めたイベントを指す withdrawn[] に入ります。次の定期リリースを待つ必要はありません。署名済みの履歴は追記のみなので、過去のリリースは書き換わりません。"
+         "A withdrawal is recorded as a public governance event. Appending that event is itself a release: in it the work leaves works[], the catalog that release publishes no longer describes it, and it appears in withdrawn[] naming the event that governs it. It does not wait for the next corpus release. The signed history is append-only, so earlier releases are not rewritten.")]
 
     [:h2 (bilingual "無保証" "No warranty")]
     [:p (bilingual

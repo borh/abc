@@ -1050,12 +1050,14 @@
          "すべて CC0 なので、引用はライセンス上の条件ではなく学術上の慣行です。版を明示して引用してください。"
          "Everything here is CC0, so citation is a scholarly norm rather than a licence condition. Cite the release by name.")]
     ;; the templates below are the document's; these are this release's, which
-    ;; is the one thing a reader cannot fill in from a repository checkout
-    ;; the head abbreviated the way every other citation on the site
-    ;; abbreviates it, and the way `docs/citation.md` says a bibliography
-    ;; should carry it. The short name resolves, so the line stays followable
+    ;; is the one thing a reader cannot fill in from a repository checkout.
+    ;; The head is abbreviated the way every other citation on the site
+    ;; abbreviates it and the way `docs/citation.md` says a bibliography
+    ;; should carry it: twelve hex digits and nothing after them, because the
+    ;; short name resolves and a trailing ellipsis would make a reader who
+    ;; typed what they saw look up a release that does not exist
     [:p [:code {:class "citation"}
-         (str site-name " Aozora TEI Corpus. Release " (subs head-hex 0 12) "…"
+         (str site-name " Aozora TEI Corpus. Release " (subs head-hex 0 12)
               (when doi (str ". https://doi.org/" doi)))]]
     [:p [:code {:class "citation" :lang "ja"}
          (citation/rendered release example-work)]]

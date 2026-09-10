@@ -21,54 +21,37 @@
             [clojure.string :as string]))
 
 (def documents
-  "The reader-facing documents, in the order the landing page lists them.
+  "The documents the site serves.
 
-  Route names are short and stable because they are cited. `/ns/tei` is the
-  local form of the namespace IRI `https://w3id.org/soranoha/ns/tei` that every
-  published TEI root declares: the permanent identifier redirects to it, so a
-  consumer who dereferences the namespace arrives at the vocabulary that
-  defines it.
+  One, and it is here because published bytes name it. Every TEI root declares
+  the `snh:` namespace as `https://w3id.org/soranoha/ns/tei` and every header
+  carries a pointer to it, so the namespace has to dereference to the
+  vocabulary that defines it or the files point at nothing. The route is short
+  and stable because it is cited.
 
-  Each entry carries a Japanese label for the site's own bilingual chrome. The
-  English side is the document's own first heading, read from the file, so the
-  two cannot drift apart."
-  [{:route "start-here" :path "docs/start-here.md"
-    :ja "はじめに"}
-   {:route "example" :path "docs/worked-example.md"
-    :ja "一作品を読み解く"}
-   {:route "glossary" :path "docs/user-glossary.md"
-    :ja "用語集"}
-   {:route "identifiers" :path "soranoha/docs/work-identifiers.md"
-    :ja "作品識別子"}
-   {:route "ns/tei" :path "soranoha/docs/tei-vocabulary.md"
-    :ja "TEI 拡張語彙"}
-   {:route "validation" :path "soranoha/docs/tei-validation.md"
-    :ja "TEI の検証"}
-   {:route "accountability" :path "soranoha/docs/source-accountability.md"
-    :ja "原文の説明責任"}
-   {:route "assessment" :path "soranoha/docs/assessment-evaluation.md"
-    :ja "公開可否の判断"}
-   {:route "annotation-layers" :path "docs/annotation-layers.md"
-    :ja "注釈の層"}
-   {:route "parser-invariants" :path "docs/parser-invariants.md"
-    :ja "パーサの不変条件"}
-   {:route "external-links" :path "soranoha/docs/external-links.md"
-    :ja "外部リンク"}
-   {:route "protocol" :path "docs/design/snh-protocol-v1.md"
-    :ja "snh プロトコル v1"}])
+  The project's other reader-facing documents stay in the repository until
+  they are trimmed and checked. A served page is a claim the corpus makes in
+  public; a repository document is one a reader has gone looking for."
+  [{:route "ns/tei" :path "soranoha/docs/tei-vocabulary.md"
+    :ja "TEI 拡張語彙"}])
 
 (def generated
-  "Documents whose page the browse layer assembles itself, because the page
-  states facts it reads from the release: the rights grant the head manifest
-  carries, and the head and DOI a citation has to name.
+  "Pages the browse layer assembles itself, because each states facts it reads
+  from the release: the rights grant the head manifest carries, and the head
+  and DOI a citation has to name.
 
-  The page opens in its own words and then carries the document from `:from`
-  onward, so the opening is stated once. These resolve like any other served
-  document: a link to `rights.md` reaches `/rights`."
-  [{:route "rights" :path "docs/rights.md"
-    :ja "権利について" :from "two-distinct-rights-layers"}
-   {:route "citation" :path "docs/citation.md"
-    :ja "引用のしかた" :from "cite-a-release-not-the-corpus"}])
+  `/rights` is not optional. Every manifest carries
+  `rights.statement_url` and every published TEI header carries a `<ptr>` to
+  the same URL, so the grant those bytes cite has to resolve.
+
+  Each page is its own short opening and nothing else. `:source` names the
+  repository document a reader can go to for the full treatment, which is
+  linked rather than served: the long form is unverified for publication, and
+  a page the manifest points at is the wrong place to be provisional."
+  [{:route "rights" :ja "権利について"
+    :source "docs/rights.md"}
+   {:route "citation" :ja "引用のしかた"
+    :source "docs/citation.md"}])
 
 (def verbatim
   "Files served as themselves rather than as pages. Their routes keep the
@@ -91,7 +74,12 @@
     :path "soranoha/schemas/metadata-record.schema.json"}])
 
 (def ^:private by-path
-  (into {} (map (juxt :path identity)) (concat documents generated verbatim)))
+  ;; A generated page is keyed by the repository document it stands for, so a
+  ;; link to `rights.md` still reaches `/rights`. The page no longer carries
+  ;; that document's text, but it is still the route the project publishes for
+  ;; it, and a link to a served route must not degrade into a bare path.
+  (into {} (map (juxt #(or (:path %) (:source %)) identity))
+        (concat documents generated verbatim)))
 
 (defn root
   "The directory the served files are read from."

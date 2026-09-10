@@ -185,7 +185,12 @@
     (testing "the orientation toggle is a checkbox, so it works with scripting off"
       (is (string/includes? read-page "type=\"checkbox\""))
       (is (string/includes? read-page "id=\"tategaki\""))
-      (is (not (string/includes? read-page "<script"))))
+      ;; the page may load progressive enhancement, but nothing scripted may
+      ;; touch the toggle: with scripting off the checkbox and the stylesheet
+      ;; still switch the setting between them
+      (is (not (re-find #"(?s)<script[^>]*>.*tategaki" read-page)))
+      (is (not (string/includes? read-page "<script>"))
+          "every script is an external file the reader can decline"))
 
     (testing "and the page says which release it renders and how to cite it"
       (is (string/includes? read-page head-hex))
@@ -254,43 +259,40 @@
     (doseq [path ["index.html" "works/000092_000879/index.html"]]
       (is (string/includes? (page pages path) "/catalog.json") path)
       (is (string/includes? (page pages path) (str "/releases/" head-hex ".json")) path))
-    (testing "a document page carries the document, its links and its neighbours"
-      (let [glossary (page pages "glossary.html")]
-        (is (string/includes? glossary "<h1"))
-        (is (string/includes? glossary "id=\"reliance\"")
-            "headings carry the identifier the documents link to")
-        (is (string/includes? glossary "href=\"/identifiers\"")
-            "a link to a served document becomes a link to its route")
-        (is (string/includes? glossary "class=\"siblings\""))
-        (is (not (string/includes? glossary ".md\""))
-            "no page links a Markdown file the site does not serve"))
-      (let [rights-doc (page pages "start-here.html")]
-        (is (string/includes? rights-doc "href=\"/glossary\"")))
-      (testing "and a repository file the site does not serve is named, not linked"
-        (let [validation (page pages "validation.html")]
-          (is (string/includes? validation "href=\"/schemas/tei-profile.odd\"")
-              "the profile is served, so it is a link")
-          (is (string/includes? (page pages "assessment.html")
-                                "soranoha/test/soranoha/assessment/evaluate_test.clj")
-              "a test file is not served, so its path is shown instead"))))
+    (testing "the one served document carries its text and resolves its links"
+      (let [vocabulary (page pages "ns/tei.html")]
+        (is (string/includes? vocabulary "<h1"))
+        (is (string/includes? vocabulary "href=\"/rights\"")
+            "a link to a served route becomes a link, even to a generated page")
+        (is (string/includes? vocabulary "href=\"/schemas/tei-profile.odd\"")
+            "the profile is served, so it is a link")
+        (is (not (string/includes? vocabulary ".md\""))
+            "no page links a Markdown file the site does not serve")
+        (is (string/includes? vocabulary "soranoha/docs/tei-validation.md")
+            "a held-back document is named as a repository path, not linked")))
+
+    (testing "the held-back documents have no page at all"
+      (doseq [rel ["glossary.html" "start-here.html" "identifiers.html"
+                   "validation.html" "assessment.html" "protocol.html"]]
+        (is (nil? (get pages rel)) rel)))
 
     (testing "and the rights page states the grant the manifest carries"
       (let [rights-page (page pages "rights.html")]
         (is (string/includes? rights-page "https://creativecommons.org/publicdomain/zero/1.0/"))
         (is (string/includes? rights-page "https://creativecommons.org/publicdomain/mark/1.0/"))
         (is (string/includes? rights-page "https://w3id.org/soranoha/rights"))
-        (testing "and then carries the statement itself, once"
-          (is (string/includes? rights-page "id=\"two-distinct-rights-layers\""))
-          (is (string/includes? rights-page "id=\"no-warranty\""))
-          (is (not (string/includes? rights-page "id=\"the-short-version\""))
-              "the page opens in its own words, so the document's opening is skipped"))))
+        (testing "and stops there, naming the long statement rather than serving it"
+          (is (not (string/includes? rights-page "id=\"two-distinct-rights-layers\"")))
+          (is (not (string/includes? rights-page "id=\"no-warranty\"")))
+          (is (string/includes? rights-page "docs/rights.md")
+              "a reader is told where the full treatment is"))))
 
-    (testing "and the citation page fills the document's templates with this release"
+    (testing "and the citation page states this release's own forms"
       (let [citation-page (page pages "citation.html")]
-        (is (string/includes? citation-page head-hex))
-        (is (string/includes? citation-page "id=\"cite-a-release-not-the-corpus\""))
-        (is (string/includes? citation-page "release head, 64 hex characters")
-            "the document's own template is carried, and stays a template")))))
+        (is (string/includes? citation-page (subs head-hex 0 12))
+            "abbreviated the way a bibliography carries it")
+        (is (not (string/includes? citation-page "id=\"cite-a-release-not-the-corpus\"")))
+        (is (string/includes? citation-page "docs/citation.md"))))))
 
 (deftest html-rendering-escapes-every-untrusted-position-test
   (is (= "<p class=\"a&quot;b\">&lt;x&gt;&amp;</p>"

@@ -25,17 +25,26 @@
   (map (fn [[_ _ target]] target) (re-seq #"\[([^\]]+)\]\(([^)]+)\)" text)))
 
 (def ^:private served
-  "Every document the site renders, however its page is assembled."
-  (concat docs/documents docs/generated))
+  "The documents the site renders from their own text."
+  docs/documents)
 
 (def ^:private routes
-  (into #{} (map :route) (concat served docs/verbatim)))
+  (into #{} (map :route) (concat served docs/generated docs/verbatim)))
 
-(deftest a-generated-page-starts-its-document-at-a-heading-it-has
-  (doseq [{:keys [route path from]} docs/generated]
+(deftest a-generated-page-names-a-repository-document-that-exists
+  ;; the long form is linked rather than served, so the page has to name a
+  ;; path a reader can actually find in a checkout
+  (doseq [{:keys [route source]} docs/generated]
     (testing route
-      (is (contains? (headings (docs/read-text path)) from)
-          "the page carries the document from this heading onward"))))
+      (is (string? source))
+      (is (fs/exists? (fs/file (docs/root) source)) source))))
+
+(deftest the-rights-route-published-bytes-cite-is-served
+  ;; every manifest carries this as rights.statement_url and every TEI header
+  ;; points at it, so dropping the route would leave those bytes citing nothing
+  (is (contains? routes "rights"))
+  ;; likewise the namespace every published TEI root declares
+  (is (contains? routes "ns/tei")))
 
 (deftest every-served-file-is-present-and-titled
   (doseq [{:keys [route path]} served]
@@ -47,7 +56,8 @@
       (is (fs/exists? (fs/file (docs/root) path)) path))))
 
 (deftest routes-are-distinct-and-usable-as-paths
-  (is (= (count routes) (+ (count served) (count docs/verbatim)))
+  (is (= (count routes)
+         (+ (count served) (count docs/generated) (count docs/verbatim)))
       "two entries would otherwise overwrite each other in the serving tree")
   (doseq [route routes]
     (is (re-matches #"[a-z0-9][a-z0-9./-]*" route) route)

@@ -78,6 +78,17 @@
     "#q { width: 100%; padding: .6rem .8rem; font-size: 1rem; font-family: inherit;"
     "  border: 1px solid var(--rule); background: #fff; }"
     "#results:empty { display: none; }"
+    ;; the copy button sits beside the value it copies, quiet until wanted:
+    ;; this is a convenience next to the text, not a control competing with it
+    "button.copy { margin-inline-start: .5em; padding: .1em .5em; font: inherit;"
+    "  font-size: .75em; line-height: 1.6; color: var(--muted); cursor: pointer;"
+    "  background: var(--bg); border: 1px solid var(--rule); border-radius: 3px;"
+    "  vertical-align: middle; }"
+    "button.copy:hover, button.copy:focus-visible { color: var(--ink);"
+    "  background: var(--panel); }"
+    "button.copy.done { color: var(--link); border-color: var(--link); }"
+    "pre + button.copy, code.citation + button.copy { display: block;"
+    "  margin: .4rem 0 0; margin-inline-start: 0; }"
     "@media (max-width: 32rem) { dl.facts { grid-template-columns: 1fr; } ul.cols { columns: 1; } }"
 
     ;; the documentation pages. Prose the project wrote, so unlike the reading
@@ -221,6 +232,61 @@
     "  box.addEventListener('input', function () { load(); draw(); });"
     "})();"]))
 
+(def ^:private copy-js
+  ;; Progressive enhancement, like the search box: the button is created here
+  ;; rather than emitted into every page, so with scripting off a reader gets
+  ;; selectable text and no dead control. The button is a sibling of the code
+  ;; rather than a child, so selecting the code by hand never picks it up, and
+  ;; a code inside a link gets its button after the link so the anchor stays
+  ;; whole.
+  (string/join
+   "\n"
+   ["(function () {"
+    "  var clip = navigator.clipboard;"
+    "  if (!clip || !document.querySelectorAll) { return; }"
+    "  var ja = document.documentElement.lang === 'ja';"
+    "  var idle = ja ? 'コピー' : 'Copy', done = ja ? 'コピーしました' : 'Copied';"
+    "  function attach(node, text) {"
+    "    var anchor = node.parentNode;"
+    "    if (!anchor) { return; }"
+    "    if (anchor.tagName === 'A') { node = anchor; anchor = anchor.parentNode; }"
+    "    var button = document.createElement('button');"
+    "    button.type = 'button';"
+    "    button.className = 'copy';"
+    "    button.textContent = idle;"
+    "    button.setAttribute('aria-label', idle);"
+    "    button.addEventListener('click', function () {"
+    "      clip.writeText(text).then(function () {"
+    "        button.textContent = done;"
+    "        button.classList.add('done');"
+    "        setTimeout(function () {"
+    "          button.textContent = idle;"
+    "          button.classList.remove('done');"
+    "        }, 1500);"
+    "      });"
+    "    });"
+    "    anchor.insertBefore(button, node.nextSibling);"
+    "  }"
+    "  var blocks = document.querySelectorAll('pre'), i;"
+    "  for (i = 0; i < blocks.length; i++) {"
+    "    attach(blocks[i], blocks[i].textContent);"
+    "  }"
+    ;; A button belongs beside a value a reader would rather copy than retype,
+    ;; and not beside every `code` in a sentence. Two exclusions do that.
+    ;; Reference tables are prose about the vocabulary rather than values to
+    ;; take away: on the vocabulary page 74 of 113 codes are table cells.
+    ;; Twelve characters is where the rest divides: every value a work page
+    ;; presents is 13 or longer, the shortest being the identifier itself,
+    ;; while the inline mentions left over are `@rend` and `snh:src`.
+    "  var codes = document.querySelectorAll('code');"
+    "  for (i = 0; i < codes.length; i++) {"
+    "    var code = codes[i];"
+    "    if (code.closest('pre') || code.closest('table')) { continue; }"
+    "    if (code.textContent.length < 12) { continue; }"
+    "    attach(code, code.textContent);"
+    "  }"
+    "})();"]))
+
 (defn- bilingual
   "Japanese label with its English counterpart marked as English, so a screen
   reader and a translation tool both get the language right."
@@ -245,7 +311,6 @@
        [:a {:href "/authors/"} (bilingual "著者" "Authors")]
        [:a {:href "/titles/"} (bilingual "作品名" "Titles")]
        [:a {:href "/ndc/"} (bilingual "分類" "NDC")]
-       [:a {:href "/start-here"} (bilingual "解説" "Docs")]
        [:a {:href "/rights"} (bilingual "権利" "Rights")]
        [:a {:href "/citation"} (bilingual "引用" "Citation")]]]
      (into [:main (cond-> {} main-class (assoc :class main-class))] body)
@@ -255,7 +320,8 @@
            "Texts are public-domain works from Aozora Bunko; the encoding is CC0 1.0. These pages render the signed record, which is the manifest and the artifact bytes.")]
       [:p [:a {:href "/catalog.json"} "/catalog.json"] " · "
        [:a {:href "/releases/HEAD"} "/releases/HEAD"] " · "
-       [:a {:href "https://www.aozora.gr.jp/"} "青空文庫"]]]])))
+       [:a {:href "https://www.aozora.gr.jp/"} "青空文庫"]]]
+     [:script {:src "/copy.js"}]])))
 
 ;; -------------------------------------------------------------- metadata
 
@@ -310,7 +376,7 @@
    ["other" "その他・分類なし" "Other or unclassified"]])
 
 (defn ndc-class-key
-  "First character of the first NDC code. Aozora records children's material
+  "First character of the first NDC code. Aozora Bunko records children's material
   as K-prefixed codes and leaves some works unclassified, so anything that is
   not a main-class digit collects under one key rather than inventing a
   class for it."
@@ -387,26 +453,16 @@
             (assoc document :text text :en (markdown/title text))))
         docs/documents))
 
-(defn- sibling-nav [entries current]
-  [:nav {:class "siblings"}
-   [:p (bilingual "ほかの解説:" "Other documents:")]
-   [:p (interpose
-        " · "
-        (for [{:keys [route ja en]} entries
-              :when (not= route current)]
-          [:a {:href (str "/" route)} (bilingual ja en)]))]])
-
-(defn- document-page [entries {:keys [route path text ja en]}]
+(defn- document-page [{:keys [path text ja en]}]
   (chrome
    ja
    {:main-class "doc"}
    (concat [[:h1 (bilingual ja en)]]
            (markdown/render {:text text
                              :source path
-                             :link (partial docs/resolve-link path)})
-           [(sibling-nav entries route)])))
+                             :link (partial docs/resolve-link path)}))))
 
-(defn- landing [head-hex works withdrawn-count entries]
+(defn- landing [head-hex works withdrawn-count]
   (chrome
    "青空文庫 TEI コーパス"
    [[:h1 (bilingual "青空文庫 TEI コーパス" "Aozora Bunko TEI corpus")]
@@ -435,15 +491,6 @@
       [:a {:href "/authors/"} (bilingual "著者" "authors")] "、"
       [:a {:href "/titles/"} (bilingual "作品名の読み" "title readings")] "、"
       [:a {:href "/ndc/"} (bilingual "NDC 分類" "NDC classes")] "。"]]
-
-    [:section
-     [:h2 (bilingual "解説" "Documentation")]
-     [:p (bilingual
-          "何がどう符号化されているか、識別子はどう読むか、公開の可否をどう判断しているかまで、このサイトで説明しています。初めての方は「はじめに」から。"
-          "How the texts are encoded, how to read an identifier, and how publication is assessed. Start with Start here.")]
-     [:ul {:class "cols plain"}
-      (for [{:keys [route ja en]} entries]
-        [:li [:a {:href (str "/" route)} (bilingual ja en)]])]]
 
     [:section
      [:h2 (bilingual "そのまま使う" "Use it directly")]
@@ -533,7 +580,7 @@
    [[:h1 (bilingual "NDC 分類から探す" "By NDC class")]
     [:p (bilingual
          "日本十進分類法の第一次区分です。分類のない作品と児童書の K 記号は「その他」にまとめています。"
-         "Nippon Decimal Classification main classes. Unclassified works and Aozora's K-prefixed children's codes are grouped under その他.")]
+         "Nippon Decimal Classification main classes. Unclassified works and Aozora Bunko's K-prefixed children's codes are grouped under その他.")]
     (into [:ul {:class "plain"}]
           (map (fn [{:keys [key ja en count*]}]
                  [:li [:a {:href (str "/ndc/" key)} (bilingual (str key " " ja) en)]
@@ -553,7 +600,7 @@
           naming/bulk-artifact-types))]))
 
 (defn- source-edition-line
-  "One 底本, shown the way Aozora recorded it. 初版発行年 is a free-form
+  "One 底本, shown the way Aozora Bunko recorded it. 初版発行年 is a free-form
   publication history rather than a year — `1981（昭和56）年3月20日`, and 914
   values carry a printing history after that — so it is shown verbatim and
   nothing is appended to it. Every recorded value already ends in its own
@@ -599,7 +646,7 @@
          (list [:dt (bilingual "底本" "Source edition")]
                (into [:dd] (interpose [:br] (map source-edition-line source_editions)))))
        (when-not (string/blank? card_url)
-         (list [:dt (bilingual "青空文庫" "Aozora card")]
+         (list [:dt (bilingual "青空文庫" "Aozora Bunko card")]
                [:dd [:a {:href card_url} card_url]]))
        [:dt (bilingual "識別子" "Identifier")]
        [:dd [:code slug]]
@@ -741,23 +788,24 @@
     [:p [:a {:href "/rights"} (bilingual "権利について" "Rights statement")]]]))
 
 (defn- generated-page
-  "One of the two pages that state facts read from the release and then carry
-  their document.
+  "One of the two pages that state facts read from the release.
 
-  The opening is the page's own, bilingual and short, because a reader who
-  arrives from a manifest's `statement_url` or from a citation needs the
-  answer before the detail. Everything after it is the repository document,
-  started at the heading that follows what the opening already said, so the
-  two cannot drift apart."
-  [{:keys [path ja from]} title lead]
+  The page is its own short opening and nothing more. A reader arriving from a
+  manifest's `statement_url` or from a citation needs the answer, and the
+  answer is the grant and the release's own values, both read from the head
+  manifest rather than described by a document that could disagree with it.
+
+  The repository document is named, not served. Its long form has not been
+  checked for publication, and the page a manifest points at is the wrong
+  place to be provisional."
+  [{:keys [ja source]} title lead]
   (chrome
    ja
    {:main-class "doc"}
    (concat [[:h1 (bilingual ja title)]] lead
-           (markdown/render {:text (docs/read-text path)
-                             :source path
-                             :from from
-                             :link (partial docs/resolve-link path)}))))
+           [[:p {:class "by"}
+             (bilingual (str "詳しい説明はリポジトリの " source " にあります。")
+                        (str "The full treatment is " source " in the repository."))]])))
 
 (defn- rights-page [document {:strs [works encoding statement_url]}]
   (generated-page
@@ -807,9 +855,12 @@
          "Everything here is CC0, so citation is a scholarly norm rather than a licence condition. Cite the release by name.")]
     ;; the templates below are the document's; these are this release's, which
     ;; is the one thing a reader cannot fill in from a repository checkout
+    ;; the head abbreviated the way every other citation on the site
+    ;; abbreviates it, and the way `docs/citation.md` says a bibliography
+    ;; should carry it. The short name resolves, so the line stays followable
     [:p [:code {:class "citation"}
-         (str site-name " Aozora TEI Corpus. Release " head-hex "."
-              (when doi (str " https://doi.org/" doi)))]]
+         (str site-name " Aozora TEI Corpus. Release " (subs head-hex 0 12) "…"
+              (when doi (str ". https://doi.org/" doi)))]]
     [:p [:code {:class "citation" :lang "ja"}
          (citation/rendered release example-work)]]
     [:p [:code {:class "citation"}
@@ -906,8 +957,9 @@
     (concat
      [(page "style.css" stylesheet)
       (page "search.js" search-js)
+      (page "copy.js" copy-js)
       (page "search-index.json" (search-index head-hex works))
-      (page "index.html" (landing head-hex works (count withdrawn) entries))
+      (page "index.html" (landing head-hex works (count withdrawn)))
       (page "rights.html" (rights-page (by-route "rights") (get head "rights")))
       (page "citation.html" (citation-page (by-route "citation") release))
 
@@ -934,7 +986,7 @@
 
      ;; the project's own documentation, rendered from the repository files it
      ;; is reviewed in, and the files those documents send a reader to
-     (map (fn [entry] (page (str (:route entry) ".html") (document-page entries entry)))
+     (map (fn [entry] (page (str (:route entry) ".html") (document-page entry)))
           entries)
 
      (map (fn [{:keys [route path]}] [route (docs/read-bytes path)]) docs/verbatim)

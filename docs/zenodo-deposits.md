@@ -3,12 +3,12 @@
 Soranoha makes two kinds of Zenodo deposit, and they are not variants of one
 procedure.
 
-| | Trust anchor | Release deposit |
+| | Trust anchor | Snapshot deposit |
 |---|---|---|
-| Purpose | Authenticates which public key holds which role | Makes a release's bytes citable and independently checkable |
-| Frequency | Once, before the first signed release | Every release, including genesis |
-| Contents | The two role public keys and their role assignment | The signed manifest and the records it names |
-| Discovery | Listed as a work on the owner's ORCID record | Cited by version DOI in each work's citation |
+| Purpose | Authenticates which public key holds which role | Archives a release's bytes independently of the publication channel |
+| Frequency | Once, before the first signed release | Quarterly |
+| Contents | The two role public keys and their role assignment | The then-current signed manifest and the records it names |
+| Discovery | Listed as a work on the owner's ORCID record | Cited by version DOI in each work's citation, when the serving release has one |
 
 Both deposits are made by the publication owner under the Zenodo account
 `borh`, from a machine that is not release CI. Zenodo credentials are never
@@ -124,10 +124,23 @@ The anchor is deposited once. Later releases do not update it, because the
 pinned set never changes: a lost medium leaves governance operating on the
 remaining copy, and a compromised role halts that role rather than rotating it.
 
-## The release deposit
+## The snapshot deposit
 
-Every release is deposited before it is served, so that every publicly
-reachable release is citable the moment it is reachable.
+Deposits are quarterly, not per release. Each one carries the manifest that is
+current when it is made, and doubles as an independent authorship checkpoint:
+the archive is a second, separately credentialed record of what this project
+published and when, held somewhere the publication channel does not control.
+
+A release is citable the moment it is reachable, and that does not depend on a
+deposit. The citable name of a release is its manifest id, which is the sha256
+of bytes anyone can check against the chain. A DOI names an archived copy; it
+is a convenience, not the identity.
+
+Releases published between two snapshots are therefore not individually
+archived on Zenodo. Their bytes remain in the append-only chain, which is what
+a verifier reads, and they carry no DOI. `release-doi` is optional throughout
+for exactly this reason, and a citation simply omits the DOI line when the
+serving release has none.
 
 Deposit the manifest and the records it names, which is what a verifier needs
 and is small enough to deposit every time. The published artifacts are not

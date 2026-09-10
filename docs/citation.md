@@ -17,11 +17,14 @@ its context allows:
 | Identifier | Form | Where |
 |---|---|---|
 | Release head | 64-character hex | `https://soranoha.org/releases/HEAD` |
-| Version DOI | `10.5281/zenodo.<n>` | The Zenodo deposit for that release |
+| Version DOI | `10.5281/zenodo.<n>` | The quarterly Zenodo snapshot, when the release you read is one |
 
-The version DOI is the one to put in a bibliography: it resolves to exactly
-the bytes cited, and it survives the site. The head is what a reader uses to
-re-verify the chain independently.
+The head is the identifier that always exists, and it is what a reader uses to
+re-verify the chain independently. Deposits are quarterly rather than per
+release, so a release published between two snapshots has no DOI of its own;
+carry the head alone in that case. When the release you read does carry a DOI,
+put it in the bibliography too: it resolves to exactly the bytes cited, and it
+survives the site.
 
 The head is the sha256 of the release manifest's own canonical bytes, so it
 identifies the manifest as well as the release: it names `releases/<head>.json`
@@ -60,9 +63,9 @@ BibLaTeX:
 
 `CITATION.cff` in the repository root carries the corpus-level record in
 machine-readable form, and GitHub-compatible forges and Zenodo read it
-directly. It describes the work rather than one release: the head and the
-version DOI change with every release and are not in it, so fill those in from
-the release you read.
+directly. It describes the work rather than one release: the head changes with
+every release, and the version DOI changes with every quarterly snapshot, so
+neither is in it. Fill them in from the release you read.
 
 To cite the corpus across releases rather than one of them, use the Zenodo
 *concept* DOI, which always resolves to the latest version. Do not use it when
@@ -125,7 +128,7 @@ note, and the `release` column of `catalog.csv`.
 | Corpus name | `Soranoha Aozora TEI Corpus` | Which corpus, distinguishing this encoding from Aozora Bunko's own files. |
 | **Work identifier** | `000092_000879` | **Identifies the work.** Stable across releases. The one component that makes the citation unambiguous. |
 | **Release** | `release <first 12 characters of the head>` | **Identifies the bytes.** The corpus is versioned; a citation without it does not name what was read. |
-| Version DOI | `https://doi.org/10.5281/zenodo.<version deposit>` | Resolves to exactly those bytes, and survives the site. |
+| Version DOI | `https://doi.org/10.5281/zenodo.<version deposit>` | Resolves to exactly those bytes, and survives the site. Present only when the release you read is a quarterly snapshot. |
 
 The identifier and the release are the two components that are never
 optional. Everything above them is description; those two are identity.

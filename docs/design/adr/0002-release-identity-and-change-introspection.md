@@ -75,7 +75,7 @@ manifests, and nothing it produces is published or served.
 
 ## Decisions required
 
-### D1. Where the maturity label and release name live
+### Where the maturity label and release name live
 
 The owner's reading is that the first release is a `v0.1`, experimental, and
 that the site and the Zenodo deposit should both say so.
@@ -101,15 +101,16 @@ Zenodo mints it after the release exists; a label is known before signing and
 could be signed. The argument here is corrigibility, not timing.
 
 The transparency need behind the label is better served by publishing derived
-facts, which cannot be wrong, than by a judgement that can. See D3.
+facts, which cannot be wrong, than by a judgement that can, which is the
+release history described below.
 
-### D2. Whether annotation layers get a manifest slot now
+### Whether annotation layers get a manifest slot now
 
 - **Reserve now**, by relaxing the four-tuple or adding a sibling `layers[]`
   block that is empty at genesis.
 - **Keep the four-tuple closed**, and accept a later bump when layers land.
 
-Recommendation: **reserve now.** Unlike D1 this is a structural reservation
+Recommendation: **reserve now.** Unlike the label, this is a structural reservation
 rather than a judgement, so it cannot turn out to have been the wrong call
 about a particular release. The layer identity model is already specified, the
 publication owner intends to publish analysis layers, and the asymmetry is
@@ -119,9 +120,9 @@ while omitting it costs a post-genesis bump that every verifier must handle.
 A reservation is not a commitment to publish layers at genesis. An empty
 `layers[]` in every genesis work entry states that the release publishes none.
 
-### D3. What the site must show
+### What the site must show
 
-Independent of D1 and D2, and needing no schema change, because every input is
+Independent of both decisions above, and needing no schema change, because every input is
 already in the chain.
 
 A release history route, and per release:
@@ -140,7 +141,7 @@ whether this release changed its edition, its documents, or neither.
 The wording has to hold the glossary's line. A work page may not say "new
 edition" for a re-conversion.
 
-Recommendation: build this regardless of D1 and D2. It is the part that
+Recommendation: build this regardless of the two decisions above. It is the part that
 answers the owner's report directly, it is derived rather than asserted, and it
 is independently checkable by anyone who has the chain.
 

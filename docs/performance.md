@@ -281,24 +281,85 @@ All eight runs executed zero stages and preserved manifest
 `027f578070ab4e1ba1458583ca65e874d3f0154960c880058dc8c165093f2e2b`, publication commit
 `394ffce2eb50fc4c5493f16fb9c772a2c42a0e06`, and the reused verified export.
 
-## Chain verification grows with chain length, and every release pays it in full
+## Publication cost grows with chain length in two places, not one
 
 Publishing a release verifies the whole chain. `transact/publish-build!` resolves
 the head through `verify/verify-repository-at` before it assembles anything, so
-release *n* verifies *n* manifests. Verification cost per manifest is roughly
-flat in chain length, which makes one release linear in chain length and a run
-of *N* releases quadratic.
+release *n* verifies *n* manifests. That much was known. Measuring the whole
+publication rather than the verification alone shows a second term of the same
+size sitting next to it.
 
-The reference baseline above measured release verification at approximately 24.4
-seconds, at chain length 3 over 17,308 published works and 51,929 verified
-blobs, with a warm cache and concurrency 16. That is one point, so it fixes the
-constant without establishing the shape.
+`soranoha.snh.chain-bench` builds a synthetic chain at the production work
+count, so no corpus is needed and the repository path is what is timed. Ten
+releases over 17,602 works, three works moving per release so the verifier's
+reuse grant applies to the rest, as it does when an upstream commit touches a
+median of two works:
 
-`soranoha.snh.chain-bench` establishes the shape over a synthetic chain, which
-needs no corpus because only the verifier is timed. Three works counts, each
-with three of the works changing per release, so the verifier's reuse grant
-applies to the rest, as it does when an upstream commit touches a median of two
-works:
+| Chain length | No-op invocation | Full-chain verification | Publication, end to end |
+| ---: | ---: | ---: | ---: |
+| 1 | 18.4 s | 10.8 s | 23.4 s |
+| 5 | 30.4 s | 22.9 s | 53.2 s |
+| 10 | 47.4 s | 40.8 s | 83.1 s |
+| **Growth per release** | **3.2 s** | **3.3 s** | **6.6 s** |
+
+The no-op is the quantity the prerequisite is stated against, because a job that
+fires on every upstream commit spends most of its runs discovering it has
+nothing to do. It is measured by repeating a release with its projection
+unchanged, which is what `decide-against-head` no-ops on, so it is the cost of
+resolving the head and deciding, with no assembly.
+
+Publication grows twice as fast as the verification inside it. The difference is
+the assembly and repository write, and that half grows on its own, by about 2.8
+seconds per release. It is not the assembly: the benchmark's assembler is a pure
+function of the head's withdrawn set and a fixed slug list, so it builds the
+same 17,602 work entries at every chain length. The growth is in the repository
+write path against a repository holding more objects. A checkpoint that
+eliminated re-verification completely would remove the smaller of the two terms.
+
+### What that costs on the real corpus
+
+The synthetic chain uses small blobs, so it fixes the shape and not the
+constant. The constant comes from the reference comparison above: a repeat
+release over 17,308 published works and 51,929 verified blobs at chain length 3,
+with concurrency 16 and a warm cache, took 68.6 seconds. The same point on the
+synthetic chain is 24.4 seconds, so the real corpus costs about 2.8 times the
+synthetic one at equal chain length.
+
+That single-point calibration is the weakest step here. Taking it, the real
+figures per additional release are roughly 9 seconds of no-op and 19 seconds of
+publication, and three consequences follow:
+
+- The 30-minute bound on an unchanged invocation is crossed near chain length
+  190. At 227 releases a year, which is the current upstream push rate, that is
+  inside year two.
+- Verifying a finished 5,476-release chain once costs on the order of 14 hours.
+- Building that chain costs the sum over its releases, because each one pays for
+  its own prefix twice over, which is on the order of nine years of compute.
+
+The measurement that mattered most is the one that came back better than the
+ledger recorded. The publication rearchitecture ledger measured an unchanged
+invocation at 1,319 seconds against the 30-minute bound and called the limit
+present. The batching work since has brought that to 68.6 seconds at the same
+work count. The bound is not currently breached; it is reached by growth, and
+the growth is what needs a decision.
+
+### Reproducing it
+
+From `soranoha/`:
+
+```sh
+clojure -Sdeps '{:paths ["src" "test" "resources"]}' -M \
+  -m soranoha.snh.chain-bench --works 17602 --releases 10 --changed 3 \
+  --tmp /data/soranoha-bench
+```
+
+Pass `--tmp` a path on real storage: a corpus-scale chain is gigabytes of loose
+objects, and the system temp directory is memory-backed on these machines, so
+the default competes with the JVM heap being measured. `--changed all` moves
+every work instead, which is what a toolchain change does.
+
+Verification cost also rises with the number of works, measured on shorter
+chains:
 
 | Works | Chain length 1 | Chain length 6 | Marginal cost per additional release |
 | ---: | ---: | ---: | ---: |
@@ -306,33 +367,7 @@ works:
 | 1,000 | 575 ms | 1,410 ms | 155 ms |
 | 3,000 | 1,094 ms | 4,106 ms | 602 ms |
 
-The marginal column is the slope across each run, not a single step: one step
-is noisy enough to come out negative. Verification is linear in chain length at
-every works count, and the marginal cost per release rises with works. The reuse grant removes the re-hashing of
-unchanged blobs; what remains is the per-manifest walk over every work entry,
-and that is the term that does not go away.
-
-Combining the two: at the measured 24.4 seconds for three manifests over the
-real corpus, one manifest costs about 8 seconds, so a full-chain verification
-costs roughly 8 seconds times the chain length. The 30-minute bound for an
-unchanged invocation is therefore crossed near chain length 225. At 227 releases
-a year, which is the current upstream push rate, that is inside year two.
-
-For a chain built one release per upstream commit, the totals matter more than
-the bound. Verifying a 5,476-release chain once costs on the order of 12 hours.
-Building that chain costs the sum over its releases, because each one verifies
-its own prefix, which is on the order of three years of compute. Publishing per
-upstream commit needs a verification checkpoint before it is attempted, not
-after.
-
-Reproduce the shape without a corpus, from `soranoha/`:
-
-```sh
-clojure -Sdeps '{:paths ["src" "test" "resources"]}' -M \
-  -m soranoha.snh.chain-bench --works 1000 --releases 10 --changed 3
-```
-
-`--changed all` moves every work instead, which is what a toolchain change does.
-These are synthetic chains with small blobs on one machine: they establish that
-the growth term is present and linear, not a production figure. The 24.4-second
-constant comes from the real corpus run above.
+Every marginal column here is the slope across a run rather than a single step;
+one step is noisy enough to come out negative. The reuse grant removes the
+re-hashing of unchanged blobs, and what remains is the per-manifest walk over
+every work entry, which is the term that does not go away.

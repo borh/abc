@@ -1,11 +1,11 @@
 (ns soranoha.snh.chain-bench
-  "Full-chain verification wall time as a function of chain length.
+  "Publication, no-op and full-chain verification wall time against chain length.
 
-  The publication rearchitecture ledger measured verification cost growing with
-  releases times works and made correcting it a precondition for unattended
-  activation. Batching has landed since. This measures whether the growth term
-  is still there, in isolation from the build: releases are synthetic, so no
-  corpus is needed and nothing but the verifier is being timed.
+  The publication rearchitecture ledger measured cost growing with releases
+  times works and made correcting it a precondition for unattended activation.
+  Batching has landed since. This measures whether the growth term is still
+  there, in isolation from the build: releases are synthetic, so no corpus is
+  needed and the repository path is what is being timed.
 
   Two shapes bracket the real one. `--changed 0` moves no work between releases,
   which is what the reuse grant is for and what an upstream commit touching a
@@ -16,12 +16,24 @@
   Run from soranoha/:
     clojure -Sdeps '{:paths [\"src\" \"test\" \"resources\"]}' -M \\
       -m soranoha.snh.chain-bench \\
-      --works 2000 --releases 24 --changed 3
+      --works 2000 --releases 24 --changed 3 --tmp /data/soranoha-bench
+
+  Pass `--tmp` a path on real storage. A chain at corpus scale is gigabytes of
+  loose objects before it is packed, and the system temp directory is
+  memory-backed on the machines this runs on, so the default puts the chain in
+  RAM alongside the JVM heap it is being measured with.
 
   Results are JSON lines on stdout. `verify_ms_marginal` is the cost of the one
   additional manifest, which is the quantity that decides whether the chain can
   grow. A single marginal is noisy enough to come out negative; read the slope
   across the whole run rather than any one row.
+
+  `noop_ms` is the one the prerequisite is stated against. The ledger's bound is
+  on an invocation that publishes nothing, because a scheduled job that fires on
+  every upstream commit spends most of its runs discovering it has nothing to
+  do. It is measured by repeating the release with its projection unchanged,
+  which is what `decide-against-head` no-ops on, so it is the cost of resolving
+  the head and deciding, without an assembly.
 
   Timings are wall time on this machine for a synthetic chain with small blobs.
   They establish the shape of the growth curve, not a production figure."
@@ -58,7 +70,7 @@
 
 (defn -main [& args]
   (try
-    (let [{:keys [works releases changed out]}
+    (let [{:keys [works releases changed out tmp]}
           (cli/parse-opts args {:coerce {:works :long :releases :long}})
           ;; babashka.cli parses a bare number itself, so `changed` arrives as a
           ;; long already; "all" is the only value that stays a string
@@ -68,7 +80,12 @@
           works (or works 500)
           releases (or releases 12)
           all (slugs works)
-          dir (fs/create-temp-dir {:prefix "snh-chain-bench"})
+          ;; the system temp directory is memory-backed here, so the default
+          ;; competes with the JVM for the RAM this is measuring; `--tmp` puts
+          ;; the chain on real storage instead
+          dir (if tmp
+                (fs/create-temp-dir {:prefix "snh-chain-bench" :dir (fs/path tmp)})
+                (fs/create-temp-dir {:prefix "snh-chain-bench"}))
           origin (repo/init-origin! (fs/path dir "origin.git"))
           clone (repo/clone! origin (fs/path dir "chain"))
           _ (transact/init-publication-branch! clone fx/branch)
@@ -85,20 +102,25 @@
         ;; an improvement while the real per-release cost is flat or rising.
         (reduce
          (fn [previous release]
-           (let [publish
-                 (millis
-                  #(fx/publish! clone
-                                {:admitted all
-                                 :variant (variant-fn changed release all)
-                                 ;; the projection must move or an unchanged
-                                 ;; build is a no-op and publishes nothing
-                                 :selection-params {"config" "bench"
-                                                    "round" (str release)}}))
-                 verify (:milliseconds (verify-once! clone))]
+           (let [opts {:admitted all
+                       :variant (variant-fn changed release all)
+                       ;; the projection must move or an unchanged build is a
+                       ;; no-op and publishes nothing
+                       :selection-params {"config" "bench" "round" (str release)}}
+                 publish (millis #(fx/publish! clone opts))
+                 ;; the same opts again: the projection now matches the head, so
+                 ;; this is the scheduled job finding nothing to do
+                 noop (millis #(fx/publish! clone opts))
+                 verify (:milliseconds (verify-once! clone))
+                 outcome (get-in noop [:result :outcome])]
+             (when-not (= :already-published outcome)
+               (throw (ex-info "repeat build was not a no-op, so noop_ms is not the no-op cost"
+                               {:outcome outcome :release release})))
              (emit! (cond-> {"phase" "release"
                              "chain_length" (inc release)
                              "works" works
                              "publish_ms" (Math/round ^double (:milliseconds publish))
+                             "noop_ms" (Math/round ^double (:milliseconds noop))
                              "verify_ms" (Math/round ^double verify)}
                       previous
                       (assoc "verify_ms_marginal"

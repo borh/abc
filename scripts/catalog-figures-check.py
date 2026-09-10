@@ -27,6 +27,11 @@ guards against. `CATALOG` is every work the catalog lists; `WITH_TEXT` is the
 subset that has a downloadable text file, which is what a release can publish
 from. The published population itself is not available without a release run.
 
+Some figures are about upstream's commit history rather than its catalog: how
+often aozorabunko moves without moving a work archive, and how long a release
+takes to cover a revision it skipped. Those are the argument for skipping a
+revision at all, so they are derived here too, from the same checkout's git.
+
 Reading archive members costs a pass over every ZIP in the checkout, so the
 figures that need it are skipped unless `--stems` is given.
 
@@ -49,6 +54,7 @@ import io
 import os
 import re
 import statistics
+import subprocess
 import sys
 import unicodedata
 import zipfile
@@ -65,6 +71,15 @@ AUTHOR = "著者"
 CATALOG = "catalog"
 WITH_TEXT = "with-text"
 ROWS = "rows"
+# Two populations that are not the catalog at all. `HISTORY` is aozorabunko's
+# first-parent commit history; `SKIPPED` is the subset of it a release passes
+# over. Both come from git rather than from the CSV, which is why they are
+# derived separately below.
+HISTORY = "first-parent-history"
+SKIPPED = "skipped-commits"
+
+WORK_ARCHIVES = "cards/*/files/*.zip"
+CATALOG_DIRECTORY = "index_pages/*"
 
 # 底本初版発行年 as Aozora records it when it records only a date: a Gregorian
 # year, its era form, and a full month and day. Anything else is irregular, and
@@ -100,6 +115,9 @@ EVIDENCE = "soranoha/docs/evidence/aozora-rights-source-contract.md"
 IDENTIFIERS = "soranoha/docs/work-identifiers.md"
 NAMING = "soranoha/src/soranoha/za/naming.clj"
 NAMING_TEST = "soranoha/test/soranoha/za/naming_test.clj"
+MAIN = "soranoha/src/soranoha/main.clj"
+MANIFEST_3 = "docs/design/adr/0003-snh-manifest-3.md"
+PERFORMANCE = "docs/performance.md"
 START_HERE = "docs/start-here.md"
 WORKED_EXAMPLE = "docs/worked-example.md"
 
@@ -311,6 +329,144 @@ STEM_FIGURES = [
         [NAMING],
     ),
 ]
+
+
+# The figures that come out of aozorabunko's commit history rather than out of
+# its catalog. They are the whole argument for `release-needed!` skipping a
+# revision: how often upstream moves without moving a work archive, and how
+# long a skipped revision waits for the release that covers it. Every one of
+# them grows as upstream does.
+#
+# They are pinned by the same catalog digests as everything else, but less
+# tightly. A checkout whose catalog matches the pin can still be a few commits
+# past the revision these were measured at, because a commit that changes no
+# catalog byte moves the history without moving the digest. Seven commits in
+# the whole history are of that kind, so the slack is real and small.
+HISTORY_FIGURES = [
+    Figure(
+        "first-parent-commits",
+        HISTORY,
+        "commits on aozorabunko's first-parent history",
+        5476,
+        [MAIN, MANIFEST_3, PERFORMANCE],
+    ),
+    Figure(
+        "work-archive-commits",
+        HISTORY,
+        "commits touching a work archive",
+        4673,
+        [MAIN],
+    ),
+    Figure(
+        "catalog-or-archive-commits",
+        HISTORY,
+        "commits touching a work archive or the catalog directory",
+        5469,
+        [MAIN],
+    ),
+    Figure(
+        "catalog-only-commits",
+        HISTORY,
+        "commits touching the catalog directory but no work archive",
+        796,
+        [MAIN],
+    ),
+    Figure(
+        "longest-skipped-run",
+        SKIPPED,
+        "longest unbroken run of commits changing no work archive",
+        14,
+        [MAIN],
+    ),
+    Figure(
+        "longest-skip-wait-days",
+        SKIPPED,
+        "days a skipped commit waits for its covering release, at most",
+        14,
+        [MAIN],
+    ),
+    # Registered for re-derivation only, with nowhere to check it against. The
+    # prose states this one as a bare `2`, and a bare `2` occurs in `main.clj`
+    # for unrelated reasons, so a quote check would pass whether or not the
+    # claim was still there. Listing a file here would raise the citation count
+    # by one and verify nothing.
+    Figure(
+        "median-skip-wait-days",
+        SKIPPED,
+        "days a skipped commit waits for its covering release, at the median",
+        2,
+        [],
+    ),
+]
+
+
+def git(aozora_root: Path, *arguments: str) -> list[str]:
+    result = subprocess.run(
+        ["git", "-C", str(aozora_root), *arguments],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise SystemExit(
+            f"catalog-figures: git {' '.join(arguments)} failed in {aozora_root}:"
+            f" {result.stderr.strip()}"
+        )
+    return result.stdout.splitlines()
+
+
+def measure_history(aozora_root: Path) -> dict[tuple[str, str], int]:
+    """The commit-history figures, from two walks of the first-parent path.
+
+    A skipped commit's wait is the time to the next commit that did move a
+    work archive, because that is the one whose release covers it.
+
+    Waits are rounded to whole days rather than truncated. Upstream commits at
+    a consistent time of day, so these land within seconds of a whole day: the
+    longest is fifteen seconds over fourteen days and the median nine seconds
+    under two. Truncating would report the second of those as one day, which
+    is a different claim than the prose makes and a wrong one.
+    """
+    commits = [
+        line.split()
+        for line in git(
+            aozora_root,
+            "rev-list",
+            "--first-parent",
+            "--format=%H %ct",
+            "--no-commit-header",
+            "HEAD",
+        )
+    ]
+    commits.reverse()
+    moved = set(git(aozora_root, "rev-list", "--first-parent", "HEAD", "--", WORK_ARCHIVES))
+    either = git(
+        aozora_root, "rev-list", "--first-parent", "HEAD", "--", WORK_ARCHIVES, CATALOG_DIRECTORY
+    )
+
+    longest = current = 0
+    waits: list[float] = []
+    pending: list[int] = []
+    for commit, timestamp in commits:
+        seconds = int(timestamp)
+        if commit in moved:
+            waits.extend((seconds - held) / 86400 for held in pending)
+            pending = []
+            current = 0
+        else:
+            current += 1
+            longest = max(longest, current)
+            pending.append(seconds)
+
+    return {
+        ("first-parent-commits", HISTORY): len(commits),
+        ("work-archive-commits", HISTORY): len(moved),
+        ("catalog-or-archive-commits", HISTORY): len(either),
+        ("catalog-only-commits", HISTORY): len(either) - len(moved),
+        ("longest-skipped-run", SKIPPED): longest,
+        ("longest-skip-wait-days", SKIPPED): round(max(waits)),
+        ("median-skip-wait-days", SKIPPED): round(statistics.median(waits)),
+    }
 
 
 def check_digests(aozora_root: Path) -> list[str]:
@@ -561,7 +717,7 @@ def main() -> int:
     )
     arguments = parser.parse_args()
     if arguments.quotes_only:
-        figures = list(FIGURES) + list(STEM_FIGURES)
+        figures = list(FIGURES) + list(STEM_FIGURES) + list(HISTORY_FIGURES)
         problems = digest_quotes() + figure_quotes(figures)
         for problem in problems:
             print(f"catalog-figures: {problem}", file=sys.stderr)
@@ -586,8 +742,8 @@ def main() -> int:
         return 1
 
     works = read_catalog(aozora_root)
-    figures = list(FIGURES)
-    measured = measure(works)
+    figures = list(FIGURES) + list(HISTORY_FIGURES)
+    measured = measure(works) | measure_history(aozora_root)
     if arguments.stems:
         figures += STEM_FIGURES
         measured |= measure_stems(aozora_root, works)

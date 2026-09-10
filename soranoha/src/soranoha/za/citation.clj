@@ -115,7 +115,7 @@
          (when-not (string/blank? orthographic_style)
            (str "（" orthographic_style "）"))
          (when edition-part (str "、" edition-part))
-         "。" corpus-name ", " slug ", release " (subs head-hex 0 12) "…"
+         "。" corpus-name ", " slug ", release " (subs head-hex 0 12)
          (when doi (str ". https://doi.org/" doi)))))
 
 (defn rendered-en
@@ -150,7 +150,7 @@
                 (when-let [publisher (blank->nil (get edition "publisher"))]
                   (str ". " publisher))
                 (when-let [year (edition-year work)] (str ", " year))))
-         ". " corpus-name ", " slug ", release " (subs head-hex 0 12) "…"
+         ". " corpus-name ", " slug ", release " (subs head-hex 0 12)
          (when doi (str ". https://doi.org/" doi)))))
 
 (def ^:private csl-roles

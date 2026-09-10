@@ -42,7 +42,11 @@
       ;; author and title leave 2357 works ambiguous, and the corpus is
       ;; versioned, so neither the identifier nor the release is optional
       (is (string/includes? line "000092_000879"))
-      (is (string/includes? line "release dddddddddddd…"))
+      ;; the twelve-character prefix is the release's own short name, which
+      ;; /releases/short/<prefix>.json resolves; an ellipsis here would paste
+      ;; into a bibliography as an identifier that resolves to nothing
+      (is (string/includes? line "release dddddddddddd"))
+      (is (not (string/includes? line "…")))
       (is (string/includes? line "https://doi.org/10.5281/zenodo.1234567")))
 
     (testing "no romanized title anywhere: the reading has no word boundaries"
@@ -51,7 +55,7 @@
 (deftest a-release-with-no-doi-yet-still-renders-every-form
   ;; the first release is exported before it has been deposited anywhere
   (let [pre {:head-hex (:head-hex release)}]
-    (is (string/ends-with? (citation/rendered pre kumo) "release dddddddddddd…"))
+    (is (string/ends-with? (citation/rendered pre kumo) "release dddddddddddd"))
     (is (not (contains? (citation/csl-json-value pre kumo) "DOI")))
     (is (not (string/includes? (citation/biblatex pre kumo) "doi")))
     (is (not (string/includes? (citation/coins pre kumo) "info:doi")))

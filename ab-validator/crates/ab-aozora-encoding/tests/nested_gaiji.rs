@@ -75,3 +75,40 @@ fn a_quoted_closing_glyph_is_not_the_reference_boundary() {
     assert_eq!(entries[0].end, marker.len());
     assert_eq!(entries[0].description, "］");
 }
+
+/// A `page-segment-line` reference into the 底本 is the same shape whether the
+/// bracket names a character or states something about the line. The middle
+/// segment cannot tell them apart, so recognition is decided by the
+/// description in front of it.
+///
+/// Every case below is attested in the pinned corpus, taken from the works
+/// whose markers were left uninterpreted.
+#[test]
+fn a_page_segment_line_reference_is_decided_by_the_description() {
+    for (body, mencode) in [
+        // 051731_001518: a component substitution, with 本文 as the segment.
+        ("「娉」の「由」に代えて「叟－又」、161-本文-1", "161-本文-1"),
+        // 004089_000398: a dictionary glyph name, with a 段 register.
+        ("小書き片仮名ヱ、28-上段-1", "28-上段-1"),
+    ] {
+        let parsed = recognize_gaiji_body(body).expect(body);
+        assert_eq!(parsed.mencode, Some(mencode), "{body}");
+        assert_eq!(
+            parsed.description,
+            body.strip_suffix(&format!("、{mencode}")).unwrap()
+        );
+    }
+    for body in [
+        // 058579_001943 and 004840_000212: statements about the line, not
+        // names for a character. Promoting these would trade a handful of
+        // unread markers for proofreaders' notes read as characters.
+        "判読不可、30-1段-1",
+        "「な」は判読困難につき推定、コマ25-左-3",
+        "底本ルビは「もら」と誤記、175-上段-4",
+        // 045476_000048: a glyph name the dictionary does not carry. The
+        // description decides, and this one names nothing this build knows.
+        "変体仮名え、11-一-18",
+    ] {
+        assert!(recognize_gaiji_body(body).is_none(), "{body}");
+    }
+}

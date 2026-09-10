@@ -448,7 +448,7 @@ pub fn parse_gaiji_body(body: &str) -> GaijiBody<'_> {
     // the canonical page-line forms and the near-miss ones (fused 上/中/下,
     // full-width minus, poetry locators).
     let shaped = |t: &str| {
-        is_mencode_shaped(t) || is_near_miss_page_line_shaped(t) || is_numbered_column_locator(t)
+        is_mencode_shaped(t) || is_near_miss_page_line_shaped(t) || is_page_segment_line_locator(t)
     };
     let commas: Vec<usize> = body.match_indices('、').map(|(i, _)| i).collect();
     let tokens: Vec<&str> = body.split('、').map(str::trim).collect();
@@ -463,19 +463,25 @@ pub fn parse_gaiji_body(body: &str) -> GaijiBody<'_> {
     // the canonical description-anchored forms (`小書き片仮名ン、500-下-19`)
     // keep resolving without a men-ku-ten.
     let run = &tokens[run_start..];
-    let uses_near_miss = run
-        .iter()
-        .any(|t| is_near_miss_page_line_shaped(t) && !is_page_line_shaped(t));
+    // A locator the canonical page-line grammar rejects: a fused 上/中/下 or
+    // poetry form, or a page-segment-line triple whose middle names a column
+    // or a region. None of them resolves a character on its own.
+    let uses_unresolvable_locator = run.iter().any(|t| {
+        (is_near_miss_page_line_shaped(t) || is_page_segment_line_locator(t))
+            && !is_page_line_shaped(t)
+    });
     let anchored = run.iter().any(|t| is_mencode_shaped(t));
-    let substitution_locator = run_start > 0
+    // A locator that only names a place in the 底本 resolves nothing on its
+    // own, so the description in front of it has to name the glyph. This is
+    // the whole discriminator between a gaiji and a proofreader's note ending
+    // in the same page reference.
+    let described_glyph_locator = run_start > 0
         && run_start < tokens.len()
-        && run.iter().all(|t| is_numbered_column_locator(t))
-        && is_substitution_description(body[..commas[run_start - 1]].trim());
+        && run.iter().all(|t| is_page_segment_line_locator(t))
+        && names_a_known_glyph(body[..commas[run_start - 1]].trim());
     if run_start == tokens.len()
         || run_start == 0
-        || ((uses_near_miss || run.iter().any(|t| is_numbered_column_locator(t)))
-            && !anchored
-            && !substitution_locator)
+        || (uses_unresolvable_locator && !anchored && !described_glyph_locator)
     {
         return GaijiBody {
             description: body,
@@ -514,11 +520,32 @@ fn is_substitution_description(description: &str) -> bool {
         .is_some_and(str::is_empty)
 }
 
-fn is_numbered_column_locator(value: &str) -> bool {
+/// Whether a description names a glyph on its own, without a character code
+/// or a resolvable page reference to stand behind it.
+///
+/// This is what separates a gaiji from a proofreader's remark when both end in
+/// the same page reference: `小書き片仮名ヱ、28-上段-1` names a character and
+/// `底本ルビは「もら」と誤記、175-上段-4` states something about the 底本.
+fn names_a_known_glyph(description: &str) -> bool {
+    DESCRIPTION_TO_CHAR.contains_key(description)
+        || roman_numeral_glyph(description).is_some()
+        || is_substitution_description(description)
+}
+
+/// A `page-segment-line` reference into the 底本, where the middle segment
+/// names something other than a column number: 本文, 左, 右, a kanji column,
+/// a 段 register. The page may be a `コマ` frame of a scanned edition.
+///
+/// Shape alone does not make one of these a gaiji reference: the same triple
+/// is how a proofreader's note points at the line it is about. Admission is
+/// decided by the description in front of it, in [`names_a_known_glyph`].
+fn is_page_segment_line_locator(value: &str) -> bool {
     let mut parts = value.split('-');
     matches!((parts.next(), parts.next(), parts.next(), parts.next()),
-        (Some(page), Some("上段" | "中段" | "下段"), Some(line), None)
-            if is_digit_run(page) && is_digit_run(line))
+        (Some(page), Some(segment), Some(line), None)
+            if is_digit_run(page.strip_prefix("コマ").unwrap_or(page))
+                && !segment.is_empty()
+                && is_digit_run(line))
 }
 
 /// Whether a gaiji `description` can be kept (it both serializes and
@@ -566,11 +593,8 @@ pub fn recognize_gaiji_body(body: &str) -> Option<GaijiBody<'_>> {
     // Unanchored descriptions need an explicit glyph construction or a known
     // glyph name; arbitrary quoted directives remain outside this contract.
     let bare_unanchored = !parsed.quoted && parsed.mencode.is_none();
-    let bare_glyph_description = DESCRIPTION_TO_CHAR.contains_key(parsed.description)
-        || roman_numeral_glyph(parsed.description).is_some()
-        || is_substitution_description(parsed.description);
     if parsed.description.is_empty()
-        || (bare_unanchored && !bare_glyph_description)
+        || (bare_unanchored && !names_a_known_glyph(parsed.description))
         || !gaiji_description_serializable(parsed.description, parsed.mencode.is_some())
     {
         return None;

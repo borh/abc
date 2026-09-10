@@ -154,6 +154,37 @@
         (testing "the successor's range starts where its predecessor's revision ended"
           (is (= (:commit run-1) (get-in head ["corpus" "covers_from"]))))
 
+        (testing "release-delta reads the difference back out of the published chain"
+          (let [ks (vector-keys)
+                dir (fs/create-temp-dir {:prefix "release-delta"})
+                write! (fn [name content]
+                         (let [path (str (fs/path dir name))] (spit path content) path))
+                release-pub (write! "release.pub" (str (get-in ks ["release" "pub"]) "\n"))
+                governance-pub (write! "governance.pub"
+                                       (str (get-in ks ["governance" "pub"]) "\n"))
+                delta (main/release-delta!
+                       {:chain-clone clone :branch fx/branch
+                        :release-pub release-pub :governance-pub governance-pub})]
+            (testing "the defaults name the newest release and the one before it"
+              (is (= (:manifest-id result-2) (get delta "to_manifest")))
+              (is (= (:manifest-id result-1) (get delta "from_manifest"))))
+            (is (= (:commit run-1) (get-in delta ["corpus" "from"])))
+            (is (= (:commit run-2) (get-in delta ["corpus" "to"])))
+            (is (= [(slug-of added)] (get-in delta ["works" "added"])))
+            (is (= 2 (get-in delta ["works" "unchanged"]))
+                "the two works carried over moved neither source nor documents")
+            (is (= [] (get-in delta ["works" "source-changed"])))
+            (is (= [] (get-in delta ["works" "documents-changed"])))
+            (is (= [] (get delta "unexplained")))
+            (testing "genesis has nothing before it to compare against"
+              (is (= :no-predecessor
+                     (:reason (try (main/release-delta!
+                                    {:chain-clone clone :branch fx/branch
+                                     :to (:manifest-id result-1)
+                                     :release-pub release-pub
+                                     :governance-pub governance-pub})
+                                   (catch clojure.lang.ExceptionInfo e (ex-data e)))))))))
+
         (testing "an unmoved upstream is the scheduled no-op"
           (let [run-3 (corpus/run-corpus! root store)
                 result-3 (drive! clone run-3

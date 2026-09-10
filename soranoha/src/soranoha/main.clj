@@ -26,6 +26,7 @@
             [soranoha.core.json :as record-json]
             [soranoha.core.parallel :as parallel]
             [soranoha.snh.decode :as decode]
+            [soranoha.snh.release-delta :as release-delta]
             [soranoha.snh.repo :as repo]
             [soranoha.snh.semantic :as semantic]
             [soranoha.snh.sign :as sign]
@@ -785,6 +786,68 @@
                       true (assoc "current_rev" current)))))
     report))
 
+(defn- verified-manifest
+  "The decoded manifest for `hex`, read from the tree of the verified commit.
+  Every release's manifest accumulates in that tree, because each release
+  commit is written on its parent's, so one verified commit serves the whole
+  chain and no second walk is needed to reach an older release."
+  [v commit hex]
+  (let [bytes (or (view/read-at v commit (verify/manifest-path hex))
+                  (throw (ex-info "manifest is absent from the verified tree"
+                                  {:reason :manifest-absent :manifest hex})))]
+    (:value (decode/decode "release-manifest" bytes))))
+
+(defn release-delta!
+  "What changed between two published releases, as deterministic JSON.
+
+  Derived from the two manifests and nothing else, which is what makes the
+  answer checkable rather than announced: anyone holding a clone runs this
+  and gets the same bytes, with no corpus checkout and no rebuild. The chain
+  is verified against the pinned keys before either manifest is read, so the
+  comparison is over bytes the keys establish and not over whatever the
+  origin happened to serve.
+
+  `--to` defaults to the head and `--from` to the release before it, so the
+  usual question, what the newest release changed, needs neither flag.
+
+  A source change and a toolchain change are reported apart and never merged;
+  see `soranoha.snh.release-delta` for why that distinction is load-bearing
+  and what `unexplained` means."
+  [{:keys [chain-clone branch release-pub governance-pub from to]}]
+  (require-flags! "release-delta"
+                  {"--chain-clone" chain-clone
+                   "--release-pub" release-pub
+                   "--governance-pub" governance-pub})
+  (let [v (view/git-view (str chain-clone))
+        commit (or (repo/fetch! (str chain-clone) branch)
+                   (throw (ex-info "no publication branch"
+                                   {:reason :no-publication-branch :branch branch})))
+        verified (verify/verify-repository-at
+                  v commit (pinned-keys-from-files release-pub governance-pub))
+        _ (when (:empty verified)
+            (throw (ex-info "the chain has no release to compare"
+                            {:reason :no-published-release})))
+        ;; newest first, so the release before `to` is the next element
+        chain (:chain verified)
+        position (into {} (map-indexed (fn [i hex] [hex i])) chain)
+        to-hex (or (not-empty (str to)) (first chain))
+        to-index (or (position to-hex)
+                     (throw (ex-info "manifest is not in this chain"
+                                     {:reason :manifest-not-in-chain :manifest to-hex})))
+        from-hex (or (not-empty (str from)) (nth chain (inc to-index) nil))
+        _ (when-not from-hex
+            (throw (ex-info "genesis has no predecessor to compare against"
+                            {:reason :no-predecessor :manifest to-hex})))
+        _ (when-not (position from-hex)
+            (throw (ex-info "manifest is not in this chain"
+                            {:reason :manifest-not-in-chain :manifest from-hex})))
+        report (assoc (release-delta/report (verified-manifest v commit from-hex)
+                                            (verified-manifest v commit to-hex))
+                      "from_manifest" from-hex
+                      "to_manifest" to-hex)]
+    (println (record-json/write-deterministic-json-str report))
+    report))
+
 (defn governance-event-prepare!
   "Turn candidate governance-event content into the exact bytes the offline
   governance key will sign, and print their sha256.
@@ -1019,6 +1082,8 @@
    :deployment {:coerce :string}
    :archive {:coerce :string}
    :commit {:coerce :string}
+   :from {:coerce :string}
+   :to {:coerce :string}
    ;; default pinned to the measured resource envelope (peak RSS < 8 GiB
    ;; with -Xmx4g); 0 = one worker per available processor
    :concurrency {:coerce :long :default 16}
@@ -1055,6 +1120,7 @@
           ;; prints, and carries the reason.
           "release-needed" (when-not (get (release-needed! opts) "needed")
                              (System/exit 10))
+          "release-delta" (release-delta! opts)
           "governance-event-prepare" (governance-event-prepare! opts)
           "governance" (let [{:keys [outcome]} (governance! opts)]
                          (when-not (#{:published :already-applied} outcome)
@@ -1069,7 +1135,7 @@
           "verify" (when-not (:ok? (verify! opts))
                      (System/exit 1))
           (do (binding [*out* *err*]
-                (println "usage: build|text-view|annotation-validate|tei-enrich|links-export|delta|release|release-needed|governance-event-prepare|governance|serving-tree|serving-activate|publication-init|assessment-evaluate|aozora-reliance-prepare|archive-verify|verify [--root R --aozora-root A --assets-root S ...]"))
+                (println "usage: build|text-view|annotation-validate|tei-enrich|links-export|delta|release|release-needed|release-delta|governance-event-prepare|governance|serving-tree|serving-activate|publication-init|assessment-evaluate|aozora-reliance-prepare|archive-verify|verify [--root R --aozora-root A --assets-root S ...]"))
               (System/exit 2))))
       (System/exit 0)
       (catch clojure.lang.ExceptionInfo e

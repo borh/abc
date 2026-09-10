@@ -71,7 +71,28 @@ exits 10 when nothing changed and the workflow mints nothing. Every uncertainty
 reports that a release is needed, because refusing to release is the outcome
 that loses work. The revisions passed over are not lost either: the next
 release's `corpus.covers_from` names where its range starts, so any revision in
-`(covers_from, upstream_rev]` maps to exactly one release. Inspect `/releases/HEAD`, the corresponding manifest and signature,
+`(covers_from, upstream_rev]` maps to exactly one release.
+
+`release-delta` answers what a release changed, from the two manifests and
+nothing else. It verifies the chain against both role pins, then compares the
+manifest at `--to` with the one at `--from`; with neither flag it compares the
+head against the release before it. Because every input is already in signed
+bytes, anyone holding a clone recomputes the same answer without a corpus
+checkout and without rebuilding anything.
+
+It keeps two causes apart rather than reporting one figure for change. A work
+under `source-changed` is publishing a different source state, established by
+its `source_content_hash`. A work under `documents-changed` has an unchanged
+source hash and moved artifact ids: the same edition converted again, which
+yields new documents and never a new edition. The stages whose closure hash or
+code version moved are listed separately, so a source change is never
+attributed to the toolchain or the reverse. `unexplained` lists works whose
+documents moved while both the source hash and every stage coordinate stood
+still, which is the one condition here that nothing else reports: the
+transaction's determinism halt cannot see it, because that fires only when the
+whole projection matches and an advanced corpus revision means it does not.
+
+Inspect `/releases/HEAD`, the corresponding manifest and signature,
 and the work links named by that manifest. The root URL serves the generated
 browse layer (a landing page, author, title and NDC indexes, a bibliography and
 a reading view per work, the rights and citation pages, and the TEI extension

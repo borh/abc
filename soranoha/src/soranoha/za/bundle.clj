@@ -4,8 +4,8 @@
   Serving is a static tree with no application runtime, so a selection cannot
   be assembled when it is asked for. Every selection a reader can take is
   therefore built at export time and served as an ordinary file. The
-  selections mirror the axes the site already browses by — the whole corpus,
-  one person, one NDC class — so `everything by this author` is a link on
+  selections mirror the axes the site already browses by, the whole corpus,
+  one person and one NDC class, so `everything by this author` is a link on
   that author's page rather than a program the reader has to write.
 
   Two artifact types are bulk-published; `soranoha.za.naming` says which and
@@ -40,7 +40,7 @@
   reproducible from the release alone.
 
   `setTimeLocal` writes the MS-DOS date field directly, so the exporter's
-  timezone does not reach the bytes — but only for a date strictly inside the
+  timezone does not reach the bytes, but only for a date strictly inside the
   DOS range. At its 1980-01-01 boundary the JDK falls back to an extended
   timestamp extra field holding an epoch second, which is computed through
   the default timezone and is therefore not reproducible. Hence a date well
@@ -107,7 +107,7 @@
 
 (defn- by-person
   "person id -> {:person contributor-record :works works-in-catalog-order}.
-  A person who holds two relations to one work — author and collator, say —
+  A person who holds two relations to one work, author and collator say,
   contributes it once; the contributors of a work are consecutive here, so
   the previous entry is enough to see that."
   [works]

@@ -613,8 +613,8 @@
 
 (defn- source-edition-line
   "One 底本, shown the way Aozora Bunko recorded it. 初版発行年 is a free-form
-  publication history rather than a year — `1981（昭和56）年3月20日`, and 914
-  values carry a printing history after that — so it is shown verbatim and
+  publication history rather than a year, as `1981（昭和56）年3月20日` is, and
+  914 values carry a printing history after that, so it is shown verbatim and
   nothing is appended to it. Every recorded value already ends in its own
   年, 月 or 日."
   [{:strs [title publisher first_edition_year]}]

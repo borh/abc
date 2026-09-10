@@ -56,7 +56,7 @@
 
 (def ^:private component-limit
   "Characters kept from one rendered component. No Aozora Bunko author component
-  reaches it — the longest measured is 38 — and no stem is known to, but a
+  reaches it, the longest measured being 38, and no stem is known to, but a
   filename has to stay under the 255-byte limit every filesystem in play
   imposes, and truncation must be a rule rather than an accident. Uniqueness
   does not depend on it: the identifier component is never truncated."

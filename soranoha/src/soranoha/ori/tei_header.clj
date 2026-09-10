@@ -138,8 +138,8 @@
   "Who published these bytes, under what identifier, and on what terms.
 
   Three identifiers, and the type names say who issued which. Soranoha issues
-  the publication identifier — the `<work-id>_<card-directory>` form the site
-  serves works under — so it is not labelled `aozora-*`: Aozora Bunko issues the
+  the publication identifier, the `<work-id>_<card-directory>` form the site
+  serves works under, so it is not labelled `aozora-*`: Aozora Bunko issues the
   work id and the card, not the pair. Without it a downloaded file cannot say
   what to cite it as, which is the property the citation projections rest on.
 
@@ -195,7 +195,7 @@
   "The editions this text was transcribed from, plus where it first appeared.
 
   初出 is a `bibl` rather than a `note` because `sourceDesc` does not admit
-  notes — its content is bibliographic — and because a first-publication
+  notes, its content being bibliographic, and because a first-publication
   statement is a reference to another appearance of the work, which is what a
   `bibl` is for. It is distinguished from the transcribed editions by its
   type: it describes where the text was first printed, not what was keyed."

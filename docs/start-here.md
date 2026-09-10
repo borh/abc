@@ -1,8 +1,8 @@
 # Start here
 
-Soranoha publishes TEI P5 editions of Japanese texts that Aozora Bunko
-classifies as copyright-expired. Each work is published in four formats
-alongside a signed record of exactly which bytes were published.
+Soranoha publishes TEI P5 editions of Japanese texts from Aozora Bunko. Each
+work is published in four formats alongside a signed record of exactly which
+bytes were published.
 
 This guide covers retrieving individual works, downloading the full corpus, and
 navigating published formats.
@@ -169,14 +169,19 @@ reference and its caption; the image itself is not published.
 
 ## Licence
 
-The underlying works are out of copyright and are not Soranoha's to license.
-Soranoha's own contributions, including the TEI encoding, plaintext and Markdown
-projections, validation reports, catalog, and manifests, are dedicated to the public domain
+The underlying works are not Soranoha's to license. Almost all of them are out
+of copyright; the rest are works whose rightsholder publishes them on Aozora
+Bunko under a Creative Commons Attribution licence. Soranoha's own
+contributions, including the TEI encoding, plaintext and Markdown projections,
+validation reports, catalog, and manifests, are dedicated to the public domain
 under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
 
 You may copy, redistribute, adapt, translate, mine and republish all of it,
-commercially or not, without asking and without payment. Attribution is
-requested, not required, which mirrors Aozora Bunko's own posture.
+commercially or not, without asking and without payment. For Soranoha's own
+encoding, attribution is requested, not required, which mirrors Aozora Bunko's
+own posture. Where the underlying work is under CC BY, attribution to that work
+is a condition of its licence. Each work's page and TEI header state which of
+the two standings applies.
 
 [Rights](rights.md) is the full statement, including what applies if you
 redistribute the software rather than the corpus, and how a rights holder asks

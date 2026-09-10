@@ -1,9 +1,9 @@
 # Soranoha
 
-Soranoha is a TEI edition of Aozora Bunko. It converts copyright-expired
-Japanese texts that Aozora Bunko distributes as annotated plain text into TEI
-P5, and publishes each work as TEI, plaintext, Markdown, and a validation
-report, with a signed record of the published bytes.
+Soranoha is a TEI edition of Aozora Bunko. It converts the Japanese texts
+Aozora Bunko distributes as annotated plain text into TEI P5, and publishes
+each work as TEI, plaintext, Markdown, and a validation report, with a signed
+record of the published bytes.
 
 **Reading or using the corpus?** Begin with [start here](docs/start-here.md),
 which requires no Nix, Clojure, or TEI background, followed by
@@ -128,13 +128,16 @@ data.
 
 | Scope | Licence |
 |---|---|
-| Underlying Aozora Bunko works | Public domain (not Soranoha's to license) |
+| Underlying Aozora Bunko works | Public domain, or CC BY where the rightsholder licensed it; recorded per work (not Soranoha's to license) |
 | Published corpus artifacts (TEI, plaintext, Markdown, validation reports, catalog, manifests) | [CC0-1.0](LICENSE-CC0) |
 | TEI customisation and protocol JSON Schemas | [CC0-1.0](LICENSE-CC0) |
 | All source code | [Apache-2.0](LICENSE) |
 
-Attribution is requested rather than required, mirroring Aozora Bunko's own
-practice. [docs/rights.md](docs/rights.md) provides the complete public
+Soranoha's own encoding is under CC0, so attribution for it is requested
+rather than required, mirroring Aozora Bunko's own practice. Where the
+underlying work is under CC BY, attribution to that work is a condition of that
+licence; each work's page, catalog entry and TEI header state which of the two
+standings applies to it. [docs/rights.md](docs/rights.md) provides the complete public
 statement covering the two rights layers, toolchain licensing, header grants in
 published bytes, and the withdrawal process. [docs/citation.md](docs/citation.md)
 gives citation forms for releases, individual works, and exact byte sequences,

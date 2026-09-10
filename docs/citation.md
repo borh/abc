@@ -1,8 +1,10 @@
 # Citing Soranoha
 
-Corpus artifacts and metadata are dedicated to the public domain under CC0.
-Citation is requested as a scholarly norm rather than enforced as a licence
-condition (see [rights](rights.md)).
+Soranoha's encoding of each work, and the metadata around it, are dedicated to
+the public domain under CC0, so citing Soranoha is requested as a scholarly
+norm rather than enforced as a licence condition. Where the underlying work is
+under CC BY, attribution to that work is a separate obligation this page does
+not discharge (see [rights](rights.md)).
 
 ## Cite a release, not "the corpus"
 

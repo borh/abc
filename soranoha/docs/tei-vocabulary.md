@@ -117,11 +117,13 @@ reported with the constant `rule_id` `relax-ng` instead.
 
 Every published work states its own terms in
 `fileDesc/publicationStmt/availability`, with one `licence` element per rights
-layer (one for the underlying work's public-domain standing, and one for
-Soranoha's CC0 grant over the encoding, which also carries a `ptr` to the full
-statement). Both are rendered from the one publication policy the release
-manifest hashes, so a detached TEI file and the signed release record cannot
-state different terms.
+layer (one for the standing of the underlying work, which is public domain or a
+Creative Commons Attribution licence, and one for Soranoha's CC0 grant over the
+encoding, which also carries a `ptr` to the full statement). The encoding grant
+is rendered from the one publication policy the release manifest hashes and the
+work's standing from the same value the manifest records in `works[].rights`,
+so a detached TEI file and the signed release record cannot state different
+terms.
 `snh-publication-licence` makes their absence a validation failure. See
 [rights and licensing](../../docs/rights.md).
 

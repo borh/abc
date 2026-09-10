@@ -5,11 +5,13 @@ message: >-
   DOI; see docs/citation.md for the citation forms and worked examples.
 title: "Soranoha Aozora TEI Corpus"
 abstract: >-
-  Soranoha converts Aozora Bunko's public-domain Japanese texts to TEI P5,
-  with plaintext and Markdown projections and a validation report for every
-  work, and publishes them as a signed, append-only chain of content-addressed
-  releases. Corpus artifacts are dedicated to the public domain under CC0-1.0;
-  the conversion and publication tooling is licensed Apache-2.0.
+  Soranoha converts the Japanese texts of Aozora Bunko to TEI P5, with
+  plaintext and Markdown projections and a validation report for every work,
+  and publishes them as a signed, append-only chain of content-addressed
+  releases. Soranoha's encoding is dedicated to the public domain under
+  CC0-1.0 and the tooling is licensed Apache-2.0. The underlying works are in
+  the public domain, or for a small number under a Creative Commons
+  Attribution licence, recorded per work in the release manifest and catalog.
 type: dataset
 license: CC0-1.0
 authors:

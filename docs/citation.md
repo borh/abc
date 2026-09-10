@@ -41,6 +41,22 @@ its own, ready to copy.
 > form with a placeholder, and the head is the only stable release
 > identifier.
 
+## A release is citable once it has been archived
+
+The corpus is citable only where its bytes can still be reached after this
+site is gone, so the specification makes eligibility conditional: a release
+becomes citable when an independent archival observation of its publication
+commit has succeeded. The observation reads the archived copy of the
+publication repository as its only source and re-runs the full chain
+verification against it, which is what establishes that the archive holds a
+complete and self-checking copy rather than a partial crawl.
+
+Observations are recorded per commit, so a release published between two
+observations is not yet covered by one. Because the observation reports carry
+no ordering contract, a later failed observation does not by itself revoke an
+earlier successful one. [Archival](archival.md) describes how an observation is
+made and how to resolve a citation through the archive without the live site.
+
 ## Citing the whole corpus
 
 ```
@@ -236,6 +252,8 @@ against the release key published in the trust anchor deposit. The procedure
 is specified in [`docs/design/snh-protocol-v1.md`](design/snh-protocol-v1.md),
 and [Zenodo deposits and ORCID anchoring](zenodo-deposits.md) describes what
 each deposit contains and how to check that a DOI names the release it claims.
+To reach the same artifact through the archive rather than through this site,
+[archival](archival.md) gives the path mapping.
 
 ## Citing the tooling
 

@@ -47,6 +47,34 @@ http://{$SORANOHA_SERVE_LISTEN} {
 	@browse path / /index.html /style.css /search.js /copy.js /search-index.json /authors /authors/* /titles /titles/* /ndc /ndc/* /bulk/* /rights /citation /history /ns/* /license/* /schemas/*
 	header @browse Cache-Control "public, max-age=60"
 
+	# Caddy types a response from the filename extension, and these routes have
+	# none, so they arrived with no Content-Type at all and a browser was left
+	# to guess the charset: /works/<id>/plaintext rendered as mojibake in
+	# Firefox while curl was fine. These are the URLs the pages tell a reader to
+	# cite, so each is given the type its extensioned twin already gets, because
+	# the pages promise the two URLs carry the same bytes.
+	@work-tei path /works/*/tei
+	header @work-tei Content-Type "text/xml; charset=utf-8"
+
+	@work-plaintext path /works/*/plaintext
+	header @work-plaintext Content-Type "text/plain; charset=utf-8"
+
+	@work-markdown path /works/*/markdown
+	header @work-markdown Content-Type "text/markdown; charset=utf-8"
+
+	@work-json path /works/*/tei-validation /releases/latest
+	header @work-json Content-Type "application/json"
+
+	@release-head path /releases/HEAD
+	header @release-head Content-Type "text/plain; charset=utf-8"
+
+	# A digest-addressed blob is bytes and nothing else: what artifact type it
+	# holds is a fact the manifest carries, not one the path can be read for.
+	# Declaring that rather than leaving the header absent keeps a client from
+	# sniffing a type the store never claimed.
+	@blob path /blobs/sha256/*
+	header @blob Content-Type "application/octet-stream"
+
 	try_files {path} {path}.html
 
 	file_server

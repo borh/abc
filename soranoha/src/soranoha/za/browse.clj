@@ -451,7 +451,9 @@
     (when work-count
       (list [:dt (bilingual "作品数" "Works")] [:dd (str work-count)]))
     [:dt (bilingual "目録" "Catalog")]
-    [:dd [:a {:href "/catalog.json"} "/catalog.json"]]]])
+    [:dd [:a {:href "/catalog.json"} "/catalog.json"]]
+    [:dt (bilingual "履歴" "History")]
+    [:dd [:a {:href "/history"} (bilingual "この版までのすべての版" "Every release up to this one")]]]])
 
 (defn- document-entries
   "Every served document with its own text and its own English title.
@@ -799,6 +801,100 @@
        " " [:a {:href (str "/releases/" last-release ".json")} [:code last-release]]])
     [:p [:a {:href "/rights"} (bilingual "権利について" "Rights statement")]]]))
 
+(defn- covered-range
+  "The upstream revisions a release stands for. A release is minted when the
+  corpus moved rather than on every upstream commit, so one release covers
+  `(covers_from, upstream_rev]` and may stand for several revisions. Genesis
+  has no predecessor revision to open its range and shows only its own."
+  [{:strs [covers_from upstream_rev]}]
+  (if covers_from
+    (str (subs covers_from 0 12) " .. " (subs upstream_rev 0 12))
+    (subs upstream_rev 0 12)))
+
+(defn- published-change
+  "What a release did to the published set against its predecessor: works
+  added, works removed, and works whose source bytes changed.
+
+  Counts rather than lists. A corpus release changes a median of two works
+  out of 17,602, but a toolchain change moves every one of them, and a page
+  naming them all would be larger than the manifests it summarises.
+
+  `source_content_hash` is what decides `changed`, because it is the fact
+  about the work rather than about the toolchain: a release that reruns an
+  unchanged source through a new parser publishes different artifacts, and
+  saying that every work changed would bury the two that did."
+  [manifest predecessor]
+  (let [source-of (fn [m]
+                    (into {} (map (juxt #(get % "slug") #(get % "source_content_hash")))
+                          (get m "works")))
+        before (source-of predecessor)
+        now (source-of manifest)]
+    {:added (count (remove before (keys now)))
+     :removed (count (remove now (keys before)))
+     :changed (count (filter (fn [[slug hash]]
+                               (when-let [was (get before slug)] (not= was hash)))
+                             now))}))
+
+(defn- history-row [[hex manifest] predecessor events]
+  (let [event-id (get manifest "governance_event")
+        event (some->> event-id verify/id->hex (get events))
+        {:keys [added removed changed]} (when predecessor
+                                          (published-change manifest predecessor))]
+    [:tr
+     [:td [:a {:href (str "/releases/" hex ".json")} [:code (subs hex 0 12)]]
+      (when event
+        (list " "
+              [:a {:href (str "/governance/" (verify/id->hex event-id) ".json")}
+               (get event "kind")]))]
+     [:td [:code (covered-range (get manifest "corpus"))]]
+     [:td (str (count (get manifest "works")))]
+     [:td (if predecessor (str added) "")]
+     [:td (if predecessor (str removed) "")]
+     [:td (if predecessor (str changed) "")]]))
+
+(defn- history-page
+  "Every release in the chain, newest first, with what it changed.
+
+  Assembled here rather than published as an artifact for the reason
+  `adr/0001` gave the citation forms and the catalog CSV: it is a projection
+  over signed bytes, and a projection stays correctable. Every number on it
+  is recomputed from the manifests the export has already written, so a
+  reader who distrusts the page can derive it from the same files.
+
+  The oldest release has no predecessor and so has no change to state; its
+  cells are left empty rather than filled with the count of the whole
+  corpus, which would read as a release that added everything at once."
+  [manifests events]
+  (chrome
+   "版の履歴"
+   {:main-class "doc"}
+   [[:h1 (bilingual "版の履歴" "Release history")]
+    [:p (bilingual
+         (str "署名された連鎖にあるすべての版です。新しいものから順に並んでいます。"
+              "各行の数字は、その版が一つ前の版に対して何を変えたかを、公開されたマニフェストから数え直したものです。")
+         (str "Every release in the signed chain, newest first. The counts on each row are "
+              "what that release changed against the one before it, recomputed from the "
+              "published manifests."))]
+    [:table
+     [:thead
+      [:tr
+       [:th (bilingual "版" "Release")]
+       [:th (bilingual "底本の範囲" "Upstream range")]
+       [:th (bilingual "作品数" "Works")]
+       [:th (bilingual "追加" "Added")]
+       [:th (bilingual "削除" "Removed")]
+       [:th (bilingual "変更" "Changed")]]]
+     (into [:tbody]
+           (map (fn [[entry predecessor]]
+                  (history-row entry (second predecessor) events))
+                (partition-all 2 1 manifests)))]
+    [:p (bilingual
+         "「底本の範囲」は、その版が代表する青空文庫のリビジョンの範囲です。作品の書庫が動いたときに版を作るので、一つの版が複数のリビジョンを代表することがあります。最初の版には比較する前の版がないので、変更の欄は空です。"
+         (str "The upstream range is the span of Aozora Bunko revisions a release stands for. "
+              "A release is minted when a work archive moved, so one release can stand for "
+              "several revisions. The oldest release has nothing to differ from, so its "
+              "change columns are empty."))]]))
+
 (defn- generated-page
   "One of the two pages that state facts read from the release.
 
@@ -1018,6 +1114,7 @@
       (page "index.html" (landing head-hex works (count withdrawn)))
       (page "rights.html" (rights-page (by-route "rights") (get head "rights")))
       (page "citation.html" (citation-page (by-route "citation") release))
+      (page "history.html" (history-page manifests events))
 
       (page "authors/index.html"
             (author-index (mapv (fn [[id {:keys [person by-relation]}]]

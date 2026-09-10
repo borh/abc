@@ -227,7 +227,7 @@
 
       (testing "the browse layer answers at the front door and at readable URLs"
         (doseq [path ["/" "/authors/" "/titles/" "/ndc/" "/rights" "/citation"
-                      "/ns/tei" "/schemas/tei-profile.odd"
+                      "/history" "/ns/tei" "/schemas/tei-profile.odd"
                       "/schemas/person-record.schema.json"
                       "/license/cc0-1.0.txt"
                       "/style.css" "/search.js" "/copy.js" "/search-index.json"]]

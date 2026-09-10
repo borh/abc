@@ -156,7 +156,7 @@
       (doseq [rel ["index.html" "style.css" "search.js" "copy.js"
                    "search-index.json"
                    "authors/index.html" "titles/index.html" "ndc/index.html"
-                   "rights.html" "citation.html" "ns/tei.html"
+                   "rights.html" "citation.html" "history.html" "ns/tei.html"
                    "schemas/tei-profile.odd" "license/cc0-1.0.txt"]]
         (is (fs/regular-file? (fs/path out rel)) rel))
       ;; the reader-facing documents are held back until they are trimmed and

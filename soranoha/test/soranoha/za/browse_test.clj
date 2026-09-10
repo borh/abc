@@ -15,6 +15,17 @@
 (def ^:private head-hex (apply str (repeat 64 "a")))
 (def ^:private prev-hex (apply str (repeat 64 "b")))
 (def ^:private event-hex (apply str (repeat 64 "c")))
+(def ^:private head-rev (apply str (repeat 40 "1")))
+(def ^:private prev-rev (apply str (repeat 40 "0")))
+
+(defn- corpus
+  "The corpus projection a manifest carries. `covers_from` is the
+  predecessor's `upstream_rev`, or nil at genesis, which is the producer
+  side of the invariant the verifier checks."
+  [rev covers-from]
+  {"upstream_origin" "https://github.com/aozorabunko/aozorabunko"
+   "upstream_rev" rev
+   "covers_from" covers-from})
 
 (defn- work
   [slug title reading & {:keys [ndc contributors]
@@ -67,11 +78,21 @@
   ([works withdrawn]
    {:head-hex head-hex
     :tei tei-for
-    :manifests [[head-hex {"works" (mapv #(select-keys % ["slug"]) works)
+    :manifests [[head-hex {"works" (mapv #(select-keys % ["slug" "source_content_hash"])
+                                         works)
                            "withdrawn" withdrawn
+                           "governance_event" (when (seq withdrawn)
+                                                (str "snh:1:governance-event:" event-hex))
+                           "corpus" (corpus head-rev prev-rev)
                            "rights" rights}]
-                [prev-hex {"works" [{"slug" "000092_000879"}]
+                ;; the predecessor holds one of the same works under different
+                ;; source bytes, so a history row has an addition and a change
+                ;; to count rather than only additions
+                [prev-hex {"works" [{"slug" "000092_000879"
+                                     "source_content_hash" (apply str (repeat 64 "2"))}]
                            "withdrawn" []
+                           "governance_event" nil
+                           "corpus" (corpus prev-rev nil)
                            "rights" rights}]]
     :catalog {"schema" "snh-catalog/1" "works" works}
     :events {event-hex {"schema" "snh-governance-event/1"
@@ -96,7 +117,7 @@
         pages (pages (inputs works))]
     (testing "the entry point and each index exist as ordinary files"
       (doseq [path ["index.html" "authors/index.html" "titles/index.html"
-                    "ndc/index.html" "rights.html" "citation.html"
+                    "ndc/index.html" "rights.html" "citation.html" "history.html"
                     "style.css" "search.js" "search-index.json"]]
         (is (contains? pages path) path)))
 
@@ -305,6 +326,50 @@
             "abbreviated the way a bibliography carries it")
         (is (not (string/includes? citation-page "id=\"cite-a-release-not-the-corpus\"")))
         (is (string/includes? citation-page "docs/citation.md"))))))
+
+(deftest the-release-history-counts-what-each-release-changed
+  ;; The history is a projection over the manifests the export has already
+  ;; written, so every number on it has to be derivable from those bytes by a
+  ;; reader who does not trust the page. These assertions are that derivation
+  ;; done independently: the head publishes two works where its predecessor
+  ;; published one, and that one's source bytes differ.
+  (let [works [(work "000092_000879" "蜘蛛の糸" "くものいと")
+               (work "000035_001567" "走れメロス" "はしれめろす")]
+        history (page (pages (inputs works)) "history.html")
+        row (fn [hex] (some #(when (string/includes? % (subs hex 0 12)) %)
+                            (string/split history #"<tr")))]
+    (testing "every release in the chain has a row that links its manifest"
+      (is (string/includes? history (str "/releases/" head-hex ".json")))
+      (is (string/includes? history (str "/releases/" prev-hex ".json"))))
+
+    (testing "the head's row states what it changed against its predecessor"
+      (let [head-row (row head-hex)]
+        (is (some? head-row))
+        (is (string/includes? head-row "<td>2</td>") "two works published")
+        ;; one work is new and one kept its slug under different source bytes,
+        ;; so the row reads 2 works, 1 added, 0 removed, 1 changed
+        (is (string/includes? head-row "<td>1</td><td>0</td><td>1</td>"))))
+
+    (testing "the oldest release states no change, having nothing to differ from"
+      (let [prev-row (row prev-hex)]
+        (is (some? prev-row))
+        (is (string/includes? prev-row "<td>1</td><td></td><td></td><td></td>"))))
+
+    (testing "each row names the upstream revisions the release stands for"
+      (is (string/includes? (row head-hex)
+                            (str (subs prev-rev 0 12) " .. " (subs head-rev 0 12))))
+      (is (not (string/includes? (row prev-hex) " .. "))
+          "genesis has no predecessor revision to open its range"))
+
+    (testing "a release carrying a governance event links the event beside it"
+      (let [withdrawn [{"slug" "000092_000879"
+                        "event" (str "snh:1:governance-event:" event-hex)}]
+            with-event (page (pages (inputs works withdrawn)) "history.html")]
+        (is (string/includes? with-event (str "/governance/" event-hex ".json")))
+        (is (string/includes? with-event "withdrawal"))))
+
+    (testing "and the landing page sends a reader to it"
+      (is (string/includes? (page (pages (inputs works)) "index.html") "\"/history\"")))))
 
 (deftest html-rendering-escapes-every-untrusted-position-test
   (is (= "<p class=\"a&quot;b\">&lt;x&gt;&amp;</p>"

@@ -33,3 +33,25 @@
     (is (= :archive-stem-outside-catalog-character-set (:reason failure)))
     (is (= "000001_000001" (:slug failure)))
     (is (= "蜘蛛の糸" (:stem failure)))))
+
+(deftest one-person-in-two-relations-is-two-entries-ordered-by-the-pair
+  (testing "the entry's identity is the pair, so both relations survive and sort"
+    ;; 海潮音 is Ueda Bin's, as its 著者 and as its 翻訳者 both. Fifteen works
+    ;; in the corpus record one person in two relations; keying on the person
+    ;; refused every one of them.
+    (let [entry (#'catalog/work-entry
+                 "002259_000235" (apply str (repeat 64 "a"))
+                 {"work" {"title" "海潮音" "orthographic_style" "旧字旧仮名"
+                          "card_url" "https://www.aozora.gr.jp/cards/000235/card2259.html"
+                          "source_editions" []}
+                  "contributors" [{"person_id" "000235" "relation_to_work" "翻訳者"}
+                                  {"person_id" "000235" "relation_to_work" "著者"}]}
+                 {"000235" {"family_name" "上田" "given_name" "敏"
+                            "family_name_romaji" "Ueda" "given_name_romaji" "Bin"}}
+                 "kaichoon.txt")]
+      (is (= [["000235" "翻訳者"] ["000235" "著者"]]
+             (mapv (juxt #(get % "person_id") #(get % "relation_to_work"))
+                   (get entry "contributors")))
+          ;; code-point order, the same comparator the semantic check applies,
+          ;; which puts 翻 (U+7FFB) ahead of 著 (U+8457)
+          "sorted by the pair, so two relations of one person have an order"))))

@@ -678,9 +678,11 @@ the manifest's `works` (§8). Each entry is closed:
 first_published, orthographic_style, ndc, card_url, archive_stem,
 contributors, source_editions}` (nullable where Aozora Bunko's catalog leaves the
 field empty; `title`, `orthographic_style`, `card_url` and `archive_stem` are
-always present). `contributors` is sorted by `person_id`, unique, non-empty,
-each `{person_id, family_name, given_name, family_name_romaji,
-given_name_romaji, relation_to_work}`. `source_editions` entries are
+always present). `contributors` is sorted by `(person_id,
+relation_to_work)`, unique on that pair, non-empty, each `{person_id,
+family_name, given_name, family_name_romaji, given_name_romaji,
+relation_to_work}`. One person may hold more than one relation to a work, so
+the pair is the entry's identity rather than the person. `source_editions` entries are
 `{title, publisher, first_edition_year}`.
 
 `archive_stem` is the Aozora Bunko archive's own name for the work's primary text

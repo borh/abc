@@ -128,8 +128,15 @@
     ;; exists to carry.
     (when-not (absolute-origin? card_url)
       (fail! :invalid-card-url {:slug slug :card_url card_url}))
+    ;; A contributor entry is a person in a relation, not a person, so that
+    ;; pair is what has to be unique and what fixes the order. One person can
+    ;; hold two relations to one work: Ueda Bin is both 著者 and 翻訳者 of
+    ;; 海潮音, and fifteen works in the corpus record something of that shape.
+    ;; Keying on the person alone refused all of them, and refused them for
+    ;; being what Aozora Bunko's catalog says they are.
     (sorted-unique! :contributors-not-sorted-unique
-                    (mapv #(get % "person_id") contributors)
+                    (mapv (juxt #(get % "person_id") #(get % "relation_to_work"))
+                          contributors)
                     {:slug slug}))
   catalog)
 

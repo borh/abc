@@ -93,7 +93,10 @@
      "ndc" (get work "ndc")
      "card_url" (get work "card_url")
      "archive_stem" (archive-stem slug primary-text-member)
-     "contributors" (vec (sort-by #(get % "person_id")
+     ;; by the pair, because the pair is the entry's identity: sorting on the
+     ;; person alone left two relations of one person in whatever order the
+     ;; metadata record happened to carry them, which is not an order
+     "contributors" (vec (sort-by (juxt #(get % "person_id") #(get % "relation_to_work"))
                                   (map #(contributor-entry slug persons %)
                                        (get metadata-record "contributors"))))
      "source_editions" (mapv source-edition-entry (get work "source_editions"))}))

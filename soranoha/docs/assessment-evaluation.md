@@ -1,10 +1,10 @@
 # Assessment evaluation and internal RDF
 
-Assessment source records describe owner-reviewed Aozora reliance declarations and independent findings with their precise premises. The evaluator regenerates the publication snapshot using the kernel's CAS and constructive traces. The committed source accepts reliance for reviewed corpus editions recorded in `soranoha/data/assessment-source.json`. The publication policy requires applicable assessment evidence; other candidates remain quarantined.
+Assessment source records describe owner-reviewed Aozora Bunko reliance declarations and independent findings with their precise premises. The evaluator regenerates the publication snapshot using the kernel's CAS and constructive traces. The committed source accepts reliance for reviewed corpus editions recorded in `soranoha/data/assessment-source.json`. The publication policy requires applicable assessment evidence; other candidates remain quarantined.
 
 The research outputs are TEI and visible-body plaintext. The rights snapshot describes admission evidence. Transcription and markup fidelity are covered separately by [source accountability and review exports](source-accountability.md).
 
-## Prepare Aozora reliance evidence
+## Prepare Aozora Bunko reliance evidence
 
 The default admission basis is reliance on Aozora Bunko’s published, work-level copyright-expired classification for the exact edition, scoped to Japan. It is an attributed upstream assertion, not Soranoha’s independent public-domain finding about every contributor. Concrete exceptions or conflicting applicable reviewed findings prevent reliance.
 
@@ -67,17 +67,18 @@ The build/render graph remains separate from assessment rules. All sources emit 
 Set `RDF_OUTPUT` to an absolute path and add these flags to the evaluation command:
 
 ```sh
---rdf-out "$RDF_OUTPUT" --rdf-base https://example.invalid/soranoha/
+--rdf-out "$RDF_OUTPUT" --rdf-base https://w3id.org/soranoha/assessment/
 ```
 
-The result is deterministic N-Quads. Each historical finding has its own named graph and PROV review metadata. Reviewed premises are recorded as activity usage; deterministic conclusion derivations also use `prov:wasDerivedFrom`. Only the graph `<https://example.invalid/soranoha/accepted>` contains currently available conclusions. Do not treat a union of the historical graphs as accepted knowledge. ScopedFact resources preserve jurisdiction and effective date rather than asserting timeless properties of people or works.
+The base IRI names the graphs and is the caller's to choose; the project's
+own namespace is used below. The result is deterministic N-Quads. Each historical finding has its own named graph and PROV review metadata. Reviewed premises are recorded as activity usage; deterministic conclusion derivations also use `prov:wasDerivedFrom`. Only the graph `<https://w3id.org/soranoha/assessment/accepted>` contains currently available conclusions. Do not treat a union of the historical graphs as accepted knowledge. ScopedFact resources preserve jurisdiction and effective date rather than asserting timeless properties of people or works.
 
 For example, query the accepted graph explicitly:
 
 ```sparql
 PREFIX a: <urn:soranoha:assessment:>
 SELECT ?subject ?predicate ?value ?date WHERE {
-  GRAPH <https://example.invalid/soranoha/accepted> {
+  GRAPH <https://w3id.org/soranoha/assessment/accepted> {
     ?fact a:subject ?subject ; a:predicate ?predicate ;
           a:value ?value ; a:effectiveDate ?date .
   }

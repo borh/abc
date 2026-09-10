@@ -60,9 +60,18 @@ Review the resulting admission partition and export measurements, then commit
 the accepted source and snapshot together at their repository paths.
 
 Dispatch `.forgejo/workflows/scheduled-release.yml` at that commit through
-Forgejo Actions. The workflow uses the existing release secret without exposing
-it to build children, publishes with both role pins, and installs a verified
-serving tree. Inspect `/releases/HEAD`, the corresponding manifest and signature,
+Forgejo Actions. The workflow first asks whether the corpus moved, then uses the
+existing release secret without exposing it to build children, publishes with
+both role pins, and installs a verified serving tree.
+
+A release is minted when a work archive changed, not on every upstream commit.
+`release-needed` verifies the published head, reads the revision it names, and
+compares that revision against the checkout under `cards/*/files/*.zip`; it
+exits 10 when nothing changed and the workflow mints nothing. Every uncertainty
+reports that a release is needed, because refusing to release is the outcome
+that loses work. The revisions passed over are not lost either: the next
+release's `corpus.covers_from` names where its range starts, so any revision in
+`(covers_from, upstream_rev]` maps to exactly one release. Inspect `/releases/HEAD`, the corresponding manifest and signature,
 and the work links named by that manifest. The root URL serves the generated
 browse layer (a landing page, author, title and NDC indexes, a bibliography and
 a reading view per work, the rights and citation pages, and the TEI extension

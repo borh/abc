@@ -27,6 +27,7 @@
             [soranoha.core.json :as record-json]
             [soranoha.core.parallel :as parallel]
             [soranoha.snh.decode :as decode]
+            [soranoha.snh.repo :as repo]
             [soranoha.snh.semantic :as semantic]
             [soranoha.snh.sign :as sign]
             [soranoha.snh.transact :as transact]
@@ -722,6 +723,65 @@
                      "commit" (:commit outcome)})))
     outcome))
 
+(defn release-needed!
+  "Whether an upstream revision is worth a release, decided before anything
+  is assembled or built.
+
+  A release is minted when the corpus moved, not on every upstream commit:
+  about 800 of aozorabunko's 5,476 commits touch no work archive, and a
+  release for one of those would differ from its parent in a 40-hex string
+  while carrying a 9.1 MB manifest and a 14.45 MB catalog. `corpus.covers_from`
+  is what lets a reader map those revisions to the release that covers them,
+  so nothing is lost by not minting them.
+
+  Decided here rather than inside the transaction because the transaction has
+  no way to say `no release`: `corpus.upstream_rev` is a projection key
+  precisely so that a corpus change is a projection change and not a
+  determinism halt, and the expensive part being skipped is the corpus build,
+  not the chain walk.
+
+  The head is fully verified before its revision is read, so a forged origin
+  cannot talk this into skipping. Fail-open on every uncertainty: an
+  unreachable predecessor revision, a diff that errors, an empty chain, all
+  report `needed`. Refusing to release is the outcome that loses work, so it
+  is taken only when the comparison actually succeeded.
+
+  Exits 0 when a release is wanted and 10 when it is not, so a runner reads
+  an exit code rather than parsing the report."
+  [{:keys [chain-clone branch aozora-root release-pub governance-pub]}]
+  (require-flags! "release-needed"
+                  {"--chain-clone" chain-clone
+                   "--aozora-root" aozora-root
+                   "--release-pub" release-pub
+                   "--governance-pub" governance-pub})
+  (let [current (source-provenance! aozora-root)
+        v (view/git-view (str chain-clone))
+        commit (repo/fetch! (str chain-clone) branch)
+        head (when commit
+               (verify/verify-repository-at v commit
+                                            (pinned-keys-from-files release-pub governance-pub)))
+        head-rev (when (and head (not (:empty head)))
+                   (get-in (:head-manifest head) ["corpus" "upstream_rev"]))
+        ;; the work archives are the whole of what a release publishes: a
+        ;; commit that touches only site pages or the catalog CSV changes no
+        ;; published byte
+        changed (when (and head-rev (not= head-rev current))
+                  (git! aozora-root "diff" "--name-only" (str head-rev ".." current)
+                        "--" "cards/*/files/*.zip"))
+        report (cond
+                 (nil? head-rev) {"needed" true "reason" "no-published-release"}
+                 (= head-rev current) {"needed" false "reason" "revision-already-published"}
+                 (nil? changed) {"needed" true "reason" "revisions-not-comparable"}
+                 (string/blank? changed) {"needed" false "reason" "no-work-archive-changed"}
+                 :else {"needed" true "reason" "work-archives-changed"
+                        "changed_archives" (count (string/split-lines changed))})]
+    (println (record-json/write-deterministic-json-str
+              (into (sorted-map)
+                    (cond-> report
+                      head-rev (assoc "head_rev" head-rev)
+                      true (assoc "current_rev" current)))))
+    report))
+
 (defn governance-event-prepare!
   "Turn candidate governance-event content into the exact bytes the offline
   governance key will sign, and print their sha256.
@@ -986,6 +1046,12 @@
           "release" (let [{:keys [outcome]} (release! opts)]
                       (when-not (#{:published :already-published} outcome)
                         (System/exit (if (= :requeue outcome) 3 1))))
+          ;; scheduled-runner exit contract: 0 asks for a release, 10 says
+          ;; the corpus did not move. An exit code rather than parsed output,
+          ;; so the runner needs no JSON tool on its path; the report still
+          ;; prints, and carries the reason.
+          "release-needed" (when-not (get (release-needed! opts) "needed")
+                             (System/exit 10))
           "governance-event-prepare" (governance-event-prepare! opts)
           "governance" (let [{:keys [outcome]} (governance! opts)]
                          (when-not (#{:published :already-applied} outcome)
@@ -1000,7 +1066,7 @@
           "verify" (when-not (:ok? (verify! opts))
                      (System/exit 1))
           (do (binding [*out* *err*]
-                (println "usage: build|text-view|annotation-validate|tei-enrich|links-export|delta|release|governance-event-prepare|governance|serving-tree|serving-activate|publication-init|assessment-evaluate|aozora-reliance-prepare|archive-verify|verify [--root R --aozora-root A --assets-root S ...]"))
+                (println "usage: build|text-view|annotation-validate|tei-enrich|links-export|delta|release|release-needed|governance-event-prepare|governance|serving-tree|serving-activate|publication-init|assessment-evaluate|aozora-reliance-prepare|archive-verify|verify [--root R --aozora-root A --assets-root S ...]"))
               (System/exit 2))))
       (System/exit 0)
       (catch clojure.lang.ExceptionInfo e

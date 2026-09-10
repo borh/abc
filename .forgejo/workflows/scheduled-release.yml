@@ -2,6 +2,7 @@
 # The signing seed reaches only the release process through stdin; build children
 # must not inherit it. Public exposure follows docs/private-publication.md.
 # Release exit 3 requests a retry from the new head; other failures stop the job.
+# release-needed exit 10 means the corpus did not move, so no release is minted.
 name: scheduled-release
 on:
   workflow_dispatch: {}
@@ -22,10 +23,33 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
+      - name: decide whether the corpus moved
+        # A release is minted when a work archive changed, not on every
+        # upstream commit: about 800 of aozorabunko's commits touch none, and
+        # a release for one of those costs a 9.1 MB manifest and a 14.45 MB
+        # catalog to record a different revision. `corpus.covers_from` is what
+        # maps those revisions to the release that covers them.
+        # The command verifies the head before reading its revision and reports
+        # `needed` on any uncertainty, so a skip only happens on a comparison
+        # that succeeded.
+        run: |
+          export PATH="/run/current-system/sw/bin:$PATH"
+          set +e
+          nix run ./src#soranoha-kernel -- release-needed \
+            --deployment /etc/soranoha/publisher.json
+          rc=$?
+          set -e
+          case "$rc" in
+            0) : ;;
+            10) echo "release: skipped, the corpus did not move" ; touch skip-release ;;
+            *) exit "$rc" ;;
+          esac
+
       - name: release
         env:
           SORANOHA_RELEASE_SEED: ${{ secrets.SORANOHA_RELEASE_SEED }}
         run: |
+          test ! -f skip-release || { echo "skipping release (corpus unmoved)"; echo skip > release.rc; exit 0; }
           export PATH="/run/current-system/sw/bin:$PATH"
           _soranoha_release_seed="$SORANOHA_RELEASE_SEED"
           export -n _soranoha_release_seed
@@ -51,7 +75,7 @@ jobs:
 
       - name: activate the verified serving tree
         run: |
-          test "$(cat release.rc)" = 0 || { echo "skipping activation (requeue)"; exit 0; }
+          test "$(cat release.rc)" = 0 || { echo "skipping activation (requeue or unmoved corpus)"; exit 0; }
           export PATH="/run/current-system/sw/bin:$PATH"
           nix run ./src#soranoha-kernel -- serving-activate \
             --deployment /etc/soranoha/publisher.json

@@ -151,6 +151,9 @@
                (into #{} (map #(get % "slug")) (get head "works"))))
         (is (= (:commit run-2) (get-in head ["corpus" "upstream_rev"])))
 
+        (testing "the successor's range starts where its predecessor's revision ended"
+          (is (= (:commit run-1) (get-in head ["corpus" "covers_from"]))))
+
         (testing "an unmoved upstream is the scheduled no-op"
           (let [run-3 (corpus/run-corpus! root store)
                 result-3 (drive! clone run-3
@@ -159,7 +162,31 @@
             (is (= :already-published (:outcome result-3)))
             (is (= (:manifest-id result-2) (:manifest-id result-3)))
             (is (= [(:manifest-id result-2) (:manifest-id result-1)]
-                   (:chain (verified-chain clone))))))))))
+                   (:chain (verified-chain clone))))))
+
+        ;; last, because each case advances the upstream checkout
+        (testing "release-needed answers before anything is assembled or built"
+          (let [ks (vector-keys)
+                dir (fs/create-temp-dir {:prefix "release-needed"})
+                write! (fn [name content]
+                         (let [path (str (fs/path dir name))] (spit path content) path))
+                needed (fn [] (main/release-needed!
+                               {:chain-clone clone :branch fx/branch :aozora-root root
+                                :release-pub (write! "release.pub"
+                                                     (str (get-in ks ["release" "pub"]) "\n"))
+                                :governance-pub (write! "governance.pub"
+                                                        (str (get-in ks ["governance" "pub"]) "\n"))}))]
+            (testing "the revision already published needs nothing"
+              (is (= {"needed" false "reason" "revision-already-published"} (needed))))
+            (testing "a commit touching no work archive needs nothing"
+              (spit (str (fs/path root "index_pages" "note.txt")) "site copy edit\n")
+              (corpus/commit-corpus! root)
+              (is (= {"needed" false "reason" "no-work-archive-changed"} (needed))))
+            (testing "a commit touching a work archive needs a release"
+              (corpus/write-work! root (assoc added :text (str (:text added) "\u3002")))
+              (corpus/commit-corpus! root)
+              (is (= {"needed" true "reason" "work-archives-changed" "changed_archives" 1}
+                     (needed))))))))))
 
 (deftest malformed-assessment-snapshot-publishes-nothing
   (let [root (corpus/init-corpus! [merosu])

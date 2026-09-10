@@ -28,6 +28,11 @@
   grow. A single marginal is noisy enough to come out negative; read the slope
   across the whole run rather than any one row.
 
+  `verify_ms` is one walk at every chain length, not the run count a verifier
+  would choose. The column is the growth curve, and the automatic count adds a
+  run every 32 releases, which would step it down at each multiple and hide
+  the slope. `--segments` measures the split instead.
+
   `--carry` threads each publication's own proof of the head it just wrote
   into the next, which is what a backfill publishing a run of releases in one
   process does. Without it every release re-verifies the whole chain, so a run
@@ -38,6 +43,13 @@
   `--segments 1,2,4,8,16` verifies the finished chain once at each run count
   and emits a `segmented` row for each. One walk is `segments 1`, so the rows
   are directly comparable, and all of them are taken over one chain.
+
+  `--repo-stats` reports what an origin holding the finished chain costs to
+  keep and to hand out: loose objects before maintenance, repack time, packed
+  size, and the apparent against on-disk size of every manifest. That last
+  pair answers whether consecutive manifests delta-compress, which decides
+  whether an origin at one release per upstream commit is gigabytes or
+  hundreds of them. It repacks the origin, so run it last.
 
   `noop_ms` is the one the prerequisite is stated against. The ledger's bound is
   on an invocation that publishes nothing, because a scheduled job that fires on
@@ -50,6 +62,7 @@
   They establish the shape of the growth curve, not a production figure."
   (:require [babashka.cli :as cli]
             [babashka.fs :as fs]
+            [babashka.process :as process]
             [clojure.string :as str]
             [charred.api :as json]
             [soranoha.snh.fixture :as fx]
@@ -91,10 +104,87 @@
     []
     (mapv parse-long (str/split (str segments) #","))))
 
+(defn- git-out
+  [dir args]
+  (let [{:keys [exit out err]}
+        (apply process/sh {:dir (str dir) :out :string :err :string} "git" args)]
+    (when-not (zero? exit)
+      (throw (ex-info "git failed in the benchmark" {:args args :err err})))
+    out))
+
+(defn- count-objects
+  "`git count-objects -v` as a map of its keys to longs. Loose counts are what
+  an origin accumulates between maintenance runs; `size-pack` is in KiB and is
+  what a clone transfers."
+  [dir]
+  (into {}
+        (map (fn [line]
+               (let [[k v] (str/split line #": ")]
+                 [k (parse-long (str/trim v))])))
+        (str/split-lines (str/trim (git-out dir ["count-objects" "-v"])))))
+
+(defn- manifest-blob-sizes
+  "For every manifest in the chain, its size and the bytes it occupies in the
+  pack. `releases/` accumulates, so the head tree names all of them.
+
+  The ratio between the two columns is the question: consecutive manifests
+  differ in a few work entries out of tens of thousands, and whether git's
+  delta compression finds that is what decides whether an origin holding one
+  release per upstream commit is gigabytes or hundreds of gigabytes."
+  [dir branch]
+  ;; `100644 blob <sha>\t<name>`, so splitting on whitespace puts the id third
+  (let [ids (into []
+                  (comp (filter #(str/ends-with? % ".json"))
+                        (map #(nth (str/split % #"\s+") 2)))
+                  (str/split-lines (git-out dir ["ls-tree" (str branch ":releases")])))
+        out (:out (process/sh {:dir (str dir) :in (str/join "\n" ids) :out :string}
+                              "git" "cat-file"
+                              "--batch-check=%(objectsize) %(objectsize:disk)"))]
+    (reduce (fn [acc line]
+              (let [[size disk] (map parse-long (str/split (str/trim line) #"\s+"))]
+                (-> acc
+                    (update :bytes + size)
+                    (update :disk_bytes + disk)
+                    (update :largest_bytes max size))))
+            {:bytes 0 :disk_bytes 0 :largest_bytes 0 :count (count ids)}
+            (remove str/blank? (str/split-lines out)))))
+
+(defn- repository-stats!
+  "What an origin holding this chain costs to keep and to hand out.
+
+  Four numbers decide whether one release per upstream commit is deployable.
+  Loose objects are what accumulates between maintenance runs. `pack_bytes`
+  is what a fresh clone transfers, which is also what Software Heritage
+  ingests. `repack_ms` is the maintenance window. `largest_object_bytes` is
+  a hard limit rather than a cost: Software Heritage does not archive an
+  object over 100 MB, and a manifest at corpus scale is already 10 MB.
+
+  Measured on the bare origin rather than the clone, because the origin is
+  the URL an archive is given."
+  [origin branch chain-length works]
+  (let [loose (count-objects origin)
+        started (System/nanoTime)
+        _ (git-out origin ["repack" "-ad"])
+        repack-ms (/ (- (System/nanoTime) started) 1e6)
+        packed (count-objects origin)
+        manifests (manifest-blob-sizes origin branch)]
+    {"phase" "repository"
+     "chain_length" chain-length
+     "works" works
+     "loose_objects" (get loose "count")
+     "loose_kib" (get loose "size")
+     "repack_ms" (Math/round ^double repack-ms)
+     "pack_kib" (get packed "size-pack")
+     "manifests" (:count manifests)
+     "manifest_bytes" (:bytes manifests)
+     "manifest_disk_bytes" (:disk_bytes manifests)
+     "largest_manifest_bytes" (:largest_bytes manifests)}))
+
 (defn -main [& args]
   (try
-    (let [{:keys [works releases changed out tmp carry segments]}
-          (cli/parse-opts args {:coerce {:works :long :releases :long :carry :boolean}})
+    (let [{:keys [works releases changed out tmp carry segments repo-stats]}
+          (cli/parse-opts args {:coerce {:works :long :releases :long
+                                         :carry :boolean :repo-stats :boolean}})
           ;; babashka.cli parses a bare number itself, so `changed` arrives as a
           ;; long already; "all" is the only value that stays a string
           changed (cond (= "all" changed) :all
@@ -134,7 +224,12 @@
                  ;; the same opts again: the projection now matches the head, so
                  ;; this is the scheduled job finding nothing to do
                  noop (millis #(fx/publish! clone opts))
-                 verify (:milliseconds (verify-once! clone))
+                 ;; one walk, not the automatic run count: this column is
+                 ;; the growth curve, and a policy that adds a run every 32
+                 ;; releases would step it down at each multiple and make the
+                 ;; slope unreadable. What a verifier actually pays is the
+                 ;; `segmented` rows.
+                 verify (:milliseconds (verify-once! clone {:segments 1}))
                  outcome (get-in noop [:result :outcome])]
              (when-not (= :already-published outcome)
                (throw (ex-info "repeat build was not a no-op, so noop_ms is not the no-op cost"
@@ -163,6 +258,8 @@
         ;; younger verified commit grants it reuse, so a count that leaves the
         ;; runs short gives back more than it wins. That is what these rows
         ;; show against `segments 1`, which is one walk.
+        (when repo-stats
+          (emit! (repository-stats! origin fx/branch releases works)))
         (doseq [k (segment-counts segments)]
           (emit! {"phase" "segmented"
                   "chain_length" releases

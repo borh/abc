@@ -362,6 +362,41 @@ about 40 milliseconds per release above the no-op, which ten releases cannot
 distinguish from noise. What separates them is a constant, not a slope: assembly
 and the repository write cost about 9 seconds at every chain length.
 
+### A run of releases carries its own proof and stops re-verifying the chain
+
+Publication verifies the chain because it has to resolve the head before it
+assembles anything. A publisher producing one release pays that once. A
+backfill producing thousands pays it once per release, and the sum over a
+chain is quadratic.
+
+`transact/publish-build!` now takes the proof its caller computed for that
+head, in the same process, from the same view and the same pinned keys, and
+returns the successor proof under the same key. A caller publishing a run of
+releases threads its own proof forward instead of walking the chain again.
+This is neither a checkpoint nor a cache: a proof accepted from anywhere
+else, persisted, or read back out of the repository is outside the
+specification, for the reason
+`adr/0002-increment-verification-before-push.md` gives.
+
+Measured over 96 releases of 800 works, the same parameters run twice:
+
+| Publication cost | Intercept | Growth per release | Total over 96 releases |
+| --- | ---: | ---: | ---: |
+| Re-verifying each time | 1,973 ms | 15.7 ms | 261.9 s |
+| Carrying the proof forward | 619 ms | 0.4 ms | 61.8 s |
+
+The carried growth term is not small, it is absent: fitting it returns a
+coefficient of determination of 0.008, which is a flat line with noise on it.
+The uncarried slope is the loose figure of the two, fitting at 0.24 because
+that run shared the machine with other work; the totals and the endpoint
+ratios are what it supports. The advantage widens with the chain, from 2.3x
+at length 10 to 5.3x at length 96.
+
+The no-op and verification columns do not move, which is the point of
+measuring them alongside. They are what a party holding no proof pays: the
+scheduled job that fires on an upstream commit, and the third party checking
+the corpus.
+
 ### What that costs on the real corpus
 
 The synthetic chain uses small blobs, so it fixes the shape and not the

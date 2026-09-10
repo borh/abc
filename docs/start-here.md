@@ -199,6 +199,13 @@ of each of its four files. The manifests form an append-only chain, so a
 release cannot be silently altered or removed after the fact, and anyone can
 check that the file they downloaded is the file the release says it published.
 
+Every release the chain holds is listed at
+`https://soranoha.org/history`, newest first, with the Aozora Bunko revisions
+it stands for and how many works it added, removed or re-encoded against the
+release before it. Those numbers are recomputed from the published manifests,
+so you can derive them yourself from the same files rather than taking the
+page's word for them.
+
 For most work you can ignore this entirely. It matters when you need a result
 to remain reproducible over time. Citing the release keeps the exact bytes you
 analyzed identifiable even if subsequent releases change the corpus. The

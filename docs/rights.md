@@ -2,7 +2,11 @@
 
 Every signed release manifest names this statement in `rights.statement_url`,
 and every published TEI file names it in `publicationStmt/availability`, at
-<https://w3id.org/soranoha/rights>.
+<https://w3id.org/soranoha/rights>. Signed bytes cannot be corrected later, so
+they name that identifier rather than whichever host serves the corpus.
+Registering the `w3id.org/soranoha/` redirects is a precondition of public
+genesis; the identifiers are written here in the form the signed bytes name,
+whether or not they resolve at the moment you try them.
 
 ## The short version
 
@@ -21,7 +25,11 @@ A published work involves two distinct rights layers.
 **The underlying works** are texts from [Aozora
 Bunko](https://www.aozora.gr.jp/) whose copyright has expired. Soranoha
 neither holds nor claims any right in them. Aozora Bunko's [handling rules](https://www.aozora.gr.jp/guide/kijyunn.html)
-permit free copying, redistribution, adaptation, and format conversion.
+permit free copying, redistribution, performance, and adaptation of
+copyright-expired files, with nothing owed in permission or fee. Altering the
+text itself is permitted within the scope of Article 20(2)(iv) of the Copyright
+Act, which is what covers format conversion, notation changes, and modernising
+旧字旧仮名.
 The rules request preserving contributor credits and recording textual
 modifications; Soranoha preserves contributor credits in each TEI `<back>`
 and publishes every work alongside its validation report and recorded divergences.
@@ -125,11 +133,20 @@ rejects files missing `publicationStmt/availability/licence` with a `@target`.
 To report a copyright concern or request removal of a published work,
 contact the maintainer via <https://orcid.org/0000-0003-2246-8774> with the
 work identifier (e.g. `000092_000879`) or Aozora Bunko card number and the
-basis of the claim.
+basis of the claim. A claim does not need to be a formal legal notice to be
+acted on.
 
-Withdrawal is recorded through signed governance events:
+Withdrawal is recorded through signed governance events. Each event carries a
+public `statement` and one of four `reason_code` values: `rights` for a
+subsisting-rights claim, `takedown-request` for a removal asked for on other
+grounds, and `data-defect` or `other` for withdrawals that are not claims.
+Appending the signed event is itself a release, so it does not wait for the
+next corpus release.
 
-- The work is removed from active distribution (`works[]` in the manifest) and from the published catalog.
+- The work is removed from `works[]`, so its artifacts are no longer served at
+  `/works/<identifier>/`, and the release publishes a new catalog that no
+  longer describes it: a manifest may not name a catalog describing a work that
+  release withdrew.
 - The work is recorded in `withdrawn[]`, referencing the signed governance event served at `/withdrawn/<identifier>.json`.
 - **Append-only history**: Earlier releases containing the work remain in the signed chain; withdrawal ceases current distribution without rewriting historical releases.
 - **Irreversible withdrawal**: A withdrawal statement may be amended via `event-amendment`, but amendments cannot reverse the withdrawal itself.
@@ -140,5 +157,6 @@ See [`docs/design/snh-protocol-v1.md`](design/snh-protocol-v1.md) and
 ## No warranty
 
 Soranoha publishes transcriptions alongside validation reports and recorded
-divergences. The corpus is provided as-is without guarantee of textual fidelity.
-Verify critical citations against the source edition named in the TEI `sourceDesc`.
+divergences, not a guarantee of fidelity. The corpus is provided as-is. Do not
+rely on it for a legal, medical, or safety purpose without independent
+verification against the source edition each work names in its `sourceDesc`.

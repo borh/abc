@@ -1,8 +1,8 @@
 # Start here
 
-Soranoha publishes TEI P5 editions of public-domain Japanese texts from Aozora
-Bunko. Each work is published in four formats alongside a signed cryptographic
-record of the published bytes.
+Soranoha publishes TEI P5 editions of Japanese texts that Aozora Bunko
+classifies as copyright-expired. Each work is published in four formats
+alongside a signed record of exactly which bytes were published.
 
 This guide covers retrieving individual works, downloading the full corpus, and
 navigating published formats.
@@ -43,8 +43,10 @@ curl -O https://soranoha.org/works/000092_000879/Akutagawa_Ryunosuke-kumono_ito-
 ```
 
 The filename structure is `<author>-<stem>-<identifier>.<ext>`. The slug
-identifier is canonical and disambiguates works that share titles or authors;
-the filename is a convenience for human downloads. Every work page shows both forms.
+identifier is canonical and is what disambiguates: 2357 works in the Aozora
+Bunko catalog share an author and title with another work, so without it those
+files would overwrite each other during bulk extraction. The filename is a
+convenience for human downloads. Every work page shows both forms.
 
 To read it rather than download it, open
 `https://soranoha.org/works/000092_000879/` for the bibliography and

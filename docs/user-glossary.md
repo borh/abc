@@ -24,8 +24,11 @@ jurisdiction (Japan).
 
 Assessment records **facts with premises**, not permanent verdicts. A fact
 records what was established, from which evidence, as of which date. If evidence
-becomes unreachable, the fact becomes unavailable rather than remaining asserted.
-See [reliance](#reliance) for the basis used for most works.
+becomes unreachable, the fact becomes unavailable rather than remaining
+asserted, so a work can drop out of a release without any new claim having been
+registered against it. Assessment is not legal advice, and Soranoha is not a
+rights clearinghouse. See [reliance](#reliance) for the basis used for most
+works.
 
 ## reliance
 
@@ -143,8 +146,9 @@ source originals, keeping base text rather than ruby annotations, and omitting
 editorial notes or figure descriptions. Unresolved gaiji are excluded from
 annotatable spans rather than replaced.
 
-Versioned reading policies ensure character offsets remain stable and verifiable
-across corpus revisions.
+The name is versioned so that an annotation can say which policy produced the
+offsets it uses. That is what keeps the annotation checkable if the policy ever
+changes, rather than silently reinterpreted against a different reading.
 
 ## gaiji (外字)
 
@@ -170,9 +174,12 @@ projections, which retain base text only.
 A byte range into the UTF-8 decoded Aozora Bunko source text, recorded for
 almost every element in the published TEI.
 
-Source offsets index the source file directly rather than intermediate representations.
-The indexed text is verified via `primary-text-hash` in `<sourceDesc>`, which
-records the SHA-256 of the original Aozora Bunko text file.
+Offsets let a claim about the corpus be stated against the source rather than
+against a particular tool's output. The text they index is named once per
+document: `primary-text-hash` in `<sourceDesc>` is the sha256 of the Aozora
+Bunko text member as distributed, while the offsets index that member's UTF-8
+decoding. Applying them to the wrong bytes therefore makes the mismatch
+visible.
 
 ## snh
 

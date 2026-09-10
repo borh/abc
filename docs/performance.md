@@ -421,8 +421,9 @@ three consequences follow:
 - Building that chain no longer scales quadratically. Carrying the head proof
   forward makes publication cost constant per release during batch processing.
   Measured at the production work count, publication requires 16.4 seconds per
-  release (or 45.9 seconds under calibrated single-core execution), placing a
-  full 5,476-release backfill at roughly three days of compute. Historical
+  release; carrying the synthetic chain's constant through the 2.8x calibration
+  above puts the same figure at 45.9 seconds, and the two routes agree on a
+  full 5,476-release backfill of roughly three days of compute. Historical
   backfill is constrained by historical assessment snapshot availability rather
   than publication compute. A single-release scheduled job holds no prior proof
   and pays the 2.7-second incremental growth.

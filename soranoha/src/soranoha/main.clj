@@ -72,7 +72,10 @@
        (fs/read-all-bytes (str (or policy
                                    (fs/path assets-root "data/publication-policy.edn")))))))
 
-(defn- publication-stages [{:keys [clj-toolchain-id assets-root] :as opts}]
+(defn- publication-stages
+  "The stages that produce what a release publishes. Every artifact a
+  manifest carries comes from one of these."
+  [{:keys [clj-toolchain-id assets-root] :as opts}]
   (let [adapter (stages/resolve-adapter)
         profile (validate/profile-paths assets-root)]
     {:extract (stages/extract-stage clj-toolchain-id)
@@ -84,10 +87,27 @@
      :markdown (stages/markdown-stage clj-toolchain-id)
      :validate (stages/validate-tei-stage clj-toolchain-id profile)}))
 
-(defn- build-stages [{:keys [clj-toolchain-id] :as opts}]
-  (assoc (publication-stages opts)
-         :accountability (accountability/source-stage (accountability/resolve-tool))
-         :coverage (accountability/coverage-stage clj-toolchain-id)))
+(def ^:private research-stages
+  "The stages that measure how much of each source the parser accounted
+  for, held as constructors rather than stages so a release never builds
+  one: `source-stage` resolves an external scanner binary that a release
+  has no reason to require.
+
+  Nothing they produce is an artifact kind a manifest carries, so a
+  release must not run them. `build` adds exactly these names and
+  `release` removes exactly these names, from this one list, so the two
+  cannot drift apart and a research stage cannot reach a manifest even
+  if one is later added to the publication set by mistake."
+  {:accountability (fn [_] (accountability/source-stage (accountability/resolve-tool)))
+   :coverage (fn [opts] (accountability/coverage-stage (:clj-toolchain-id opts)))})
+
+(defn- build-stages
+  "The publication stages plus the research stages. This is the set
+  `build` runs, and it is where the parser is measured today."
+  [opts]
+  (into (publication-stages opts)
+        (map (fn [[stage make]] [stage (make opts)]))
+        research-stages))
 
 (defn- read-cas-json [store hex]
   (json/read-json (String. ^bytes (cas/get-bytes (:cas-dir store) hex) "UTF-8")))
@@ -657,8 +677,9 @@
                   inputs (update captured :candidates #(filterv (comp requested :slug) %))
                   _ (selected-metadata! inputs)
                   stage-set (if (seq requested)
-                              (dissoc (publication-stages (assoc opts :rights rights))
-                                      :accountability :coverage)
+                              (apply dissoc
+                                     (publication-stages (assoc opts :rights rights))
+                                     (keys research-stages))
                               {})
                   report (execute-build! (dissoc opts :out) inputs stage-set)]
               (when-not (and (= source-commit (get report "aozora_git_commit")

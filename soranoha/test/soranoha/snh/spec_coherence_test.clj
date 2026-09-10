@@ -17,47 +17,32 @@
   (:require [clojure.string :as str]
             [clojure.test :refer [deftest is testing]]
             [soranoha.snh.schema :as schema]
+            [soranoha.snh.schema-walk :as walk]
             [soranoha.snh.verify :as verify]
             [soranoha.za.naming :as naming]
             [soranoha.za.docs :as docs]))
 
 (def ^:private spec-path "docs/design/snh-protocol-v1.md")
 
-(defn- object-nodes
-  "Every object the schemas define, as {:required :properties} name sets.
-  Nodes requiring nothing are conditional subschemas rather than payload
-  objects: they carry the members a rule reaches, not a shape anyone restates."
+(defn- payload-objects
+  "Every object a protocol schema defines that requires anything. A node
+  requiring nothing is a conditional subschema rather than a payload object:
+  it carries the members a rule reaches, not a shape anyone restates."
   []
-  (letfn [(walk [node]
-            (cond
-              (map? node) (concat (when-let [properties (get node "properties")]
-                                    [{:required (set (get node "required"))
-                                      :properties (set (keys properties))}])
-                                  (mapcat walk (vals node)))
-              (sequential? node) (mapcat walk node)
-              :else nil))]
-    (->> (keys schema/schema-resources)
-         (mapcat (comp walk schema/schema-for))
-         (filter (comp seq :required)))))
+  (filter (comp seq :required)
+          (mapcat walk/objects (map schema/schema-for (keys schema/schema-resources)))))
 
-(defn- schema-enums
-  "Every closed vocabulary the schemas define, as value sets."
+(defn- payload-vocabularies
+  "Every closed vocabulary the protocol schemas define."
   []
-  (letfn [(walk [node]
-            (cond
-              (map? node) (concat (when (sequential? (get node "enum"))
-                                    [(set (get node "enum"))])
-                                  (mapcat walk (vals node)))
-              (sequential? node) (mapcat walk node)
-              :else nil))]
-    (distinct (mapcat (comp walk schema/schema-for) (keys schema/schema-resources)))))
+  (distinct (mapcat walk/enums (map schema/schema-for (keys schema/schema-resources)))))
 
 (def ^:private restatable-sets
   "The field sets the spec may restate, and where each one is defined."
   (delay
     (into {(set verify/projection-keys) "soranoha.snh.verify/projection-keys"}
           (map (juxt :required (constantly "a protocol schema")))
-          (object-nodes))))
+          (payload-objects))))
 
 (defn- brace-spans
   "The text inside every `{...}` in `text` that closes, innermost included, as
@@ -137,7 +122,7 @@
   ;; check above stays quiet because the list of required members did not move.
   (let [spec (docs/read-text spec-path)
         named? #(str/includes? spec (str "`" % "`"))]
-    (doseq [{:keys [required properties]} (object-nodes)
+    (doseq [{:keys [required properties]} (payload-objects)
             :let [unnamed (sort (remove named? (remove required properties)))]]
       (is (empty? unnamed)
           (str "these may appear in a published payload and the spec never "
@@ -145,7 +130,7 @@
 
 (deftest every-vocabulary-the-spec-restates-is-one-a-schema-defines
   (let [spec (docs/read-text spec-path)
-        defined (set (schema-enums))]
+        defined (set (payload-vocabularies))]
     (doseq [[line inside] (brace-spans spec)
             :let [claimed (restated-enum inside)]
             :when claimed]
@@ -160,7 +145,7 @@
   (let [spec (docs/read-text spec-path)
         written? #(or (str/includes? spec (str "`" % "`"))
                       (str/includes? spec (str "\"" % "\"")))]
-    (doseq [values (schema-enums)
+    (doseq [values (payload-vocabularies)
             :let [unwritten (sort (remove written? values))]]
       (is (empty? unwritten)
           (str "a release may carry these and the spec never states them: "

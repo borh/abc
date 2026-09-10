@@ -10,7 +10,8 @@
             [soranoha.assessment.graph :as graph]
             [soranoha.assessment.records :as records]
             [soranoha.kura.engine :as engine]
-            [soranoha.snh.schema :as snh-schema]))
+            [soranoha.snh.schema :as snh-schema]
+            [soranoha.snh.schema-walk :as walk]))
 
 (def ^:private captures
   {"bundle" (str "sha256:" (apply str (repeat 64 "1"))) "catalog" ["author:000001"]})
@@ -131,14 +132,8 @@
   "The assessment statuses a published snapshot may carry, read off the schema
   a verifier enforces rather than listed here."
   []
-  (letfn [(walk [node]
-            (cond
-              (map? node) (concat (when-let [values (get-in node ["properties" "status" "enum"])]
-                                    values)
-                                  (mapcat walk (vals node)))
-              (sequential? node) (mapcat walk node)
-              :else nil))]
-    (set (walk (snh-schema/schema-for "assessment-snapshot")))))
+  (into #{} (mapcat #(get-in % ["properties" "status" "enum"]))
+        (walk/nodes (snh-schema/schema-for "assessment-snapshot"))))
 
 (deftest a-status-nobody-has-classified-restricts-rather-than-permits
   (is (not (graph/restrictive? graph/permitting-status))

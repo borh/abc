@@ -1,6 +1,7 @@
 (ns soranoha.aozora.rights-notice-test
   (:require [clojure.test :refer [deftest is testing]]
-            [soranoha.aozora.rights-notice :as notice]))
+            [soranoha.aozora.rights-notice :as notice]
+            [soranoha.core.rights :as rights]))
 
 (defn- rows [& flags]
   (mapv #(hash-map "作品著作権フラグ" %) flags))
@@ -84,3 +85,19 @@
 (deftest a-flag-value-outside-the-vocabulary-is-refused
   (is (= {:refused :unknown-copyright-flag :flags ["不明"]}
          (notice/standing (rows "不明") never-read))))
+
+(deftest a-licence-this-build-cannot-state-refuses-the-work-and-nothing-else
+  ;; Every standing the corpus carries today is one of the four this build has
+  ;; words for. A version or a port that has not appeared before arrives with
+  ;; an upstream bump, and until someone writes its terms the work is refused
+  ;; here, where one work is refused, rather than reaching the stage that
+  ;; renders the terms and stopping the release of every other work.
+  (doseq [[url licence]
+          [["https://creativecommons.org/licenses/by/2.5/" "CC-BY-2.5"]
+           ["http://creativecommons.org/licenses/by/3.0/jp/" "CC-BY-3.0-JP"]
+           ["https://creativecommons.org/licenses/by/1.0/" "CC-BY-1.0"]]]
+    (is (not (contains? (rights/standings) licence))
+        (str licence " is refused because this build cannot state it"))
+    (is (= {:refused :unpublishable-licence :licence licence}
+           (notice/standing (rows "あり") (constantly url)))
+        url)))

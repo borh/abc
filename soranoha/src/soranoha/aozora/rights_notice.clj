@@ -6,9 +6,11 @@
   colophon: those works are on Aozora Bunko at the rightsholder's request and
   carry the licence they chose.
 
-  A work whose notice does not resolve to a known licence is refused. There is
-  no default, because the fallback would be to publish terms nobody granted."
-  (:require [clojure.string :as string]))
+  A work whose notice does not resolve to a licence this build can state its
+  terms in is refused. There is no default, because the fallback would be to
+  publish terms nobody granted."
+  (:require [clojure.string :as string]
+            [soranoha.core.rights :as rights]))
 
 (def ^:private flag-key "作品著作権フラグ")
 
@@ -102,7 +104,17 @@
       :else
       (if-let [parsed (parse-notice (text-fn))]
         (let [found (identifier parsed)]
-          (if (some restricting-elements (:elements parsed))
+          (cond
+            (some restricting-elements (:elements parsed))
             {:refused :restricted-licence :licence found}
-            {:standing found}))
+
+            ;; A licence this build cannot state its terms in is refused here,
+            ;; where one work is refused, rather than reaching the stage that
+            ;; renders the terms and stopping the release of every other work.
+            ;; Versions and ports the corpus has not carried before arrive
+            ;; with an upstream bump, and nobody has decided about them yet.
+            (not (contains? (rights/standings) found))
+            {:refused :unpublishable-licence :licence found}
+
+            :else {:standing found}))
         {:refused :unstated-licence}))))

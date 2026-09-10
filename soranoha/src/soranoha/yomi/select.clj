@@ -54,8 +54,10 @@
                        :work_id work-id}))))
 
 (defn slug
-  "Publication identity for one source: a function of that source's own
-  coordinates alone, so unrelated corpus changes can never move it.
+  "The name of the work one source publishes under: a function of that
+  source's own coordinates alone, so unrelated corpus changes can never move
+  it. It names the work and never its bytes, which is why it survives a
+  re-proofread or a repackaged archive unchanged.
 
   `<work-id>_<card-directory>`, six digits each. Both components identify the
   work; neither describes how the build reached it. The archive filename stem

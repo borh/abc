@@ -54,6 +54,14 @@ types, and `git-bare` is the one that reconstructs an actual bare Git
 repository with its branches. The verifier needs a repository, not a directory
 of files, because it reads commits and trees.
 
+**Check that the visit was full, not partial.** Software Heritage records a
+visit as full, partial or failed, and a partial visit still produces a
+snapshot. A snapshot from a partial visit names a real commit and is a
+perfectly good identifier for something that is not the whole repository, so
+the status has to be read rather than inferred from the snapshot existing. How
+long a submission takes to reach a full visit is not measured here; treat it as
+unknown rather than assuming hours.
+
 **Verify the materialized bundle, and record the snapshot identifier with the
 report.** Unpack the bundle, then run the kernel against it:
 
@@ -74,6 +82,13 @@ the recorded observation names something a third party can fetch.
 A view that cannot be constructed at all is a failure to perform the
 observation rather than an observation, and the kernel throws instead of
 reporting. A readable view always produces a report, successful or failed.
+
+Verifying the materialized bundle is what establishes that every published
+artifact is present in the archive with the right bytes: the verifier reads
+each one at its prescribed path in the archived view and checks it against the
+manifest that names it. Looking artifacts up individually by hash in the
+archive would prove less, because it reads objects one at a time instead of
+proving the repository closes.
 
 ## Resolving a citation through the archive
 

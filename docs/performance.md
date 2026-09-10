@@ -18,6 +18,23 @@ checks out or updates a branch in the supplied repository. The output directory
 must not exist; results and diagnostics remain there after success or failure.
 Use `--limit N` only for an explicitly labelled partial-corpus experiment.
 
+Add `--endpoints-only` to build just the two ends of that range. The range is
+still resolved and still has to be a real first-parent range, so the answer
+remains about upstream history rather than about two unrelated commits; what is
+dropped is every build in between. This is what makes a comparison across an
+arbitrary distance affordable, and it is the difference between measuring how
+the build behaves over history and asking what two revisions differ by. The
+second build runs against the first one's cache, so only works whose sources
+moved are converted again.
+
+Use it to answer whether the current toolchain would produce different
+documents from the same sources, which is the one question
+[`corpus-delta`](private-publication.md) cannot: that command compares source
+identities, and source identities are the whole answer only under an unchanged
+toolchain. Reach for this recipe when the toolchain has moved, and for
+`corpus-delta` otherwise, because comparing sources costs seconds and this
+costs a cold build.
+
 `measurements.jsonl` records repository setup time, checkout time, build time,
 per-stage execution counts, and source/artifact delta counts. Every revision is
 then built again unchanged. The command fails if that repeat executes any stage,

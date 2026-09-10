@@ -19,8 +19,15 @@
     (string/trim out)))
 
 (defn revisions
-  "Resolve an inclusive, oldest-first range on the end revision's first-parent path."
-  [repo from to]
+  "Resolve an inclusive, oldest-first range on the end revision's first-parent path.
+
+  `endpoints-only` keeps just the two ends of that range. The range is still
+  resolved and still has to be a real first-parent range, so the answer remains
+  about upstream history rather than about two unrelated commits; what is
+  dropped is every build in between. That is what makes a comparison across an
+  arbitrary distance affordable, and it is the difference between measuring how
+  the build behaves over history and asking what two revisions differ by."
+  [repo from to & [endpoints-only]]
   (let [resolve! #(git! repo "rev-parse" "--verify" "--end-of-options" (str % "^{commit}"))
         first-revision (resolve! from)
         last-revision (resolve! to)
@@ -31,7 +38,9 @@
     (when (empty? commits)
       (throw (ex-info "Start revision is not on the end revision's first-parent path"
                       {:from first-revision :to last-revision})))
-    commits))
+    (if endpoints-only
+      (into [(first commits)] (when (< 1 (count commits)) [(peek commits)]))
+      commits)))
 
 (defn measure [f]
   (let [start (System/nanoTime)
@@ -51,9 +60,9 @@
 
 (defn prepare!
   "Create an owned source checkout beneath a fresh output directory."
-  [{:keys [repo from to out]}]
+  [{:keys [repo from to out endpoints-only]}]
   (let [repo (fs/real-path repo)
-        commits (revisions repo from to)
+        commits (revisions repo from to endpoints-only)
         out (fs/absolutize out)
         out (fs/path (fs/real-path (fs/parent out)) (fs/file-name out))
         _ (when (fs/starts-with? out repo)
@@ -67,7 +76,8 @@
 (defn replay!
   "Retain reports and a streaming measurements.jsonl in a new output directory.
   No state outside that directory is changed; failures retain diagnostic outputs."
-  [{:keys [repo from to out concurrency limit clj-toolchain-id assets-root]}]
+  [{:keys [repo from to out concurrency limit clj-toolchain-id assets-root
+           endpoints-only]}]
   (doseq [[option value] {:repo repo :from from :to to :out out
                           :clj-toolchain-id clj-toolchain-id :assets-root assets-root}]
     (when (or (nil? value) (string/blank? (str value)))
@@ -76,7 +86,8 @@
           :when (some? value)]
     (when-not (and (integer? value) (pos? value))
       (throw (ex-info "Replay count must be positive" {:option option :value value}))))
-  (let [{:keys [out checkout commits setup]} (prepare! {:repo repo :from from :to to :out out})
+  (let [{:keys [out checkout commits setup]} (prepare! {:repo repo :from from :to to :out out
+                                                        :endpoints-only endpoints-only})
         opts (cond-> {:root (str (fs/path out "build")) :aozora-root (str checkout)
                       :concurrency (or concurrency 1) :clj-toolchain-id clj-toolchain-id
                       :assets-root assets-root}
@@ -87,7 +98,8 @@
                   (print line)
                   (flush)))]
     (emit! {:phase "setup" :milliseconds (:milliseconds setup)
-            :commits commits :limit limit :concurrency (:concurrency opts)
+            :commits commits :endpoints-only (boolean endpoints-only)
+            :limit limit :concurrency (:concurrency opts)
             :clj-toolchain-id clj-toolchain-id
             :scope "build-only; no live assessment, signing or serving"})
     (reduce
@@ -116,8 +128,9 @@
 
 (defn -main [& args]
   (try
-    (let [opts (cli/parse-opts args {:coerce {:concurrency :long :limit :long}})]
+    (let [opts (cli/parse-opts args {:coerce {:concurrency :long :limit :long
+                                              :endpoints-only :boolean}})]
       (if (:help opts)
-        (println "soranoha-replay --repo PATH --from REV --to REV --out NEW-DIRECTORY [--concurrency N] [--limit N]")
+        (println "soranoha-replay --repo PATH --from REV --to REV --out NEW-DIRECTORY [--endpoints-only] [--concurrency N] [--limit N]")
         (replay! opts)))
     (finally (shutdown-agents))))

@@ -92,6 +92,47 @@ still, which is the one condition here that nothing else reports: the
 transaction's determinism halt cannot see it, because that fires only when the
 whole projection matches and an advanced corpus revision means it does not.
 
+`corpus-delta` answers the neighbouring question: how the corpus in a local
+Aozora Bunko checkout differs from what a release published. No release was
+ever cut at most upstream revisions, so the chain cannot answer this on its
+own; the archives at that revision are simply not in it. The reader supplies
+them instead, from their own checkout.
+
+```sh
+nix run .#soranoha-kernel -- corpus-delta \
+  --chain-clone /absolute/path/to/chain \
+  --aozora-root /absolute/path/to/aozorabunko-at-the-revision-to-compare \
+  --release-pub /absolute/path/to/release.pub \
+  --governance-pub /absolute/path/to/governance.pub
+```
+
+The chain is verified against both role pins before any manifest is read, so
+the only unsigned side is the reader's own. `--to` names the release to compare
+against and defaults to the head. The checkout must be clean under `cards/` and
+`index_pages/`, because otherwise the revision it reports would not describe
+the bytes that were read.
+
+No parser runs. A work's `source_content_hash` is the hash of its archive's
+identity object, produced by the `extract` stage before any parsing, so every
+published source identity can be recomputed from the archive alone. Scanning
+the whole corpus took 2.3 seconds at `--concurrency 16` on this machine, over
+17,602 works with warm OS page caches. Comparing against an arbitrary
+historical revision therefore costs a checkout, not a rebuild.
+
+`withdrawn` is reported apart from `only-in-checkout`, because it is the one
+case where the release is missing a work on purpose. `unreadable` names
+archives the admission rules refused, which an old revision is exactly where to
+expect: one refused archive costs its own answer and not the rest. A release
+built by a different `extract` version is refused outright rather than
+differenced, since two versions may hash one archive differently and the
+differences reported would be the stage's.
+
+What this does not answer is whether the current toolchain would produce
+different documents from the same sources. Under one toolchain nothing else can
+move a document, so the source answer is the whole answer; across a toolchain
+change it is not, and only building both revisions is. See
+[performance measurements](performance.md) for that recipe.
+
 Inspect `/releases/HEAD`, the corresponding manifest and signature,
 and the work links named by that manifest. The root URL serves the generated
 browse layer (a landing page, author, title and NDC indexes, a bibliography and

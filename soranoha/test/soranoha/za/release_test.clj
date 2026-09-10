@@ -185,6 +185,39 @@
                                      :governance-pub governance-pub})
                                    (catch clojure.lang.ExceptionInfo e (ex-data e)))))))))
 
+        (testing "corpus-delta reads the checkout against a release that predates it"
+          (let [ks (vector-keys)
+                dir (fs/create-temp-dir {:prefix "corpus-delta"})
+                write! (fn [name content]
+                         (let [path (str (fs/path dir name))] (spit path content) path))
+                release-pub (write! "release.pub" (str (get-in ks ["release" "pub"]) "\n"))
+                governance-pub (write! "governance.pub"
+                                       (str (get-in ks ["governance" "pub"]) "\n"))
+                run! (fn [opts]
+                       (main/corpus-delta!
+                        (merge {:chain-clone clone :branch fx/branch
+                                :aozora-root root :concurrency 2
+                                :release-pub release-pub
+                                :governance-pub governance-pub}
+                               opts)))
+                against-genesis (run! {:to (:manifest-id result-1)})]
+            (testing "the work the checkout gained since genesis is the whole difference"
+              (is (= [(slug-of added)] (get-in against-genesis ["works" "only-in-checkout"])))
+              (is (= 2 (get-in against-genesis ["works" "unchanged"])))
+              (is (= [] (get-in against-genesis ["works" "source-changed"])))
+              (is (= [] (get-in against-genesis ["works" "only-in-release"]))))
+            (testing "the scan recomputes the release's own source hashes, not new ones"
+              (is (= (:commit run-2) (get-in against-genesis ["corpus" "checkout"])))
+              (is (= (:commit run-1) (get-in against-genesis ["corpus" "release"]))))
+            (testing "against the release built from this very revision, nothing differs"
+              (let [against-head (run! {})]
+                (is (= (:manifest-id result-2) (get against-head "to_manifest")))
+                (is (= 3 (get-in against-head ["works" "unchanged"])))
+                (is (= [] (get-in against-head ["works" "only-in-checkout"])))
+                (is (= [] (get-in against-head ["works" "only-in-release"])))
+                (is (= [] (get-in against-head ["works" "source-changed"])))
+                (is (= [] (get against-head "unreadable")))))))
+
         (testing "an unmoved upstream is the scheduled no-op"
           (let [run-3 (corpus/run-corpus! root store)
                 result-3 (drive! clone run-3

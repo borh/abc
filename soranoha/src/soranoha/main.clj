@@ -25,6 +25,7 @@
             [soranoha.ori.validate :as validate]
             [soranoha.core.json :as record-json]
             [soranoha.core.parallel :as parallel]
+            [soranoha.snh.corpus-delta :as corpus-delta]
             [soranoha.snh.decode :as decode]
             [soranoha.snh.release-delta :as release-delta]
             [soranoha.snh.repo :as repo]
@@ -848,6 +849,56 @@
     (println (record-json/write-deterministic-json-str report))
     report))
 
+(defn corpus-delta!
+  "How the corpus in a local aozorabunko checkout differs from what a release
+  published, as deterministic JSON.
+
+  `release-delta` answers this between two releases from published bytes
+  alone. This answers it for a revision no release was ever cut at, which the
+  chain cannot reach: the archives at that revision are not in it. So the
+  reader supplies them, from their own checkout, rather than asking a server to
+  rebuild history on demand. The chain is still verified against the pinned
+  keys first, so the only unsigned side is the one the reader supplies.
+
+  No parser runs. `source_content_hash` is produced before parsing, so the
+  cost is reading the corpus rather than converting it. The answer is
+  therefore about sources: under one toolchain that is the whole question,
+  since nothing else can move a document, and across a toolchain change it is
+  not. See `soranoha.snh.corpus-delta`.
+
+  `--to` defaults to the head, so comparing a checkout against the newest
+  release needs no flag."
+  [{:keys [chain-clone branch release-pub governance-pub to aozora-root
+           concurrency limit]}]
+  (require-flags! "corpus-delta"
+                  {"--chain-clone" chain-clone
+                   "--release-pub" release-pub
+                   "--governance-pub" governance-pub
+                   "--aozora-root" aozora-root})
+  (let [;; before the scan, so a checkout that cannot name its own revision
+        ;; costs nothing rather than a full corpus read
+        checkout-rev (source-provenance! aozora-root)
+        v (view/git-view (str chain-clone))
+        commit (or (repo/fetch! (str chain-clone) branch)
+                   (throw (ex-info "no publication branch"
+                                   {:reason :no-publication-branch :branch branch})))
+        verified (verify/verify-repository-at
+                  v commit (pinned-keys-from-files release-pub governance-pub))
+        _ (when (:empty verified)
+            (throw (ex-info "the chain has no release to compare"
+                            {:reason :no-published-release})))
+        chain (:chain verified)
+        to-hex (or (not-empty (str to)) (first chain))
+        _ (when-not (some #{to-hex} chain)
+            (throw (ex-info "manifest is not in this chain"
+                            {:reason :manifest-not-in-chain :manifest to-hex})))
+        manifest (verified-manifest v commit to-hex)
+        scanned (corpus-delta/scan aozora-root {:concurrency concurrency :limit limit})
+        report (assoc (corpus-delta/report manifest scanned checkout-rev)
+                      "to_manifest" to-hex)]
+    (println (record-json/write-deterministic-json-str report))
+    report))
+
 (defn governance-event-prepare!
   "Turn candidate governance-event content into the exact bytes the offline
   governance key will sign, and print their sha256.
@@ -1121,6 +1172,7 @@
           "release-needed" (when-not (get (release-needed! opts) "needed")
                              (System/exit 10))
           "release-delta" (release-delta! opts)
+          "corpus-delta" (corpus-delta! opts)
           "governance-event-prepare" (governance-event-prepare! opts)
           "governance" (let [{:keys [outcome]} (governance! opts)]
                          (when-not (#{:published :already-applied} outcome)
@@ -1135,7 +1187,7 @@
           "verify" (when-not (:ok? (verify! opts))
                      (System/exit 1))
           (do (binding [*out* *err*]
-                (println "usage: build|text-view|annotation-validate|tei-enrich|links-export|delta|release|release-needed|release-delta|governance-event-prepare|governance|serving-tree|serving-activate|publication-init|assessment-evaluate|aozora-reliance-prepare|archive-verify|verify [--root R --aozora-root A --assets-root S ...]"))
+                (println "usage: build|text-view|annotation-validate|tei-enrich|links-export|delta|release|release-needed|release-delta|corpus-delta|governance-event-prepare|governance|serving-tree|serving-activate|publication-init|assessment-evaluate|aozora-reliance-prepare|archive-verify|verify [--root R --aozora-root A --assets-root S ...]"))
               (System/exit 2))))
       (System/exit 0)
       (catch clojure.lang.ExceptionInfo e

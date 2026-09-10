@@ -44,6 +44,28 @@
         (fs/delete-tree parent)
         (fs/delete-tree repo)))))
 
+(deftest endpoints-only-keeps-the-range-and-drops-the-builds-between
+  (let [work {:work-id "000001" :person-id "000001" :card "000001"
+              :book "1" :n "1" :text "one"}
+        repo (corpus/init-corpus! [work])
+        first-revision (main/source-provenance! repo)
+        _ (corpus/write-work! repo (assoc work :text "two"))
+        middle (corpus/commit-corpus! repo)
+        _ (corpus/write-work! repo (assoc work :text "three"))
+        last-revision (corpus/commit-corpus! repo)]
+    (try
+      (is (= [first-revision middle last-revision]
+             (replay/revisions repo first-revision last-revision)))
+      (is (= [first-revision last-revision]
+             (replay/revisions repo first-revision last-revision true))
+          "comparing two revisions costs two builds, not one per revision between")
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo #"first-parent"
+                            (replay/revisions repo last-revision first-revision true))
+          "the range is still resolved, so the two ends still have to be one")
+      (is (= [first-revision] (replay/revisions repo first-revision first-revision true))
+          "a range of one revision has one end, not the same end twice")
+      (finally (fs/delete-tree repo)))))
+
 (deftest failed-work-batches-retain-all-diagnostics-and-resume-completed-work
   (let [works (mapv (fn [id text]
                       {:work-id id :person-id "000001" :card "000001"

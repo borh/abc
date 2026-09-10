@@ -817,17 +817,17 @@
      [:dt (bilingual "取り下げの記録" "Withdrawal record")]
      [:dd [:a {:href (str "/withdrawn/" slug ".json")} (str "/withdrawn/" slug ".json")]]]
     [:p (bilingual
-         "この作品は現在の版では配布していません。取り下げは記録を追記する操作で、現在の配布を止め、過去の版はそのまま署名の連鎖に残します。"
-         "This work is not distributed in the current release. Withdrawal appends a record: it stops current distribution and leaves earlier releases standing in the signed chain.")]
+         "この作品は現在の版では配布していません。取り下げても記録を消すことはなく、以後の配布を止めるだけで、過去の版は署名の連鎖にそのまま残ります。"
+         "Soranoha no longer distributes this work in the current release. Withdrawing a work removes nothing: it stops further distribution, and the signed chain keeps every earlier release exactly as published.")]
     (when last-release
       [:p (bilingual "最後に収録された版:" "Last release that contained it:")
        " " [:a {:href (str "/releases/" last-release ".json")} [:code last-release]]])
     [:p [:a {:href "/rights"} (bilingual "権利について" "Rights statement")]]]))
 
 (defn- covered-range
-  "The upstream revisions a release stands for. A release is minted when the
-  corpus moved rather than on every upstream commit, so one release covers
-  `(covers_from, upstream_rev]` and may stand for several revisions. Genesis
+  "The upstream revisions a release covers. A release is minted when the
+  corpus moved rather than on every upstream commit, so one release spans
+  `(covers_from, upstream_rev]`, which can be several revisions. Genesis
   has no predecessor revision to open its range and shows only its own."
   [{:strs [covers_from upstream_rev]}]
   (if covers_from
@@ -912,10 +912,10 @@
                   (history-row entry (second predecessor) events))
                 (partition-all 2 1 (manifest-seq))))]
     [:p (bilingual
-         "「底本の範囲」は、その版が代表する青空文庫のリビジョンの範囲です。作品の書庫が動いたときに版を作るので、一つの版が複数のリビジョンを代表することがあります。最初の版には比較する前の版がないので、変更の欄は空です。"
-         (str "The upstream range is the span of Aozora Bunko revisions a release stands for. "
-              "A release is minted when a work archive moved, so one release can stand for "
-              "several revisions. The oldest release has nothing to differ from, so its "
+         "「底本の範囲」は、その版が対象とする青空文庫のリビジョンの範囲です。作品の書庫が動いたときに版を作るので、一つの版が複数のリビジョンにまたがることがあります。最初の版には比較対象となる前の版がないので、変更の欄は空です。"
+         (str "The upstream range is the span of Aozora Bunko revisions a release covers. "
+              "A release is minted when a work archive moved, so one release can cover "
+              "several revisions. The oldest release has no predecessor to compare against, so its "
               "change columns are empty."))]]))
 
 (defn- last-release-of
@@ -965,7 +965,7 @@
    document
    "Rights and licensing"
    [[:p (bilingual
-         "複製、再配布、翻案、翻訳、情報解析、再公開のいずれも、営利非営利を問わず自由に行えます。許諾も支払いも不要です。クレジットの表示はお願いであって、条件ではありません。"
+         "複製、再頒布、翻案、翻訳、情報解析、公衆送信のいずれも、営利非営利を問わず自由に行えます。許諾を得る必要も、対価を支払う必要もありません。クレジットの表示はお願いであって、利用の条件ではありません。"
          "You may copy, redistribute, adapt, translate, mine and republish everything here, commercially or not, without asking and without payment. Attribution is requested, not required.")]
     ;; the grant as this release states it, rather than as this document
     ;; describes it: a served page that disagreed with the signed manifest
@@ -981,34 +981,34 @@
          "上の三つは、この版のマニフェストに書かれている値です。"
          "Those three are read from this release's own manifest.")]
 
-    [:h2 (bilingual "二つの権利層" "Two rights layers")]
+    [:h2 (bilingual "権利の二つの層" "Two rights layers")]
     [:p (bilingual
-         "底本は青空文庫の著作権満了作品です。Soranoha はそこに何の権利も持たず、主張もしません。青空文庫の取り扱い規準は、満了作品のファイルを有償無償を問わず自由に複製・再配布・翻案してよいとしています。"
+         "底本は、著作権の存続期間が満了して権利が消滅した青空文庫の作品です。Soranoha は底本について著作権その他の権利を有しておらず、主張もしません。青空文庫の「収録ファイルの取り扱い規準」は、著作権の消滅した作品のファイルを、有償無償を問わず自由に複製・再頒布・翻案してよいとしています。"
          "The underlying texts are copyright-expired works from Aozora Bunko. Soranoha neither holds nor claims any right in them. Aozora Bunko's handling rules allow files for expired works to be copied, redistributed and adapted freely, whether for payment or not.")]
     [:p (bilingual
-         "Soranoha 自身の符号化（TEI マークアップ、プレーンテキストと Markdown への投影、検証レポート、目録、リリースマニフェスト）は CC0-1.0 で公共領域に献呈されています。符号化に著作権やデータベース権が生じる範囲では、それを放棄します。"
+         "Soranoha 自身の符号化（TEI マークアップ、プレーンテキストと Markdown への投影、検証レポート、目録、リリースマニフェスト）は、CC0-1.0 によりパブリックドメインで提供します。符号化に著作権および関連する権利（データベースに関する権利を含む）が生じる範囲では、これを放棄します。"
          "Soranoha's own encoding (the TEI markup, the plaintext and Markdown projections, the validation reports, the catalog and the release manifests) is dedicated to the public domain under CC0-1.0. Where that encoding attracts copyright or a database right at all, those rights are waived.")]
     ;; the two requests are not conditions on the grant, so they belong on
     ;; the served page as what they are: a redistributor who reads only this
     ;; page would otherwise never learn that anything was asked
     [:p (bilingual
-         "青空文庫は義務ではなく二つのことを求めています。作品名・著者・底本・入力者・校正者を記したクレジット表記を削らないこと、そして底本や表記を変更した場合はその記録を添えることです。Soranoha はどちらも行っており、クレジットは各 TEI ファイルの back と各作品ページに、変更の記録は検証レポートと底本との差異に残しています。再配布される方にも同じ扱いをお願いします。"
-         "Aozora Bunko asks two things without requiring them: that the credit block naming the work, its author, its source edition and the people who keyed and proofread it not be removed, and that a change of source edition or notation come with a record of what changed. Soranoha does both: the credit block survives into every TEI file's back matter and onto every work page, and the record is the validation report and the divergences from the source published with each work. We ask the same of anyone redistributing these files.")]
+         "青空文庫は義務ではなく二つのことを求めています。作品名・著者・底本・入力者・校正者を記したクレジット表記を削らないこと、そして底本や表記を変更した場合はその記録を添えることです。Soranoha はどちらも行っており、クレジットは各 TEI ファイルの back と各作品ページに、変更の記録は検証レポートと底本との差異に残しています。再頒布される方にも同じ扱いをお願いします。"
+         "Aozora Bunko asks two things without requiring them: that the credit block naming the work, its author, its source edition and the people who keyed and proofread it not be removed, and that a change of source edition or notation come with a record of what changed. Soranoha does both: we keep the credit block in every TEI file's back matter and on every work page, and we publish the record as the validation report and the divergences from the source that accompany each work. We ask the same of anyone redistributing these files.")]
 
     ;; the split a redistributor actually needs: the corpus and the program
     ;; that made it are under different terms, and the page a manifest points
     ;; at is where someone checks before redistributing
     [:p (bilingual
-         "公開されたコーパスを再配布しても、ツールチェーンの義務は伴いません。ツールチェーンを再配布する場合は伴います。ソースコードは Apache-2.0、分岐した解析器クレートは上流から引き継いだ MIT OR Apache-2.0 です。"
+         "公開されたコーパスを再頒布しても、ツールチェーンのライセンス上の義務は生じません。ツールチェーン自体を再頒布する場合には生じます。自作のソースコードは Apache-2.0、分岐した解析器クレートは上流から承継した MIT OR Apache-2.0 です。"
          "Redistributing the published corpus does not carry the toolchain's obligations. Redistributing the toolchain does: the locally authored source is Apache-2.0, and the forked parser crates carry MIT OR Apache-2.0 as an inherited obligation.")]
 
     [:h2 (bilingual "公開作品に権利をお持ちの方へ" "If you hold rights in a published work")]
     [:p (bilingual
-         "Soranoha は権利が存続しないと評価した作品だけを公開しますが、この規模のコーパスであれば、いずれどれか一つは誤ります。"
-         "Soranoha publishes only works its assessment finds to be free of subsisting rights, but a corpus of this size will eventually be wrong about one.")]
+         "Soranoha が公開するのは、著作権が存続していないと判断した作品だけです。ただし、この規模のコーパスであれば、いずれどれか一つは判断を誤ります。"
+         "Soranoha publishes only works its assessment finds to be free of subsisting rights. Over a corpus this size we will eventually get one wrong.")]
     [:p (bilingual
-         (str "作品識別子（URL に見える " example-identifier " の形）または青空文庫の図書カードと、主張の根拠を添えて、"
-              orcid-url " に記載の連絡先までご連絡ください。正式な法的通知である必要はありません。")
+         (str "作品識別子（URL に見える " example-identifier " の形）または青空文庫の図書カードと、権利主張の根拠を添えて、"
+              orcid-url " に記載の連絡先までご連絡ください。正式な法的通知の形式による必要はありません。")
          (str "Write to the address on " orcid-url ", naming the work identifier (the "
               example-identifier " form, visible in the URL) or the Aozora Bunko card, and the "
               "basis of the claim. A claim does not need to be a formal legal notice to be acted on."))]
@@ -1016,13 +1016,13 @@
     ;; rights holder is not waiting on a corpus release that may be weeks
     ;; away; `transact/successor-for-event` builds that manifest
     [:p (bilingual
-         "取り下げは、公開されたガバナンスイベントとして記録されます。そのイベントを追記すること自体が一つのリリースであり、そこで作品は works[] から外れ、そのリリースの目録からも消え、取り下げを定めたイベントを指す withdrawn[] に入ります。次の定期リリースを待つ必要はありません。署名済みの履歴は追記のみなので、過去のリリースは書き換わりません。"
-         "A withdrawal is recorded as a public governance event. Appending that event is itself a release: in it the work leaves works[], the catalog that release publishes no longer describes it, and it appears in withdrawn[] naming the event that governs it. It does not wait for the next corpus release. The signed history is append-only, so earlier releases are not rewritten.")]
+         "公開を取り下げる場合は、その理由を記したガバナンスイベントを公開します。イベントの公開それ自体が一つの版で、その版では作品を works[] と目録から外し、根拠となるイベントとともに withdrawn[] に記録します。次の定期の版を待たずに公開します。署名済みの履歴は追記しかできないので、過去の版はそのまま残ります。"
+         "To withdraw a work, Soranoha publishes a governance event stating why. Publishing it is itself a release. That release omits the work from works[] and from the catalog, and records it in withdrawn[] together with the event the removal rests on. Soranoha publishes such a release as soon as it is needed, rather than at the next corpus release. Nothing can be removed from the signed history, so earlier releases keep the work exactly as they published it.")]
 
     [:h2 (bilingual "無保証" "No warranty")]
     [:p (bilingual
-         "Soranoha が公開するのは、検証レポートと底本からの差異を添えた翻刻であって、忠実性の保証ではありません。現状のまま提供されます。法律・医療・安全に関わる用途では、各作品が sourceDesc に記載する底本に対して独自に検証せずに依拠しないでください。"
-         "Soranoha publishes transcriptions with their validation reports and their recorded divergences from the source, not a guarantee of fidelity. The corpus is provided as-is. Do not rely on it for a legal, medical or safety purpose without independent verification against the source edition each work names in its sourceDesc.")]]))
+         "Soranoha が公開するのは、検証レポートと底本との差異を添えた翻刻であって、翻刻の正確性を保証するものではありません。コーパスは現状有姿で提供します。法律・医療・安全に関わる用途では、各作品の sourceDesc に記録された底本に照らして独自に検証することなく依拠しないでください。"
+         "Soranoha publishes transcriptions with their validation reports and their recorded divergences from the source, not a guarantee of fidelity. The corpus is provided as-is. Do not rely on it for a legal, medical or safety purpose without independent verification against the source edition recorded in each work's sourceDesc.")]]))
 
 (def ^:private example-work
   "The work the how-to-cite page is worked through. A literal rather than a

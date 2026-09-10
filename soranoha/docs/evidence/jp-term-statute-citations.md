@@ -1,11 +1,15 @@
 # Japanese statutory term citations
 
-These pinned quotations and agency guidance support the independent-assessment
-route. They do not assess any work, establish Aozora's review process, or replace
-edition-level reliance. The implemented rule and its limits are described in
-[assessment evaluation](../assessment-evaluation.md). Catalog death years alone
-do not establish the applicable term, exclude wartime additions, or establish
-all copyright-relevant contributions.
+These pinned quotations and agency guidance are the statutory basis for the
+independent-assessment route: the ordinary term, the Allied-powers wartime
+addition, and the transition from the old law, each bound to an exact
+consolidated revision. The implemented rule and its limits are described in
+[assessment evaluation](../assessment-evaluation.md).
+
+The applicable term follows from more than a catalog death year. The wartime
+addition and the old-law transition both bear on it, and the
+copyright-relevant contributions to an edition can exceed the roles the catalog
+names.
 
 All retrievals 2026-08-27 (UTC), except S-E (旧著作権法 text,
 retrieved 2026-08-28). Retrieval channels:
@@ -148,7 +152,7 @@ entry into force). 問8–問9: works inside a wartime-addition period on
 
 ## composition of the original author's and translator's terms
 
-A translation IS a derivative work by definition (S-A, 第2条第1項第11号):
+A translation is a derivative work by statutory definition (S-A, 第2条第1項第11号):
 
 > 十一 二次的著作物　著作物を翻訳し、編曲し、若しくは変形し、又は脚色し、映画化し、その他翻案することにより創作した著作物をいう。
 
@@ -163,11 +167,11 @@ term is whichever of 第51条/第52条/第53条 applies to the translation's
 authorship form, death-based only for real-name or 周知変名 natural
 persons), and the original author's rights over the derivative's use
 (第28条, running on the original work's term, likewise under whichever
-of 第51〜53条 applies). Free use requires BOTH terms to have expired:
+of 第51〜53条 applies). Free use requires both terms to have expired:
 the statutory basis for the composition rule described in
-[Aozora's handling rules](aozora-rights-source-contract.md).
+[Aozora Bunko's handling rules](aozora-rights-source-contract.md).
 
-## The old-law transition (旧著作権法, 明治32年法律第39号)
+## the old-law transition (旧著作権法, 明治32年法律第39号)
 
 Current-law supplementary provisions (S-A, 附則, 昭和45年):
 

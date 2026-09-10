@@ -1,9 +1,9 @@
-# Nix Policy
+# Nix policy
 
 Soranoha treats Nix as the repository's identity, toolchain, and bounded
 materialization layer. Domain behavior stays in Clojure, Rust, and Python code.
 
-## Roles
+## Nix owns source identity and toolchain, not domain behavior
 
 Nix owns:
 
@@ -20,7 +20,7 @@ Nix does not own:
 - report interpretation
 - full-corpus Cartesian derivation matrices
 
-## Lock Authority
+## The root lock is the canonical one
 
 The root `flake.lock` is the canonical lock for Soranoha. The old split
 repositories are archived and no longer define active source identity.
@@ -34,7 +34,7 @@ The `flake-input-policy` gate enforces this requirement for shared non-path inpu
 If a component lock and the root lock share an input name, their `original`
 and `locked` records must match.
 
-## Release-Critical Inputs
+## Release-critical inputs are pinned in the flake URL, not only in the lock
 
 Release-critical inputs must be explicitly pinned in the flake URL by `rev` or
 release tag, not only by the lockfile:
@@ -53,7 +53,7 @@ Infrastructure inputs such as `nixpkgs`, `clj-nix`, `rust-overlay`,
 `flake-utils`, `crane`, and `flake-parts` may be lock-only pins, with update
 review handled by normal Nix lock diffs.
 
-## TEI P5 Identity
+## Every TEI reference in the monorepo is TEI P5 4.11.0
 
 Soranoha profile validation is pinned to TEI P5 4.11.0. The monorepo TEI source
 reference must therefore also use TEI P5 4.11.0:
@@ -64,7 +64,7 @@ reference must therefore also use TEI P5 4.11.0:
 
 The `monorepo-tei-version-coherence` check enforces this alignment.
 
-## Validation
+## Gates to run after an input or source-policy change
 
 Run these cheap gates from the monorepo root after Nix input or source-policy
 changes:

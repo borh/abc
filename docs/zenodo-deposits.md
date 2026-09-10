@@ -12,16 +12,15 @@ procedure.
 
 Both deposits are made by the publication owner under the Zenodo account
 `borh`, from a machine that is not release CI. Zenodo credentials are never
-available to the release workflow. This is deliberate: the release key signs
-manifests automatically, and adding archive credentials to the same automation
-would put the ability to publish and the ability to make something citable in
-one place.
+available to the release workflow. The release key signs manifests
+automatically, and adding archive credentials to the same automation would put
+the ability to publish and the ability to make something citable in one place.
 
 Cite a **version** DOI, never the concept DOI, wherever the DOI has to resolve
 to fixed bytes. A concept DOI resolves to the latest version, so what it names
 changes underneath a citation.
 
-## The order, which is the part that goes wrong
+## Deposit the anchor and record it on ORCID before the first release is signed
 
 Each step below produces the input the next one needs, and the last three
 cannot be reordered without either an unverifiable release or a chain that has
@@ -207,16 +206,16 @@ fail closed with `serving-tree-mismatch`: the existing tree's citations name a
 different DOI. Remove that tree and re-export. Activation is otherwise
 idempotent, so a DOI recorded late is recovered by re-running it.
 
-Activation therefore depends on Zenodo being reachable. For a research corpus
-that delay is acceptable, and it is stated here as policy so that it is not
-discovered during a release.
+Activation therefore waits on Zenodo being reachable. For a research corpus
+that delay is acceptable, and recording it as policy here is what keeps it from
+arriving as a surprise mid-release.
 
 ## Checking a deposit you were given
 
-Nothing verifiable is lost by keeping the DOI outside the signed chain, because
-the deposit contains the manifest bytes. A reader who is given a DOI can check
-the correspondence with `openssl` and coreutils alone, using only the release
-key published in the trust anchor:
+The deposit contains the manifest bytes, so the DOI's correspondence to a
+release stays checkable outside the chain. A reader who is given a DOI can check
+it with `openssl` and coreutils alone, using only the release key published in
+the trust anchor:
 
 ```sh
 set -eu

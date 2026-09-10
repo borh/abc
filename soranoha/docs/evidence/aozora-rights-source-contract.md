@@ -1,10 +1,11 @@
-# Aozora rights fields and source assertions
+# Aozora Bunko rights fields and source assertions
 
-Aozora's work classification is an attributed upstream assertion. It does not
-establish individual contributor rights, the complete rights-relevant contribution
-set, or the date of an independent legal assessment. Soranoha's
-[assessment evaluator](../assessment-evaluation.md) keeps edition-level reliance
-separate from independent rights findings.
+Aozora Bunko publishes a copyright flag per work and per person, and Soranoha
+relies on that classification at the edition level. Recorded here is what the
+flag asserts, the published guidance it rests on, and which rights-relevant
+fields the catalog carries. Soranoha's
+[assessment evaluator](../assessment-evaluation.md) keeps that reliance separate
+from independent rights findings, which is why the field boundaries below matter.
 
 ## Pinned source evidence
 
@@ -18,7 +19,7 @@ published guidance; current reliance also checks live official responses.
   with comments invited until 2011-03-15.
 - [`guide/kijyunn.html`](https://github.com/aozorabunko/aozorabunko/blob/0e9ea3e586eb0aa34039fabfc85a407d2f98b165/guide/kijyunn.html)
   describes free copying, redistribution, adaptation and translation of works
-  classified as expired, without permission or payment owed to Aozora. For works
+  classified as expired, without permission or payment owed to Aozora Bunko. For works
   classified as protected, reuse beyond private use requires permission. Special
   permissions may appear on the card, in the work file, or on a linked author
   page; the CSV does not record their terms. A translation remains protected

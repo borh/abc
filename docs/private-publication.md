@@ -65,12 +65,12 @@ it to build children, publishes with both role pins, and installs a verified
 serving tree. Inspect `/releases/HEAD`, the corresponding manifest and signature,
 and the work links named by that manifest. The root URL serves the generated
 browse layer (a landing page, author, title and NDC indexes, a bibliography and
-a reading view per work, the rights and citation pages, and the project's
-reader-facing documents), providing presentation over the same release without
-any of it being hashed into the chain. The document pages are
-rendered from the repository files themselves, which the Nix wrapper supplies
-through `SORANOHA_SITE_DOCS`; `soranoha.za.docs` lists which files are served
-and at which routes.
+a reading view per work, the rights and citation pages, and the TEI extension
+vocabulary the published headers point at), providing presentation over the same
+release without any of it being hashed into the chain. The vocabulary page is
+rendered from the repository file itself, which the Nix wrapper supplies through
+`SORANOHA_SITE_DOCS`; `soranoha.za.docs` lists which files are served and at
+which routes.
 Follow `/catalog.json` for the signed discovery record.
 
 The NixOS publisher profile provisions the source and chain clones, shared serving

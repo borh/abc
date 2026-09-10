@@ -176,6 +176,15 @@ pub fn lookup(
     None
 }
 
+/// The characters a marker body uses to separate a description from its
+/// men-ku-ten reference.
+///
+/// 、 is the form the archive writes almost everywhere. `002587_000372` writes
+/// the halfwidth ､ in one marker, which is the same punctuation mark in a
+/// different width and separates the same two things, so it is read as the
+/// same boundary rather than as description text.
+const CLAUSE_SEPARATORS: [char; 2] = ['、', '､'];
+
 /// Split gaiji reference clauses without splitting commas inside quoted descriptions.
 /// Glyph resolution and embedded documentary annotations share these boundaries.
 pub fn reference_clauses(text: &str) -> impl Iterator<Item = &str> {
@@ -189,7 +198,7 @@ pub fn reference_clauses(text: &str) -> impl Iterator<Item = &str> {
             depth = depth.saturating_sub(1);
             false
         }
-        '、' => depth == 0,
+        ch if CLAUSE_SEPARATORS.contains(&ch) => depth == 0,
         _ => false,
     })
 }
@@ -440,9 +449,9 @@ pub fn parse_gaiji_body(body: &str) -> GaijiBody<'_> {
             !tail.is_empty() && is_mencode_shaped(mencode_resolution_token(tail));
         if !desc.is_empty()
             && !desc.contains(['「', '」'])
-            && (tail.is_empty() || tail.starts_with('、') || bare_mencode_tail)
+            && (tail.is_empty() || tail.starts_with(CLAUSE_SEPARATORS) || bare_mencode_tail)
         {
-            let mencode = tail.strip_prefix('、').map_or_else(
+            let mencode = tail.strip_prefix(CLAUSE_SEPARATORS).map_or_else(
                 || (!tail.is_empty()).then_some(tail),
                 |m| {
                     let m = m.trim();
@@ -476,8 +485,11 @@ pub fn parse_gaiji_body(body: &str) -> GaijiBody<'_> {
     let shaped = |t: &str| {
         is_mencode_shaped(t) || is_near_miss_page_line_shaped(t) || is_page_segment_line_locator(t)
     };
-    let commas: Vec<usize> = body.match_indices('、').map(|(i, _)| i).collect();
-    let tokens: Vec<&str> = body.split('、').map(str::trim).collect();
+    let commas: Vec<(usize, usize)> = body
+        .match_indices(CLAUSE_SEPARATORS)
+        .map(|(i, separator)| (i, separator.len()))
+        .collect();
+    let tokens: Vec<&str> = body.split(CLAUSE_SEPARATORS).map(str::trim).collect();
     let mut run_start = tokens.len();
     while run_start > 0 && shaped(tokens[run_start - 1]) {
         run_start -= 1;
@@ -504,7 +516,21 @@ pub fn parse_gaiji_body(body: &str) -> GaijiBody<'_> {
     let described_glyph_locator = run_start > 0
         && run_start < tokens.len()
         && run.iter().all(|t| is_page_segment_line_locator(t))
-        && names_a_known_glyph(body[..commas[run_start - 1]].trim());
+        && names_a_known_glyph(body[..commas[run_start - 1].0].trim());
+    // No separator-delimited run at all. Before giving up, the fused form:
+    // a men-ku-ten written directly onto the description's closing 」 with
+    // nothing between them. The simple quoted branch above already reads that
+    // shape; a description with nested 「」 never reaches it, which is the
+    // only reason 004643_000284 was missed.
+    if run_start == tokens.len()
+        && let Some(end) = fused_mencode_boundary(body)
+    {
+        return GaijiBody {
+            description: body[..end].trim(),
+            mencode: Some(body[end..].trim()),
+            quoted: false,
+        };
+    }
     if run_start == tokens.len()
         || run_start == 0
         || (uses_unresolvable_locator && !anchored && !described_glyph_locator)
@@ -515,12 +541,40 @@ pub fn parse_gaiji_body(body: &str) -> GaijiBody<'_> {
             quoted: false,
         };
     }
-    let boundary = commas[run_start - 1];
+    let (boundary, separator_len) = commas[run_start - 1];
     GaijiBody {
         description: body[..boundary].trim(),
-        mencode: Some(body[boundary + '、'.len_utf8()..].trim()),
+        mencode: Some(body[boundary + separator_len..].trim()),
         quoted: false,
     }
+}
+
+/// Byte offset just past the description's outermost closing 」, when what
+/// follows it is a men-ku-ten and nothing else.
+///
+/// `004643_000284` writes `「…「炎」」第4水準2-84-80` once and the same glyph
+/// with a separating 、 three times in the same file, so the missing separator
+/// is a slip rather than a second house form. Gated on the tail being
+/// mencode-shaped, which keeps a directive that merely follows a quote (`」に
+/// 傍点`) out.
+fn fused_mencode_boundary(body: &str) -> Option<usize> {
+    let mut depth = 0_u32;
+    let mut outermost_close = None;
+    for (index, ch) in body.char_indices() {
+        match ch {
+            '「' => depth += 1,
+            '」' => {
+                depth = depth.saturating_sub(1);
+                if depth == 0 {
+                    outermost_close = Some(index + ch.len_utf8());
+                }
+            }
+            _ => {}
+        }
+    }
+    let end = outermost_close?;
+    let tail = body[end..].trim();
+    (!tail.is_empty() && is_mencode_shaped(tail)).then_some(end)
 }
 
 /// A complete source-stated component substitution describes a glyph even
@@ -634,7 +688,7 @@ pub fn recognize_gaiji_body(body: &str) -> Option<GaijiBody<'_>> {
 #[must_use]
 pub fn mencode_resolution_token(mencode: &str) -> &str {
     mencode
-        .split_once('、')
+        .split_once(CLAUSE_SEPARATORS)
         .map_or(mencode, |(token, _)| token.trim())
 }
 
@@ -1496,6 +1550,38 @@ mod tests {
         // The spacing is not a structured form, so serialization still
         // echoes the source token rather than rewriting it closed up.
         assert!(parse_menkuten("第4水準 2-13-28").is_none());
+    }
+
+    #[test]
+    fn a_halfwidth_comma_separates_a_description_from_its_reference() {
+        // 002587_000372 line 47. Same punctuation mark, narrower width.
+        let body = parse_gaiji_body("「てへん＋闌」､第4水準2-13-61");
+        assert_eq!(body.description, "てへん＋闌");
+        assert_eq!(body.mencode, Some("第4水準2-13-61"));
+        assert!(body.quoted);
+    }
+
+    #[test]
+    fn a_reference_fused_to_a_nested_quote_description_is_still_the_reference() {
+        // 004643_000284 line 40 writes this glyph once with no separator and
+        // three times with one. The nested 「」 is what keeps it out of the
+        // simple quoted branch, which already reads the fused shape.
+        let body = parse_gaiji_body("「（罪－非）／「厠」の「貝」に変えて「炎」」第4水準2-84-80");
+        assert_eq!(
+            body.description,
+            "「（罪－非）／「厠」の「貝」に変えて「炎」」"
+        );
+        assert_eq!(body.mencode, Some("第4水準2-84-80"));
+        assert!(!body.quoted);
+    }
+
+    #[test]
+    fn a_directive_that_merely_follows_a_quote_is_not_a_reference() {
+        // The fused fallback is gated on the tail being mencode-shaped, so a
+        // forward directive after a closing quote stays part of the
+        // description and the marker keeps no reference at all.
+        let body = parse_gaiji_body("「厠」の「貝」に傍点");
+        assert_eq!(body.mencode, None);
     }
 
     #[test]

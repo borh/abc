@@ -29,7 +29,7 @@ pub(crate) struct NwayFactRows {
 }
 
 /// Production fact-table batch. `regions`/`region_analyzers` stay
-/// `Vec<Row>` (untouched this round -- see the task brief); `feature_diffs`
+/// `Vec<Row>`; `feature_diffs`
 /// is a direct Arrow-column builder instead of `Vec<NwayFeatureDiffRow>`:
 /// `nway_feature_diffs` is the highest-row-volume warehouse table (~23.4B
 /// rows), so [`push_region_rows`] appends straight into it, skipping the

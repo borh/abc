@@ -177,8 +177,6 @@ fn bare_toggle_model_matches_shared_vectors() {
     }
 }
 
-// --- Property-test generator ------------------------------------------
-
 /// One token: a bare-toggle marker literal, or a short run of ASCII/
 /// hiragana filler standing in for ordinary text.
 fn bare_toggle_token() -> impl Strategy<Value = String> {

@@ -1,15 +1,19 @@
 # Comments and documentation
 
-Repository prose explains the current system without requiring project history.
-Plans, handoffs, review discussions and temporary decision records belong in the
-issue tracker. Current contracts, operating guides, useful research evidence and
-permanent architectural decisions belong beside the code they explain.
+Code is the central truth; prose is a maintenance liability. Repository prose
+explains the current system without requiring project history. Plans, handoffs,
+review discussions, and temporary decision records belong in the issue tracker.
+Current contracts, operating guides, useful research evidence, and permanent
+architectural decisions belong beside the code they explain.
 
-Source comments should add a contract, constraint or reason the code cannot express
-clearly. Remove comments that repeat the next expression, narrate an edit, or
-promise future work. Describe an actual limitation where a caller needs to know
-it. Document public behavior at the API boundary and implementation rationale
-beside the relevant operation.
+Source comments exist only to explain the non-obvious "why" — constraints,
+subtle edge cases, domain rules, or performance invariants that clear code
+cannot express on its own. Omit comments that narrate the "what", repeat the
+next expression, echo a symbol name, divide files with decorative banners,
+narrate an edit, or promise future work. If a detail is obvious to experienced
+programmers or domain experts, do not comment it. Document public behavior at
+the API boundary and non-obvious implementation rationale beside the relevant
+operation.
 
 Use descriptive invariant names, including those in [the parser invariants](parser-invariants.md).
 Do not reference issues, review findings, numbered project tasks or deleted plans.

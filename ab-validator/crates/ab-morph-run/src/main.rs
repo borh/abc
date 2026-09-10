@@ -283,8 +283,7 @@ Defaults to the old-kana set 新字旧仮名,旧字旧仮名 when --works-parque
     /// Hydrates a summarize-warehouse-interesting JSON artifact into a
     /// self-contained example bundle (examples.md + examples.json) with
     /// text snippets, per-analyzer tables, reconstructed aozora markup,
-    /// and work metadata. Spec:
-    /// See the design for details
+    /// and work metadata.
     HydrateInteresting {
         #[arg(long)]
         interesting: PathBuf,

@@ -6455,14 +6455,10 @@ mod tests {
         // text (post-BOM-strip, per decode_source_bytes) is
         // "あ\r\n［＃改ページ］\nい\n" — あ 0..3, \r 3..4, \n 4..5,
         // ［＃改ページ］ 5..26 (7 fullwidth chars × 3 bytes each), \n
-        // 26..27, い 27..30, \n 30..31 (31 bytes total). The directive
         // is markup, so the parser splits it into its own node — unlike
-        // a markup-free input, which the adapter merges into ONE
-        // source-gap node spanning the whole body and so can never
-        // exercise a line >1 (verified by running the brief's original
-        // markup-free literal: it produces a single span, byte_end 9,
-        // line_end 2, line_start 1 — never a span whose line_START is
-        // 2, hence this input adds the directive).
+        // a markup-free input, which the adapter merges into one
+        // source-gap node spanning the whole body and so cannot
+        // exercise a span whose line_start is greater than 1.
         let bytes = [
             b"\xef\xbb\xbf".as_ref(),
             "あ\r\n［＃改ページ］\nい\n".as_bytes(),
@@ -7279,8 +7275,6 @@ mod tests {
         assert_eq!(unclassifiable, vec![0]);
     }
 
-    // --- source_note emission -------------------------------------------
-
     #[test]
     fn explanatory_colophon_note_is_retained_separately_from_attribution() {
         let source = "本文。\n\n底本：「作品集」\n\n※「□」には、底本では「◆」が内接しています。\n入力：入力者\n";
@@ -7580,9 +7574,9 @@ mod tests {
         raws
     }
 
-    // --- The ten shared bare-toggle vectors -------------------------------
-    // (reports/aat-fidelity/bare-toggle-model-vectors.json; each Rust test
-    // mirrors the normative `classify_line` adopt/decline decision.)
+    // Ten shared bare-toggle vectors from
+    // reports/aat-fidelity/bare-toggle-model-vectors.json; each Rust test
+    // mirrors the normative `classify_line` adopt/decline decision.
 
     #[test]
     fn bare_toggle_simple_pair_adopts_inline_container() {
@@ -7751,8 +7745,6 @@ mod tests {
         assert!(raws.iter().any(|s| s == "［＃横組み終わり］"));
     }
 
-    // --- Invariants (review P5-6: STRUCTURAL EQUALITY) --------------------
-
     #[test]
     fn bare_toggle_zero_adoption_input_is_structurally_unchanged() {
         // For every shared vector with zero adoptions, the pass must return
@@ -7918,8 +7910,6 @@ mod tests {
         assert_eq!(doc["blocks"][1]["content"][0]["value"], "次の段落\n");
     }
 
-    // --- property-test target ---------------------------------------------
-    //
     // `pair_bare_toggles` is `pub(crate)`, unreachable from an integration
     // test under `tests/`. The mirror test over the shared vector file and
     // the three properties that only need OBSERVABLE adapter outcomes

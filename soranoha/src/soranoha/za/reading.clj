@@ -93,8 +93,6 @@
   ;; layout-kind classes carry the same fact in a form the toggle can honour.
   #{"writing-mode"})
 
-;; --------------------------------------------------------------- reading
-
 (defn- attr [^Element element ^String name]
   (let [value (.getAttribute element name)]
     (when-not (string/blank? value) value)))
@@ -297,8 +295,6 @@
       (into [:span (element-attrs element [tag] (unrendered-rend element))] (kids))
 
       "ruby"
-      ;; the acceptance criterion for this view: a reading above its base
-      ;; characters, not beside them in brackets
       (if-let [base (child-named element "rb")]
         [:ruby (element-attrs element ["ruby"])
          (render-nodes declarations (view/children base))

@@ -1,4 +1,3 @@
-;; Entry point for the soranoha publication kernel, assessment, and chain CLI.
 (ns soranoha.main
   (:require [babashka.cli :as cli]
             [babashka.fs :as fs]
@@ -256,15 +255,12 @@
           ;; selection join, and the stage coordinates
             report {"aozora_git_commit" commit
                     "catalog_csv_hash" catalog-csv-hash
-                  ;; Captured before execution, independently of result rows.
                     "selected_slugs" (vec (sort (map :slug candidates)))
                     "rejected_count" (count rejected)
                     "executed_stage_count" (count (filter false?
                                                           (mapcat (comp vals :cached)
                                                                   results)))
                     "clj_toolchain_id" clj-toolchain-id
-                  ;; coordinate values pass through unchanged; only the
-                  ;; outer logical stage keys become strings
                     "stages" (into (sorted-map)
                                    (map (fn [[stage coordinate]]
                                           [(name stage) coordinate]))

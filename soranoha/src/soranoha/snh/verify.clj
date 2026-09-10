@@ -669,8 +669,6 @@
   (let [spine (view/first-parent-spine v commit)
         k (segment-count (:segments opts) (dec (count spine)))]
     (if (= 1 k)
-      ;; the chain walk reads every artifact of every manifest; one batched
-      ;; reader serves the whole pass
       (view/with-batch v (fn [v] (verify-chain-from v commit pinned-keys)))
       (verify-chain-segmented v spine k pinned-keys))))
 

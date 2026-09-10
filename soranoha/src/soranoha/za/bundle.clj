@@ -54,8 +54,6 @@
   platform changing its mind must not change an archive's bytes."
   6)
 
-;; --------------------------------------------------------------- catalog.csv
-
 (defn- csv-field
   "Every field is quoted, which RFC 4180 permits and which keeps a title
   containing a comma or a quotation mark from depending on the reader's
@@ -82,8 +80,6 @@
                                (naming/filename work artifact-type))))
                    works))))
 
-;; ------------------------------------------------------------------ archives
-
 (defn- put-entry! [^ZipOutputStream zip ^String name ^bytes content]
   (.putNextEntry zip (doto (ZipEntry. name)
                        (.setMethod ZipEntry/DEFLATED)
@@ -108,8 +104,6 @@
                   (artifact (get work "slug") artifact-type)))
     (.finish zip)
     (.flush zip)))
-
-;; --------------------------------------------------------------- selections
 
 (defn- by-person
   "person id -> {:person contributor-record :works works-in-catalog-order}.

@@ -16,10 +16,7 @@ members = [
     "crates/ab-warehouse",
     "crates/ab-aat-to-parser-ir",
     "crates/ab-notation-strategies",
-    # Lifted from P4suta/aozora; each carries its own NOTICE. The prefix marks
-    # that lineage, so a locally authored crate does not take it. `ab-aozora`
-    # below is the harness-edge binary and is not part of the lift, and
-    # `ab-notation-strategies` above replaced the lifted generator crate.
+    # Forked parser crates from P4suta/aozora (MIT OR Apache-2.0).
     "crates/ab-aozora-spec",
     "crates/ab-aozora-encoding",
     "crates/ab-aozora-syntax",
@@ -44,14 +41,9 @@ exclude = [
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
-# Apache-2.0 for its explicit patent grant: the snh protocol is specified for
-# independent reimplementation, and MIT grants no patent rights, so offering it
-# as an alternative would hand back the thing the choice exists to provide.
-# The forked crates set their own `MIT OR Apache-2.0` because upstream's dual
-# licence is inherited rather than chosen; see docs/rights.md.
+# Apache-2.0 for locally authored code; forked crates specify MIT OR Apache-2.0.
 license = "Apache-2.0"
 
-# Member crates opt into these lints with `[lints] workspace = true`.
 [workspace.lints.rust]
 unsafe_code = "forbid"
 non_ascii_idents = "deny"

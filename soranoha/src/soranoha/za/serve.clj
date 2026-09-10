@@ -241,7 +241,6 @@
                              (write! (verify/event-sig-path hex)
                                      (read! (verify/event-sig-path hex))))
                            (write! verify/head-path (sign/hex64-lf-bytes (:head chain-result)))
-                           ;; Relative symlinks provide stable human routes into chain content without duplicating bytes.
                            (let [head-manifest (second (first manifests))
                                  head-catalog (:value
                                                (decode/decode
@@ -287,9 +286,6 @@
                                 (fs/path staging "withdrawn" (str (get entry "slug") ".json"))
                                 (str "../" (verify/event-path
                                             (verify/id->hex (get entry "event"))))))
-                             ;; Presentation over verified bytes written as static files.
-                             ;; Reading pages hold a whole rendered work each, so the sequence
-                             ;; is consumed one page at a time.
                              (doseq [[path bytes]
                                      (browse/pages
                                       {:head-hex (:head chain-result)
@@ -305,7 +301,6 @@
                                        :doi release-doi})]
                                (write! path bytes)
                                (vswap! page-count inc))
-                             ;; Stream bulk archives into destination or compare stream on reuse path.
                              (doseq [[path produce] (bundle/archives
                                                      {:catalog head-catalog
                                                       :artifact artifact!
@@ -318,7 +313,6 @@
                             :blobs (count blob-hexes)
                             :pages @page-count
                             :archives @archive-count})))]
-          ;; Atomic rename into the exporter-owned parent ensures atomic namespace visibility.
           (if reuse?
             (when-not (= (persistent! @expected) (tree-paths staging)) (mismatch! staging))
             (Files/move (fs/path staging) out-path

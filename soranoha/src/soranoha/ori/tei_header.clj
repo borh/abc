@@ -41,8 +41,6 @@
 (def ^:private tei-ns "http://www.tei-c.org/ns/1.0")
 (def ^:private xml-ns "http://www.w3.org/XML/1998/namespace")
 
-;; Hiccup builder (pure data, no XML library coupling beyond keyword names)
-
 (defn- person-idno-type
   "Who issued this person identifier.
 
@@ -321,8 +319,6 @@
    (file-desc work contributors slug source-content-hash primary-text-hash rights)
    (encoding-desc char-declarations)
    (profile-desc work)])
-
-;; Hiccup → clojure.data.xml adapter
 
 (defn- tei-qname [tag]
   (xml/qname tei-ns (name tag)))

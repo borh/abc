@@ -20,8 +20,6 @@
   (:require [clojure.string :as string])
   (:import (java.text Normalizer Normalizer$Form)))
 
-;; ------------------------------------------------------------- people
-
 (defn person-name-ja [{:strs [family_name given_name]}]
   (let [parts (remove string/blank? [family_name given_name])]
     (when (seq parts) (string/join " " parts))))
@@ -44,8 +42,6 @@
   (let [authors (authors-of work)]
     (when (seq authors)
       (string/join "、" (map person-label authors)))))
-
-;; ----------------------------------------------------------- filenames
 
 (def ^:private transliterations
   "Letters that survive NFKD intact but have a settled Latin spelling. Kept
@@ -129,8 +125,6 @@
          "-" (if (string/blank? stem) "text" stem)
          "-" (get work "slug")
          "." extension)))
-
-;; ------------------------------------------------------------- bundles
 
 (def bulk-artifact-types
   "The types published as bulk archives, in the order their archives are

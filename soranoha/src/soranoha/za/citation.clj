@@ -98,8 +98,6 @@
         subtitle (blank->nil (get work "subtitle"))]
     (if subtitle (str title "──" subtitle) title)))
 
-;; ------------------------------------------------------------ rendered line
-
 (defn rendered
   "The citation to copy, in the decided order: author, title with 副題,
   orthography, 底本 with publisher and year, corpus, identifier, release,
@@ -154,8 +152,6 @@
                 (when-let [year (edition-year work)] (str ", " year))))
          ". " corpus-name ", " slug ", release " (subs head-hex 0 12) "…"
          (when doi (str ". https://doi.org/" doi)))))
-
-;; ----------------------------------------------------------------- CSL-JSON
 
 (def ^:private csl-roles
   "Aozora Bunko's roles as CSL contributor variables. 校訂者 has no CSL counterpart,
@@ -216,8 +212,6 @@
                                 (when-let [variable (get csl-roles role)]
                                   [variable (mapv csl-name people)])))
                         by-role)))))
-
-;; ------------------------------------------------------------------ BibLaTeX
 
 (def ^:private latex-escapes
   {\\ "\\textbackslash{}" \{ "\\{" \} "\\}" \& "\\&" \% "\\%"
@@ -280,8 +274,6 @@
                                                          (str "初出: " first_published))]))))
          "}\n")))
 
-;; --------------------------------------------------------------------- COinS
-
 (defn- urlencode [s]
   (-> (URLEncoder/encode (str s) StandardCharsets/UTF_8)
       ;; OpenURL readers expect percent-encoding, not the form-encoding plus
@@ -313,8 +305,6 @@
          (when doi (pair "rft_id" (str "info:doi/" doi)))
          (pair "rft.description"
                (str corpus-name ", " (get work "slug") ", release " head-hex)))))
-
-;; ------------------------------------------------------- tabular projection
 
 (def csv-columns
   "The bulk archives' `catalog.csv` header. Enough to build a bibliography

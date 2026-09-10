@@ -335,8 +335,6 @@
        [:a {:href "https://www.aozora.gr.jp/"} "青空文庫"]]]
      [:script {:src "/copy.js"}]])))
 
-;; -------------------------------------------------------------- metadata
-
 ;; Personal names, bylines and download filenames are rendered by
 ;; soranoha.za.naming, which the bulk archives share: a name on a page and
 ;; the name inside a ZIP must agree.

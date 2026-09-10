@@ -60,10 +60,6 @@
   (->> (string/split (string/replace line #"^\||\|$" "") #"\|" -1)
        (mapv string/trim)))
 
-;; ---------------------------------------------------------------------------
-;; Inline
-;; ---------------------------------------------------------------------------
-
 (def ^:private cjk-boundary
   "Ranges whose characters do not take a space when a hard-wrapped line is
   rejoined. Japanese prose wraps without spaces, so joining two such lines with
@@ -132,10 +128,6 @@
           ;; A seq, never a vector: `soranoha.za.html` reads a vector as an
           ;; element and would take the first node as the tag name.
           (seq (cond-> out (seq tail) (conj tail))))))))
-
-;; ---------------------------------------------------------------------------
-;; Blocks
-;; ---------------------------------------------------------------------------
 
 (defn- paragraph-line? [line]
   (and (not (string/blank? line))

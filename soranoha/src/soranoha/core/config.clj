@@ -1,4 +1,3 @@
-;; Computation-cache paths derive from one explicitly configured root.
 (ns soranoha.core.config
   (:require [babashka.fs :as fs]))
 

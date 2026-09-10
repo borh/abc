@@ -308,21 +308,34 @@ nothing to do. It is measured by repeating a release with its projection
 unchanged, which is what `decide-against-head` no-ops on, so it is the cost of
 resolving the head and deciding, with no assembly.
 
-Publication grows at twice the rate of the verification inside it, and the
-factor is exactly two because `publish-build!` verifies the chain twice.
-`verified-state` verifies the fetched head before anything is assembled, and
-after the new commit is written `verify-repository-at` runs again on that
-commit, walking the whole chain back to genesis a second time. The no-op path
-returns at `decide-against-head` before the second call, which is why the no-op
-tracks a single verification: 3.2 seconds against 3.3, while publication is 6.6.
+Publication used to grow at twice the rate of the verification inside it,
+because `publish-build!` verified the chain twice: once on the fetched head
+before assembling, and once more on the newly written commit before pushing.
+The no-op path returns at `decide-against-head` before the second call, which is
+why the no-op tracked a single verification at 3.2 seconds against 3.3 while
+publication was 6.6.
 
-The second walk re-verifies a prefix the same process verified moments earlier
-with the same pinned keys. Only the new commit's increment is unestablished at
-that point. Eliminating that is not the checkpoint question: a checkpoint asks a
-third party to trust a claim it did not compute, whereas this is one process
-declining to recompute its own result. The assembly is not a factor either. The
-benchmark's assembler is a pure function of the head's withdrawn set and a fixed
-slug list, so it builds the same 17,602 work entries at every chain length.
+The second walk re-verified a prefix the same process had verified moments
+earlier under the same pinned keys, when only the new commit was unestablished.
+`verify-increment-at` now checks that one commit and carries the earlier proof
+forward. The assembly was never a factor: the benchmark's assembler is a pure
+function of the head's withdrawn set and a fixed slug list, so it builds the
+same 17,602 work entries at every chain length.
+
+Measured over the same ten-release chain before and after, by least squares:
+
+| Growth per release | Before | After |
+| --- | ---: | ---: |
+| No-op invocation | 3.1 s | 3.5 s |
+| Full-chain verification | 3.1 s | 3.2 s |
+| Publication, end to end | 6.3 s | 4.1 s |
+
+Most of the doubling is gone and the full walk is untouched, which is what
+should have happened. Publication did not fall all the way to the no-op rate,
+though: about 0.6 seconds per release remains unaccounted for, and ten releases
+with one visibly noisy row cannot separate a real write-path term from run
+variance. That residual is worth another measurement before anyone claims the
+growth outside verification is zero.
 
 ### What that costs on the real corpus
 
@@ -341,10 +354,10 @@ publication, and three consequences follow:
   190. At 227 releases a year, which is the current upstream push rate, that is
   inside year two.
 - Verifying a finished 5,476-release chain once costs on the order of 14 hours.
-- Building that chain costs the sum over its releases, and each one walks its
-  own prefix twice, which is on the order of nine years of compute. Verifying
-  the increment rather than the whole chain on the second walk would halve it
-  without changing what any third party has to check.
+- Building that chain costs the sum over its releases. At the rate before the
+  increment check it was on the order of nine years of compute, and at the rate
+  after it, nearer five and a half. Neither is a viable backfill, and nothing a
+  third party has to check changed between them.
 
 The measurement that mattered most is the one that came back better than the
 ledger recorded. The publication rearchitecture ledger measured an unchanged

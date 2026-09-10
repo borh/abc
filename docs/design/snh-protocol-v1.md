@@ -674,11 +674,11 @@ archival object.
 `{schema, works}`. `works` is sorted by `slug` ascending, unique, and equal to
 the manifest's `works` (§8). Each entry is closed:
 
-`{slug, source_content_hash, title, title_reading, subtitle, original_title,
-first_published, orthographic_style, ndc, card_url, archive_stem,
-contributors, source_editions}` (nullable where Aozora Bunko's catalog leaves the
-field empty; `title`, `orthographic_style`, `card_url` and `archive_stem` are
-always present). `contributors` is sorted by `(person_id,
+`{slug, source_content_hash, rights, title, title_reading, subtitle,
+original_title, first_published, orthographic_style, ndc, card_url,
+archive_stem, contributors, source_editions}` (nullable where Aozora Bunko's
+catalog leaves the field empty; `title`, `orthographic_style`, `card_url` and
+`archive_stem` are always present). `contributors` is sorted by `(person_id,
 relation_to_work)`, unique on that pair, non-empty, each `{person_id,
 family_name, given_name, family_name_romaji, given_name_romaji,
 relation_to_work}`. One person may hold more than one relation to a work, so
@@ -689,6 +689,14 @@ the pair is the entry's identity rather than the person. `source_editions` entri
 member, without its extension. Every published work has exactly one such
 member (the source bundle fails closed on none and on several), so the value
 is always well defined and needs no fallback rule.
+
+One further field may appear and is otherwise absent.
+`trailing_bytes_after_archive` is the number of bytes following the end of the
+work's Aozora Bunko archive, recorded only for an archive that carries any.
+Standard zip readers refuse such an archive on account of those bytes while its
+members are intact, so a reader verifying the work against its source has to be
+told that the refusal is a property of upstream's file and not of the published
+copy.
 
 FACTS, NOT RENDERINGS. The catalog carries no download filename, citation
 string, DOI, manifest id or release ordinal.

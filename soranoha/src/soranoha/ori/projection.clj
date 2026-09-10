@@ -83,7 +83,7 @@
            "</ruby>")
 
       (#{"lb" "pb" "cb"} tag) (if html? "<br>" "  \n")
-      (= "g" tag) (if (empty? (.getTextContent node)) "�" (content))
+      (= "g" tag) (if (empty? (.getTextContent node)) view/unresolved-glyph (content))
       (= "hi" tag) (let [rend (.getAttribute ^Element node "rend")]
                      (case rend
                        "bold" (str "<strong>" (inline-children node true) "</strong>")

@@ -1,5 +1,6 @@
 (ns soranoha.ori.projection-test
   (:require [babashka.fs :as fs]
+            [clojure.string :as string]
             [clojure.test :refer [deftest is]]
             [soranoha.annotations.view :as view]
             [soranoha.kura.cas :as cas]
@@ -52,3 +53,13 @@
       (is (some #(= {"family" "hi" "disposition" "unsupported" "count" 1} %) (get report "counts")))
       (is (= "本文" (projection/plaintext reading)))
       (is (= "markdown/2" (get report "profile"))))))
+
+(deftest both-projections-stand-in-for-an-unencodable-glyph-the-same-way
+  ;; The source names the glyph and the TEI carries its description; what no
+  ;; artifact should say is that the bytes were damaged. Markdown said exactly
+  ;; that, in 521 works, while the plaintext of the same works did not.
+  (let [reading (view/from-tei (tei "<p>前<g ref=\"#gaiji-1\"/>後</p>"))]
+    (is (= (str "前" view/unresolved-glyph "後") (projection/plaintext reading)))
+    (is (= (str "前" view/unresolved-glyph "後") (projection/markdown reading)))
+    (is (not (string/includes? (projection/markdown reading) "�"))
+        "U+FFFD is what a decoder writes when bytes were malformed")))

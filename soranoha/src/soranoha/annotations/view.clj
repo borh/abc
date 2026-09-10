@@ -30,6 +30,21 @@
   (let [nodes (.getChildNodes node)]
     (mapv #(.item nodes %) (range (.getLength nodes)))))
 
+(def unresolved-glyph
+  "What stands in for a glyph the source names and Unicode cannot encode.
+
+  U+FFFC OBJECT REPLACEMENT CHARACTER rather than U+FFFD REPLACEMENT
+  CHARACTER, which is what a decoder writes when bytes were malformed. Nothing
+  here is malformed: the source named the character, the TEI carries it as a
+  `g` pointing at a `char` that holds the source's own description of it, and
+  the byte range it was read from is recorded beside it. A reader of a work
+  that has one should not be told the file is damaged.
+
+  Every projection reads it from here, because two of them chose separately
+  once and the plaintext and the markdown of one work disagreed about the same
+  glyph for 521 works."
+  "\uFFFC")
+
 (defn local-name [^Node node]
   (when (= tei-namespace (.getNamespaceURI node))
     (.getLocalName node)))
@@ -95,7 +110,7 @@
       [{:view/kind :view/break :view/text "\n" :view/node node}]
 
       (and (= "g" tag) (empty? (.getTextContent node)))
-      [{:view/kind :view/unresolved-glyph :view/text "\uFFFC" :view/node node}]
+      [{:view/kind :view/unresolved-glyph :view/text unresolved-glyph :view/node node}]
 
       (#{Node/COMMENT_NODE Node/PROCESSING_INSTRUCTION_NODE} (.getNodeType node)) []
 

@@ -27,13 +27,39 @@
   layer renders download filenames from this rather than from a mechanical
   romanization of the title reading. Every published work has exactly one
   primary text member: the source bundle fails closed on none and on
-  several, so no fallback rule is reachable here."
+  several, so no fallback rule is reachable here.
+
+  Normalized to the character set the catalog's schema admits, which ten
+  archives in the corpus need. The word boundaries are what the field is for,
+  and both foldings preserve them, so nothing the serving layer reads off this
+  changes. Stems are not unique to begin with, 17,602 works carrying 16,489 of
+  them, and folding these ten collides none that were not already equal."
   [slug primary-text-member]
   (when-not (string? primary-text-member)
     (fail! :missing-primary-text-member {:slug slug}))
   (let [name (last (string/split primary-text-member #"/"))
-        dot (string/last-index-of name ".")]
-    (if (and dot (pos? dot)) (subs name 0 dot) name)))
+        dot (string/last-index-of name ".")
+        stem (-> (if (and dot (pos? dot)) (subs name 0 dot) name)
+                 ;; Hepburn's n' disambiguation, as in `kan'yaku_igakushi`.
+                 ;; 204 stems spell it with an apostrophe and four with the
+                 ;; typographic quotation mark, which is the same mark and the
+                 ;; same word boundary.
+                 (string/replace "\u2019" "'")
+                 string/trim
+                 ;; a word boundary is an underscore everywhere else in these
+                 ;; names, and six archives write one of theirs as a space.
+                 ;; Underscores beside the space belong to the same boundary,
+                 ;; so `hakubutsushi _atogaki` has one and not two; the two
+                 ;; stems that carry a real `__` have no space near it and
+                 ;; keep it.
+                 (string/replace #"[\s_]*\s[\s_]*" "_"))]
+    ;; The schema admits printable ASCII with no space, so a stem that still
+    ;; does not is refused by name here rather than by position in the works
+    ;; array when the whole catalog is decoded.
+    (when-not (re-matches #"[!-~]+" stem)
+      (fail! :archive-stem-outside-catalog-character-set
+             {:slug slug :member primary-text-member :stem stem}))
+    stem))
 
 (defn- contributor-entry [slug persons {:strs [person_id relation_to_work]}]
   (let [person (or (get persons person_id)

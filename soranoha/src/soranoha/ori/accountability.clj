@@ -113,6 +113,15 @@
    "warichu" {:markers #{"CommandFullwidth" "CommandAscii"}
               :families #{"warichu.basic"} :aspects #{"structure" "layout"}}})
 
+(def claimable-families
+  "Every family some fact kind can claim, on any marker kind it admits.
+
+  Public because it is one half of a pair that has to agree: the coverage
+  matrix names the families the scanner assigns, this table names the families
+  a claim can carry, and nothing compared them until the two had drifted far
+  enough that most reported coverage gaps were families no claim could reach."
+  (into (sorted-set) (mapcat :families) (vals compatible-families)))
+
 (def ^:private reachable-families
   "For each marker kind the scanner emits, the families a claim could carry on an
   occurrence of that kind.

@@ -369,3 +369,38 @@
     (is (= 1 (count (get complete "occurrences"))))
     (is (= ["kunten.kaeriten"]
            (get-in (report [(kunten 0 100) (kunten 10 20)]) ["occurrences" 0 "unaccounted_families"])))))
+
+(defn- matrix-rows
+  "The coverage matrix's `[[syntax]]` rows as {family status}.
+
+  Read with a regex rather than a TOML parser: this test compares two
+  vocabularies and needs one field out of each row, and the file is written
+  against a struct that fixes both spellings at the start of a line."
+  [matrix-path]
+  (into {}
+        (keep (fn [block]
+                (when-let [[_ id] (re-find #"(?m)^id = \"([^\"]+)\"" block)]
+                  [id (second (re-find #"(?m)^status = \"([^\"]+)\"" block))])))
+        (rest (str/split (slurp matrix-path :encoding "UTF-8") #"\[\[syntax\]\]"))))
+
+(deftest the-claim-table-and-the-coverage-matrix-name-the-same-families
+  (let [rows (matrix-rows (:matrix (accountability/resolve-tool)))]
+    (is (< 50 (count rows)) "the matrix parsed")
+    (testing "a claim cannot carry a family the matrix does not declare"
+      ;; The other direction is not an error: the matrix declares families the
+      ;; interpreter does not model yet, and marks them so.
+      (is (= #{} (into (sorted-set)
+                       (remove (set (keys rows)))
+                       accountability/claimable-families))))
+    (testing "a family the matrix calls modelled is a family some claim can reach"
+      ;; This is the drift that made the published coverage number unreadable:
+      ;; the scanner assigned a family, no fact kind could claim it, and every
+      ;; occurrence was reported as a coverage gap it was not. A row saying the
+      ;; feature is covered or partly covered while no claim can reach it says
+      ;; two incompatible things about the same feature.
+      (is (= #{} (into (sorted-set)
+                       (comp (filter (fn [[_ status]]
+                                       (contains? #{"covered" "partial"} status)))
+                             (map key)
+                             (remove accountability/claimable-families))
+                       rows))))))

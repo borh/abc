@@ -11,8 +11,9 @@ The `tei-validation.json` output records three layers, not two. `relax_ng` and
 `schematron` are the profile's; `well_formed_xml` is the serializer's own
 report that it produced parseable XML, always passed, and it does not
 contribute to the overall status. Each finding carries `rule_id`, `severity`,
-the `layer` it came from, and `allowed`, which is false exactly for the
-severities that fail the work. Its profile identity is the ODD hash. Toolchain
+the `layer` it came from, its `message` and `location`, and `allowed`, which
+is false exactly for the severities that fail the work: the layer's own status
+and this flag apply the same test, so they cannot disagree. Its profile identity is the ODD hash. Toolchain
 metadata binds the exact ODD, RNG, and Schematron hashes, with generator identity
 from [tei-profile-generation.json](../schemas/tei-profile-generation.json).
 Generation metadata whose hashes disagree with the supplied profile is rejected.
@@ -37,8 +38,10 @@ just evidence-gate
 `regenerate-tei-profile` rewrites the RNG, the Schematron and
 `tei-profile-generation.json` in place; `evidence-gate` runs the drift check
 and the test suite for the current system, so neither step names a platform.
-An edit to the ODD's prose alone moves `odd_hash` and leaves the other two
-hashes as they were.
+Which prose an edit touches decides how many hashes move. A `remarks` block
+or a `constraintSpec` description is not copied into either generated file, so
+editing one moves `odd_hash` alone; an `attDef` description is copied into the
+Relax NG as documentation, so editing one moves `rng_hash` with it.
 
 The drift check compares generated artifacts and their provenance with the
 checked-in profile. Runtime validation uses Jing for Relax NG and ph-schematron's

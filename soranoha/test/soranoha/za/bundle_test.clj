@@ -175,3 +175,16 @@
       (produce out)
       (is (= 3 (count (:order (entries (.toByteArray out)))))
           "catalog.csv plus two works, with 蜘蛛の糸 counted once"))))
+
+(deftest a-person-named-twice-for-one-work-holds-it-once
+  (testing "an author bundle lists a work once however many rows name the person"
+    ;; A catalog can name one person twice for one work, repeating a relation
+    ;; or holding two of them, and neither makes it two works. The author page
+    ;; and the archive it links to derive this from one definition, so they
+    ;; cannot disagree about what the works of a person are.
+    (let [repeated (work "000092_000879" "kumono_ito" "蜘蛛の糸" "NDC 913"
+                         akutagawa akutagawa (assoc akutagawa "relation_to_work" "校訂者"))
+          selections (bundle/selections {"schema" "snh-catalog/1" "works" [repeated]})
+          author (first (filter #(string/includes? (:path %) "000879") selections))]
+      (is (= 1 (count (:works author))))
+      (is (= ["000092_000879"] (mapv #(get % "slug") (:works author)))))))

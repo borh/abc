@@ -105,28 +105,6 @@
     (.finish zip)
     (.flush zip)))
 
-(defn- by-person
-  "person id -> {:person contributor-record :works works-in-catalog-order}.
-  A person who holds two relations to one work, author and collator say,
-  contributes it once; the contributors of a work are consecutive here, so
-  the previous entry is enough to see that."
-  [works]
-  (reduce
-   (fn [acc work]
-     (reduce (fn [acc contributor]
-               (let [id (get contributor "person_id")]
-                 (-> acc
-                     (assoc-in [id :person] (get-in acc [id :person] contributor))
-                     (update-in [id :works]
-                                (fn [ws]
-                                  (if (identical? (peek ws) work)
-                                    ws
-                                    (conj (or ws []) work)))))))
-             acc
-             (get work "contributors")))
-   (sorted-map)
-   works))
-
 (defn selections
   "Every bulk selection for one release as `{:path :works :artifact-type}`,
   without building any archive. The paths a page links are rendered from
@@ -134,7 +112,7 @@
   does not have to know how an archive is built to point at one."
   [catalog]
   (let [works (vec (get catalog "works"))
-        people (by-person works)
+        people (browse/people works)
         by-ndc (group-by browse/ndc-class-key works)]
     (for [artifact-type naming/bulk-artifact-types
           selection (concat

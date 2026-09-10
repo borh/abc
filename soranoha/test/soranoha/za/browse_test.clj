@@ -425,3 +425,20 @@
   (is (= "<input disabled>" (html/render [:input {:disabled true :value nil}]))
       "true renders bare, nil renders nothing")
   (is (= "ab" (html/render (list "a" "b"))) "sequences splice"))
+
+(deftest a-person-index-holds-a-work-once-per-relation-and-once-overall
+  (testing "repeated contributor rows are rows, not works"
+    (let [akutagawa {"person_id" "000879" "family_name" "芥川" "given_name" "龍之介"
+                     "relation_to_work" "著者"}
+          work {"slug" "000092_000879" "title" "蜘蛛の糸"
+                "contributors" [akutagawa
+                                akutagawa
+                                (assoc akutagawa "relation_to_work" "校訂者")]}
+          {:keys [works by-relation person]} (get (browse/people [work]) "000879")]
+      (is (= ["000092_000879"] (mapv #(get % "slug") works))
+          "one work, however many rows named the person in it")
+      (is (= {"著者" ["000092_000879"] "校訂者" ["000092_000879"]}
+             (update-vals by-relation #(mapv (fn [w] (get w "slug")) %)))
+          "and once in each relation it was named under")
+      (is (= "著者" (get person "relation_to_work"))
+          "the person record is the first row that named them"))))

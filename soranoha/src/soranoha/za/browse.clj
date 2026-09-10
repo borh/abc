@@ -1078,22 +1078,35 @@
              works))
        "]}"))
 
-(defn- people
-  "Every person in the release, keyed by person_id, with the works they
-  contributed to grouped by the relation the catalog records."
+(defn people
+  "Every person in the release, keyed by person_id.
+
+  `:works` is every work they contributed to and `:by-relation` is the same
+  works split by the relation the catalog records; both hold a work once and
+  keep catalog order. A catalog can name one person twice for one work,
+  holding two relations or repeating one, and neither is a reason to list the
+  work twice: the works of a person are works, not contributor rows.
+
+  One definition because the author pages and the bulk selections describe the
+  same release from the same catalog, and a person's works have to mean the
+  same thing on the page and in the archive it links to. Contributors of a
+  work are reached consecutively here, so the last entry in a list is enough
+  to recognise a repeat."
   [works]
-  (reduce
-   (fn [acc work]
-     (reduce (fn [acc contributor]
-               (let [id (get contributor "person_id")]
-                 (-> acc
-                     (assoc-in [id :person] (get-in acc [id :person] contributor))
-                     (update-in [id :by-relation (get contributor "relation_to_work")]
-                                (fnil conj []) work))))
-             acc
-             (get work "contributors")))
-   (sorted-map)
-   works))
+  (let [add (fn [ws work] (if (identical? (peek ws) work) ws (conj (or ws []) work)))]
+    (reduce
+     (fn [acc work]
+       (reduce (fn [acc contributor]
+                 (let [id (get contributor "person_id")]
+                   (-> acc
+                       (assoc-in [id :person] (get-in acc [id :person] contributor))
+                       (update-in [id :works] add work)
+                       (update-in [id :by-relation (get contributor "relation_to_work")]
+                                  add work))))
+               acc
+               (get work "contributors")))
+     (sorted-map)
+     works)))
 
 (defn pages
   "Every browse file for one release, as a sequence of `[path bytes]` pairs.
@@ -1145,10 +1158,10 @@
       (page "history.html" (history-page manifest-seq events))
 
       (page "authors/index.html"
-            (author-index (mapv (fn [[id {:keys [person by-relation]}]]
+            (author-index (mapv (fn [[id {:keys [person works]}]]
                                   {:person-id id
                                    :label (person-label person)
-                                   :count* (count (distinct (mapcat val by-relation)))})
+                                   :count* (count works)})
                                 (sort-by (fn [[id {:keys [person]}]]
                                            [(or (person-name-romaji person) "￿")
                                             (or (person-name-ja person) "")

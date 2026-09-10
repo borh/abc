@@ -10,6 +10,7 @@
             [babashka.process :as process]
             [charred.api :as json]
             [soranoha.core.hash :as core-hash]
+            [soranoha.core.rights :as core-rights]
             [soranoha.annotations.view :as view]
             [soranoha.ori.projection :as projection]
             [soranoha.ori.render :as render]
@@ -138,16 +139,17 @@
   every TEI file, so a policy change has to invalidate the cached TEI rather
   than leave works stating superseded terms.
 
-  The `slug` input is fail-closed for the same reason. It is published as the
-  header's own identifier, and it is a scalar stage input rather than a blob
-  so that it enters the derivation key: a work rendered under one identifier
-  must not be served from cache under another."
+  The `slug` and `works-standing` inputs are fail-closed for the same reason.
+  Both are published in the header, and both are scalar stage inputs rather
+  than blobs so that they enter the derivation key: a work rendered under one
+  identifier, or under one set of rights terms, must not be served from cache
+  under another."
   [clj-toolchain-id rights]
   (when-not (map? rights)
     (throw (ex-info "render stage requires the publication rights grant"
                     {:reason :missing-rights-grant})))
   {:stage-id "render"
-   :stage-version "49"
+   :stage-version "50"
    :toolchain-id (core-hash/sha256-canonical-json
                   {"clj" clj-toolchain-id "rights" rights})
    :f (fn [{:keys [blob]} inputs]
@@ -155,16 +157,20 @@
                           (json/read-json
                            (String. ^bytes (blob (get inputs name)) "UTF-8")))
               slug (get inputs "slug")
+              works-standing (get inputs "works-standing")
               rendered (do
                          (when (string/blank? slug)
                            (throw (ex-info "render stage requires the publication identifier"
                                            {:reason :missing-publication-identifier})))
+                         (when (string/blank? works-standing)
+                           (throw (ex-info "render stage requires the work's rights standing"
+                                           {:reason :missing-works-standing :slug slug})))
                          (render/render-work
                           {:parser-ir (read-json "parser-ir")
                            :metadata-record (read-json "metadata-record")
                            :persons-by-id (read-json "persons")
                            :slug slug
-                           :rights rights}))]
+                           :rights (core-rights/work-terms rights works-standing)}))]
           {"tei" (utf8 (:tei rendered))}))})
 
 (defn plaintext-stage [clj-toolchain-id]

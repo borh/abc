@@ -54,7 +54,8 @@
                       :metadata-record (get work "metadata-record")
                       :persons (get work "persons")
                       :primary-text-member (get work "primary_text_member")
-                      :source-content-hash (get work "source_content_hash")}]))
+                      :source-content-hash (get work "source_content_hash")
+                      :rights (get work "rights")}]))
         (get report "works")))
 
 (defn- report-toolchain

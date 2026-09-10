@@ -4,13 +4,15 @@
 ;;
 ;; :rights-publication  the one state that authorizes publishing at all.
 ;; :rights-statement    the grant published in each manifest's `rights` field.
-;;                      :works is the standing of the underlying Aozora texts;
 ;;                      :encoding is the licence over Soranoha's own encoding
-;;                      and derived artifacts. :statement-url
+;;                      and derived artifacts. The standing of each underlying
+;;                      text is not here: it is read from Aozora Bunko's
+;;                      catalog and the rightsholder's notice, differs between
+;;                      works, and is carried per work in the manifest.
+;;                      :statement-url
 ;;                      must resolve to the full statement before genesis.
 ;;                      It is the w3id form: this URL is published in every
 ;;                      manifest and every TEI file, so it outlives any host.
 {:rights-publication :assessment-required
- :rights-statement {:works "public-domain"
-                    :encoding "CC0-1.0"
+ :rights-statement {:encoding "CC0-1.0"
                     :statement-url "https://w3id.org/soranoha/rights"}}

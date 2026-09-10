@@ -120,7 +120,7 @@
   :outputs {stage-key {name hex}} :cached {stage-key bool}
   :trace-keys {stage-key derivation-key-hex}}."
   [store {:keys [extract metadata parse convert render plaintext markdown validate accountability coverage]}
-   {:keys [slug row file]} catalog-rows]
+   {:keys [slug row file rights]} catalog-rows]
   (let [zip-hex (cas/put-file! (:cas-dir store) file)
         extract-r (engine/run-stage! store extract {"zip" zip-hex})
         facts (read-cas-json store (get (:outputs extract-r) "source-facts"))
@@ -145,7 +145,13 @@
                                      ;; a scalar, so the identifier a work was
                                      ;; rendered under is part of its derivation
                                      ;; key rather than invisible to the cache
-                                     "slug" slug})
+                                     "slug" slug
+                                     ;; a scalar for the same reason: the TEI
+                                     ;; states this work's terms, so a work
+                                     ;; whose standing changes has to be
+                                     ;; re-rendered and not served from cache
+                                     ;; under the terms it used to carry
+                                     "works-standing" rights})
         plaintext-r (engine/run-stage! store plaintext
                                        {"tei" (get (:outputs render-r) "tei")})
         markdown-r (engine/run-stage! store markdown
@@ -251,6 +257,10 @@
                                 {:reason :build/work-failures :failures failures})))
             results (mapv :work outcomes)
             relpath-of (into {} (map (juxt :slug :relpath)) candidates)
+            ;; selection decided this and the manifest publishes it; carrying
+            ;; it through the report keeps the terms a work is published under
+            ;; the same ones it was admitted under
+            rights-of (into {} (map (juxt :slug :rights)) candidates)
           ;; the report is a disposable trace-store export, but it must
           ;; carry everything the second-revision delta oracle consumes:
           ;; per-work source identity, per-stage cache decisions, the
@@ -293,6 +303,7 @@
                                                         "source_relpath" (get relpath-of slug)
                                                         "source_content_hash"
                                                         (get source-facts "work_content_hash")
+                                                        "rights" (get rights-of slug)
                                                         "cached" (into (sorted-map)
                                                                        (map (fn [[stage hit?]]
                                                                               [(name stage)

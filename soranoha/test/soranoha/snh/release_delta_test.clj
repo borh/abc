@@ -23,7 +23,7 @@
 (def ^:private one-catalog (str "snh:1:catalog:" (apply str (repeat 64 "a"))))
 
 (def ^:private one-rights
-  {"works" "public-domain" "encoding" "cc0" "statement_url" "https://example.org/rights"})
+  {"encoding" "cc0" "statement_url" "https://example.org/rights"})
 
 (defn- manifest
   [rev works & {:keys [toolchain withdrawn catalog rights]}]

@@ -24,7 +24,8 @@
     (let [grant (rights/grant-from-bytes (policy-bytes))]
       (is (= grant (:rights (za-release/rights-authority! (policy-bytes))))
           "manifest grant and build grant come from one document")
-      (is (= #{"works" "encoding" "statement_url"} (set (keys grant)))))))
+      (is (= #{"encoding" "statement_url"} (set (keys grant)))
+          "the standing of the underlying works is per work, not per release"))))
 
 (deftest grant-is-fail-closed-test
   (testing "a policy that authorizes publication without stating terms publishes nothing"
@@ -48,7 +49,8 @@
 
 (deftest header-carries-both-rights-layers-test
   (testing "a detached TEI file states the terms it travels under"
-    (let [grant (rights/grant-from-bytes (policy-bytes))
+    (let [grant (rights/work-terms (rights/grant-from-bytes (policy-bytes))
+                                   "public-domain")
           xml (header-xml grant)]
       (is (string/includes? xml "<availability status=\"free\">"))
       (is (string/includes?
@@ -72,3 +74,27 @@
                 (:toolchain-id (stages/render-stage
                                 "test-runtime"
                                 (assoc grant "statement_url" "https://example.org/rights"))))))))
+
+(deftest a-work-states-its-own-standing-not-the-releases-test
+  (testing "two works of one release carry the terms each is published under"
+    (let [grant (rights/grant-from-bytes (policy-bytes))
+          pd (header-xml (rights/work-terms grant "public-domain"))
+          by (header-xml (rights/work-terms grant "CC-BY-4.0"))]
+      (is (string/includes? pd "The underlying work is in the public domain"))
+      (is (string/includes? by "under CC BY 4.0"))
+      (is (string/includes? by "Attribution is a condition of that licence, not a request.")
+          "a reader of the file alone must not take the site-wide request to cover it")
+      (is (string/includes? by (str "<licence target=\"" (rights/works-uri "CC-BY-4.0") "\">")))
+      (is (not= pd by))
+      (testing "the encoding licence is the same for both, since it is Soranoha's own"
+        (is (every? #(string/includes? % "Attribution is requested, not required.")
+                    [pd by]))))))
+
+(deftest a-standing-outside-the-vocabulary-is-refused-test
+  (testing "a work cannot be published under terms this build cannot state"
+    (let [grant (rights/grant-from-bytes (policy-bytes))]
+      (doseq [standing ["CC-BY-NC-4.0" "in-copyright" "" nil]]
+        (is (= :unknown-works-standing
+               (:reason (ex-data (try (rights/work-terms grant standing)
+                                      (catch clojure.lang.ExceptionInfo e e)))))
+            (pr-str standing))))))

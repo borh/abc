@@ -285,18 +285,20 @@
   "The assembler's works map from one run's results: published artifact
   hexes plus the catalog's inputs."
   [run]
-  (into {}
-        (map (fn [[slug {:keys [outputs]}]]
-               [slug {:markdown (get-in outputs [:markdown "markdown"])
-                      :plaintext (get-in outputs [:plaintext "plaintext"])
-                      :tei (get-in outputs [:render "tei"])
-                      :tei-validation (get-in outputs [:validate
-                                                       "tei-validation"])
-                      :metadata-record (get-in outputs [:metadata
-                                                        "metadata-record"])
-                      :persons (get-in outputs [:metadata "persons"])
-                      :primary-text-member (get (source-facts run slug)
-                                                "primary_text_member")
-                      :source-content-hash (get (source-facts run slug)
-                                                "work_content_hash")}]))
-        (:results run)))
+  (let [rights-of (into {} (map (juxt :slug :rights)) (:candidates run))]
+    (into {}
+          (map (fn [[slug {:keys [outputs]}]]
+                 [slug {:rights (get rights-of slug)
+                        :markdown (get-in outputs [:markdown "markdown"])
+                        :plaintext (get-in outputs [:plaintext "plaintext"])
+                        :tei (get-in outputs [:render "tei"])
+                        :tei-validation (get-in outputs [:validate
+                                                         "tei-validation"])
+                        :metadata-record (get-in outputs [:metadata
+                                                          "metadata-record"])
+                        :persons (get-in outputs [:metadata "persons"])
+                        :primary-text-member (get (source-facts run slug)
+                                                  "primary_text_member")
+                        :source-content-hash (get (source-facts run slug)
+                                                  "work_content_hash")}]))
+          (:results run))))

@@ -66,7 +66,8 @@
                               "family_name_romaji" "Shiken"
                               "given_name_romaji" nil}})
                             "UTF-8"))]
-    {:plaintext text :markdown markdown :tei tei :tei-validation validation
+    {:rights "public-domain"
+     :plaintext text :markdown markdown :tei tei :tei-validation validation
      :metadata-record metadata :persons persons
      :primary-text-member (str slug ".txt")
      :source-content-hash (str "sha256:" (apply str (repeat 64 "1")))}))
@@ -77,8 +78,7 @@
             "upstream_rev" (apply str (repeat 40 "2"))}
    :toolchain {} :selection-params {} :policy-id "synthetic-reliance-test"
    :policy-hash (hash/sha256-string "synthetic-reliance-policy")
-   :rights {"works" "public-domain"
-            "encoding" "CC0-1.0"
+   :rights {"encoding" "CC0-1.0"
             "statement_url" "https://soranoha.example/rights"}
    :candidates (get (snapshot) "candidates")
    :works (into {} (map (fn [slug] [slug (work! cas-dir slug)])) ["independent" "relied"])

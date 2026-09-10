@@ -54,8 +54,7 @@
                        "first_edition_year" "1971"}]})
 
 (def ^:private rights
-  {"works" "public-domain"
-   "encoding" "CC0-1.0"
+  {"encoding" "CC0-1.0"
    "statement_url" "https://w3id.org/soranoha/rights"})
 
 (defn- tei-for
@@ -83,7 +82,9 @@
     ;; supplies it: `pages` must not depend on getting one sequence back
     :manifest-seq
     (fn []
-      [[head-hex {"works" (mapv #(select-keys % ["slug" "source_content_hash"]) works)
+      [[head-hex {"works" (mapv #(assoc (select-keys % ["slug" "source_content_hash"])
+                                        "rights" "public-domain")
+                                works)
                   "withdrawn" withdrawn
                   "governance_event" (when (seq withdrawn)
                                        (str "snh:1:governance-event:" event-hex))
@@ -93,7 +94,8 @@
        ;; source bytes, so a history row has an addition and a change
        ;; to count rather than only additions
        [prev-hex {"works" [{"slug" "000092_000879"
-                            "source_content_hash" (apply str (repeat 64 "2"))}]
+                            "source_content_hash" (apply str (repeat 64 "2"))
+                            "rights" "public-domain"}]
                   "withdrawn" []
                   "governance_event" nil
                   "corpus" (corpus prev-rev nil)
@@ -279,8 +281,10 @@
         event-of (fn [slug] (str "snh:1:governance-event:"
                                  (apply str (repeat 64 (if (= slug older) "a" "b")))))
         release (fn [hex slugs]
-                  [hex {"works" (mapv (fn [slug] {"slug" slug
-                                                  "source_content_hash" (apply str (repeat 64 "1"))})
+                  [hex {"works" (mapv (fn [slug]
+                                        {"slug" slug
+                                         "source_content_hash" (apply str (repeat 64 "1"))
+                                         "rights" "public-domain"})
                                       slugs)
                         "withdrawn" []
                         "governance_event" nil

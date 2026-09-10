@@ -52,18 +52,22 @@
                       {:reason :policy-unreadable :cause (ex-message e)})))))
 
 (defn grant
-  "The published rights grant carried by a policy value, in the manifest's
-  own key spelling. Fail-closed: a policy that authorizes publication
-  without stating terms publishes nothing."
+  "The release-wide part of the published rights grant, in the manifest's own
+  key spelling. Fail-closed: a policy that authorizes publication without
+  stating terms publishes nothing.
+
+  The standing of the underlying works is not here. It is a fact about each
+  work, read from what Aozora Bunko records and what the rightsholder stated,
+  and one corpus holds more than one of them, so it is carried per work in the
+  manifest. What is release-wide is Soranoha's own grant over its encoding and
+  the URL of the full statement."
   [value]
-  (let [{:keys [works encoding statement-url]} (:rights-statement value)]
-    (when-not (and (string? works) (seq works)
-                   (string? encoding) (seq encoding)
+  (let [{:keys [encoding statement-url]} (:rights-statement value)]
+    (when-not (and (string? encoding) (seq encoding)
                    (string? statement-url) (seq statement-url))
       (throw (ex-info "rights policy states no publishable rights grant"
                       {:reason :missing-rights-statement})))
-    {"works" works
-     "encoding" encoding
+    {"encoding" encoding
      "statement_url" statement-url}))
 
 (defn grant-from-bytes
@@ -80,10 +84,53 @@
   {"CC0-1.0" "https://creativecommons.org/publicdomain/zero/1.0/"})
 
 (def ^:private works-standing
+  "Every standing an underlying work may be published under. Written out per
+  standing rather than derived from the identifier, because these are the
+  words a detached TEI file states its terms in and they should be readable
+  here as themselves.
+
+  The CC BY entries are for works whose copyright subsists and whose
+  rightsholder put them on Aozora Bunko under that licence. Attribution is a
+  condition for them, which is the opposite of what Soranoha asks for its own
+  encoding, so each statement says so rather than leaving a reader to assume
+  the site-wide request covers it."
   {"public-domain"
    {:uri "https://creativecommons.org/publicdomain/mark/1.0/"
     :statement (str "The underlying work is in the public domain; Soranoha "
-                    "asserts no rights over it.")}})
+                    "asserts no rights over it.")}
+   "CC-BY-2.1-JP"
+   {:uri "https://creativecommons.org/licenses/by/2.1/jp/"
+    :statement (str "Copyright in the underlying work subsists and is held by "
+                    "its rightsholder, who publishes it under CC BY 2.1 JP. "
+                    "Attribution is a condition of that licence, not a request.")}
+   "CC-BY-3.0"
+   {:uri "https://creativecommons.org/licenses/by/3.0/"
+    :statement (str "Copyright in the underlying work subsists and is held by "
+                    "its rightsholder, who publishes it under CC BY 3.0. "
+                    "Attribution is a condition of that licence, not a request.")}
+   "CC-BY-4.0"
+   {:uri "https://creativecommons.org/licenses/by/4.0/"
+    :statement (str "Copyright in the underlying work subsists and is held by "
+                    "its rightsholder, who publishes it under CC BY 4.0. "
+                    "Attribution is a condition of that licence, not a request.")}})
+
+(defn standings
+  "The standings this build can publish a work under."
+  []
+  (into (sorted-set) (keys works-standing)))
+
+(defn work-terms
+  "The rights statement one TEI file publishes: Soranoha's release-wide grant
+  over its own encoding, and the standing of the underlying work in hand.
+
+  A header states both together, so they travel as one value from here on. The
+  manifest keeps them apart because one is per release and the other per work,
+  and this is the single place the two are joined."
+  [grant standing]
+  (when-not (contains? works-standing standing)
+    (throw (ex-info "work has no publishable rights standing"
+                    {:reason :unknown-works-standing :works standing})))
+  (assoc grant "works" standing))
 
 (defn licence-uri
   "Canonical URI of the licence the encoding layer is published under."

@@ -82,10 +82,16 @@
   "The one established cause for a work present in both releases. Source is
   tested first because it is the only cause the manifest attributes on its
   own: once the source hash has moved, the artifacts moving says nothing
-  further about why."
+  further about why.
+
+  A standing that moved is tested next, before the documents it would explain.
+  Each TEI file states the terms of the work it carries, so a work whose
+  standing changed necessarily has different bytes, and reporting that as an
+  unattributed document change would hide the cause."
   [a b]
   (cond
     (not= (get a "source_content_hash") (get b "source_content_hash")) :source-changed
+    (not= (get a "rights") (get b "rights")) :rights-changed
     (not= (get a "artifacts") (get b "artifacts")) :documents-changed
     (not= (get a "layers") (get b "layers")) :layers-changed
     :else :unchanged))
@@ -100,8 +106,9 @@
      :rights {:from <rights> :to <rights>}
      :toolchain {<stage> {:from <coordinate> :to <coordinate>}}
      :works {:added [slug] :withdrawn [slug] :dropped [slug]
-             :source-changed [slug] :documents-changed [slug]
-             :layers-changed [slug] :unchanged <count>}
+             :source-changed [slug] :rights-changed [slug]
+             :documents-changed [slug] :layers-changed [slug]
+             :unchanged <count>}
      :unexplained [slug]}
 
   `:withdrawn` and `:dropped` are both works the later release no longer
@@ -129,6 +136,7 @@
              :withdrawn (sorted-vec (filter withdrawn gone))
              :dropped (sorted-vec (remove withdrawn gone))
              :source-changed (sorted-vec (:source-changed buckets))
+             :rights-changed (sorted-vec (:rights-changed buckets))
              :documents-changed documents-changed
              :layers-changed (sorted-vec (:layers-changed buckets))
              :unchanged (count (:unchanged buckets))}

@@ -9,4 +9,9 @@
             [soranoha.core.rights :as rights]))
 
 (def grant
-  (delay (rights/grant-from-bytes (fs/read-all-bytes "data/publication-policy.edn"))))
+  "The terms a rendered test work publishes under: the policy's release-wide
+  grant joined to a standing, which is what a header states. Tests render
+  public-domain works unless they build their own terms."
+  (delay (rights/work-terms
+          (rights/grant-from-bytes (fs/read-all-bytes "data/publication-policy.edn"))
+          "public-domain")))

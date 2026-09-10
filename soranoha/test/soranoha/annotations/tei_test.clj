@@ -164,13 +164,14 @@
         inputs {"parser-ir" (put-json {"nodes" [{"type" "text" "text" "本文"}]})
                 "metadata-record" (put-json {"work" {"title" "試験" "work_id" "1" "aozora_modified" "2026-09-07"} "contributors" []})
                 "persons" (put-json {})
-                ;; a scalar input, so a work rendered under one publication
-                ;; identifier is never served from cache under another
-                "slug" "000001_000001"}
+                ;; scalar inputs, so a work rendered under one publication
+                ;; identifier or one set of terms is never served from cache
+                ;; under another
+                "slug" "000001_000001"
+                "works-standing" "public-domain"}
         render-stage (publication-stages/render-stage
                       "test-runtime"
-                      {"works" "public-domain"
-                       "encoding" "CC0-1.0"
+                      {"encoding" "CC0-1.0"
                        "statement_url" "https://w3id.org/soranoha/rights"})
         plain-stage (publication-stages/plaintext-stage "test-runtime")
         enrich-stage (stages/enrichment-stage "test-runtime")]

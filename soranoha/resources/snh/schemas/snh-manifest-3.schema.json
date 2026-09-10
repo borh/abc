@@ -129,15 +129,10 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "works",
         "encoding",
         "statement_url"
       ],
       "properties": {
-        "works": {
-          "type": "string",
-          "minLength": 1
-        },
         "encoding": {
           "type": "string",
           "minLength": 1
@@ -156,6 +151,7 @@
         "required": [
           "slug",
           "source_content_hash",
+          "rights",
           "artifacts",
           "layers"
         ],
@@ -165,6 +161,9 @@
           },
           "source_content_hash": {
             "$ref": "#/$defs/hex64"
+          },
+          "rights": {
+            "$ref": "#/$defs/works-standing"
           },
           "artifacts": {
             "type": "array",
@@ -306,6 +305,15 @@
     "hex64": {
       "type": "string",
       "pattern": "^[0-9a-f]{64}$"
+    },
+    "works-standing": {
+      "type": "string",
+      "enum": [
+        "public-domain",
+        "CC-BY-2.1-JP",
+        "CC-BY-3.0",
+        "CC-BY-4.0"
+      ]
     },
     "slug": {
       "type": "string",

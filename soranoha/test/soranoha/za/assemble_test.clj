@@ -76,8 +76,7 @@
                 :selection-params {"config" "za-fixture" "concurrency" 1}
                 :policy-id "za-fixture-policy-v1"
                 :policy-hash policy-hash
-                :rights {"works" "public-domain"
-                         "encoding" "CC0-1.0"
+                :rights {"encoding" "CC0-1.0"
                          "statement_url" "https://soranoha.example/rights"}
                 :candidates candidates
                 :works (corpus/works-for-assembly run)

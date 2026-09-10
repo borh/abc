@@ -31,8 +31,7 @@
   ;; A rights policy must both authorize publication and state the terms the
   ;; manifest publishes; a policy carrying only the state publishes nothing.
   (str "{:rights-publication :assessment-required "
-       ":rights-statement {:works \"public-domain\" "
-       ":encoding \"CC0-1.0\" "
+       ":rights-statement {:encoding \"CC0-1.0\" "
        ":statement-url \"https://soranoha.example/rights\"}}"))
 
 (def ^:private merosu {:work-id "000100" :person-id "000001" :card "000001"
@@ -69,28 +68,30 @@
   "Project a fixture kernel run into the build-run report format exported
   by `main/build!`."
   [run]
-  {"aozora_git_commit" (:commit run)
-   "selected_slugs" (vec (sort (map :slug (:candidates run))))
-   "stages" (into {}
-                  (map (fn [[stage coordinate]] [(name stage) coordinate]))
-                  (dissoc (:stage-coordinates run) :accountability :coverage))
-   "works" (into {}
-                 (map (fn [[slug {:keys [outputs]}]]
-                        [slug {"markdown" (get-in outputs [:markdown "markdown"])
-                               "plaintext" (get-in outputs [:plaintext "plaintext"])
-                               "tei" (get-in outputs [:render "tei"])
-                               "tei-validation"
-                               (get-in outputs [:validate "tei-validation"])
-                               "metadata-record"
-                               (get-in outputs [:metadata "metadata-record"])
-                               "persons" (get-in outputs [:metadata "persons"])
-                               "primary_text_member"
-                               (get (corpus/source-facts run slug)
-                                    "primary_text_member")
-                               "source_content_hash"
-                               (get (corpus/source-facts run slug)
-                                    "work_content_hash")}]))
-                 (:results run))})
+  (let [rights-of (into {} (map (juxt :slug :rights)) (:candidates run))]
+    {"aozora_git_commit" (:commit run)
+     "selected_slugs" (vec (sort (map :slug (:candidates run))))
+     "stages" (into {}
+                    (map (fn [[stage coordinate]] [(name stage) coordinate]))
+                    (dissoc (:stage-coordinates run) :accountability :coverage))
+     "works" (into {}
+                   (map (fn [[slug {:keys [outputs]}]]
+                          [slug {"rights" (get rights-of slug)
+                                 "markdown" (get-in outputs [:markdown "markdown"])
+                                 "plaintext" (get-in outputs [:plaintext "plaintext"])
+                                 "tei" (get-in outputs [:render "tei"])
+                                 "tei-validation"
+                                 (get-in outputs [:validate "tei-validation"])
+                                 "metadata-record"
+                                 (get-in outputs [:metadata "metadata-record"])
+                                 "persons" (get-in outputs [:metadata "persons"])
+                                 "primary_text_member"
+                                 (get (corpus/source-facts run slug)
+                                      "primary_text_member")
+                                 "source_content_hash"
+                                 (get (corpus/source-facts run slug)
+                                      "work_content_hash")}]))
+                   (:results run))}))
 
 (defn- driver-inputs [clone report cas-dir snapshot]
   {:selection (get report "selected_slugs")
@@ -101,8 +102,7 @@
    :selection-params {}
    :policy-id "za-fixture-policy-v1"
    :policy-hash policy-hash
-   :rights {"works" "public-domain"
-            "encoding" "CC0-1.0"
+   :rights {"encoding" "CC0-1.0"
             "statement_url" "https://soranoha.example/rights"}
    :snapshot-bytes snapshot
    :clone clone
@@ -409,8 +409,7 @@
       (let [{:keys [policy-id rights]}
             (release/rights-authority! (.getBytes (str authorizing "\n") "UTF-8"))]
         (is (= "rights-publication-policy-v1" policy-id))
-        (is (= {"works" "public-domain"
-                "encoding" "CC0-1.0"
+        (is (= {"encoding" "CC0-1.0"
                 "statement_url" "https://soranoha.example/rights"}
                rights))))))
 

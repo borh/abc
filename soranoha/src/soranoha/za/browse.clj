@@ -1004,7 +1004,16 @@
                         (str "Background and detail are in " source
                              " in the repository."))]])))
 
-(defn- rights-page [document {:strs [works encoding statement_url]}]
+(defn- works-standings
+  "The standings the release actually publishes under, in the order the rights
+  page lists them: the public domain first, because it is almost every work,
+  then the licences, so a reader meets the common case before the exception."
+  [manifest]
+  (let [present (into #{} (map #(get % "rights")) (get manifest "works"))]
+    (into (filterv present ["public-domain"])
+          (sort (disj present "public-domain")))))
+
+(defn- rights-page [document standings {:strs [encoding statement_url]}]
   (generated-page
    document
    "Rights and licensing"
@@ -1016,7 +1025,11 @@
     ;; would be the one thing a rights statement may not do
     [:dl {:class "facts"}
      [:dt (bilingual "底本の権利状態" "Underlying works")]
-     [:dd [:a {:href (rights/works-uri works)} works]]
+     ;; one <dd> per standing: <dl> allows several for one <dt>, and a corpus
+     ;; with two rights regimes has to show both under the one term
+     (map (fn [standing]
+            [:dd [:a {:href (rights/works-uri standing)} standing]])
+          standings)
      [:dt (bilingual "符号化のライセンス" "Encoding licence")]
      [:dd [:a {:href (rights/licence-uri encoding)} encoding]]
      [:dt (bilingual "この文書" "This statement")]
@@ -1223,7 +1236,9 @@
       (page "copy.js" copy-js)
       (page "search-index.json" (search-index head-hex works))
       (page "index.html" (landing head-hex works (count withdrawn)))
-      (page "rights.html" (rights-page (by-route "rights") (get head "rights")))
+      (page "rights.html" (rights-page (by-route "rights")
+                                       (works-standings head)
+                                       (get head "rights")))
       (page "citation.html" (citation-page (by-route "citation") release))
       (page "history.html" (history-page manifest-seq events))
 

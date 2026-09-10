@@ -74,6 +74,11 @@
                     artifact-kinds)]
     {:entry {"slug" slug
              "source_content_hash" (bare-hex (:source-content-hash outputs))
+             ;; the standing selection admitted this work under. Fail closed:
+             ;; a work reaching assembly without one would otherwise be
+             ;; published with no stated terms at all.
+             "rights" (or (:rights outputs)
+                          (fail! :work-rights-missing {:slug slug}))
              "artifacts" (mapv (fn [[kind hex path]]
                                  {"type" kind
                                   "id" (str "snh:1:" kind ":" hex)

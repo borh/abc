@@ -106,14 +106,14 @@
                   parts)
      :entry {"slug" slug
              "source_content_hash" (hash/sha256-string (str "fixture:source:" slug))
+             "rights" "public-domain"
              "artifacts" (mapv (fn [[kind bytes]] (entry-for kind bytes)) parts)
              "layers" []}}))
 
 (def policy-hash (hash/sha256-string "fixture:policy"))
 
 (def rights
-  {"works" "public-domain"
-   "encoding" "CC0-1.0"
+  {"encoding" "CC0-1.0"
    "statement_url" "https://soranoha.example/rights"})
 
 (defn catalog-for

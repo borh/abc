@@ -14125,7 +14125,7 @@ Sample values include: 1] homeoteleuton; 2] homeoarchy; 3] paleographicConfusion
                 context="tei:figure">
          <sch:report role="warning"
                      test="not((tei:figDesc | tei:head | tei:p | tei:note[@type = ('image-description', 'caption-reference')])[normalize-space(.) != ''])">
-                Soranoha TEI figure should preserve a nonempty source description or caption reference when available.
+                Soranoha TEI figure carries no nonempty description or caption, so the image it names has no alternative text.
               </sch:report>
       </sch:rule>
    </pattern>

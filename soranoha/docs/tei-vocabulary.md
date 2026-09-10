@@ -105,7 +105,7 @@ reported with the constant `rule_id` `relax-ng` instead.
 | `snh-gaiji-reference` | error | Gaiji retains its original marker and either a resolved replacement or unresolved status. |
 | `snh-gaiji-chardecl-resolution` | error | A gaiji `@ref` fragment resolves to a `charDecl/char` in the same document. |
 | `snh-char-resolution-form` | error | A `charDecl/char` declares at least one of `mapping`, `unicodeProp`, `localProp`, `desc`. |
-| `snh-figure-accessibility` | warning | Figures preserve a nonempty description or caption reference where available. |
+| `snh-figure-accessibility` | warning | A figure carries a nonempty description or caption, so the image it names has alternative text. Most Aozora Bunko illustration markers supply a filename and pixel dimensions and no description, so this fires on the source's own form rather than on anything the conversion dropped. |
 | `snh-source-span-reference` | error | Elements claiming source spans point to valid span identifiers. |
 | `snh-source-span-target-exists` | error | Each fragment id in `@source` resolves to an `@xml:id` in the same document. |
 | `snh-transcription-vs-annotation` | warning | No element of TEI's analysis module appears inside `tei:text` unless the header declares it. Stand-off anchors and a `standOff` sibling are outside the rule, which is what the supported enrichment path writes. |

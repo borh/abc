@@ -68,7 +68,7 @@
    <pattern id="snh-figure-accessibility">
       <rule context="tei:figure">
          <report role="warning"
-                 test="not((tei:figDesc | tei:head | tei:p | tei:note[@type = ('image-description', 'caption-reference')])[normalize-space(.) != ''])"> Soranoha TEI figure should preserve a nonempty source description or caption reference when available.</report>
+                 test="not((tei:figDesc | tei:head | tei:p | tei:note[@type = ('image-description', 'caption-reference')])[normalize-space(.) != ''])"> Soranoha TEI figure carries no nonempty description or caption, so the image it names has no alternative text.</report>
       </rule>
    </pattern>
    <pattern id="snh-source-span-reference">

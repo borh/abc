@@ -347,13 +347,77 @@
   (when-not (= [] (get manifest "withdrawn"))
     (fail! :genesis-has-withdrawn {:commit commit})))
 
+(defn- verify-commit!
+  "Everything the chain walk establishes about one commit standing alone:
+  a single parent, a head that advanced, the `prev_manifest` link to the
+  parent's head, the manifest signature, every work artifact, the admission
+  pair, the catalog, and any governance event. Returns
+  {:parent :parent-head :genesis? :events :verified}.
+
+  `younger` is the already-verified successor commit whose evidence grants
+  blob reuse, or nil when there is none, in which case every artifact is
+  read and hashed. The transition against the predecessor manifest is NOT
+  checked here: it needs the predecessor decoded, which is the caller's
+  next move in both directions of travel.
+
+  This is the one definition of what a commit must satisfy. The full walk
+  and the increment check both call it, so neither can drift into checking
+  less than the other."
+  [v c pinned-keys {:keys [m-hex m younger facts]}]
+  (let [parents (view/parents-of v c)]
+    (when-not (= 1 (count parents))
+      (fail! (if (empty? parents) :nonzero-head-at-root :merge-commit)
+             {:commit c :parents parents}))
+    (let [p (first parents)
+          h (head-at v p)
+          genesis? (= sign/zero-head-hex h)]
+      (when (= m-hex h) (fail! :head-not-advanced {:commit c}))
+      (when-not (= h (get m "prev_manifest"))
+        (fail! :prev-manifest-mismatch
+               {:commit c :head-at-parent h :prev (get m "prev_manifest")}))
+      (when genesis? (check-genesis! c m))
+      (check-signature! v c pinned-keys "release-manifest" m-hex
+                        (manifest-sig-path m-hex))
+      (let [;; a reuse grant needs both halves of the proof: the
+            ;; younger, already-verified commit held this hex at
+            ;; this path, and the tree comparison shows this
+            ;; commit's entry is identical
+            reuse? (if younger
+                     (let [changed (view/changed-paths
+                                    v (:commit younger) c "blobs")]
+                       (fn [path hex]
+                         (and (= hex (get (:verified younger) path))
+                              (not (contains? changed path)))))
+                     (fn [_ _] false))
+            verified (check-works-blobs! v c m {:reuse? reuse?
+                                                :facts facts})]
+        (check-admission! v c m)
+        (check-catalog! v c m)
+        (let [events (check-events! v c pinned-keys m)]
+          (when genesis?
+            (when (seq (view/parents-of v p))
+              (fail! :zero-head-after-genesis {:commit p})))
+          {:parent p :parent-head h :genesis? genesis?
+           :events events :verified verified})))))
+
+(defn- with-event [gov-ids manifest]
+  (cond-> gov-ids
+    (get manifest "governance_event") (conj (get manifest "governance_event"))))
+
+(defn- pre-genesis-state!
+  "The initial commit is the only one allowed to carry the zero head. A zero
+  head anywhere else is a chain reset, and saying so is a rule of its own
+  rather than a consequence of the walk, so both entry points share it."
+  [v commit]
+  (when (seq (view/parents-of v commit))
+    (fail! :zero-head-after-genesis {:commit commit}))
+  {:empty true})
+
 (defn- verify-chain-from
   [v commit pinned-keys]
   (let [head (head-at v commit)]
     (if (= sign/zero-head-hex head)
-      (do (when (seq (view/parents-of v commit))
-            (fail! :zero-head-after-genesis {:commit commit}))
-          {:empty true})
+      (pre-genesis-state! v commit)
       (let [head-manifest (decoded-manifest v commit head)
             facts (atom {})]
         (loop [c commit
@@ -362,52 +426,59 @@
                chain []
                gov-ids #{}
                younger nil]
-          (let [parents (view/parents-of v c)]
-            (when-not (= 1 (count parents))
-              (fail! (if (empty? parents) :nonzero-head-at-root :merge-commit)
-                     {:commit c :parents parents}))
-            (let [p (first parents)
-                  h (head-at v p)
-                  genesis? (= sign/zero-head-hex h)]
-              (when (= m-hex h) (fail! :head-not-advanced {:commit c}))
-              (when-not (= h (get m "prev_manifest"))
-                (fail! :prev-manifest-mismatch
-                       {:commit c :head-at-parent h :prev (get m "prev_manifest")}))
-              (when genesis? (check-genesis! c m))
-              (check-signature! v c pinned-keys "release-manifest" m-hex
-                                (manifest-sig-path m-hex))
-              (let [;; a reuse grant needs both halves of the proof: the
-                    ;; younger, already-verified commit held this hex at
-                    ;; this path, and the tree comparison shows this
-                    ;; commit's entry is identical
-                    reuse? (if younger
-                             (let [changed (view/changed-paths
-                                            v (:commit younger) c "blobs")]
-                               (fn [path hex]
-                                 (and (= hex (get (:verified younger) path))
-                                      (not (contains? changed path)))))
-                             (fn [_ _] false))
-                    verified (check-works-blobs! v c m {:reuse? reuse?
-                                                        :facts facts})]
-                (check-admission! v c m)
-                (check-catalog! v c m)
-                (let [events (check-events! v c pinned-keys m)
-                      chain (conj chain m-hex)
-                      gov-ids (cond-> gov-ids
-                                (get m "governance_event")
-                                (conj (get m "governance_event")))]
-                  (if genesis?
-                    (do (when (seq (view/parents-of v p))
-                          (fail! :zero-head-after-genesis {:commit p}))
-                        {:head head
-                         :head-manifest head-manifest
-                         :chain chain
-                         :governance-events gov-ids
-                         :chain-length (count chain)})
-                    (let [pm (decoded-manifest v p h)]
-                      (check-transition! c m pm events)
-                      (recur p h pm chain gov-ids
-                             {:commit c :verified verified}))))))))))))
+          (let [{:keys [parent parent-head genesis? events verified]}
+                (verify-commit! v c pinned-keys
+                                {:m-hex m-hex :m m :younger younger :facts facts})
+                chain (conj chain m-hex)
+                gov-ids (with-event gov-ids m)]
+            (if genesis?
+              {:head head
+               :head-manifest head-manifest
+               :chain chain
+               :governance-events gov-ids
+               :chain-length (count chain)}
+              (let [pm (decoded-manifest v parent parent-head)]
+                (check-transition! c m pm events)
+                (recur parent parent-head pm chain gov-ids
+                       {:commit c :verified verified})))))))))
+
+(defn- verify-increment-from
+  [v commit pinned-keys {parent-commit :commit prior :result}]
+  (let [head (head-at v commit)]
+    (when (= sign/zero-head-hex head)
+      ;; the same rule the full walk applies, so the two agree on the reason;
+      ;; an increment always has a parent, so this never returns
+      (pre-genesis-state! v commit)
+      (fail! :increment-parent-mismatch
+             {:commit commit :parent nil :claimed parent-commit}))
+    (let [m (decoded-manifest v commit head)
+          {:keys [parent parent-head genesis? events]}
+          (verify-commit! v commit pinned-keys
+                          {:m-hex head :m m :younger nil :facts (atom {})})]
+      ;; the prior result is only a proof of the prefix if it is a proof of
+      ;; THIS parent, in the state this commit was built on
+      (when-not (= parent parent-commit)
+        (fail! :increment-parent-mismatch
+               {:commit commit :parent parent :claimed parent-commit}))
+      (when-not (= genesis? (boolean (:empty prior)))
+        (fail! :increment-prior-shape-mismatch
+               {:commit commit :genesis? genesis?
+                :prior-empty (boolean (:empty prior))}))
+      (if genesis?
+        {:head head :head-manifest m :chain [head]
+         :governance-events (with-event #{} m)
+         :chain-length 1}
+        (do
+          (when-not (= parent-head (:head prior))
+            (fail! :increment-prior-head-mismatch
+                   {:commit commit :parent-head parent-head
+                    :prior-head (:head prior)}))
+          (check-transition! commit m (decoded-manifest v parent parent-head) events)
+          {:head head
+           :head-manifest m
+           :chain (into [head] (:chain prior))
+           :governance-events (with-event (:governance-events prior) m)
+           :chain-length (inc (:chain-length prior))})))))
 
 (defn verify-repository-at
   "Verify the repository state at `commit` through `v`, with `pinned-keys`
@@ -422,6 +493,31 @@
   ;; the chain walk reads every artifact of every manifest; one batched
   ;; reader serves the whole pass
   (view/with-batch v (fn [v] (verify-chain-from v commit pinned-keys))))
+
+(defn verify-increment-at
+  "Verify `commit` when its parent has already been verified, checking the
+  one commit rather than walking the chain again. `verified` is
+  {:commit <parent commit id> :result <what `verify-repository-at`
+  returned for that commit>}. Returns and throws exactly as
+  `verify-repository-at` does.
+
+  This is NOT a trust primitive and must not be used as one. It proves
+  nothing about the prefix; it carries forward a proof the caller already
+  holds, and it is sound only when the caller computed that proof itself,
+  from the same view and the same pinned keys. A publisher verifying the
+  commit it has just written against the head it verified moments earlier
+  is the case this exists for. A third party arriving at a repository has
+  no such proof and must use `verify-repository-at`.
+
+  What it does check is that the proof it was handed is a proof of this
+  commit's actual parent, in the state this commit was built on: the
+  parent id must match, and so must the head that parent carries. A stale
+  or foreign result fails rather than being carried forward."
+  [v commit pinned-keys verified]
+  (sign/validate-pinned-keys! pinned-keys)
+  (when-not (view/commit-exists? v commit)
+    (fail! :commit-missing {:commit commit}))
+  (view/with-batch v (fn [v] (verify-increment-from v commit pinned-keys verified))))
 
 (def verifier-version "snh-verify/1")
 

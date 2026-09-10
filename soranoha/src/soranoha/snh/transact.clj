@@ -100,13 +100,15 @@
   (let [v (view/git-view clone)
         ;; fetched state is trusted only after full verification; the
         ;; verifier's result already carries the decoded head manifest
-        verified-state (fn [c]
-                         (let [r (verify/verify-repository-at v c pinned-keys)]
-                           (when-not (:empty r)
-                             {:hex (:head r) :value (:head-manifest r)
-                              :chain (:chain r)})))
+        state (fn [r] (when-not (:empty r)
+                        {:hex (:head r) :value (:head-manifest r)
+                         :chain (:chain r)}))
+        verified-state (fn [c] (state (verify/verify-repository-at v c pinned-keys)))
         c (or (repo/fetch! clone branch) (fail! :no-publication-branch {:branch branch}))
-        head (verified-state c)
+        ;; kept whole rather than projected: the commit written below is
+        ;; verified against this proof instead of walking the chain again
+        head-proof (verify/verify-repository-at v c pinned-keys)
+        head (state head-proof)
         {:keys [core blobs selection]} (assemble (some-> head :value))
         manifest (build-manifest core head (or (:hex head) sign/zero-head-hex))
         _ (check-totality! blobs manifest selection)]
@@ -124,7 +126,8 @@
                                                  :sig (sign-release hex)
                                                  :blobs blobs})
                           :message (str "snh release " hex)})
-           _ (verify/verify-repository-at v commit pinned-keys)
+           _ (verify/verify-increment-at v commit pinned-keys
+                                         {:commit c :result head-proof})
            outcome (push-fn clone branch commit c)
            reconcile
            (fn [head2]
@@ -267,7 +270,8 @@
                                    :base-tree-of c
                                    :files files
                                    :message (str "snh governance " event-hex)})
-                    _ (verify/verify-repository-at v commit pinned-keys)
+                    _ (verify/verify-increment-at v commit pinned-keys
+                                                  {:commit c :result chain})
                     outcome (push-fn clone branch commit c)]
                 (case outcome
                   :ok {:outcome :published :manifest-id hex :event event-id}

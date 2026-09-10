@@ -529,6 +529,56 @@
       (testing name
         (is (= expect (reason-at (:clone ctx) (craft ctx))))))))
 
+(defn- increment-reason-at
+  "Increment-check outcome at `commit`, given the proof of `parent` that a
+  publisher would be holding: the failure reason keyword, or :valid."
+  [clone parent commit]
+  (let [v (view/git-view clone)
+        proof (verify/verify-repository-at v parent (fx/pinned-keys))]
+    (try (verify/verify-increment-at v commit (fx/pinned-keys)
+                                     {:commit parent :result proof})
+         :valid
+         (catch clojure.lang.ExceptionInfo e (:reason (ex-data e))))))
+
+(deftest the-increment-check-rejects-exactly-what-the-full-walk-rejects
+  ;; A publisher verifies the commit it has just written against the head it
+  ;; verified moments earlier rather than walking the chain again. That is
+  ;; only sound if it rejects everything the full walk rejects, so the two
+  ;; are compared over the whole mutation table rather than over a chosen
+  ;; few: a rule the increment stops enforcing turns this red without
+  ;; anyone having to think of it.
+  (let [ctx (build-ctx)
+        {:keys [clone head-commit]} ctx]
+    (testing "a valid successor passes both"
+      (let [commit (:commit (fx/craft-release!
+                             clone {:parents [head-commit]
+                                    :base-tree-of head-commit
+                                    :manifest-value (next-value ctx)}))]
+        (is (= :valid (reason-at clone commit)))
+        (is (= :valid (increment-reason-at clone head-commit commit)))))
+    (doseq [{:keys [name expect craft]} build-mutations]
+      (testing name
+        (let [commit (craft ctx)]
+          (is (= expect (reason-at clone commit)))
+          (is (= expect (increment-reason-at clone head-commit commit))))))))
+
+(deftest a-proof-of-some-other-commit-is-refused
+  ;; the shortcut carries a proof forward rather than computing one, so a
+  ;; proof of anything but this commit's actual parent has to fail loudly
+  (let [{:keys [clone head-commit] :as ctx} (build-ctx)
+        v (view/git-view clone)
+        commit (:commit (fx/craft-release!
+                         clone {:parents [head-commit]
+                                :base-tree-of head-commit
+                                :manifest-value (next-value ctx)}))
+        parent-of-head (first (view/parents-of v head-commit))]
+    (testing "a proof of the grandparent, which is a real verified commit"
+      (is (= :increment-parent-mismatch
+             (increment-reason-at clone parent-of-head commit))))
+    (testing "a proof of the commit itself"
+      (is (= :increment-parent-mismatch
+             (increment-reason-at clone commit commit))))))
+
 (deftest historical-corruption-behind-a-valid-head-is-still-caught
   ;; the within-pass reuse grant must never extend a younger commit's
   ;; verification to a historical tree entry that differs: a chain whose

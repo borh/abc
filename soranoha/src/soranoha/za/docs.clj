@@ -31,7 +31,11 @@
 
   The project's other reader-facing documents stay in the repository until
   they are trimmed and checked. A served page is a claim the corpus makes in
-  public; a repository document is one a reader has gone looking for."
+  public; a repository document is one a reader has gone looking for.
+
+  Holding one back is a staging state rather than a decision to keep it off
+  the site. Each is expected to return here as it is verified, one at a time,
+  and the operator judges when a document has cleared that bar."
   [{:route "ns/tei" :path "soranoha/docs/tei-vocabulary.md"
     :ja "TEI 拡張語彙"}])
 
@@ -44,10 +48,13 @@
   `rights.statement_url` and every published TEI header carries a `<ptr>` to
   the same URL, so the grant those bytes cite has to resolve.
 
-  Each page is its own short opening and nothing else. `:source` names the
-  repository document a reader can go to for the full treatment, which is
-  linked rather than served: the long form is unverified for publication, and
-  a page the manifest points at is the wrong place to be provisional."
+  Each page carries its own statement rather than an excerpt of one. A reader
+  who followed `rights.statement_url` out of a detached TEI file has to reach
+  the answer here, so a forwarding address to a repository document would not
+  discharge what the signed bytes promise.
+
+  `:source` names the repository document that treats the subject at length.
+  It is background a reader may want, not the page's substance."
   [{:route "rights" :ja "権利について"
     :source "docs/rights.md"}
    {:route "citation" :ja "引用のしかた"

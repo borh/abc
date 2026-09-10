@@ -30,6 +30,18 @@
 
 (def ^:private site-name "Soranoha")
 
+(def ^:private orcid-url
+  "Where a rights claim is sent. An ORCID record rather than a mail address:
+  the served rights statement is what every manifest and every detached TEI
+  file points at, so its contact route has to outlive any one mailbox, and
+  ORCID is the identifier the project already publishes in `CITATION.cff`."
+  "https://orcid.org/0000-0003-2246-8774")
+
+(def ^:private example-identifier
+  "A work identifier shown as a shape rather than as a link, so a reader
+  recognises the form to quote when naming a work in a claim."
+  "000092_000879")
+
 (def ^:private stylesheet
   (string/join
    "\n"
@@ -790,22 +802,23 @@
 (defn- generated-page
   "One of the two pages that state facts read from the release.
 
-  The page is its own short opening and nothing more. A reader arriving from a
-  manifest's `statement_url` or from a citation needs the answer, and the
-  answer is the grant and the release's own values, both read from the head
-  manifest rather than described by a document that could disagree with it.
+  The facts come from the head manifest rather than from a document that could
+  disagree with it, which is the whole reason these two pages are assembled
+  here instead of being served from Markdown.
 
-  The repository document is named, not served. Its long form has not been
-  checked for publication, and the page a manifest points at is the wrong
-  place to be provisional."
+  `:source` names the repository document that treats the subject at length.
+  The page stands on its own without it: a reader who followed
+  `rights.statement_url` out of a detached TEI file has to find the answer
+  here, not a forwarding address."
   [{:keys [ja source]} title lead]
   (chrome
    ja
    {:main-class "doc"}
    (concat [[:h1 (bilingual ja title)]] lead
            [[:p {:class "by"}
-             (bilingual (str "詳しい説明はリポジトリの " source " にあります。")
-                        (str "The full treatment is " source " in the repository."))]])))
+             (bilingual (str "背景と詳細はリポジトリの " source " にあります。")
+                        (str "Background and detail are in " source
+                             " in the repository."))]])))
 
 (defn- rights-page [document {:strs [works encoding statement_url]}]
   (generated-page
@@ -825,8 +838,41 @@
      [:dt (bilingual "この文書" "This statement")]
      [:dd [:a {:href statement_url} statement_url]]]
     [:p (bilingual
-         "上の三つは、この版のマニフェストに書かれている値です。以下は権利の全文です。"
-         "Those three are read from this release's own manifest. The full statement follows.")]]))
+         "上の三つは、この版のマニフェストに書かれている値です。"
+         "Those three are read from this release's own manifest.")]
+
+    [:h2 (bilingual "二つの権利層" "Two rights layers")]
+    [:p (bilingual
+         "底本は青空文庫の著作権満了作品です。Soranoha はそこに何の権利も持たず、主張もしません。青空文庫の取り扱い規準は、満了作品のファイルを有償無償を問わず自由に複製・再配布・翻案してよいとしています。"
+         "The underlying texts are copyright-expired works from Aozora Bunko. Soranoha neither holds nor claims any right in them. Aozora Bunko's handling rules allow files for expired works to be copied, redistributed and adapted freely, whether for payment or not.")]
+    [:p (bilingual
+         "Soranoha 自身の符号化（TEI マークアップ、プレーンテキストと Markdown への投影、検証レポート、目録、リリースマニフェスト）は CC0-1.0 で公共領域に献呈されています。符号化に著作権やデータベース権が生じる範囲では、それを放棄します。"
+         "Soranoha's own encoding (the TEI markup, the plaintext and Markdown projections, the validation reports, the catalog and the release manifests) is dedicated to the public domain under CC0-1.0. Where that encoding attracts copyright or a database right at all, those rights are waived.")]
+    ;; the split a redistributor actually needs: the corpus and the program
+    ;; that made it are under different terms, and the page a manifest points
+    ;; at is where someone checks before redistributing
+    [:p (bilingual
+         "公開されたコーパスを再配布しても、ツールチェーンの義務は伴いません。ツールチェーンを再配布する場合は伴います。ソースコードは Apache-2.0、分岐した解析器クレートは上流から引き継いだ MIT OR Apache-2.0 です。"
+         "Redistributing the published corpus does not carry the toolchain's obligations. Redistributing the toolchain does: the locally authored source is Apache-2.0, and the forked parser crates carry MIT OR Apache-2.0 as an inherited obligation.")]
+
+    [:h2 (bilingual "公開作品に権利をお持ちの方へ" "If you hold rights in a published work")]
+    [:p (bilingual
+         "Soranoha は権利が存続しないと評価した作品だけを公開しますが、この規模のコーパスであれば、いずれどれか一つは誤ります。"
+         "Soranoha publishes only works its assessment finds to be free of subsisting rights, but a corpus of this size will eventually be wrong about one.")]
+    [:p (bilingual
+         (str "作品識別子（URL に見える " example-identifier " の形）または青空文庫の図書カードと、主張の根拠を添えて、"
+              orcid-url " に記載の連絡先までご連絡ください。正式な法的通知である必要はありません。")
+         (str "Write to the address on " orcid-url ", naming the work identifier (the "
+              example-identifier " form, visible in the URL) or the Aozora Bunko card, and the "
+              "basis of the claim. A claim does not need to be a formal legal notice to be acted on."))]
+    [:p (bilingual
+         "取り下げは、公開されたガバナンスイベントとして記録されます。次のリリースでその作品は works[] から外れ、目録からも消え、取り下げを定めたイベントを指す withdrawn[] に入ります。署名済みの履歴は追記のみなので、過去のリリースは書き換わりません。"
+         "A withdrawal is recorded as a public governance event. In the next release the work leaves works[], the catalog no longer describes it, and it appears in withdrawn[] pointing at the event that governs it. The signed history is append-only, so earlier releases are not rewritten.")]
+
+    [:h2 (bilingual "無保証" "No warranty")]
+    [:p (bilingual
+         "Soranoha が公開するのは、検証レポートと底本からの差異を添えた翻刻であって、忠実性の保証ではありません。現状のまま提供されます。法律・医療・安全に関わる用途では、各作品が sourceDesc に記載する底本に対して独自に検証せずに依拠しないでください。"
+         "Soranoha publishes transcriptions with their validation reports and their recorded divergences from the source, not a guarantee of fidelity. The corpus is provided as-is. Do not rely on it for a legal, medical or safety purpose without independent verification against the source edition each work names in its sourceDesc.")]]))
 
 (def ^:private example-work
   "The work the how-to-cite page is worked through. A literal rather than a

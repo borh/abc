@@ -7,10 +7,10 @@ This is the full statement that every signed release manifest names in
 corrected later, so they name an identifier rather than whichever host is
 serving the corpus.
 
-> **Not yet resolvable.** The `w3id.org/soranoha/` redirects are registered as
-> a precondition of public genesis, and are not registered yet: this URL and
-> the publisher identifier both return 404 today. They are stated here in
-> their final form because that form is what the signed bytes will name.
+Registering the `w3id.org/soranoha/` redirects, so that the identifier and the
+publisher identifier both resolve, is a precondition of public genesis. They
+are written here in the form the signed bytes name, which is the form that has
+to hold whether or not it resolves at the moment you try it.
 
 ## The short version
 

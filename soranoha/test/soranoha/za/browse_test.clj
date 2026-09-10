@@ -276,16 +276,28 @@
                    "validation.html" "assessment.html" "protocol.html"]]
         (is (nil? (get pages rel)) rel)))
 
-    (testing "and the rights page states the grant the manifest carries"
+    ;; Every manifest carries rights.statement_url and every published TEI
+    ;; header carries a <ptr> to the same URL, so this page is where a reader
+    ;; holding a detached file has to arrive at an answer. It stands on its
+    ;; own: naming a repository document is background, not the answer.
+    (testing "and the rights page is the whole statement the signed bytes cite"
       (let [rights-page (page pages "rights.html")]
-        (is (string/includes? rights-page "https://creativecommons.org/publicdomain/zero/1.0/"))
-        (is (string/includes? rights-page "https://creativecommons.org/publicdomain/mark/1.0/"))
-        (is (string/includes? rights-page "https://w3id.org/soranoha/rights"))
-        (testing "and stops there, naming the long statement rather than serving it"
-          (is (not (string/includes? rights-page "id=\"two-distinct-rights-layers\"")))
-          (is (not (string/includes? rights-page "id=\"no-warranty\"")))
-          (is (string/includes? rights-page "docs/rights.md")
-              "a reader is told where the full treatment is"))))
+        (testing "the grant, read from this release's own manifest"
+          (is (string/includes? rights-page "https://creativecommons.org/publicdomain/zero/1.0/"))
+          (is (string/includes? rights-page "https://creativecommons.org/publicdomain/mark/1.0/"))
+          (is (string/includes? rights-page "https://w3id.org/soranoha/rights")))
+        (testing "both rights layers, because a reader has to know which covers what"
+          (is (string/includes? rights-page "Two rights layers"))
+          (is (string/includes? rights-page "Aozora Bunko"))
+          (is (string/includes? rights-page "CC0-1.0"))
+          (is (string/includes? rights-page "Apache-2.0")
+              "redistributing the toolchain is not redistributing the corpus"))
+        (testing "and how to ask for a withdrawal, which is what a rights holder needs"
+          (is (string/includes? rights-page "https://orcid.org/0000-0003-2246-8774"))
+          (is (string/includes? rights-page "governance event"))
+          (is (string/includes? rights-page "No warranty")))
+        (is (string/includes? rights-page "docs/rights.md")
+            "the long treatment is named as background")))
 
     (testing "and the citation page states this release's own forms"
       (let [citation-page (page pages "citation.html")]

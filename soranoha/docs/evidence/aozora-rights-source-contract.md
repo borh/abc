@@ -53,3 +53,21 @@ archive is `index_pages/list_person_all_extended_utf8.zip`, SHA-256
 the CSV SHA-256 is
 `c0ace54c7ac037e5aebd045922c7879b9f7dc01f85b8f7483c8d4ecc29569ef4`.
 These counts describe catalog records, not an admitted publication population.
+
+Moving this pin is what re-derives the figures. `scripts/catalog-figures-check.py`
+recomputes every count this project quotes from the catalog in a checkout, and
+fails with both numbers when one has drifted. It cannot be gated automatically,
+because it is bound to the pin above rather than to a schedule: a publisher's
+checkout is at live upstream, so the digest check fails on it by construction.
+Its answer can only change, and be correct, when the pin moves. Run it then,
+against a checkout at the new snapshot:
+
+```sh
+python scripts/catalog-figures-check.py --aozora-root "$CHECKOUT" --stems
+```
+
+and correct each failing figure where it is quoted before committing the new
+pin. `--stems` adds the four figures that need a pass over every work archive;
+without it they are skipped. The agreement half runs on its own in the bundled
+gates, so a figure that stops being quoted is caught without a checkout; only
+re-derivation waits for this.

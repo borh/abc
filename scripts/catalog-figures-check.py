@@ -40,6 +40,13 @@ against the prose alone, which is what the bundled gates can afford: the
 sandboxed checks have no checkout, so without it an edit that stops quoting a
 figure goes unnoticed until someone runs the full check by hand.
 
+The full check is bound to the pinned snapshot rather than to a schedule, and
+that is why no gate runs it. A publisher's checkout is at live upstream, so the
+digest check fails on it by construction; there is no cadence at which this
+could run unattended and pass. It runs when the pin moves, which is the only
+moment its answer can change and be correct. The procedure is recorded beside
+the pin, in `soranoha/docs/evidence/aozora-rights-source-contract.md`.
+
     python scripts/catalog-figures-check.py --aozora-root "$CORPUS_CHECKOUT"
     python scripts/catalog-figures-check.py --quotes-only
 """

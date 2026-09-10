@@ -157,7 +157,11 @@
   (fn [head-manifest]
     (let [withdrawn (set (map #(get % "slug") (get head-manifest "withdrawn")))
           live (vec (sort (remove withdrawn admitted)))
-          works (mapv #(work-entry % variant (contains? (set invalid) %)) live)
+          ;; a scalar variant moves every work at once, which is what a
+          ;; toolchain change does; a function of slug lets a caller move only
+          ;; the few works an upstream commit actually touches
+          variant-of (if (fn? variant) variant (constantly variant))
+          works (mapv #(work-entry % (variant-of %) (contains? (set invalid) %)) live)
           all-candidates (vec (sort (concat admitted excluded quarantined)))
           snapshot {"schema" "snh-assessment-snapshot/2"
                     "candidates" (mapv (fn [slug]

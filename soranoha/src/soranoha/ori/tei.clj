@@ -254,26 +254,37 @@
 
 (defn- render-ruby-node
   ([acc node depth]
-   (let [ruby (get node "ruby")]
-     (if (and (present-ruby-text? (get ruby "base"))
-              (or (present-ruby-text? (get ruby "reading"))
-                  (seq (get node "reading_children"))))
-       (let [attrs (cond-> {:type "furigana"}
-                     (get ruby "direction")
-                     (assoc :rend (get ruby "direction")))
-             before (:current-paragraph acc)
-             base (if (seq (get node "inline_children"))
-                    (render-inline-children (assoc acc :current-paragraph [])
-                                            (get node "inline_children") depth)
-                    (assoc acc :current-paragraph [(get ruby "base")]))
-             reading (if (seq (get node "reading_children"))
-                       (render-inline-children (assoc base :current-paragraph [])
-                                               (get node "reading_children") depth)
-                       (assoc base :current-paragraph [(get ruby "reading")]))]
-         (append-inline (assoc reading :current-paragraph before)
-                        (sourced node [:ruby attrs
-                                       (into [:rb] (:current-paragraph base))
-                                       (into [:rt] (:current-paragraph reading))])))
+   ;; Both sides of a ruby carry their content in either of two places: the
+   ;; plain string the converter derived, or the child nodes it kept when that
+   ;; string could not hold them. Asking whether a side is present therefore
+   ;; means rendering it and looking, not reading one of the two places. The
+   ;; base was read off the string alone, so a base made only of kinds that
+   ;; contribute no visible text (`raw`, `kunten`, `editorial_note`,
+   ;; `layout_break`, `figure`) arrived as an empty string beside the children
+   ;; that held it, and the whole ruby was dropped along with them.
+   ;;
+   ;; Rendering first also settles what the string test was standing in for: a
+   ;; side that renders to nothing cannot become an `rb` or `rt`, because the
+   ;; profile has no empty one. The work spent on a ruby that is then dropped
+   ;; is the price of asking the question accurately, and it is spent only on
+   ;; the rubies that get dropped.
+   (let [ruby (get node "ruby")
+         attrs (cond-> {:type "furigana"}
+                 (get ruby "direction")
+                 (assoc :rend (get ruby "direction")))
+         side (fn [state children text]
+                (if (seq children)
+                  (render-inline-children (assoc state :current-paragraph []) children depth)
+                  (assoc state :current-paragraph
+                         (if (present-ruby-text? text) [text] []))))
+         before (:current-paragraph acc)
+         base (side acc (get node "inline_children") (get ruby "base"))
+         reading (side base (get node "reading_children") (get ruby "reading"))]
+     (if (and (seq (:current-paragraph base)) (seq (:current-paragraph reading)))
+       (append-inline (assoc reading :current-paragraph before)
+                      (sourced node [:ruby attrs
+                                     (into [:rb] (:current-paragraph base))
+                                     (into [:rt] (:current-paragraph reading))]))
        (mark-omitted acc "ruby")))))
 
 (defn- render-gaiji-node

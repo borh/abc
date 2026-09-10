@@ -337,6 +337,54 @@
       (is (= [{:type "ruby" :policy "omitted"}]
              (:omitted result))))))
 
+(deftest ruby-base-carried-only-by-children-is-not-dropped-test
+  (testing "a ruby whose base lives in its children renders that base"
+    ;; The converter derives `ruby.base` as the plain visible text of the AAT
+    ;; node's base content, and the kinds `raw`, `kunten`, `editorial_note`,
+    ;; `layout_break` and `figure` contribute none. A base made only of those
+    ;; therefore arrives as an empty string beside the `inline_children` that
+    ;; hold it. Below: the direct shape, then the converter-derived one.
+    (let [direct (parser-ir-tei/render
+                  {"nodes" [{"type" "ruby"
+                             "span" {"start" 0 "end" 1 "coordinate_system" "parser_text_utf8"}
+                             "ruby" {"base" "" "reading" "かんじ" "direction" "right"}
+                             "inline_children" [{"type" "text"
+                                                 "span" {"start" 0 "end" 1 "coordinate_system" "parser_text_utf8"}
+                                                 "text" "漢"}]}]})
+          converted (parser-ir-tei/render
+                     {"nodes" [{"type" "ruby"
+                                "span" {"start" 0 "end" 0 "coordinate_system" "parser_text_utf8"}
+                                "ruby" {"base" "" "reading" "かんじ" "direction" "right"}
+                                "inline_children" [{"type" "kunten"
+                                                    "span" {"start" 0 "end" 0 "coordinate_system" "parser_text_utf8"}
+                                                    "kunten_kind" "return-mark"
+                                                    "text" "レ"}]}]})]
+      (is (= [:p [:ruby {:type "furigana" :rend "right"}
+                  [:rb "漢"]
+                  [:rt "かんじ"]]]
+             (some #(when (= :p (first %)) %) (hiccup-nodes (:body direct)))))
+      (is (empty? (:omitted direct)))
+      (is (= [:p [:ruby {:type "furigana" :rend "right"}
+                  [:rb [:note {:type "kunten" :subtype "return-mark" :rend "subscript"} "レ"]]
+                  [:rt "かんじ"]]]
+             (some #(when (= :p (first %)) %) (hiccup-nodes (:body converted)))))
+      (is (empty? (:omitted converted))))))
+
+(deftest ruby-side-that-renders-to-nothing-is-omitted-test
+  (testing "children that render to nothing leave no empty rb behind"
+    ;; The profile has no empty `rb` or `rt`, so presence is decided on what a
+    ;; side rendered rather than on whether it had children to render.
+    (let [result (parser-ir-tei/render
+                  {"nodes" [{"type" "ruby"
+                             "span" {"start" 0 "end" 0 "coordinate_system" "parser_text_utf8"}
+                             "ruby" {"base" "" "reading" "かんじ" "direction" "right"}
+                             "inline_children" [{"type" "quote"
+                                                 "span" {"start" 0 "end" 0 "coordinate_system" "parser_text_utf8"}
+                                                 "marker_type" "open"
+                                                 "text" ""}]}]})]
+      (is (not-any? #(= :ruby (first %)) (hiccup-nodes (:body result))))
+      (is (= [{:type "ruby" :policy "omitted"}] (:omitted result))))))
+
 (deftest gaiji-jis-reference-mints-xml-safe-id-test
   (testing "Aozora JIS references are preserved semantically but minted as XML-safe char ids"
     (let [parser-ir {"nodes" [{"type" "gaiji"

@@ -1102,8 +1102,15 @@
          "残りは、著作権が存続しており、権利者がクリエイティブ・コモンズ 表示ライセンス（CC BY）の下で青空文庫に公開している作品です。これらも同じく自由に利用できますが、クレジットの表示は権利者が付した条件です。どのバージョンのライセンスによるかは、作品ページと TEI ファイルの双方に記載しています。Soranoha が公開するのは、表示のみを条件とするライセンスの作品に限られます。非営利、改変禁止、継承のいずれかを課すライセンスの作品は収録していません。"
          "The rest are works whose copyright subsists and whose rightsholder publishes them on Aozora Bunko under a Creative Commons Attribution licence. They may be used just as freely, but attribution is a condition their rightsholder set rather than a request. Each work's page and its TEI header name the version of the licence it is under. Soranoha publishes such a work only where attribution is the sole condition: a work under a licence adding NonCommercial, NoDerivatives or ShareAlike is not in the corpus.")]
     [:p (bilingual
-         "Soranoha 自身の符号化（TEI マークアップ、プレーンテキストと Markdown への投影、検証レポート、目録、リリースマニフェスト）は、CC0-1.0 によりパブリックドメインで提供します。符号化に著作権および関連する権利（データベースに関する権利を含む）が生じる範囲では、これを放棄します。"
-         "Soranoha's own encoding (the TEI markup, the plaintext and Markdown projections, the validation reports, the catalog and the release manifests) is dedicated to the public domain under CC0-1.0. Where that encoding attracts copyright or a database right at all, those rights are waived.")]
+         "Soranoha 自身の符号化（TEI マークアップ、プレーンテキストと Markdown への投影、検証レポート、リリースマニフェスト）は、CC0-1.0 によりパブリックドメインで提供します。符号化に著作権および関連する権利（データベースに関する権利を含む）が生じる範囲では、これを放棄します。"
+         "Soranoha's own encoding (the TEI markup, the plaintext and Markdown projections, the validation reports and the release manifests) is dedicated to the public domain under CC0-1.0. Where that encoding attracts copyright or a database right at all, those rights are waived.")]
+    ;; the catalog is deliberately absent from the CC0 list above. Its
+    ;; bibliographic fields come from Aozora Bunko's catalog CSV, which
+    ;; carries its own attribution condition, and a redistributor who read
+    ;; only this page would otherwise take the whole file as unconditioned
+    [:p (bilingual
+         "目録（catalog.json と catalog.csv）に収めた書誌情報は、青空文庫が CC BY 4.0 で公開している「公開作品情報一覧」に由来します。目録そのものやそれに基づく一覧を再頒布する場合は、出典として青空文庫を表示してください。これは上に述べた作品ごとの権利の状態とは別の話で、本文ではなく書誌データにかかるものです。目録の構造、Soranoha が付した識別子、および底本や検証に関する各項目は Soranoha 自身の符号化であり、CC0-1.0 で提供します。"
+         "The bibliographic data in the catalog (catalog.json and catalog.csv) derives from Aozora Bunko's list of published works, which Aozora Bunko publishes under CC BY 4.0. Credit Aozora Bunko as the source when redistributing the catalog or a listing built from it. This is a separate matter from the per-work standings above: it attaches to the bibliographic data rather than to the texts. The catalog's structure, the identifiers Soranoha assigns, and the fields it records about source editions and validation are Soranoha's own encoding and are under CC0-1.0.")]
     ;; the two requests are not conditions on the grant, so they belong on
     ;; the served page as what they are: a redistributor who reads only this
     ;; page would otherwise never learn that anything was asked

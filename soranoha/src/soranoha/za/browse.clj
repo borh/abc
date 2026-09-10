@@ -862,7 +862,7 @@
   The oldest release has no predecessor and so has no change to state; its
   cells are left empty rather than filled with the count of the whole
   corpus, which would read as a release that added everything at once."
-  [manifests events]
+  [manifest-seq events]
   (chrome
    "版の履歴"
    {:main-class "doc"}
@@ -885,13 +885,34 @@
      (into [:tbody]
            (map (fn [[entry predecessor]]
                   (history-row entry (second predecessor) events))
-                (partition-all 2 1 manifests)))]
+                (partition-all 2 1 (manifest-seq))))]
     [:p (bilingual
          "「底本の範囲」は、その版が代表する青空文庫のリビジョンの範囲です。作品の書庫が動いたときに版を作るので、一つの版が複数のリビジョンを代表することがあります。最初の版には比較する前の版がないので、変更の欄は空です。"
          (str "The upstream range is the span of Aozora Bunko revisions a release stands for. "
               "A release is minted when a work archive moved, so one release can stand for "
               "several revisions. The oldest release has nothing to differ from, so its "
               "change columns are empty."))]]))
+
+(defn- last-release-of
+  "The newest release still listing each of `slugs`, in one newest-first pass.
+
+  A withdrawn work's page has to name the release it was last published in,
+  and the chain is ordered newest first, so the answer for every slug is
+  found by walking until none are outstanding. Done once for all of them
+  rather than once per slug: the alternative reads the chain again for every
+  withdrawal, and reading the chain is the expensive part."
+  [manifest-seq slugs]
+  (loop [remaining (manifest-seq)
+         wanted (set slugs)
+         found {}]
+    (let [[hex manifest] (first remaining)]
+      (if (or (nil? hex) (empty? wanted))
+        found
+        (let [listed (into #{} (comp (map #(get % "slug")) (filter wanted))
+                           (get manifest "works"))]
+          (recur (rest remaining)
+                 (reduce disj wanted listed)
+                 (into found (map (fn [slug] [slug hex])) listed)))))))
 
 (defn- generated-page
   "One of the two pages that state facts read from the release.
@@ -1089,10 +1110,18 @@
   `tei` is a function from slug to that work's published TEI bytes. It is
   what makes a reading page possible without a second copy of the text: the
   bytes it returns are the artifact the manifest names and the export has
-  already written."
-  [{:keys [head-hex manifests catalog events tei doi]}]
+  already written.
+
+  `manifest-seq` is a function of no arguments returning the chain newest
+  first as `[hex manifest]`, and it is a function for the same reason `tei`
+  is. A published manifest is about nine megabytes at the current corpus, and
+  three places here read the chain, so a realized sequence would be held for
+  the whole export and would cost the chain's length times that. Each caller
+  asks for its own sequence, walks it once and lets it go, which bounds the
+  chain's contribution to what one manifest costs."
+  [{:keys [head-hex manifest-seq catalog events tei doi]}]
   (let [release {:head-hex head-hex :doi doi}
-        head (second (first manifests))
+        head (second (first (manifest-seq)))
         works (get catalog "works")
         by-slug (into {} (map (juxt #(get % "slug") identity)) works)
         withdrawn (get head "withdrawn")
@@ -1112,7 +1141,7 @@
       (page "index.html" (landing head-hex works (count withdrawn)))
       (page "rights.html" (rights-page (by-route "rights") (get head "rights")))
       (page "citation.html" (citation-page (by-route "citation") release))
-      (page "history.html" (history-page manifests events))
+      (page "history.html" (history-page manifest-seq events))
 
       (page "authors/index.html"
             (author-index (mapv (fn [[id {:keys [person by-relation]}]]
@@ -1185,16 +1214,12 @@
              works)
 
      ;; then the withdrawn works, which no longer have one
-     (keep (fn [{:strs [slug event]}]
-             (when-not (contains? by-slug slug)
-               (let [entry (->> (get (get events (verify/id->hex event)) "entries")
-                                (filter #(= slug (get % "slug")))
-                                first)
-                     last-release (some (fn [[hex manifest]]
-                                          (when (some #(= slug (get % "slug"))
-                                                      (get manifest "works"))
-                                            hex))
-                                        manifests)]
-                 (page (str "works/" slug "/index.html")
-                       (withdrawn-page slug entry last-release)))))
-           withdrawn))))
+     (let [gone (remove #(contains? by-slug (get % "slug")) withdrawn)
+           last-release (delay (last-release-of manifest-seq (map #(get % "slug") gone)))]
+       (map (fn [{:strs [slug event]}]
+              (let [entry (->> (get (get events (verify/id->hex event)) "entries")
+                               (filter #(= slug (get % "slug")))
+                               first)]
+                (page (str "works/" slug "/index.html")
+                      (withdrawn-page slug entry (get @last-release slug)))))
+            gone)))))

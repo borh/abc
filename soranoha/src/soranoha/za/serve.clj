@@ -185,21 +185,30 @@
                                        (or (view/read-at reader commit path)
                                            (throw (ex-info "verified chain path unreadable"
                                                            {:reason :path-unreadable :path path}))))
-                               manifests (mapv (fn [hex]
-                                                 [hex
-                                                  (:value (decode/decode
-                                                           "release-manifest"
-                                                           (read! (verify/manifest-path hex))))])
-                                               chain)
+                               manifest-of (fn [hex]
+                                             (:value (decode/decode
+                                                      "release-manifest"
+                                                      (read! (verify/manifest-path hex)))))
+                               ;; a function rather than a realized sequence.
+                               ;; A manifest is about nine megabytes at the
+                               ;; current corpus and the chain is read three
+                               ;; times below and once more inside
+                               ;; `browse/pages`; holding it would make an
+                               ;; activation cost the chain's length times a
+                               ;; manifest, which the chain-length-3 fixture
+                               ;; never shows. Each caller gets its own
+                               ;; sequence, walks it once and lets it go.
+                               manifest-seq (fn []
+                                              (map (fn [hex] [hex (manifest-of hex)]) chain))
                                blob-hexes (into (sorted-set)
                                                 (comp (map second)
                                                       (mapcat referenced-ids)
                                                       (map verify/id->hex))
-                                                manifests)
+                                                (manifest-seq))
                                event-hexes (into (sorted-set)
                                                  (keep #(some-> (get (second %) "governance_event")
                                                                 verify/id->hex))
-                                                 manifests)]
+                                                 (manifest-seq))]
                            (doseq [hex chain]
                              (write! (verify/manifest-path hex)
                                      (read! (verify/manifest-path hex)))
@@ -241,7 +250,7 @@
                              (write! (verify/event-sig-path hex)
                                      (read! (verify/event-sig-path hex))))
                            (write! verify/head-path (sign/hex64-lf-bytes (:head chain-result)))
-                           (let [head-manifest (second (first manifests))
+                           (let [head-manifest (manifest-of (first chain))
                                  head-catalog (:value
                                                (decode/decode
                                                 "catalog"
@@ -289,7 +298,7 @@
                              (doseq [[path bytes]
                                      (browse/pages
                                       {:head-hex (:head chain-result)
-                                       :manifests manifests
+                                       :manifest-seq manifest-seq
                                        :catalog head-catalog
                                        :events (into {}
                                                      (map (fn [hex]

@@ -8,6 +8,7 @@
             [clojure.test :refer [deftest is testing]]
             [soranoha.ori.fixture :as fixture]
             [soranoha.ori.render :as render]
+            [soranoha.snh.verify :as verify]
             [soranoha.za.browse :as browse]
             [soranoha.za.docs :as docs]
             [soranoha.za.html :as html]))
@@ -78,22 +79,25 @@
   ([works withdrawn]
    {:head-hex head-hex
     :tei tei-for
-    :manifests [[head-hex {"works" (mapv #(select-keys % ["slug" "source_content_hash"])
-                                         works)
-                           "withdrawn" withdrawn
-                           "governance_event" (when (seq withdrawn)
-                                                (str "snh:1:governance-event:" event-hex))
-                           "corpus" (corpus head-rev prev-rev)
-                           "rights" rights}]
-                ;; the predecessor holds one of the same works under different
-                ;; source bytes, so a history row has an addition and a change
-                ;; to count rather than only additions
-                [prev-hex {"works" [{"slug" "000092_000879"
-                                     "source_content_hash" (apply str (repeat 64 "2"))}]
-                           "withdrawn" []
-                           "governance_event" nil
-                           "corpus" (corpus prev-rev nil)
-                           "rights" rights}]]
+    ;; a function, and called afresh each time, exactly as the exporter
+    ;; supplies it: `pages` must not depend on getting one sequence back
+    :manifest-seq
+    (fn []
+      [[head-hex {"works" (mapv #(select-keys % ["slug" "source_content_hash"]) works)
+                  "withdrawn" withdrawn
+                  "governance_event" (when (seq withdrawn)
+                                       (str "snh:1:governance-event:" event-hex))
+                  "corpus" (corpus head-rev prev-rev)
+                  "rights" rights}]
+       ;; the predecessor holds one of the same works under different
+       ;; source bytes, so a history row has an addition and a change
+       ;; to count rather than only additions
+       [prev-hex {"works" [{"slug" "000092_000879"
+                            "source_content_hash" (apply str (repeat 64 "2"))}]
+                  "withdrawn" []
+                  "governance_event" nil
+                  "corpus" (corpus prev-rev nil)
+                  "rights" rights}]])
     :catalog {"schema" "snh-catalog/1" "works" works}
     :events {event-hex {"schema" "snh-governance-event/1"
                         "kind" "withdrawal"
@@ -262,6 +266,49 @@
         "the release that last contained it stays reachable")
     (is (string/includes? (page pages "index.html") "取り下げ")
         "the landing page counts withdrawals rather than hiding them")))
+
+(deftest withdrawn-works-find-their-own-last-release-in-one-pass
+  ;; Two works withdrawn at different points, so a lookup that stopped at the
+  ;; first release still listing anything would name the wrong one for the
+  ;; older withdrawal. Reading the chain once for all of them rather than once
+  ;; per withdrawal is what keeps an activation from re-walking it, so the
+  ;; per-slug answer has to survive that sharing.
+  (let [kept (work "000035_001567" "走れメロス" "はしれめろす")
+        older "000092_000879"
+        newer "000005_000005"
+        event-of (fn [slug] (str "snh:1:governance-event:"
+                                 (apply str (repeat 64 (if (= slug older) "a" "b")))))
+        release (fn [hex slugs]
+                  [hex {"works" (mapv (fn [slug] {"slug" slug
+                                                  "source_content_hash" (apply str (repeat 64 "1"))})
+                                      slugs)
+                        "withdrawn" []
+                        "governance_event" nil
+                        "corpus" (corpus head-rev prev-rev)
+                        "rights" rights}])
+        chain [(assoc-in (release head-hex [(get kept "slug")]) [1 "withdrawn"]
+                         [{"slug" older "event" (event-of older)}
+                          {"slug" newer "event" (event-of newer)}])
+               (release prev-hex [(get kept "slug") newer])
+               (release (apply str (repeat 64 "3")) [(get kept "slug") newer older])]
+        rendered (pages {:head-hex head-hex
+                         :tei tei-for
+                         :manifest-seq (fn [] chain)
+                         :catalog {"schema" "snh-catalog/1" "works" [kept]}
+                         :events (into {}
+                                       (map (fn [slug]
+                                              [(verify/id->hex (event-of slug))
+                                               {"schema" "snh-governance-event/1"
+                                                "kind" "withdrawal"
+                                                "entries" [{"slug" slug
+                                                            "reason_code" "rights"
+                                                            "statement" "Withdrawn."}]}]))
+                                       [older newer])})]
+    (is (string/includes? (page rendered (str "works/" newer "/index.html")) prev-hex)
+        "the newer withdrawal was last published one release back")
+    (is (string/includes? (page rendered (str "works/" older "/index.html"))
+                          (apply str (repeat 64 "3")))
+        "the older one two releases back, not wherever the walk first stopped")))
 
 (deftest the-same-release-produces-the-same-bytes-test
   (let [works [(work "000092_000879" "蜘蛛の糸" "くものいと")

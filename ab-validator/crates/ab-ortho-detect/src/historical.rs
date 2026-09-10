@@ -278,8 +278,6 @@ mod tests {
         }
     }
 
-    // ---- expand_long_vowel ----
-
     #[test]
     fn long_vowel_o_row_becomes_u() {
         // けふ reads キョー; kata_to_hira→きょー; ょ is o-row → きょう.
@@ -304,8 +302,6 @@ mod tests {
     fn long_vowel_passthrough_without_mark() {
         assert_eq!(expand_long_vowel("あさ"), "あさ");
     }
-
-    // ---- digraph tokens (pron path) ----
 
     #[test]
     fn digraph_kefu_becomes_kyou() {
@@ -332,8 +328,6 @@ mod tests {
             Some("こう")
         );
     }
-
-    // ---- regular surface rewrite ----
 
     #[test]
     fn medial_hagyou_rewrites() {
@@ -386,8 +380,6 @@ mod tests {
         );
     }
 
-    // ---- particle guard ----
-
     #[test]
     fn particle_ha_he_wo_are_protected() {
         // Standalone 助詞 は/へ/を keep historical spelling in 現代仮名遣い.
@@ -401,8 +393,6 @@ mod tests {
         // Token-initial は in a non-particle word is not medial → stays は.
         assert_eq!(modernize_token(&tok("はな", "ハナ", "名詞")), None);
     }
-
-    // ---- no-change detection ----
 
     #[test]
     fn kanji_token_with_long_vowel_reading_is_not_replaced_by_reading() {
@@ -438,10 +428,6 @@ mod tests {
         };
         assert_eq!(modernize_token(&t).as_deref(), Some("い"));
     }
-
-    // ---- rules hash ----
-
-    // ---- detector (token-granular annotations) ----
 
     /// A stub oracle returning a fixed token stream so the detector is testable
     /// without a dictionary. Spans are byte ranges within the sentence text.

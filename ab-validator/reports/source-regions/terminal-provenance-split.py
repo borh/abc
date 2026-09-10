@@ -146,8 +146,6 @@ def discover_entries(corpus_root: pathlib.Path) -> list[pathlib.Path]:
     return entries
 
 
-# --- Zip-vs-plain entry selection/reading --
-#
 # The corpus confinement audit traced the split scanner's 6-entry
 # disagreement with the Rust corpus pipeline to a single root cause: this
 # reader used to dispatch zip-vs-plain by FILENAME EXTENSION (`.zip` only),

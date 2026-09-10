@@ -2881,8 +2881,6 @@ mod tests {
         ))
     }
 
-    // --- WarehouseFeaturePatternAccumulator: BTreeMap -> linear scan ---
-
     fn warehouse_test_diff_row(
         region_index: u64,
         feature_key: &str,

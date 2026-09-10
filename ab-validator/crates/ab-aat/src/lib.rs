@@ -6307,10 +6307,7 @@ mod tests {
     /// (insertion-order serialization) and this exact-byte assertion
     /// fails. A parsed `Value` equality check would not catch this change, since
     /// `Value::eq` for objects is order-independent.
-    ///
-    /// Expected output re-pasted 2026-07-12 (`ab-aozora` `0.5.0` →
-    /// `0.6.0`, the C5 identity bump; only the version string changed,
-    /// with no functional change) via:
+    /// Regenerate expected output via:
     /// ```text
     /// export RUSTC_WRAPPER= SCCACHE_DISABLE=1
     /// cd ab-validator

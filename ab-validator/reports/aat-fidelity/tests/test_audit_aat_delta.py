@@ -558,9 +558,6 @@ def test_blocks_as_object_is_reference_error(tmp_path):
     assert code == 2
 
 
-# --- span-confinement mode ---
-
-
 def spanned(value, bs, be, ls, le):
     return {
         "kind": "text",
@@ -616,9 +613,6 @@ def test_wholesale_line1_synthesis_trips(tmp_path):
     cand = write_dump(tmp_path, "b", {"w1": doc([para(*nodes)])})
     code, _, _ = run("span-confinement", base, cand, tmp_path)
     assert code == 2
-
-
-# --- v2-migration mode ---
 
 
 def v2_doc(blocks, warnings=None):
@@ -796,7 +790,7 @@ def _line_width_base(tmp_path):
 
 
 def test_v2_migration_line_width_container_stays_raw(tmp_path):
-    # C3 gate fix (mirror of the Rust `line_width_container` pin): the
+    # Mirror of the Rust `line_width_container` pin: the
     # standalone `字詰め` line-width form migrates MECHANICALLY only: the
     # candidate keeps the raw containerOpen/containerClose pair, so the doc
     # lands in `migrated`, never `jizume_rewritten`.
@@ -827,8 +821,8 @@ def test_v2_migration_line_width_container_stays_raw(tmp_path):
 
 def test_v2_migration_rejects_standalone_jizume_block(tmp_path):
     # A candidate that forms a jizume_block from the standalone line-width
-    # form is the over-match the C3 gate caught; it must be REJECTED, since
-    # the forward rewrite leaves the pair raw.
+    # form is an over-match and must be rejected, since the forward rewrite
+    # leaves the pair raw.
     base = _line_width_base(tmp_path)
     cand = write_dump(
         tmp_path,
@@ -1186,9 +1180,6 @@ def test_v2_migration_rejects_warning_extra_key(tmp_path):
     assert code == 2
 
 
-# --- source-note-append mode ---
-
-
 def source_note(content, placement="back", region_class="terminal_provenance", span=None):
     content = list(content)
     if span is None:
@@ -1342,8 +1333,6 @@ def test_append_mode_rejects_terminator_stripped_values(tmp_path):
     assert code == 2
 
 
-# --- bare-toggle-adoption mode -----------------------
-#
 # NOTE: this file already defines `raw_marker(source, marker_kind, start)`
 # above (used by container-rewrite/v2-migration/source-note-append tests).
 # Its signature is incompatible with what these tests need (explicit

@@ -33,11 +33,9 @@
           (swap! cache assoc [::hash path] v)
           v))))
 
-;; ---------------------------------------------------------------------------
 ;; SchemaRegistry: created once at namespace load; thread-safe and caches
 ;; Schema objects keyed by $id / content. Draft 2020-12 is the default dialect
 ;; when $schema is absent from the schema data.
-;; ---------------------------------------------------------------------------
 (defn- checked-in-schema-resources
   ([] (checked-in-schema-resources (fs/path "schemas")))
   ([schema-dir]

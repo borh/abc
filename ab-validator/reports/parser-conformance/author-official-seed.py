@@ -122,8 +122,7 @@ SEED = [
         "https://www.aozora.gr.jp/annotation/layout_1.html",
         "[provenance:official] verbatim example; 地から１字上げ (raise 1 char from baseline)",
     ),
-    # --- edge-case expansion 2026-07-09 (§5): variant forms from official docs, to
-    # move the seed from "relative family weakness" toward absolute-rate coverage. ---
+    # Variant forms from official docs for absolute-rate coverage.
     # Sesame-dot variants (emphasis.html): all map to the shared `bouten` marker; a
     # parser that only handles plain 傍点 will drop these.
     (

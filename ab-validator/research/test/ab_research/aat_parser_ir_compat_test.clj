@@ -56,8 +56,6 @@
     (is (thrown? clojure.lang.ExceptionInfo
                  (compat/append-missing registry {:entries [{}]})))))
 
-;; --- CLI contract (dispatch-level; full subprocess verified manually) ---
-
 (defn- run-dispatch [args]
   (let [err (java.io.StringWriter.)
         code (binding [*err* err]

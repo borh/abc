@@ -12,8 +12,7 @@
 //! `mod tests` instead (`bare_toggle_zero_adoption_is_structurally_unchanged`,
 //! `bare_toggle_pass_is_deterministic`), the natural home for anything
 //! that must call a `pub(crate)` function directly.
-//!
-//! Mirror test (Step 1): reads the shared vector file
+//! The mirror test reads the shared vector file
 //! `reports/aat-fidelity/bare-toggle-model-vectors.json`, the
 //! same vectors `reports/aat-fidelity/bare-toggle-placement.py`'s
 //! `classify_tokens` classifies on the Python side. This side asserts the
@@ -22,7 +21,7 @@
 //! `orphan_close`/`reopen`/`interleave_events`/`proper_nestings`/
 //! `rollback_markers`); the Python side owns counter-level assertions.
 //!
-//! Properties (Step 2): five invariants over the same
+//! The properties test five invariants over the same
 //! `classify_tokens`-equivalent grammar, generated via a "token soup" of
 //! the four bare-toggle marker literals interleaved with short ASCII/
 //! hiragana filler.

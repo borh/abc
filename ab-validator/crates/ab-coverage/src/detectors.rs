@@ -195,17 +195,14 @@ where
     }
 }
 
-// ---------------------------------------------------------------------------
 // Named detectors. Each one receives the raw AAT JSON and returns the count
 // of nodes that match the row's intent. They are referenced by
 // `corpus_prevalence.detector_id` in `data/aozora-syntax-coverage.toml`.
 // Convention: detector id is the row id with `.` replaced by `_`.
-// ---------------------------------------------------------------------------
 
 fn lookup_named_detector(id: &str) -> Option<Rule> {
     let node = |predicate| Rule::AatNode(predicate);
     Some(match id {
-        // ---- gaiji.* group ----
         "gaiji_marker" => node(d_gaiji_any),
         "gaiji_unicode_codepoint" => node(d_gaiji_unicode_codepoint),
         "gaiji_jis_code" => node(d_gaiji_with_jis_code),
@@ -216,7 +213,6 @@ fn lookup_named_detector(id: &str) -> Option<Rule> {
         "figure_image_inline" => node(d_figure_image),
         "figure_insertion_declaration" => node(d_figure_insertion_declaration),
 
-        // ---- ruby.* + annotation.* + kunten.okurigana group ----
         "ruby_basic" => node(d_ruby_any),
         "ruby_double" => node(d_source_only),
         "ruby_placement_directional" => node(d_ruby_directional),
@@ -224,17 +220,14 @@ fn lookup_named_detector(id: &str) -> Option<Rule> {
         "annotation_bouki" => node(d_source_only),
         "kunten_okurigana" => node(d_source_only),
 
-        // ---- heading.* group ----
         "heading_basic" => node(d_heading_any),
         "heading_inline_form" => node(d_source_only),
         "heading_dogyo" => node(d_source_only),
         "heading_mado" => node(d_source_only),
 
-        // ---- caption.* group ----
         "caption_inline" => node(d_caption_inline),
         "caption_block" => node(d_caption_block),
 
-        // ---- style group: decoration / indentation / layout / etc. ----
         "decoration_boten" => node(d_style_boten),
         "decoration_bousen" => node(d_style_bousen),
         "decoration_bold_italic" => node(d_style_bold_italic),
@@ -255,10 +248,8 @@ fn lookup_named_detector(id: &str) -> Option<Rule> {
         "reference_frontref" => node(d_source_only),
         "emphasis_basic" => node(d_emphasis_any),
 
-        // ---- text-anchor group: source-only ----
         "break_page_line" | "break_line_explicit" | "editor_note_unmapped" => node(d_source_only),
 
-        // ---- composite ad-hoc rows ----
         "gaiji_ruby_inline_base" => Rule::WholeAat(d_gaiji_ruby_inline_base),
         "figure_image_caption" => Rule::WholeAat(d_figure_image_caption),
         "ruby_nested_forbidden" => node(d_source_only),
@@ -284,8 +275,6 @@ fn count_with<F: FnMut(&Value) -> bool>(aat: &Value, mut pred: F) -> u64 {
 fn style_type_of(node: &Value) -> Option<&str> {
     node.get("style_type").and_then(Value::as_str)
 }
-
-// ---- gaiji ----
 
 fn d_gaiji_any(node: &Value) -> bool {
     node.get("kind").and_then(Value::as_str) == Some("gaiji")
@@ -377,8 +366,6 @@ fn d_figure_image(n: &Value) -> bool {
     )
 }
 
-// ---- ruby ----
-
 fn d_ruby_any(node: &Value) -> bool {
     node.get("kind").and_then(Value::as_str) == Some("ruby")
 }
@@ -391,13 +378,9 @@ fn d_ruby_directional(n: &Value) -> bool {
         )
 }
 
-// ---- heading ----
-
 fn d_heading_any(node: &Value) -> bool {
     node.get("kind").and_then(Value::as_str) == Some("heading")
 }
-
-// ---- caption ----
 
 fn d_caption_inline(n: &Value) -> bool {
     n.get("kind").and_then(Value::as_str) == Some("caption")
@@ -408,8 +391,6 @@ fn d_caption_inline(n: &Value) -> bool {
 fn d_caption_block(node: &Value) -> bool {
     node.get("kind").and_then(Value::as_str) == Some("caption_block")
 }
-
-// ---- style group ----
 
 const BOTEN_TYPES: &[&str] = &[
     "boten",

@@ -331,8 +331,6 @@ mod tests {
     type OwnedMappingEntry = (&'static str, &'static str, Vec<(&'static str, usize)>);
     type MappingEntryRef<'a> = (&'a str, &'a str, &'a [(&'a str, usize)]);
 
-    // --- Pure metric functions ----------------------------------------
-
     #[test]
     fn precision_at_k_is_relevant_count_over_k() {
         assert!((precision_at_k(2, 3) - 2.0 / 3.0).abs() < 1e-12);
@@ -356,8 +354,6 @@ mod tests {
         assert!((ndcg_at_k(2.0, 4.0) - 0.5).abs() < 1e-12);
         assert_eq!(ndcg_at_k(0.0, 0.0), 0.0);
     }
-
-    // --- TSV parsing / validation --------------------------------------
 
     fn write_labels_tsv(dir: &Path, rows: &[(&str, &str)]) -> std::path::PathBuf {
         let path = dir.join("labels.tsv");

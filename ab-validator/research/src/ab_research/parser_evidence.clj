@@ -59,8 +59,6 @@
     [(str "Parser evidence index entry " idx " must be a map")]
     (parser-evidence-malli-errors idx entry)))
 
-;; --- Evidence-class admission/release boundary --------------------------------
-;;
 ;; A structural allowlist keyed off :evidence_class, not off the absence of any
 ;; particular field. Admission (exact-tuple registry) and release
 ;; qualification (separately authorized) each name the exact evidence

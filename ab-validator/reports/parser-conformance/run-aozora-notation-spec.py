@@ -63,9 +63,6 @@ def load_vectors(vectors_dir: Path) -> list[dict[str, Any]]:
     return vectors
 
 
-# --- inspect-mode comparison (reference `aozora inspect` adapter) ------------
-
-
 def inspect(adapter: Adapter, kind: str, source: str) -> tuple[dict[str, Any] | None, str | None]:
     proc = subprocess.run(
         adapter.command + [kind, "-"],
@@ -86,8 +83,6 @@ def inspect(adapter: Adapter, kind: str, source: str) -> tuple[dict[str, Any] | 
     return value, None
 
 
-# --- AAT-mode comparison: project AAT blocks -> ordered spec `kind` sequence -
-#
 # Adapters differ in span availability, so this comparison uses only the
 # ordered sequence of projected node kinds.
 #
@@ -241,8 +236,6 @@ def expected_kind_seq(vector: dict[str, Any]) -> list[str] | None:
     return [node["kind"] for node in nodes]
 
 
-# --- span-deviation manifest --------------------------------------------------
-#
 # Pre-committed, hand-reviewed authorization for diagnostic-span deviations vs
 # third-party vectors (rotation B decoded-source offsets). Fail-closed on both
 # sides: unlisted divergence still fails, and unknown/unused manifest entries
@@ -290,8 +283,6 @@ def check_manifest_consumed(manifest: dict, vector_names: set, used: set) -> Non
         )
 
 
-# --- scoring -----------------------------------------------------------------
-#
 # Projections an adapter cannot faithfully answer are recorded as explicit
 # `skips` -- they do NOT mask a pass/fail on the scored projection(s):
 #   inspect: scores nodes/pairs/diagnostics; serialize/html are skips.

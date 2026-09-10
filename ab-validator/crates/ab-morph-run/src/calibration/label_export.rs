@@ -398,8 +398,6 @@ mod tests {
         );
     }
 
-    // --- Integration: run_export_labels ------------------------------------
-
     // chars: a b c 吾 輩 は 猫 で あ る x y z P Q R  (16 chars, indices 0..16)
     const TINY_AAT: &str = r#"{"version":1,"work_id":"source-a","blocks":[{"kind":"paragraph","content":[{"kind":"text","value":"abc吾輩は猫であるxyzPQR"}]}],"meta":{"adapter":"fixture","adapter_version":"fixture","source_encoding":"utf-8","source_hash":"sha256:0000000000000000000000000000000000000000000000000000000000000000","parse_complete":true,"warnings":[]}}"#;
 

@@ -27,15 +27,11 @@
             [clojure.string :as string]
             [malli.core :as m]))
 
-;; --- Artifact locations -------------------------------------------------------
-
 (def corpus-path
   (files/path "data" "parser-release-qualification-corpus.edn"))
 
 (def predicates-path
   (files/path "data" "parser-release-qualification-predicates.edn"))
-
-;; --- Pinned-corpus identity ---------------------------------------------------
 
 (def corpus-entry-identity-keys
   "Fields that make a corpus entry's contract identity. The list hash is taken
@@ -134,8 +130,6 @@
       hash/sha256-json-jcs
       hash/format-sha256))
 
-;; --- Predicate evaluation -----------------------------------------------------
-
 (def unavailable-observations
   "Observation sentinels that mean the instrument produced no real value. They
   map to verdict `:unavailable`, never `:pass`."
@@ -208,8 +202,6 @@
            (every? #(= :pass (:verdict %)) results))
     :release-qualified
     :not-qualified))
-
-;; --- Qualification coherence + admission ------------------------------------
 
 (def admission-identity-keys
   "The exact compatibility projection used for admission. This is a
@@ -360,8 +352,6 @@
       (not= (:predicate_set_hash identity) (:predicate_set_hash predicate-set))
       (conj "qualification identity predicate_set_hash does not match the pinned predicate set"))))
 
-;; --- Report schema + assembly -------------------------------------------------
-
 (def predicate-result-schema
   [:map
    [:predicate_id :keyword]
@@ -420,8 +410,6 @@
      :predicate_verdicts results
      :verdict_tally (verdict-tally results)}))
 
-;; --- Capture entrypoint -------------------------------------------------------
-;;
 ;; Reads a captured measurement bundle EDN (produced by running the parser over
 ;; the pinned corpus on the measurement host) and writes the deterministic
 ;; report JSON. The bundle carries `:report_id`, `:identity`, and

@@ -47,8 +47,6 @@
      :admission_candidate (when candidate {:entries [candidate]})
      :measurements measurements}))
 
-;; --- Pinned corpus integrity --------------------------------------------------
-
 (deftest committed-corpus-passes-its-own-integrity-check-test
   (let [corpus (q/load-corpus)]
     (is (= [] (q/corpus-integrity-errors corpus)))
@@ -62,8 +60,6 @@
           tampered (assoc-in corpus [:entries 0 :expected_status] :failed)]
       (is (seq (q/corpus-integrity-errors tampered)))
       (is (thrown? clojure.lang.ExceptionInfo (q/validate-corpus! tampered))))))
-
-;; --- Predicate declaration ----------------------------------------------------
 
 (deftest predicate-set-declares-all-ten-dimensions-test
   (let [ids (set (map :predicate_id (:predicates (q/load-predicates))))]
@@ -123,8 +119,6 @@
     (is (= "parser-rq-resource-v1" (:instrument predicate)))
     (is (= 2147483648 (get-in predicate [:expected :value])))))
 
-;; --- Exact numeric boundary: 0.969 FAILS a 1.0 predicate ----------------------
-
 (deftest span-coverage-0969-fails-1_0-predicate-test
   (let [pred (first (filter #(= :source-span-coverage (:predicate_id %))
                             (:predicates (q/load-predicates))))]
@@ -142,8 +136,6 @@
   (is (true? (q/compare-observed :<= 0 0)))
   (is (false? (q/compare-observed :<= 0 1)))
   (is (true? (q/compare-observed :>= 1.0 1.0))))
-
-;; --- Integrity rule: no instrument -> :unavailable, never :pass ---------------
 
 (deftest missing-instrument-is-unavailable-not-pass-test
   (let [pred {:predicate_id :memory :dimension "d" :instrument "none"
@@ -179,8 +171,6 @@
     (is (= :pass
            (:verdict (q/evaluate-predicate
                       predicate {:parser_ir_schema_validation envelope}))))))
-
-;; --- Gate status and promotion rule -----------------------------------------
 
 (deftest gate-status-requires-all-predicates-pass-test
   (let [preds (q/load-predicates)
@@ -291,11 +281,11 @@
     (is (= :release-qualified (:gate_status report)))))
 
 (deftest clearance-is-conjunctive-across-body-and-metadata
-  ;; parser-rq-source-region-partition c4: header and tail are distinct
-  ;; regions under ONE metadata predicate, and a corpus clears only when
-  ;; body-projection coverage and metadata attribution both clear. Both
-  ;; predicates sit in the same must-pass set, so either number short of its
-  ;; threshold leaves the gate not qualified while the other passes.
+  ;; Header and tail are distinct regions under ONE metadata predicate, and a
+  ;; corpus clears only when body-projection coverage and metadata attribution
+  ;; both clear. Both predicates sit in the same must-pass set, so either
+  ;; number short of its threshold leaves the gate not qualified while the other
+  ;; passes.
   (let [failing {:metadata_attribution 0.882 :source_span_coverage 0.9911}]
     (is (= :release-qualified
            (:gate_status (q/build-report
@@ -315,8 +305,6 @@
 ;; entry-release-qualifying?) is exercised directly in
 ;; ab-research.parser-evidence-test; this gate consumes a measurement bundle and
 ;; never ingests citations, so there is no wrapper to test here.
-
-;; --- Report assembly + schema -------------------------------------------------
 
 (deftest build-report-validates-against-schema-test
   (let [corpus (q/load-corpus)

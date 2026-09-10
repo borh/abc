@@ -91,9 +91,6 @@ def strip_identity(doc):
     return doc
 
 
-# --- container-rewrite grammar (mirror of blocks_from_inline_content) ------
-
-
 def is_raw(node, marker_kind):
     return (
         isinstance(node, dict)
@@ -485,9 +482,6 @@ def container_rewrite_mode(base_doc, cand_doc, name, summary):
     summary["classes"]["rewritten"] += 1
 
 
-# --- span-confinement -------------------------------------------------------
-
-
 def mask_spans(node, spans_out):
     if isinstance(node, dict):
         # Intercept the "span" KEY regardless of value type: a null or
@@ -536,8 +530,6 @@ def span_confinement_mode(base_doc, cand_doc, name, summary):
         die(f"{name}: {len(cand_spans)} spans all line 1/1: synthesis tripline")
     summary["classes"]["span_confined"] += 1
 
-
-# --- v2-migration ------------------------------------
 
 WARNING_SEVERITIES = {"error", "warning", "note"}
 WARNING_ALLOWED_KEYS = {"code", "severity", "message", "span", "path"}
@@ -715,8 +707,6 @@ def is_burasage_paragraph(node):
     )
 
 
-# --- chitsuki left-ruby line re-merge (mirror of find_next_raw_boundary) -----
-#
 # The 地付き (align-end / chitsuki) block assembler collects the inline run
 # from just after its marker up to `find_next_raw_boundary`
 # (crates/ab-aat/src/lib.rs:516-522, 862-867): the first node of
@@ -872,24 +862,24 @@ def adopt_compound_jizume(base_node, cand_node, name):
 def v2_migration_mode(base_doc, cand_doc, name, summary):
     base = strip_identity(base_doc)
     cand = strip_identity(cand_doc)
-    base["version"] = 2  # contract item 1
-    migrate_warnings(base.get("meta", {}), cand.get("meta", {}), name)  # contract item 2
+    base["version"] = 2
+    migrate_warnings(base.get("meta", {}), cand.get("meta", {}), name)
     base.setdefault("meta", {})["warnings"] = "__warnings_checked__"
     cand.setdefault("meta", {})["warnings"] = "__warnings_checked__"
     counts = {"ruby_left": 0}
-    migrated_blocks = migrate_tree(base.get("blocks", []), counts)  # items 3+4
-    # C3 gate fix: the standalone `字詰め` line-width form is NOT formed into a
+    migrated_blocks = migrate_tree(base.get("blocks", []), counts)
+    # The standalone `字詰め` line-width form is NOT formed into a
     # jizume_block (it stays a raw containerOpen/containerClose
     # pair, exactly as the v1 baseline already left it). `rewrite_blocks`
     # therefore does no jizume formation here; jizume enters only via the
     # compound-indent wrap adopted below.
     migrated_blocks, _ = rewrite_blocks(migrated_blocks)
-    # item 4b: re-merge chitsuki lines a now-typed left-ruby no longer breaks
+    # Re-merge chitsuki lines a now-typed left-ruby no longer breaks
     # (mirror of find_next_raw_boundary; see merge_chitsuki_left_ruby).
     migrated_blocks = merge_chitsuki_left_ruby(migrated_blocks)
     adopted_blocks, compound_adopted = adopt_compound_jizume(
         migrated_blocks, cand.get("blocks"), name
-    )  # item 5, compound form
+    )
     rewritten = dict(base, blocks=adopted_blocks)
     if rewritten != cand:
         die(f"{name}: candidate is not exactly the v2-migration grammar's rewrite")
@@ -910,14 +900,11 @@ def v2_migration_mode(base_doc, cand_doc, name, summary):
         summary["classes"]["migrated"] += 1
 
 
-# --- source-note-append ------------------------------
-
-
 def check_meta_confinement(base, cand, name):
-    """Contract item 4: `meta.warnings` byte-equal; any other differing
-    `meta` key (adapter_version already stripped by `strip_identity`) is a
-    reference error. Split into two checks purely for a clearer die()
-    message; together they are exactly full-`meta` equality."""
+    """`meta.warnings` must be byte-equal; any other differing `meta` key
+    (adapter_version already stripped by `strip_identity`) is a reference
+    error. Split into two checks purely for a clearer die() message; together
+    they are exactly full-`meta` equality."""
     base_meta = base.get("meta", {})
     cand_meta = cand.get("meta", {})
     if base_meta.get("warnings") != cand_meta.get("warnings"):
@@ -998,14 +985,12 @@ def source_note_append_mode(base_doc, cand_doc, name, summary):
     appended = cand_blocks[len(base_blocks) :]
     for block in appended:
         check_appended_source_note_block(block, name)
-    if appended:  # contract item 5
+    if appended:
         summary["classes"]["source_note_appended"] += 1
     else:
         summary["classes"]["identical"] += 1
 
 
-# --- bare-toggle-adoption ----------------------------
-#
 # Two checks in one pass per work: (1) diff-grammar: any difference between
 # baseline and candidate must consist EXACTLY of bare-toggle adoption
 # rewrites (raw containerOpen/content/containerClose -> a typed

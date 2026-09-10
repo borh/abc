@@ -210,7 +210,6 @@ morph-warehouse-clean-dry-run:
 	  if [ -e "$d" ]; then echo "$d"; fi; \
 	done
 
-# --- scratch/ hygiene -------------------------------------------------------
 # scratch/ is gitignored materialized output (perf runs, morph smokes, coverage
 # artifacts). Per the project principle that materialized outputs are caches,
 # these are all regenerable via the morph-warehouse- / ab-validator- recipes.

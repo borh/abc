@@ -308,13 +308,21 @@ nothing to do. It is measured by repeating a release with its projection
 unchanged, which is what `decide-against-head` no-ops on, so it is the cost of
 resolving the head and deciding, with no assembly.
 
-Publication grows twice as fast as the verification inside it. The difference is
-the assembly and repository write, and that half grows on its own, by about 2.8
-seconds per release. It is not the assembly: the benchmark's assembler is a pure
-function of the head's withdrawn set and a fixed slug list, so it builds the
-same 17,602 work entries at every chain length. The growth is in the repository
-write path against a repository holding more objects. A checkpoint that
-eliminated re-verification completely would remove the smaller of the two terms.
+Publication grows at twice the rate of the verification inside it, and the
+factor is exactly two because `publish-build!` verifies the chain twice.
+`verified-state` verifies the fetched head before anything is assembled, and
+after the new commit is written `verify-repository-at` runs again on that
+commit, walking the whole chain back to genesis a second time. The no-op path
+returns at `decide-against-head` before the second call, which is why the no-op
+tracks a single verification: 3.2 seconds against 3.3, while publication is 6.6.
+
+The second walk re-verifies a prefix the same process verified moments earlier
+with the same pinned keys. Only the new commit's increment is unestablished at
+that point. Eliminating that is not the checkpoint question: a checkpoint asks a
+third party to trust a claim it did not compute, whereas this is one process
+declining to recompute its own result. The assembly is not a factor either. The
+benchmark's assembler is a pure function of the head's withdrawn set and a fixed
+slug list, so it builds the same 17,602 work entries at every chain length.
 
 ### What that costs on the real corpus
 
@@ -333,8 +341,10 @@ publication, and three consequences follow:
   190. At 227 releases a year, which is the current upstream push rate, that is
   inside year two.
 - Verifying a finished 5,476-release chain once costs on the order of 14 hours.
-- Building that chain costs the sum over its releases, because each one pays for
-  its own prefix twice over, which is on the order of nine years of compute.
+- Building that chain costs the sum over its releases, and each one walks its
+  own prefix twice, which is on the order of nine years of compute. Verifying
+  the increment rather than the whole chain on the second walk would halve it
+  without changing what any third party has to check.
 
 The measurement that mattered most is the one that came back better than the
 ledger recorded. The publication rearchitecture ledger measured an unchanged

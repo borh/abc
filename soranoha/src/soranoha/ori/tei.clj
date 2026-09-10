@@ -569,8 +569,20 @@
 
 (defn- render-source-note-node
   ([acc node _depth]
-   (if-not (present-text? (get node "text"))
+   (cond
+     (not (present-text? (get node "text")))
      (mark-omitted acc "source-note")
+
+     ;; ［＃本文終わり］. TEI already says where the body ends: the colophon is
+     ;; a `div type="source"` and everything before it is the body. Emitting
+     ;; the marker as well would state that boundary twice, the second time as
+     ;; a note about the source edition, which it is not. The line stays in the
+     ;; parser IR and the source inventory counts it as a region boundary, so
+     ;; nothing about it goes unrecorded.
+     (= "body-end-boundary" (get node "note_type"))
+     (mark-omitted acc "body-end-boundary")
+
+     :else
      ;; `front` and `back` put a note in the document's front or back matter,
      ;; which a note standing inside a phrase cannot mean: reaching them costs
      ;; the paragraph that phrase belongs to. Inline, the note is where it

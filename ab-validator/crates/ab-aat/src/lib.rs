@@ -2048,6 +2048,12 @@ fn build_aat(
 enum TailLineClass {
     TerminalProvenance,
     Colophon,
+    /// The `［＃本文終わり］` line. Aozora Bunko writes it to say the main body
+    /// has ended and the colophon follows, so it is a boundary between two
+    /// regions rather than a line of either one. Kept as its own class so the
+    /// consumer can encode the boundary structurally instead of republishing
+    /// the directive as prose about the source edition.
+    BodyEnd,
     Blank,
 }
 
@@ -2076,8 +2082,10 @@ fn classify_tail(lines: &[&str]) -> (Vec<TailLineClass>, Vec<usize>) {
             continue;
         }
         if stripped == "［＃本文終わり］" {
+            // The colophon starts here for every line that follows, which is
+            // what the state carries; the marker line itself is the boundary.
             state = Some(TailState::Colophon);
-            classes.push(TailLineClass::Colophon);
+            classes.push(TailLineClass::BodyEnd);
             continue;
         }
         if PROVENANCE_HEADS
@@ -2157,6 +2165,7 @@ fn source_notes_from_tail(decoded: &DecodedSource) -> (Vec<Value>, Vec<Value>) {
         let region = match classes[index] {
             TailLineClass::TerminalProvenance => Some("terminal_provenance"),
             TailLineClass::Colophon => Some("colophon_metadata"),
+            TailLineClass::BodyEnd => Some("body_end_boundary"),
             TailLineClass::Blank => None,
         };
         if region != group_region && !group.is_empty() {
@@ -7170,6 +7179,44 @@ mod tests {
         assert_eq!(
             classes,
             vec![TailLineClass::Colophon, TailLineClass::Colophon]
+        );
+    }
+
+    /// The marker is neither colophon data nor provenance: it says the body
+    /// has ended. Classifying it as colophon gave the consumer no way to tell
+    /// the boundary from a line about the source edition, which is how it
+    /// reached published TEI as a transcriber's note.
+    #[test]
+    fn classify_tail_body_end_marker_is_its_own_class_and_opens_the_colophon() {
+        // cards/001657/files/54333_ruby_69151.zip::shokuhin_no_henzo.txt is
+        // one of the 235 works in the pinned corpus that carry the marker.
+        let lines = [
+            "［＃本文終わり］",
+            "底本：FREDRICK ACCUM, \"A TREATISE ON ADULTERATIONS OF FOOD\"",
+            "入力：sogo",
+        ];
+        let (classes, unclassifiable) = classify_tail(&lines);
+        assert!(unclassifiable.is_empty());
+        assert_eq!(
+            classes,
+            vec![
+                TailLineClass::BodyEnd,
+                TailLineClass::TerminalProvenance,
+                TailLineClass::Colophon,
+            ]
+        );
+    }
+
+    /// A line following the marker with no head of its own inherits the
+    /// colophon state the marker set, which is what the marker means.
+    #[test]
+    fn classify_tail_body_end_marker_leaves_following_lines_in_the_colophon() {
+        let lines = ["［＃本文終わり］", "この作品には底本の記載がありません"];
+        let (classes, unclassifiable) = classify_tail(&lines);
+        assert!(unclassifiable.is_empty(), "the marker settles the state");
+        assert_eq!(
+            classes,
+            vec![TailLineClass::BodyEnd, TailLineClass::Colophon]
         );
     }
 

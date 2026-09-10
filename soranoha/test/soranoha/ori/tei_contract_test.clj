@@ -500,3 +500,34 @@
           "no element may claim the delimiter is the quotation")
       (is (= "「新小説」" text)
           "every character of the source reaches the reader"))))
+
+(deftest body-end-boundary-is-not-published-as-a-note-test
+  (testing "the marker saying the body ended is not a note about the source edition"
+    (let [result (parser-ir-tei/render
+                  {"nodes" [{"type" "text"
+                             "span" {"start" 0 "end" 3}
+                             "text" "本文"}
+                            {"type" "source-note"
+                             "span" {"start" 3 "end" 11}
+                             "text" "［＃本文終わり］\n"
+                             "note_type" "body-end-boundary"
+                             "placement" "back"
+                             "classification" "direct"
+                             "source_pointer" "blocks[1]"}
+                            {"type" "source-note"
+                             "span" {"start" 11 "end" 19}
+                             "text" "底本：「作品集」"
+                             "note_type" "source-attribution"
+                             "placement" "back"
+                             "classification" "direct"
+                             "source_pointer" "blocks[2]"}]
+                   "paragraphs" [{"role" "body" "node_range" {"start" 0 "end" 1}}
+                                 {"role" "source-note" "node_range" {"start" 1 "end" 2}}
+                                 {"role" "source-note" "node_range" {"start" 2 "end" 3}}]})
+          xml (pr-str (:body result))]
+      (is (not (string/includes? xml "本文終わり"))
+          "TEI says where the body ends by where the source division starts")
+      (is (string/includes? xml "底本：「作品集」")
+          "the colophon itself is still published")
+      (is (= [{:type "body-end-boundary" :policy "omitted"}] (:omitted result))
+          "the marker is accounted for as an omission, not dropped in silence"))))

@@ -294,9 +294,14 @@
     (is (= "本文" (:plaintext result)))
     (is (= "本文" (projection/markdown (:view result))))
     (is (= ["本文"] (texts result "p")))
-    (is (= ["［＃本文終わり］" "翻訳の底本：原書" "※利用条件" "翻訳者：訳者"]
+    ;; The marker is the boundary between body and colophon, which TEI states
+    ;; by where the source division begins. Publishing it as well put an Aozora
+    ;; Bunko directive at the head of the block a reader reads for the source
+    ;; edition, and in the note category a consumer reads for provenance.
+    (is (= ["翻訳の底本：原書" "※利用条件" "翻訳者：訳者"]
            (mapv view/visible-text
-                 (filter #(= "source-line" (attribute % "type")) (elements result "seg")))))))
+                 (filter #(= "source-line" (attribute % "type")) (elements result "seg"))))
+        "everything the marker introduces is published; the marker is not")))
 
 (deftest unsupported-multiline-accents-retain-text-and-mark-analysis-uncertain
   (let [body "〔Pardonnez a` mon bavardage\nA line without accent decomposition.〕"

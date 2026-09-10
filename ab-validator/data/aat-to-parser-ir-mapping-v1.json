@@ -1,10 +1,10 @@
 {
   "mapping_id": "https://w3id.org/soranoha/mappings/aat-v1-to-parser-ir-v1/generated-probe",
-  "mapping_version": "0.50.0",
+  "mapping_version": "0.51.0",
   "mapping_schema_hash": "sha256:c75eaa2e3f4f42002e25ff6cccf725c019c98d653360ca4e648c0f96bec2958a",
   "source_aat_version": 1,
   "target_parser_ir_schema_id": "https://w3id.org/soranoha/schemas/parser-ir.schema.json",
-  "target_parser_ir_schema_hash": "sha256:6e2c1b1a8dce9111f8f07ddf34dcbf03ea85fae619fdca86413b5acaf6786b19",
+  "target_parser_ir_schema_hash": "sha256:1df4269238092a84c2b11c40801210da1c4c4d6a7bc625856ababdf16279d7e9",
   "transform_rule_descriptions": [
     {
       "rule_id": "A-02",

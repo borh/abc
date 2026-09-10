@@ -656,6 +656,12 @@ fn map_block_content(
             let note_type = match region_class {
                 "terminal_provenance" => "source-attribution",
                 "colophon_metadata" => "transcriber-note",
+                // ［＃本文終わり］. It says the body has ended, which is a fact
+                // about where the regions meet and not a note about the source
+                // edition. Carried with its own note_type so the line stays in
+                // the IR, and so a consumer that encodes the boundary
+                // structurally can tell it apart from the colophon around it.
+                "body_end_boundary" => "body-end-boundary",
                 other => bail!("unmapped source_note region_class {other:?} at {path}"),
             };
             recorder.record(

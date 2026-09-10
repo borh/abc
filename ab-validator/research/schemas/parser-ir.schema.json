@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/soranoha/schemas/parser-ir.schema.json",
   "title": "ABC Parser IR",
-  "version": "0.54.0",
+  "version": "0.55.0",
   "type": "object",
   "required": ["schema_id", "schema_hash", "source", "nodes", "warnings", "errors", "interpretation_problems", "interpretation_facts"],
   "additionalProperties": false,
@@ -888,7 +888,7 @@
             "span": { "$ref": "#/$defs/span" },
             "source_span": { "$ref": "#/$defs/sourceSpan" },
             "text": { "type": "string" },
-            "note_type": { "type": "string", "enum": ["source-attribution", "bibliographic-note", "transcriber-note", "unknown"] },
+            "note_type": { "type": "string", "enum": ["source-attribution", "bibliographic-note", "transcriber-note", "body-end-boundary", "unknown"] },
             "placement": { "type": "string", "enum": ["front", "body", "back", "unknown"] },
             "classification": { "type": "string", "enum": ["direct", "heuristic", "unknown"] },
             "source_pointer": { "type": ["string", "null"] }

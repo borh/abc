@@ -2188,6 +2188,45 @@ fn emitted_colophon_note_converts_to_transcriber_note() {
     validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
 }
 
+/// ［＃本文終わり］ is where the body stops, not a remark about the source
+/// edition. Mapped as a colophon line it reached published TEI as
+/// `note type="transcriber-note"`, which put an Aozora Bunko directive in the
+/// category a consumer reads for provenance.
+#[test]
+fn emitted_body_end_marker_keeps_its_own_note_type() {
+    let (schemas, mapping) = v2_schemas_and_mapping();
+    let source = "本文。\n\n［＃本文終わり］\n底本：「作品集」\n入力：入力者\n";
+    let aat =
+        serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap()).unwrap();
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: default_test_options(),
+    })
+    .unwrap();
+    let notes: Vec<_> = output.parser_ir["nodes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|node| node["type"] == "source-note")
+        .collect();
+    assert_eq!(notes[0]["note_type"], "body-end-boundary");
+    assert_eq!(notes[0]["text"], "［＃本文終わり］\n");
+    assert_eq!(notes[0]["placement"], "back");
+    assert_eq!(notes[0]["classification"], "direct");
+    assert_eq!(
+        notes[1]["note_type"], "source-attribution",
+        "the boundary is its own note and does not absorb the provenance line"
+    );
+    assert_eq!(
+        notes[2]["note_type"], "transcriber-note",
+        "the colophon line after the boundary is still a colophon line"
+    );
+    assert_eq!(notes.len(), 3);
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
 #[test]
 fn preserves_source_diagnostics_and_parse_completion() {
     let (schemas, mapping) = v2_schemas_and_mapping();

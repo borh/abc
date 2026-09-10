@@ -174,7 +174,7 @@
 
     (testing "and the type route stays on the page as the citable one"
       (is (string/includes? work-page "/works/000092_000879/tei"))
-      (is (string/includes? work-page "識別子であって、ファイル名ではありません")))))
+      (is (string/includes? work-page "引用には識別子を使ってください")))))
 
 (deftest bulk-selections-are-linked-from-the-pages-they-mirror
   (let [works [(work "000092_000879" "蜘蛛の糸" "くものいと")]

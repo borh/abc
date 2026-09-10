@@ -329,8 +329,8 @@
      (into [:main (cond-> {} main-class (assoc :class main-class))] body)
      [:footer
       [:p (bilingual
-           "本文は著作権の消滅した青空文庫の作品、符号化は CC0 1.0。これらのページは署名された記録を表示したもので、記録そのものはマニフェストと各ファイルのバイト列です。"
-           "Texts are public-domain works from Aozora Bunko; the encoding is CC0 1.0. These pages render the signed record, which is the manifest and the artifact bytes.")]
+           "本文は著作権の消滅した青空文庫の作品、符号化データは CC0 1.0。署名はマニフェストと各ファイルにかかり、このサイトはそれを表示しています。"
+           "Texts are public-domain works from Aozora Bunko; the encoding is CC0 1.0. The signature covers the manifest and the artifact files, and this site displays them.")]
       [:p [:a {:href "/catalog.json"} "/catalog.json"] " · "
        [:a {:href "/releases/HEAD"} "/releases/HEAD"] " · "
        [:a {:href "https://www.aozora.gr.jp/"} "青空文庫"]]]
@@ -431,7 +431,7 @@
         (str "どの ZIP にも直下に catalog.csv が入っています。識別子、作品名、著者、底本、初出、分類、版など、"
              "引用に必要な項目が列に分かれているので、表計算ソフトでそのまま開けます。"
              "TEI ファイルを一つも開かずに、まとめた作品全体の文献表を作れます。"
-             "引用に使うのは識別子・底本ハッシュ・版であって、ファイル名ではありません。")
+             "引用には識別子・底本ハッシュ・版の列を使ってください。ファイル名は便宜のためのものです。")
         (str "Every archive carries catalog.csv at its root, with the structured citation "
              "fields in columns: identifier, title, author, source edition, first publication, "
              "class and release among them. It opens directly in a spreadsheet, so a whole "
@@ -527,7 +527,7 @@
     [:section
      [:h2 (bilingual "権利と引用" "Rights and citation")]
      [:p (bilingual
-          "底本は著作権の消滅した作品、Soranoha の符号化は CC0 1.0。クレジットの表示はお願いであって、条件ではありません。"
+          "底本は著作権の消滅した作品、Soranoha の符号化データは CC0 1.0。クレジットの表示はお願いであって、条件ではありません。"
           "The underlying works are out of copyright and Soranoha's encoding is CC0 1.0. Attribution is requested, not required.")]
      [:p [:a {:href "/rights"} (bilingual "権利について" "Rights statement")] " · "
       [:a {:href "/citation"} (bilingual "引用のしかた" "How to cite")]]]
@@ -671,8 +671,8 @@
        [:p [:a {:class "read-link" :href (str "/works/" slug "/read")}
             (bilingual "この作品を読む" "Read this work")]]
        [:p (bilingual
-            "ルビ、外字、傍点、字下げをそのまま表示して読めます。縦書きに切り替えることもできます。このページが表示しているのは下の TEI ファイルで、記録はその TEI ファイルです。"
-            "Ruby, gaiji, emphasis marks and indentation are shown as encoded, and the text can be set vertically. The page renders the TEI file below, which is the record.")]]
+            "ルビ、外字、傍点、字下げをそのまま表示して読めます。縦書きに切り替えることもできます。この表示は下の TEI ファイルから組み立てています。"
+            "Ruby, gaiji, emphasis marks and indentation are shown as encoded, and the text can be set vertically. The reading view is built from the TEI file below.")]]
 
       [:section
        [:h2 (bilingual "ダウンロード" "Downloads")]
@@ -686,8 +686,8 @@
                    ["markdown" "Markdown"]
                    ["tei-validation" (bilingual "検証レポート" "Validation report")]]))
        [:p (bilingual
-            (str "ファイル名は便宜のためのものです。引用に使うのは識別子であって、ファイル名ではありません。"
-                 "同じバイト列は、末尾に種別名を置いた URL からも取得できます。こちらは識別子から組み立てられ、版が変わっても同じままです。")
+            (str "引用には識別子を使ってください。ファイル名は便宜のためのものです。"
+                 "同じバイト列は、末尾に種別名を置いた URL からも取得できます。この URL は識別子から組み立てられ、版をまたいでも同じです。")
             (str "Cite the identifier; the filename is a convenience. The same bytes are also "
                  "served at URLs named after the artifact type, which are constructible from "
                  "the identifier and stable across releases."))]
@@ -762,8 +762,8 @@
       [:section {:class "provenance"}
        [:h2 (bilingual "この表示について" "About this rendering")]
        [:p (bilingual
-            "このページは署名された TEI ファイルを読みやすく表示したものです。記録は TEI ファイルであって、このページではありません。校異のあるところは一つの読みを選んで示し、採らなかった読みは要素の title に残しています。"
-            "This page renders the signed TEI file. The file is the record; this page is a projection of it. Where the encoding carries an apparatus, one reading is shown and the rejected witness is carried in the element's title.")]
+            "記録は下にリンクした署名済みの TEI ファイルです。このページはそれを読むための一つの形です。読みが複数ある箇所は一つだけを本文に示し、もう一方は語の title に残しています。"
+            "The record is the signed TEI file linked below. This page is one way of reading it. Where the text has more than one reading, the page shows one of them and keeps the other on the word itself, in its title text.")]
        [:dl {:class "facts"}
         [:dt (bilingual "版" "Release")]
         [:dd [:a {:href (str "/releases/" head-hex ".json")} [:code head-hex]]]

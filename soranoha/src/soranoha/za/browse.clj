@@ -790,7 +790,9 @@
      [:dd [:code (or reason_code "—")]]
      [:dt (bilingual "説明" "Statement")]
      [:dd (or statement "—")]
-     [:dt (bilingual "取り下げ記録" "Governance event")]
+     ;; the two rows above are read out of this file, so the label names the
+     ;; document a reader would be opening rather than its role in the protocol
+     [:dt (bilingual "取り下げの記録" "Withdrawal record")]
      [:dd [:a {:href (str "/withdrawn/" slug ".json")} (str "/withdrawn/" slug ".json")]]]
     [:p (bilingual
          "この作品は現在の版では配布していません。取り下げは記録を追記する操作で、現在の配布を止め、過去の版はそのまま署名の連鎖に残します。"

@@ -764,7 +764,7 @@
             (str "Cite the identifier; the filename is a convenience. The same bytes are also "
                  "served at URLs named after the artifact type, which are constructible from "
                  "the identifier and stable across releases."))]
-       [:p (->> ["tei" "plaintext" "markdown" "tei-validation"]
+       [:p (->> naming/artifact-kinds
                 (map (fn [artifact-type]
                        [:code (str "/works/" slug "/" artifact-type)]))
                 (interpose " · "))]]

@@ -11,6 +11,7 @@
             [soranoha.snh.verify :as verify]
             [soranoha.za.browse :as browse]
             [soranoha.za.docs :as docs]
+            [soranoha.za.naming :as naming]
             [soranoha.za.html :as html]))
 
 (def ^:private head-hex (apply str (repeat 64 "a")))
@@ -158,7 +159,7 @@
                       "https://www.aozora.gr.jp/cards/000879/card92.html"
                       "000092_000879" head-hex]]
           (is (string/includes? work-page fact) fact))
-        (doseq [artifact ["tei" "plaintext" "markdown" "tei-validation"]]
+        (doseq [artifact naming/artifact-kinds]
           (is (string/includes? work-page (str "/works/000092_000879/" artifact))
               artifact))))))
 
@@ -167,12 +168,21 @@
         pages (pages (inputs works))
         work-page (page pages "works/000092_000879/index.html")]
     (testing "each artifact links its readable name, which is what gets saved"
-      (doseq [[artifact extension] [["tei" "xml"] ["plaintext" "txt"]
-                                    ["markdown" "md"] ["tei-validation" "validation.json"]]]
+      ;; against the set the release carries rather than a list of its own, so
+      ;; that a page offering three of four downloads, or a fourth nothing
+      ;; answers, fails here
+      (is (= (set (map naming/extensions naming/artifact-kinds))
+             (into #{}
+                   (keep #(second (re-matches
+                                   #"Akutagawa_Ryunosuke-92_ruby_164-000092_000879\.(.+)"
+                                   (second %))))
+                   (re-seq #"download=\"([^\"]+)\"" work-page)))
+          "the download list offers exactly the artifact types a work carries")
+      (doseq [artifact naming/artifact-kinds]
         (is (string/includes?
              work-page
              (str "/works/000092_000879/Akutagawa_Ryunosuke-92_ruby_164-000092_000879."
-                  extension))
+                  (get naming/extensions artifact)))
             artifact)))
 
     (testing "and the type route stays on the page as the citable one"

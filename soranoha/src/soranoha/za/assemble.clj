@@ -15,7 +15,8 @@
             [soranoha.snh.decode :as decode]
             [soranoha.snh.admission :as admission]
             [soranoha.snh.verify :as verify]
-            [soranoha.za.catalog :as catalog]))
+            [soranoha.za.catalog :as catalog]
+            [soranoha.za.naming :as naming]))
 
 (defn- fail! [reason data]
   (throw (ex-info (str "release assembly failed: " (name reason))
@@ -46,10 +47,6 @@
    "excluded" (vec (sort-by #(get % "slug") excluded))
    "quarantined" (vec (sort-by #(get % "slug") quarantined))})
 
-;; Bytewise ascending by type, which is the order the manifest schema pins
-;; positionally. markdown sorts first.
-(def ^:private artifact-kinds ["markdown" "plaintext" "tei" "tei-validation"])
-
 (defn- cas-blob ^bytes [cas-dir hex]
   (or (cas/get-bytes cas-dir hex)
       (fail! :artifact-missing-from-cas {:hex hex})))
@@ -71,7 +68,7 @@
                         (when-not (fs/exists? path)
                           (fail! :artifact-missing-from-cas {:hex hex}))
                         [kind hex path]))
-                    artifact-kinds)]
+                    naming/artifact-kinds)]
     {:entry {"slug" slug
              "source_content_hash" (bare-hex (:source-content-hash outputs))
              ;; the standing selection admitted this work under. Fail closed:

@@ -150,6 +150,10 @@
                  (hash/sha256-bytes (:body response))))))
 
       (testing "current corpus: a live work's artifacts download by slug and type"
+        ;; from the manifest rather than from a list here, so that a release
+        ;; carrying fewer types than the configuration routes is a failure of
+        ;; this test and not a 404 a reader finds
+        (is (= (set naming/artifact-kinds) (set (keys current-artifacts))))
         (doseq [[type hex] current-artifacts]
           (let [response (http-get port (str "/works/" slug-a "/" type))]
             (is (= 200 (:status response)))

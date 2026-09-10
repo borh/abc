@@ -98,6 +98,18 @@
       (string/join "_" parts)
       (or (get person "person_id") "unknown"))))
 
+(def artifact-kinds
+  "Every artifact type a published work carries, in the order snh-manifest/3
+  pins them positionally: bytewise ascending by type, so markdown sorts first.
+
+  Four layers state this set, and they have to state the same one: the manifest
+  schema, the serving configuration's typed routes, the download list on each
+  work page, and the extension table below. A release was assembled carrying
+  three of the four while the other layers already promised four, and nothing
+  failed. It lives here because this is the lowest namespace all of them
+  already reach; the Caddyfile cannot read it, so a test compares the two."
+  ["markdown" "plaintext" "tei" "tei-validation"])
+
 (def extensions
   "Artifact type to the extension a reader expects for those bytes. The
   predictable routes name the type and carry no extension, which is why a

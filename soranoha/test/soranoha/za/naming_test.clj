@@ -4,7 +4,44 @@
   collides, survives a filesystem, and is the same on every activation."
   (:require [clojure.string :as string]
             [clojure.test :refer [deftest is testing]]
+            [soranoha.snh.schema :as schema]
             [soranoha.za.naming :as naming]))
+
+(defn- content-typed-paths
+  "Every path the checked-in Caddyfile both matches and gives a Content-Type.
+
+  The serving configuration is the one layer that cannot read
+  `naming/artifact-kinds`, so it is read here instead: named matchers map to
+  the paths they match, and a matcher counts only once a header directive
+  names it."
+  []
+  (let [text (slurp "config/caddy/Caddyfile")
+        matchers (into {} (map (fn [[_ matcher paths]]
+                                 [matcher (set (string/split paths #"\s+"))]))
+                       (re-seq #"(?m)^\s*@(\S+)\s+path\s+(.+?)\s*$" text))
+        typed (map second (re-seq #"(?m)^\s*header\s+@(\S+)\s+Content-Type" text))]
+    (into #{} (mapcat matchers) typed)))
+
+(deftest every-layer-that-promises-an-artifact-promises-the-same-four
+  ;; A release was assembled carrying three of these four types while the
+  ;; manifest schema, the serving configuration and every work page already
+  ;; promised four. Each layer stated the set on its own and nothing compared
+  ;; them, so the release verified, published and served a route that 404ed.
+  (testing "the extension table names an extension for each type and no other"
+    (is (= (set naming/artifact-kinds) (set (keys naming/extensions)))))
+
+  (testing "the manifest schema pins exactly these types, in this order"
+    (is (= naming/artifact-kinds
+           (mapv #(get-in % ["properties" "type" "const"])
+                 (get-in (schema/schema-for "release-manifest")
+                         ["properties" "works" "items" "properties"
+                          "artifacts" "prefixItems"])))))
+
+  (testing "the serving configuration types the route each type is served at"
+    (let [typed (content-typed-paths)]
+      (is (seq typed) "the Caddyfile parse found no typed path at all")
+      (doseq [artifact-type naming/artifact-kinds]
+        (is (contains? typed (str "/works/*/" artifact-type)) artifact-type)))))
 
 (defn- person
   [id family given family-romaji given-romaji & [relation]]

@@ -5,6 +5,7 @@
             [clojure.string :as str]
             [clojure.test :refer [deftest is testing]]
             [soranoha.assessment.evaluate :as evaluate]
+            [soranoha.assessment.graph :as graph]
             [soranoha.assessment.rdf :as rdf]
             [soranoha.assessment.records :as records]
             [soranoha.assessment.snapshot :as snapshot]
@@ -115,7 +116,7 @@
                        (assoc "identities" [identity])
                        (update-in ["findings" 0 "premises"] conj
                                   {"kind" "identity" "ref" "soranoha-example"
-                                   "fingerprint" (evaluate/identity-fingerprint
+                                   "fingerprint" (graph/identity-fingerprint
                                                   identity {"evidence" captured-evidence})}))
             nq (rdf/nquads (evaluate-view store minted) options)
             plain (rdf/nquads (evaluate-view store (source)) options)]

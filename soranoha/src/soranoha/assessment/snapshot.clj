@@ -2,12 +2,12 @@
   "Project currently applicable assessments to the frozen publication snapshot."
   (:require [clojure.string :as str]
             [soranoha.assessment.records :as records]
-            [soranoha.assessment.evaluate :as evaluate]
+            [soranoha.assessment.graph :as graph]
             [soranoha.snh.decode :as decode]
             [soranoha.za.scaffold :as scaffold]))
 
 (defn- fact [result]
-  (if (and result (= "available" (evaluate/state->wire (:state result))))
+  (if (and result (= "available" (graph/state->wire (:state result))))
     {"status" (:value result) "jurisdiction" "jp"
      "effective_date" (:effective-date result)
      "basis" (str/join "\n" (distinct (map #(get % "text") (:basis result))))}
@@ -22,7 +22,7 @@
             (if-let [reliance (get reliances slug)]
               {"slug" slug "reliance" reliance}
               (let [complete (get facts (records/fact-key slug "contribution-set"))
-                    established? (and complete (= "available" (evaluate/state->wire (:state complete))))
+                    established? (and complete (= "available" (graph/state->wire (:state complete))))
                     ids (if established? (:value complete) provisional)]
                 {"slug" slug
                  "work_assessment" (if established?

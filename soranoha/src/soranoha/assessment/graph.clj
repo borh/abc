@@ -1,0 +1,403 @@
+(ns soranoha.assessment.graph
+  "The assessment evaluation itself: authored findings and captured
+  observations in, resolved facts and their provenance out.
+
+  Nothing here reads or writes a store. The one effect the evaluation cannot
+  compute for itself is the derived-term rule, whose value has to come back
+  through the content-addressed engine so a release can point at the run that
+  produced it, and that arrives as the `:rule` function the caller supplies. A
+  caller with no store supplies `pure-rule` and gets the same answers.
+
+  This decides publication admissibility and mints the provenance the signed
+  snapshot carries, so it is separated from staging to be readable and testable
+  on its own rather than only through a store."
+  (:require [charred.api :as json]
+            [clojure.string :as str]
+            [soranoha.assessment.records :as records]
+            [soranoha.core.canonical :as canonical]))
+
+(defn state->wire [state]
+  (case state
+    :assessment/available "available"
+    :assessment/unavailable "unavailable"
+    (throw (ex-info "Invalid assessment state" {:reason :invalid-assessment-view :value state}))))
+
+(defn reason->wire [reason]
+  (case reason
+    nil nil
+    (:assessment/missing-selected-work
+     :assessment/stale-premise
+     :assessment/revoked-support
+     :assessment/unavailable-term-premise
+     :assessment/death-year-outside-conservative-rule
+     :assessment/attribution-not-death-based
+     :assessment/wartime-addition-not-discharged
+     :assessment/work-type-outside-conservative-rule
+     :assessment/publication-timing-unestablished
+     :assessment/underlying-work-not-public-domain
+     :assessment/before-term-rule-effective-date
+     :assessment/unavailable-contribution-assessment
+     :assessment/unavailable-contribution-completeness
+     :assessment/absent-assessment) (name reason)
+    (throw (ex-info "Invalid assessment reason" {:reason :invalid-assessment-view :value reason}))))
+
+(defn- wire->reason [reason]
+  (case reason
+    ("missing-selected-work"
+     "stale-premise"
+     "revoked-support"
+     "unavailable-term-premise"
+     "death-year-outside-conservative-rule"
+     "attribution-not-death-based"
+     "wartime-addition-not-discharged"
+     "work-type-outside-conservative-rule"
+     "publication-timing-unestablished"
+     "underlying-work-not-public-domain"
+     "before-term-rule-effective-date"
+     "unavailable-contribution-assessment"
+     "unavailable-contribution-completeness"
+     "absent-assessment") (keyword "assessment" reason)
+    (throw (ex-info "Invalid stored assessment reason" {:reason :invalid-assessment-view :value reason}))))
+
+(def missing-selected-work
+  {"state" "unavailable" "reason" "missing-selected-work"})
+
+(def rule-version "1")
+
+(def ^:private rule-date "2018-12-29")
+
+(defn semantic-value
+  "The supported value and its effective date, without its supporting evidence."
+  [result]
+  (case (state->wire (:state result))
+    "available" {"state" "available" "value" (:value result)
+                 "effective_date" (:effective-date result)}
+    "unavailable" {"state" "unavailable"}))
+
+(defn premise-fingerprint
+  "Fingerprint a fact projection for an authored premise. Observations use
+  records/fingerprint directly on their captured value."
+  [result projection]
+  (records/fingerprint
+   (case projection
+     "evidence-version" {"semantic" (semantic-value result) "basis" (:basis result)}
+     "set-membership" (dissoc (semantic-value result) "effective_date")
+     (semantic-value result))))
+
+(defn identity-fingerprint [identity observations]
+  (records/fingerprint
+   {"identity" identity
+    "evidence" (into (sorted-map)
+                     (map (fn [id] [id (records/fingerprint (get observations id))]))
+                     (get identity "evidence"))}))
+
+(defn- unavailable [reason dependencies]
+  {:state :assessment/unavailable :reason reason :dependencies (vec dependencies) :basis []})
+
+(defn- latest-date [results]
+  (last (sort (keep :effective-date results))))
+
+(defn- available [value date basis dependencies]
+  {:state :assessment/available :value value :effective-date date
+   :basis (vec (sort-by records/fingerprint (distinct basis))) :dependencies (vec dependencies)})
+
+(defn contribution-parts [subject]
+  (str/split subject #"/" 2))
+
+(defn pure-rule
+  "A `:rule` that computes the derived-term value and nothing else.
+
+  The store-backed rule writes the computed value to the content-addressed
+  store and reads it back, so the value the evaluation sees has been through
+  canonical JSON. This does that round trip without the store, so a caller
+  without one gets the same value rather than a differently shaped one."
+  [_key _inputs compute]
+  (json/read-json
+   (String. ^bytes (canonical/rfc8785-safe-integer-json-bytes-v1 (compute)) "UTF-8")))
+
+(defn validate-view!
+  "Refuse a source whose findings postdate `as-of`, whose captured observations
+  are malformed, or whose contribution sets are not fully premised."
+  [source observations as-of]
+  (records/date! as-of)
+  (doseq [finding (get source "findings")]
+    (when (pos? (compare (get finding "effective_date") as-of))
+      (records/fail! :future-assessment-finding {:finding (get finding "id")})))
+  (doseq [observation (get source "observations")]
+    (let [id (get observation "id") value (get observations id)]
+      (when-not (and (contains? observations id)
+                     (or (and (not= "retained-evidence" (get observation "selector"))
+                              (= missing-selected-work value))
+                         (case (get observation "selector")
+                           "catalog-contributors" (and (vector? value) (seq value)
+                                                       (every? #(and (string? %)
+                                                                     (re-matches #"(author|translator|editor|reviser|other):[0-9]{6}" %)) value)
+                                                       (= value (vec (sort (distinct value)))))
+                           (and (string? value) (re-matches #"sha256:[0-9a-f]{64}" value)))))
+        (records/fail! :invalid-captured-observation {:id id}))))
+  (let [ids (set (map #(get % "id") (get source "identities")))
+        by-observation (into {} (map (juxt #(get % "id") identity))
+                             (get source "observations"))]
+    (doseq [finding (get source "findings")
+            :when (= "contribution-set" (get-in finding ["fact" "predicate"]))]
+      (let [slug (get-in finding ["fact" "subject"])
+            captures (set (for [p (get finding "premises")
+                                :when (= "observation" (get p "kind"))
+                                :let [o (get by-observation (get p "ref"))]
+                                :when (= slug (get o "slug"))]
+                            (get o "selector")))]
+        (when-not (every? captures ["canonical-source-bundle" "catalog-contributors"])
+          (records/fail! :incomplete-contribution-set-premises {:finding (get finding "id")}))
+        (doseq [cid (get finding "value")
+                :let [coordinate (second (str/split cid #":" 2))]
+                :when (str/starts-with? coordinate "soranoha-")]
+          (when-not (ids coordinate)
+            (records/fail! :missing-minted-person {:contribution-id cid}))
+          (when-not (some #(and (= "identity" (get % "kind"))
+                                (= coordinate (get % "ref")))
+                          (get finding "premises"))
+            (records/fail! :missing-minted-person-premise {:contribution-id cid})))))))
+
+(defn- fact-edges
+  "Every fact key resolving `key` can reach: the fact premises its findings
+  name, plus the keys its predicate derives from.
+
+  Both this and the resolution below walk the same edges, and this is the one
+  that decides whether the walk terminates. Resolution reads the derived
+  values, which are always values some finding here authored, so what it
+  reaches is a subset of this."
+  [by-fact key]
+  (let [key-for records/fact-key
+        subject (get key "subject")
+        authored (mapcat #(get % "premises") (get by-fact key))
+        explicit (keep #(when (= "fact" (get % "kind")) (get % "ref")) authored)
+        implicit
+        (case (get key "predicate")
+          "work-status"
+          (cons (key-for subject "contribution-set")
+                (for [finding (get by-fact (key-for subject "contribution-set"))
+                      cid (get finding "value")]
+                  (key-for (records/contribution-subject subject cid) "contribution-status")))
+          "contribution-status"
+          (let [[slug cid] (contribution-parts subject)
+                coordinate (second (str/split (or cid "") #":" 2))]
+            (concat [(key-for (str "person:" coordinate) "death-year")
+                     (key-for subject "attribution-form")
+                     (key-for subject "no-wartime-addition")
+                     (key-for slug "work-type")
+                     (key-for slug "publication-timing")
+                     (key-for slug "derivative-chain")]
+                    (for [finding (get by-fact (key-for slug "derivative-chain"))
+                          underlying (get finding "value")]
+                      (key-for underlying "work-status"))))
+          [])]
+    (concat explicit implicit)))
+
+(defn validate-acyclic!
+  "The single cycle check. Resolution has none of its own, so a source that
+  reaches this without failing is one the recursion below terminates on."
+  [source candidates]
+  (let [by-fact (group-by #(get % "fact") (get source "findings"))
+        done (atom #{}) active (atom #{})]
+    (letfn [(visit [key]
+              (when (@active key) (records/fail! :assessment-cycle {:fact key}))
+              (when-not (@done key)
+                (swap! active conj key)
+                (doseq [next-key (fact-edges by-fact key)] (visit next-key))
+                (swap! active disj key)
+                (swap! done conj key)))]
+      (doseq [key (concat (keys by-fact)
+                          (map #(records/fact-key % "work-status") (keys candidates)))]
+        (visit key)))))
+
+(defn resolve!
+  "Resolve every authored fact and every candidate's work status.
+
+  Returns `{:observations :facts :findings :order}`: the observation states
+  this read, a map of fact key to resolved result, a map of finding id to the
+  review that produced it, and the keys in the order they resolved. A result
+  carries its value, effective date, supporting basis and `:dependencies`,
+  which is the provenance edge list a later projection traces a conclusion back
+  through. `:order` is what lets a staging pass record the facts in the order
+  the evaluation established them without re-deriving that order.
+
+  `rule` is called as `(rule key inputs compute)` and returns the derived
+  value; see `pure-rule`. `resolve!` performs no other effect, so the same
+  arguments give the same graph.
+
+  The `resolved` atom is memoization and nothing else: a fact is resolved once
+  and every later reference reads that result, which is what keeps the shared
+  premises of a large source from being recomputed per path. Cycles are already
+  refused by `validate-acyclic!`, which the caller runs first."
+  [source {:keys [observations candidates as-of rule]}]
+  (let [findings (get source "findings")
+        by-fact (group-by #(get % "fact") findings)
+        revoked (set (map #(get % "target") (get source "controls")))
+        resolved (atom {:facts {} :findings {} :order []})
+        obs (into {} (map (fn [[id value]]
+                            [id (if (= missing-selected-work value)
+                                  {:state :assessment/unavailable :reason :assessment/missing-selected-work}
+                                  {:state :assessment/available :value value :version (records/fingerprint value)})])) observations)]
+    (letfn [(resolve-premise [premise]
+              (let [kind (get premise "kind") ref (get premise "ref")
+                    projection (get premise "projection" "evidence-version")
+                    result (when (= kind "fact") (resolve-fact ref))
+                    identity (when (= kind "identity")
+                               (first (filter #(= ref (get % "id")) (get source "identities"))))
+                    actual (case kind
+                             "identity" (when (every? #(= :assessment/available (get-in obs [% :state]))
+                                                      (get identity "evidence"))
+                                          (identity-fingerprint identity observations))
+                             "observation"
+                             (do
+                               (when (and (= :assessment/available (get-in obs [ref :state]))
+                                          (= projection "set-membership")
+                                          (not (vector? (get-in obs [ref :value]))))
+                                 (records/fail! :non-set-membership-premise {:premise premise}))
+                               (get-in obs [ref :version]))
+                             (when (= :assessment/available (:state result))
+                               (when (and (= projection "set-membership")
+                                          (not (vector? (:value result))))
+                                 (records/fail! :non-set-membership-premise {:premise premise}))
+                               (premise-fingerprint result projection)))
+                    matches? (= actual (get premise "fingerprint"))]
+                {:premise premise :state (if matches? :assessment/available :assessment/unavailable)
+                 :actual actual :reason (when-not matches?
+                                          (or (:reason result)
+                                              (if identity
+                                                (some #(get-in obs [% :reason]) (get identity "evidence"))
+                                                (get-in obs [ref :reason]))
+                                              :assessment/stale-premise))
+                 ;; What this premise's match rested on, for the RDF provenance
+                 ;; view to trace a finding back through. A fact premise passes
+                 ;; on the referenced fact's own grounding. An identity premise
+                 ;; matches only when every evidence observation is available
+                 ;; and its fingerprint is minted over all of them, so each one
+                 ;; is an edge; without them a finding resting on a minted
+                 ;; identity could not be traced to the evidence that grounded
+                 ;; it, which is the premise kind whose grounding is least
+                 ;; visible. An observation premise names its observation in
+                 ;; `ref`, which the projection already carries, and an
+                 ;; observation rests on nothing further, so it adds no edge.
+                 :dependencies (if (= kind "identity")
+                                 (mapv (fn [id]
+                                         {:observation id
+                                          :state (get-in obs [id :state])
+                                          :reason (get-in obs [id :reason])})
+                                       (get identity "evidence"))
+                                 (vec (:dependencies result)))}))
+            (resolve-finding [finding]
+              (let [id (get finding "id")
+                    edges (mapv resolve-premise (get finding "premises"))
+                    bad (filter #(= :assessment/unavailable (:state %)) edges)
+                    result (cond
+                             (revoked id) (unavailable :assessment/revoked-support edges)
+                             (seq bad) (unavailable :assessment/stale-premise edges)
+                             :else (available (get finding "value")
+                                              (get finding "effective_date")
+                                              [{"id" id "version" (records/fingerprint finding)
+                                                "text" (get finding "basis")}]
+                                              edges))]
+                (swap! resolved assoc-in [:findings id] (assoc result :record finding))
+                result))
+            (dependency [key result]
+              {:fact key :state (:state result) :reason (:reason result)
+               :semantic (semantic-value result)
+               :dependencies (:dependencies result)})
+            (derive-contribution [key]
+              (let [[slug cid] (contribution-parts (get key "subject"))
+                    coordinate (second (str/split (or cid "") #":" 2))
+                    keys [(records/fact-key (str "person:" coordinate) "death-year")
+                          (records/fact-key (get key "subject") "attribution-form")
+                          (records/fact-key (get key "subject") "no-wartime-addition")
+                          (records/fact-key slug "work-type")
+                          (records/fact-key slug "publication-timing")
+                          (records/fact-key slug "derivative-chain")]
+                    results (mapv resolve-fact keys)
+                    edges (mapv dependency keys results)
+                    [death attribution wartime type timing chain] (map :value results)
+                    chain-keys (mapv #(records/fact-key % "work-status") (or chain []))
+                    chain-results (mapv resolve-fact chain-keys)
+                    all-results (into results chain-results)
+                    all-edges (into edges (mapv dependency chain-keys chain-results))
+                    failure-reason (fn []
+                                     (cond
+                                       (some #(not= :assessment/available (:state %)) all-results) :assessment/unavailable-term-premise
+                                       (or (not (integer? death)) (> death 1967)) :assessment/death-year-outside-conservative-rule
+                                       (not (#{"real-name" "well-known-pseudonym" "registered-real-name"} attribution)) :assessment/attribution-not-death-based
+                                       (not (true? wartime)) :assessment/wartime-addition-not-discharged
+                                       (not= "non-film-non-photo" type) :assessment/work-type-outside-conservative-rule
+                                       (not (#{"lifetime" "posthumous"} timing)) :assessment/publication-timing-unestablished
+                                       (some #(not= "public-domain" (:value %)) chain-results) :assessment/underlying-work-not-public-domain
+                                       (neg? (compare as-of rule-date)) :assessment/before-term-rule-effective-date))
+                    semantic (rule key
+                                   {"premises" (mapv semantic-value all-results)
+                                    "rule-applicable" (not (neg? (compare as-of rule-date)))}
+                                   #(if-let [reason (failure-reason)]
+                                      {"state" "unavailable" "reason" (reason->wire reason)}
+                                      {"state" "available" "value" "public-domain"
+                                       "effective_date" (last (sort [rule-date (latest-date all-results)]))}))]
+                (if (= "available" (get semantic "state"))
+                  (available (get semantic "value")
+                             (get semantic "effective_date")
+                             (concat [{"id" (str "jp-conservative-term/" rule-version)
+                                       "text" (str "jp-conservative-term/" rule-version
+                                                   ": Japanese death-based term: death by 1967; established attribution, work type, publication timing, rights chain and absence of wartime addition; status on or after 2018-12-29.")}]
+                                     (mapcat :basis all-results))
+                             all-edges)
+                  (unavailable (wire->reason (get semantic "reason")) all-edges))))
+            (derive-work [key]
+              (let [slug (get key "subject")
+                    set-key (records/fact-key slug "contribution-set")
+                    members (resolve-fact set-key)]
+                (if (= :assessment/available (:state members))
+                  (let [keys (mapv #(records/fact-key (records/contribution-subject slug %)
+                                                      "contribution-status") (:value members))
+                        results (mapv resolve-fact keys)
+                        edges (into [(dependency set-key members)] (mapv dependency keys results))]
+                    (if (every? #(and (= :assessment/available (:state %))
+                                      (= "public-domain" (:value %))) results)
+                      (available "public-domain" (latest-date (cons members results))
+                                 (mapcat :basis (cons members results)) edges)
+                      (unavailable :assessment/unavailable-contribution-assessment edges)))
+                  (unavailable :assessment/unavailable-contribution-completeness
+                               [(dependency set-key members)]))))
+            (resolve-fact [key]
+              (or (get-in @resolved [:facts key])
+                  (let [reviewed (mapv resolve-finding (get by-fact key))
+                        predicate (get key "predicate")
+                        derived (case predicate
+                                  "contribution-status" (derive-contribution key)
+                                  "work-status" (derive-work key)
+                                  nil)
+                        supports (filter #(= :assessment/available (:state %))
+                                         (cond-> reviewed derived (conj derived)))
+                        values (set (map :value supports))
+                        _ (when (> (count values) 1)
+                            (records/fail! :conflicting-assessment-support
+                                           {:fact key :justifications (vec (mapcat :basis supports))}))
+                        result (if (seq supports)
+                                 (available (:value (first supports)) (latest-date supports)
+                                            (distinct (mapcat :basis supports))
+                                            (mapcat :dependencies supports))
+                                 (unavailable (or (:reason (first reviewed))
+                                                  (:reason derived) :assessment/absent-assessment)
+                                              (mapcat :dependencies
+                                                      (cond-> reviewed derived (conj derived)))))
+                        result (if (and (= predicate "work-status")
+                                        (not (#{"in-copyright" "undetermined"} (:value result)))
+                                        (not= :assessment/available
+                                              (:state (resolve-fact
+                                                       (records/fact-key (get key "subject")
+                                                                         "contribution-set")))))
+                                 (unavailable :assessment/unavailable-contribution-completeness
+                                              (:dependencies derived)) result)]
+                    (swap! resolved #(-> % (assoc-in [:facts key] result)
+                                         (update :order conj key)))
+                    result)))]
+      ;; Evaluate every authored key, including findings outside the selected
+      ;; publication population, so inconsistent source authority cannot hide.
+      (doseq [key (sort-by records/fingerprint (keys by-fact))] (resolve-fact key))
+      (doseq [[slug _] (sort-by key candidates)]
+        (resolve-fact (records/fact-key slug "work-status")))
+      (assoc @resolved :observations obs))))

@@ -5,7 +5,7 @@
   (:require [clojure.string :as str]
             [clojure.walk :as walk]
             [soranoha.core.rdf :refer [iri component literal value-term quad]]
-            [soranoha.assessment.evaluate :as evaluate]
+            [soranoha.assessment.graph :as graph]
             [soranoha.core.hash :as hash]
             [soranoha.kura.engine :as engine]))
 
@@ -57,8 +57,18 @@
                (quad entity (str vocabulary "observationId") (value-term observation-id) nil)]))
           observation-ids))
 
-(defn- finding-quads [base vocabulary {:keys [record state reason grounding]}]
-  (let [id (claim-iri base record)
+(defn- finding-quads
+  "The quads for one reviewed finding, read from the projection's own shape.
+
+  Takes the projection entry rather than a keyword-keyed rebuild of it, because
+  the two callers each built that rebuild by hand and a field added to one was
+  missing from the other."
+  [base vocabulary finding]
+  (let [record (get finding "record")
+        state (get finding "state")
+        reason (get finding "reason")
+        grounding (get finding "grounding")
+        id (claim-iri base record)
         activity (str id "/review")
         assessor (str base "agent/" (component (get record "assessor")))]
     (concat
@@ -94,8 +104,8 @@
 
 (defn- dependency-input [edge]
   (cond-> edge
-    (contains? edge :state) (update :state evaluate/state->wire)
-    (contains? edge :reason) (update :reason evaluate/reason->wire)
+    (contains? edge :state) (update :state graph/state->wire)
+    (contains? edge :reason) (update :reason graph/reason->wire)
     (contains? edge :dependencies) (update :dependencies #(mapv dependency-input %))))
 
 (defn- projection-input [view]
@@ -108,11 +118,11 @@
                       ;; `dependencies` is one edge per premise, in the order
                       ;; the record lists them, so the observations each
                       ;; premise's match consumed stay aligned with it by index
-                      {"record" record "state" (evaluate/state->wire state) "reason" (evaluate/reason->wire reason)
+                      {"record" record "state" (graph/state->wire state) "reason" (graph/reason->wire reason)
                        "grounding" (mapv #(vec (keep :observation (:dependencies %))) dependencies)})
                     (:findings view))
    "facts" (mapv (fn [[fact result]]
-                   {"fact" fact "state" (evaluate/state->wire (:state result)) "value" (:value result)
+                   {"fact" fact "state" (graph/state->wire (:state result)) "value" (:value result)
                     "effective-date" (:effective-date result)
                     "semantic-id" (:semantic-id result) "basis-id" (:basis-id result)
                     "basis" (:basis result)
@@ -207,10 +217,11 @@
 (defn- render [input base profile]
   (let [vocabulary (get profile "vocabulary")
         accepted (str base "accepted")
-        findings (map #(hash-map :record (get % "record") :state (get % "state")
-                                 :reason (get % "reason") :grounding (get % "grounding"))
-                      (get input "findings"))
-        by-id (into {} (map (fn [{:keys [record]}] [(get record "id") record]) findings))]
+        findings (get input "findings")
+        by-id (into {} (map (fn [finding]
+                              (let [record (get finding "record")]
+                                [(get record "id") record])))
+                    findings)]
     (apply str
            (sort
             (distinct
@@ -245,11 +256,7 @@
                      payload (get inputs "payload")
                      quads (case kind
                              "reliance" (reliance-quads base vocabulary payload)
-                             "finding" (finding-quads base vocabulary
-                                                      {:record (get payload "record")
-                                                       :state (get payload "state")
-                                                       :reason (get payload "reason")
-                                                       :grounding (get payload "grounding")})
+                             "finding" (finding-quads base vocabulary payload)
                              "conclusion" (conclusion-quads base vocabulary (str base "accepted")
                                                             (get payload "supports") (get payload "result")))]
                  {"fragment" (.getBytes ^String (apply str (sort (distinct quads))) "UTF-8")}))}

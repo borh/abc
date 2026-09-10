@@ -2,6 +2,7 @@
   (:require [babashka.fs :as fs]
             [clojure.test :refer [deftest is testing]]
             [soranoha.assessment.evaluate :as evaluate]
+            [soranoha.assessment.graph :as graph]
             [soranoha.assessment.records :as records]
             [soranoha.assessment.snapshot :as snapshot]
             [soranoha.assessment.source :as source]
@@ -49,7 +50,7 @@
                                        "fingerprint" (records/fingerprint value)})
                                     (sort-by key captured))
                               {"kind" "identity" "ref" "soranoha-example"
-                               "fingerprint" (evaluate/identity-fingerprint identity captured)})}])))
+                               "fingerprint" (graph/identity-fingerprint identity captured)})}])))
 
 (defn- evaluated-snapshot [store root input]
   (snapshot/encode

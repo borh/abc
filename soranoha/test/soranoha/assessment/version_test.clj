@@ -4,6 +4,7 @@
             [clojure.test :refer [deftest is]]
             [soranoha.assessment.evaluate :as evaluate]
             [soranoha.assessment.fixtures :as fixtures]
+            [soranoha.assessment.graph :as graph]
             [soranoha.assessment.records :as records]
             [soranoha.assessment.rdf :as rdf]
             [soranoha.kura.engine :as engine]))
@@ -26,9 +27,9 @@
                      :as-of "2026-09-05" :toolchain-id "unchanged-runtime"}
             before (evaluate/evaluate! store source options)
             warm (evaluate/evaluate! store source options)
-            next-version (str @#'evaluate/rule-version "-changed")
+            next-version (str graph/rule-version "-changed")
             expected-rule (str "jp-conservative-term/" next-version)
-            changed (with-redefs-fn {#'evaluate/rule-version next-version}
+            changed (with-redefs-fn {#'graph/rule-version next-version}
                       #(evaluate/evaluate! store source options))
             rule-stage #(first (filter :rule? (:stages %)))
             key (records/fact-key "work/author:000001" "contribution-status")
@@ -52,9 +53,9 @@
                           "findings" [(fixtures/finding
                                        "death" "person:soranoha-example" "death-year" 1900
                                        [{"kind" "identity" "ref" "soranoha-example"
-                                         "fingerprint" (evaluate/identity-fingerprint identity captures)}])])
+                                         "fingerprint" (graph/identity-fingerprint identity captures)}])])
             view (evaluate/evaluate! store source
-                                     {:observations {"bundle" evaluate/missing-selected-work}
+                                     {:observations {"bundle" graph/missing-selected-work}
                                       :candidates {} :as-of "2026-09-05" :toolchain-id "test"})]
         (is (= :assessment/unavailable (get-in view [:findings 0 :state])))
         (is (= :assessment/missing-selected-work (get-in view [:findings 0 :dependencies 0 :reason])))))))

@@ -3,6 +3,7 @@
             [clojure.test :refer [deftest is testing]]
             [soranoha.assessment.evaluate :as evaluate]
             [soranoha.assessment.fixtures :as fixtures]
+            [soranoha.assessment.graph :as graph]
             [soranoha.assessment.records :as records]
             [soranoha.assessment.snapshot :as snapshot]
             [soranoha.kura.engine :as engine]))
@@ -90,12 +91,12 @@
             base (assoc records/empty-source "findings" [death])
             result (get (:facts (evaluate/evaluate! store base options)) (get death "fact"))
             premise {"kind" "fact" "ref" (get death "fact")
-                     "fingerprint" (evaluate/premise-fingerprint result "evidence-version")}
+                     "fingerprint" (graph/premise-fingerprint result "evidence-version")}
             child (fixtures/finding "dependent" "person:000002" "death-year" 1901 [premise])
             strict (assoc base "findings" [death child])
             changed (assoc-in strict ["findings" 0 "basis"] "Corrected citation")
             value-premise (assoc premise "projection" "value" "rationale" "Only established year affects this synthetic calculation."
-                                 "fingerprint" (evaluate/premise-fingerprint result "value"))
+                                 "fingerprint" (graph/premise-fingerprint result "value"))
             semantic (assoc-in changed ["findings" 1 "premises"] [value-premise])]
         (is (= :assessment/unavailable (:state (get (:facts (evaluate/evaluate! store changed options)) (get child "fact")))))
         (is (= :assessment/available (:state (get (:facts (evaluate/evaluate! store semantic options)) (get child "fact")))))
@@ -153,7 +154,7 @@
               identity (first (get source "identities"))
               source (update-in source ["findings" 0 "premises"] conj
                                 {"kind" "identity" "ref" (get identity "id")
-                                 "fingerprint" (evaluate/identity-fingerprint identity captures)})
+                                 "fingerprint" (graph/identity-fingerprint identity captures)})
               view (evaluate/evaluate! store source options)]
           (is (= "public-domain" (status view "work")))
           (fs/delete-tree (:cas-dir store))
@@ -180,7 +181,7 @@
                        (assoc "identities" [identity])
                        (update-in ["findings" 0 "premises"] conj
                                   {"kind" "identity" "ref" "soranoha-example"
-                                   "fingerprint" (evaluate/identity-fingerprint identity captures)}))]
+                                   "fingerprint" (graph/identity-fingerprint identity captures)}))]
         (is (= "public-domain" (status (evaluate/evaluate! store source options) "work")))
         (is (= "not-evaluated"
                (status (evaluate/evaluate! store
@@ -190,8 +191,8 @@
 (deftest missing-selected-edition-is-local-unavailability
   (with-store
     (fn [store]
-      (let [inputs (assoc options :observations {"bundle" evaluate/missing-selected-work
-                                                 "catalog" evaluate/missing-selected-work}
+      (let [inputs (assoc options :observations {"bundle" graph/missing-selected-work
+                                                 "catalog" graph/missing-selected-work}
                           :candidates {"independent" ["author:000002"]})
             view (evaluate/evaluate! store (source) inputs)
             complete (get (:facts view) (records/fact-key "work" "contribution-set"))]
@@ -259,7 +260,7 @@
 (deftest assessment-state-does-not-accept-neighboring-domain-vocabulary
   (doseq [state ["available" :available :aozora/available :validation/passed]]
     (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Invalid assessment state"
-                          (evaluate/semantic-value {:state state}))))
+                          (graph/semantic-value {:state state}))))
   (doseq [reason [:aozora/missing-selected-work :validation/failed]]
     (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Invalid assessment reason"
-                          (evaluate/reason->wire reason)))))
+                          (graph/reason->wire reason)))))

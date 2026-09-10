@@ -269,6 +269,13 @@
                     "catalog_csv_hash" catalog-csv-hash
                     "selected_slugs" (vec (sort (map :slug candidates)))
                     "rejected_count" (count rejected)
+                    ;; and the rejections themselves. A count alone says how
+                    ;; many candidates the build declined and nothing about
+                    ;; which, so a work excluded on its rights left no trace an
+                    ;; operator could read. Each entry carries the path, the
+                    ;; reason, and for a rights refusal the licence that was
+                    ;; declined.
+                    "rejected" (vec rejected)
                     "executed_stage_count" (count (filter false?
                                                           (mapcat (comp vals :cached)
                                                                   results)))

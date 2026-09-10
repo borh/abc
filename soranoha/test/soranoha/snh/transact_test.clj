@@ -127,7 +127,12 @@
         first-run (fx/publish! clone base)
         second-run (fx/publish! clone base)]
     (is (= :published (:outcome first-run)))
-    (is (= {:outcome :already-published :manifest-id (:manifest-id first-run)}
+    ;; the whole result, so a no-op cannot quietly start reporting more:
+    ;; the carried proof is of the commit the first run wrote, unmoved
+    (is (= {:outcome :already-published
+            :manifest-id (:manifest-id first-run)
+            :verified-head {:commit (:commit first-run)
+                            :result (:result (:verified-head first-run))}}
            second-run))
     (is (= 1 (count (:chain (verified-chain clone)))))))
 
@@ -282,3 +287,38 @@
         (is (= [(first slugs-a)] (mapv #(get % "slug") (get head "works"))))
         (is (= [(second slugs-a)]
                (mapv #(get % "slug") (get head "withdrawn"))))))))
+
+(deftest carrying-the-head-proof-forward-publishes-the-same-chain
+  ;; A caller publishing a run of releases holds a proof of the head it just
+  ;; wrote. Threading it costs one walk for the whole run instead of one per
+  ;; release, and must reach the same chain the walking publisher reaches.
+  (let [releases (fn [clone carry?]
+                   (reduce (fn [proof n]
+                             (let [opts (assoc base :selection-params
+                                               {"config" "carry" "round" (str n)})
+                                   result (fx/publish! clone opts (when carry? proof))]
+                               (is (= :published (:outcome result)))
+                               (:verified-head result)))
+                           nil
+                           (range 4)))
+        walked (:clone (fx/make-repos!))
+        carried (:clone (fx/make-repos!))]
+    (releases walked false)
+    (let [final (releases carried true)]
+      (testing "the carried run produces the same chain as the walking run"
+        (is (= (:chain (verified-chain walked)) (:chain (verified-chain carried)))))
+      (testing "the proof handed back is of the commit that was just published"
+        (is (= (:head (:result final)) (first (:chain (verified-chain carried))))))
+      (testing "the chain still verifies from the pinned keys alone"
+        (is (= 4 (:chain-length (verified-chain carried))))))))
+
+(deftest a-carried-proof-of-the-wrong-commit-is-ignored-not-trusted
+  ;; The proof is an optimisation, never an authority: one that does not name
+  ;; the commit the fetch resolved to sends the publisher back to the walk.
+  (let [{:keys [clone]} (fx/make-repos!)
+        first-run (fx/publish! clone (assoc base :selection-params {"config" "a"}))
+        stale (:verified-head first-run)
+        _ (fx/publish! clone (assoc base :selection-params {"config" "b"}))
+        third (fx/publish! clone (assoc base :selection-params {"config" "c"}) stale)]
+    (is (= :published (:outcome third)))
+    (is (= 3 (:chain-length (verified-chain clone))))))

@@ -222,12 +222,15 @@
        :selection (set all-candidates)})))
 
 (defn publish!
-  "Publish one build on `clone` with the fixture keys."
-  [clone assemble-opts]
-  (transact/publish-build! {:clone clone :branch branch
-                            :pinned-keys (pinned-keys)
-                            :assemble (make-assemble assemble-opts)
-                            :sign-release sign-release}))
+  "Publish one build on `clone` with the fixture keys. `verified-head`, when
+  given, is the proof the caller carried from its previous publication."
+  ([clone assemble-opts] (publish! clone assemble-opts nil))
+  ([clone assemble-opts verified-head]
+   (transact/publish-build! (cond-> {:clone clone :branch branch
+                                     :pinned-keys (pinned-keys)
+                                     :assemble (make-assemble assemble-opts)
+                                     :sign-release sign-release}
+                              verified-head (assoc :verified-head verified-head)))))
 
 (defn event-value [kind entries]
   {"schema" "snh-governance-event/1" "kind" kind "entries" entries})

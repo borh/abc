@@ -28,6 +28,13 @@
   grow. A single marginal is noisy enough to come out negative; read the slope
   across the whole run rather than any one row.
 
+  `--carry` threads each publication's own proof of the head it just wrote
+  into the next, which is what a backfill publishing a run of releases in one
+  process does. Without it every release re-verifies the whole chain, so a run
+  of N is quadratic; with it `publish_ms` should stop growing. Only
+  `publish_ms` changes: `noop_ms` and `verify_ms` are what a party holding no
+  proof pays, which is the scheduled job and the third-party verifier.
+
   `noop_ms` is the one the prerequisite is stated against. The ledger's bound is
   on an invocation that publishes nothing, because a scheduled job that fires on
   every upstream commit spends most of its runs discovering it has nothing to
@@ -70,8 +77,8 @@
 
 (defn -main [& args]
   (try
-    (let [{:keys [works releases changed out tmp]}
-          (cli/parse-opts args {:coerce {:works :long :releases :long}})
+    (let [{:keys [works releases changed out tmp carry]}
+          (cli/parse-opts args {:coerce {:works :long :releases :long :carry :boolean}})
           ;; babashka.cli parses a bare number itself, so `changed` arrives as a
           ;; long already; "all" is the only value that stays a string
           changed (cond (= "all" changed) :all
@@ -101,13 +108,13 @@
         ;; over the chain falls as the fixed setup is amortised, which reads as
         ;; an improvement while the real per-release cost is flat or rising.
         (reduce
-         (fn [previous release]
+         (fn [{:keys [previous proof]} release]
            (let [opts {:admitted all
                        :variant (variant-fn changed release all)
                        ;; the projection must move or an unchanged build is a
                        ;; no-op and publishes nothing
                        :selection-params {"config" "bench" "round" (str release)}}
-                 publish (millis #(fx/publish! clone opts))
+                 publish (millis #(fx/publish! clone opts proof))
                  ;; the same opts again: the projection now matches the head, so
                  ;; this is the scheduled job finding nothing to do
                  noop (millis #(fx/publish! clone opts))
@@ -119,14 +126,19 @@
              (emit! (cond-> {"phase" "release"
                              "chain_length" (inc release)
                              "works" works
+                             "carried" (boolean carry)
                              "publish_ms" (Math/round ^double (:milliseconds publish))
                              "noop_ms" (Math/round ^double (:milliseconds noop))
                              "verify_ms" (Math/round ^double verify)}
                       previous
                       (assoc "verify_ms_marginal"
                              (Math/round ^double (- verify ^double previous)))))
-             verify))
-         nil
+             {:previous verify
+              ;; only `publish_ms` is measured under the carry: `noop_ms` and
+              ;; `verify_ms` are the cost of a party that holds no proof, which
+              ;; is what a scheduled job and a third party respectively pay
+              :proof (when carry (get-in publish [:result :verified-head]))}))
+         {}
          (range releases))
         (finally (fs/delete-tree dir))))
     (finally (shutdown-agents))))

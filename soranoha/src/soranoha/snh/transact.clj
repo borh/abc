@@ -94,8 +94,24 @@
   `sign-release` maps a manifest hex to its 64-byte signature. `push-fn`
   (default the real compare-and-swap push) may return :ok, :rejected, or
   :unknown. Returns {:outcome :published | :already-published | :requeue
-  | :determinism-halt, ...}."
-  [{:keys [clone branch pinned-keys assemble sign-release push-fn]
+  | :determinism-halt, ...}.
+
+  `verified-head` is an optional {:commit <commit id> :result <what
+  `verify/verify-repository-at` returned for it>} that this caller computed
+  ITSELF, in this process, from this view and these pinned keys. When it
+  names the commit the fetch resolved to, the head is taken as proved and
+  the chain is not walked again; when it names anything else, or is absent,
+  the chain is walked. The result carries the successor proof back under
+  the same key, so a caller publishing a run of releases threads its own
+  proof forward instead of re-verifying the whole chain once per release,
+  which is the difference between linear and quadratic over a backfill.
+
+  This is the §9 step 2 counterpart of `verify/verify-increment-at` and
+  carries the same restriction, for the same reason: it is sound only
+  because the caller holds a proof it computed, so a proof accepted from
+  anywhere else, cached across processes or read from the repository, is
+  out of specification. See `docs/design/adr/0002-increment-verification-before-push.md`."
+  [{:keys [clone branch pinned-keys assemble sign-release push-fn verified-head]
     :or {push-fn repo/push!}}]
   (let [v (view/git-view clone)
         ;; fetched state is trusted only after full verification; the
@@ -107,7 +123,9 @@
         c (or (repo/fetch! clone branch) (fail! :no-publication-branch {:branch branch}))
         ;; kept whole rather than projected: the commit written below is
         ;; verified against this proof instead of walking the chain again
-        head-proof (verify/verify-repository-at v c pinned-keys)
+        head-proof (if (= c (:commit verified-head))
+                     (:result verified-head)
+                     (verify/verify-repository-at v c pinned-keys))
         head (state head-proof)
         {:keys [core blobs selection]} (assemble (some-> head :value))
         manifest (build-manifest core head (or (:hex head) sign/zero-head-hex))
@@ -116,7 +134,12 @@
      ;; the scheduled no-op / determinism decision runs before any commit is
      ;; created: an uncontended duplicate publishes nothing, and an uncontended
      ;; same-projection divergence halts.
-     (decide-against-head manifest head)
+     ;; neither outcome here moved the head, so the proof this process holds
+     ;; is still a proof of it and the caller can thread it on. The
+     ;; reconciliation paths below deliberately carry nothing: there the head
+     ;; moved under us and this proof is of a commit that no longer is one.
+     (some-> (decide-against-head manifest head)
+             (assoc :verified-head {:commit c :result head-proof}))
      (let [{:keys [hex bytes]} (decode/encode "release-manifest" manifest)
            commit (repo/write-commit!
                    clone {:parents [c]
@@ -126,8 +149,8 @@
                                                  :sig (sign-release hex)
                                                  :blobs blobs})
                           :message (str "snh release " hex)})
-           _ (verify/verify-increment-at v commit pinned-keys
-                                         {:commit c :result head-proof})
+           increment (verify/verify-increment-at v commit pinned-keys
+                                                 {:commit c :result head-proof})
            outcome (push-fn clone branch commit c)
            reconcile
            (fn [head2]
@@ -141,7 +164,8 @@
                    {:outcome :requeue :head (:hex head2)})))
            refetched-state (fn [] (verified-state (repo/fetch! clone branch)))]
        (case outcome
-         :ok {:outcome :published :manifest-id hex :commit commit}
+         :ok {:outcome :published :manifest-id hex :commit commit
+              :verified-head {:commit commit :result increment}}
          :unknown (let [head2 (refetched-state)]
                     (if (some #{hex} (:chain head2))
                       {:outcome :published :manifest-id hex}

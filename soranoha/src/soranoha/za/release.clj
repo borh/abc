@@ -72,10 +72,13 @@
   :selection is captured independently of assessment and execution.
   :build-works! accepts the published slugs and returns their kernel run report;
   it must recheck source and assessment inputs before returning on every attempt.
-  :source-hashes binds assessed source facts even when no artifact is requested."
+  :source-hashes binds assessed source facts even when no artifact is requested.
+  :verified-head is passed through to the transaction: a proof of the current
+  head that THIS process computed, letting a caller that publishes a run of
+  releases avoid re-verifying the whole chain once per release."
   [{:keys [selection build-works! source-hashes cas-dir upstream-origin selection-params
            policy-id policy-hash rights snapshot-bytes
-           clone branch pinned-keys sign-release push-fn]}]
+           clone branch pinned-keys sign-release push-fn verified-head]}]
   (let [snapshot (:value (decode/decode "assessment-snapshot" snapshot-bytes))
         candidates (get snapshot "candidates")
         selected (set selection)
@@ -109,4 +112,5 @@
                      :rights rights
                      :candidates candidates :works (report-works report)
                      :source-hashes source-hashes :selection selected}) head)))}
-       push-fn (assoc :push-fn push-fn)))))
+       push-fn (assoc :push-fn push-fn)
+       verified-head (assoc :verified-head verified-head)))))

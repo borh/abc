@@ -118,6 +118,43 @@ match and neither is derivable from the other. The sha256 selects the path; the
 archive resolves the path to its own identifier. This is why the recipe is a
 path mapping rather than an identifier translation.
 
+## Resolving the upstream provenance pointers
+
+Every manifest records where the source corpus came from, as
+`corpus.upstream_origin` and `corpus.upstream_rev`. Those two fields resolve
+through the archive by the same reasoning as the chain's own bytes, and they
+have to, because the GitHub repository the origin names no longer serves.
+
+The origin URL is the archive's identifier for the repository, not a link that
+has to answer:
+
+| Manifest field | Software Heritage identifier |
+|---|---|
+| `corpus.upstream_origin` | `swh:1:ori:<sha1 of the URL>`, resolved by `/api/1/origin/<url>/get/` |
+| `corpus.upstream_rev` | `swh:1:rev:<upstream_rev>`, the same hex, resolved by `/api/1/revision/<rev>/` |
+
+The revision identifier needs no translation. Git revision hashes *are*
+Software Heritage revision identifiers, unlike the artifact ids above, whose
+sha256 has to go through a path.
+
+For the upstream corpus this project pins, that resolves today to
+`swh:1:ori:6adb5c82f6b8412b1a978506696d9288eac300ab`, whose full visits reach
+2026-08-14, and `swh:1:rev:0e9ea3e586eb0aa34039fabfc85a407d2f98b165`, archived
+with its tree at `swh:1:dir:dcf629b24001d78ff4e324d9766948e867b89f0e`.
+
+A qualified identifier for one upstream file, which is what a reader following
+a provenance pointer usually wants, names the revision as its anchor:
+
+```
+swh:1:cnt:<git blob id>;origin=https://github.com/aozorabunko/aozorabunko;anchor=swh:1:rev:<upstream_rev>;path=/cards/000148/files/1046_ruby_4521.zip
+```
+
+The origin qualifier is a name the archive resolves, so it keeps working after
+the repository stops serving. That is the property the manifest field is
+recorded for, and it is why the field is not rewritten when a hosting account
+disappears: a rewritten URL would name a mirror the corpus was not built from,
+and the recorded revision would no longer be the thing the origin published.
+
 ## Where this sits in the genesis sequence
 
 An archival observation needs a publication commit to observe, so it follows

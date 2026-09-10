@@ -231,12 +231,19 @@
 (defn- render-inline-children [acc children depth]
   (if (>= depth max-inline-depth)
     (mark-omitted acc "emphasis-inline-depth")
-    (reduce (fn [state child]
-              (-> state
-                  (count-node (get child "type"))
-                  (render-node child (inc depth))))
-            acc
-            children)))
+    ;; Every inline position in the document reaches its children through
+    ;; here, so this is where a child learns that it is one. Two renderers
+    ;; otherwise close the paragraph in progress and hand their result to the
+    ;; document structure; from inside a phrase that would publish the phrase
+    ;; ahead of the text it followed.
+    (let [outer (:inline-context? acc)
+          rendered (reduce (fn [state child]
+                             (-> state
+                                 (count-node (get child "type"))
+                                 (render-node child (inc depth))))
+                           (assoc acc :inline-context? true)
+                           children)]
+      (assoc rendered :inline-context? outer))))
 
 (defn- render-text-node
   ([acc node _depth]
@@ -377,13 +384,16 @@
 
 (defn- render-inline-wrapper [acc children text depth wrapper]
   (if (seq children)
-    (let [before-count (count (:current-paragraph acc))
-          rendered (render-inline-children acc children depth)
-          inline-fragment (subvec (vec (:current-paragraph rendered)) before-count)]
-      (assoc rendered
-             :current-paragraph
-             (conj (subvec (vec (:current-paragraph acc)) 0 before-count)
-                   (into wrapper inline-fragment))))
+    ;; The wrapped fragment is what the children put in a paragraph of their
+    ;; own, which is how every other renderer here composes one. Carving it
+    ;; out of the paragraph in progress by index assumed that a child could
+    ;; only ever append to that paragraph, and nothing made that true: a child
+    ;; that closed the paragraph left the slice running off the end.
+    (let [before (:current-paragraph acc)
+          rendered (render-inline-children (assoc acc :current-paragraph [])
+                                           children depth)]
+      (append-inline (assoc rendered :current-paragraph before)
+                     (into wrapper (:current-paragraph rendered))))
     (append-inline acc (conj wrapper text))))
 
 (defn- render-warichu-node [acc node depth]
@@ -441,7 +451,12 @@
 
 (defn- render-heading-node
   ([acc node depth]
-   (if (#{"dogyo" "mado"} (get node "style"))
+   ;; `dogyo` and `mado` are the source saying that a heading sits in the run
+   ;; of text rather than above it. A heading nested inside inline content
+   ;; says as much by where it stands, so it is read the same way. The
+   ;; converter reaches this: its inline child projection maps the `heading`
+   ;; kind, and the style it copies over is any of `normal`, `dogyo`, `mado`.
+   (if (or (:inline-context? acc) (#{"dogyo" "mado"} (get node "style")))
      (render-inline-wrapper acc
                             (seq (get node "inline_children"))
                             (get node "text")
@@ -538,7 +553,16 @@
   ([acc node _depth]
    (if-not (present-text? (get node "text"))
      (mark-omitted acc "source-note")
-     (case (get node "placement")
+     ;; `front` and `back` put a note in the document's front or back matter,
+     ;; which a note standing inside a phrase cannot mean: reaching them costs
+     ;; the paragraph that phrase belongs to. Inline, the note is where it
+     ;; stands. The current converter emits source notes only as blocks, so
+     ;; this shape arrives from parser IR written by hand or by another
+     ;; producer rather than from the corpus.
+     (case (if (and (:inline-context? acc)
+                    (#{"front" "back"} (get node "placement")))
+             "body"
+             (get node "placement"))
        "front" (-> acc
                    flush-paragraph
                    flush-division
@@ -589,6 +613,7 @@
    :current-division []
    :current-paragraph []
    :current-paragraph-attrs nil
+   :inline-context? false
    :front-notes []
    :back-notes []
    :source-spans (sorted-map)

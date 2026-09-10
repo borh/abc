@@ -79,6 +79,79 @@
       (is (= {"emphasis" 3 "ruby" 1} (:node_counts result)))
       (is (empty? (:omitted result))))))
 
+(deftest nested-heading-renders-inline-and-keeps-source-order-test
+  (testing "a heading inside inline content stays in the phrase that contains it"
+    ;; The converter's inline child projection maps the `heading` kind and
+    ;; copies the style through, so a `normal` heading inside emphasis
+    ;; children is a shape the corpus can produce. Rendering it as a division
+    ;; heading would close the paragraph from inside the emphasis, which put
+    ;; the text before the emphasis after the heading and cost the emphasis
+    ;; the run in front of it.
+    (let [result (parser-ir-tei/render
+                  {"nodes" [{"type" "text"
+                             "span" {"start" 0 "end" 2 "coordinate_system" "parser_text_utf8"}
+                             "text" "前置"}
+                            {"type" "emphasis"
+                             "span" {"start" 2 "end" 6 "coordinate_system" "parser_text_utf8"}
+                             "style" "bold"
+                             "text" "甲見出乙"
+                             "inline_children" [{"type" "text"
+                                                 "span" {"start" 2 "end" 3 "coordinate_system" "parser_text_utf8"}
+                                                 "text" "甲"}
+                                                {"type" "heading"
+                                                 "span" {"start" 3 "end" 5 "coordinate_system" "parser_text_utf8"}
+                                                 "text" "見出"
+                                                 "level" 2
+                                                 "style" "normal"}
+                                                {"type" "text"
+                                                 "span" {"start" 5 "end" 6 "coordinate_system" "parser_text_utf8"}
+                                                 "text" "乙"}]}]})
+          paragraphs (filterv #(= :p (first %)) (hiccup-nodes (:body result)))]
+      (is (= [[:p "前置"
+               [:hi {:rend "bold"}
+                "甲"
+                [:seg {:n "2" :type "heading" :rend "normal"} "見出"]
+                "乙"]]]
+             paragraphs)
+          "one paragraph, in source order, with the emphasis spanning the heading")
+      (is (empty? (filterv #(= :head (first %)) (hiccup-nodes (:body result)))))
+      (is (empty? (:omitted result))))))
+
+(deftest nested-front-source-note-stays-in-the-phrase-test
+  (testing "a front-placed source note inside inline content renders where it stands"
+    ;; Only hand-written or third-party parser IR reaches this: the converter
+    ;; emits source notes as blocks. It used to throw, because the wrapper
+    ;; recovered its fragment by index from a paragraph the note had closed.
+    (let [result (parser-ir-tei/render
+                  {"nodes" [{"type" "text"
+                             "span" {"start" 0 "end" 2 "coordinate_system" "parser_text_utf8"}
+                             "text" "前置"}
+                            {"type" "emphasis"
+                             "span" {"start" 2 "end" 4 "coordinate_system" "parser_text_utf8"}
+                             "style" "bold"
+                             "text" "甲乙"
+                             "inline_children" [{"type" "text"
+                                                 "span" {"start" 2 "end" 3 "coordinate_system" "parser_text_utf8"}
+                                                 "text" "甲"}
+                                                {"type" "source-note"
+                                                 "span" {"start" 3 "end" 3 "coordinate_system" "parser_text_utf8"}
+                                                 "text" "底本注"
+                                                 "note_type" "source"
+                                                 "placement" "front"}
+                                                {"type" "text"
+                                                 "span" {"start" 3 "end" 4 "coordinate_system" "parser_text_utf8"}
+                                                 "text" "乙"}]}]})]
+      (is (= [:text
+              [:body
+               [:p "前置"
+                [:hi {:rend "bold"}
+                 "甲"
+                 [:note {:type "source"} [:seg {:type "source-line"} "底本注"]]
+                 "乙"]]]]
+             (:body result))
+          "no front matter, and the note keeps its place in the run of text")
+      (is (empty? (:omitted result))))))
+
 (deftest heading-inline-children-render-inside-head-test
   (testing "heading inline_children render structured TEI inside head"
     (let [result (parser-ir-tei/render

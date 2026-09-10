@@ -395,6 +395,76 @@ present. The batching work since has brought that to 68.6 seconds at the same
 work count. The bound is not currently breached; it is reached by growth, and
 the growth is what needs a decision.
 
+### Chain verification is linear to 60 releases
+
+The slopes above come from ten releases. A 60-release chain at the same work
+count settles the shape: least squares over lengths 1 to 53 gives 944.6 ms per
+release for verification, with a coefficient of determination of 0.9977, and the
+best-fit quadratic coefficient is negative, improving residual root-mean-square
+only from 692 to 676 ms. Splitting the range in half lowers the slope rather
+than raising it, 948.1 ms over lengths 1 to 30 against 934.5 ms over 31 to 53.
+Lengths 54 to 60 were measured while builds competed for the same cores and are
+excluded.
+
+### Verification splits across cores, and its runs have to be long
+
+A walk was one thread reading one manifest at a time. `verify-repository-at`
+now splits the chain into runs verified concurrently and joins them at the
+k-1 seams, a seam being the transition the runs deliberately leave open. Every
+invariant the walk establishes is local to one commit or to one adjacent pair,
+which is what makes a split possible at all; the test
+`a-segmented-walk-rejects-exactly-what-one-walk-rejects` puts the whole build
+mutation table through both forms and requires the same rejection from each.
+
+The newest commit of each run reads and hashes every artifact of its manifest,
+because no younger verified commit grants it reuse. That cost is paid once per
+run, so short runs waste it. Measured on one 96-release chain of 800 works,
+verified ten times back to back on a machine with 32 cores:
+
+| Runs | Releases per run | Wall time | Speedup |
+| ---: | ---: | ---: | ---: |
+| 1 | 96 | 5,220 ms | 1.00x |
+| 2 | 48 | 2,523 ms | 2.07x |
+| 3 | 32 | 1,796 ms | 2.91x |
+| 4 | 24 | 1,437 ms | 3.63x |
+| 6 | 16 | 1,133 ms | 4.61x |
+| 8 | 12 | 960 ms | 5.44x |
+| 12 | 8 | 828 ms | 6.30x |
+| 16 | 6 | 801 ms | 6.52x |
+| 24 | 4 | 754 ms | 6.92x |
+| 32 | 3 | 721 ms | 7.24x |
+
+Wall time follows 244 ms plus 50.9 ms per release in a run, fitted over runs of
+12 releases or longer. Neither constant is a free parameter: the intercept is
+what verifying one commit with no reuse grant costs at this work count, and the
+slope is the marginal cost a single walk pays per release, both measured
+separately.
+
+The fit holds within 7% while runs are 16 releases or longer and then breaks
+down. At runs of 8 the measured wall time is 27% above the model, at runs of 3
+it is 82% above, and speedup saturates near 7x rather than approaching the core
+count. Part of that is the fixed cost, which the model already carries; the
+remainder is unaccounted for and was not profiled. It is enough to fix the
+policy: the automatic run count never produces a run shorter than 32 releases,
+and it never asks for more runs than the machine has processors. An explicit
+`:segments` overrides both, which is what lets a test drive the seams over a
+chain of four.
+
+At corpus scale, carrying the 2.8x calibration above onto both constants, one
+commit with no grant costs 24.6 seconds and each further release in a run costs
+2.65 seconds:
+
+| Chain length | One walk | 8 runs | 16 runs | 32 runs |
+| ---: | ---: | ---: | ---: | ---: |
+| 227, one year at the current push rate | 10.4 min | 1.6 min | 1.0 min | 0.7 min |
+| 1,000 | 44.5 min | 5.9 min | 3.1 min | 1.7 min |
+| 5,476, one release per upstream commit | 4.0 h | 31 min | 15 min | 8 min |
+
+A third party checking the whole corpus waits minutes rather than an afternoon,
+and that wait was the figure deciding whether anyone outside the project ever
+checks it. The 5,476-release row stays inside the range the model was validated
+over: at 32 runs each run is 171 releases.
+
 ### Reproducing it
 
 From `soranoha/`:
@@ -409,6 +479,10 @@ Pass `--tmp` a path on real storage: a corpus-scale chain is gigabytes of loose
 objects, and the system temp directory is memory-backed on these machines, so
 the default competes with the JVM heap being measured. `--changed all` moves
 every work instead, which is what a toolchain change does.
+
+Add `--segments 1,2,4,8,16,32` to verify the finished chain once at each run
+count and emit a row for each. One walk is `segments 1`, so the rows compare
+directly, and all of them are taken over the one chain.
 
 Verification cost also rises with the number of works, measured on shorter
 chains:

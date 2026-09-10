@@ -149,6 +149,7 @@
     "  border: 1px dashed var(--rule);"
     "  color: var(--muted); font-size: .9em; }"
     ".tei .graphic-url { font-size: .8em; }"
+    ".tei .ref-target { font-size: .8em; color: var(--muted); }"
     ".tei .rend-bold { font-weight: bold; }"
     ".tei .rend-italic { font-style: italic; }"
     ".tei .rend-gothic, .tei .rend-textbook {"

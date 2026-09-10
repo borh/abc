@@ -197,6 +197,23 @@
              (when-let [type (attr element "type")]
                (when (ascii-token? type) [(str "type-" type)])))))))
 
+(defn- followable-target
+  "The `href` a TEI `ref/@target` may become, or nil when it may not become one.
+
+  A target is source content, not the publisher's: `render-editor-note-node`
+  puts the companion file an external table reference names straight into it.
+  So only `http` and `https` become an anchor. Everything else is shown as
+  text, which is right for both halves of what else can arrive: a
+  `javascript:` or `data:` URL is then visible rather than executable, and
+  the companion filename the corpus actually carries tells the reader what
+  the source pointed at instead of offering a link to a file this site does
+  not serve. `soranoha.za.docs/resolve-link` makes the same choice for a
+  repository path a document links to."
+  [target]
+  (when-let [scheme (second (re-matches #"([A-Za-z][A-Za-z0-9+.-]*):.*" (or target "")))]
+    (when (#{"http" "https"} (string/lower-case scheme))
+      target)))
+
 (defn- element-attrs
   ([element extra] (element-attrs element extra nil))
   ([element extra title]
@@ -330,6 +347,9 @@
             (kids))
 
       "figDesc" (into [:figcaption (element-attrs element ["fig-desc"])] (kids))
+      ;; the url is source content and the image is not published, so it is
+      ;; read as text here for the same reason a `ref/@target` is: this is
+      ;; what the source pointed at, not somewhere to send the reader
       "graphic" [:span {:class "graphic-url"} (or (attr element "url") "")]
 
       "note"
@@ -339,9 +359,13 @@
           "superscript" (into [:sup (element-attrs element ["note"])] (kids))
           (into [:span (element-attrs element ["note"] (attr element "type"))] (kids))))
 
-      "ref" (into [:a (cond-> (element-attrs element ["ref"])
-                        (attr element "target") (assoc :href (attr element "target")))]
-                  (kids))
+      "ref" (let [target (attr element "target")]
+              (if-let [href (followable-target target)]
+                (into [:a (assoc (element-attrs element ["ref"]) :href href)] (kids))
+                (into [:span (element-attrs element ["ref"])]
+                      (cond-> (vec (kids))
+                        (not (string/blank? target))
+                        (conj [:span {:class "ref-target"} target])))))
 
       ;; the profile can admit an element before this stylesheet has an
       ;; opinion about it; showing its text unstyled is wrong in a way a

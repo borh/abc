@@ -80,6 +80,43 @@
       (is (string/includes? unmapped "gaiji-unmapped"))
       (is (string/includes? unmapped "〔※［＃「熾」の火が金］〕")))))
 
+(deftest a-source-reference-becomes-a-link-only-where-a-link-is-safe-test
+  (testing "an external table reference names its companion file as text"
+    ;; This is the target the corpus actually holds: an external table
+    ;; reference carries the Aozora Bunko companion filename, which this site
+    ;; does not serve, so an anchor would resolve to nothing.
+    (let [rendered (read-html
+                    {"nodes" [{"type" "editor-note" "note_kind" "external-table-reference"
+                               "span" {"start" 0 "end" 1}
+                               "source_filename" "densyanokonzatsu_table.txt"
+                               "text" "表"}]})]
+      (is (string/includes? rendered "densyanokonzatsu_table.txt"))
+      (is (not (string/includes? rendered "<a")))))
+
+  (testing "a target carrying an executable scheme reaches no href"
+    ;; @target is transcriber-controlled source content, so the value is not
+    ;; the publisher's. The chain signature and the TEI profile stand in front
+    ;; of this; the allowlist is what stands behind them.
+    (doseq [target ["javascript:alert(1)"
+                    "JavaScript:alert(1)"
+                    "data:text/html,<script>alert(1)</script>"
+                    "vbscript:msgbox(1)"]]
+      (let [rendered (read-html
+                      {"nodes" [{"type" "editor-note" "note_kind" "external-table-reference"
+                                 "span" {"start" 0 "end" 1}
+                                 "source_filename" target
+                                 "text" "表"}]})]
+        (is (not (string/includes? rendered "href")) target))))
+
+  (testing "an http or https target still links"
+    (doseq [target ["https://example.org/table" "http://example.org/table"]]
+      (let [rendered (read-html
+                      {"nodes" [{"type" "editor-note" "note_kind" "external-table-reference"
+                                 "span" {"start" 0 "end" 1}
+                                 "source_filename" target
+                                 "text" "表"}]})]
+        (is (string/includes? rendered (str "href=\"" target "\"")) target)))))
+
 (deftest an-emphasis-mark-reaches-the-reader-by-shape-or-by-name-test
   (testing "a mark this stylesheet can draw becomes a class"
     (let [rendered (read-html

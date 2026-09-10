@@ -530,6 +530,41 @@
       (testing name
         (is (= expect (reason-at (:clone ctx) (craft ctx))))))))
 
+(defn- segmented-reason-at
+  "Verification outcome at `commit` when the chain is split into `segments`
+  concurrent runs: the failure reason keyword, or :valid."
+  [clone commit segments]
+  (try (verify/verify-repository-at (view/git-view clone) commit (fx/pinned-keys)
+                                    {:segments segments})
+       :valid
+       (catch clojure.lang.ExceptionInfo e (:reason (ex-data e)))))
+
+(deftest a-segmented-walk-rejects-exactly-what-one-walk-rejects
+  ;; Splitting the chain into runs verified concurrently and joining them at
+  ;; the seams must prove what one walk proves, so the two are compared over
+  ;; the whole mutation table rather than over a chosen few: a rule that
+  ;; held only because one walk happened to check it where a seam does not
+  ;; turns this red without anyone having to think of it. The fixture chain
+  ;; is three publication commits, so at three runs every transition in it
+  ;; is a seam.
+  (let [ctx (build-ctx)
+        {:keys [clone head-commit]} ctx
+        v (view/git-view clone)
+        counts [2 3 4]]
+    (testing "the untouched chain verifies to the same result at every count"
+      (let [one (verify/verify-repository-at v head-commit (fx/pinned-keys))]
+        (doseq [segments counts]
+          (is (= one (verify/verify-repository-at v head-commit (fx/pinned-keys)
+                                                  {:segments segments}))
+              (str segments " runs")))))
+    (doseq [{:keys [name expect craft]} build-mutations]
+      (testing name
+        (let [commit (craft ctx)]
+          (is (= expect (reason-at clone commit)) "one walk")
+          (doseq [segments counts]
+            (is (= expect (segmented-reason-at clone commit segments))
+                (str segments " runs"))))))))
+
 (defn- increment-reason-at
   "Increment-check outcome at `commit`, given the proof of `parent` that a
   publisher would be holding: the failure reason keyword, or :valid."

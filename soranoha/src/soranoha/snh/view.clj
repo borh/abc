@@ -152,6 +152,24 @@
       (throw (ex-info "commit unreadable in view" {:commit commit :err err})))
     (vec (rest (str/split (str/trim out) #"\s+")))))
 
+(defn first-parent-spine
+  "Commit ids from `commit` back to a root along first parents, newest
+  first.
+
+  This is scheduling input, not evidence. It exists so a chain walk can
+  choose where to split, and every id it returns is re-derived from the
+  commit graph by the walk itself: a run follows real parent links and
+  stops only when it meets the commit the next run was given. A stale or
+  wrong spine therefore fails the walk rather than shortening it. Merges
+  are not resolved here for the same reason; a walk that reaches one
+  rejects it."
+  [view commit]
+  (let [{:keys [exit out err]} (run-git view {:out :string}
+                                        ["rev-list" "--first-parent" commit])]
+    (when-not (zero? exit)
+      (throw (ex-info "commit unreadable in view" {:commit commit :err err})))
+    (into [] (remove str/blank?) (str/split-lines out))))
+
 (defn changed-paths
   "Set of repo paths under `prefix` whose entries differ between the trees
   of `commit-a` and `commit-b`; additions and removals differ by

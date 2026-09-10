@@ -465,6 +465,147 @@
                 (recur parent parent-head pm chain gov-ids
                        {:commit c :verified verified})))))))))
 
+(defn- verify-run!
+  "Everything a contiguous run of publication commits establishes standing
+  alone: every commit from `commit` back to (but not including) `stop`
+  satisfies `verify-commit!`, and every transition INSIDE the run is
+  checked. A `stop` of nil means the run continues to genesis.
+
+  The run's oldest commit is left open when `stop` is given: its
+  predecessor is decoded by the next run, so what closing that transition
+  needs is handed back under `:open` instead. `:open` is nil exactly when
+  the run reached genesis.
+
+  Following real parent links and stopping only on the commit it was
+  given is what makes the spine that chose `stop` scheduling input rather
+  than evidence: a run that walks past its stop reaches genesis and
+  fails."
+  [v commit stop pinned-keys]
+  (let [head (head-at v commit)
+        _ (when (= sign/zero-head-hex head)
+            ;; The one commit allowed to carry the zero head is the root,
+            ;; and no run starts at one: the spine hands out publication
+            ;; commits and a chain short enough to have only a root takes
+            ;; the single walk. `pre-genesis-state!` is the rule the single
+            ;; walk applies to the same commit, so both name a chain reset
+            ;; the same way.
+            (pre-genesis-state! v commit)
+            (fail! :zero-head-after-genesis {:commit commit}))
+        head-manifest (decoded-manifest v commit head)
+        facts (atom {})
+        close (fn [chain gov-ids open]
+                {:head head :head-manifest head-manifest :chain chain
+                 :governance-events gov-ids :open open})]
+    (loop [c commit
+           m-hex head
+           m head-manifest
+           chain []
+           gov-ids #{}
+           younger nil]
+      (let [{:keys [parent parent-head genesis? events verified]}
+            (verify-commit! v c pinned-keys
+                            {:m-hex m-hex :m m :younger younger :facts facts})
+            chain (conj chain m-hex)
+            gov-ids (with-event gov-ids m)]
+        (cond
+          genesis?
+          (do (when stop
+                (fail! :run-passed-its-stop {:commit c :stop stop}))
+              (close chain gov-ids nil))
+
+          (= parent stop)
+          (close chain gov-ids {:commit c :manifest m :events events
+                                :parent-head parent-head})
+
+          :else
+          (let [pm (decoded-manifest v parent parent-head)]
+            (check-transition! c m pm events)
+            (recur parent parent-head pm chain gov-ids
+                   {:commit c :verified verified})))))))
+
+(def ^:private shortest-automatic-run
+  "How short a run the automatic segment count will produce. A run's newest
+  commit reads and hashes every artifact of its manifest because no
+  younger verified commit grants it reuse: 8.8 s against 0.95 s for a
+  granted one, on the 17,602-work corpus `docs/performance.md` measures.
+  A run of 32 therefore gives back about a fifth of its own time, and a
+  shorter one gives back more than it wins by running alongside the
+  others. Only the automatic choice is bound by this. An explicit
+  `:segments` is honoured as asked, which is what lets a test drive the
+  seams over a chain of four."
+  32)
+
+(defn- segment-count [requested publication-commits]
+  (max 1 (min (or requested
+                  (min (.availableProcessors (Runtime/getRuntime))
+                       (quot publication-commits shortest-automatic-run)))
+              publication-commits)))
+
+(defn- run-starts
+  "Indexes into the spine at which each of `k` runs begins, splitting `n`
+  publication commits as evenly as the count allows."
+  [n k]
+  (:starts (reduce (fn [{:keys [at starts]} i]
+                     {:at (+ at (quot n k) (if (< i (rem n k)) 1 0))
+                      :starts (conj starts at)})
+                   {:at 0 :starts []}
+                   (range k))))
+
+(defn- in-parallel
+  "Run each thunk on its own thread and return the results in order. A
+  thunk that throws surfaces its own exception rather than the
+  ExecutionException a future wraps it in, so a segmented walk fails with
+  the ex-info a sequential one would have raised. Results are taken in
+  order, so when two runs both fail it is the one nearer the head that
+  reports, which is the reason a sequential walk would have reached
+  first."
+  [thunks]
+  (let [futures (mapv future-call thunks)]
+    (try
+      (mapv deref futures)
+      (catch java.util.concurrent.ExecutionException e
+        (throw (or (ex-cause e) e)))
+      (finally (run! future-cancel futures)))))
+
+(defn- verify-chain-segmented
+  "The chain walk split into `k` runs verified concurrently, then joined at
+  the k-1 seams.
+
+  A seam is the transition the runs deliberately left open, and closing it
+  consumes exactly what the sequential walk consumes at that point: the
+  younger run's oldest manifest and events, and the older run's newest
+  manifest. The older run decoded that manifest from the commit the
+  younger run's parent link named, at the head that commit carries, so the
+  two arguments are the same values a single walk would have passed. What
+  the seam adds is the check that they are: a run reports the head its
+  parent carried, and the run that claims to be that parent must carry the
+  same head.
+
+  Each run reads through its own batch subprocess. They share the view's
+  binding and hardening, so every read still resolves in the one object
+  store the view was constructed over."
+  [v spine k pinned-keys]
+  (let [starts (mapv #(nth spine %) (run-starts (dec (count spine)) k))
+        stops (conj (vec (rest starts)) nil)
+        runs (in-parallel
+              (mapv (fn [start stop]
+                      (fn [] (view/with-batch
+                               v #(verify-run! % start stop pinned-keys))))
+                    starts stops))]
+    (doseq [[younger older] (partition 2 1 runs)]
+      (let [{:keys [commit manifest events parent-head]} (:open younger)]
+        (when-not (= parent-head (:head older))
+          (fail! :seam-head-mismatch
+                 {:commit commit :parent-head parent-head
+                  :run-head (:head older)}))
+        (check-transition! commit manifest (:head-manifest older) events)))
+    (let [chain (into [] (mapcat :chain) runs)]
+      {:head (:head (first runs))
+       :head-manifest (:head-manifest (first runs))
+       :chain chain
+       :governance-events (into #{} (mapcat :governance-events) runs)
+       :chain-length (count chain)})))
+
 (defn- verify-increment-from
   [v commit pinned-keys {parent-commit :commit prior :result}]
   (let [head (head-at v commit)]
@@ -503,19 +644,37 @@
            :governance-events (with-event (:governance-events prior) m)
            :chain-length (inc (:chain-length prior))})))))
 
+(defn- verify-at
+  "The body of `verify-repository-at`, held apart from the var so the
+  two-arity form does not re-enter it by name: a test that intercepts the
+  public var would otherwise see a call it did not make."
+  [v commit pinned-keys opts]
+  (sign/validate-pinned-keys! pinned-keys)
+  (when-not (view/commit-exists? v commit)
+    (fail! :commit-missing {:commit commit}))
+  (let [spine (view/first-parent-spine v commit)
+        k (segment-count (:segments opts) (dec (count spine)))]
+    (if (= 1 k)
+      ;; the chain walk reads every artifact of every manifest; one batched
+      ;; reader serves the whole pass
+      (view/with-batch v (fn [v] (verify-chain-from v commit pinned-keys)))
+      (verify-chain-segmented v spine k pinned-keys))))
+
 (defn verify-repository-at
   "Verify the repository state at `commit` through `v`, with `pinned-keys`
   covering the full chain. Returns {:empty true} for the valid pre-genesis
   initial commit, otherwise {:head <hex> :head-manifest <value>
   :chain [hex ... genesis] :governance-events #{event id ...}
-  :chain-length n}. Throws ex-info with :reason on any violation."
-  [v commit pinned-keys]
-  (sign/validate-pinned-keys! pinned-keys)
-  (when-not (view/commit-exists? v commit)
-    (fail! :commit-missing {:commit commit}))
-  ;; the chain walk reads every artifact of every manifest; one batched
-  ;; reader serves the whole pass
-  (view/with-batch v (fn [v] (verify-chain-from v commit pinned-keys))))
+  :chain-length n}. Throws ex-info with :reason on any violation.
+
+  A long chain is verified in concurrent runs joined at their seams, which
+  proves what one walk proves: see `verify-chain-segmented`. `:segments`
+  in `opts` fixes how many runs to use; without it the count comes from
+  the available processors and the chain length, and a chain too short to
+  gain from splitting is walked in one pass. The result does not depend on
+  the count, and neither does whether verification succeeds."
+  ([v commit pinned-keys] (verify-at v commit pinned-keys nil))
+  ([v commit pinned-keys opts] (verify-at v commit pinned-keys opts)))
 
 (defn verify-increment-at
   "Verify `commit` when its parent has already been verified, checking the

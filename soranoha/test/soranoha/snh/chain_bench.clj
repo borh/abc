@@ -35,6 +35,10 @@
   `publish_ms` changes: `noop_ms` and `verify_ms` are what a party holding no
   proof pays, which is the scheduled job and the third-party verifier.
 
+  `--segments 1,2,4,8,16` verifies the finished chain once at each run count
+  and emits a `segmented` row for each. One walk is `segments 1`, so the rows
+  are directly comparable, and all of them are taken over one chain.
+
   `noop_ms` is the one the prerequisite is stated against. The ledger's bound is
   on an invocation that publishes nothing, because a scheduled job that fires on
   every upstream commit spends most of its runs discovering it has nothing to
@@ -46,6 +50,7 @@
   They establish the shape of the growth curve, not a production figure."
   (:require [babashka.cli :as cli]
             [babashka.fs :as fs]
+            [clojure.string :as str]
             [charred.api :as json]
             [soranoha.snh.fixture :as fx]
             [soranoha.snh.repo :as repo]
@@ -70,14 +75,25 @@
     (let [moved (set (take changed (drop (* changed release) (cycle all))))]
       (fn [slug] (if (contains? moved slug) (str "v" release) "v0")))))
 
-(defn- verify-once! [clone]
-  (let [v (view/git-view clone)
-        commit (repo/fetch! clone fx/branch)]
-    (millis #(verify/verify-repository-at v commit (fx/pinned-keys)))))
+(defn- verify-once!
+  ([clone] (verify-once! clone nil))
+  ([clone opts]
+   (let [v (view/git-view clone)
+         commit (repo/fetch! clone fx/branch)]
+     (millis #(verify/verify-repository-at v commit (fx/pinned-keys) opts)))))
+
+(defn- segment-counts
+  "Run counts to measure the built chain at, from a comma-separated
+  `--segments`. Empty when the option is absent, so a run that only wants
+  the growth curve pays nothing for this."
+  [segments]
+  (if (nil? segments)
+    []
+    (mapv parse-long (str/split (str segments) #","))))
 
 (defn -main [& args]
   (try
-    (let [{:keys [works releases changed out tmp carry]}
+    (let [{:keys [works releases changed out tmp carry segments]}
           (cli/parse-opts args {:coerce {:works :long :releases :long :carry :boolean}})
           ;; babashka.cli parses a bare number itself, so `changed` arrives as a
           ;; long already; "all" is the only value that stays a string
@@ -140,5 +156,20 @@
               :proof (when carry (get-in publish [:result :verified-head]))}))
          {}
          (range releases))
+        ;; the built chain measured again at each requested run count, so the
+        ;; split is compared against one walk over the same chain rather than
+        ;; against a chain built separately. The newest commit of each run
+        ;; re-reads and re-hashes every artifact of its manifest, because no
+        ;; younger verified commit grants it reuse, so a count that leaves the
+        ;; runs short gives back more than it wins. That is what these rows
+        ;; show against `segments 1`, which is one walk.
+        (doseq [k (segment-counts segments)]
+          (emit! {"phase" "segmented"
+                  "chain_length" releases
+                  "works" works
+                  "segments" k
+                  "verify_ms" (Math/round ^double
+                                          (:milliseconds
+                                           (verify-once! clone {:segments k})))}))
         (finally (fs/delete-tree dir))))
     (finally (shutdown-agents))))

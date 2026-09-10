@@ -49,7 +49,14 @@
       (throw (ex-info "hex+LF file must end with one LF" {})))
     (hash/assert-hex64 (subs s 0 64))))
 
-(def ^:private ^KeyFactory key-factory (KeyFactory/getInstance "Ed25519"))
+(defn- key-factory
+  "A fresh Ed25519 key factory per decode. `java.security.KeyFactory` states
+  no thread-safety guarantee, and a segmented chain walk verifies
+  signatures on several threads at once; a provider lookup costs
+  microseconds against the milliseconds a signature check costs, so the
+  guarantee is worth more than the object."
+  ^KeyFactory []
+  (KeyFactory/getInstance "Ed25519"))
 
 (defn- raw-pub->public-key
   "Decode 32 raw Ed25519 public-key bytes (RFC 8032 encoding: little-endian y,
@@ -62,7 +69,7 @@
         x-odd (pos? (bit-and (aget le 0) 0x80))
         _ (aset-byte le 0 (unchecked-byte (bit-and (aget le 0) 0x7f)))
         y (BigInteger. 1 le)]
-    (.generatePublic key-factory
+    (.generatePublic (key-factory)
                      (EdECPublicKeySpec. NamedParameterSpec/ED25519
                                          (EdECPoint. x-odd y)))))
 
@@ -78,7 +85,7 @@
   ^bytes [^bytes seed ^String message]
   (when-not (= 32 (alength seed))
     (throw (ex-info "Ed25519 seed must be 32 bytes" {:length (alength seed)})))
-  (let [priv (.generatePrivate key-factory
+  (let [priv (.generatePrivate (key-factory)
                                (EdECPrivateKeySpec. NamedParameterSpec/ED25519 seed))
         sig (doto (Signature/getInstance "Ed25519") (.initSign priv))]
     (.update sig (.getBytes message StandardCharsets/US_ASCII))

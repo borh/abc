@@ -122,7 +122,7 @@ the bytes that were read.
 No parser runs. A work's `source_content_hash` is the hash of its archive's
 identity object, produced by the `extract` stage before any parsing, so every
 published source identity can be recomputed from the archive alone. Scanning
-the whole corpus took 2.3 seconds at `--concurrency 16` on this machine, over
+the whole corpus takes approximately 2.3 seconds at `--concurrency 16` over
 17,602 works with warm OS page caches. Comparing against an arbitrary
 historical revision therefore costs a checkout, not a rebuild.
 

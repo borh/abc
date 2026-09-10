@@ -4,8 +4,8 @@
   facts a reader would otherwise have to read TEI source to find, and keep
   the parser's own audit record out of the story.
 
-  Every fixture here is real published TEI — rendered by the same
-  `soranoha.ori.render` path that produces the artifact a manifest names —
+  Every fixture here is real published TEI, rendered by the same
+  `soranoha.ori.render` path that produces the artifact a manifest names,
   so a change in what is published cannot pass these tests by leaving the
   reading view untouched."
   (:require [clojure.string :as string]

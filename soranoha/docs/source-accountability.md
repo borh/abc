@@ -28,8 +28,9 @@ per-edition source/export fidelity certificate.
 `interpretation-coverage.json` joins this lexical evidence to explicit native
 interpretation facts. Family counts distinguish `interpreter_claimed` from
 `unaccounted` and from `outside_claim_vocabulary`; a claimed occurrence has at
-least one explicit compatible aspect, not necessarily every aspect. Each claim must match the exact span and a
-compatible family of an independently scanned occurrence or nested component.
+least one explicit compatible aspect, not necessarily every aspect. Each claim
+must match the exact span and a compatible family of an independently scanned
+occurrence or nested component.
 Nested markers retain their own component spans. Source apparatus is kept
 separate. Lossy decoding prevents positive claim accounting. Reported
 interpretation problems retain their original influence bounds alongside positive

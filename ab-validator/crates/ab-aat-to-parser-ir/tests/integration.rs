@@ -4417,8 +4417,6 @@ fn ruby_node_spans_distinguish_parser_text_and_source_markup() {
             .all(|n| n.get("source_span").is_none())
     );
 
-    // The whole (ruby-bearing) document must convert and remain schema-valid — the
-    // The node spans retain the same visible-text coordinate basis.
     validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
 }
 

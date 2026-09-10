@@ -13,9 +13,10 @@ report that it produced parseable XML, always passed, and it does not
 contribute to the overall status. Each finding carries `rule_id`, `severity`,
 the `layer` it came from, its `message` and `location`, and `allowed`, which
 is false exactly for the severities that fail the work: the layer's own status
-and this flag apply the same test, so they cannot disagree. Its profile identity is the ODD hash. Toolchain
-metadata binds the exact ODD, RNG, and Schematron hashes, with generator identity
-from [tei-profile-generation.json](../schemas/tei-profile-generation.json).
+and this flag apply the same test, so they cannot disagree. Its profile identity
+is the ODD hash. Toolchain metadata binds the exact ODD, RNG, and Schematron
+hashes, with generator identity from
+[tei-profile-generation.json](../schemas/tei-profile-generation.json).
 Generation metadata whose hashes disagree with the supplied profile is rejected.
 Custom profiles may omit generator metadata; omitted fields are not emitted as
 null placeholders.

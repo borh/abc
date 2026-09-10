@@ -213,9 +213,9 @@ nix run .#soranoha-kernel -- corpus-delta \
 
 It names the works whose source differs, the works only one side has, and the
 works a governance event withdrew. Nothing is parsed and nothing is rebuilt,
-because a release records each work's source identity, so the answer takes
-seconds. It is your computation, not ours: the chain is verified against the
-published keys first, and the corpus side is your own checkout.
+because a release records each work's source identity. The chain is verified
+against the published keys first, and the comparison runs locally against the
+supplied checkout.
 
 For most work you can ignore this entirely. It matters when you need a result
 to remain reproducible over time. Citing the release keeps the exact bytes you

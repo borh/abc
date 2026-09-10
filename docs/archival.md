@@ -140,12 +140,18 @@ cannot wait until after launch.
 
 ## When to observe again
 
-Each observation covers one commit. A release that has not been observed is not
-citation-eligible, so the cadence follows whatever the citation policy requires
-rather than a fixed schedule. Observing the head at each
-[quarterly deposit](zenodo-deposits.md) pairs the two independent records
-naturally: the deposit holds the manifest bytes and the archive holds the
-repository they came from.
+An observation names one commit but covers the chain behind it. Verification
+walks from that commit back to genesis through the archived view, so a single
+successful observation establishes every release up to it, and a release
+published afterwards becomes covered by the next observation rather than
+needing one of its own. Observations are therefore periodic rather than
+per-release.
+
+Observing the head at each [quarterly deposit](zenodo-deposits.md) pairs the
+two independent records naturally: the deposit holds one release's manifest
+bytes and the archive holds the whole repository they came from. The interval
+sets how long a new release waits to become citable, which is what to trade off
+if quarterly proves too slow.
 
 ## See also
 

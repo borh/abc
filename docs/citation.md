@@ -51,11 +51,17 @@ publication repository as its only source and re-runs the full chain
 verification against it, which is what establishes that the archive holds a
 complete and self-checking copy rather than a partial crawl.
 
-Observations are recorded per commit, so a release published between two
-observations is not yet covered by one. Because the observation reports carry
-no ordering contract, a later failed observation does not by itself revoke an
-earlier successful one. [Archival](archival.md) describes how an observation is
-made and how to resolve a citation through the archive without the live site.
+An observation covers more than the one release it names. Verification walks
+the whole chain back to genesis through the archived copy, so an observation
+that succeeds at one commit establishes that every release up to that commit is
+in the archive and checks out. A release published after the last observation
+is not yet covered; it becomes covered by the next observation of any later
+commit, without anything being redeposited.
+
+Because the observation reports carry no ordering contract, a later failed
+observation does not by itself revoke an earlier successful one.
+[Archival](archival.md) describes how an observation is made and how to resolve
+a citation through the archive without the live site.
 
 ## Citing the whole corpus
 

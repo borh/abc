@@ -1,51 +1,39 @@
 (ns soranoha.aozora.rights-notice
-  "The rights standing of one Aozora Bunko work, decided from the only two
-  statements upstream makes about it.
+  "The rights standing of one Aozora Bunko work.
 
-  The catalog's 作品著作権フラグ says whether copyright subsists, and nothing
-  more: there is no licence column. For a work whose copyright has expired
-  that is the whole answer. For a work whose copyright subsists, the terms
-  exist only as the rightsholder's own notice in the colophon, because those
-  works are on Aozora Bunko by the rightsholder's decision and carry the
-  licence they chose.
+  The catalog's 作品著作権フラグ says whether copyright subsists. There is no
+  licence column, so for a work where it subsists the terms are only in the
+  colophon: those works are on Aozora Bunko at the rightsholder's request and
+  carry the licence they chose.
 
-  So this reads a notice rather than a field, and reads it strictly. A work
-  whose notice does not resolve to a licence this code can name is refused,
-  never given a default: guessing here would publish terms nobody granted."
+  A work whose notice does not resolve to a known licence is refused. There is
+  no default, because the fallback would be to publish terms nobody granted."
   (:require [clojure.string :as string]))
 
 (def ^:private flag-key "作品著作権フラグ")
 
-(def ^:private element-order
-  "The order Creative Commons writes licence elements in, so one licence has
-  one identifier however its notice happened to spell it."
-  ["BY" "NC" "ND" "SA"])
+;; Canonical element order, so one licence has one identifier whatever order
+;; its notice used.
+(def ^:private element-order ["BY" "NC" "ND" "SA"])
 
 (def ^:private restricting-elements
-  "Licence elements the release cannot honour as it publishes.
+  "Licence elements this release cannot publish under.
 
-  NC and ND contradict the grant every page and every manifest makes: that
-  anything published here may be used commercially and adapted. SA contradicts
-  the CC0 dedication over Soranoha's own encoding, because a TEI file carrying
-  editorial decisions about an SA work is an adaptation of it, and an
-  adaptation owes BY-SA rather than CC0.
-
-  A work under one of these is not published, rather than published under
-  terms the site contradicts elsewhere."
+  NC and ND are incompatible with the grant the site makes, that everything
+  here may be used commercially and adapted. SA is incompatible with the CC0
+  dedication over Soranoha's encoding: ShareAlike extends to adaptations, and
+  a TEI file carrying editorial decisions about an SA work is one, so it would
+  owe BY-SA."
   #{"NC" "ND" "SA"})
 
-(defn- identifier
-  "The licence identifier for a parsed notice: elements in canonical order,
-  then the version, then the jurisdiction port when the deed is a ported one."
-  [{:keys [elements version port]}]
+(defn- identifier [{:keys [elements version port]}]
   (str "CC-"
        (string/join "-" (filter (set elements) element-order))
        "-" version
        (when port (str "-" port))))
 
-;; The URL the notice links, when it links one. The port is two letters that
-;; end the segment; without that guard `licenses/by/3.0/deed.ja` reads its own
-;; `deed` as a jurisdiction and mints a standing that does not exist.
+;; The port is two letters at the end of the segment. Without the lookahead,
+;; `licenses/by/3.0/deed.ja` yields CC-BY-3.0-DE, which is not a licence.
 (def ^:private licence-url
   #"creativecommons\.org/licenses/([a-z][a-z-]*)/(\d(?:\.\d)?)(?:/([a-z]{2})(?![a-z]))?")
 
@@ -55,11 +43,10 @@
      :version version
      :port (some-> port string/upper-case)}))
 
-;; Some notices name the licence only in prose, with no URL to fall back on:
-;; 058806_001955 and 058807_001955 say
+;; Some notices give no URL. 058806_001955 and 058807_001955 say
 ;; 「この作品は、クリエイティブ・コモンズ「表示 2.1 日本」でライセンスされています。」
-;; and stop there. Spacing, interpuncts and hyphens vary between notices, so
-;; the clause is captured whole and its elements are matched inside it.
+;; and nothing else. Spacing, interpuncts and hyphens vary between notices, so
+;; match the clause and look for elements inside it.
 (def ^:private licence-prose
   #"クリエイティブ[・]?[ 　]*コモンズ[「\s・]*([^」\n（(]{0,60})")
 
@@ -73,14 +60,13 @@
                          (when (string/includes? clause jp) code))
                        prose-elements)
        :version version
-       ;; 日本 is the only ported jurisdiction Aozora Bunko's notices use;
-       ;; 国際 and 非移植 name the unported deeds, whose URLs carry no port.
+       ;; 日本 is the only ported jurisdiction in these notices. 国際 and
+       ;; 非移植 are the unported deeds, whose URLs carry no port.
        :port (when (string/includes? clause "日本") "JP")})))
 
 (defn parse-notice
-  "The licence a colophon states, as `{:elements :version :port}`, or nil when
-  it states none. The URL is preferred because it is unambiguous; the prose
-  form is the fallback for notices that carry no link."
+  "The licence a colophon states, as `{:elements :version :port}`, or nil.
+  Prefers the URL, which is unambiguous, and falls back to the prose form."
   [text]
   (when text
     (when-let [parsed (or (from-url text) (from-prose text))]
@@ -88,25 +74,22 @@
         parsed))))
 
 (defn copyright-flags
-  "The distinct 作品著作権フラグ values the catalog rows for one work carry."
+  "The distinct 作品著作権フラグ values across the catalog rows for one work."
   [rows]
   (into #{} (map #(get % flag-key)) rows))
 
 (defn standing
-  "The rights standing of the work `rows` describe, given `text-fn`, a thunk
-  returning the work's primary text. Returns `{:standing s}` when the work may
-  be published, or `{:refused reason}` when it may not, carrying whatever the
-  notice did say so the refusal names its own cause.
+  "The rights standing of the work `rows` describe. `text-fn` is a thunk
+  returning the work's primary text. Returns `{:standing s}` if the work may
+  be published, otherwise `{:refused reason}` with whatever the notice stated.
 
-  `text-fn` is a thunk because the expired works never need it: their flag
-  decides them, and opening an archive to confirm what the catalog already
-  said would be work done for nothing."
+  The thunk exists so that the expired works, which are almost all of them,
+  are settled by the flag alone and never open an archive."
   [rows text-fn]
   (let [flags (copyright-flags rows)]
     (cond
-      ;; Rows that disagree are not a majority to be taken: one of them is
-      ;; wrong about whether a right subsists, and which one is not knowable
-      ;; from here.
+      ;; Disagreeing rows cannot be resolved by majority: one of them is wrong
+      ;; about whether a right subsists, and there is no way to tell which.
       (not= 1 (count flags))
       {:refused :inconsistent-copyright-flag :flags (vec (sort flags))}
 

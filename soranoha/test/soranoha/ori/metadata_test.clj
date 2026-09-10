@@ -20,9 +20,13 @@
     (try
       (corpus/write-zip! (fs/path root "index_pages" "list_person_all_extended_utf8.zip")
                          [["catalog.csv"
-                           (str "作品ID,人物ID,役割フラグ,作品名,テキストファイルURL,姓\n"
+                           ;; ragged in 姓 only: the work still has to be
+                           ;; selected for the metadata build to reach it, and
+                           ;; selection refuses a row that states no copyright
+                           ;; flag before the ragged check ever runs
+                           (str "作品ID,人物ID,役割フラグ,作品名,テキストファイルURL,作品著作権フラグ,姓\n"
                                 "000100,000001,著者,試験,https://example.org/cards/000001/files/"
-                                (corpus/work-basename work) ".zip\n")]])
+                                (corpus/work-basename work) ".zip,なし\n")]])
       (corpus/commit-corpus! root)
       (is (= :ragged-metadata-row
              (try (main/build! {:root (str store) :aozora-root root

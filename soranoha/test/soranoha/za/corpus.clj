@@ -72,10 +72,10 @@
   [root works]
   (write-zip! (fs/path root "index_pages" "list_person_all_extended_utf8.zip")
               [["list_person_all_extended_utf8.csv"
-                (str "作品ID,人物ID,役割フラグ,作品名,テキストファイルURL\n"
+                (str "作品ID,人物ID,役割フラグ,作品名,テキストファイルURL,作品著作権フラグ\n"
                      (str/join ""
                                (for [{:keys [work-id person-id card title
-                                             contributors]
+                                             contributors copyright-flag]
                                       :as work} works
                                      {p :person-id r :role}
                                      (concat contributors
@@ -83,7 +83,12 @@
                                                :role "著者"}])]
                                  (str work-id "," p "," r "," title
                                       ",https://example.org/cards/" card
-                                      "/files/" (work-basename work) ".zip\n"))))]]))
+                                      "/files/" (work-basename work) ".zip,"
+                                      ;; every real catalog row carries this
+                                      ;; column, and selection refuses a row
+                                      ;; that does not state it, so a fixture
+                                      ;; without one would not be a catalog
+                                      (or copyright-flag "なし") "\n"))))]]))
 
 (defn- git! [root & args]
   (let [{:keys [exit err]} (apply process/sh {:dir (str root) :out :string

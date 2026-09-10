@@ -16,14 +16,26 @@
       (.closeEntry out))))
 
 (def csv-header
-  "作品ID,人物ID,テキストファイルURL")
+  "作品ID,人物ID,テキストファイルURL,作品著作権フラグ")
 
 (defn- fixture-root! []
   (let [root (fs/create-temp-dir {:prefix "yomi-select-test"})]
     (write-zip! (fs/path root "cards" "000001" "files" "100_ruby_200.zip")
                 [["100_ruby_200.txt" "本文"]])
+    ;; A work whose copyright subsists and whose colophon licenses it, which
+    ;; is admitted on the licence rather than on the flag.
     (write-zip! (fs/path root "cards" "000002" "files" "300_ruby_400.zip")
-                [["300_ruby_400.txt" "本文"]])
+                [["300_ruby_400.txt"
+                  (str "本文\n※本作品は「クリエイティブ・コモンズ 表示 4.0 国際 "
+                       "ライセンス」（https://creativecommons.org/licenses/by/4.0/）"
+                       "の下に提供されています。")]])
+    ;; The same, under terms the release cannot honour.
+    (write-zip! (fs/path root "cards" "000004" "files" "500_ruby_600.zip")
+                [["500_ruby_600.txt"
+                  (str "本文\nhttps://creativecommons.org/licenses/by-nc-nd/4.0/")]])
+    ;; The same again, stating no terms at all.
+    (write-zip! (fs/path root "cards" "000005" "files" "700_ruby_800.zip")
+                [["700_ruby_800.txt" "本文\n底本：ある本"]])
     ;; A work zip with no catalog row, and a zip outside the work shape.
     (write-zip! (fs/path root "cards" "000003" "files" "999_ruby_999.zip")
                 [["999_ruby_999.txt" "本文"]])
@@ -34,8 +46,10 @@
 (def fixture-rows
   (csv/read-rows-from-string
    (str csv-header "\n"
-        "000100,000001,https://example.org/cards/000001/files/100_ruby_200.zip\n"
-        "000300,000002,https://example.org/cards/000002/files/300_ruby_400.zip\n")))
+        "000100,000001,https://example.org/cards/000001/files/100_ruby_200.zip,なし\n"
+        "000300,000002,https://example.org/cards/000002/files/300_ruby_400.zip,あり\n"
+        "000500,000004,https://example.org/cards/000004/files/500_ruby_600.zip,あり\n"
+        "000700,000005,https://example.org/cards/000005/files/700_ruby_800.zip,あり\n")))
 
 (deftest selection-join-test
   (let [root (fixture-root!)
@@ -47,10 +61,19 @@
       (is (= ["000100_000001"
               "000300_000002"]
              (mapv :slug candidates))))
+    (testing "each admitted work carries the standing it is published under"
+      (is (= ["public-domain" "CC-BY-4.0"] (mapv :rights candidates))))
     (testing "non-catalog and non-work-shape zips are rejected with reasons"
       (is (= {"cards/000003/files/999_ruby_999.zip" "not-catalog-text-zip"
-              "cards/000001/misc.zip" "not-under-cards-files"}
+              "cards/000001/misc.zip" "not-under-cards-files"
+              "cards/000004/files/500_ruby_600.zip" "rights-restricted-licence"
+              "cards/000005/files/700_ruby_800.zip" "rights-unstated-licence"}
              (into {} (map (juxt #(get % "path") #(get % "reason")))
+                   rejected))))
+    (testing "a refusal names the terms it declined"
+      (is (= "CC-BY-NC-ND-4.0"
+             (some #(when (= "cards/000004/files/500_ruby_600.zip" (get % "path"))
+                      (get % "licence"))
                    rejected))))))
 
 (deftest slug-function-test

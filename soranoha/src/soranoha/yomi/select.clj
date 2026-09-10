@@ -1,9 +1,19 @@
 (ns soranoha.yomi.select
-  "Join work ZIPs against catalog text-file basenames. Reject slug collisions
-  before producing any slug-addressed result."
+  "Join work ZIPs against catalog text-file basenames, admit each on the rights
+  standing it can be published under, and reject slug collisions before
+  producing any slug-addressed result.
+
+  Rights admission is done here because the manifest, the corpus delta and
+  the assessment all determine corpus membership by calling this function. A
+  separate step that a caller could skip would let the delta report a work the
+  manifest never published."
   (:require [babashka.fs :as fs]
             [clojure.string :as string]
-            [soranoha.yomi.catalog :as catalog]))
+            [soranoha.aozora.rights-notice :as notice]
+            [soranoha.aozora.source-bundle :as source-bundle]
+            [soranoha.yomi.catalog :as catalog])
+  (:import (java.nio ByteBuffer)
+           (java.nio.charset Charset CodingErrorAction)))
 
 (defn- normalized-path [f]
   (string/replace (str f) java.io.File/separator "/"))
@@ -102,10 +112,45 @@
                        :collisions collisions})))
     candidates))
 
+(def ^:private source-charsets
+  "The encodings the catalog declares for a work's text file. A row that
+  declares nothing is Shift_JIS; only ten catalog rows declare UTF-8."
+  {"UTF-8" "UTF-8"})
+
+(defn- primary-text
+  "The work's primary text member, decoded with the encoding its catalog row
+  declares.
+
+  Unmappable bytes are replaced rather than raised, so one bad byte does not
+  stop a 17,000-work build. A file that is not the encoding it declares loses
+  its notice and is refused admission, which is the correct outcome."
+  [file row]
+  (let [charset (Charset/forName
+                 (get source-charsets
+                      (get row "テキストファイル符号化方式")
+                      "windows-31j"))
+        bytes (:primary-text-bytes (source-bundle/inspect-zip file))]
+    (str (.decode (doto (.newDecoder charset)
+                    (.onMalformedInput CodingErrorAction/REPLACE)
+                    (.onUnmappableCharacter CodingErrorAction/REPLACE))
+                  (ByteBuffer/wrap ^bytes bytes)))))
+
+(defn- admit
+  "The rights standing a candidate is publishable under, or the reason it is
+  not. `rows-by-work-id` supplies every catalog row describing the work, since
+  a work filed under several contributor cards has a row under each and they
+  have to agree about whether a right subsists."
+  [rows-by-work-id {:keys [file row]}]
+  (notice/standing (get rows-by-work-id (catalog/row-work-id row))
+                   #(primary-text file row)))
+
 (defn select-candidates
-  "The selection join: work ZIPs × catalog rows by text-file basename,
-  sorted by relpath, injectivity-asserted. Returns
-  {:candidates [{:file :relpath :row :slug}] :rejected [{path reason}]}."
+  "The selection join: work ZIPs × catalog rows by text-file basename, sorted
+  by relpath, injectivity-asserted, then admitted on rights. Returns
+  {:candidates [{:file :relpath :row :slug :rights}] :rejected [{path reason}]}.
+
+  Each admitted candidate carries the standing it is published under, so no
+  later stage derives the terms again and reaches a different answer."
   [aozora-root rows]
   (let [rows-by-basename (catalog/catalog-index rows)
         candidates (work-zip-files aozora-root)
@@ -122,9 +167,30 @@
                          (assoc candidate
                                 :slug (slug (catalog/row-work-id row) relpath)))
                        selected)
-        selected-relpaths (set (map :relpath selected))
+        rows-by-work-id (group-by catalog/row-work-id rows)
+        assessed (mapv #(assoc % :rights (admit rows-by-work-id %)) selected)
+        selected (filterv #(:standing (:rights %)) assessed)
+        selected (mapv #(assoc % :rights (:standing (:rights %))) selected)
+        ;; Rights refusals record the licence as well as the reason, so the
+        ;; build report shows which terms were declined without reopening the
+        ;; archive.
+        refused-on-rights (->> assessed
+                               (keep (fn [{:keys [relpath rights]}]
+                                       (when-let [reason (:refused rights)]
+                                         (cond-> {"path" relpath
+                                                  "reason" (str "rights-" (name reason))}
+                                           (:licence rights)
+                                           (assoc "licence" (:licence rights))
+                                           (:flags rights)
+                                           (assoc "copyright_flags" (:flags rights))))))
+                               vec)
+        ;; Admitted and rights-refused works are both accounted for here, so
+        ;; neither reaches the cond below and gets reported as not-selected.
+        accounted (into (set (map :relpath selected))
+                        (map #(get % "path"))
+                        refused-on-rights)
         rejected (->> candidates
-                      (remove #(contains? selected-relpaths (:relpath %)))
+                      (remove #(contains? accounted (:relpath %)))
                       (mapv (fn [{:keys [file relpath]}]
                               {"path" (or relpath
                                           (normalized-path
@@ -142,4 +208,4 @@
                                           :else
                                           "not-selected")})))]
     {:candidates selected
-     :rejected rejected}))
+     :rejected (vec (sort-by #(get % "path") (into rejected refused-on-rights)))}))

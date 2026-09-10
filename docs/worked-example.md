@@ -100,7 +100,7 @@ did not grant.
   <date when="2014-09-17">2014-09-17</date>
   <availability status="free">
     <licence target="https://creativecommons.org/publicdomain/mark/1.0/">The underlying work is in the public domain; Soranoha asserts no rights over it.</licence>
-    <licence target="https://creativecommons.org/publicdomain/zero/1.0/">Soranoha's encoding of this work, and the artifacts derived from it, are dedicated to the public domain under CC0-1.0. Attribution is requested, not required. Full rights statement: <ptr target="https://w3id.org/soranoha/rights"/></licence>
+    <licence target="https://creativecommons.org/publicdomain/zero/1.0/">Soranoha's encoding of this work and the artifacts derived from it are dedicated to the public domain under CC0-1.0. Attribution is requested, not required. Full rights statement: <ptr target="https://w3id.org/soranoha/rights"/></licence>
   </availability>
 </publicationStmt>
 ```

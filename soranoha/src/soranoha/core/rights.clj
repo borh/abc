@@ -142,7 +142,7 @@
 (defn licence-statement
   "Prose form of the encoding licence, for readers rather than resolvers."
   [encoding]
-  (str "Soranoha's encoding of this work, and the artifacts derived from it, "
+  (str "Soranoha's encoding of this work and the artifacts derived from it "
        "are dedicated to the public domain under " encoding
        ". Attribution is requested, not required."))
 

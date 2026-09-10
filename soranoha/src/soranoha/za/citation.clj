@@ -47,6 +47,13 @@
 
 (defn- blank->nil [s] (when-not (string/blank? s) s))
 
+(defn- short-release
+  "The release's short name: the first twelve characters of its head hash,
+  which `/releases/short/<prefix>.json` resolves. The forms a reader sees
+  carry this; the machine-readable fields carry all sixty-four characters."
+  [head-hex]
+  (subs head-hex 0 12))
+
 (def ^:private person-name-ja naming/person-name-ja)
 (def ^:private person-name-romaji naming/person-name-romaji)
 
@@ -115,7 +122,7 @@
          (when-not (string/blank? orthographic_style)
            (str "（" orthographic_style "）"))
          (when edition-part (str "、" edition-part))
-         "。" corpus-name ", " slug ", release " (subs head-hex 0 12)
+         "。" corpus-name ", " slug ", release " (short-release head-hex)
          (when doi (str ". https://doi.org/" doi)))))
 
 (defn rendered-en
@@ -150,7 +157,7 @@
                 (when-let [publisher (blank->nil (get edition "publisher"))]
                   (str ". " publisher))
                 (when-let [year (edition-year work)] (str ", " year))))
-         ". " corpus-name ", " slug ", release " (subs head-hex 0 12)
+         ". " corpus-name ", " slug ", release " (short-release head-hex)
          (when doi (str ". https://doi.org/" doi)))))
 
 (def ^:private csl-roles
@@ -235,10 +242,18 @@
   "One @incollection entry. Works are items inside a 底本, which is what
   @incollection means; @book would say the transcription is the whole volume.
 
-  The identifier uses BibLaTeX's own archive idiom (`eprinttype` naming the
-  collection and `eprint` the identifier inside it) rather than being buried
-  in a note, and `version` carries the release. Both render in ordinary
-  bibliography styles without a custom driver."
+  The identifier uses BibLaTeX's own archive idiom rather than a note:
+  `eprinttype` names the collection and `eprint` the identifier inside it,
+  which the standard drivers print as `Soranoha Aozora Bunko TEI Corpus:
+  000092_000879`.
+
+  The release and the original title are each written twice, because the
+  entry has two readers that want different things from it. `version` and
+  `origtitle` are what biber and Zotero import, and no standard style prints
+  either of them for an @incollection. `addendum` and `note` are printed by
+  every standard driver, so the release the transcription came from and the
+  title it was translated from reach the citation a reader sees, which is
+  what makes that citation name the bytes that were read."
   ^String [{:keys [head-hex doi]} work]
   (let [{:strs [slug title subtitle title_reading original_title first_published
                 orthographic_style]} work
@@ -252,8 +267,15 @@
          (names "translator" "翻訳者")
          (names "editor" "編者")
          (when-let [collators (seq (get by-role "校訂者"))]
+           ;; BibLaTeX's editorial roles are a closed set with no collator in
+           ;; it, and a value outside the set prints as itself: `collator
+           ;; Suzuki Gyozo` where a value inside it prints `Rev. by Suzuki
+           ;; Gyozo`. 校訂 is revision of a text against its sources, so
+           ;; `reviser` is the entry in that set that says the nearest true
+           ;; thing. The Japanese role itself is on the work page and in the
+           ;; TEI header.
            (str (field "editora" (bib-names collators))
-                (field "editoratype" "collator")))
+                (field "editoratype" "reviser")))
          (field "title" (tex title))
          (field "subtitle" (tex subtitle))
          (field "titleaddon" (tex title_reading))
@@ -266,10 +288,13 @@
          (field "eprinttype" (tex corpus-name))
          (field "eprint" slug)
          (field "version" head-hex)
+         (field "addendum" (str "Release " (short-release head-hex)))
          (field "url" (work-url work))
          (when doi (field "doi" doi))
          (field "note" (tex (string/join "; " (remove string/blank?
                                                       [orthographic_style
+                                                       (when original_title
+                                                         (str "原題: " original_title))
                                                        (when first_published
                                                          (str "初出: " first_published))]))))
          "}\n")))

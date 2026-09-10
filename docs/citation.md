@@ -189,6 +189,7 @@ cannot express it.
   eprinttype = {Soranoha Aozora Bunko TEI Corpus},
   eprint = {000092_000879},
   version = {<release head, 64 hex characters>},
+  addendum = {Release <release head, first 12 characters>},
   url = {https://soranoha.org/works/000092_000879/},
   doi = {10.5281/zenodo.<version deposit>},
   note = {新字新仮名; 初出: 「赤い鳥」1918（大正7）年7月},
@@ -198,11 +199,22 @@ cannot express it.
 The identifier uses BibLaTeX's archive idiom (`eprinttype` naming the
 collection and `eprint` the item within it) rather than being buried in a
 note, so ordinary bibliography styles print it without a custom driver.
-`version` carries the release for the same reason. 校訂者 has no CSL
-counterpart, so CSL-JSON records it as a plain `contributor` rather than
-promoting it to `editor`, which would claim something the source does not
-say; BibLaTeX can express it exactly, and uses `editora` with
-`editoratype = {collator}`.
+
+The release is in the entry twice because the entry has two readers.
+`version` holds the whole head hash, which biber and Zotero import; no
+standard style prints it for an `@incollection`, so on its own it would leave
+the bibliography saying nothing about which release was read. `addendum` holds
+the release's short name and is printed at the end of the entry by every
+standard driver. The original title of a translated work is repeated in the
+note for the same reason: `origtitle` is imported and not printed.
+
+校訂者 has no CSL counterpart, so CSL-JSON records it as a plain `contributor`
+rather than promoting it to `editor`, which would claim something the source
+does not say. BibLaTeX's editorial roles are a closed set with no collator in
+it, and a value outside the set prints as itself rather than as a phrase, so
+the entry uses `editora` with `editoratype = {reviser}`, which is the value in
+that set nearest to 校訂. The Japanese role is on the work page and in the TEI
+header.
 
 For many works at once, every [bulk archive](start-here.md) carries a
 `catalog.csv` holding the same fields as columns, so a whole selection

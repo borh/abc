@@ -60,7 +60,9 @@
     (is (not (string/includes? (citation/biblatex pre kumo) "doi")))
     (is (not (string/includes? (citation/coins pre kumo) "info:doi")))
     (testing "the release is still named, because that part is never optional"
-      (is (string/includes? (citation/biblatex pre kumo) "version = {d")))))
+      (is (string/includes? (citation/biblatex pre kumo) "version = {d"))
+      (is (string/includes? (citation/biblatex pre kumo)
+                            "addendum = {Release dddddddddddd},")))))
 
 (deftest csl-json-imports-as-a-work-inside-its-source-edition
   (let [record (citation/csl-json-value release kumo)]
@@ -97,6 +99,43 @@
     (testing "every brace is balanced, or the .bib file will not parse at all"
       (is (= (count (filter #{\{} entry)) (count (filter #{\}} entry)))))
     (is (string/ends-with? entry "}\n"))))
+
+(def ^:private printed-by-the-incollection-driver
+  "The fields BibLaTeX's standard @incollection driver puts on the page.
+
+  Read from `bbx/standard.bbx` in biblatex 3.21 and confirmed by compiling an
+  entry with biber under authoryear, numeric, authortitle and verbose.
+  `version` and `origtitle` are not in it: `version` is printed by the
+  dataset, manual, misc, online and report drivers, and `origtitle` only
+  through the `related` mechanism, which needs a second entry to point at."
+  #{"author" "translator" "editor" "editora" "editoratype" "title" "subtitle"
+    "titleaddon" "language" "booktitle" "maintitle" "edition" "volume"
+    "volumes" "series" "number" "note" "publisher" "location" "date"
+    "chapter" "pages" "isbn" "doi" "eprint" "eprinttype" "url" "addendum"
+    "pubstate"})
+
+(defn- entry-fields [entry]
+  (into {} (map (fn [[_ k v]] [k v])) (re-seq #"(?m)^  ([a-z]+) = \{(.*)\},$" entry)))
+
+(deftest the-release-reaches-the-bibliography-and-not-only-the-file
+  ;; A field the .bib carries and no style prints is not a citation that
+  ;; names the release. The whole hash stays for biber and Zotero, which
+  ;; import it, and the short name goes where the driver will print it.
+  (let [fields (entry-fields (citation/biblatex release kumo))
+        printed (vals (select-keys fields printed-by-the-incollection-driver))]
+    (is (= (:head-hex release) (get fields "version")))
+    (is (some #(string/includes? % "dddddddddddd") printed)
+        "no field a bibliography style prints carries the release")))
+
+(deftest an-original-title-reaches-the-bibliography-too
+  (let [translated (assoc kumo "original_title" "The Spider's Thread")
+        fields (entry-fields (citation/biblatex release translated))
+        printed (vals (select-keys fields printed-by-the-incollection-driver))]
+    (is (= "The Spider's Thread" (get fields "origtitle")))
+    (is (some #(string/includes? % "原題: The Spider's Thread") printed)
+        "no field a bibliography style prints carries the original title")
+    (testing "and a work that was not translated says nothing about one"
+      (is (not (string/includes? (citation/biblatex release kumo) "原題"))))))
 
 (deftest biblatex-escapes-what-tex-would-otherwise-interpret
   (let [hostile (assoc kumo
@@ -172,9 +211,9 @@
     (testing "校訂 has no CSL counterpart, so it is not promoted to editor"
       (is (nil? (get record "editor")))
       (is (= [{"family" "校" "given" "訂"}] (get record "contributor"))))
-    (testing "BibLaTeX can say what it is, so it does"
+    (testing "BibLaTeX says it with a word from its own closed set of roles"
       (is (string/includes? entry "editora = {校, 訂},"))
-      (is (string/includes? entry "editoratype = {collator},")))))
+      (is (string/includes? entry "editoratype = {reviser},")))))
 
 (deftest the-subtitle-joins-the-title-the-way-japanese-typography-joins-it
   (let [with-sub (assoc kumo "subtitle" "序")]

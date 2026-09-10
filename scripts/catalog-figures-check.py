@@ -219,6 +219,20 @@ FIGURES = [
     Figure("orthography-kyuji-shinkana", WITH_TEXT, "旧字新仮名 works", 93, [WORKED_EXAMPLE]),
     Figure("orthography-other", WITH_TEXT, "その他 works", 19, [WORKED_EXAMPLE]),
     Figure(
+        "orthography-split-titles",
+        WITH_TEXT,
+        "title-and-subtitle pairs recorded under more than one orthography",
+        568,
+        [WORKED_EXAMPLE],
+    ),
+    Figure(
+        "orthography-split-works",
+        WITH_TEXT,
+        "works sharing a title and subtitle with a differently-spelled sibling",
+        1343,
+        [WORKED_EXAMPLE],
+    ),
+    Figure(
         "edition-year-values",
         ROWS,
         "rows recording a 底本初版発行年 for the first edition slot",
@@ -408,6 +422,18 @@ def measure(works: dict[str, Work]) -> dict[tuple[str, str], int]:
         if match and written and written[0]["人物ID"].zfill(6) != match.group(1):
             filed_elsewhere += 1
     orthography = collections.Counter(work[0]["文字遣い種別"].strip() for work in with_text)
+    # One text can sit in the archive twice, once per orthography, as two works
+    # with two identifiers. A study that groups by title without the
+    # 文字遣い種別 field silently merges them.
+    by_title: collections.defaultdict[tuple[str, str], set[str]] = collections.defaultdict(set)
+    for work in with_text:
+        style = work[0]["文字遣い種別"].strip()
+        if style:
+            by_title[(work[0]["作品名"], work[0]["副題"])].add(style)
+    split_titles = {title for title, styles in by_title.items() if len(styles) > 1}
+    split_works = sum(
+        1 for work in with_text if (work[0]["作品名"], work[0]["副題"]) in split_titles
+    )
     rows = [row for work in every for row in work]
     first_slot = [row["底本初版発行年1"].strip() for row in rows if row["底本初版発行年1"].strip()]
     both_slots = first_slot + [
@@ -437,6 +463,8 @@ def measure(works: dict[str, Work]) -> dict[tuple[str, str], int]:
         ("orthography-kyuji-kyukana", WITH_TEXT): orthography["旧字旧仮名"],
         ("orthography-kyuji-shinkana", WITH_TEXT): orthography["旧字新仮名"],
         ("orthography-other", WITH_TEXT): orthography["その他"],
+        ("orthography-split-titles", WITH_TEXT): len(split_titles),
+        ("orthography-split-works", WITH_TEXT): split_works,
         ("edition-year-values", ROWS): len(first_slot),
         ("edition-year-values-both-slots", ROWS): len(both_slots),
         ("edition-year-plain", ROWS): len(first_slot) - len(irregular),

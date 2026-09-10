@@ -226,8 +226,10 @@ a text file. Those counts move with the upstream catalog. A historical-kana
 study that mixes the values is not measuring what it thinks it is measuring,
 and one text can exist in two of them: 銭形平次捕物控 001 金色の処女 is in the
 archive twice, as 旧字旧仮名 under work id 054695 and as 新字新仮名 under
-056372, and so are episodes 002, 003, 004 and 006. Each such pair is two works
-with two identifiers, and this is the field that tells them apart.
+056372. That is not an isolated case. Across the works that have a text file,
+568 title-and-subtitle pairs are recorded under more than one orthography,
+covering 1343 works. Each such pair is two works with two identifiers, and
+this is the field that tells them apart.
 
 Both `scheme` attributes reference taxonomies declared in `encodingDesc`
 rather than bare string identifiers, making the authority explicit. In both

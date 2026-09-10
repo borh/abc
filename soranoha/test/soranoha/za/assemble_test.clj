@@ -354,3 +354,36 @@
         {:keys [clone]} (fx/make-repos!)]
     (is (thrown-with-msg? clojure.lang.ExceptionInfo #"totality"
                           (publish-release! clone run [(pd merosu)])))))
+
+(defn- manifest-of
+  "A manifest carrying only what the regression check reads: which works were
+  published from which source bytes, which of them failed validation, and the
+  profile they were judged by."
+  [profile works invalid]
+  {"toolchain" {"validate-tei" {"nix_closure_hash" profile "stage_code_version" "4"}}
+   "works" (mapv (fn [[slug source]] {"slug" slug "source_content_hash" source}) works)
+   "validation_summary" {"invalid_count" (count invalid) "invalid_slugs" (vec (sort invalid))}})
+
+(deftest a-work-that-stops-validating-with-nothing-to-explain-it-is-a-regression
+  (let [head (manifest-of "profile-1" {"a" "h1" "b" "h1" "c" "h1"} ["c"])]
+    (testing "same source, same profile, valid then invalid"
+      (is (= ["a"] (za/validation-regressions
+                    head (manifest-of "profile-1" {"a" "h1" "b" "h1" "c" "h1"} ["a" "c"])))))
+    (testing "an upstream reproofread explains it"
+      (is (= [] (za/validation-regressions
+                 head (manifest-of "profile-1" {"a" "h2" "b" "h1" "c" "h1"} ["a" "c"])))))
+    (testing "a tightened profile explains every one of them"
+      (is (= [] (za/validation-regressions
+                 head (manifest-of "profile-2" {"a" "h1" "b" "h1" "c" "h1"} ["a" "b" "c"])))))
+    (testing "a work that was already invalid has not regressed"
+      (is (= [] (za/validation-regressions
+                 head (manifest-of "profile-1" {"a" "h1" "b" "h1" "c" "h1"} ["c"])))))
+    (testing "a work this release publishes for the first time has no parent to regress from"
+      (is (= [] (za/validation-regressions
+                 head (manifest-of "profile-1" {"a" "h1" "b" "h1" "c" "h1" "d" "h1"} ["c" "d"])))))
+    (testing "genesis has no parent at all"
+      (is (= [] (za/validation-regressions
+                 nil (manifest-of "profile-1" {"a" "h1"} ["a"])))))
+    (testing "every regressed slug is reported, in the summary's order"
+      (is (= ["a" "b"] (za/validation-regressions
+                        head (manifest-of "profile-1" {"a" "h1" "b" "h1" "c" "h1"} ["a" "b" "c"])))))))

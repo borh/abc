@@ -174,12 +174,61 @@
                   entries)
      :selection (set selection)}))
 
+(defn validation-regressions
+  "Slugs this release would publish as invalid that its parent published as
+  valid, with nothing to explain the change.
+
+  A work is here only when its `source_content_hash` is the one the parent
+  published and the `validate-tei` stage coordinate is the one the parent
+  published. If the source moved, upstream reproofread it. If the stage
+  coordinate moved, the TEI profile tightened and reclassifying a document
+  is what that is for. With neither moved, the document is the same
+  document judged by the same profile, and the only remaining explanation
+  is that something between the source and the TEI got worse.
+
+  Both facts are already on the chain and neither is taken on trust: every
+  verifier re-derives `validation_summary.invalid_slugs` from the published
+  validation records, and the work entry carries the source hash its
+  artifacts were built from. So this compares two signed statements, and it
+  needs no threshold. A work absent from either release, newly published or
+  withdrawn, is not a regression and is not here."
+  [head-manifest manifest]
+  (let [source-of (fn [m]
+                    (into {} (map (juxt #(get % "slug") #(get % "source_content_hash")))
+                          (get m "works")))
+        published-before (source-of head-manifest)
+        published-now (source-of manifest)
+        invalid-before (set (get-in head-manifest ["validation_summary" "invalid_slugs"]))
+        same-profile? (= (get-in head-manifest ["toolchain" "validate-tei"])
+                         (get-in manifest ["toolchain" "validate-tei"]))]
+    (if-not same-profile?
+      []
+      (vec (for [slug (get-in manifest ["validation_summary" "invalid_slugs"])
+                 :when (and (contains? published-before slug)
+                            (not (contains? invalid-before slug))
+                            (= (get published-before slug) (get published-now slug)))]
+             slug)))))
+
 (defn release-assembler
   "Adapter to the transaction contract: a fn of the current head manifest
   value (nil at genesis) closing over everything else; the head's withdrawn
-  set is subtracted from the admitted works, as the transaction requires."
+  set is subtracted from the admitted works, as the transaction requires.
+
+  A release that regresses validation does not get assembled. The chain is
+  append-only, so a toolchain change that breaks works the last release
+  handled cannot be unpublished, only withdrawn work by work through
+  governance events. Refusing costs one release; publishing costs the
+  history. This is the only place both manifests are in hand before
+  anything is signed."
   [opts]
   (fn [head-manifest]
-    (assemble-release
-     (assoc opts :withdrawn-slugs
-            (set (map #(get % "slug") (get head-manifest "withdrawn")))))))
+    (let [assembled (assemble-release
+                     (assoc opts :withdrawn-slugs
+                            (set (map #(get % "slug") (get head-manifest "withdrawn")))))
+          regressed (when head-manifest
+                      (validation-regressions head-manifest (:core assembled)))]
+      (when (seq regressed)
+        (fail! :validation-regression
+               {:count (count regressed)
+                :slugs (vec (take 20 regressed))}))
+      assembled)))

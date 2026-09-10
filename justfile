@@ -24,6 +24,9 @@ active-path-hygiene:
 python-quality:
 	@bash scripts/python-quality.sh
 
+# Scans the files git tracks, so it runs here rather than as a flake check:
+# the check source is a store path with no git directory, and falling back to a
+# tree walk would scan build outputs and any local corpus checkout.
 comment-hygiene:
 	@bash scripts/comment-hygiene-check.sh
 
@@ -83,7 +86,7 @@ tei-eaj-reports-with-probes *args:
 validate-eval-cache-smoke:
 	@bash tests/validate-eval-cache-smoke.sh
 
-check-no-build: runtime-config-smoke active-path-hygiene root-flake-output-contract tei-version-coherence flake-input-policy schema-hash-coherence figure-quotes python-quality docs-links gaiji-table-drift nix-format-check validate-eval-cache-smoke root-flake-check-no-build
+check-no-build: runtime-config-smoke active-path-hygiene root-flake-output-contract tei-version-coherence flake-input-policy schema-hash-coherence figure-quotes python-quality comment-hygiene docs-links gaiji-table-drift nix-format-check validate-eval-cache-smoke root-flake-check-no-build
 	@(cd ab-validator && AB_WORKSPACE_ROOT="$(pwd)/.." {{nix_eval}} flake check --no-build)
 
 # Publication tests and generated TEI profile must match their checked-in sources.

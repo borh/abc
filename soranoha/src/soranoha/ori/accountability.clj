@@ -113,6 +113,21 @@
    "warichu" {:markers #{"CommandFullwidth" "CommandAscii"}
               :families #{"warichu.basic"} :aspects #{"structure" "layout"}}})
 
+(def ^:private reachable-families
+  "For each marker kind the scanner emits, the families a claim could carry on an
+  occurrence of that kind.
+
+  A claim counts against an occurrence only when the fact kind's marker set
+  admits the occurrence's own kind, so a family outside this set is unreachable
+  however the interpreter behaved. Calling such a family unaccounted would read
+  as a coverage gap and be none: the scanner and the fact table name marker kinds
+  from two vocabularies, and the scanner emits kinds no fact kind mentions. The
+  set is derived from the fact table rather than restated, so a fact kind that
+  gains a marker widens it in step."
+  (reduce (fn [reachable {:keys [markers families]}]
+            (reduce #(update %1 %2 (fnil into #{}) families) reachable markers))
+          {} (vals compatible-families)))
+
 (defn- require-evidence [condition message]
   (when-not condition (throw (ex-info message {:type :accountability/invalid-evidence}))))
 
@@ -204,20 +219,32 @@
                              [components claims] (located-claims occurrence
                                                                  (if (or apparatus? (not= "lossless" (get oracle "decode_outcome")))
                                                                    {} facts-by-marker))
-                             claimed (into #{} (mapcat #(get % "families")) claims)]
+                             claimed (into #{} (mapcat #(get % "families")) claims)
+                             ;; a nested component carries its own marker kind and
+                             ;; its claims are promoted to the occurrence, so what
+                             ;; is reachable here is reachable through any of them
+                             reachable (transduce (map #(get reachable-families (get % "kind")))
+                                                  into
+                                                  (get reachable-families (get occurrence "kind") #{})
+                                                  components)]
                          (assoc occurrence "claims" claims "components" components
                                 "disposition" (if apparatus? "source-apparatus" "interpretation-evidence")
                                 "unaccounted_families" (if apparatus? []
-                                                           (filterv #(not (claimed %)) (get occurrence "families")))
+                                                           (filterv #(and (reachable %) (not (claimed %)))
+                                                                    (get occurrence "families")))
+                                "unreachable_families" (if apparatus? []
+                                                           (filterv #(not (reachable %)) (get occurrence "families")))
                                 "unclassified" (and (not apparatus?) (empty? (get occurrence "families")))))))
                 (sort-by #(get-in % ["source_span" "start"]) occurrences))
           families
           (reduce (fn [counts occurrence]
-                    (let [claimed (into #{} (mapcat #(get % "families")) (get occurrence "claims"))]
+                    (let [claimed (into #{} (mapcat #(get % "families")) (get occurrence "claims"))
+                          unreachable (set (get occurrence "unreachable_families"))]
                       (reduce (fn [counts family]
                                 (update-in counts [family (cond
                                                             (= "source-apparatus" (get occurrence "disposition")) "source_apparatus"
                                                             (claimed family) "interpreter_claimed"
+                                                            (unreachable family) "outside_claim_vocabulary"
                                                             :else "unaccounted")] (fnil inc 0)))
                               counts (get occurrence "families"))))
                   (sorted-map) results)]
@@ -244,11 +271,18 @@
 
   What is not recoverable from anything else the build writes is which
   occurrences went unaccounted, so those are kept whole, and the total they
-  were drawn from is stated so their number can be read as a proportion."
+  were drawn from is stated so their number can be read as a proportion.
+
+  An occurrence whose families are all outside the claim vocabulary is not one
+  of them. It is counted in `families` under `outside_claim_vocabulary` and left
+  off the list, because what explains it is its marker kind rather than anything
+  about the occurrence, and one count per family says that as completely as
+  thousands of records would. Measured over the full corpus, those were 69% of
+  the entries this list used to carry."
   [report]
   (let [occurrences (get report "occurrences")]
     (-> report
-        (assoc "schema" "soranoha-interpretation-coverage/2"
+        (assoc "schema" "soranoha-interpretation-coverage/3"
                "occurrence_count" (count occurrences)
                "unclassified_occurrence_count" (get report "unclassified_occurrences")
                "unaccounted_occurrences"
@@ -259,7 +293,7 @@
 (defn coverage-stage
   "Independent lexical oracle + parser IR -> explicit claim accounting."
   [clj-toolchain-id]
-  {:stage-id "interpretation-coverage" :stage-version "21" :toolchain-id clj-toolchain-id
+  {:stage-id "interpretation-coverage" :stage-version "22" :toolchain-id clj-toolchain-id
    :f (fn [{:keys [blob]} inputs]
         (let [input-bytes (into {} (map (fn [name] [name (blob (get inputs name))]))
                                 ["source-accountability" "parser-ir"])

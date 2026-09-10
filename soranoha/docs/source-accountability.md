@@ -27,8 +27,8 @@ per-edition source/export fidelity certificate.
 
 `interpretation-coverage.json` joins this lexical evidence to explicit native
 interpretation facts. Family counts distinguish `interpreter_claimed` from
-`unaccounted`; a claimed occurrence has at least one explicit compatible aspect,
-not necessarily every aspect. Each claim must match the exact span and a
+`unaccounted` and from `outside_claim_vocabulary`; a claimed occurrence has at
+least one explicit compatible aspect, not necessarily every aspect. Each claim must match the exact span and a
 compatible family of an independently scanned occurrence or nested component.
 Nested markers retain their own component spans. Source apparatus is kept
 separate. Lossy decoding prevents positive claim accounting. Reported
@@ -44,6 +44,15 @@ A claimed occurrence is not listed, because the correspondence is already
 recorded from the other direction: the TEI element the claim produced carries
 that occurrence's span in its `source` attribute. Nothing else the build writes
 records which occurrences went unaccounted, so those are kept in full.
+
+A family can only be claimed on a marker kind some interpretation fact admits.
+The scanner recognizes kinds no fact kind mentions, among them the two forms of
+`〔…〕` and the terminal provenance line, and a family the scanner assigns to one
+of those is unreachable rather than missed. Those are counted under
+`outside_claim_vocabulary` and are not listed as exceptions, because what
+explains them is the marker kind and not the individual occurrence. Reading
+`unaccounted` as a proportion of `occurrence_count` therefore measures
+interpretation coverage and not the distance between two vocabularies.
 
 ## Review exports
 

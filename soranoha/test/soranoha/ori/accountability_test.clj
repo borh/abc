@@ -83,7 +83,7 @@
                 (oracle [(marker 15 30) (marker 0 9)])
                 (interpretation [(fact 0 9)]))
         reported (accountability/reported-coverage report)]
-    (is (= "soranoha-interpretation-coverage/2" (get reported "schema")))
+    (is (= "soranoha-interpretation-coverage/3" (get reported "schema")))
     (is (= 2 (get reported "occurrence_count"))
         "both occurrences are counted, whether or not either is listed")
     (is (= [15] (mapv #(get-in % ["source_span" "start"])
@@ -105,6 +105,28 @@
     (is (= 1 (get reported "unclassified_occurrence_count")))
     (is (= ["［＃］"] (mapv #(get % "raw") (get reported "unaccounted_occurrences")))
         "a marker with no families is an exception even though it has none to be unaccounted")))
+
+(deftest a-family-no-fact-admits-on-this-marker-is-not-a-coverage-gap
+  (testing "the scanner puts 〔…〕 under annotation.chuuki, and no fact kind that
+  claims that family admits the marker, so the occurrence could never be claimed"
+    (let [accent {"source_span" (span 0 13) "kind" "AccentNotation" "region" "body"
+                  "raw" "〔e'tiquette〕" "families" ["annotation.chuuki"]}
+          reported (accountability/reported-coverage
+                    (accountability/coverage-report (oracle [accent]) (interpretation [])))]
+      (is (= {"outside_claim_vocabulary" 1} (get-in reported ["families" "annotation.chuuki"]))
+          "counted under its own name rather than as an unaccounted family")
+      (is (= 1 (get reported "occurrence_count")))
+      (is (= [] (get reported "unaccounted_occurrences"))
+          "not listed as an exception: the marker kind explains it, not the occurrence")
+      (is (= 0 (get reported "unclassified_occurrence_count"))
+          "it has a family, so it is classified; it is only unclaimable")))
+  (testing "the same family on a marker some fact kind does admit stays unaccounted"
+    (let [note {"source_span" (span 0 13) "kind" "CommandFullwidth" "region" "body"
+                "raw" "［＃「あ」はママ］" "families" ["annotation.chuuki"]}
+          reported (accountability/reported-coverage
+                    (accountability/coverage-report (oracle [note]) (interpretation [])))]
+      (is (= {"unaccounted" 1} (get-in reported ["families" "annotation.chuuki"])))
+      (is (= ["［＃「あ」はママ］"] (mapv #(get % "raw") (get reported "unaccounted_occurrences")))))))
 
 (deftest claims-need-compatible-kinds-and-spans-and-do-not-certify-semantics
   (let [ruby {"source_span" (span 6 21) "kind" "RubyImplicit" "region" "body"
@@ -153,14 +175,18 @@
                       (json/read-json
                        (String. ^bytes (cas/get-bytes (:cas-dir store) (get-in result [:outputs name])) "UTF-8")))]
     (try
-      (doseq [[body unknown expected-claimed expected-component-claims]
+      (doseq [[body unknown expected-claimed expected-component-claims unreachable]
               [["［＃斜体］字［＃「字」に白四角傍点］［＃斜体終わり］" "［＃「字」に白四角傍点］" 2]
                ["［＃斜体］字［＃「字」の部分はイタリック体］［＃斜体終わり］" "［＃「字」の部分はイタリック体］" 2]
                ["［＃太字］字［＃「字」は斜体］［＃太字終わり］" nil 3]
                ["｜漢字《かんじ》、漢字《かんじ》。" nil 2]
                ["※［＃「需＋頁」、第3水準1-94-6］《じゅ》" nil 2]
                ["｜前※［＃「需＋頁」、第3水準1-94-6］《ぜんじゅ》" nil 1]
-               ["※［＃「鬟」の「口」の下の部分に代えて「小」、33-17］" "※［＃「鬟」の「口」の下の部分に代えて「小」、33-17］" 0]
+               ;; the scanner reads a page reference in the gaiji's own body and
+               ;; adds reference.frontref, which only a command fact claims
+               ["※［＃「鬟」の「口」の下の部分に代えて「小」、33-17］"
+                "※［＃「鬟」の「口」の下の部分に代えて「小」、33-17］" 0 nil
+                "※［＃「鬟」の「口」の下の部分に代えて「小」、33-17］"]
                ["※［＃ローマ数字1、1-13-21］" nil 1]
                ["※［＃「藹」の「言」に代えて「月」、第3水準1-91-26］" nil 1]
                ["２）［＃「２）」は縦中横、行右小書き］" nil 1]
@@ -194,18 +220,24 @@
                 "［＃「甲［＃「甲」はママ］」は底本では「乙」］" 1]
                ["〔Hu:lshoff［＃「Hu:lshoff」は底本では「Hu:lshoffs」］〕" nil 1]
                ["〔schla:gt［＃「〔schla:gt〕」は底本では「〔scha:gt〕」］〕" nil 1]
-               ["〔Der Mu:s&iggang wird〕［＃「〔Mu:s&iggang〕」は底本では「〔Mu:s&igang〕」］" "〔Der Mu:s&iggang wird〕" 1]
+               ;; the correction stands outside the accent notation, so the
+               ;; notation has no command component and the family the scanner
+               ;; gives it is one no fact kind can claim on a bracket
+               ["〔Der Mu:s&iggang wird〕［＃「〔Mu:s&iggang〕」は底本では「〔Mu:s&igang〕」］"
+                nil 1 nil "〔Der Mu:s&iggang wird〕"]
                ["萬一《まんいち》［＃「萬一《まんいち》」は底本では「萬　《まん　　》」］"
                 "［＃「萬一《まんいち》」は底本では「萬　《まん　　》」］" 1 1]
                ["萬二《まんに》［＃「萬一《まんいち》」は底本では「萬　《まん　　》」］"
                 "［＃「萬一《まんいち》」は底本では「萬　《まん　　》」］" 1 0]
                ["零《こぼ》す［＃ルビの「こぼ（す）」は底本では「にぼ（す）」］" nil 2]
                ["「露西亞車」［＃「露西亞車」は底本では「靈西亞車」］" nil 1]
-               ["〔Ha:tte.“〕［＃「Ha:tte.“」は底本では「Ha:tte“.」］" "〔Ha:tte.“〕" 1]
+               ["〔Ha:tte.“〕［＃「Ha:tte.“」は底本では「Ha:tte“.」］" nil 1 nil "〔Ha:tte.“〕"]
                ["字［＃底本では傍点］" nil 1]
                ["キタ［＃お手伝いさん］" nil 1]
                ["ワフタンゴフ［＃劇場名］" nil 1]
-               ["字［＃海野家のお手伝いさん］" "［＃海野家のお手伝いさん］" 0]
+               ;; source.reviewed_residual_command is claimed by no fact kind on
+               ;; any marker, so it is unreachable wherever the scanner puts it
+               ["字［＃海野家のお手伝いさん］" "［＃海野家のお手伝いさん］" 0 nil "［＃海野家のお手伝いさん］"]
                ["字［＃父、太字］" "［＃父、太字］" 0]
                ["字［＃「字」に「ママ」注記］" nil 1]
                ["字［＃「字」に「注」の注記］" nil 1]
@@ -232,6 +264,9 @@
                      (count (mapcat #(get % "claims") (mapcat #(get % "components") occurrences))))))
             (is (= (if unknown [unknown] [])
                    (mapv #(get % "raw") (filter #(seq (get % "unaccounted_families")) occurrences))))
+            (is (= (if unreachable [unreachable] [])
+                   (mapv #(get % "raw") (filter #(seq (get % "unreachable_families")) occurrences)))
+                "a family no fact could claim on this marker is not a coverage gap")
             (doseq [occurrence claimed claim (get occurrence "claims")]
               (is (contains? (into #{(select-keys (get occurrence "source_span") ["start" "end"])}
                                    (map #(select-keys (get % "source_span") ["start" "end"]))

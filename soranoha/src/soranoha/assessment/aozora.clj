@@ -31,7 +31,7 @@
     :aozora/acquisition-failed
     (if (or (nil? detail) (and (string? detail) (seq detail)))
       (or detail "acquisition-failed")
-      (throw (ex-info "Invalid Aozora acquisition diagnostic"
+      (throw (ex-info "Invalid Aozora Bunko acquisition diagnostic"
                       {:reason :invalid-aozora-reason :value detail})))
     (:aozora/ambiguous-catalog
      :aozora/card-identity-mismatch
@@ -59,7 +59,7 @@
      :aozora/rules-changed
      :aozora/source-revision-unavailable
      :aozora/unofficial-url) (name reason)
-    (throw (ex-info "Invalid Aozora unavailability reason"
+    (throw (ex-info "Invalid Aozora Bunko unavailability reason"
                     {:reason :invalid-aozora-reason :value reason}))))
 
 (defn observation->wire [{:keys [state] :as observation}]
@@ -67,14 +67,14 @@
     :aozora/available
     (if (nil? (:reason observation))
       {"state" "available" "reason" nil}
-      (throw (ex-info "Available Aozora observation cannot carry a failure reason"
+      (throw (ex-info "Available Aozora Bunko observation cannot carry a failure reason"
                       {:reason :invalid-reliance-observation :value (:reason observation)})))
     :aozora/unavailable {"state" "unavailable" "reason" (reason->wire observation)}
-    (throw (ex-info "Invalid Aozora observation state"
+    (throw (ex-info "Invalid Aozora Bunko observation state"
                     {:reason :invalid-reliance-observation :value state}))))
 
 (defn- refuse! [reason]
-  (throw (ex-info (str "Aozora reliance unavailable: " (reason->wire {:reason reason})) {:reason reason})))
+  (throw (ex-info (str "Aozora Bunko reliance unavailable: " (reason->wire {:reason reason})) {:reason reason})))
 
 (defn- official-uri [url]
   (let [u (URI. url)]
@@ -105,7 +105,7 @@
       (.setRequestProperty c "Accept-Encoding" "identity")
       (let [status (.getResponseCode c)]
         (when-not (= 200 status)
-          (throw (ex-info "Aozora reliance unavailable: http-status"
+          (throw (ex-info "Aozora Bunko reliance unavailable: http-status"
                           {:reason :aozora/http-status :status status}))))
       (with-open [in (.getInputStream c)] (bounded-bytes in))
       (finally (.disconnect c)))))
@@ -238,6 +238,11 @@
          {"source_revision" (str/trim (:out git))
           "observed_at" (or (:observed-at opts) today)
           "decision_date" (or (:decision-date opts) today)
+          ;; verbatim: every accepted declaration in data/assessment-source.json
+          ;; already records this exact sentence, and the basis is reviewed
+          ;; data rather than prose. Correcting the name here would make a
+          ;; freshly prepared declaration differ from the accepted ones, which
+          ;; is an owner re-review, not a wording fix.
           "basis" (or (:basis opts) "Reliance on Aozora's published copyright-expired classification for this exact edition in Japan.")
           "catalog_sha256" (retain! evidence-root catalog)
           "rules_sha256" (retain! evidence-root @rules)

@@ -46,10 +46,10 @@
 (defn- person-idno-type
   "Who issued this person identifier.
 
-  A six-digit id is Aozora's 人物ID, taken from the catalog's 人物ID column.
+  A six-digit id is Aozora Bunko's 人物ID, taken from the catalog's 人物ID column.
   Anything else is minted locally, and the record schemas permit one such
   form. Publishing a locally minted id as `aozora-person-id` would claim a
-  provenance Aozora did not grant, which is the one thing an idno type
+  provenance Aozora Bunko did not grant, which is the one thing an idno type
   exists to state."
   [person-id]
   (if (re-matches #"[0-9]{6}" (str person-id))
@@ -93,7 +93,7 @@
 
   Four title forms where the catalog carries them. The subtitle matters for
   identification, not decoration: author and title alone leave 2357 works in
-  the Aozora catalog ambiguous, and adding 副題 cuts that to 882. The original
+  the Aozora Bunko catalog ambiguous, and adding 副題 cuts that to 882. The original
   title of a translated work carries no language attribute because the catalog
   records no source language, and guessing one from the string would be an
   assertion this project cannot support."
@@ -141,11 +141,11 @@
 
   Three identifiers, and the type names say who issued which. Soranoha issues
   the publication identifier — the `<work-id>_<card-directory>` form the site
-  serves works under — so it is not labelled `aozora-*`: Aozora issues the
+  serves works under — so it is not labelled `aozora-*`: Aozora Bunko issues the
   work id and the card, not the pair. Without it a downloaded file cannot say
   what to cite it as, which is the property the citation projections rest on.
 
-  The card URL moves here from the source description. It identifies Aozora's
+  The card URL moves here from the source description. It identifies Aozora Bunko's
   record for the work, which is what the other two identifiers beside it do;
   the source description is about the printed edition transcribed, which is a
   different thing and is often not the one the card links.
@@ -185,9 +185,9 @@
 
 (defn- fallback-source-bibl
   "What can be said about the source when the catalog records no edition. The
-  Aozora card URL is no longer part of this: it is published unconditionally
+  Aozora Bunko card URL is no longer part of this: it is published unconditionally
   in the publication statement, so a work with no edition metadata keeps the
-  link back to Aozora instead of being the only kind of work that has one."
+  link back to Aozora Bunko instead of being the only kind of work that has one."
   [work]
   (if-let [title (get work "title")]
     [:bibl [:title title]]
@@ -242,7 +242,7 @@
   "The taxonomies the text classification points at, declared rather than
   named by a bare string, so a reader can tell who classified the work.
 
-  Aozora assigns both the NDC code and the orthographic style. Declaring the
+  Aozora Bunko assigns both the NDC code and the orthographic style. Declaring the
   taxonomies is what carries that provenance to a reader, and it matters most
   for 文字遣い種別, which is populated for every work and partitions the corpus
   into 新字新仮名, 新字旧仮名, 旧字旧仮名, 旧字新仮名 and その他. A

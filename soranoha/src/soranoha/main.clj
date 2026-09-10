@@ -393,7 +393,7 @@
   (let [source-bytes (fs/read-all-bytes (str assessment-source))
         source (:value (assessment-records/decode source-bytes))]
     (when (and (seq (get source "reliances")) (string/blank? evidence-root))
-      (throw (ex-info "Aozora reliance requires --evidence-root"
+      (throw (ex-info "Aozora Bunko reliance requires --evidence-root"
                       {:reason :missing-evidence-root})))
     {:source source :source-bytes source-bytes
      :retained (assessment-source/retained-observations source evidence-root)}))

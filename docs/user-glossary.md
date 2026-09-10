@@ -62,7 +62,7 @@ are not part of a release: a release publishes the TEI edition and its three
 projections, and these reports are how the project checks its own work, written
 alongside a build for anyone who runs one.
 
-- **source accountability** scans the raw Aozora file for every recognisable
+- **source accountability** scans the raw Aozora Bunko file for every recognisable
   annotation, independently of the parser, and records each one with its exact
   spelling and byte span.
 - **interpretation coverage** joins that scan to what the converter says it
@@ -83,7 +83,7 @@ Three different concepts that are easy to conflate, kept apart throughout:
 
 - **work**: The intellectual work. For example, 蜘蛛の糸 is one work regardless of
   the edition in which it appears. A Soranoha identifier denotes a work.
-- **edition**: A specific source, such as a printed edition or the Aozora
+- **edition**: A specific source, such as a printed edition or the Aozora Bunko
   transcription derived from it. The `source_content_hash` in the manifest and
   `<sourceDesc>` in each TEI file identify the edition.
 - **document**: A specific byte sequence identified by its SHA-256 digest. Two
@@ -149,7 +149,7 @@ does not identify the bytes you read; a citation that names the release does.
 
 The bibliography of every work in a release, including identifiers, titles,
 readings, contributors, first publication details, orthographic style, NDC
-classification, Aozora card URL, and printed source edition. It is published as a
+classification, Aozora Bunko card URL, and printed source edition. It is published as a
 single JSON file at `https://soranoha.org/catalog.json`.
 
 The catalog is part of the signed release, not a convenience export. It
@@ -188,7 +188,7 @@ if the policy ever changes.
 
 ## gaiji (外字)
 
-A character the Aozora source file could not encode, written instead as a
+A character the Aozora Bunko source file could not encode, written instead as a
 prose description with, usually, a JIS X 0213 code point:
 `※［＃「特のへん＋廴＋聿」、第3水準1-87-71］`.
 
@@ -208,13 +208,13 @@ carries base text only.
 
 ## source offset
 
-A byte range into the Aozora source text, after decoding it to UTF-8, recorded
+A byte range into the Aozora Bunko source text, after decoding it to UTF-8, recorded
 for almost every element of the published TEI.
 
 Offsets let a claim about the corpus be stated against the source rather than
 against a particular tool's output, and checked by someone who has never seen
 that tool. The text they index is named once per document rather than once per
-offset: `primary-text-hash` in `<sourceDesc>` is the sha256 of the Aozora text
+offset: `primary-text-hash` in `<sourceDesc>` is the sha256 of the Aozora Bunko text
 member as distributed, and the offsets index its UTF-8 decoding, so applying
 them to the wrong bytes makes the mismatch visible.
 

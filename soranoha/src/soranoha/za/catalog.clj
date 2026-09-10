@@ -20,9 +20,9 @@
     (json/read-json (String. ^bytes bytes "UTF-8"))))
 
 (defn- archive-stem
-  "The Aozora archive's own name for the work's primary text member, without
+  "The Aozora Bunko archive's own name for the work's primary text member, without
   its extension: `92_ruby_164.zip` holds `kumono_ito.txt`, so the stem is
-  `kumono_ito` and not the archive's own name. Aozora volunteers
+  `kumono_ito` and not the archive's own name. Aozora Bunko volunteers
   hand-curated these names with word boundaries, which is why the serving
   layer renders download filenames from this rather than from a mechanical
   romanization of the title reading. Every published work has exactly one

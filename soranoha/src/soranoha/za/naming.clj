@@ -10,7 +10,7 @@
 
   A download filename is a convenience. The citable thing is the identifier,
   which is why it is a component of every filename rather than an alternative
-  to one: 470 author-and-title pairs are shared by 2357 works in the Aozora
+  to one: 470 author-and-title pairs are shared by 2357 works in the Aozora Bunko
   catalog, so a name built from author and title alone would silently
   overwrite more than one work in ten of any bulk extraction.
 
@@ -49,7 +49,7 @@
 
 (def ^:private transliterations
   "Letters that survive NFKD intact but have a settled Latin spelling. Kept
-  small on purpose: it covers what the Aozora person catalog actually
+  small on purpose: it covers what the Aozora Bunko person catalog actually
   contains plus its immediate neighbours, and anything else falls through to
   the person-id fallback rather than to a guess. Measured over the whole
   catalog, the only romanized name with nothing Latin in it at all is person
@@ -59,7 +59,7 @@
    \ı "i" \İ "I" \u2019 "'"})
 
 (def ^:private component-limit
-  "Characters kept from one rendered component. No Aozora author component
+  "Characters kept from one rendered component. No Aozora Bunko author component
   reaches it — the longest measured is 38 — and no stem is known to, but a
   filename has to stay under the 255-byte limit every filesystem in play
   imposes, and truncation must be a rule rather than an accident. Uniqueness
@@ -70,7 +70,7 @@
   "One filename component: Latin letters, digits and apostrophes, with word
   boundaries as underscores.
 
-  Apostrophes are kept because they are meaningful: 204 Aozora stems use
+  Apostrophes are kept because they are meaningful: 204 Aozora Bunko stems use
   Hepburn's n' disambiguation, as in `ippon'ashino_heitai`, and shells handle
   them with ordinary quoting. Hyphens fold to underscores, which is what keeps the
   three components of a filename separable by splitting on the hyphen."
@@ -114,7 +114,7 @@
   "<Author_Romaji>-<aozora-stem>-<identifier>.<ext>, as in
   `Shiraki_Shizu-sanjusanno_shi-000002_000012.xml`.
 
-  The middle component is Aozora's own name for the work's primary text
+  The middle component is Aozora Bunko's own name for the work's primary text
   member. Volunteers hand-curated those names with word boundaries for the
   whole archive: the longest unbroken run is a median of 8 characters against
   a median of 14 for a mechanical romanization of the title reading, which

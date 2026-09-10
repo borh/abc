@@ -12,7 +12,7 @@ then all of them, and tells you what you are holding.
 > are the ones the first release will serve; the shapes of the files, the
 > identifiers and the licence are settled and will not change. Until the first
 > release, follow [the worked example](worked-example.md), which builds one
-> text from Aozora source and shows the same output.
+> text from Aozora Bunko source and shows the same output.
 
 ## What you get
 
@@ -20,7 +20,7 @@ Every work is published in four files, all reachable from its identifier:
 
 | File | What it is |
 |---|---|
-| `tei` | TEI P5 XML edition containing ruby, gaiji, emphasis, indentation, headings, the source colophon, and byte offsets into the Aozora source. |
+| `tei` | TEI P5 XML edition containing ruby, gaiji, emphasis, indentation, headings, the source colophon, and byte offsets into the Aozora Bunko source. |
 | `plaintext` | Reading text alone in UTF-8. Ruby readings, editorial notes, and apparatus remain in the TEI edition rather than this projection. |
 | `markdown` | CommonMark containing the reading text with headings, ruby as inline HTML `<ruby>`, and CSS emphasis marks. |
 | `tei-validation` | JSON report recording each validation layer's result, every rule finding with its severity, and the sha256 of the TEI profile the file was checked against. |
@@ -45,16 +45,16 @@ readable name, which is what a browser save or `curl -O` writes to disk:
 curl -O https://soranoha.org/works/000092_000879/Akutagawa_Ryunosuke-kumono_ito-000092_000879.xml
 ```
 
-The name is `<author>-<Aozora stem>-<identifier>.<ext>`. The middle part is
+The name is `<author>-<Aozora Bunko stem>-<identifier>.<ext>`. The middle part is
 Aozora Bunko's own filename for the text, which its volunteers wrote with word
-boundaries by hand. **The filename is a convenience, whereas the identifier is the citable reference.** The identifier is included in every filename because title and author alone do not uniquely identify a work: 2357 works in the Aozora catalog share an author and title with another work. Without the identifier, those files would overwrite each other during bulk extraction. Every work page shows both forms.
+boundaries by hand. **The filename is a convenience, whereas the identifier is the citable reference.** The identifier is included in every filename because title and author alone do not uniquely identify a work: 2357 works in the Aozora Bunko catalog share an author and title with another work. Without the identifier, those files would overwrite each other during bulk extraction. Every work page shows both forms.
 
 To read it rather than download it, open
 `https://soranoha.org/works/000092_000879/` for the bibliography and
 `https://soranoha.org/works/000092_000879/read` for the text itself, ruby and
 all, in horizontal or vertical setting.
 
-If you have an Aozora card URL, you already have the identifier. The card
+If you have an Aozora Bunko card URL, you already have the identifier. The card
 `https://www.aozora.gr.jp/cards/000879/card92.html` is card directory `000879`
 and work id `92`; pad each to six digits and join them with an underscore.
 
@@ -72,7 +72,7 @@ what that promises and what it does not.
 
 A catalog entry gives you the identifier, the title and its reading, the
 author and other contributors, the first-publication note, the orthography
-(新字新仮名 and the rest), the NDC class, the Aozora card URL, and the printed
+(新字新仮名 and the rest), the NDC class, the Aozora Bunko card URL, and the printed
 source edition the transcription was made from.
 
 ```python
@@ -119,7 +119,7 @@ page that serves them. The filename is a convenience; the citable columns are
 `encoding="utf-8-sig"`. The file contains a byte-order mark so that applications like Excel preserve Japanese titles without encoding errors.
 
 `source_edition_year` is the Gregorian year of the 底本's first edition,
-taken from Aozora's 初版発行年. That field is a free-form publication history
+taken from Aozora Bunko's 初版発行年. That field is a free-form publication history
 rather than a year, as in `1981（昭和56）年3月20日`, sometimes with a
 printing history after it. The year is extracted for the machine-readable
 columns, while the work page shows the recorded string in full.
@@ -153,11 +153,11 @@ single-download option.
 The source is Aozora Bunko's catalog of works whose copyright has expired in
 Japan, restricted to works with a downloadable text file: 17,655 of them in the
 catalog this release builds from, contributed by 1,167 authors, translators,
-editors and collators. Those numbers move as Aozora adds works and as
+editors and collators. Those numbers move as Aozora Bunko adds works and as
 copyrights expire. Each release states its own count on the landing page and
 in `/catalog.json`; a release is a fixed set of works, not a live view.
 
-Contributors are recorded with their upstream Aozora roles, such as 著者, 翻訳者,
+Contributors are recorded with their upstream Aozora Bunko roles, such as 著者, 翻訳者,
 校訂者, or 編者. A work can have several contributors, and the site indexes individuals
 across all assigned roles rather than authorship alone.
 
@@ -171,7 +171,7 @@ work whose basis does not hold is not published. See
 [admission and assessment](user-glossary.md#admission) for what those words
 mean here.
 
-**Illustrations are not included.** Aozora's image files are outside the
+**Illustrations are not included.** Aozora Bunko's image files are outside the
 grant. Where the source references an illustration, the TEI records the
 reference and its caption; the image itself is not published.
 
@@ -209,7 +209,7 @@ anyone implementing a verifier.
 
 ## Where to go next
 
-- [A worked example](worked-example.md) walks through one text from Aozora source to TEI and plaintext, explaining each header block and providing loader code.
+- [A worked example](worked-example.md) walks through one text from Aozora Bunko source to TEI and plaintext, explaining each header block and providing loader code.
 - [Glossary](user-glossary.md) defines terminology used across project outputs.
 - [Work identifiers](../soranoha/docs/work-identifiers.md) explains identifier structure, stability across releases, and edition tracking.
 - [TEI extension vocabulary](../soranoha/docs/tei-vocabulary.md) specifies `snh:` attributes in published files and their schema validation constraints.

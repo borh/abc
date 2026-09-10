@@ -404,7 +404,7 @@
 
 (defn- scan-zip-with-trailing-garbage-recovery
   "Retry an unreadable archive at earlier end-of-central-directory
-  candidates: some shipped archives (e.g. Aozora's 58100_txt_60357.zip)
+  candidates: some shipped archives (e.g. Aozora Bunko's 58100_txt_60357.zip)
   carry trailing bytes with a decoy EOCD after the intact archive, which
   the zip reader trusts and then rejects. A successful retry records the
   trimmed byte count; the archive identity stays the hash of the file as

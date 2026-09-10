@@ -12,7 +12,7 @@
   exactly why it does not live in the chain.
 
   Two things every form carries. The **identifier**, because a description
-  does not identify a work: measured over the Aozora catalog this release
+  does not identify a work: measured over the Aozora Bunko catalog this release
   builds from, author and title leave 2357 works ambiguous, and author, title,
   副題, 文字遣い種別, 底本名 and 初出 together still leave 16. Both counts
   move with the upstream catalog. And the **release**, because the corpus is
@@ -51,7 +51,7 @@
 (def ^:private person-name-romaji naming/person-name-romaji)
 
 (defn- contributors-by-role
-  "Aozora's role strings grouped as the citation formats need them. A person
+  "Aozora Bunko's role strings grouped as the citation formats need them. A person
   can hold more than one role on a work, and each role is cited separately."
   [work]
   (group-by #(get % "relation_to_work") (get work "contributors")))
@@ -65,7 +65,7 @@
 (defn- edition-year
   "The Gregorian year of the 底本's first edition, as a number.
 
-  Aozora's 底本初版発行年 is not a year. It is a free-form publication
+  Aozora Bunko's 底本初版発行年 is not a year. It is a free-form publication
   history: 17747 of the 18780 recorded values read `1981（昭和56）年3月20日`,
   and of the 1033 that do not, 667 append a printing history, as in
   `1948（昭和23）年5月15日、1963（昭和38）年5月16日第20刷改版`. Every one of
@@ -127,13 +127,13 @@
 
   The titles stay Japanese because the alternative would be invented. The
   kana reading carries no word boundaries, so a mechanical transliteration is
-  not correct Hepburn, and the 文字遣い種別 values are Aozora's own
+  not correct Hepburn, and the 文字遣い種別 values are Aozora Bunko's own
   classification rather than terms with settled English equivalents. A writer
   who needs romanized titles has the reading and their journal's style; a
   writer who does not gets a form that is true.
 
   When a contributor has no romanized name at all (one person in the whole
-  Aozora catalog), this falls back to the Japanese name rather than dropping
+  Aozora Bunko catalog), this falls back to the Japanese name rather than dropping
   the author."
   [{:keys [head-hex doi]} work]
   (let [{:strs [slug orthographic_style]} work
@@ -158,7 +158,7 @@
 ;; ----------------------------------------------------------------- CSL-JSON
 
 (def ^:private csl-roles
-  "Aozora's roles as CSL contributor variables. 校訂者 has no CSL counterpart,
+  "Aozora Bunko's roles as CSL contributor variables. 校訂者 has no CSL counterpart,
   since CSL models editors and translators but not collators, so it is
   recorded as a plain contributor rather than promoted to editor, which would
   say something the source does not."

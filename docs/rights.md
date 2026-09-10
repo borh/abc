@@ -28,11 +28,11 @@ A published work involves two distinct rights layers.
 
 **The underlying works** are texts from [Aozora
 Bunko](https://www.aozora.gr.jp/) whose copyright has expired. Soranoha
-neither holds nor claims any right in them. Aozora's own handling rules
+neither holds nor claims any right in them. Aozora Bunko's own handling rules
 ([取り扱い規準](https://www.aozora.gr.jp/guide/kijyunn.html)) state that files
 for copyright-expired works may be freely copied, redistributed and shared,
 whether for payment or not, and freely performed, recited and adapted, with
-nothing owed to Aozora in permission or fee. Altering the text itself is
+nothing owed to Aozora Bunko in permission or fee. Altering the text itself is
 allowed within the scope of Article 20(2)(iv) of the Copyright Act, which is
 what covers converting the file format, changing notation, and modernising
 旧字旧仮名.
@@ -56,7 +56,7 @@ encoding attracts copyright or a database right at all, those rights are
 waived.
 
 CC0 rather than CC BY was selected because TEI transcription is largely
-a mechanical conversion of Aozora's markup. An attribution requirement would
+a mechanical conversion of Aozora Bunko's markup. An attribution requirement would
 add obligations for downstream combiners while resting on limited creative
 originality. Credit is requested through `CITATION.cff` and standard scholarly
 citation rather than enforced as a licence condition.
@@ -117,7 +117,7 @@ redistributing tooling, and when auditing transcription methodology.
 Redistributing the *published corpus* does not carry the toolchain's
 obligations. Redistributing the *tooling* does.
 
-The Aozora catalog CSV that Soranoha reads bibliographic metadata from is
+The Aozora Bunko catalog CSV that Soranoha reads bibliographic metadata from is
 published by Aozora Bunko under CC BY 4.0. That licence covers catalog reuse;
 it grants nothing over the works themselves.
 
@@ -172,7 +172,7 @@ Soranoha publishes only works its assessment finds to be free of subsisting
 rights, but a corpus of this size will eventually be wrong about one.
 
 Write to the address on <https://orcid.org/0000-0003-2246-8774>, naming the
-work identifier (the `000092_000879` form, visible in the URL) or the Aozora
+work identifier (the `000092_000879` form, visible in the URL) or the Aozora Bunko
 card, and the basis of the claim. A claim does not need to be a formal legal
 notice to be acted on.
 

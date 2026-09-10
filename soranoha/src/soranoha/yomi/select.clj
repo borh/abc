@@ -43,7 +43,7 @@
                        :text_zip_relpath relpath}))))
 
 (defn work-identifier
-  "The catalog work id in the six-digit form Aozora files works under. Fails
+  "The catalog work id in the six-digit form Aozora Bunko files works under. Fails
   closed rather than padding a short value: this is half of a permanent public
   identifier, so a row that does not carry the documented shape must stop the
   build instead of having a shape guessed for it."

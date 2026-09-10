@@ -33,7 +33,7 @@ Building an export does not admit a work to publication. Assessment evaluates
 current facts and their applicability against the selected source revision;
 publication preflight checks those inputs before running the build. A catalog
 contribution listing is not proof of exhaustive authorship or copyright ownership.
-The implemented Aozora reliance route records the upstream assertion and its
+The implemented Aozora Bunko reliance route records the upstream assertion and its
 source applicability, separately from independent rights assessment.
 See [assessment evaluation](../../soranoha/docs/assessment-evaluation.md).
 

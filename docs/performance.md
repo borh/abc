@@ -197,7 +197,7 @@ Assessment execution counts appear separately as `assessment-executions`; releas
 counts cover every actual engine execution during preflight, building and final
 assessment. They include extraction performed before the per-work build report,
 so build-report counts alone are not total publication work. `release-phases` and
-`repeat-phases` contain inclusive timings: capture and Aozora checks nest inside
+`repeat-phases` contain inclusive timings: capture and Aozora Bunko checks nest inside
 assessment, and capture also occurs inside preflight. Do not sum nested phases.
 
 Compare unchanged publication in an existing completed replay fixture:
@@ -274,7 +274,7 @@ fixture at `0e9ea3e586eb0aa34039fabfc85a407d2f98b165` (17,308 published works an
 The assessment improvement clears the preselected 20% relevant-phase threshold;
 the largest paired peak-RSS increase was 0.19%, below the 10% guardrail.
 Preflight fell from 14.595 to 7.864 seconds; the two source captures within release
-fell from 21.233 to 7.764 seconds combined, and Aozora checking from 9.636 to 6.364
+fell from 21.233 to 7.764 seconds combined, and Aozora Bunko checking from 9.636 to 6.364
 seconds. Release verification remained approximately 24.4 seconds.
 
 All eight runs executed zero stages and preserved manifest

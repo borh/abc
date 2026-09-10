@@ -227,10 +227,10 @@
 
 (deftest observation-wire-boundary-preserves-domain-and-diagnostic-distinction
   (doseq [state ["available" :available :assessment/available :validation/passed]]
-    (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Invalid Aozora observation state"
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Invalid Aozora Bunko observation state"
                           (aozora/observation->wire {:state state :reason nil}))))
   (doseq [reason [:assessment/missing-selected-work :validation/failed :aozora/unknown]]
-    (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Invalid Aozora unavailability reason"
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo #"Invalid Aozora Bunko unavailability reason"
                           (aozora/observation->wire {:state :aozora/unavailable :reason reason}))))
   (is (thrown? clojure.lang.ExceptionInfo
                (aozora/observation->wire {:state :aozora/available :reason :assessment/stale-premise})))

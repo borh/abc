@@ -117,7 +117,7 @@
   (sorted-unique! :catalog-works-not-sorted-unique
                   (mapv #(get % "slug") (get catalog "works")) {})
   (doseq [{:strs [slug card_url contributors]} (get catalog "works")]
-    ;; A relative card URL would not identify the Aozora card the entry
+    ;; A relative card URL would not identify the Aozora Bunko card the entry
     ;; claims to come from, which is the one cross-reference the catalog
     ;; exists to carry.
     (when-not (absolute-origin? card_url)

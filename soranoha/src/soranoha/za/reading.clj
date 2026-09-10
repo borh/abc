@@ -24,7 +24,7 @@
 
   Where the encoding records something HTML cannot carry, the fact becomes a
   class or a title rather than disappearing: an apparatus's rejected reading,
-  a gaiji's original Aozora marker, the Japanese name of an emphasis mark
+  a gaiji's original Aozora Bunko marker, the Japanese name of an emphasis mark
   this stylesheet renders only approximately."
   (:require [clojure.string :as string]
             [soranoha.annotations.view :as view])
@@ -50,7 +50,7 @@
   ["corr" "reg" "expan" "sic" "orig" "abbr"])
 
 (def ^:private decoration-classes
-  "Aozora's emphasis-mark names, as they reach `@rend` from the parser's
+  "Aozora Bunko's emphasis-mark names, as they reach `@rend` from the parser's
   `decoration.kind`, mapped onto ASCII class names. The source keyword is the
   identifier; this table only says which of them this stylesheet can draw and
   which mark it draws for each. A name absent here still reaches the reader,
@@ -72,7 +72,7 @@
 
 (def ^:private font-sizes
   "`snh:layout-params` for a font-size scope onto one CSS length. Levels are
-  clamped: Aozora records `［＃５段階大きな文字］` and a reader gains nothing
+  clamped: Aozora Bunko records `［＃５段階大きな文字］` and a reader gains nothing
   from a font that leaves the page."
   {"absolute" {"extra-large" "1.7em" "large" "1.35em" "medium" "1em" "small" ".85em"}
    "qualitative" {"larger" "1.3em" "smaller" ".8em"}
@@ -266,7 +266,7 @@
 
 (defn- gaiji
   "A `<g>` shows its mapped character where the encoding found one, and its
-  Aozora marker either way. The marker is what identifies the character in
+  Aozora Bunko marker either way. The marker is what identifies the character in
   the source, so it stays available even when a substitute is displayed."
   [declarations ^Element element]
   (let [id (string/replace (or (attr element "ref") "") #"^#" "")
@@ -326,7 +326,7 @@
          (render-nodes declarations (view/children chosen))])
 
       "figure"
-      ;; The image itself is not published because Aozora illustrations are not
+      ;; The image itself is not published because Aozora Bunko illustrations are not
       ;; part of the rights grant; the figure is a placeholder with the source
       ;; description.
       (into [:figure (element-attrs element ["figure"])
@@ -368,7 +368,7 @@
   "Published TEI to `{:front :body :back}`, each a vector of hiccup nodes.
 
   `:body` is the work. `:front` and `:back` contain surrounding source material,
-  specifically Aozora's notes on the text and the colophon naming the printed
+  specifically Aozora Bunko's notes on the text and the colophon naming the printed
   edition from which the transcription was made. The colophon is the one piece of
   bibliographic evidence a reader cannot reconstruct from the catalog, so it
   is rendered rather than dropped; the parser's own audit notes are dropped,

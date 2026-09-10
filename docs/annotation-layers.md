@@ -14,7 +14,7 @@ to the source document and is not part of the reusable analyzer input. Image
 metadata is not principal text; `figDesc` preserves descriptions and a
 `note` of type `caption-reference` preserves any quoted caption reference. The
 separately transcribed visible caption remains body text, following the
-[Aozora image convention](https://www.aozora.gr.jp/annotation/graphics.html).
+[Aozora Bunko image convention](https://www.aozora.gr.jp/annotation/graphics.html).
 Correcting previously included descriptions changes affected text identities;
 image-free readings retain their existing `body-v1` identity.
 
@@ -73,7 +73,7 @@ have these transformations:
 | An unqualified inline box | A solid one-pixel border; no claim of the source's exact stroke width |
 
 Dot shapes and side-line distinctions follow the
-[Aozora emphasis notation](https://www.aozora.gr.jp/annotation/emphasis.html).
+[Aozora Bunko emphasis notation](https://www.aozora.gr.jp/annotation/emphasis.html).
 Its horizontal XHTML examples use underlines for default side lines and overlines
 for left-side lines. Dot placement follows the separate
 [CSS text-emphasis convention](https://www.w3.org/TR/css-text-decor-3/#text-emphasis-position-property).

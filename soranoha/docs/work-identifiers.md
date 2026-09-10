@@ -20,7 +20,7 @@ https://soranoha.org/withdrawn/000092_000879.json
 
 Both components come from Aozora Bunko. `000092` is the catalog's 作品ID
 (work id) and `000879` is the contributor card directory the source archive is
-filed under, as in `cards/000879/files/`. Together they name the Aozora card
+filed under, as in `cards/000879/files/`. Together they name the Aozora Bunko card
 the text was taken from:
 
 ```
@@ -38,7 +38,7 @@ it. Adding works, removing works, reprocessing the corpus, changing the
 converter, or changing this project's own tooling all leave it exactly as it
 was.
 
-**It denotes the work, not a particular file.** If Aozora repackages the
+**It denotes the work, not a particular file.** If Aozora Bunko repackages the
 archive, re-proofreads the text, or publishes a corrected edition, the
 identifier stays the same and the text under it changes. Changes are
 recorded explicitly rather than hidden. The manifest carries `source_content_hash` per work
@@ -54,7 +54,7 @@ governance event carrying the public reason. The releases that included the
 work keep their manifests, signatures and content; withdrawal removes the
 work from the current release, and never rewrites a past one.
 
-An identifier would also change if Aozora refiled the same work under a
+An identifier would also change if Aozora Bunko refiled the same work under a
 different contributor card, since the card directory is part of it. Only that
 work would be affected; every other identifier is computed independently.
 
@@ -90,7 +90,7 @@ its own inputs can disagree with them and the chain is append-only.
 
 The identifier is a component of the filename rather than an alternative to
 it. 470 author-and-title pairs are shared by 2357 of the 17810 works in the
-Aozora catalog, so a name built from author and title alone would silently
+Aozora Bunko catalog, so a name built from author and title alone would silently
 collide for more than one work in ten of any bulk extraction.
 Splitting a filename on its hyphens recovers the
 identifier as the last component; the bulk archives also carry it in

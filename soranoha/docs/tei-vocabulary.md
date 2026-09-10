@@ -22,7 +22,7 @@ namespace and declares the vocabulary version:
 ```
 
 These attributes are derived audit projections. They record what the parser
-established about the Aozora source; they do not replace the source records
+established about the Aozora Bunko source; they do not replace the source records
 from which they were derived, and a consumer may ignore them without losing the
 transcription.
 
@@ -57,10 +57,10 @@ declared for projections that are specified but not yet produced.
 | `snh:preservation-record` | `r` followed by six digits | Record id in the publication-preservation sidecar. |
 | `snh:ir-pointer` | JSON Pointer | Location in the parser IR of the projected fact. |
 | `snh:source-pointer` | pointer string | Location in the source or AAT of the projected fact. |
-| `snh:source-marker` | string | Original Aozora marker, kept when a TEI-native rendering normalizes it away. |
-| `snh:accent-code` | string | Aozora accent notation code. |
-| `snh:style-source` | string | Aozora style source marker. |
-| `snh:figure-class` | string | Aozora figure class. |
+| `snh:source-marker` | string | Original Aozora Bunko marker, kept when a TEI-native rendering normalizes it away. |
+| `snh:accent-code` | string | Aozora Bunko accent notation code. |
+| `snh:style-source` | string | Aozora Bunko style source marker. |
+| `snh:figure-class` | string | Aozora Bunko figure class. |
 
 Permitted values of `snh:vocab-version` are declared once, in the attribute's
 value list in [the ODD](../schemas/tei-profile.odd), and the generated Relax NG
@@ -107,7 +107,7 @@ reported with the constant `rule_id` `relax-ng` instead.
 | Rule ID | Severity | Requires |
 |---|---|---|
 | `snh-tei-header-title` | error | A main title in `teiHeader/fileDesc/titleStmt` (a `title` that is not one of the subordinate forms `sub`, `sub-reading`, `reading`, or `original`). |
-| `snh-tei-header-source-work-id` | error | An Aozora work ID or source work identifier in the header. |
+| `snh-tei-header-source-work-id` | error | An Aozora Bunko work ID or source work identifier in the header. |
 | `snh-header-language-declared` | error | At least one `profileDesc/langUsage/language` with a non-empty `@ident`. |
 | `snh-publication-licence` | error | A rights grant in `publicationStmt/availability/licence` with a non-empty `@target`. |
 | `snh-ruby-complete` | error | Ruby structures contain both base and reading components. |

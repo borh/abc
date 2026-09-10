@@ -1,5 +1,5 @@
 (ns soranoha.aozora.csv
-  "Read Aozora's list_person_all_extended_utf8.csv (one row per
+  "Read Aozora Bunko's list_person_all_extended_utf8.csv (one row per
   work-author-role tuple) into JSON-shaped record fragments. Pure;
   reads supplied CSV text. NFC normalization
   applied at the parse boundary."
@@ -52,7 +52,7 @@
 (def ^:private dot-date-separator-pattern
   #"(?<=\d)\.(?=\d)")
 (def ^:private unknown-marker-set
-  "Aozora date sentinels that mean 'not known'. Mapped to null at parse
+  "Aozora Bunko date sentinels that mean 'not known'. Mapped to null at parse
   time; preserved in parse_corrections under rule `unknown-marker`."
   #{"不詳" "未詳"})
 (def ^:private multi-dash-pattern #"--+")
@@ -112,7 +112,7 @@
     :else true))
 
 (defn parse-date
-  "Normalize an Aozora date-cell string to the v0.1 EDTF lexical union
+  "Normalize an Aozora Bunko date-cell string to the v0.1 EDTF lexical union
   (Level 0: YYYY[-MM[-DD]] with optional leading '-'; Level 1: decade
   YYYX and century YYXX, both with optional leading '-'). Returns
   `[normalized corrections]` where `corrections` is a vector of

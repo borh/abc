@@ -663,14 +663,14 @@ the manifest's `works` (§8). Each entry is closed:
 
 `{slug, source_content_hash, title, title_reading, subtitle, original_title,
 first_published, orthographic_style, ndc, card_url, archive_stem,
-contributors, source_editions}` (nullable where Aozora's catalog leaves the
+contributors, source_editions}` (nullable where Aozora Bunko's catalog leaves the
 field empty; `title`, `orthographic_style`, `card_url` and `archive_stem` are
 always present). `contributors` is sorted by `person_id`, unique, non-empty,
 each `{person_id, family_name, given_name, family_name_romaji,
 given_name_romaji, relation_to_work}`. `source_editions` entries are
 `{title, publisher, first_edition_year}`.
 
-`archive_stem` is the Aozora archive's own name for the work's primary text
+`archive_stem` is the Aozora Bunko archive's own name for the work's primary text
 member, without its extension. Every published work has exactly one such
 member (the source bundle fails closed on none and on several), so the value
 is always well defined and needs no fallback rule.

@@ -3,7 +3,7 @@
 This walkthrough follows Akutagawa Ryūnosuke's 蜘蛛の糸 (1918, identifier `000092_000879`) from its Aozora Bunko source file through the published TEI and plaintext representations, concluding with Python loading examples.
 
 Every excerpt below is real output, produced by the conversion pipeline from
-the Aozora file at
+the Aozora Bunko file at
 [`cards/000879/files/92_ruby_164.zip`](https://www.aozora.gr.jp/cards/000879/files/92_ruby_164.zip).
 Nothing here is illustrative reconstruction; if you run the same source
 through the same pipeline you get the same bytes.
@@ -40,12 +40,12 @@ not part of the story and it is not thrown away.
 ## The pipeline
 
 ```
-Aozora ZIP  →  primary text  →  AAT  →  parser IR  →  TEI  →  plaintext
+Aozora Bunko ZIP  →  primary text  →  AAT  →  parser IR  →  TEI  →  plaintext
                                                           →  Markdown
                                                           →  validation report
 ```
 
-The first three steps are the Rust converter: it lexes the Aozora notation
+The first three steps are the Rust converter: it lexes the Aozora Bunko notation
 into an annotated syntax tree (AAT), then maps that to a parser intermediate
 representation which records, for every node, the byte span in the decoded
 source that produced it. The last steps are Clojure: the parser IR plus the
@@ -80,14 +80,14 @@ The title's kana reading is a separate `<title>` rather than an attribute,
 because it is a title of the work in another script, not a property of the
 first one. The author record includes three `<persName>` forms covering kanji, kana,
 and romaji. Each entry specifies its script so applications can sort or display
-the appropriate representation. All three originate from Aozora's catalog and preserve
+the appropriate representation. All three originate from Aozora Bunko's catalog and preserve
 its recorded spelling without normalisation. For example, the given name is recorded as
 竜之介 here, whereas the printed edition cited in the next block uses 龍之介.
 
 The person `<idno>` names whoever issued the identifier, the same way the
-publication identifiers below do. `aozora-person-id` is Aozora's six-digit
+publication identifiers below do. `aozora-person-id` is Aozora Bunko's six-digit
 人物ID. A person Soranoha has to identify without one gets a locally minted
-id under `soranoha-person-id`, so no identifier claims a provenance Aozora
+id under `soranoha-person-id`, so no identifier claims a provenance Aozora Bunko
 did not grant.
 
 ### publicationStmt: publication details and terms
@@ -109,11 +109,11 @@ did not grant.
 The record contains three identifiers, with the `type` attribute specifying the issuing
 authority. Soranoha issues the publication identifier (`000092_000879`), which
 appears in every URL for the work. This identifier is not labeled `aozora-*` because
-Aozora issues the work identifier and card number separately rather than as a joined pair.
+Aozora Bunko issues the work identifier and card number separately rather than as a joined pair.
 Embedding this identifier enables an isolated `.xml` file to remain citable without
 reference to the original server.
 
-The date is Aozora's last-modified date for the catalog entry, not a date of
+The date is Aozora Bunko's last-modified date for the catalog entry, not a date of
 composition or of Soranoha's own processing.
 
 Two `<licence>` elements rather than one, because the two layers are
@@ -214,7 +214,7 @@ below works through one of them.
 </profileDesc>
 ```
 
-`K913` is Aozora's own NDC-style class. The `K` prefix marks children's
+`K913` is Aozora Bunko's own NDC-style class. The `K` prefix marks children's
 material and is not an NDC main class, which is why works like this one appear
 under その他 rather than under 9 文学 in the site's NDC index.
 
@@ -420,7 +420,7 @@ import xml.etree.ElementTree as ET
 
 TEI = "{http://www.tei-c.org/ns/1.0}"
 XML = "{http://www.w3.org/XML/1998/namespace}"
-# The work page's TEI download is named for the author, Aozora's own stem for
+# The work page's TEI download is named for the author, Aozora Bunko's own stem for
 # the text, and the identifier.
 tree = ET.parse("Akutagawa_Ryunosuke-kumono_ito-000092_000879.xml")
 
@@ -444,7 +444,7 @@ print(edition.findtext(f"{TEI}publisher"))                # ちくま文庫、�
 ```
 
 Name the parts you want rather than taking all the text under `<persName>`:
-the Aozora person id is an `<idno>` inside it, so `text(author)` would give
+the Aozora Bunko person id is an `<idno>` inside it, so `text(author)` would give
 you `芥川竜之介000879`.
 
 **Every ruby pair in the work:**

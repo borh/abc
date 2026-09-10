@@ -188,6 +188,7 @@
             bash tests/root-flake-output-contract-smoke.sh
             bash scripts/monorepo-tei-version-coherence.sh
             python scripts/monorepo-flake-input-policy.py
+            python scripts/monorepo-schema-hash-coherence.py
             nix flake check --no-build "$@"
             (
               cd "$workspace_root/ab-validator"
@@ -383,6 +384,14 @@
               ]
               ''
                 python scripts/monorepo-flake-input-policy.py "$src"
+              '';
+          monorepo-schema-hash-coherence =
+            mkMonorepoCheck "soranoha-monorepo-schema-hash-coherence"
+              [
+                pkgs.python3
+              ]
+              ''
+                python scripts/monorepo-schema-hash-coherence.py "$src"
               '';
           monorepo-runtime-config =
             mkMonorepoCheck "soranoha-monorepo-runtime-config"

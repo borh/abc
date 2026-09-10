@@ -2,7 +2,7 @@
   "schema_id": "https://w3id.org/soranoha/schemas/parser-rq-publication-policy.schema.json",
   "schema_version": "1.0.0",
   "policy_id": "abc/parser-rq-publication-policy/v1",
-  "policy_hash": "sha256:4d498000b1b13d427ea0dd53a33ad67ec4f96cb5454d6570055d9a2f320becef",
+  "policy_hash": "sha256:94436a4ddc90a273111430c9dda972354fb2f9109fb0fbcbc852a2ef48fc3600",
   "structure_checks": [
     "tei_profile_valid",
     "preservation_schema_valid",
@@ -27,6 +27,6 @@
   },
   "validator": {
     "id": "ab-validator/publication-bundle-validate/v2",
-    "semantics_hash": "sha256:12d683cf55744768655ce632f20e9b5ca512758f7cade968194f5d5f18cf7b99"
+    "semantics_hash": "sha256:27137bc8cc0f4d5ab90f03e36dee397951cc036984e000a284290e154a1893f6"
   }
 }

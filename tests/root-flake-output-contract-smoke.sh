@@ -48,6 +48,7 @@ expected = {
         "monorepo-nix-format",
         "monorepo-python-quality",
         "monorepo-runtime-config",
+        "monorepo-schema-hash-coherence",
         "monorepo-tei-p5-reference",
         "monorepo-tei-version-coherence",
         "monorepo-workflow-run-lib",

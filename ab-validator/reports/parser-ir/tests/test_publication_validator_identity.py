@@ -10,6 +10,7 @@ import pytest
 AB_ROOT = pathlib.Path(__file__).resolve().parents[3]
 SCRIPT = AB_ROOT / "reports/parser-ir/publication-validator-identity.py"
 VALIDATOR = AB_ROOT / "reports/parser-ir/publication-bundle-validate.py"
+COMMITTED = AB_ROOT / "data/parser-rq-publication-validator-v1.json"
 
 
 @pytest.fixture
@@ -33,6 +34,17 @@ def test_manifest_hash_recomputes_and_check_detects_drift(module):
     stale = json.loads(json.dumps(manifest))
     stale["sources"][0]["sha256"] = "sha256:" + "0" * 64
     assert module.check_manifest(stale, manifest)
+
+
+def test_committed_manifest_still_describes_the_validator(module):
+    """The committed manifest is what a capture cites, so it has to be current.
+
+    Without this the manifest can only drift: --check is the sole reader of
+    the committed file, and nothing ran it. Two source files had already
+    changed underneath it before this test existed.
+    """
+    committed = json.loads(COMMITTED.read_text(encoding="utf-8"))
+    assert module.check_manifest(committed, module.build_manifest(AB_ROOT)) == []
 
 
 def test_unreviewed_local_import_fails_closed(module, tmp_path):

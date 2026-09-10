@@ -6,6 +6,12 @@ tei-version-coherence:
 flake-input-policy:
 	@python scripts/monorepo-flake-input-policy.py
 
+# Recorded schema hashes are assertions about which schema a record or an
+# importer was written against. Recompute them, so a schema edit fails here
+# rather than at the first import of real data.
+schema-hash-coherence:
+	@python scripts/monorepo-schema-hash-coherence.py
+
 runtime-config:
 	@bash -lc 'source scripts/soranoha-runtime-env.sh; soranoha_runtime_summary'
 
@@ -72,7 +78,7 @@ tei-eaj-reports-with-probes *args:
 validate-eval-cache-smoke:
 	@bash tests/validate-eval-cache-smoke.sh
 
-check-no-build: runtime-config-smoke active-path-hygiene root-flake-output-contract tei-version-coherence flake-input-policy python-quality docs-links gaiji-table-drift nix-format-check validate-eval-cache-smoke root-flake-check-no-build
+check-no-build: runtime-config-smoke active-path-hygiene root-flake-output-contract tei-version-coherence flake-input-policy schema-hash-coherence python-quality docs-links gaiji-table-drift nix-format-check validate-eval-cache-smoke root-flake-check-no-build
 	@(cd ab-validator && AB_WORKSPACE_ROOT="$(pwd)/.." {{nix_eval}} flake check --no-build)
 
 # Publication tests and generated TEI profile must match their checked-in sources.

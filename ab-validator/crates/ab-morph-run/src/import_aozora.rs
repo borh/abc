@@ -1,5 +1,5 @@
 //! Producer for the `aozora_works.parquet` sidecar: an imported projection
-//! of ABC's `metadata-record.schema.json` export.
+//! of the `soranoha/schemas/metadata-record.schema.json` export.
 //! Import design.
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -18,12 +18,14 @@ use serde::Deserialize;
 use crate::summary::read_warehouse_table;
 use crate::warehouse::schema::WarehouseTable;
 
-/// ABC metadata-record schema hash this importer was written against.
-/// Every export record must declare exactly this hash; an ABC schema
-/// change updates this constant and the field mapping together in one
-/// reviewed change .
+/// The metadata-record schema hash this importer's field mapping was written
+/// against. Every export record must declare exactly this hash, so a schema
+/// change updates this constant and the field mapping together in one reviewed
+/// change. `scripts/monorepo-schema-hash-coherence.py` recomputes the constant
+/// from the schema: without it the pin drifted across two schema edits and
+/// would have rejected every real export.
 pub const ABC_METADATA_RECORD_SCHEMA_HASH: &str =
-    "sha256:55eeb37795d53b1c9041d11215328536eada911f36335abfd5f213dfa3a90fb8";
+    "sha256:016e05b5941d7b424da851cec7fd316842b11497b031be1bab5512aa9a068a22";
 
 /// Parses a warehouse `source_id` of the form `<person>_<card>-<hash12>`
 /// (e.g. `000136_731-9559c30ae312`) into the 6-digit zero-padded ABC
@@ -63,7 +65,7 @@ fn extract_year(value: &str) -> Option<i32> {
     None
 }
 
-/// The consumed subset of ABC's `metadata-record.schema.json`. Unknown
+/// The consumed subset of `metadata-record.schema.json`. Unknown
 /// fields are ignored by serde; validation covers only consumed fields
 /// (the pinned hash is the drift gate).
 #[derive(Debug, Deserialize)]
@@ -109,7 +111,7 @@ const ORTHOGRAPHIC_STYLES: &[&str] = &[
 fn validate_record(record: &MetadataRecord, expected_work_id: &str, path: &Path) -> Result<()> {
     if record.metadata_record_schema_hash != ABC_METADATA_RECORD_SCHEMA_HASH {
         bail!(
-            "{}: ABC metadata-record schema hash mismatch: importer expects \
+            "{}: metadata-record schema hash mismatch: importer expects \
              {ABC_METADATA_RECORD_SCHEMA_HASH} but the record declares {}; update the \
              importer's pinned hash and field mapping together",
             path.display(),

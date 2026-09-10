@@ -399,6 +399,30 @@
       (is (some #(= [:g {:ref "#gaiji-1-2-22"}] %)
                 (hiccup-nodes (:body result)))))))
 
+(deftest gaiji-reference-cannot-take-a-source-span-note-id-test
+  (testing "a reference shaped like a span note id still mints under the gaiji prefix"
+    ;; Character declarations and source-span notes write into the one xml:id
+    ;; space from two schemes that never consult each other, so `gaiji-` is
+    ;; reserved for this one. Without that, a reference of `source-0-6` landed
+    ;; on the note for extent 0 to 6 and g/@ref resolved to both.
+    (let [result (parser-ir-tei/render
+                  {"nodes" [{"type" "text"
+                             "source_span" {"start" 0 "end" 6 "coordinate_system" "decoded_utf8"}
+                             "text" "本文です"}
+                            {"type" "gaiji"
+                             "span" {"start" 6 "end" 7}
+                             "source_span" {"start" 6 "end" 7 "coordinate_system" "decoded_utf8"}
+                             "gaiji" {"raw_marker" "※［＃衝突］"
+                                      "reference" "source-0-6"
+                                      "resolved" false}}]})
+          ids (concat (map :xml-id (:char_declarations result))
+                      (keep #(get-in % [1 :xml/id]) (hiccup-nodes (:body result))))]
+      (is (= ["gaiji-source-0-6"] (map :xml-id (:char_declarations result))))
+      (is (some #(= [:g {:ref "#gaiji-source-0-6" :source "#source-6-7"}] %)
+                (hiccup-nodes (:body result))))
+      (is (= (count ids) (count (distinct ids)))
+          "every minted xml:id in the document is its own"))))
+
 (deftest gaiji-without-reference-declaration-contract-test
   (testing "gaiji without reference generates a span-derived id and preserves the raw marker"
     (let [parser-ir {"nodes" [{"type" "gaiji"

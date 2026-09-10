@@ -186,12 +186,21 @@
 (defn- count-node [acc node-type]
   (update acc :node_counts update node-type (fnil inc 0)))
 
-(def ^:private xml-safe-id-pattern #"^[A-Za-z_][A-Za-z0-9_.-]*$")
-
 (defn- fallback-gaiji-id [span]
   (str "gaiji-" (get span "start") "-" (get span "end")))
 
-(defn- sanitize-gaiji-reference-id [reference]
+(defn- sanitize-gaiji-reference-id
+  "A character declaration's `xml:id`, derived from the gaiji's reference.
+
+  A document mints ids in two schemes that never consult each other: this one,
+  and `source-<start>-<end>` for the note carrying a source span. Both write
+  into the one `xml:id` space, so the only way they cannot meet is for one of
+  them to own a prefix. `gaiji-` is that prefix, and every id from this scheme
+  wears it, including the ones whose reference was already a usable name. A
+  reference of `source-0-6` used to pass through as itself and land on the
+  span note for extent 0 to 6, leaving `g/@ref` pointing at two elements and
+  the assertions that resolve through `id()` with nothing to stand on."
+  [reference]
   (when-let [reference (some-> reference
                                (string/replace #"^#" "")
                                string/trim
@@ -199,9 +208,7 @@
                                (string/replace #"-+" "-")
                                (string/replace #"^-|-$" ""))]
     (when (seq reference)
-      (if (re-matches xml-safe-id-pattern reference)
-        reference
-        (str "gaiji-" reference)))))
+      (str "gaiji-" reference))))
 
 (defn- normalize-gaiji-id [reference span]
   (or (sanitize-gaiji-reference-id reference)

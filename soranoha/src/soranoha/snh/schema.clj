@@ -6,7 +6,7 @@
 
 (def schema-resources
   "Artifact type -> classpath resource of its JSON Schema."
-  {"release-manifest"    "snh/schemas/snh-manifest-2.schema.json"
+  {"release-manifest"    "snh/schemas/snh-manifest-3.schema.json"
    "assessment-snapshot" "snh/schemas/snh-assessment-snapshot-2.schema.json"
    "admission-report"    "snh/schemas/snh-admission-report-1.schema.json"
    "governance-event"    "snh/schemas/snh-governance-event-1.schema.json"

@@ -76,6 +76,12 @@
     (when-not (every? (set works) invalid_slugs)
       (fail! :invalid-slugs-outside-works
              {:strays (vec (remove (set works) invalid_slugs))})))
+  ;; a layer list is ordered and unique for the same reason `works` is: the
+  ;; canonical bytes of a set have to be one thing, and two entries naming
+  ;; the same layer would let a manifest claim a layer twice
+  (doseq [{:strs [slug layers]} (get manifest "works")]
+    (sorted-unique! :layers-not-sorted-unique
+                    (mapv #(get % "id") layers) {:slug slug}))
   manifest)
 
 (defn check-snapshot!

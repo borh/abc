@@ -198,12 +198,18 @@
   [v commit manifest reuse]
   (let [failed
         (vec
-         (for [{:strs [slug artifacts]} (get manifest "works")
+         (for [{:strs [slug artifacts layers]} (get manifest "works")
                :let [by-type (into {}
                                    (map (fn [{:strs [type] :as a}]
                                           [type (checked-artifact!
                                                  v commit slug a reuse)]))
                                    artifacts)
+                     ;; a published layer is a blob like any other; it
+                     ;; carries no type of its own in the manifest, so the
+                     ;; registry type is supplied here
+                     _ (run! #(checked-artifact!
+                               v commit slug (assoc % "type" "annotation-layer") reuse)
+                             layers)
                      record (:record (get by-type "tei-validation"))
                      tei-hex (:hex (get by-type "tei"))]
                :when (do (when-not (= (:validated-artifact record)
@@ -220,8 +226,8 @@
               :declared (get-in manifest ["validation_summary" "invalid_slugs"])
               :derived failed}))
     (into {}
-          (for [{:strs [artifacts]} (get manifest "works")
-                {:strs [id]} artifacts
+          (for [{:strs [artifacts layers]} (get manifest "works")
+                {:strs [id]} (concat artifacts layers)
                 :let [hex (id->hex id)]]
             [(blob-path hex) hex]))))
 
@@ -295,6 +301,18 @@
   "Chain rules between a manifest and its predecessor. `events` is the
   younger manifest's decoded event map (id -> value)."
   [commit manifest predecessor events]
+  ;; The covered ranges tile upstream history without gap or overlap, and
+  ;; the field a detached reader takes a range from is checked against the
+  ;; chain rather than believed. A release that did not move the corpus,
+  ;; which is every governance event, carries its predecessor's corpus
+  ;; unchanged and so does not restart the range.
+  (when-not (or (= (get manifest "corpus") (get predecessor "corpus"))
+                (= (get-in manifest ["corpus" "covers_from"])
+                   (get-in predecessor ["corpus" "upstream_rev"])))
+    (fail! :covers-from-mismatch
+           {:commit commit
+            :declared (get-in manifest ["corpus" "covers_from"])
+            :predecessor-rev (get-in predecessor ["corpus" "upstream_rev"])}))
   (let [wd (withdrawn-map manifest)
         pwd (withdrawn-map predecessor)
         gov (get manifest "governance_event")]
@@ -345,7 +363,12 @@
   (when-not (nil? (get manifest "governance_event"))
     (fail! :genesis-has-governance-event {:commit commit}))
   (when-not (= [] (get manifest "withdrawn"))
-    (fail! :genesis-has-withdrawn {:commit commit})))
+    (fail! :genesis-has-withdrawn {:commit commit}))
+  ;; genesis covers upstream history up to its own revision and has no
+  ;; predecessor whose revision could start the range
+  (when-not (nil? (get-in manifest ["corpus" "covers_from"]))
+    (fail! :genesis-has-covers-from
+           {:commit commit :declared (get-in manifest ["corpus" "covers_from"])})))
 
 (defn- verify-commit!
   "Everything the chain walk establishes about one commit standing alone:

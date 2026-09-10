@@ -106,7 +106,8 @@
                   parts)
      :entry {"slug" slug
              "source_content_hash" (hash/sha256-string (str "fixture:source:" slug))
-             "artifacts" (mapv (fn [[kind bytes]] (entry-for kind bytes)) parts)}}))
+             "artifacts" (mapv (fn [[kind bytes]] (entry-for kind bytes)) parts)
+             "layers" []}}))
 
 (def policy-hash (hash/sha256-string "fixture:policy"))
 
@@ -151,9 +152,10 @@
   withdrawn set, as the transaction contract requires. `drop-candidate`
   (test hook) omits one slug from the snapshot to violate totality."
   [{:keys [admitted excluded quarantined selection-params variant drop-candidate
-           invalid]
+           invalid upstream-rev]
     :or {excluded [] quarantined [] variant "v1" invalid #{}
-         selection-params {"config" "fixture"}}}]
+         selection-params {"config" "fixture"}
+         upstream-rev "0e9ea3e586eb0aa34039fabfc85a407d2f98b165"}}]
   (fn [head-manifest]
     (let [withdrawn (set (map #(get % "slug") (get head-manifest "withdrawn")))
           live (vec (sort (remove withdrawn admitted)))
@@ -183,9 +185,21 @@
                                       (sort quarantined))}
           report-enc (decode/encode "admission-report" report)
           catalog-enc (decode/encode "catalog" (catalog-for (mapv :entry works)))]
-      {:core {"schema" "snh-manifest/2"
+      {:core {"schema" "snh-manifest/3"
               "corpus" {"upstream_origin" "https://github.com/aozorabunko/aozorabunko.git"
-                        "upstream_rev" "0e9ea3e586eb0aa34039fabfc85a407d2f98b165"}
+                        "upstream_rev" upstream-rev
+                        ;; the producer side of the covers_from invariant,
+                        ;; restated here rather than borrowed: this fixture is
+                        ;; an independent implementation of the assembler
+                        ;; contract, and one that imported the real assembler
+                        ;; would stop being evidence about it
+                        "covers_from"
+                        (let [head-corpus (get head-manifest "corpus")]
+                          (cond
+                            (nil? head-manifest) nil
+                            (= upstream-rev (get head-corpus "upstream_rev"))
+                            (get head-corpus "covers_from")
+                            :else (get head-corpus "upstream_rev")))}
               "toolchain" {"render" {"nix_closure_hash" (hash/sha256-string "fixture:render")
                                      "stage_code_version" "1"}}
               "selection_params" selection-params

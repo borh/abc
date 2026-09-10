@@ -1,7 +1,7 @@
 (ns soranoha.za.assemble-test
   "Release-assembly acceptance against the real kernel: a fixture corpus
   checkout built through the real selection/extract/engine path, assembled
-  into snh-manifest/2 with real admission evidence, published through the
+  into snh-manifest/3 with real admission evidence, published through the
   publication transaction, and verified. Covers the include-and-flag path
   for an invalid work, manifest round-trip stability, the second-revision
   three-set delta oracle (addition, deletion, content edit, catalog

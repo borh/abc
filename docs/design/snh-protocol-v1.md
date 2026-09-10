@@ -10,8 +10,10 @@ Key rotation, successor-chain recovery statements and signature envelopes are
 outside this version. Assessment snapshots use payload version 2 under the
 existing `snh:1:assessment-snapshot` artifact identity, and the release
 catalog uses payload version 1 under the `snh:1:catalog` identity. The
-manifest is at wire version 2; `adr/0001-snh-manifest-2.md` records why it
-moved there and what that cost.
+manifest is at wire version 3. `adr/0001-snh-manifest-2.md` records the move
+to version 2 and what it cost; `adr/0003-snh-manifest-3.md` records version 3,
+which adds the upstream range a release covers and a slot for annotation
+layers.
 
 ## 1. Canonical form and identity
 
@@ -56,20 +58,20 @@ Release-level types: `release-manifest`, `assessment-snapshot`,
 Any addition or removal is wire version `snh-manifest/3`; closed-schema
 v2 consumers must never meet unknown members.
 
-## 3. `snh-manifest/2`
+## 3. `snh-manifest/3`
 
 Required top-level fields; closed schema (no other members). No dedicated date or timestamp fields appear in manifest bytes.
 
 | Field | Contract |
 |---|---|
-| `schema` | literal `"snh-manifest/2"` |
-| `corpus` | `{upstream_origin (URL string), upstream_rev (commit hex)}` |
+| `schema` | literal `"snh-manifest/3"` |
+| `corpus` | `{upstream_origin (URL string), upstream_rev (commit hex), covers_from (commit hex, or null at genesis)}`. The release covers `(covers_from, upstream_rev]` in upstream history: a release is minted when the corpus moved, not on every upstream commit, so one release may stand for several revisions. `covers_from` MUST equal the predecessor manifest's `upstream_rev`, and MUST be null exactly at genesis; a verifier checks it against the predecessor it already reads |
 | `toolchain` | object: stage-id (matches `^[0-9a-z][0-9a-z-]*$`) → `{nix_closure_hash (string), stage_code_version (string)}`; keys sorted. Provenance/derivation-key input only; never an input to artifact identity. `nix_closure_hash` carries the stage's toolchain identity EXACTLY as the build's derivation keys carry it: the wrapper-supplied Nix closure hash for nix-provisioned stages, the hashed binary/profile identity for subprocess stages; a constant placeholder is prohibited: the build fails closed without a supplied identity |
 | `selection_params` | object; string keys sorted; values strings or safe-range integers; `{}` when the inclusion rule takes no parameters |
 | `admission` | `{policy_id (string), policy_hash (hex), inclusion_rule_id (string), inclusion_rule_hash (hex), assessment_snapshot (artifact id), admission_report (artifact id)}` |
 | `catalog` | the `catalog` artifact id (§13) describing exactly this manifest's `works` |
 | `rights` | `{works (string), encoding (string), statement_url (absolute URL)}` (the grant under which the published bytes may be reused). `works` states the standing of the underlying texts, `encoding` the licence over Soranoha's own encoding and derived artifacts. Carried by the rights policy whose `policy_hash` this manifest already records, so the terms published and the terms authorized cannot diverge |
-| `works` | array sorted by `slug` as raw UTF-8 bytes ascending; slugs match `^[0-9a-z_-]+$` (non-empty), unique. Each `{slug, source_content_hash (hex of the CANONICAL SOURCE-BUNDLE IDENTITY: sha256 over the canonical bytes of the abc-source-bundle-v1 identity object `{construction, members: [{path, member_hash}...], primary_text_member}`, stable across archive-level repackaging that preserves members, unlike a raw archive hash), artifacts}`; `artifacts` sorted bytewise by `type` (`markdown`, `plaintext`, `tei`, `tei-validation`); each `{type, id, bytes}` with `bytes` = exact byte length (non-negative safe integer). Every work has exactly one artifact per per-work registry type |
+| `works` | array sorted by `slug` as raw UTF-8 bytes ascending; slugs match `^[0-9a-z_-]+$` (non-empty), unique. Each `{slug, source_content_hash (hex of the CANONICAL SOURCE-BUNDLE IDENTITY: sha256 over the canonical bytes of the abc-source-bundle-v1 identity object `{construction, members: [{path, member_hash}...], primary_text_member}`, stable across archive-level repackaging that preserves members, unlike a raw archive hash), artifacts}`; `artifacts` sorted bytewise by `type` (`markdown`, `plaintext`, `tei`, `tei-validation`); each `{type, id, bytes}` with `bytes` = exact byte length (non-negative safe integer). Every work has exactly one artifact per per-work registry type. `layers` is a further array, sorted by `id` with `id` unique, of `{id, bytes}` naming `snh:1:annotation-layer:<hex>` blobs published for that work; `[]` when there are none. Layer blobs are present, hashed and length-checked exactly as artifacts are; `artifacts` keeps its fixed four-member shape |
 | `withdrawn` | array sorted by `slug`; each `{slug, event}` with `event` a `governance-event` artifact id (the GOVERNING event carrying the public reason) |
 | `validation_summary` | `{invalid_count (integer), invalid_slugs (sorted array of slugs)}` |
 | `governance_event` | `null`, or the `governance-event` artifact id this manifest executes; non-null exactly when the manifest performs a withdrawal or event-amendment |

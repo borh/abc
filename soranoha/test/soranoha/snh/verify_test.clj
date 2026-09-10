@@ -9,6 +9,7 @@
             [babashka.process :as process]
             [soranoha.core.hash :as hash]
             [soranoha.snh.fixture :as fx]
+            [soranoha.snh.decode :as decode]
             [soranoha.snh.repo :as repo]
             [soranoha.snh.sign :as sign]
             [soranoha.snh.verify :as verify]
@@ -687,6 +688,10 @@
              (reason-at clone (craft (assoc genesis-base "governance_event"
                                             (str "snh:1:governance-event:"
                                                  (apply str (repeat 64 "a")))))))))
+    (testing "genesis declaring a range start"
+      (is (= :genesis-has-covers-from
+             (reason-at clone (craft (assoc-in genesis-base ["corpus" "covers_from"]
+                                               (apply str (repeat 40 "a"))))))))
     (testing "genesis with a withdrawn entry"
       (is (= :genesis-has-withdrawn
              (reason-at clone
@@ -815,3 +820,44 @@
     (is (= :missing-manifest (reason-at archive forged)))
     (is (map? (verify/verify-repository-at (view/git-view clone) head-commit
                                            (fx/pinned-keys))))))
+
+(def ^:private later-rev "1f8ea3e586eb0aa34039fabfc85a407d2f98b165")
+
+(deftest the-covered-upstream-range-tiles-the-chain
+  ;; covers_from is what a detached manifest states its range from, so it is
+  ;; checked against the predecessor the verifier already reads rather than
+  ;; believed. The fixture publishes at one upstream revision by default; this
+  ;; advances it, which is the only case where the range moves.
+  (let [{:keys [clone init-commit]} (fx/make-repos!)
+        genesis-core (:core (assembled {} nil))
+        genesis-blobs (:blobs (assembled {} nil))
+        genesis-value (assoc genesis-core "prev_manifest" sign/zero-head-hex
+                             "governance_event" nil "withdrawn" [])
+        genesis (:commit (fx/craft-release!
+                          clone {:parents [init-commit]
+                                 :base-tree-of init-commit
+                                 :manifest-value genesis-value
+                                 :extra-files (blob-files genesis-blobs)}))
+        genesis-hex (:hex (decode/encode "release-manifest" genesis-value))
+        advance (fn [covers-from]
+                  (let [{:keys [core blobs]} (assembled {:upstream-rev later-rev
+                                                         :selection-params {"config" "later"}}
+                                                        genesis-value)]
+                    (:commit (fx/craft-release!
+                              clone {:parents [genesis]
+                                     :base-tree-of genesis
+                                     :manifest-value
+                                     (-> core
+                                         (assoc "prev_manifest" genesis-hex
+                                                "governance_event" nil "withdrawn" [])
+                                         (assoc-in ["corpus" "covers_from"] covers-from))
+                                     :extra-files (blob-files blobs)}))))]
+    (testing "genesis covers everything up to its own revision and starts nowhere"
+      (is (= :valid (reason-at clone genesis)))
+      (is (nil? (get-in genesis-value ["corpus" "covers_from"]))))
+    (testing "a release that advanced the revision starts where its predecessor ended"
+      (is (= :valid (reason-at clone (advance (get-in genesis-value ["corpus" "upstream_rev"]))))))
+    (testing "a range that leaves a gap is refused"
+      (is (= :covers-from-mismatch (reason-at clone (advance later-rev)))))
+    (testing "a range that claims to start nowhere after genesis is refused"
+      (is (= :covers-from-mismatch (reason-at clone (advance nil)))))))

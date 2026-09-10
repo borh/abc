@@ -78,7 +78,12 @@
                                  {"type" kind
                                   "id" (str "snh:1:" kind ":" hex)
                                   "bytes" (fs/size path)})
-                               blobs)}
+                               blobs)
+             ;; the reserved annotation layer slot. No stage publishes one
+             ;; yet, so this is empty for every work; it is here because the
+             ;; schema is closed and adding it after genesis would be a wire
+             ;; version every verifier of the day has to handle.
+             "layers" []}
      :blobs (into {} (map (fn [[_ hex path]] [hex path])) blobs)}))
 
 (defn- validation-failed?
@@ -90,7 +95,7 @@
      (:status (verify/consumed-validation-record (cas-blob cas-dir hex)))))
 
 (defn toolchain-value
-  "snh-manifest/2 toolchain object from engine-shaped stages: per stage id,
+  "snh-manifest/3 toolchain object from engine-shaped stages: per stage id,
   the toolchain identity and stage code version exactly as its derivation
   keys carry them. nix_closure_hash holds that derivation toolchain
   identity (the wrapper-supplied Nix closure hash for nix-provisioned
@@ -152,7 +157,7 @@
         catalog-enc (decode/encode
                      "catalog"
                      (catalog/catalog-value cas-dir published works))]
-    {:core {"schema" "snh-manifest/2"
+    {:core {"schema" "snh-manifest/3"
             "corpus" corpus
             "toolchain" toolchain
             "selection_params" selection-params
@@ -173,6 +178,24 @@
                   (map :blobs)
                   entries)
      :selection (set selection)}))
+
+(defn covers-from
+  "Where the range this release covers starts: the predecessor's
+  `upstream_rev` when the corpus moved, the predecessor's own
+  `covers_from` when it did not, and null at genesis.
+
+  Carrying it forward unchanged is what makes a rerun at the same upstream
+  revision a no-op rather than a new release. `corpus` is a projection key,
+  so a `covers_from` that advanced on every attempt would make every
+  projection differ from the head's and publish a release for a corpus
+  nobody moved."
+  [head-manifest corpus]
+  (let [head-corpus (get head-manifest "corpus")]
+    (cond
+      (nil? head-manifest) nil
+      (= (get head-corpus "upstream_rev") (get corpus "upstream_rev"))
+      (get head-corpus "covers_from")
+      :else (get head-corpus "upstream_rev"))))
 
 (defn validation-regressions
   "Slugs this release would publish as invalid that its parent published as
@@ -223,8 +246,11 @@
   [opts]
   (fn [head-manifest]
     (let [assembled (assemble-release
-                     (assoc opts :withdrawn-slugs
-                            (set (map #(get % "slug") (get head-manifest "withdrawn")))))
+                     (-> opts
+                         (assoc :withdrawn-slugs
+                                (set (map #(get % "slug") (get head-manifest "withdrawn"))))
+                         (assoc-in [:corpus "covers_from"]
+                                   (covers-from head-manifest (:corpus opts)))))
           regressed (when head-manifest
                       (validation-regressions head-manifest (:core assembled)))]
       (when (seq regressed)

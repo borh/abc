@@ -48,7 +48,7 @@ The build log names the generated JSON report under `production/root/runs`.
 The new export directory contains each work's TEI, plaintext, Markdown, validation,
 projection and fidelity reports, including works whose assessment does not permit publication.
 Markdown is a published per-work artifact alongside TEI and plaintext
-(`snh-manifest/2`); its projection report is an experimental review artifact
+(`snh-manifest/3`); its projection report is an experimental review artifact
 outside the signed set.
 Each TEI header carries the rights grant read from
 `soranoha/data/publication-policy.edn` under `--assets-root`, which is the same

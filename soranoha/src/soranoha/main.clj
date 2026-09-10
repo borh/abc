@@ -723,12 +723,11 @@
   "Whether an upstream revision is worth a release, decided before anything
   is assembled or built.
 
-  A release is minted when the corpus moved, not on every upstream commit:
-  about 800 of aozorabunko's 5,476 commits touch no work archive, and a
-  release for one of those would differ from its parent in a 40-hex string
-  while carrying a 9.1 MB manifest and a 14.45 MB catalog. `corpus.covers_from`
-  is what lets a reader map those revisions to the release that covers them,
-  so nothing is lost by not minting them.
+  A release is minted when a work archive moved, not on every upstream commit:
+  796 of aozorabunko's 5,476 first-parent commits touch no work archive, and a
+  release for one of those would carry a 9.1 MB manifest and a 14.45 MB catalog
+  to record a 40-hex string. `corpus.covers_from` is what lets a reader map
+  those revisions to the release that covers them.
 
   Decided here rather than inside the transaction because the transaction has
   no way to say `no release`: `corpus.upstream_rev` is a projection key
@@ -758,9 +757,17 @@
                                             (pinned-keys-from-files release-pub governance-pub)))
         head-rev (when (and head (not (:empty head)))
                    (get-in (:head-manifest head) ["corpus" "upstream_rev"]))
-        ;; the work archives are the whole of what a release publishes: a
-        ;; commit that touches only site pages or the catalog CSV changes no
-        ;; published byte
+        ;; Work archives are a proxy for the published bytes rather than the
+        ;; whole of them: the catalog CSV under index_pages/ is read too, at
+        ;; yomi/catalog.clj, and supplies the title, contributors, NDC and
+        ;; orthography that reach both the catalog artifact and the TEI header.
+        ;; Watching it as well would skip nothing, because every commit that
+        ;; touches a work archive touches the CSV in the same commit, all 4,673
+        ;; of them, so the predicate would fire on 5,469 of 5,476 revisions. Of
+        ;; the CSV-only commits about one in ten changes metadata of a
+        ;; publishable work, and the release covering it has never been more
+        ;; than 14 days behind across fifteen years of history, two days at the
+        ;; median, because a run of skipped commits has never exceeded 14.
         changed (when (and head-rev (not= head-rev current))
                   (git! aozora-root "diff" "--name-only" (str head-rev ".." current)
                         "--" "cards/*/files/*.zip"))

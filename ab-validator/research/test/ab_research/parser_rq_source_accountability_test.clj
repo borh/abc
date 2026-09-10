@@ -538,7 +538,7 @@
       (finally (delete-tree! root)))))
 
 (def taxonomy-text
-  "{\"$schema\":\"https://w3id.org/abc/schemas/parser-rq-ignored-regions.schema.json\",\"coordinate_system\":\"decoded_utf8\",\"rules\":[],\"schema_version\":\"abc/parser-rq-ignored-regions/v1\",\"taxonomy_version\":\"parser-rq-ignored-regions-v1\"}")
+  "{\"$schema\":\"https://w3id.org/soranoha/schemas/parser-rq-ignored-regions.schema.json\",\"coordinate_system\":\"decoded_utf8\",\"rules\":[],\"schema_version\":\"abc/parser-rq-ignored-regions/v1\",\"taxonomy_version\":\"parser-rq-ignored-regions-v1\"}")
 
 (def taxonomy-hash
   (hash/format-sha256 (hash/sha256-string taxonomy-text)))

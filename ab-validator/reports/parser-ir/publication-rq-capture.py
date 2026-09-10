@@ -91,7 +91,7 @@ def capture(value: dict[str, Any], store_root: pathlib.Path) -> CaptureResult:
         source = next(row for row in corpus["entries"] if row["work_id"] == work_id)
         supplied = input_by_work[work_id]
         record = {
-            "schema_id": "https://w3id.org/abc/schemas/parser-rq-publication-work.schema.json",
+            "schema_id": "https://w3id.org/soranoha/schemas/parser-rq-publication-work.schema.json",
             "schema_version": "1.0.0",
             "work_id": work_id,
             "source_sha256": source["source_sha256"],
@@ -122,7 +122,7 @@ def capture(value: dict[str, Any], store_root: pathlib.Path) -> CaptureResult:
             }
         )
     index = {
-        "schema_id": "https://w3id.org/abc/schemas/parser-rq-publication-index.schema.json",
+        "schema_id": "https://w3id.org/soranoha/schemas/parser-rq-publication-index.schema.json",
         "schema_version": "1.0.0",
         "corpus_id": corpus["corpus_id"],
         "corpus_snapshot_hash": corpus["corpus_snapshot_hash"],

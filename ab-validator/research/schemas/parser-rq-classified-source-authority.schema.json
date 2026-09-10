@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://w3id.org/abc/schemas/parser-rq-classified-source-authority.schema.json",
+  "$id": "https://w3id.org/soranoha/schemas/parser-rq-classified-source-authority.schema.json",
   "type": "object",
   "required": ["schema_version", "generation_ref_contract", "policy", "ledger_schema", "generation_schema"],
   "additionalProperties": false,

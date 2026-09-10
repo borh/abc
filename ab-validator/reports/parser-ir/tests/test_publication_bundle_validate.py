@@ -32,7 +32,7 @@ def values():
     digest = "sha256:" + "1" * 64
     parser_ir = {"nodes": [{"type": "text", "text": "body", "source_pointer": "p0"}]}
     preservation = {
-        "schema_id": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json",
+        "schema_id": "https://w3id.org/soranoha/schemas/parser-ir-publication-preservation.schema.json",
         "schema_version": "0.3.0",
         "schema_hash": digest,
         "parser_ir": {"schema_id": "x", "schema_hash": digest, "work_id": "w1"},

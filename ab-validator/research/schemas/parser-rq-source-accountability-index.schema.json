@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://w3id.org/abc/schemas/parser-rq-source-accountability-index.schema.json",
+  "$id": "https://w3id.org/soranoha/schemas/parser-rq-source-accountability-index.schema.json",
   "title": "Parser release qualification source-accountability record index",
   "type": "object",
   "required": ["schema_version", "identity_ref", "taxonomy_version", "taxonomy_hash", "coordinate_system", "status", "expected_work_count", "record_count", "records", "errors"],

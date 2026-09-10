@@ -2010,7 +2010,7 @@ mod tests {
         std::fs::create_dir_all(&works).unwrap();
         let record = serde_json::json!({
             "metadata_record_schema_id":
-                "https://w3id.org/abc/schemas/metadata-record.schema.json",
+                "https://w3id.org/soranoha/schemas/metadata-record.schema.json",
             "metadata_record_schema_hash":
                 crate::import_aozora::ABC_METADATA_RECORD_SCHEMA_HASH,
             "work": {

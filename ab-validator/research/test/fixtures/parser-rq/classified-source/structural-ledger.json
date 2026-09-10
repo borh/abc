@@ -1,6 +1,6 @@
 {
   "schema_version": "abc/parser-rq-classified-source-ledger/v1",
-  "ledger_schema_hash": "sha256:b87be18e02272f336d688032078bb965534d6b4d36dfb3f4521744d6dd2f2bf2",
+  "ledger_schema_hash": "sha256:d35ad654fb6e4968d7a4d8033d82f2ecf9fcf4a61bd720f7b9dee6277e786ea3",
   "qualification_identity_ref": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
   "parser": "ab-aozora",
   "instrument_version": "parser-rq-classified-source-v1",

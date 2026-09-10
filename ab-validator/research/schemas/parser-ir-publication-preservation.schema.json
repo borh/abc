@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json",
+  "$id": "https://w3id.org/soranoha/schemas/parser-ir-publication-preservation.schema.json",
   "title": "ABC Parser-IR Publication Preservation Sidecar",
   "version": "0.3.0",
   "type": "object",
@@ -19,7 +19,7 @@
   "additionalProperties": false,
   "properties": {
     "schema_id": {
-      "const": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+      "const": "https://w3id.org/soranoha/schemas/parser-ir-publication-preservation.schema.json"
     },
     "schema_version": {
       "const": "0.3.0"

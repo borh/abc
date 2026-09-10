@@ -105,7 +105,7 @@ fn qualification_conversion_retains_invalid_value_without_divergence_bundle() {
     };
     assert_eq!(
         parser_ir["schema_id"],
-        "https://w3id.org/abc/schemas/parser-ir.schema.json"
+        "https://w3id.org/soranoha/schemas/parser-ir.schema.json"
     );
     assert!(!errors.is_empty());
 }
@@ -713,7 +713,7 @@ fn legacy_schema_hashes_match_mapping_artifact() {
 
     assert_eq!(
         schema_hash(&schemas.mapping_schema).unwrap(),
-        "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2"
+        "sha256:c75eaa2e3f4f42002e25ff6cccf725c019c98d653360ca4e648c0f96bec2958a"
     );
     let mapping =
         MappingDocument::from_path(&repo.join("data/aat-to-parser-ir-mapping-v1.json")).unwrap();

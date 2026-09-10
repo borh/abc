@@ -1,10 +1,10 @@
 {
-  "mapping_id": "https://w3id.org/abc/mappings/aat-v2-to-parser-ir-v1/generated-probe",
+  "mapping_id": "https://w3id.org/soranoha/mappings/aat-v2-to-parser-ir-v1/generated-probe",
   "mapping_version": "0.51.0",
-  "mapping_schema_hash": "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2",
+  "mapping_schema_hash": "sha256:c75eaa2e3f4f42002e25ff6cccf725c019c98d653360ca4e648c0f96bec2958a",
   "source_aat_version": 2,
-  "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "target_parser_ir_schema_hash": "sha256:948e68b9bcf09f053e70ccad5e1d50f99a71a5517014dc87b5d25149e900080e",
+  "target_parser_ir_schema_id": "https://w3id.org/soranoha/schemas/parser-ir.schema.json",
+  "target_parser_ir_schema_hash": "sha256:6e2c1b1a8dce9111f8f07ddf34dcbf03ea85fae619fdca86413b5acaf6786b19",
   "transform_rule_descriptions": [
     {
       "rule_id": "A-02",

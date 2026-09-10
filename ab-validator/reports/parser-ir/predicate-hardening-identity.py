@@ -337,13 +337,13 @@ def build_policy(
         policy = {
             **common,
             "schema_version": "2.0.0",
-            "schema_id": "https://w3id.org/abc/schemas/parser-rq-diagnostic-completeness-policy.schema.json",
+            "schema_id": "https://w3id.org/soranoha/schemas/parser-rq-diagnostic-completeness-policy.schema.json",
             "policy_id": "abc/parser-rq-diagnostic-completeness/v1",
             "algorithm_version": "diagnostic-expectation-conformance-v2",
             "expected_diagnostics": {
                 work: sorted(codes) for work, codes in expected_diagnostics.items()
             },
-            "raw_diagnostic_schema_id": "https://w3id.org/abc/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json",
+            "raw_diagnostic_schema_id": "https://w3id.org/soranoha/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json",
             "raw_diagnostic_schema_hash": _json_logical_hash(
                 repo_root
                 / "ab-validator/research/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json"
@@ -362,10 +362,10 @@ def build_policy(
         policy = {
             **common,
             "schema_version": "1.0.0",
-            "schema_id": "https://w3id.org/abc/schemas/parser-rq-parser-ir-conformance-policy.schema.json",
+            "schema_id": "https://w3id.org/soranoha/schemas/parser-rq-parser-ir-conformance-policy.schema.json",
             "policy_id": "abc/parser-rq-parser-ir-conformance/v1",
             "algorithm_version": "parser-ir-schema-conformance-v1",
-            "parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
+            "parser_ir_schema_id": "https://w3id.org/soranoha/schemas/parser-ir.schema.json",
             "parser_ir_schema_hash": _json_logical_hash(
                 repo_root / "ab-validator/research/schemas/parser-ir.schema.json"
             ),

@@ -1,0 +1,13 @@
+{
+  "parser_ir": {
+    "bytes": 2082,
+    "media_type": "application/json",
+    "sha256": "sha256:b58a63cb39ff9450378583e174ff2882e80faaecbd1f4a14d5ca8d674e8d8269"
+  },
+  "policy_hash": "sha256:7eaf30c4da67a22f922a03170395e93423dce4add6d50cca06f8aab925869340",
+  "qualification_identity_ref": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "schema_id": "https://w3id.org/soranoha/schemas/parser-rq-parser-ir-conformance-work.schema.json",
+  "schema_version": "1.0.0",
+  "status": "schema_valid",
+  "work_id": "000001_1"
+}

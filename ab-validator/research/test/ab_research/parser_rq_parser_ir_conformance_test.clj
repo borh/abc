@@ -51,7 +51,7 @@
 (defn- record-value
   [record-policy work-id status parser-ref ledger-ref]
   (cond-> {:schema_id
-           "https://w3id.org/abc/schemas/parser-rq-parser-ir-conformance-work.schema.json"
+           "https://w3id.org/soranoha/schemas/parser-rq-parser-ir-conformance-work.schema.json"
            :schema_version "1.0.0"
            :work_id work-id
            :qualification_identity_ref identity-ref

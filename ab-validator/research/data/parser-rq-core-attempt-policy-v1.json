@@ -1,8 +1,8 @@
 {
-  "schema_id": "https://w3id.org/abc/schemas/parser-rq-core-attempt-policy.schema.json",
+  "schema_id": "https://w3id.org/soranoha/schemas/parser-rq-core-attempt-policy.schema.json",
   "schema_version": "1.0.0",
   "instrument_id": "parser-rq-core-attempt-v1",
-  "policy_hash": "sha256:ee9efa7b00dc22042d7b48aeba86f80170128d3c476761d324816164937d5f92",
+  "policy_hash": "sha256:13a277b2b785a695ba3b4d588dff37825b57baa763b376800033be2c142eab0e",
   "expected_work_ids": ["000001_1", "000002_2", "000003_3"],
   "expected_sources": [
     {
@@ -62,10 +62,10 @@
     "protocol_error"
   ],
   "schema_hashes": {
-    "policy": "sha256:940a69e64abc31dbfaa3decd0d85799cbaaacfd3ec7cd55b9e29d64b018e0725",
-    "work": "sha256:5b33ec67abf0528cf768286e3cd1c194a4867c3ace014ad34da1a671f9e7e366",
-    "index": "sha256:49fb3d66f2a6d26fbc412e13a18d29e8e9c0abf4c0eb7d841c07324395c62a2b",
-    "aggregate": "sha256:256026e62eccd4d01ad9811c7e2d8a592e244cc74f68100d6b4c9ddc8c9fb57a"
+    "policy": "sha256:92b559c0101e6a979f6c881b5d301fd54ebc30d432acdc751ad3d07bd02e9a62",
+    "work": "sha256:4623fc11b819bbeebc429e96a1b7699a1db10fbd35035f2d0b938f81e5544615",
+    "index": "sha256:e85cd1f81280746d014f58cbe902a83d36d3fcc7a86804066dca1ef1a1511b98",
+    "aggregate": "sha256:39605a3ae0ef10980333645b13311b3e35317cdae586be71ae7570410cdccf73"
   },
   "capture_semantics_hash": "sha256:8cd8c208df4b79c46425f93e8b5d0f7ae417c9fec47e050365ab1fcbea989536",
   "analyzer_semantics_hash": "sha256:3e4fb4e779d8d0c7decedabbfbc4cb917798e51cc122cace7a4f7173aefc1282"

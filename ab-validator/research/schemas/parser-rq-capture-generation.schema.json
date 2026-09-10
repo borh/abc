@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://w3id.org/abc/schemas/parser-rq-capture-generation.schema.json",
+  "$id": "https://w3id.org/soranoha/schemas/parser-rq-capture-generation.schema.json",
   "type": "object",
   "required": ["schema_version", "generation_ref", "qualification_identity_ref", "work_id", "members"],
   "additionalProperties": false,

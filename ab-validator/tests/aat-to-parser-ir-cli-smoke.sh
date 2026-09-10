@@ -56,13 +56,13 @@ else
   "${CARGO:-cargo}" "${cargo_args[@]}" run --package ab-aat-to-parser-ir -- "${convert_args[@]}"
 fi
 
-smoke_jq '.schema_id == "https://w3id.org/abc/schemas/parser-ir.schema.json"' "$out_dir/parser-ir.json"
+smoke_jq '.schema_id == "https://w3id.org/soranoha/schemas/parser-ir.schema.json"' "$out_dir/parser-ir.json"
 smoke_jq '.derived_from.aat_version == 1' "$out_dir/parser-ir.json"
 smoke_jq '.derived_from.aat_adapter == "fixture"' "$out_dir/parser-ir.json"
 smoke_jq '.derived_from.aat_adapter_version == "fixture 0.1.0"' "$out_dir/parser-ir.json"
-smoke_jq '.derived_from.mapping_id == "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"' "$out_dir/parser-ir.json"
+smoke_jq '.derived_from.mapping_id == "https://w3id.org/soranoha/mappings/aat-v1-to-parser-ir-v1/generated-probe"' "$out_dir/parser-ir.json"
 smoke_jq --slurpfile mapping "$repo_root/data/aat-to-parser-ir-mapping-v1.json" '.derived_from.mapping_version == $mapping[0].mapping_version' "$out_dir/parser-ir.json"
-smoke_jq '.derived_from.mapping_schema_hash == "sha256:e6af01115ccdb7c5cad086eee4c458230f6b6f55e0dfee7791730b48994283e2"' "$out_dir/parser-ir.json"
+smoke_jq '.derived_from.mapping_schema_hash == "sha256:c75eaa2e3f4f42002e25ff6cccf725c019c98d653360ca4e648c0f96bec2958a"' "$out_dir/parser-ir.json"
 smoke_jq '.paragraphs[0].node_range == {"start":0,"end":2}' "$out_dir/parser-ir.json"
 smoke_jq '.paragraphs[0].role == "body"' "$out_dir/parser-ir.json"
 smoke_jq '.source.work_content_hash == "sha256:6666666666666666666666666666666666666666666666666666666666666666"' "$out_dir/parser-ir.json"

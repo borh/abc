@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://w3id.org/abc/schemas/parser-rq-evidence-integrity-receipt.schema.json",
+  "$id": "https://w3id.org/soranoha/schemas/parser-rq-evidence-integrity-receipt.schema.json",
   "title": "Parser RQ evidence integrity receipt",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_id", "schema_version", "receipt_ref", "candidate_ref", "capture_generation_ref", "status"],
   "properties": {
-    "schema_id": {"const": "https://w3id.org/abc/schemas/parser-rq-evidence-integrity-receipt.schema.json"},
+    "schema_id": {"const": "https://w3id.org/soranoha/schemas/parser-rq-evidence-integrity-receipt.schema.json"},
     "schema_version": {"const": "1.0.0"},
     "receipt_ref": {"$ref": "#/$defs/hash"},
     "candidate_ref": {"$ref": "#/$defs/hash"},

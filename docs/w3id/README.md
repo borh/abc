@@ -2,6 +2,8 @@
 
 Soranoha's published TEI declares the namespace `https://w3id.org/soranoha/ns/tei`,
 its record schemas are identified under `https://w3id.org/soranoha/schemas/`,
+its conversion mappings and policy documents under
+`https://w3id.org/soranoha/mappings/` and `https://w3id.org/soranoha/policies/`,
 and every release manifest and TEI file names the rights statement as
 `https://w3id.org/soranoha/rights`. Those IRIs are in signed,
 content-addressed bytes, so they must stay stable independently of where the
@@ -14,7 +16,7 @@ Submission adds `ids/soranoha/.htaccess` and `ids/soranoha/README.md` to that
 repository. `htaccess` and `w3id-README.md` here are those two files; the local
 names avoid a dotfile and a second README in this tree.
 
-Four prefixes are claimed, each redirecting to the corresponding `soranoha.org`
+Six prefixes are claimed, each redirecting to the corresponding `soranoha.org`
 path, plus a bare `/soranoha/`:
 
 | Prefix | Denotes |
@@ -22,6 +24,8 @@ path, plus a bare `/soranoha/`:
 | `/soranoha/ns/` | TEI extension vocabulary namespaces |
 | `/soranoha/rights` | The published rights statement |
 | `/soranoha/schemas/` | Record schema identifiers embedded in published records |
+| `/soranoha/mappings/` | Conversion mapping documents the toolchain names |
+| `/soranoha/policies/` | Policy documents the toolchain names |
 | `/soranoha/works/` | Landing pages for published works |
 
 Redirects are 302 rather than 301 throughout because the target is a current

@@ -30,7 +30,7 @@
 (deftest committed-capture-rederives-byte-identical-observations
   (let [historical-schema (str (io/file fixture-root "parser-ir-0.7.0.schema.json"))
         read-schema schema/read-schema]
-    (is (= "sha256:43a6a6d86ca5eca062508e6cae633d19bf5248f15c5bb46153a6d8580ea916ec"
+    (is (= "sha256:ea521fcccb9007056de3e3378f5b7ed8040285121bb6bf43b6b4c1e19a881521"
            (schema/schema-hash historical-schema)))
     (with-redefs [schema/read-schema
                   (fn [path]
@@ -53,11 +53,11 @@
             diagnostic-index
             (value-by-schema
              values
-             "https://w3id.org/abc/schemas/parser-rq-diagnostic-completeness-index.schema.json")
+             "https://w3id.org/soranoha/schemas/parser-rq-diagnostic-completeness-index.schema.json")
             parser-index
             (value-by-schema
              values
-             "https://w3id.org/abc/schemas/parser-rq-parser-ir-conformance-index.schema.json")
+             "https://w3id.org/soranoha/schemas/parser-rq-parser-ir-conformance-index.schema.json")
             diagnostic-index-schema
             (files/read-json "schemas/parser-rq-diagnostic-completeness-index.schema.json")
             parser-index-schema
@@ -112,11 +112,11 @@
         (is (= diagnostic-aggregate
                (value-by-schema
                 values
-                "https://w3id.org/abc/schemas/parser-rq-diagnostic-completeness-aggregate.schema.json")))
+                "https://w3id.org/soranoha/schemas/parser-rq-diagnostic-completeness-aggregate.schema.json")))
         (is (= parser-aggregate
                (value-by-schema
                 values
-                "https://w3id.org/abc/schemas/parser-rq-parser-ir-conformance-aggregate.schema.json")))
+                "https://w3id.org/soranoha/schemas/parser-rq-parser-ir-conformance-aggregate.schema.json")))
         (is (= diagnostic-observation
                (:diagnostic_completeness committed-measurements)))
         (is (= parser-observation
@@ -131,7 +131,7 @@
         policy (files/read-json "data/parser-rq-parser-ir-conformance-policy-v1.json")
         index (value-by-schema
                (fixture-values)
-               "https://w3id.org/abc/schemas/parser-rq-parser-ir-conformance-index.schema.json")]
+               "https://w3id.org/soranoha/schemas/parser-rq-parser-ir-conformance-index.schema.json")]
     (doseq [entry (:records index)]
       (let [result (conformance/authenticate-record
                     store policy (:qualification_identity_ref index) entry)]

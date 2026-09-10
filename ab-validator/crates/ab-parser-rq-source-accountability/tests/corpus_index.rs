@@ -98,7 +98,7 @@ fn input(root: &std::path::Path) -> CorpusInput {
         });
     }
     fs::write(source_root.join("unrelated.txt"), b"unrelated").unwrap();
-    let taxonomy_jcs_bytes = br#"{"$schema":"https://w3id.org/abc/schemas/parser-rq-ignored-regions.schema.json","coordinate_system":"decoded_utf8","rules":[],"schema_version":"abc/parser-rq-ignored-regions/v1","taxonomy_version":"parser-rq-ignored-regions-v1"}"#.to_vec();
+    let taxonomy_jcs_bytes = br#"{"$schema":"https://w3id.org/soranoha/schemas/parser-rq-ignored-regions.schema.json","coordinate_system":"decoded_utf8","rules":[],"schema_version":"abc/parser-rq-ignored-regions/v1","taxonomy_version":"parser-rq-ignored-regions-v1"}"#.to_vec();
     CorpusInput {
         entries,
         source_root,

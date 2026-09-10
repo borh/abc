@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://w3id.org/abc/schemas/parser-rq-source-accountability-work-v1.schema.json",
+  "$id": "https://w3id.org/soranoha/schemas/parser-rq-source-accountability-work-v1.schema.json",
   "title": "Parser release qualification source-accountability work record (v1, frozen)",
   "description": "Frozen. Validates work records carrying the retired wire version abc/parser-rq-source-accountability-work/v1, which published the node-span coverage quantity. No instrument emits this shape; it exists so already-published evidence stays checkable. See docs/adr/parser-rq-retire-node-span-coverage.md.",
   "type": "object",

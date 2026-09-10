@@ -125,7 +125,7 @@ for work_id in work_ids:
     matching_works += int(observed_codes == expected_codes)
     raw_member = publish_bytes(raw_diag)
     diag_record = {
-        "schema_id": "https://w3id.org/abc/schemas/parser-rq-diagnostic-completeness-work.schema.json",
+        "schema_id": "https://w3id.org/soranoha/schemas/parser-rq-diagnostic-completeness-work.schema.json",
         "schema_version": "1.0.0",
         "work_id": work_id,
         "qualification_identity_ref": identity_ref,
@@ -170,7 +170,7 @@ for work_id in work_ids:
     ir_entries.append({"work_id": work_id, "record": record_member["ref"]})
 
 diag_index = {
-    "schema_id": "https://w3id.org/abc/schemas/parser-rq-diagnostic-completeness-index.schema.json",
+    "schema_id": "https://w3id.org/soranoha/schemas/parser-rq-diagnostic-completeness-index.schema.json",
     "schema_version": "1.0.0",
     "qualification_identity_ref": identity_ref,
     "policy_hash": diag_policy["policy_hash"],
@@ -178,7 +178,7 @@ diag_index = {
     "records": diag_entries,
 }
 ir_index = {
-    "schema_id": "https://w3id.org/abc/schemas/parser-rq-parser-ir-conformance-index.schema.json",
+    "schema_id": "https://w3id.org/soranoha/schemas/parser-rq-parser-ir-conformance-index.schema.json",
     "schema_version": "1.0.0",
     "qualification_identity_ref": identity_ref,
     "policy_hash": ir_policy["policy_hash"],
@@ -186,7 +186,7 @@ ir_index = {
     "records": ir_entries,
 }
 diag_aggregate = {
-    "schema_id": "https://w3id.org/abc/schemas/parser-rq-diagnostic-completeness-aggregate.schema.json",
+    "schema_id": "https://w3id.org/soranoha/schemas/parser-rq-diagnostic-completeness-aggregate.schema.json",
     "schema_version": "1.0.0",
     "qualification_identity_ref": identity_ref,
     "policy_hash": diag_policy["policy_hash"],
@@ -203,7 +203,7 @@ generated = valid_outputs + invalid_outputs
 assert (valid_outputs, invalid_outputs, no_outputs, generated) == (1, 1, 1, 2)
 parser_ratio = 0.5
 ir_aggregate = {
-    "schema_id": "https://w3id.org/abc/schemas/parser-rq-parser-ir-conformance-aggregate.schema.json",
+    "schema_id": "https://w3id.org/soranoha/schemas/parser-rq-parser-ir-conformance-aggregate.schema.json",
     "schema_version": "1.0.0",
     "qualification_identity_ref": identity_ref,
     "policy_hash": ir_policy["policy_hash"],

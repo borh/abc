@@ -412,7 +412,7 @@ mod tests {
 
     fn record_value(work_id: &str) -> serde_json::Value {
         serde_json::json!({
-            "metadata_record_schema_id": "https://w3id.org/abc/schemas/metadata-record.schema.json",
+            "metadata_record_schema_id": "https://w3id.org/soranoha/schemas/metadata-record.schema.json",
             "metadata_record_schema_hash": ABC_METADATA_RECORD_SCHEMA_HASH,
             "work": {
                 "work_id": work_id,

@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://w3id.org/abc/schemas/parser-rq-core-attempt-policy.schema.json",
+  "$id": "https://w3id.org/soranoha/schemas/parser-rq-core-attempt-policy.schema.json",
   "title": "Parser RQ core attempt policy",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_id", "schema_version", "instrument_id", "policy_hash", "expected_work_ids", "expected_sources", "expected_work_set_hash", "repetitions", "reduction", "timeout_seconds", "jobs", "serial", "lock_policy", "gnu_time", "argv_template", "allowed_dispositions", "schema_hashes", "capture_semantics_hash", "analyzer_semantics_hash"],
   "properties": {
-    "schema_id": {"const": "https://w3id.org/abc/schemas/parser-rq-core-attempt-policy.schema.json"},
+    "schema_id": {"const": "https://w3id.org/soranoha/schemas/parser-rq-core-attempt-policy.schema.json"},
     "schema_version": {"const": "1.0.0"},
     "instrument_id": {"const": "parser-rq-core-attempt-v1"},
     "policy_hash": {"$ref": "#/$defs/hash"},

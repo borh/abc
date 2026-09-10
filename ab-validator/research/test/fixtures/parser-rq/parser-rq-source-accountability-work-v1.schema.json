@@ -5,7 +5,7 @@
   "work_id": "w1",
   "original_source": {"sha256": "sha256:1111111111111111111111111111111111111111111111111111111111111111", "bytes": 3},
   "decoded_source": {"sha256": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "bytes": 3, "encoding": "utf-8"},
-  "parser_ir": {"schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json", "schema_hash": "sha256:3333333333333333333333333333333333333333333333333333333333333333", "sha256": "sha256:4444444444444444444444444444444444444444444444444444444444444444", "bytes": 100},
+  "parser_ir": {"schema_id": "https://w3id.org/soranoha/schemas/parser-ir.schema.json", "schema_hash": "sha256:3333333333333333333333333333333333333333333333333333333333333333", "sha256": "sha256:4444444444444444444444444444444444444444444444444444444444444444", "bytes": 100},
   "diagnostics": {"profile": "abc/raw-parser-diagnostics-schema-v3", "sha256": "sha256:5555555555555555555555555555555555555555555555555555555555555555", "bytes": 2, "media_type": "application/json", "locator": "blobs/sha256/55"},
   "taxonomy_version": "parser-rq-ignored-regions-v1",
   "taxonomy_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",

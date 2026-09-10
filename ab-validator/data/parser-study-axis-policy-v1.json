@@ -1,5 +1,5 @@
 {
-  "schema_id": "https://w3id.org/abc/schemas/parser-study-axis-policy-v1",
+  "schema_id": "https://w3id.org/soranoha/schemas/parser-study-axis-policy-v1",
   "schema_version": 1,
   "policy_id": "aozora-parser-neutral-comparison-axis-policy-v1",
   "axes": [

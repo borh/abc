@@ -453,7 +453,7 @@ def bind_provenance(
         raise ProvenanceUnavailable("provenance core hash does not authenticate proof")
     bound = {
         **proof,
-        "schema_id": "https://w3id.org/abc/schemas/parser-rq-executable-provenance.schema.json",
+        "schema_id": "https://w3id.org/soranoha/schemas/parser-rq-executable-provenance.schema.json",
         "schema_version": "2.0.0",
         "candidate_ref": candidate_ref,
         "qualification_identity_ref": qualification_identity_ref,
@@ -618,7 +618,7 @@ def capture_build(
     log_path = Path(build_log_path)
     log_hash, log_bytes = _stream_identity(log_path)
     record: dict[str, object] = {
-        "schema_id": "https://w3id.org/abc/schemas/parser-rq-build-record.schema.json",
+        "schema_id": "https://w3id.org/soranoha/schemas/parser-rq-build-record.schema.json",
         "schema_version": "1.0.0",
         **{
             key: realization[key]
@@ -804,7 +804,7 @@ def main(argv: list[str] | None = None) -> int:
             blobs = [LogicalBlob(**row) for row in raw]
             value = verify_evidence(blobs, args.evidence_root)
             receipt: dict[str, object] = {
-                "schema_id": "https://w3id.org/abc/schemas/parser-rq-evidence-integrity-receipt.schema.json",
+                "schema_id": "https://w3id.org/soranoha/schemas/parser-rq-evidence-integrity-receipt.schema.json",
                 "schema_version": "1.0.0",
                 "candidate_ref": args.candidate_ref,
                 "capture_generation_ref": args.capture_generation_ref,

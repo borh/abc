@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://w3id.org/abc/schemas/parser-rq-diagnostic-gap-policy.schema.json",
+  "$id": "https://w3id.org/soranoha/schemas/parser-rq-diagnostic-gap-policy.schema.json",
   "type": "object",
   "required": ["schema_version", "policy_id", "policy_hash", "raw_diagnostic_schema_hash", "identity", "parser", "coordinate_system", "rules"],
   "additionalProperties": false,

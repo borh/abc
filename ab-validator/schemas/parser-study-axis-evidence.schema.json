@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://w3id.org/abc/schemas/parser-study-axis-evidence.schema.json",
+  "$id": "https://w3id.org/soranoha/schemas/parser-study-axis-evidence.schema.json",
   "title": "Soranoha parser study axis evidence",
   "type": "object",
   "additionalProperties": false,
@@ -20,7 +20,7 @@
     }
   ],
   "properties": {
-    "schema_id": {"const": "https://w3id.org/abc/schemas/parser-study-axis-evidence-v1"},
+    "schema_id": {"const": "https://w3id.org/soranoha/schemas/parser-study-axis-evidence-v1"},
     "schema_version": {"const": 1},
     "study_id": {"const": "aozora-parser-neutral-comparison-2026-07"},
     "candidate": {"$ref": "#/$defs/candidate"},

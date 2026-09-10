@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://w3id.org/abc/schemas/parser-rq-source-recognition-aggregate-v1.schema.json",
+  "$id": "https://w3id.org/soranoha/schemas/parser-rq-source-recognition-aggregate-v1.schema.json",
   "title": "Parser release qualification source-recognition aggregate (v1, frozen)",
   "description": "Frozen. Validates recognition aggregates on the retired wire version abc/parser-rq-source-recognition-aggregate/v1, whose eligible_bytes folded whole-file denominators. Nothing emits this shape; it exists so already-published evidence stays checkable. See docs/adr/parser-rq-source-region-partition.md.",
   "type": "object",

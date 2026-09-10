@@ -2,7 +2,7 @@
   "artifacts": [
     {
       "path": "abc/schemas/parser-ir.schema.json",
-      "sha256": "sha256:0addc54c9f131ada8c73696ffb79b5cf78a47d44f1147f9d9e948c423b0fabd5"
+      "sha256": "sha256:15e028f9c4b29bd01d038109077481594447badd3731592f8059b49381a7a759"
     }
   ],
   "instrument": "parser-ir-conformance",
@@ -2453,5 +2453,5 @@
     }
   ],
   "validator_id": "ab-validator/parser-ir-schema-conformance/v1",
-  "validator_semantics_hash": "sha256:a94dfafdadce2743e6bcdaf5fd810af9f1104f133016cfef68ea5dcbacb93757"
+  "validator_semantics_hash": "sha256:f26d266b821bfb59fa5ac3b9cf4dca84fbd9461a2484bf886a9a19cbd197540d"
 }

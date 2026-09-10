@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://w3id.org/abc/schemas/parser-comparison-result-v2.schema.json",
+  "$id": "https://w3id.org/soranoha/schemas/parser-comparison-result-v2.schema.json",
   "title": "Soranoha parser comparison result IR version 2",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_id", "schema_version", "study_id", "rows"],
   "properties": {
-    "schema_id": {"const": "https://w3id.org/abc/schemas/parser-comparison-result-v2"},
+    "schema_id": {"const": "https://w3id.org/soranoha/schemas/parser-comparison-result-v2"},
     "schema_version": {"const": 2},
     "study_id": {"type": "string", "minLength": 1},
     "rows": {

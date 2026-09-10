@@ -113,7 +113,7 @@ fn taxonomy(path: &PathBuf) -> Result<TaxonomyIdentity> {
     let bytes = fs::read(path)?;
     let value: V1Taxonomy = serde_json::from_slice(&bytes)?;
     anyhow::ensure!(
-        value.schema == "https://w3id.org/abc/schemas/parser-rq-ignored-regions.schema.json",
+        value.schema == "https://w3id.org/soranoha/schemas/parser-rq-ignored-regions.schema.json",
         "taxonomy $schema mismatch"
     );
     anyhow::ensure!(
@@ -402,11 +402,11 @@ mod tests {
         let root = std::env::temp_dir().join(format!("taxonomy-cli-{}", std::process::id()));
         let cases = [
             br#"{"#.as_slice(),
-            br#"{"$schema":"https://w3id.org/abc/schemas/parser-rq-ignored-regions.schema.json","coordinate_system":"decoded_utf8","extra":true,"rules":[],"schema_version":"abc/parser-rq-ignored-regions/v1","taxonomy_version":"parser-rq-ignored-regions-v1"}"#.as_slice(),
-            br#"{"$schema":"https://w3id.org/abc/schemas/parser-rq-ignored-regions.schema.json","coordinate_system":"decoded_utf8","rules":[{}],"schema_version":"abc/parser-rq-ignored-regions/v1","taxonomy_version":"parser-rq-ignored-regions-v1"}"#.as_slice(),
+            br#"{"$schema":"https://w3id.org/soranoha/schemas/parser-rq-ignored-regions.schema.json","coordinate_system":"decoded_utf8","extra":true,"rules":[],"schema_version":"abc/parser-rq-ignored-regions/v1","taxonomy_version":"parser-rq-ignored-regions-v1"}"#.as_slice(),
+            br#"{"$schema":"https://w3id.org/soranoha/schemas/parser-rq-ignored-regions.schema.json","coordinate_system":"decoded_utf8","rules":[{}],"schema_version":"abc/parser-rq-ignored-regions/v1","taxonomy_version":"parser-rq-ignored-regions-v1"}"#.as_slice(),
             br#"{"$schema":"wrong","coordinate_system":"decoded_utf8","rules":[],"schema_version":"abc/parser-rq-ignored-regions/v1","taxonomy_version":"parser-rq-ignored-regions-v1"}"#.as_slice(),
-            br#"{"$schema":"https://w3id.org/abc/schemas/parser-rq-ignored-regions.schema.json","coordinate_system":"bytes","rules":[],"schema_version":"abc/parser-rq-ignored-regions/v1","taxonomy_version":"parser-rq-ignored-regions-v2"}"#.as_slice(),
-            br#"{ "coordinate_system":"decoded_utf8","rules":[],"schema_version":"abc/parser-rq-ignored-regions/v1","taxonomy_version":"parser-rq-ignored-regions-v1","$schema":"https://w3id.org/abc/schemas/parser-rq-ignored-regions.schema.json"}"#.as_slice(),
+            br#"{"$schema":"https://w3id.org/soranoha/schemas/parser-rq-ignored-regions.schema.json","coordinate_system":"bytes","rules":[],"schema_version":"abc/parser-rq-ignored-regions/v1","taxonomy_version":"parser-rq-ignored-regions-v2"}"#.as_slice(),
+            br#"{ "coordinate_system":"decoded_utf8","rules":[],"schema_version":"abc/parser-rq-ignored-regions/v1","taxonomy_version":"parser-rq-ignored-regions-v1","$schema":"https://w3id.org/soranoha/schemas/parser-rq-ignored-regions.schema.json"}"#.as_slice(),
         ];
         for (index, bytes) in cases.iter().enumerate() {
             let path = root.with_extension(index.to_string());

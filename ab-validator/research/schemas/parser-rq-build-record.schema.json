@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://w3id.org/abc/schemas/parser-rq-build-record.schema.json",
+  "$id": "https://w3id.org/soranoha/schemas/parser-rq-build-record.schema.json",
   "title": "Parser RQ independently realized build record",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_id", "schema_version", "build_id", "store_uri", "initially_empty", "target_absent_before_seed", "target_absent_after_seed", "drv_path", "output_path", "output_ref", "nar_hash", "build_record_ref", "seeded_inputs", "build_log", "executables"],
   "properties": {
-    "schema_id": {"const": "https://w3id.org/abc/schemas/parser-rq-build-record.schema.json"},
+    "schema_id": {"const": "https://w3id.org/soranoha/schemas/parser-rq-build-record.schema.json"},
     "schema_version": {"const": "1.0.0"},
     "build_id": {"enum": ["build-a", "build-b"]},
     "store_uri": {"type": "string", "minLength": 1},

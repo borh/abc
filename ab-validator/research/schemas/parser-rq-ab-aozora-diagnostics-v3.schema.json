@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://w3id.org/abc/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json",
+  "$id": "https://w3id.org/soranoha/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json",
   "type": "object",
   "required": ["schemaVersion", "data"],
   "additionalProperties": false,

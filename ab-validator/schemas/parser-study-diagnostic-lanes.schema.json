@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://w3id.org/abc/schemas/parser-study-diagnostic-lanes.schema.json",
+  "$id": "https://w3id.org/soranoha/schemas/parser-study-diagnostic-lanes.schema.json",
   "title": "Soranoha parser study diagnostic lanes",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_id", "schema_version", "lanes"],
   "properties": {
-    "schema_id": {"const": "https://w3id.org/abc/schemas/parser-study-diagnostic-lanes-v1"},
+    "schema_id": {"const": "https://w3id.org/soranoha/schemas/parser-study-diagnostic-lanes-v1"},
     "schema_version": {"const": 1},
     "lanes": {
       "type": "array",

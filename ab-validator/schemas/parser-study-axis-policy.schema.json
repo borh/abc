@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://w3id.org/abc/schemas/parser-study-axis-policy.schema.json",
+  "$id": "https://w3id.org/soranoha/schemas/parser-study-axis-policy.schema.json",
   "title": "Soranoha parser study axis policy",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_id", "schema_version", "policy_id", "axes"],
   "properties": {
-    "schema_id": {"const": "https://w3id.org/abc/schemas/parser-study-axis-policy-v1"},
+    "schema_id": {"const": "https://w3id.org/soranoha/schemas/parser-study-axis-policy-v1"},
     "schema_version": {"const": 1},
     "policy_id": {"const": "aozora-parser-neutral-comparison-axis-policy-v1"},
     "axes": {

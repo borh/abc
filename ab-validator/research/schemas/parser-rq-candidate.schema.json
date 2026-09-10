@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://w3id.org/abc/schemas/parser-rq-candidate.schema.json",
+  "$id": "https://w3id.org/soranoha/schemas/parser-rq-candidate.schema.json",
   "title": "Parser RQ release candidate",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_id", "schema_version", "candidate_ref", "qualification_identity_ref", "qualification_identity", "executable_provenance_ref"],
   "properties": {
-    "schema_id": {"const": "https://w3id.org/abc/schemas/parser-rq-candidate.schema.json"},
+    "schema_id": {"const": "https://w3id.org/soranoha/schemas/parser-rq-candidate.schema.json"},
     "schema_version": {"const": "2.0.0"},
     "candidate_ref": {"$ref": "#/$defs/hash"},
     "qualification_identity_ref": {"$ref": "#/$defs/hash"},

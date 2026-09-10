@@ -95,7 +95,7 @@ fn parser_ir(source: &[u8]) -> Vec<u8> {
 }
 
 fn taxonomy() -> TaxonomyIdentity {
-    let bytes = br#"{"$schema":"https://w3id.org/abc/schemas/parser-rq-ignored-regions.schema.json","coordinate_system":"decoded_utf8","rules":[],"schema_version":"abc/parser-rq-ignored-regions/v1","taxonomy_version":"parser-rq-ignored-regions-v1"}"#.to_vec();
+    let bytes = br#"{"$schema":"https://w3id.org/soranoha/schemas/parser-rq-ignored-regions.schema.json","coordinate_system":"decoded_utf8","rules":[],"schema_version":"abc/parser-rq-ignored-regions/v1","taxonomy_version":"parser-rq-ignored-regions-v1"}"#.to_vec();
     TaxonomyIdentity {
         taxonomy_version: TaxonomyVersion::V1,
         taxonomy_hash: hash(&bytes),

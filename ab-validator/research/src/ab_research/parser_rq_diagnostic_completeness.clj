@@ -9,10 +9,10 @@
             [clojure.string :as string]))
 
 (def ^:private work-schema-id
-  "https://w3id.org/abc/schemas/parser-rq-diagnostic-completeness-work.schema.json")
+  "https://w3id.org/soranoha/schemas/parser-rq-diagnostic-completeness-work.schema.json")
 
 (def ^:private aggregate-schema-id
-  "https://w3id.org/abc/schemas/parser-rq-diagnostic-completeness-aggregate.schema.json")
+  "https://w3id.org/soranoha/schemas/parser-rq-diagnostic-completeness-aggregate.schema.json")
 
 (def ^:private raw-diagnostics-schema
   (delay (files/read-json "schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json")))

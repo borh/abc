@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://w3id.org/abc/schemas/parser-rq-diagnostic-gap-aggregate.schema.json",
+  "$id": "https://w3id.org/soranoha/schemas/parser-rq-diagnostic-gap-aggregate.schema.json",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "status", "qualification_identity_ref", "corpus_generation_ref", "policy_hash", "policy_artifact_hash", "expected_work_ids", "observed_work_ids", "authorized_bytes", "silent_bytes", "silent_drop_count", "diagnostic_count", "authorizing_diagnostic_count", "observe_only_diagnostic_count", "authorized_interval_count", "vacuous"],

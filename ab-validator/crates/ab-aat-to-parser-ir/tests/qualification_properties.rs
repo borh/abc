@@ -8,7 +8,7 @@ const HASH: &str = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
 fn record(work_id: &str, status: QualificationStatus) -> QualificationWorkRecord {
     let mut value = serde_json::json!({
-        "schema_id": "https://w3id.org/abc/schemas/parser-rq-parser-ir-conformance-work.schema.json",
+        "schema_id": "https://w3id.org/soranoha/schemas/parser-rq-parser-ir-conformance-work.schema.json",
         "schema_version": "1.0.0",
         "work_id": work_id,
         "qualification_identity_ref": HASH,

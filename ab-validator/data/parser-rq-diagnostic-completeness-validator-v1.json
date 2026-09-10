@@ -2,7 +2,7 @@
   "artifacts": [
     {
       "path": "abc/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json",
-      "sha256": "sha256:71ac5808c775679f60278ce5b3da5f5487a0c7fba996fcc7dcdb05a6e2c3c985"
+      "sha256": "sha256:856bdedaac092b09ec89531874fe25aa02ce102d698f5aceeafaeddf3588c083"
     }
   ],
   "instrument": "diagnostic-completeness",
@@ -43,5 +43,5 @@
     }
   ],
   "validator_id": "abc/parser-rq-diagnostic-completeness/v1",
-  "validator_semantics_hash": "sha256:3ab7a87657990f1d7e6323812ae647075a19a7bd848ebc7e875ec5ee19450a82"
+  "validator_semantics_hash": "sha256:991b0e92c61f01a2c05dd512d24c34f05ab3f1e7e98ca775ff7e1b3da5d1d0ea"
 }

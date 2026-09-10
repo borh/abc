@@ -24,7 +24,7 @@ hash_file() {
 
 cat > "$parser_ir" <<'JSON'
 {
-  "schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
+  "schema_id": "https://w3id.org/soranoha/schemas/parser-ir.schema.json",
   "schema_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
   "source": {
     "work_content_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
@@ -150,10 +150,10 @@ JSON
 
 cat > "$bundle_dir/preservation.json" <<'JSON'
 {
-  "schema_id": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json",
+  "schema_id": "https://w3id.org/soranoha/schemas/parser-ir-publication-preservation.schema.json",
   "schema_version": "0.3.0",
   "schema_hash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
-  "parser_ir": {"schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json", "schema_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "work_id": "fixture"},
+  "parser_ir": {"schema_id": "https://w3id.org/soranoha/schemas/parser-ir.schema.json", "schema_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222", "work_id": "fixture"},
   "tei": {"profile_id": "tei-eaj-v0", "profile_hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444"},
   "source": {"corpus_snapshot_hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555", "work_content_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777", "source_path": "cards/000000/files/example.txt", "encoding": "Shift_JIS", "normalization": "source"},
   "producer": {"agent": "publication-bundle-smoke", "generated_at": "2026-07-17T00:00:00Z"},

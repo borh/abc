@@ -1,0 +1,77 @@
+{
+  "derived_from": {
+    "aat_adapter": "ab-aozora",
+    "aat_adapter_version": "ab-aozora 0.6.0 aat-schema 2 facade 0.3.0 wire-schema 3 (git unknown)",
+    "aat_version": 2,
+    "mapping_id": "https://w3id.org/soranoha/mappings/aat-v2-to-parser-ir-v1/generated-probe",
+    "mapping_schema_hash": "sha256:c75eaa2e3f4f42002e25ff6cccf725c019c98d653360ca4e648c0f96bec2958a",
+    "mapping_version": "0.5.0"
+  },
+  "errors": [],
+  "nodes": [
+    {
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 17,
+        "line": 1,
+        "start": 0
+      },
+      "text": "plain ascii only\n",
+      "type": "text"
+    }
+  ],
+  "paragraphs": [
+    {
+      "classification": "direct",
+      "id": "p000000",
+      "node_range": {
+        "end": 1,
+        "start": 0
+      },
+      "role": "body",
+      "source_pointer": "blocks[0]",
+      "span": {
+        "column": null,
+        "coordinate_system": "decoded_utf8",
+        "end": 17,
+        "line": 1,
+        "start": 0
+      },
+      "span_source": "derived"
+    }
+  ],
+  "schema_hash": "sha256:ea521fcccb9007056de3e3378f5b7ed8040285121bb6bf43b6b4c1e19a881521",
+  "schema_id": "https://w3id.org/soranoha/schemas/parser-ir.schema.json",
+  "sentence_segmentation": {
+    "coordinate_system": "decoded_utf8",
+    "coverage": "body-paragraphs",
+    "schema_version": "sentence-segmentation-v1",
+    "splitter_id": "ab-plaintext-japanese-v2"
+  },
+  "sentences": [
+    {
+      "id": "s000000",
+      "node_range": {
+        "end": 1,
+        "start": 0
+      },
+      "orthographic_annotation_indices": [],
+      "paragraph_id": "p000000",
+      "span": {
+        "coordinate_system": "decoded_utf8",
+        "end": 17,
+        "start": 0
+      },
+      "tags": []
+    }
+  ],
+  "source": {
+    "encoding": "UTF-8",
+    "normalization": "source",
+    "primary_text_hash": "sha256:f0ae89f324e93e0d13854110dc02adaa660f9d5a399064d2df51f793f738da23",
+    "source_path": null,
+    "work_content_hash": "sha256:f0ae89f324e93e0d13854110dc02adaa660f9d5a399064d2df51f793f738da23"
+  },
+  "warnings": []
+}

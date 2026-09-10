@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://w3id.org/abc/schemas/aat-parser-ir-divergence.schema.json",
+  "$id": "https://w3id.org/soranoha/schemas/aat-parser-ir-divergence.schema.json",
   "title": "AAT to Parser-IR Divergence Record",
   "version": "0.3.0",
   "type": "object",

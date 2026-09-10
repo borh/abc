@@ -41,7 +41,7 @@ MD
 
 cat > "$policy" <<'JSON'
 {
-  "policy_id": "https://w3id.org/abc/policies/source-region-publication-v0",
+  "policy_id": "https://w3id.org/soranoha/policies/source-region-publication-v0",
   "policy_version": "0.1.0",
   "dispositions": [
     {

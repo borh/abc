@@ -316,7 +316,7 @@ def capture_repetitions(config: CaptureConfig, lock: LockCapability) -> dict[str
             disposition = classify_work(report)
             report_blob = _blob(report_path, config.staging_root, "application/json")
             record: dict[str, object] = {
-                "schema_id": "https://w3id.org/abc/schemas/parser-rq-core-attempt-work.schema.json",
+                "schema_id": "https://w3id.org/soranoha/schemas/parser-rq-core-attempt-work.schema.json",
                 "schema_version": "1.0.0",
                 "work_id": work_id,
                 "source_sha256": source_sha256,
@@ -342,7 +342,7 @@ def capture_repetitions(config: CaptureConfig, lock: LockCapability) -> dict[str
                 }
             )
     return {
-        "schema_id": "https://w3id.org/abc/schemas/parser-rq-core-attempt-index.schema.json",
+        "schema_id": "https://w3id.org/soranoha/schemas/parser-rq-core-attempt-index.schema.json",
         "schema_version": "1.0.0",
         "qualification_identity_ref": config.qualification_identity_ref,
         "candidate_ref": config.candidate_ref,

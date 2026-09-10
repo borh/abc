@@ -13,6 +13,8 @@ the project is served.
 |---|---|
 | `/soranoha/ns/` | TEI extension vocabulary namespaces |
 | `/soranoha/rights` | The rights statement every release and file cites |
+| `/soranoha/mappings/` | Conversion mapping documents the toolchain names |
+| `/soranoha/policies/` | Policy documents the toolchain names |
 | `/soranoha/schemas/` | Record schema identifiers embedded in published records |
 | `/soranoha/works/` | Landing pages for published works |
 

@@ -12,11 +12,11 @@
     "000003_3"
   ],
   "expected_work_set_hash": "sha256:3b847030730777136a941e2819356736fb8be01c683eed349a533e05d1aa72bb",
-  "policy_hash": "sha256:1a6ca2cd40b8dc9816b2fb9b4963234978705deabd8578da88147ee5808fb5c0",
+  "policy_hash": "sha256:9913cfb8aac56f69cc6c58b8be12abcbb7ca1942d629731d964c0a17876d22c8",
   "policy_id": "abc/parser-rq-diagnostic-completeness/v1",
-  "raw_diagnostic_schema_hash": "sha256:e467a46ac8196b0193d658012375fda69f55a780e8edb9d1976e36fcf8417592",
-  "raw_diagnostic_schema_id": "https://w3id.org/abc/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json",
-  "schema_id": "https://w3id.org/abc/schemas/parser-rq-diagnostic-completeness-policy.schema.json",
+  "raw_diagnostic_schema_hash": "sha256:b213819b4603f59f24ef5af5a41c565c2479a0bdf315e1dbb459bd5c6c598bc4",
+  "raw_diagnostic_schema_id": "https://w3id.org/soranoha/schemas/parser-rq-ab-aozora-diagnostics-v3.schema.json",
+  "schema_id": "https://w3id.org/soranoha/schemas/parser-rq-diagnostic-completeness-policy.schema.json",
   "schema_version": "2.0.0",
   "status_mapping": {
     "allowed_statuses": [
@@ -29,5 +29,5 @@
     }
   },
   "vacuity_semantics": "empty_expectation_match_is_a_positive_observation",
-  "validator_semantics_hash": "sha256:3ab7a87657990f1d7e6323812ae647075a19a7bd848ebc7e875ec5ee19450a82"
+  "validator_semantics_hash": "sha256:991b0e92c61f01a2c05dd512d24c34f05ab3f1e7e98ca775ff7e1b3da5d1d0ea"
 }

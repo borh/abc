@@ -9,10 +9,10 @@
             [clojure.walk :as walk]))
 
 (def ^:private work-schema-id
-  "https://w3id.org/abc/schemas/parser-rq-parser-ir-conformance-work.schema.json")
+  "https://w3id.org/soranoha/schemas/parser-rq-parser-ir-conformance-work.schema.json")
 
 (def ^:private aggregate-schema-id
-  "https://w3id.org/abc/schemas/parser-rq-parser-ir-conformance-aggregate.schema.json")
+  "https://w3id.org/soranoha/schemas/parser-rq-parser-ir-conformance-aggregate.schema.json")
 
 (def ^:private policy-schema
   (delay (files/read-json "schemas/parser-rq-parser-ir-conformance-policy.schema.json")))

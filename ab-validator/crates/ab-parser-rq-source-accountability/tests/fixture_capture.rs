@@ -76,7 +76,7 @@ fn temp_root(label: &str) -> PathBuf {
 }
 
 fn taxonomy_bytes() -> Vec<u8> {
-    br#"{"$schema":"https://w3id.org/abc/schemas/parser-rq-ignored-regions.schema.json","coordinate_system":"decoded_utf8","rules":[],"schema_version":"abc/parser-rq-ignored-regions/v1","taxonomy_version":"parser-rq-ignored-regions-v1"}"#.to_vec()
+    br#"{"$schema":"https://w3id.org/soranoha/schemas/parser-rq-ignored-regions.schema.json","coordinate_system":"decoded_utf8","rules":[],"schema_version":"abc/parser-rq-ignored-regions/v1","taxonomy_version":"parser-rq-ignored-regions-v1"}"#.to_vec()
 }
 
 fn capture(root: &Path, mutate_source: bool) -> BTreeMap<String, String> {

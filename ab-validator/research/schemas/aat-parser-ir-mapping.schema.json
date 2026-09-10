@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://w3id.org/abc/schemas/aat-parser-ir-mapping.schema.json",
+  "$id": "https://w3id.org/soranoha/schemas/aat-parser-ir-mapping.schema.json",
   "title": "AAT to Parser-IR Mapping",
   "version": "0.2.4",
   "type": "object",

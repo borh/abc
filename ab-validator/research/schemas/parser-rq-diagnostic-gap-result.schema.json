@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://w3id.org/abc/schemas/parser-rq-diagnostic-gap-result.schema.json",
+  "$id": "https://w3id.org/soranoha/schemas/parser-rq-diagnostic-gap-result.schema.json",
   "$defs": {
     "hash": {
       "type": "string",

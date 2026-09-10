@@ -1,5 +1,5 @@
 {
-  "policy_id": "https://w3id.org/abc/policies/source-region-publication-v0",
+  "policy_id": "https://w3id.org/soranoha/policies/source-region-publication-v0",
   "policy_version": "0.3.0",
   "notes": [
     "ABC owns publication disposition for ab-validator source-region facts.",

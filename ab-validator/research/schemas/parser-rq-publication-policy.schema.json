@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://w3id.org/abc/schemas/parser-rq-publication-policy.schema.json",
+  "$id": "https://w3id.org/soranoha/schemas/parser-rq-publication-policy.schema.json",
   "title": "Parser RQ publication policy",
   "version": "1.0.0",
   "type": "object",
@@ -17,7 +17,7 @@
   ],
   "properties": {
     "schema_id": {
-      "const": "https://w3id.org/abc/schemas/parser-rq-publication-policy.schema.json"
+      "const": "https://w3id.org/soranoha/schemas/parser-rq-publication-policy.schema.json"
     },
     "schema_version": {
       "const": "1.0.0"

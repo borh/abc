@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://w3id.org/abc/schemas/parser-rq-source-accountability-work.schema.json",
+  "$id": "https://w3id.org/soranoha/schemas/parser-rq-source-accountability-work.schema.json",
   "title": "Parser release qualification source-accountability work record",
   "description": "v2. Records which source, decoded how, which parser-IR, which diagnostics, under which taxonomy, authenticated against which qualification identity. It publishes no measurement: v1 also carried a node-span coverage quantity and the whole-file eligibility it was measured against, and both were retired together. Published v1 records are validated by parser-rq-source-accountability-work-v1.schema.json. See docs/adr/parser-rq-retire-node-span-coverage.md.",
   "type": "object",

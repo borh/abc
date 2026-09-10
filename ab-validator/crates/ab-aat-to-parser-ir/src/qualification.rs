@@ -10,9 +10,9 @@ use crate::{
 };
 
 const WORK_SCHEMA_ID: &str =
-    "https://w3id.org/abc/schemas/parser-rq-parser-ir-conformance-work.schema.json";
+    "https://w3id.org/soranoha/schemas/parser-rq-parser-ir-conformance-work.schema.json";
 const AGGREGATE_SCHEMA_ID: &str =
-    "https://w3id.org/abc/schemas/parser-rq-parser-ir-conformance-aggregate.schema.json";
+    "https://w3id.org/soranoha/schemas/parser-rq-parser-ir-conformance-aggregate.schema.json";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]

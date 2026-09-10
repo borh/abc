@@ -30,6 +30,7 @@
             [soranoha.snh.sign :as sign]
             [soranoha.snh.view :as view])
   (:import (java.util Arrays)
+           (java.util.concurrent Callable ExecutionException Executors)
            (tools.jackson.core StreamReadFeature)
            (tools.jackson.databind.json JsonMapper)))
 
@@ -552,24 +553,37 @@
                    (range k))))
 
 (defn- in-parallel
-  "Run each thunk on its own thread and return the results in order. A
-  thunk that throws surfaces its own exception rather than the
-  ExecutionException a future wraps it in, so a segmented walk fails with
-  the ex-info a sequential one would have raised. Results are taken in
+  "Run each thunk on its own thread and return the results in order.
+
+  The pool is created and shut down here rather than taken from the agent
+  pool `future` uses, whose threads are not daemon threads and idle for a
+  minute before exiting: a command-line verification would have printed
+  its result and then held the process open.
+
+  A thunk that throws surfaces its own exception rather than the
+  ExecutionException the future wraps it in, so a segmented walk fails
+  with the ex-info a single walk would have raised. Results are taken in
   order, so when two runs both fail it is the one nearer the head that
-  reports, which is the reason a sequential walk would have reached
-  first."
+  reports, which is the failure a single walk would have reached first."
   [thunks]
-  (let [futures (mapv future-call thunks)]
+  (let [pool (Executors/newFixedThreadPool (count thunks))]
     (try
-      (mapv deref futures)
-      (catch java.util.concurrent.ExecutionException e
+      (mapv deref (mapv #(.submit pool ^Callable %) thunks))
+      (catch ExecutionException e
         (throw (or (ex-cause e) e)))
-      (finally (run! future-cancel futures)))))
+      (finally (.shutdownNow pool)))))
 
 (defn- verify-chain-segmented
   "The chain walk split into `k` runs verified concurrently, then joined at
   the k-1 seams.
+
+  Every invariant the walk establishes is local to one commit or to one
+  adjacent pair: `verify-commit!` is the first and `check-transition!` the
+  second, and nothing accumulates across the chain except the manifest ids
+  and executed event ids the result carries. That is what makes a split
+  possible at all, and it is checked rather than assumed:
+  `a-segmented-walk-rejects-exactly-what-one-walk-rejects` puts the whole
+  build mutation table through both.
 
   A seam is the transition the runs deliberately left open, and closing it
   consumes exactly what the sequential walk consumes at that point: the

@@ -169,7 +169,7 @@
                   "works" works
                   "segments" k
                   "verify_ms" (Math/round ^double
-                                          (:milliseconds
-                                           (verify-once! clone {:segments k})))}))
+                               (:milliseconds
+                                (verify-once! clone {:segments k})))}))
         (finally (fs/delete-tree dir))))
     (finally (shutdown-agents))))

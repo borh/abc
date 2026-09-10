@@ -18,9 +18,13 @@ duplicate appears in output.
 ## gothic/太字 distinction
 
 ゴシック体 (gothic typeface) is a distinct syntax construct from
-太字 (bold). The parser keeps them separate; non-canonical corpus
-variants (ゴチック, etc.) decline to `Directive{Unknown}` with a lint
-suggesting the canonical form.
+太字 (bold), and the parser keeps them separate. What a non-canonical
+variant spelling does depends on the directive's form, not on the spelling
+alone. A bare `［＃ゴチック］` declines to `DirectiveKind::Unknown` and the
+lint catalogue suggests `ゴシック体`; the forward-referencing
+`［＃「X」はゴチック］` carries typed gothic emphasis instead. The catalogue
+holds that line by construction: its self-test requires every key to still
+parse to Unknown and every suggestion to parse to something else.
 
 ## non-adjacent referent resolution
 

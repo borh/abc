@@ -1133,7 +1133,7 @@
     ;; short name resolves and a trailing ellipsis would make a reader who
     ;; typed what they saw look up a release that does not exist
     [:p [:code {:class "citation"}
-         (str site-name " Aozora TEI Corpus. Release " (subs head-hex 0 12)
+         (str site-name " Aozora Bunko TEI Corpus. Release " (subs head-hex 0 12)
               (when doi (str ". https://doi.org/" doi)))]]
     [:p [:code {:class "citation" :lang "ja"}
          (citation/rendered release example-work)]]

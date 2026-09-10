@@ -148,7 +148,7 @@
   the source description is about the printed edition transcribed, which is a
   different thing and is often not the one the card links.
 
-  The publisher is `Soranoha`, the entity, not `Soranoha Aozora TEI Corpus`,
+  The publisher is `Soranoha`, the entity, not `Soranoha Aozora Bunko TEI Corpus`,
   which is the corpus title and is already carried by `titleStmt`. `abc`
   survives in the w3id schema namespaces and the source-bundle construction
   id, where it identifies a schema rather than naming a publisher.

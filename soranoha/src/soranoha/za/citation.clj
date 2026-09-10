@@ -31,7 +31,7 @@
   (:import (java.net URLEncoder)
            (java.nio.charset StandardCharsets)))
 
-(def corpus-name "Soranoha Aozora TEI Corpus")
+(def corpus-name "Soranoha Aozora Bunko TEI Corpus")
 
 (def ^:private site-origin
   "The origin a citation's landing-page URL points at.

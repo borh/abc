@@ -68,7 +68,7 @@ a citation through the archive without the live site.
 ## Citing the whole corpus
 
 ```
-Hodošček, Bor. Soranoha Aozora TEI Corpus. Release
+Hodošček, Bor. Soranoha Aozora Bunko TEI Corpus. Release
 <release head, 64 hex characters>.
 https://doi.org/10.5281/zenodo.<version deposit>
 ```
@@ -78,7 +78,7 @@ BibLaTeX:
 ```bibtex
 @dataset{soranoha,
   author  = {Hodošček, Bor},
-  title   = {Soranoha Aozora TEI Corpus},
+  title   = {Soranoha Aozora Bunko TEI Corpus},
   version = {<release head, 64 hex characters>},
   doi     = {10.5281/zenodo.<version deposit>},
   url     = {https://soranoha.org},
@@ -114,7 +114,7 @@ second metadata source.
 
 ```
 芥川 竜之介「蜘蛛の糸」（新字新仮名）、底本『芥川龍之介全集2』ちくま文庫、筑摩書房、
-1986年。Soranoha Aozora TEI Corpus, 000092_000879,
+1986年。Soranoha Aozora Bunko TEI Corpus, 000092_000879,
 release <first 12 characters of the head>…
 https://doi.org/10.5281/zenodo.<version deposit>
 ```
@@ -123,7 +123,7 @@ https://doi.org/10.5281/zenodo.<version deposit>
 
 ```
 Akutagawa Ryunosuke. “蜘蛛の糸” (新字新仮名). In 芥川龍之介全集2.
-ちくま文庫、筑摩書房, 1986. Soranoha Aozora TEI Corpus, 000092_000879,
+ちくま文庫、筑摩書房, 1986. Soranoha Aozora Bunko TEI Corpus, 000092_000879,
 release <first 12 characters of the head>…
 https://doi.org/10.5281/zenodo.<version deposit>
 ```
@@ -149,7 +149,7 @@ note, and the `release` column of `catalog.csv`.
 | Title, with 副題 | `蜘蛛の糸` | What it is. Not sufficient either: 2357 works share an author-and-title pair with another work. |
 | 文字遣い種別 | `新字新仮名` | Which orthographic transcription. Aozora Bunko often publishes the same work in two, and they are different texts. |
 | 底本 | `『芥川龍之介全集2』ちくま文庫、筑摩書房、1986年` | The printed book the transcription was made from. Two transcriptions of one work from different 底本 are different texts. |
-| Corpus name | `Soranoha Aozora TEI Corpus` | Which corpus, distinguishing this encoding from Aozora Bunko's own files. |
+| Corpus name | `Soranoha Aozora Bunko TEI Corpus` | Which corpus, distinguishing this encoding from Aozora Bunko's own files. |
 | **Work identifier** | `000092_000879` | **Identifies the work.** Stable across releases. The one component that makes the citation unambiguous. |
 | **Release** | `release <first 12 characters of the head>` | **Identifies the bytes.** The corpus is versioned; a citation without it does not name what was read. |
 | Version DOI | `https://doi.org/10.5281/zenodo.<version deposit>` | Resolves to exactly those bytes, and survives the site. Present only when the release you read is a quarterly snapshot. |
@@ -186,7 +186,7 @@ cannot express it.
   date = {1986},
   language = {japanese},
   langid = {japanese},
-  eprinttype = {Soranoha Aozora TEI Corpus},
+  eprinttype = {Soranoha Aozora Bunko TEI Corpus},
   eprint = {000092_000879},
   version = {<release head, 64 hex characters>},
   url = {https://soranoha.org/works/000092_000879/},
@@ -242,7 +242,7 @@ id of the form `snh:1:<type>:<sha256>`, and the manifest that names it is
 signed:
 
 ```
-Soranoha Aozora TEI Corpus, work 000092_000879, TEI artifact
+Soranoha Aozora Bunko TEI Corpus, work 000092_000879, TEI artifact
 snh:1:tei:6f0b1c…, in release
 <release head, 64 hex characters>.
 ```

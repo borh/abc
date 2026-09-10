@@ -121,7 +121,7 @@ license, and Soranoha's encoding is CC0. A file detached from this site still
 carries its own terms. See [rights](rights.md).
 
 `<publisher>` names the publishing entity, so it is `Soranoha` rather than
-`Soranoha Aozora TEI Corpus`: the latter is the corpus title, and `titleStmt`
+`Soranoha Aozora Bunko TEI Corpus`: the latter is the corpus title, and `titleStmt`
 already carries the title. The `@ref` lets a downloaded file resolve to its
 publisher without a lookup. There is no `<pubPlace>`, because a corpus
 published only on the web has no place of publication that would not be

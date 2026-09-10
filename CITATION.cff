@@ -3,7 +3,7 @@ message: >-
   If you use Soranoha in research, please cite the release you used. A release
   is identified by its head, and each release is archived with its own version
   DOI; see docs/citation.md for the citation forms and worked examples.
-title: "Soranoha Aozora TEI Corpus"
+title: "Soranoha Aozora Bunko TEI Corpus"
 abstract: >-
   Soranoha converts the Japanese texts of Aozora Bunko to TEI P5, with
   plaintext and Markdown projections and a validation report for every work,

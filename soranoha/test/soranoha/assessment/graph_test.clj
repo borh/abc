@@ -9,7 +9,8 @@
             [soranoha.assessment.fixtures :as fixtures]
             [soranoha.assessment.graph :as graph]
             [soranoha.assessment.records :as records]
-            [soranoha.kura.engine :as engine]))
+            [soranoha.kura.engine :as engine]
+            [soranoha.snh.schema :as snh-schema]))
 
 (def ^:private captures
   {"bundle" (str "sha256:" (apply str (repeat 64 "1"))) "catalog" ["author:000001"]})
@@ -125,3 +126,29 @@
     (is (= :assessment-cycle
            (try (graph/validate-acyclic! cyclic candidates) nil
                 (catch clojure.lang.ExceptionInfo e (:reason (ex-data e))))))))
+
+(defn- snapshot-statuses
+  "The assessment statuses a published snapshot may carry, read off the schema
+  a verifier enforces rather than listed here."
+  []
+  (letfn [(walk [node]
+            (cond
+              (map? node) (concat (when-let [values (get-in node ["properties" "status" "enum"])]
+                                    values)
+                                  (mapcat walk (vals node)))
+              (sequential? node) (mapcat walk node)
+              :else nil))]
+    (set (walk (snh-schema/schema-for "assessment-snapshot")))))
+
+(deftest a-status-nobody-has-classified-restricts-rather-than-permits
+  (is (not (graph/restrictive? graph/permitting-status))
+      "the one status a work may be published under")
+  (testing "every other status the snapshot vocabulary carries stands in the way"
+    (let [statuses (snapshot-statuses)]
+      (is (contains? statuses graph/permitting-status))
+      (doseq [status (sort (disj statuses graph/permitting-status))]
+        (is (graph/restrictive? status) status))))
+  (testing "including one the vocabulary does not carry yet, which is the point"
+    (is (graph/restrictive? "orphan-work")))
+  (testing "and an absent value is neither, because the fact carries no assessment"
+    (is (not (graph/restrictive? nil)))))

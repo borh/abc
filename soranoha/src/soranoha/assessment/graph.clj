@@ -62,6 +62,24 @@
 (def missing-selected-work
   {"state" "unavailable" "reason" "missing-selected-work"})
 
+(def permitting-status
+  "The one assessment status under which a work may be published."
+  "public-domain")
+
+(defn restrictive?
+  "Whether an assessment `value` stands in the way of publishing the work.
+
+  Read as the complement of the one status that permits rather than as a list
+  of the statuses that do not, so a status added to the snapshot vocabulary
+  restricts until someone decides otherwise. The two callers each held their
+  own copy of that list, which would have let a new status permit publication
+  in both places without anyone choosing that.
+
+  An absent value is neither: the fact carries no assessment at all, and the
+  reason already recorded for that says more than this question would."
+  [value]
+  (and (some? value) (not= permitting-status value)))
+
 (def rule-version "1")
 
 (def ^:private rule-date "2018-12-29")
@@ -385,7 +403,7 @@
                                               (mapcat :dependencies
                                                       (cond-> reviewed derived (conj derived)))))
                         result (if (and (= predicate "work-status")
-                                        (not (#{"in-copyright" "undetermined"} (:value result)))
+                                        (not (restrictive? (:value result)))
                                         (not= :assessment/available
                                               (:state (resolve-fact
                                                        (records/fact-key (get key "subject")

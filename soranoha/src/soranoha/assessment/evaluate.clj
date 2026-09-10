@@ -62,7 +62,7 @@
            subject (get fact "subject")]
        (if (and (#{"work-status" "contribution-status"} predicate)
                 (= :assessment/available (:state result))
-                (#{"in-copyright" "undetermined"} (:value result)))
+                (graph/restrictive? (:value result)))
          (update index (if (= predicate "work-status") subject (first (graph/contribution-parts subject)))
                  (fnil conj []) {"fact" fact "semantic" (graph/semantic-value result)})
          index)))

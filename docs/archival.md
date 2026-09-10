@@ -34,6 +34,24 @@ This requirement is distinct from public HTTP serving of corpus artifacts.
 The Git URL serves as the archive's origin identity across all SWHID qualifiers
 and must remain stable.
 
+The URL is:
+
+```
+https://soranoha.org/chain/soranoha-chain.git
+```
+
+It is read-only, and it is a view of the publication origin rather than a copy
+of it. Publishers write to the same repository over SSH on the tailnet; that
+address is deployment detail and is recorded in
+[private corpus testing](private-publication.md). What is fixed here is the
+public name, because it is what every archived SWHID carries as its origin
+qualifier. Choosing it late is expensive even though nothing signs it, and
+moving it afterwards orphans every identifier already recorded against it.
+
+A copy pushed somewhere public could not stand in its place. The archive's
+observation is of the origin the project serializes releases to, and a mirror
+is a second sequence of the same bytes rather than the sequence itself.
+
 ## Making an observation
 
 Software Heritage's own procedures are not restated here; use Save Code Now and
@@ -108,7 +126,7 @@ the two walks agree at every step or the chain is broken.
 origin URL, a fully qualified identifier for one file is:
 
 ```
-swh:1:cnt:<git blob id>;origin=<chain URL>;visit=swh:1:snp:<S>;anchor=swh:1:rev:<C>;path=/blobs/sha256/8b/8b2595...
+swh:1:cnt:<git blob id>;origin=https://soranoha.org/chain/soranoha-chain.git;visit=swh:1:snp:<S>;anchor=swh:1:rev:<C>;path=/blobs/sha256/8b/8b2595...
 ```
 
 **Do not confuse the two digests.** A Soranoha artifact id carries the sha256

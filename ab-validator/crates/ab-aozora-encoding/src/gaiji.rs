@@ -194,6 +194,31 @@ pub fn reference_clauses(text: &str) -> impl Iterator<Item = &str> {
     })
 }
 
+/// A `第N水準` token with any spacing between the level and its men-ku-ten
+/// coordinates removed.
+///
+/// `060590_001938` writes `第4水準 2-13-28` where every table key and every
+/// other work writes `第4水準2-13-28`. The clause is already delimited by
+/// `、`, so a space inside it separates nothing and dropping it loses no
+/// distinction. Only the source-facing shape changes: the token is still
+/// echoed verbatim on serialization, because it stays `Unresolved` rather
+/// than becoming a structured `MenKuTen` whose `Display` would rewrite it.
+fn without_level_spacing(token: &str) -> Cow<'_, str> {
+    let Some(after) = token.strip_prefix('第') else {
+        return Cow::Borrowed(token);
+    };
+    let Some(suijun) = after.find("水準") else {
+        return Cow::Borrowed(token);
+    };
+    let (level, tail) = after.split_at(suijun + "水準".len());
+    let coordinates = tail.trim_start();
+    if coordinates.len() == tail.len() {
+        Cow::Borrowed(token)
+    } else {
+        Cow::Owned(format!("第{level}{coordinates}"))
+    }
+}
+
 fn resolve_reference(clause: &str) -> Option<Resolved> {
     let clause = clause.trim();
     let clause = clause.strip_suffix('」').unwrap_or(clause);
@@ -223,7 +248,8 @@ fn resolve_reference(clause: &str) -> Option<Resolved> {
                 .strip_prefix("2-")
                 .map(|_| format!("第4水準{normalized}"))
         });
-    let key = prefixed.as_deref().unwrap_or(&normalized);
+    let key = without_level_spacing(prefixed.as_deref().unwrap_or(&normalized));
+    let key = key.as_ref();
     JISX0213_MENCODE_TO_STR
         .get(key)
         .copied()
@@ -757,13 +783,15 @@ pub fn is_mencode_shaped(s: &str) -> bool {
         return !hex.is_empty() && hex.len() <= 6 && hex.chars().all(|c| c.is_ascii_hexdigit());
     }
     // Optional `第N水準` prefix: skip past the digits + `水準` token if
-    // present, then validate the remainder as `N-N-N`.
+    // present, then validate the remainder as `N-N-N`. The remainder is
+    // trimmed for the same reason resolution trims it, so a token this
+    // admits is a token resolution can key on.
     let rest = s
         .strip_prefix('第')
         .and_then(|after_dai| {
             let nondigit = after_dai.find(|c: char| !c.is_ascii_digit())?;
             let (_digits, tail) = after_dai.split_at(nondigit);
-            tail.strip_prefix("水準")
+            Some(tail.strip_prefix("水準")?.trim_start())
         })
         .unwrap_or(s);
     !rest.is_empty()
@@ -1445,6 +1473,29 @@ mod tests {
             lookup(Some('\u{1234}'), Some("第3水準1-85-54"), "木＋吶のつくり"),
             Some(Resolved::Char('\u{1234}'))
         );
+    }
+
+    #[test]
+    fn a_space_between_the_level_and_its_coordinates_resolves_the_same_glyph() {
+        // 060590_001938 writes `第4水準 2-13-28` where every other work and
+        // every table key writes it closed up. The clause is delimited by
+        // `、`, so the space separates nothing.
+        let description = "「插」でつくりの縦棒が下に突き抜けている";
+        assert_eq!(
+            lookup(None, Some("第4水準 2-13-28"), description),
+            lookup(None, Some("第4水準2-13-28"), description)
+        );
+        assert_eq!(
+            lookup(None, Some("第4水準 2-13-28"), description),
+            Some(Resolved::Char('\u{63F7}'))
+        );
+        // Admitted by the shape test too, or the marker never reaches
+        // resolution: the composed scan needs a mencode-shaped token to
+        // anchor the run.
+        assert!(is_mencode_shaped("第4水準 2-13-28"));
+        // The spacing is not a structured form, so serialization still
+        // echoes the source token rather than rewriting it closed up.
+        assert!(parse_menkuten("第4水準 2-13-28").is_none());
     }
 
     #[test]

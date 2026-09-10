@@ -24,6 +24,11 @@ comment-hygiene:
 docs-links:
 	@python scripts/docs-link-check.py
 
+# The two JIS X 0213 gaiji tables must still match the licensed source table
+# they are generated from, so neither can be hand-edited away from its terms.
+gaiji-table-drift:
+	@python ab-validator/crates/ab-aozora-encoding/data/generate_jisx0213_tables.py --check
+
 # Re-derive every corpus figure quoted in prose from the pinned Aozora catalog.
 # Not part of any bundled gate: it needs a corpus checkout, which the sandboxed
 # checks do not have. Set CORPUS_CHECKOUT, or pass --aozora-root. `--stems`
@@ -67,7 +72,7 @@ tei-eaj-reports-with-probes *args:
 validate-eval-cache-smoke:
 	@bash tests/validate-eval-cache-smoke.sh
 
-check-no-build: runtime-config-smoke active-path-hygiene root-flake-output-contract tei-version-coherence flake-input-policy python-quality docs-links nix-format-check validate-eval-cache-smoke root-flake-check-no-build
+check-no-build: runtime-config-smoke active-path-hygiene root-flake-output-contract tei-version-coherence flake-input-policy python-quality docs-links gaiji-table-drift nix-format-check validate-eval-cache-smoke root-flake-check-no-build
 	@(cd ab-validator && AB_WORKSPACE_ROOT="$(pwd)/.." {{nix_eval}} flake check --no-build)
 
 # Publication tests and generated TEI profile must match their checked-in sources.

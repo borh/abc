@@ -1,16 +1,16 @@
 # JIS X 0213:2004 multi-codepoint cells.
 #
-# 25 cells in plane 1 第3水準 whose canonical mapping is a Unicode
-# *combining sequence* (a base character followed by a combining
-# diacritic) rather than a single scalar. They cannot be represented
-# as a single `char` and therefore live in a separate string-valued
-# phf::Map. The lookup API stitches both maps together so callers
-# get a uniform `&str` result.
+# Generated from jisx0213-2004-std.txt by generate_jisx0213_tables.py.
+# Do not edit: regenerate instead.
 #
-# Source: JIS X 0213:2004 standard, Annex F (informative SJIS encoding).
-# Verified against the Python `euc_jis_2004` codec output (the codec
-# emits these as multi-char strings; glibc's charmap omits them
-# because its `<UXXXX>  /xYY/xZZ` format is 1-to-1).
+# Terms: inherited from the source table, whose header grants free use,
+# modification and distribution (Project X0213, earthian@tama.or.jp, I'O).
+#
+# The 25 plane 1 第3水準 cells whose canonical mapping is a Unicode combining
+# sequence, a base character followed by a combining diacritic, rather than a
+# single scalar. They cannot be represented as a single `char` and therefore
+# live in a separate string-valued phf::Map. The lookup API stitches both maps
+# together so callers get a uniform `&str` result.
 #
 # Format: plane<TAB>row<TAB>cell<TAB>comma-separated codepoint hex
 # (e.g. `1\t4\t87\t304B,309A` = か + 半濁点 = か゚)

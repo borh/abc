@@ -1,11 +1,17 @@
 # JIS X 0213:2004 mencode table — single-codepoint cells only.
-# Source: glibc /usr/share/i18n/charmaps/EUC-JISX0213 (= JIS X 0213:2004).
-# Filtered to gaiji territory: plane 1 cells NOT in JIS X 0208 (第3水準) +
-# all plane 2 cells (第4水準). Cells whose canonical mapping is a combining
-# sequence (>1 codepoint) are listed separately in jisx0213-combo.tsv.
+#
+# Generated from jisx0213-2004-std.txt by generate_jisx0213_tables.py.
+# Do not edit: regenerate instead.
+#
+# Terms: inherited from the source table, whose header grants free use,
+# modification and distribution (Project X0213, earthian@tama.or.jp, I'O).
+#
+# Filtered to gaiji territory: plane 1 cells the source marks [2000] or [2004],
+# which are the ones JIS X 0213 introduced over JIS X 0208 (第3水準), plus all
+# plane 2 cells (第4水準). Cells whose mapping is a combining sequence are in
+# jisx0213-combo.tsv.
+#
 # Format: plane<TAB>row<TAB>cell<TAB>codepoint_hex
-# Generated upstream by the aozora-xtask gaiji generator, which the fork
-# reduction did not carry: this tree holds the table, not its generator.
 1	2	15	FF07
 1	2	16	FF02
 1	2	17	FF0D

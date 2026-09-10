@@ -89,11 +89,10 @@ The data tables the tooling reads are mostly third-party work, and each file's
 own header names where it came from rather than this page gathering it, so a
 table stays interpretable when it is copied out on its own. The 外字注記辞書
 mapping is CC0 through an upstream transcription. The JIS X 0213 code table is
-Project X0213's, under its own permissive grant; the two gaiji-territory tables
-derived from it come from glibc's EUC-JISX0213 charmap and from the standard's
-Annex F, and their headers record that provenance rather than a grant of their
-own. The hand-curated gaiji aliases are Soranoha's. Redistributing the tooling
-carries those headers with it.
+Project X0213's, under its own permissive grant, and the two gaiji-territory
+tables are generated from it, so they inherit that grant and say so. The
+hand-curated gaiji aliases are Soranoha's. Redistributing the tooling carries
+those headers with it.
 
 ## The toolchain
 

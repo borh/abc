@@ -79,3 +79,41 @@
           (is (= "failed" (get result "status")))
           (is (some #(= "snh-source-span-target-exists" (get % "rule_id")) (get result "findings")))))
       (finally (fs/delete-tree dir)))))
+
+(defn- annotation-document
+  "A minimal profile-valid document whose body carries `body-markup` and whose
+  header declares each element named in `declared`."
+  [body-markup declared]
+  (str "<TEI xmlns='http://www.tei-c.org/ns/1.0'><teiHeader><fileDesc><titleStmt><title>試験</title></titleStmt><publicationStmt><publisher>試験</publisher><availability status='free'><licence target='https://creativecommons.org/publicdomain/zero/1.0/'>CC0-1.0</licence></availability></publicationStmt><sourceDesc><p><idno type='aozora-work-id'>1</idno></p></sourceDesc></fileDesc>"
+       (when (seq declared)
+         (str "<encodingDesc><tagsDecl><namespace name='http://www.tei-c.org/ns/1.0'>"
+              (apply str (map #(str "<tagUsage gi='" % "'/>") declared))
+              "</namespace></tagsDecl></encodingDesc>"))
+       "<profileDesc><langUsage><language ident='ja'>Japanese</language></langUsage></profileDesc></teiHeader><text><body><p>"
+       body-markup
+       "</p></body></text></TEI>"))
+
+(deftest analysis-elements-in-the-body-are-reported-unless-declared
+  (let [dir (fs/create-temp-dir {:prefix "transcription-vs-annotation"})
+        file (str (fs/path dir "tei.xml"))
+        profile (validate/profile-paths ".")
+        findings (fn [text]
+                   (spit file text)
+                   (set (map #(get % "rule_id")
+                             (get (validate/tei-validation-result profile file) "findings"))))
+        rule "snh-transcription-vs-annotation"]
+    (try
+      (testing "every analysis-module element the profile admits into the body is covered"
+        ;; The profile takes the analysis module whole, so a body wrapper the
+        ;; rule does not name validates in silence. `s` and `phr` are the ones
+        ;; sentence segmentation would introduce.
+        (doseq [element ["s" "phr" "w" "m" "pc" "c" "cl" "span" "interp"]]
+          (is (contains? (findings (annotation-document
+                                    (str "<" element ">本文</" element ">") nil))
+                         rule)
+              (str "an undeclared " element " in the transcription body is reported"))))
+      (testing "declaring the element in the header discharges the warning"
+        (is (not (contains? (findings (annotation-document "<s>本文</s>" ["s"])) rule))))
+      (testing "a plain transcription reports nothing"
+        (is (not (contains? (findings (annotation-document "本文" nil)) rule))))
+      (finally (fs/delete-tree dir)))))

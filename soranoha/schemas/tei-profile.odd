@@ -369,9 +369,9 @@
         </constraintSpec>
 
         <constraintSpec ident="snh-transcription-vs-annotation" scheme="schematron">
-          <desc>Warn when linguistic enrichment appears in the transcription body without declaration.</desc>
+          <desc>Warn when linguistic enrichment appears in the transcription body without declaration. The context is every element the analysis module contributes, because the profile admits that module whole and any of its elements inside tei:text is an inline annotation. The supported enrichment path is unaffected: it inserts linking-module anchors into the body and keeps its spans in a standOff sibling of tei:text.</desc>
           <constraint>
-            <sch:rule context="tei:text//tei:w | tei:text//tei:m | tei:text//tei:pc">
+            <sch:rule context="tei:text//tei:c | tei:text//tei:cl | tei:text//tei:interp | tei:text//tei:interpGrp | tei:text//tei:m | tei:text//tei:pc | tei:text//tei:phr | tei:text//tei:s | tei:text//tei:span | tei:text//tei:spanGrp | tei:text//tei:w">
               <sch:assert role="warning" test="ancestor::tei:TEI/tei:teiHeader//tei:encodingDesc//tei:tagsDecl//tei:namespace[@name = 'http://www.tei-c.org/ns/1.0']/tei:tagUsage/@gi = local-name()">
                 Soranoha TEI linguistic enrichment in the transcription layer must be declared in the header.
               </sch:assert>

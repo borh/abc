@@ -2,7 +2,10 @@
 
 Base transcription preserves source paragraphs and rich inline nodes. Sentence
 segmentation belongs to independently selected analysis layers; it neither splits
-source nodes nor adds sentence wrappers to base TEI.
+source nodes nor adds sentence wrappers to base TEI. The TEI profile holds that
+line rather than leaving it to convention: any element of TEI's analysis module
+appearing inside `tei:text` is reported unless the header declares it, so an
+inline annotation cannot reach a published file in silence.
 
 Analysis consumes an identified text view of TEI rather than an export's presentation
 whitespace. The `body-v1` view selects ruby bases and corrected or regularized readings,

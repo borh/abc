@@ -82,7 +82,7 @@
       </rule>
    </pattern>
    <pattern id="snh-transcription-vs-annotation">
-      <rule context="tei:text//tei:w | tei:text//tei:m | tei:text//tei:pc">
+      <rule context="tei:text//tei:c | tei:text//tei:cl | tei:text//tei:interp | tei:text//tei:interpGrp | tei:text//tei:m | tei:text//tei:pc | tei:text//tei:phr | tei:text//tei:s | tei:text//tei:span | tei:text//tei:spanGrp | tei:text//tei:w">
          <assert role="warning"
                  test="ancestor::tei:TEI/tei:teiHeader//tei:encodingDesc//tei:tagsDecl//tei:namespace[@name = 'http://www.tei-c.org/ns/1.0']/tei:tagUsage/@gi = local-name()"> Soranoha TEI linguistic enrichment in the transcription layer must be declared in the header.</assert>
       </rule>

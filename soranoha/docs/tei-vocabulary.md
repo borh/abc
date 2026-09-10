@@ -118,7 +118,7 @@ reported with the constant `rule_id` `relax-ng` instead.
 | `snh-figure-accessibility` | warning | Figures preserve a nonempty description or caption reference where available. |
 | `snh-source-span-reference` | error | Elements claiming source spans point to valid span identifiers. |
 | `snh-source-span-target-exists` | error | Each fragment id in `@source` resolves to an `@xml:id` in the same document. |
-| `snh-transcription-vs-annotation` | warning | Linguistic enrichment is not mixed into transcription unless declared in the header. |
+| `snh-transcription-vs-annotation` | warning | No element of TEI's analysis module appears inside `tei:text` unless the header declares it. Stand-off anchors and a `standOff` sibling are outside the rule, which is what the supported enrichment path writes. |
 | `snh-vocab-version-declared` | error | A root carrying `snh:*` attributes declares `snh:vocab-version`. |
 | `snh-preservation-record-shape` | error | `snh:preservation-record` values have the form `r000000`. |
 | `snh-layout-params-shape` | error | `snh:layout-params` uses the `key=value` grammar above. |

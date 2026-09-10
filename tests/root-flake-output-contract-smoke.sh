@@ -36,7 +36,7 @@ expected = {
         "tei-version-coherence",
         "validate",
     },
-    "packages": {"tei-p5-reference"},
+    "packages": {"tei-p5-reference", "tei-profile-artifacts"},
     "devShells": {"default"},
     "checks": {
         "monorepo-aat-materialization-workflow",

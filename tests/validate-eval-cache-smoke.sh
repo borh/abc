@@ -50,17 +50,4 @@ for gate_script in $gate_scripts; do
   fi
 done
 
-sudachi_block="$(sed -n '/sudachiCli = rustPlatform\.buildRustPackage {/,/^        };/p' \
-  "$repo_root/ab-validator/flake.nix")"
-
-if rg -n 'cargoLock\.lockFile = sudachiRustSource' <<<"$sudachi_block"; then
-  printf 'Sudachi reads a fetched Cargo.lock during flake evaluation\n' >&2
-  exit 1
-fi
-
-if ! rg -q 'cargoHash = "sha256-[A-Za-z0-9+/]+=*";' <<<"$sudachi_block"; then
-  printf 'Sudachi does not bind its vendored Cargo dependency closure\n' >&2
-  exit 1
-fi
-
 printf 'validate eval-cache contract ok\n'

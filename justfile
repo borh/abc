@@ -150,13 +150,13 @@ parser-rq-instrument-identity:
 # than a hand-kept list: a check added later is gated without touching this
 # recipe, which is the failure mode being closed.
 #
-# `cargo-test`, `default` and `ab-validator` are the same multi-minute workspace
-# derivation under three names, excluded here and run as a focused check.
+# `default` is the workspace test suite; `ab-validator` and `cargo-test` are
+# its aliases and are dropped so the derivation is listed once.
 flake-checks:
 	@{{nix_eval}} flake check --print-build-logs
 	@system="$({{nix_eval}} eval --impure --raw --expr builtins.currentSystem)"; \
 	names="$({{nix_eval}} eval --raw "./ab-validator#checks.$system" --apply \
-		'cs: builtins.concatStringsSep " " (builtins.filter (n: !(builtins.elem n [ "default" "ab-validator" "cargo-test" ])) (builtins.attrNames cs))')"; \
+		'cs: builtins.concatStringsSep " " (builtins.filter (n: !(builtins.elem n [ "ab-validator" "cargo-test" ])) (builtins.attrNames cs))')"; \
 	targets=""; \
 	for name in $names; do targets="$targets ./ab-validator#checks.$system.$name"; done; \
 	{{nix_eval}} build --no-link --print-build-logs $targets

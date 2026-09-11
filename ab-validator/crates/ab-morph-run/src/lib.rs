@@ -13,6 +13,7 @@ mod script;
 mod select;
 mod summary;
 mod tokenize_plaintext;
+mod tokenize_text;
 mod warehouse;
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, VecDeque};
@@ -89,6 +90,7 @@ pub use summary::{
 pub use tokenize_plaintext::{
     TOKENIZE_ERRORS_FILE, TokenizePlaintextSummary, run_tokenize_plaintext,
 };
+pub use tokenize_text::run_tokenize_text;
 
 /// Run the selected analysis pipeline over AAT input(s).
 ///

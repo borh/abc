@@ -1,5 +1,5 @@
 use std::fs::{self, File};
-use std::io::Write;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
@@ -406,6 +406,14 @@ Defaults to the old-kana set 新字旧仮名,旧字旧仮名 when --works-parque
         out_dir: PathBuf,
         #[arg(long, default_value_t = 1)]
         jobs: usize,
+    },
+    /// Tokenize the text on stdin with one analyzer and print one compact
+    /// JSON object per morpheme (surface, char_start, char_end, features).
+    /// Vibrato dictionaries resolve through AB_VIBRATO_DICT_DIR and Sudachi
+    /// through AB_SUDACHI_DICT, as in every other command.
+    Tokenize {
+        #[arg(long, required = true)]
+        analyzer: Vec<String>,
     },
 }
 
@@ -962,6 +970,14 @@ fn main() -> Result<()> {
             serde_json::to_writer(std::io::stdout(), &summary)?;
             println!();
             Ok(())
+        }
+        Command::Tokenize { analyzer } => {
+            let mut text = String::new();
+            std::io::stdin()
+                .read_to_string(&mut text)
+                .context("failed to read stdin")?;
+            let stdout = std::io::stdout();
+            ab_morph_run::run_tokenize_text(&analyzer, &text, &mut stdout.lock())
         }
     }
 }
@@ -2641,6 +2657,17 @@ mod tests {
         assert_eq!(plaintext_dir, PathBuf::from("scratch/plain"));
         assert_eq!(out_dir, PathBuf::from("scratch/tokens"));
         assert_eq!(jobs, 4);
+    }
+
+    #[test]
+    fn parses_tokenize_command() {
+        let args = Args::parse_from(["ab-morph-run", "tokenize", "--analyzer", "sudachi-c"]);
+
+        let Command::Tokenize { analyzer } = args.command else {
+            panic!("expected tokenize command");
+        };
+
+        assert_eq!(analyzer, vec!["sudachi-c".to_owned()]);
     }
 
     #[test]

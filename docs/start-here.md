@@ -103,9 +103,10 @@ The whole corpus is two files:
 - `https://soranoha.org/bulk/soranoha-plaintext.zip`
 
 Smaller selections are linked from the pages they match: every author page
-offers that person's works as one archive, and every NDC class page offers
-that class. All of them are pre-built, because the site is a static tree with
-no application behind it, so what you can download is exactly what is listed.
+offers that person's works as a TEI archive and a plaintext archive, and every
+NDC class page offers that class the same way. All of them are pre-built,
+because the site is a static tree with no application behind it, so what you
+can download is exactly what is listed.
 
 Each archive contains the readable filenames plus `catalog.csv` at its root,
 carrying the structured citation fields for exactly the works inside it:
@@ -145,7 +146,8 @@ for work in catalog["works"]:
 ```
 
 Rate-limit automated requests when fetching individual texts, or use the bulk
-archives or Zenodo deposits for complete corpus downloads.
+archives for complete corpus downloads. Quarterly Zenodo deposits are planned
+and not yet minted; [Citing Soranoha](citation.md) says what they will carry.
 
 ## Scale and coverage
 

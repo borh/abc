@@ -85,10 +85,9 @@
   carries it so that selecting works by their terms costs one file rather than
   one file per work: the only other published copy is inside each TEI header.
 
-  `trailing-bytes-after-archive` is present only for a work whose Aozora Bunko
-  archive carries bytes after its end. One work of 17,531 does. It is here and
-  not in a note because a reader who runs unzip on that archive is told it is
-  corrupt, and the catalog is what a page can read to say otherwise."
+  `trailing-bytes-after-archive` records the trailing garbage byte count for archives
+  that carry trailing bytes after the zip end-of-central-directory record. Enables
+  readers and web views to distinguish upstream format anomalies from file corruption."
   [slug source-content-hash rights metadata-record persons primary-text-member
    trailing-bytes-after-archive]
   (let [work (get metadata-record "work")]

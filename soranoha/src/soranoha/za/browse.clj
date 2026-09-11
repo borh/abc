@@ -1104,23 +1104,17 @@
     [:p (bilingual
          "Soranoha 自身の符号化（TEI マークアップ、プレーンテキストと Markdown への投影、検証レポート、リリースマニフェスト）は、CC0-1.0 によりパブリックドメインで提供します。符号化に著作権および関連する権利（データベースに関する権利を含む）が生じる範囲では、これを放棄します。"
          "Soranoha's own encoding (the TEI markup, the plaintext and Markdown projections, the validation reports and the release manifests) is dedicated to the public domain under CC0-1.0. To the extent that copyright and related rights, including database rights, subsist in that encoding, they are waived.")]
-    ;; the catalog is deliberately absent from the CC0 list above. Its
-    ;; bibliographic fields come from Aozora Bunko's catalog CSV, which
-    ;; carries its own attribution condition, and a redistributor who read
-    ;; only this page would otherwise take the whole file as unconditioned
+    ;; Catalog bibliographic metadata derives from Aozora Bunko under CC BY 4.0;
+    ;; catalog structure and Soranoha-authored fields remain CC0.
     [:p (bilingual
          "目録（catalog.json と catalog.csv）に収めた書誌情報は、青空文庫が CC BY 4.0 で公開している「公開作品情報一覧」に由来します。目録そのものやそれに基づく一覧を再頒布する場合は、出典として青空文庫を表示してください。これは上に述べた作品ごとの権利の状態とは別の話で、本文ではなく書誌データにかかるものです。目録の構造、Soranoha が付した識別子、および底本や検証に関する各項目は Soranoha 自身の符号化であり、CC0-1.0 で提供します。"
          "The bibliographic data in the catalog (catalog.json and catalog.csv) derives from Aozora Bunko's list of published works, which Aozora Bunko publishes under CC BY 4.0. Credit Aozora Bunko as the source when redistributing the catalog or a listing built from it. This is a separate matter from the per-work standings above: it attaches to the bibliographic data rather than to the texts. The catalog's structure, the identifiers Soranoha assigns, and the fields it records about source editions and validation are Soranoha's own encoding and are under CC0-1.0.")]
-    ;; the two requests are not conditions on the grant, so they belong on
-    ;; the served page as what they are: a redistributor who reads only this
-    ;; page would otherwise never learn that anything was asked
+    ;; Community attribution and textual provenance requests from Aozora Bunko (non-binding).
     [:p (bilingual
          "青空文庫は義務ではなく二つのことを求めています。作品名・著者・底本・入力者・校正者を記したクレジット表示を削らないこと、そして底本や表記を変更した場合はその記録を添えることです。Soranoha はどちらも行っており、クレジットは各 TEI ファイルの back と各作品ページに、変更の記録は検証レポートと底本との差異に残しています。再頒布される方にも同じ扱いをお願いします。"
          "Aozora Bunko asks two things without requiring them: that the credit block naming the work, its author, its source edition and the people who keyed and proofread it not be removed, and that a change of source edition or notation come with a record of what changed. Soranoha does both: we keep the credit block in every TEI file's back matter and on every work page, and we publish the record as the validation report and the divergences from the source that accompany each work. We ask the same of anyone redistributing these files.")]
 
-    ;; the split a redistributor actually needs: the corpus and the program
-    ;; that made it are under different terms, and the page a manifest points
-    ;; at is where someone checks before redistributing
+    ;; Published corpus terms (CC0/CC-BY) are distinct from toolchain licensing (Apache-2.0/MIT).
     [:p (bilingual
          "公開されたコーパスを再頒布しても、ツールチェーンのライセンス上の義務は生じません。ツールチェーン自体を再頒布する場合には生じます。自作のソースコードは Apache-2.0、分岐した解析器クレートは上流から承継した MIT OR Apache-2.0 です。"
          "Redistributing the published corpus does not carry the toolchain's obligations. Redistributing the toolchain does: the locally authored source is Apache-2.0, and the forked parser crates carry MIT OR Apache-2.0 as an inherited obligation.")]
@@ -1172,10 +1166,7 @@
    [[:p (bilingual
          "すべて CC0 なので、引用はライセンス上の条件ではなく学術上の慣行です。版を明示して引用してください。"
          "Everything here is CC0, so citation is a scholarly norm rather than a licence condition. Cite the release by name.")]
-    ;; the corpus name is not what a citation carries, and saying so here is
-    ;; the point of mentioning it at all: a reader who has seen `v0.1` on the
-    ;; front page would otherwise write it down and cite a name that stands
-    ;; for many releases
+    ;; Release names designate a project stage; citations require the immutable release head.
     (when release-name
       [:p (bilingual
            (str "コーパス全体の呼び名は " release-name
@@ -1187,13 +1178,7 @@
                 ", but what a citation carries is the release head below. "
                 "The name stands for the corpus at this stage rather than for "
                 "any one release."))])
-    ;; the templates below are the document's; these are this release's, which
-    ;; is the one thing a reader cannot fill in from a repository checkout.
-    ;; The head is abbreviated the way every other citation on the site
-    ;; abbreviates it and the way `docs/citation.md` says a bibliography
-    ;; should carry it: twelve hex digits and nothing after them, because the
-    ;; short name resolves and a trailing ellipsis would make a reader who
-    ;; typed what they saw look up a release that does not exist
+    ;; Abbreviated 12-char release prefix without trailing ellipsis so the hash resolves directly.
     [:p [:code {:class "citation"}
          (str site-name " Aozora Bunko TEI Corpus. Release " (subs head-hex 0 12)
               (when doi (str ". https://doi.org/" doi)))]]

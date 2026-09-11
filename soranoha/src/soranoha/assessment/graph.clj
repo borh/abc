@@ -67,16 +67,10 @@
   "public-domain")
 
 (defn restrictive?
-  "Whether an assessment `value` stands in the way of publishing the work.
+  "Whether assessment status `value` precludes publication.
 
-  Read as the complement of the one status that permits rather than as a list
-  of the statuses that do not, so a status added to the snapshot vocabulary
-  restricts until someone decides otherwise. The two callers each held their
-  own copy of that list, which would have let a new status permit publication
-  in both places without anyone choosing that.
-
-  An absent value is neither: the fact carries no assessment at all, and the
-  reason already recorded for that says more than this question would."
+  Fails closed: any non-nil status other than `permitting-status` (\"public-domain\")
+  restricts publication, ensuring newly introduced statuses restrict by default."
   [value]
   (and (some? value) (not= permitting-status value)))
 

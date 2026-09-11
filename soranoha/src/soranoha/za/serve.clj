@@ -97,21 +97,12 @@
     (into #{} (iterator-seq (.iterator paths)))))
 
 (defn- export-at!
-  "`release-doi` is the release's Zenodo version DOI. It is deployment
-  configuration rather than chain content: Zenodo mints it after the release
-  exists, so nothing signed can carry it, and before the first deposit there
-  is none. Every citation this export renders names it when it is known.
+  "Exports publication site and artifacts for `commit` into `out-dir`.
 
-  It is therefore part of what the generated pages are a function of, and the
-  reuse check compares those pages byte for byte. Setting or changing a DOI
-  for a commit that has already been exported makes reuse fail closed with
-  :serving-tree-mismatch rather than serve two different citations for one
-  tree; the operator removes that tree and re-exports.
-
-  `release-name` and `maturity` are deployment configuration for the same
-  reason and behave the same way under reuse: they are editorial judgements
-  about the corpus rather than facts derived from the release, so no manifest
-  carries them, and changing one for an exported commit fails closed."
+  `release-doi`, `release-name`, and `maturity` are deployment configurations injected
+  into citations and landing pages rather than signed manifest fields. Because the
+  export-tree reuse check compares generated pages byte-for-byte, modifying these values
+  for an already-exported commit fails closed with `:serving-tree-mismatch`."
   [{:keys [clone pinned-keys out-dir release-doi release-name maturity]} commit reuse?]
   (let [v (view/git-view clone)
         chain-result (verify/verify-repository-at v commit pinned-keys)]

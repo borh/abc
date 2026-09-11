@@ -58,12 +58,11 @@ is dedicated to the public domain under [CC0
 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/). Where that
 encoding attracts copyright or a database right, those rights are waived.
 
-The catalog is deliberately not in that list. Its structure, the identifiers
-Soranoha assigns, and the fields it records about source editions and
-validation are Soranoha's own encoding and are under CC0; its bibliographic
-data derives from Aozora Bunko's catalog CSV, which carries the attribution
-condition described in the table below. Credit Aozora Bunko as the source when
-redistributing the catalog or a listing built from it.
+The catalog combines two layers: its structure, assigned identifiers, and
+source-edition and validation fields are Soranoha's CC0 encoding, while its
+bibliographic data derives from Aozora Bunko's catalog CSV under CC-BY-4.0.
+Redistributing the catalog or listings built from it requires attributing Aozora
+Bunko as the source.
 
 CC0 was chosen because TEI transcription is largely a mechanical conversion
 of Aozora Bunko markup. A public-domain dedication avoids imposing attribution

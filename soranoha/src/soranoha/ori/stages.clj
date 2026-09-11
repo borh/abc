@@ -117,21 +117,13 @@
         text))))
 
 (defn catalog-text-reader
-  "The reader the metadata stage hands to the catalog boundary.
+  "Parses and projects Aozora markup in catalog fields through the standard parser pipeline.
 
-  Aozora Bunko writes ※［＃…］ into a title or a publisher's name when the
-  catalog cannot type a character, the same notation it writes into a text,
-  and the boundary used to publish it as it stood: 八※［＃小書き片仮名ガ］
-  岳登山記 as a page heading, a search row and a citation. A field that
-  carries the notation is read the way the text is read, so the title holds
-  what the body holds and follows it when the parser changes: ガ from Aozora
-  Bunko's own gaiji dictionary, 𫝹 where the annotation names the code point,
-  the digits without the instruction where 指数 asks for a superscript. A
-  field without it is returned as it is, and never reaches the parser, which
-  reads a bare 《》 as a ruby reading with no base and drops it; four subtitles
-  are written with those brackets.
+  Fields containing markup annotations (※［＃…］) are converted to plaintext using
+  the same gaiji dictionary and parser pipeline as body text. Plain fields bypass
+  the parser to preserve unescaped brackets (such as subtitle brackets 《》).
 
-  The identity is the same three files the parse and convert stages hash."
+  Toolchain identity hashes the adapter binary, converter binary, and gaiji mapping."
   [{:keys [aozora-bin convert-bin mapping] :as adapter}]
   {:toolchain-id (core-hash/sha256-canonical-json
                   {"aozora_bin" (core-hash/sha256-file aozora-bin)

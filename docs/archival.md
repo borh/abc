@@ -40,17 +40,14 @@ The URL is:
 https://soranoha.org/chain/soranoha-chain.git
 ```
 
-It is read-only, and it is a view of the publication origin rather than a copy
-of it. Publishers write to the same repository over SSH on the tailnet; that
-address is deployment detail and is recorded in
-[private corpus testing](private-publication.md). What is fixed here is the
-public name, because it is what every archived SWHID carries as its origin
-qualifier. Choosing it late is expensive even though nothing signs it, and
-moving it afterwards orphans every identifier already recorded against it.
+It is read-only and provides an anonymous public view of the publication origin.
+Publishers write to the same repository over SSH on the tailnet, as described in
+[private corpus testing](private-publication.md). This URL serves as the stable
+origin qualifier for every archived SWHID; changing it invalidates previously
+recorded identifiers.
 
-A copy pushed somewhere public could not stand in its place. The archive's
-observation is of the origin the project serializes releases to, and a mirror
-is a second sequence of the same bytes rather than the sequence itself.
+An archival observation records the authoritative origin that serializes
+releases, which a secondary mirror cannot replace.
 
 ## Making an observation
 
@@ -138,13 +135,13 @@ path mapping rather than an identifier translation.
 
 ## Resolving the upstream provenance pointers
 
-Every manifest records where the source corpus came from, as
-`corpus.upstream_origin` and `corpus.upstream_rev`. Those two fields resolve
-through the archive by the same reasoning as the chain's own bytes, and they
-have to, because the GitHub repository the origin names no longer serves.
+Every manifest records where the source corpus came from as
+`corpus.upstream_origin` and `corpus.upstream_rev`. Because the upstream GitHub
+repository no longer serves, those fields resolve through the Software Heritage
+archive.
 
-The origin URL is the archive's identifier for the repository, not a link that
-has to answer:
+The origin URL serves as the archive's repository identifier rather than an active
+endpoint:
 
 | Manifest field | Software Heritage identifier |
 |---|---|
@@ -167,11 +164,10 @@ a provenance pointer usually wants, names the revision as its anchor:
 swh:1:cnt:<git blob id>;origin=https://github.com/aozorabunko/aozorabunko;anchor=swh:1:rev:<upstream_rev>;path=/cards/000148/files/1046_ruby_4521.zip
 ```
 
-The origin qualifier is a name the archive resolves, so it keeps working after
-the repository stops serving. That is the property the manifest field is
-recorded for, and it is why the field is not rewritten when a hosting account
-disappears: a rewritten URL would name a mirror the corpus was not built from,
-and the recorded revision would no longer be the thing the origin published.
+The origin qualifier is a persistent archive identifier that remains valid after
+the repository stops serving. The manifest field preserves this origin rather than
+rewriting to a mirror, ensuring the recorded revision authenticates the exact
+source from which the corpus was compiled.
 
 ## Where this sits in the genesis sequence
 

@@ -246,15 +246,11 @@
                (nfc (get row (edition-key n "底本の親本初版発行年"))))))))
 
 (defn parse-work-fields-from-row
-  "One catalog row as the work fields of a record.
+  "Parses one catalog row into a work record map.
 
-  `read-text` reads each field that is prose from the source's world rather
-  than the catalog's own: a title, a publisher, a statement of where a piece
-  first appeared. Aozora Bunko writes the same ※［＃…］ notation into those
-  fields as into a text when a title needs a character the catalog cannot
-  type, and the reader is what turns it into the character. Readings,
-  identifiers, dates and flags are the catalog's own and are not read. With
-  one argument the fields are carried as the catalog wrote them."
+  `read-text` transforms textual fields (title, subtitle, original title, editions,
+  first published) that may contain Aozora markup annotations. Catalog metadata
+  (readings, identifiers, dates, flags) is preserved verbatim. Defaults to `identity`."
   ([row] (parse-work-fields-from-row row identity))
   ([row read-text]
    (let [editions (filterv some? [(source-edition-from row 1 read-text)

@@ -108,11 +108,8 @@
             (some restricting-elements (:elements parsed))
             {:refused :restricted-licence :licence found}
 
-            ;; A licence this build cannot state its terms in is refused here,
-            ;; where one work is refused, rather than reaching the stage that
-            ;; renders the terms and stopping the release of every other work.
-            ;; Versions and ports the corpus has not carried before arrive
-            ;; with an upstream bump, and nobody has decided about them yet.
+            ;; Refuse licences lacking TEI publication vocabulary support during
+            ;; admission, isolating individual works before release assembly.
             (not (contains? (rights/standings) found))
             {:refused :unpublishable-licence :licence found}
 

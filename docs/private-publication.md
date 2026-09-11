@@ -174,15 +174,13 @@ signed append-only bytes could not correct.
 names the corpus at this stage of its life rather than the individual release:
 releases are minted whenever the upstream corpus moves, so a name that
 incremented per release would reach three digits without saying anything the
-release head does not. The head remains the identity, and citations name it;
-the served citation page says so, so that a reader who saw the name on the
-front page does not write it into a bibliography instead.
+release head does not. The release head remains the canonical identity in
+citations, and the citation page clarifies this distinction so bibliographies cite
+the immutable release rather than the broad version label.
 
-`release-maturity` is a key into a closed vocabulary, `early` or `stable`,
-rather than free text. The site is bilingual, so a label has to exist in both
-languages to be rendered at all, and a configuration string could supply only
-one of them; `soranoha.za.maturity` holds the vocabulary and an unknown key
-stops the export naming the keys this build can render.
+`release-maturity` is a key into a closed vocabulary (`early` or `stable`)
+defined in `soranoha.za.maturity`. Because the site is bilingual, labels must
+exist in both languages; export fails closed if an unrecognized key is configured.
 
 Because citations and the pages that carry these strings are generated files,
 all three are part of what activation produces. Setting or changing one for an

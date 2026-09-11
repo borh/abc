@@ -710,9 +710,8 @@ One further field may appear and is otherwise absent.
 `trailing_bytes_after_archive` is the number of bytes following the end of the
 work's Aozora Bunko archive, recorded only for an archive that carries any.
 Standard zip readers refuse such an archive on account of those bytes while its
-members are intact, so a reader verifying the work against its source has to be
-told that the refusal is a property of upstream's file and not of the published
-copy.
+members are intact; recording the byte count documents that this behavior originates
+in upstream's file rather than in the published copy.
 
 FACTS, NOT RENDERINGS. The catalog carries no download filename, citation
 string, DOI, manifest id or release ordinal.

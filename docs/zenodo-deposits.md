@@ -185,12 +185,9 @@ script just read.
 
 ### Upload it
 
-Carry the corpus's name and maturity label in the deposit's metadata: the name
-in Zenodo's version field, and the maturity in the description, in the words
-the served site uses. Those two strings live in the serving layer and in the
-deposit and nowhere else, so the deposit is the only archived record of what
-the project claimed about the corpus's stage at that moment. They are not in
-the manifest and must not be added to it.
+Include the corpus release name in Zenodo's version field and the maturity label
+in the description, matching the served site. Because these editorial labels are
+omitted from signed manifests, the Zenodo deposit serves as their archived record.
 
 The upload itself is Zenodo's procedure and is not specified here; use the
 deposit form or the REST API under the `borh` account. Two things about it are

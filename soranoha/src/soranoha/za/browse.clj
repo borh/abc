@@ -489,10 +489,10 @@
                  [:span {:class "by"} " ZIP"]])
               paths))
    [:p (bilingual
-        (str "どの ZIP にも直下に catalog.csv が入っています。識別子、作品名、著者、底本、初出、分類、版など、"
+        (str "どの ZIP にも直下に catalog.csv が入っています。識別子、作品名、著者、底本、初出、分類、リリースなど、"
              "引用に必要な項目が列に分かれているので、表計算ソフトでそのまま開けます。"
              "TEI ファイルを一つも開かずに、まとめた作品全体の文献表を作れます。"
-             "引用には識別子・底本ハッシュ・版の列を使ってください。ファイル名は便宜のためのものです。")
+             "引用には識別子・底本ハッシュ・リリースの列を使ってください。ファイル名は便宜のためのものです。")
         (str "Every archive carries catalog.csv at its root, with the structured citation "
              "fields in columns: identifier, title, author, source edition, first publication, "
              "class and release among them. It opens directly in a spreadsheet, so a whole "
@@ -504,16 +504,16 @@
 
 (defn- release-note [head-hex work-count]
   [:section
-   [:h2 (bilingual "この版" "This release")]
+   [:h2 (bilingual "このリリース" "This release")]
    [:dl {:class "facts"}
-    [:dt (bilingual "版" "Release")]
+    [:dt (bilingual "リリース" "Release")]
     [:dd [:a {:href (str "/releases/" head-hex ".json")} [:code head-hex]]]
     (when work-count
       (list [:dt (bilingual "作品数" "Works")] [:dd (str work-count)]))
     [:dt (bilingual "目録" "Catalog")]
     [:dd [:a {:href "/catalog.json"} "/catalog.json"]]
     [:dt (bilingual "履歴" "History")]
-    [:dd [:a {:href "/history"} (bilingual "この版までのすべての版" "Every release up to this one")]]]])
+    [:dd [:a {:href "/history"} (bilingual "このリリースまでのすべてのリリース" "Every release up to this one")]]]])
 
 (defn- document-entries
   "Every served document with its own text and its own English title.
@@ -553,7 +553,7 @@
    "青空文庫 TEI コーパス"
    [[:h1 (bilingual "青空文庫 TEI コーパス" "Aozora Bunko TEI corpus")]
     [:p (bilingual
-         (str "青空文庫の作品を TEI P5 に変換し、内容のハッシュで特定できる署名付きの版として公開しています。"
+         (str "青空文庫の作品を TEI P5 に変換し、内容のハッシュで特定できる署名付きのリリースとして公開しています。"
               "各作品に TEI、プレーンテキスト、Markdown、検証レポートが付きます。")
          (str "Works from Aozora Bunko converted to TEI P5 and published as "
               "signed, content-addressed releases. Every work carries TEI, plain text, "
@@ -583,18 +583,18 @@
      [:h2 (bilingual "そのまま使う" "Use it directly")]
      [:dl {:class "facts"}
       [:dt [:a {:href "/catalog.json"} "/catalog.json"]]
-      [:dd (bilingual "全作品の書誌。署名された版の一部です。"
+      [:dd (bilingual "全作品の書誌。署名されたリリースの一部です。"
                       "Bibliography of every work in this release; part of the signed record.")]
       [:dt [:a {:href "/releases/HEAD"} "/releases/HEAD"]]
-      [:dd (bilingual "現在の版のハッシュ。" "The current release head.")]
+      [:dd (bilingual "現在のリリースのハッシュ。" "The current release head.")]
       [:dt [:a {:href "/releases/latest"} "/releases/latest"]]
-      [:dd (bilingual "現在の版のマニフェスト。" "The current release manifest.")]
+      [:dd (bilingual "現在のリリースのマニフェスト。" "The current release manifest.")]
       [:dt [:code "/works/<識別子>/tei"]]
       [:dd (bilingual "作品ごとのファイル。plaintext・markdown・tei-validation も同じ形です。"
                       "Per-work artifacts; plaintext, markdown and tei-validation take the same form.")]]]
 
     (bulk-section
-     "この版の全作品を一つの ZIP にまとめてあります。著者ごと・分類ごとの ZIP は、それぞれのページにあります。"
+     "このリリースの全作品を一つの ZIP にまとめてあります。著者ごと・分類ごとの ZIP は、それぞれのページにあります。"
      "Every work in this release, in one archive. Per-author and per-class archives are on the author and NDC pages."
      (corpus-archives))
 
@@ -614,7 +614,7 @@
    "著者一覧"
    [[:h1 (bilingual "著者一覧" "Authors")]
     [:p (bilingual
-         (str "この版の作品に関わった人物 " (count people) " 名。ローマ字表記の頭文字順です。")
+         (str "このリリースの作品に関わった人物 " (count people) " 名。ローマ字表記の頭文字順です。")
          (str (count people) " people in this release, ordered by the initial of the romanized name."))]
     (into [:ul {:class "cols"}]
           (map (fn [{:keys [person-id label count*]}]
@@ -800,7 +800,7 @@
                    ["tei-validation" (bilingual "検証レポート" "Validation report") "evidence"]]))
        [:p (bilingual
             (str "引用には識別子を使ってください。ファイル名は便宜のためのものです。"
-                 "同じバイト列は、末尾に種別名を置いた URL からも取得できます。この URL は識別子から組み立てられ、版をまたいでも同じです。")
+                 "同じバイト列は、末尾に種別名を置いた URL からも取得できます。この URL は識別子から組み立てられ、リリースをまたいでも同じです。")
             (str "Cite the identifier; the filename is a convenience. The same bytes are also "
                  "served at URLs named after the artifact type, which are constructible from "
                  "the identifier and stable across releases."))]
@@ -812,7 +812,7 @@
       [:section
        [:h2 (bilingual "引用" "Citation")]
        [:p (bilingual
-            "引用には識別子と版を含めてください。作品名と著者名だけでは一意に定まりません。"
+            "引用には識別子とリリースを含めてください。作品名と著者名だけでは一意に定まりません。"
             "Cite the identifier and the release: title and author alone do not identify a work.")]
        [:p [:code {:class "citation" :lang "ja"} (citation/rendered release work)]]
        [:p [:code {:class "citation"} (citation/rendered-en release work)]]
@@ -884,7 +884,7 @@
             "記録は下にリンクした署名済みの TEI ファイルです。このページはそれを読むための一つの形です。読みが複数ある箇所は一つだけを本文に示し、もう一方は語の title に残しています。"
             "The record is the signed TEI file linked below. This page is one way of reading it. Where the text has more than one reading, the page shows one of them and keeps the other on the word itself, in its title text.")]
        [:dl {:class "facts"}
-        [:dt (bilingual "版" "Release")]
+        [:dt (bilingual "リリース" "Release")]
         [:dd [:a {:href (str "/releases/" head-hex ".json")} [:code head-hex]]]
         [:dt "TEI"]
         [:dd [:a {:href (str "/works/" slug "/tei")} (str "/works/" slug "/tei")]]
@@ -914,10 +914,10 @@
      [:dt (bilingual "取り下げの記録" "Withdrawal record")]
      [:dd [:a {:href (str "/withdrawn/" slug ".json")} (str "/withdrawn/" slug ".json")]]]
     [:p (bilingual
-         "この作品は現在の版では配布していません。取り下げても記録を消すことはなく、以後の配布を止めるだけで、過去の版は署名の連鎖にそのまま残ります。"
+         "この作品は現在のリリースでは配布していません。取り下げても記録を消すことはなく、以後の配布を止めるだけで、過去のリリースは署名の連鎖にそのまま残ります。"
          "Soranoha no longer distributes this work in the current release. Withdrawing a work removes nothing: it stops further distribution, and the signed chain keeps every earlier release exactly as published.")]
     (when last-release
-      [:p (bilingual "最後に収録された版:" "Last release that contained it:")
+      [:p (bilingual "最後に収録されたリリース:" "Last release that contained it:")
        " " [:a {:href (str "/releases/" last-release ".json")} [:code last-release]]])
     [:p [:a {:href "/rights"} (bilingual "権利について" "Rights statement")]]]))
 
@@ -986,19 +986,19 @@
   corpus, which would read as a release that added everything at once."
   [manifest-seq events]
   (chrome
-   "版の履歴"
+   "リリースの履歴"
    {:main-class "doc"}
-   [[:h1 (bilingual "版の履歴" "Release history")]
+   [[:h1 (bilingual "リリースの履歴" "Release history")]
     [:p (bilingual
-         (str "署名された連鎖にあるすべての版です。新しいものから順に並んでいます。"
-              "各行の数字は、その版が一つ前の版に対して何を変えたかを、公開されたマニフェストから数え直したものです。")
+         (str "署名された連鎖にあるすべてのリリースです。新しいものから順に並んでいます。"
+              "各行の数字は、そのリリースが一つ前のリリースに対して何を変えたかを、公開されたマニフェストから数え直したものです。")
          (str "Every release in the signed chain, newest first. The counts on each row are "
               "what that release changed against the one before it, recomputed from the "
               "published manifests."))]
     [:table
      [:thead
       [:tr
-       [:th (bilingual "版" "Release")]
+       [:th (bilingual "リリース" "Release")]
        [:th (bilingual "底本の範囲" "Upstream range")]
        [:th (bilingual "作品数" "Works")]
        [:th (bilingual "追加" "Added")]
@@ -1009,7 +1009,7 @@
                   (history-row entry (second predecessor) events))
                 (partition-all 2 1 (manifest-seq))))]
     [:p (bilingual
-         "「底本の範囲」は、その版が対象とする青空文庫のリビジョンの範囲です。作品の書庫が動いたときに版を作るので、一つの版が複数のリビジョンにまたがることがあります。最初の版には比較対象となる前の版がないので、変更の欄は空です。"
+         "「底本の範囲」は、そのリリースが対象とする青空文庫のリビジョンの範囲です。作品の書庫が動いたときにリリースを作るので、一つのリリースが複数のリビジョンにまたがることがあります。最初のリリースには比較対象となる前のリリースがないので、変更の欄は空です。"
          (str "The upstream range is the span of Aozora Bunko revisions a release covers. "
               "A release is minted when a work archive moved, so one release can cover "
               "several revisions. The oldest release has no predecessor to compare against, so its "
@@ -1088,7 +1088,7 @@
      [:dt (bilingual "この文書" "This statement")]
      [:dd [:a {:href statement_url} statement_url]]]
     [:p (bilingual
-         "上の各項目は、この版のマニフェストに書かれている値です。底本の権利状態は作品ごとに記録しているので、この版に含まれるものをすべて挙げています。"
+         "上の各項目は、このリリースのマニフェストに書かれている値です。底本の権利状態は作品ごとに記録しているので、このリリースに含まれるものをすべて挙げています。"
          "Every row above is read from this release's own manifest. The standing of the underlying works is recorded per work, so the row lists each one the release publishes under.")]
 
     [:h2 (bilingual "権利の二つの層" "Two rights layers")]
@@ -1136,7 +1136,7 @@
     ;; rights holder is not waiting on a corpus release that may be weeks
     ;; away; `transact/successor-for-event` builds that manifest
     [:p (bilingual
-         "公開を取り下げる場合は、その理由を記したガバナンスイベントを公開します。イベントの公開それ自体が一つの版で、その版では作品を works[] と目録から外し、根拠となるイベントとともに withdrawn[] に記録します。次の定期の版を待たずに公開します。署名済みの履歴は追記しかできないので、過去の版はそのまま残ります。"
+         "公開を取り下げる場合は、その理由を記したガバナンスイベントを公開します。イベントの公開それ自体が一つのリリースで、そのリリースでは作品を works[] と目録から外し、根拠となるイベントとともに withdrawn[] に記録します。次の定期のリリースを待たずに公開します。署名済みの履歴は追記しかできないので、過去のリリースはそのまま残ります。"
          "To withdraw a work, Soranoha publishes a governance event stating why. Publishing it is itself a release. That release omits the work from works[] and from the catalog, and records it in withdrawn[] together with the event the removal rests on. Soranoha publishes such a release as soon as it is needed, rather than at the next corpus release. Nothing can be removed from the signed history, so earlier releases keep the work exactly as they published it.")]
 
     [:h2 (bilingual "無保証" "No warranty")]
@@ -1169,7 +1169,7 @@
    ;; Citing Soranoha and attributing a work are different obligations, and
    ;; only the second can be a licence condition: CC0 sets none, CC BY does.
    [[:p (bilingual
-         "Soranoha の符号化は CC0 なので、Soranoha の引用はライセンス上の条件ではなく学術上の慣行です。権利者がクリエイティブ・コモンズ 表示ライセンスの下で公開している作品については、その作品のクレジット表示がライセンスの条件であり、作品のページに記載しています。版を明示して引用してください。"
+         "Soranoha の符号化は CC0 なので、Soranoha の引用はライセンス上の条件ではなく学術上の慣行です。権利者がクリエイティブ・コモンズ 表示ライセンスの下で公開している作品については、その作品のクレジット表示がライセンスの条件であり、作品のページに記載しています。リリースを明示して引用してください。"
          "Soranoha's encoding is CC0, so citing Soranoha is a scholarly norm rather than a licence condition. For a work its rightsholder publishes under a Creative Commons Attribution licence, attribution of that work is a condition of the licence, stated on the work's page. Cite the release by name.")]
     ;; Release names designate a project stage; citations require the immutable release head.
     (when release-name
@@ -1177,7 +1177,7 @@
            (str "コーパス全体の呼び名は " release-name
                 (when maturity (str "（" (:ja maturity) "）"))
                 "ですが、引用に書くのは以下のリリースのハッシュです。"
-                "この呼び名は一つの版ではなく、この段階のコーパス全体を指します。")
+                "この呼び名は一つのリリースではなく、この段階のコーパス全体を指します。")
            (str "The corpus as a whole is called " release-name
                 (when maturity (str ", " (:en maturity)))
                 ", but what a citation carries is the release head below. "
@@ -1192,7 +1192,7 @@
     [:p [:code {:class "citation"}
          (citation/rendered-en release example-work)]]
     [:p (bilingual
-         "上はこの版のもので、作品の例は「蜘蛛の糸」です。各作品のページにも、その作品に合わせた同じ形が載っています。それぞれの項目の意味は以下のとおりです。"
+         "上はこのリリースのもので、作品の例は「蜘蛛の糸」です。各作品のページにも、その作品に合わせた同じ形が載っています。それぞれの項目の意味は以下のとおりです。"
          "Those are this release, with 蜘蛛の糸 as the worked example; every work page carries the same forms for its own work. Each component is explained below.")]
     [:p [:a {:href "/catalog.json"} "/catalog.json"] " · "
      [:a {:href (str "/releases/" head-hex ".json")} (str "/releases/" head-hex ".json")]]]))

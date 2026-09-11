@@ -321,6 +321,19 @@
           teiEaj = ab-validator.inputs.tei-eaj-aozora-tei;
         in
         {
+          # Evaluates the ceremony image without building it. nix flake check
+          # evaluates a NixOS configuration's toplevel, which never reaches the
+          # image derivation, so an option conflict there would otherwise show
+          # up only when someone builds the image. The context is discarded so
+          # this depends on the evaluation alone, not on the 1 GiB build.
+          monorepo-ceremony-image =
+            pkgs.runCommand "monorepo-ceremony-image"
+              {
+                image = builtins.unsafeDiscardStringContext self.nixosConfigurations.snh-ceremony.config.system.build.isoImage.drvPath;
+              }
+              ''
+                echo "$image" > "$out"
+              '';
           tei-profile-drift = pkgs.runCommand "soranoha-tei-profile-drift" { } ''
             diff -u ${./soranoha/schemas/tei-profile.rng} ${profile.artifacts}/tei-profile.rng
             diff -u ${./soranoha/schemas/tei-profile.sch} ${profile.artifacts}/tei-profile.sch

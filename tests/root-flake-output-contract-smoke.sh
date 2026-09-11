@@ -56,6 +56,7 @@ expected = {
         "monorepo-aat-run-set",
         "monorepo-active-path-hygiene",
         "monorepo-batch-run-staleness",
+        "monorepo-ceremony-image",
         "monorepo-fidelity-lock-idempotency",
         "monorepo-figure-quotes",
         "monorepo-flake-input-policy",

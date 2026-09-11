@@ -28,6 +28,9 @@
   networking.networkmanager.enable = lib.mkForce false;
   networking.wireless.enable = lib.mkForce false;
 
-  image.fileName = "snh-ceremony.iso";
+  # The ISO builder in this nixpkgs derives the file name from baseName and
+  # does not read image.fileName, so the base name is what names the file.
+  # The installer profile defines it at normal priority, hence mkForce.
+  image.baseName = lib.mkForce "snh-ceremony";
   system.stateVersion = "26.11";
 }

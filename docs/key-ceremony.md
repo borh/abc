@@ -68,8 +68,8 @@ sha256sum result/iso/snh-ceremony.iso
 readlink -f result
 ```
 
-The derivation keeps the upstream `nixos-minimal` name; `image.fileName` names the
-file inside it, which is what `result/iso/snh-ceremony.iso` above refers to.
+The module sets `image.baseName`, which names both the derivation and the file
+inside it, so `result/iso/snh-ceremony.iso` above is the image.
 
 Record both the store path and the digest in the ceremony parameters, then write the
 image to the boot medium.

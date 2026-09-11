@@ -56,7 +56,10 @@ terms; the reasoning is recorded in
 projections, validation reports, and release manifests)
 is dedicated to the public domain under [CC0
 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/). Where that
-encoding attracts copyright or a database right, those rights are waived.
+encoding attracts copyright or a database right, those rights are waived. The
+waiver covers only what Soranoha added. For a work under CC BY, the text inside
+the TEI, plaintext and Markdown files remains under that licence, and its
+attribution condition applies to any use of those files.
 
 The catalog combines two layers: its structure, assigned identifiers, and
 source-edition and validation fields are Soranoha's CC0 encoding, while its
@@ -74,7 +77,7 @@ and standard citation practice (see [citation](citation.md)).
 | Scope | Licence | Where |
 |---|---|---|
 | Underlying works | Public domain (copyright expired), or CC BY where the rightsholder licensed it | Not Soranoha's to license; recorded per work as `works[].rights` |
-| TEI, plaintext, Markdown, validation reports, catalog, manifests | [CC0-1.0](../LICENSE-CC0) | Published bytes |
+| Soranoha's encoding in the TEI, plaintext, Markdown, validation reports, catalog and manifests | [CC0-1.0](../LICENSE-CC0) | Published bytes; the text of a CC BY work inside them keeps that licence |
 | TEI customisation: `soranoha/schemas/tei-profile.{odd,rng,sch}` | [CC0-1.0](../LICENSE-CC0) | Repository |
 | Protocol JSON Schemas: `soranoha/resources/snh/schemas/` | [CC0-1.0](../LICENSE-CC0) | Repository |
 | Locally authored source code | [Apache-2.0](../LICENSE) | Repository |
@@ -104,9 +107,10 @@ Eight crates are forked: `ab-aozora-corpus`, `ab-aozora-encoding`,
 `ab-aozora-syntax`, and `ab-notation-strategies` (forked from `aozora-proptest`).
 The CLI binary `ab-aozora` is locally authored.
 
-Redistributing published corpus artifacts carries only the CC0 encoding
-dedication; the underlying public-domain works carry no licence terms.
-Redistributing the toolchain carries the toolchain's licences.
+Redistributing published corpus artifacts carries the CC0 encoding
+dedication and, for a work under CC BY, the attribution condition of that
+licence; a public-domain work carries no licence terms. Redistributing the
+toolchain carries the toolchain's licences.
 
 ## Machine-readable form
 
@@ -136,7 +140,10 @@ In every published TEI file, one `licence` element covers each rights layer.
 Below, the underlying work is out of copyright, so its status is represented by
 the Creative Commons Public Domain Mark; for a work under CC BY, the first
 `licence` names that licence instead and states attribution as its condition.
-Soranoha's encoding is dedicated under CC0 either way:
+The second `licence` is CC0 either way. For a public-domain work it dedicates
+the encoding and the derived artifacts outright, as below; for a work under
+CC BY it waives Soranoha's rights only and states that the text in every
+artifact remains under the licence above it:
 
 ```xml
 <publicationStmt>

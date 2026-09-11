@@ -130,7 +130,7 @@
    [:licence {:target (rights/works-uri works)}
     (rights/works-statement works)]
    [:licence {:target (rights/licence-uri encoding)}
-    (rights/licence-statement encoding)
+    (rights/licence-statement encoding works)
     " Full rights statement: "
     [:ptr {:target statement_url}]]])
 

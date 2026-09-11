@@ -139,12 +139,33 @@
       (throw (ex-info "rights policy names an unrenderable encoding licence"
                       {:reason :unknown-encoding-licence :encoding encoding}))))
 
+(defn attribution-condition?
+  "Whether attribution is a condition of the underlying work's licence. It is
+  for every standing except the public domain, where no licence exists to
+  set one."
+  [works]
+  (not= "public-domain" works))
+
 (defn licence-statement
-  "Prose form of the encoding licence, for readers rather than resolvers."
-  [encoding]
-  (str "Soranoha's encoding of this work and the artifacts derived from it "
-       "are dedicated to the public domain under " encoding
-       ". Attribution is requested, not required."))
+  "Prose form of the encoding licence, for readers rather than resolvers.
+
+  What CC0 can cover depends on the work. For a public-domain work nobody
+  else holds rights in the file, so the encoding and the plaintext and
+  Markdown derived from it are dedicated outright. For a work under CC BY the
+  text inside those same files belongs to its rightsholder, so the dedication
+  is a waiver of Soranoha's rights only, and the statement says that the
+  text keeps its licence, because the sentence \"attribution is requested,
+  not required\" would otherwise follow a licence element that states the
+  opposite."
+  [encoding works]
+  (if (attribution-condition? works)
+    (str "Soranoha's rights in its encoding of this work and in the artifacts "
+         "derived from it are waived under " encoding
+         ". The text in every artifact remains under the licence stated above, "
+         "whose attribution condition applies to each of them.")
+    (str "Soranoha's encoding of this work and the artifacts derived from it "
+         "are dedicated to the public domain under " encoding
+         ". Attribution is requested, not required.")))
 
 (defn- works-standing! [works]
   (or (get works-standing works)

@@ -178,7 +178,9 @@ of copyright; the rest are works whose rightsholder publishes them on Aozora
 Bunko under a Creative Commons Attribution licence. Soranoha's own
 contributions, including the TEI encoding, plaintext and Markdown projections,
 validation reports, catalog, and manifests, are dedicated to the public domain
-under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).
+under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). The
+dedication covers what Soranoha added; the text of a CC BY work keeps its
+licence in every file that contains it.
 
 You may copy, redistribute, adapt, translate, mine and republish all of it,
 commercially or not, without asking and without payment. For Soranoha's own

@@ -553,9 +553,9 @@
    "青空文庫 TEI コーパス"
    [[:h1 (bilingual "青空文庫 TEI コーパス" "Aozora Bunko TEI corpus")]
     [:p (bilingual
-         (str "著作権の消滅した青空文庫の作品を TEI P5 に変換し、内容のハッシュで特定できる署名付きの版として公開しています。"
+         (str "青空文庫の作品を TEI P5 に変換し、内容のハッシュで特定できる署名付きの版として公開しています。"
               "各作品に TEI、プレーンテキスト、Markdown、検証レポートが付きます。")
-         (str "Public-domain works from Aozora Bunko converted to TEI P5 and published as "
+         (str "Works from Aozora Bunko converted to TEI P5 and published as "
               "signed, content-addressed releases. Every work carries TEI, plain text, "
               "Markdown and a validation report."))]
     (when maturity (maturity-notice release-name maturity))
@@ -746,11 +746,11 @@
        (when-not (string/blank? works-standing)
          (list [:dt (bilingual "底本の権利" "Rights in the source text")]
                [:dd [:a {:href (rights/works-uri works-standing)} works-standing] " "
-                (if (= "public-domain" works-standing)
-                  (bilingual "著作権の存続期間が満了しています。"
-                             "The copyright term has expired.")
+                (if (rights/attribution-condition? works-standing)
                   (bilingual "クレジット表示はこのライセンスの条件です。"
-                             "Attribution is a condition of this licence."))]))
+                             "Attribution is a condition of this licence.")
+                  (bilingual "著作権の存続期間が満了しています。"
+                             "The copyright term has expired."))]))
        (when-not (string/blank? card_url)
          (list [:dt (bilingual "青空文庫" "Aozora Bunko card")]
                [:dd [:a {:href card_url} card_url]]))
@@ -1101,9 +1101,12 @@
     [:p (bilingual
          "残りは、著作権が存続しており、権利者がクリエイティブ・コモンズ 表示ライセンス（CC BY）の下で青空文庫に公開している作品です。これらも同じく自由に利用できますが、クレジット表示は権利者が付した条件です。どのバージョンのライセンスによるかは、作品ページと TEI ファイルの双方に記載しています。Soranoha が公開するのは、表示のみを条件とするライセンスの作品に限られます。非営利、改変禁止、継承のいずれかを課すライセンスの作品は収録していません。"
          "The rest are works whose copyright subsists and whose rightsholder publishes them on Aozora Bunko under a Creative Commons Attribution licence. They may be used just as freely, but attribution is a condition their rightsholder set rather than a request. Each work's page and its TEI header name the version of the licence it is under. Soranoha publishes such a work only where attribution is the sole condition: a work under a licence adding NonCommercial, NoDerivatives or ShareAlike is not in the corpus.")]
+    ;; CC0 can only cover what Soranoha added. In a file whose text is under
+    ;; CC BY, the text is not Soranoha's to dedicate, so the paragraph states
+    ;; what the waiver covers and what it does not.
     [:p (bilingual
-         "Soranoha 自身の符号化（TEI マークアップ、プレーンテキストと Markdown への投影、検証レポート、リリースマニフェスト）は、CC0-1.0 によりパブリックドメインで提供します。符号化に著作権および関連する権利（データベースに関する権利を含む）が生じる範囲では、これを放棄します。"
-         "Soranoha's own encoding (the TEI markup, the plaintext and Markdown projections, the validation reports and the release manifests) is dedicated to the public domain under CC0-1.0. To the extent that copyright and related rights, including database rights, subsist in that encoding, they are waived.")]
+         "Soranoha 自身の符号化、すなわち TEI マークアップ、プレーンテキストと Markdown への投影、検証レポート、リリースマニフェストは、CC0-1.0 によりパブリックドメインで提供します。符号化に著作権および関連する権利（データベースに関する権利を含む）が生じる範囲では、これを放棄します。この放棄が及ぶのは Soranoha が加えた部分だけです。底本が CC BY の作品では、TEI、プレーンテキスト、Markdown の各ファイルに含まれる本文はそのライセンスの下にとどまり、それらのファイルを利用する際にはクレジット表示の条件が適用されます。"
+         "Soranoha's own encoding, meaning the TEI markup, the plaintext and Markdown projections, the validation reports and the release manifests, is dedicated to the public domain under CC0-1.0. To the extent that copyright and related rights, including database rights, subsist in that encoding, they are waived. The waiver covers only what Soranoha added. For a work under CC BY, the text inside the TEI, plaintext and Markdown files remains under that licence, and its attribution condition applies to any use of those files.")]
     ;; Catalog bibliographic metadata derives from Aozora Bunko under CC BY 4.0;
     ;; catalog structure and Soranoha-authored fields remain CC0.
     [:p (bilingual
@@ -1163,9 +1166,11 @@
   (generated-page
    document
    "Citing Soranoha"
+   ;; Citing Soranoha and attributing a work are different obligations, and
+   ;; only the second can be a licence condition: CC0 sets none, CC BY does.
    [[:p (bilingual
-         "すべて CC0 なので、引用はライセンス上の条件ではなく学術上の慣行です。版を明示して引用してください。"
-         "Everything here is CC0, so citation is a scholarly norm rather than a licence condition. Cite the release by name.")]
+         "Soranoha の符号化は CC0 なので、Soranoha の引用はライセンス上の条件ではなく学術上の慣行です。権利者がクリエイティブ・コモンズ 表示ライセンスの下で公開している作品については、その作品のクレジット表示がライセンスの条件であり、作品のページに記載しています。版を明示して引用してください。"
+         "Soranoha's encoding is CC0, so citing Soranoha is a scholarly norm rather than a licence condition. For a work its rightsholder publishes under a Creative Commons Attribution licence, attribution of that work is a condition of the licence, stated on the work's page. Cite the release by name.")]
     ;; Release names designate a project stage; citations require the immutable release head.
     (when release-name
       [:p (bilingual

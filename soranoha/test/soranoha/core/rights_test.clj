@@ -87,9 +87,16 @@
           "a reader of the file alone must not take the site-wide request to cover it")
       (is (string/includes? by (str "<licence target=\"" (rights/works-uri "CC-BY-4.0") "\">")))
       (is (not= pd by))
-      (testing "the encoding licence is the same for both, since it is Soranoha's own"
-        (is (every? #(string/includes? % "Attribution is requested, not required.")
-                    [pd by]))))))
+      (testing "the encoding licence target is the same for both, since it is Soranoha's own"
+        (is (every? #(string/includes?
+                      % (str "<licence target=\"" (rights/licence-uri (get grant "encoding")) "\">"))
+                    [pd by])))
+      (testing "the encoding statement claims only what CC0 can reach for that work"
+        (is (string/includes? pd "Attribution is requested, not required."))
+        (is (not (string/includes? by "Attribution is requested, not required."))
+            "under a CC BY licence element, that sentence would contradict the condition above it")
+        (is (string/includes? by "waived under CC0-1.0"))
+        (is (string/includes? by "remains under the licence stated above"))))))
 
 (deftest a-standing-outside-the-vocabulary-is-refused-test
   (testing "a work cannot be published under terms this build cannot state"

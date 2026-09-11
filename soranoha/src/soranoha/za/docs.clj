@@ -21,23 +21,38 @@
             [clojure.string :as string]))
 
 (def documents
-  "The documents the site serves.
+  "The documents the site serves, each rendered from its own Markdown.
 
-  One, and it is here because published bytes name it. Every TEI root declares
-  the `snh:` namespace as `https://w3id.org/soranoha/ns/tei` and every header
-  carries a pointer to it, so the namespace has to dereference to the
-  vocabulary that defines it or the files point at nothing. The route is short
-  and stable because it is cited.
+  Every entry was checked claim by claim against the code, schemas, tests,
+  catalog or a served build before it came back, and the operator decided its
+  return. `ns/tei` is not optional: every TEI root declares the `snh:`
+  namespace as `https://w3id.org/soranoha/ns/tei` and every header carries a
+  pointer to it, so the namespace has to dereference to the vocabulary that
+  defines it. Its route is short and stable because it is cited.
 
-  The project's other reader-facing documents stay in the repository until
-  they are trimmed and checked. A served page is a claim the corpus makes in
-  public; a repository document is one a reader has gone looking for.
-
-  Holding one back is a staging state rather than a decision to keep it off
-  the site. Each is expected to return here as it is verified, one at a time,
-  and the operator judges when a document has cleared that bar."
-  [{:route "ns/tei" :path "soranoha/docs/tei-vocabulary.md"
-    :ja "TEI 拡張語彙"}])
+  Two documents stay in the repository on purpose: the parser invariants and
+  the snh protocol specification are written for implementers, and a link to
+  either resolves to its repository path rather than a page."
+  [{:route "start-here" :path "docs/start-here.md"
+    :ja "はじめに"}
+   {:route "example" :path "docs/worked-example.md"
+    :ja "一作品を読み解く"}
+   {:route "glossary" :path "docs/user-glossary.md"
+    :ja "用語集"}
+   {:route "identifiers" :path "soranoha/docs/work-identifiers.md"
+    :ja "作品識別子"}
+   {:route "ns/tei" :path "soranoha/docs/tei-vocabulary.md"
+    :ja "TEI 拡張語彙"}
+   {:route "validation" :path "soranoha/docs/tei-validation.md"
+    :ja "TEI の検証"}
+   {:route "accountability" :path "soranoha/docs/source-accountability.md"
+    :ja "原文の説明責任"}
+   {:route "assessment" :path "soranoha/docs/assessment-evaluation.md"
+    :ja "公開可否の判断"}
+   {:route "annotation-layers" :path "docs/annotation-layers.md"
+    :ja "注釈の層"}
+   {:route "external-links" :path "soranoha/docs/external-links.md"
+    :ja "外部リンク"}])
 
 (def generated
   "Pages the browse layer assembles itself, because each states facts it reads

@@ -159,13 +159,14 @@
                    "rights.html" "citation.html" "history.html" "ns/tei.html"
                    "schemas/tei-profile.odd" "license/cc0-1.0.txt"]]
         (is (fs/regular-file? (fs/path out rel)) rel))
-      ;; the reader-facing documents are held back until they are trimmed and
-      ;; checked, so the site must not be publishing them
+      ;; the reader documents returned once each was checked; the two written
+      ;; for implementers stay in the repository and have no page
       (doseq [rel ["start-here.html" "example.html" "glossary.html"
-                   "identifiers.html" "protocol.html" "assessment.html"
-                   "accountability.html" "validation.html"
-                   "annotation-layers.html" "parser-invariants.html"
+                   "identifiers.html" "assessment.html" "accountability.html"
+                   "validation.html" "annotation-layers.html"
                    "external-links.html"]]
+        (is (fs/regular-file? (fs/path out rel)) rel))
+      (doseq [rel ["protocol.html" "parser-invariants.html"]]
         (is (not (fs/exists? (fs/path out rel))) rel))
       (let [landing (String. (tree-bytes out "index.html") "UTF-8")]
         (is (str/includes? landing (:head result))

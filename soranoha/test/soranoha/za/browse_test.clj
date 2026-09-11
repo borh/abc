@@ -343,21 +343,31 @@
     (doseq [path ["index.html" "works/000092_000879/index.html"]]
       (is (string/includes? (page pages path) "/catalog.json") path)
       (is (string/includes? (page pages path) (str "/releases/" head-hex ".json")) path))
-    (testing "the one served document carries its text and resolves its links"
+    (testing "a served document carries its text and resolves its links"
       (let [vocabulary (page pages "ns/tei.html")]
         (is (string/includes? vocabulary "<h1"))
         (is (string/includes? vocabulary "href=\"/rights\"")
             "a link to a served route becomes a link, even to a generated page")
         (is (string/includes? vocabulary "href=\"/schemas/tei-profile.odd\"")
             "the profile is served, so it is a link")
+        (is (string/includes? vocabulary "href=\"/validation\"")
+            "a link to another served document becomes a link to its route")
         (is (not (string/includes? vocabulary ".md\""))
             "no page links a Markdown file the site does not serve")
-        (is (string/includes? vocabulary "soranoha/docs/tei-validation.md")
-            "a held-back document is named as a repository path, not linked")))
+        (is (string/includes? vocabulary "href=\"/accountability\"")
+            "and the other documents are reachable from each one"))
+      (let [glossary (page pages "glossary.html")]
+        (is (string/includes? glossary "docs/parser-invariants.md")
+            "a document kept in the repository is named as a path, not linked")
+        (is (string/includes? glossary "docs/design/snh-protocol-v1.md"))))
 
-    (testing "the held-back documents have no page at all"
-      (doseq [rel ["glossary.html" "start-here.html" "identifiers.html"
-                   "validation.html" "assessment.html" "protocol.html"]]
+    (testing "the landing page lists every served document"
+      (let [landing (page pages "index.html")]
+        (doseq [{:keys [route]} docs/documents]
+          (is (string/includes? landing (str "href=\"/" route "\"")) route))))
+
+    (testing "the two implementer documents have no page at all"
+      (doseq [rel ["parser-invariants.html" "protocol.html"]]
         (is (nil? (get pages rel)) rel)))
 
     ;; Every manifest carries rights.statement_url and every published TEI

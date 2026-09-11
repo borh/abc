@@ -345,7 +345,8 @@
        [:a {:href "/titles/"} (bilingual "作品名" "Titles")]
        [:a {:href "/ndc/"} (bilingual "分類" "NDC")]
        [:a {:href "/rights"} (bilingual "権利" "Rights")]
-       [:a {:href "/citation"} (bilingual "引用" "Citation")]]]
+       [:a {:href "/citation"} (bilingual "引用" "Citation")]
+       [:a {:href "/start-here"} (bilingual "解説" "Docs")]]]
      (into [:main (cond-> {} main-class (assoc :class main-class))] body)
      [:footer
       [:p (bilingual
@@ -527,14 +528,27 @@
             (assoc document :text text :en (markdown/title text))))
         docs/documents))
 
-(defn- document-page [{:keys [path text ja en]}]
+(defn- sibling-nav
+  "The other served documents, so a reader who arrived at one by link can
+  reach the rest without going back to the landing page."
+  [entries current]
+  [:nav {:class "siblings"}
+   [:p (bilingual "ほかの解説:" "Other documents:")]
+   [:p (interpose
+        " · "
+        (for [{:keys [route ja en]} entries
+              :when (not= route current)]
+          [:a {:href (str "/" route)} (bilingual ja en)]))]])
+
+(defn- document-page [entries {:keys [route path text ja en]}]
   (chrome
    ja
    {:main-class "doc"}
    (concat [[:h1 (bilingual ja en)]]
            (markdown/render {:text text
                              :source path
-                             :link (partial docs/resolve-link path)}))))
+                             :link (partial docs/resolve-link path)})
+           [(sibling-nav entries route)])))
 
 (defn- maturity-notice
   "The corpus's maturity, said once where a reader arrives, rather than in the
@@ -548,7 +562,7 @@
    " "
    (bilingual note-ja note-en)])
 
-(defn- landing [head-hex works withdrawn-count release-name maturity]
+(defn- landing [head-hex works withdrawn-count release-name maturity entries]
   (chrome
    "青空文庫 TEI コーパス"
    [[:h1 (bilingual "青空文庫 TEI コーパス" "Aozora Bunko TEI corpus")]
@@ -597,6 +611,15 @@
      "このリリースの全作品を一つの ZIP にまとめてあります。著者ごと・分類ごとの ZIP は、それぞれのページにあります。"
      "Every work in this release, in one archive. Per-author and per-class archives are on the author and NDC pages."
      (corpus-archives))
+
+    [:section
+     [:h2 (bilingual "解説" "Documentation")]
+     [:p (bilingual
+          "何がどう符号化されているか、識別子はどう読むか、公開の可否をどう判断しているかまで、このサイトで説明しています。初めての方は「はじめに」から。"
+          "How the texts are encoded, how to read an identifier, and how publication is assessed. Start with Start here.")]
+     [:ul {:class "cols plain"}
+      (for [{:keys [route ja en]} entries]
+        [:li [:a {:href (str "/" route)} (bilingual ja en)]])]]
 
     [:section
      [:h2 (bilingual "権利と引用" "Rights and citation")]
@@ -1307,7 +1330,7 @@
       (page "search.js" search-js)
       (page "copy.js" copy-js)
       (page "search-index.json" (search-index head-hex works))
-      (page "index.html" (landing head-hex works (count withdrawn) release-name maturity))
+      (page "index.html" (landing head-hex works (count withdrawn) release-name maturity entries))
       (page "rights.html" (rights-page (by-route "rights")
                                        (works-standings head)
                                        (get head "rights")))
@@ -1337,7 +1360,7 @@
 
      ;; the project's own documentation, rendered from the repository files it
      ;; is reviewed in, and the files those documents send a reader to
-     (map (fn [entry] (page (str (:route entry) ".html") (document-page entry)))
+     (map (fn [entry] (page (str (:route entry) ".html") (document-page entries entry)))
           entries)
 
      (map (fn [{:keys [route path]}] [route (docs/read-bytes path)]) (docs/verbatim-files))

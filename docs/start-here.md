@@ -149,6 +149,11 @@ Rate-limit automated requests when fetching individual texts, or use the bulk
 archives for complete corpus downloads. Quarterly Zenodo deposits are planned
 and not yet minted; [Citing Soranoha](citation.md) says what they will carry.
 
+The site is served from one host the project operates. Availability is best
+effort and bandwidth is not guaranteed, so take the whole corpus through the
+bulk archives rather than one text at a time. What persists is the signed
+release chain and its archived copies, not this host.
+
 ## Scale and coverage
 
 The source is Aozora Bunko's catalog of works whose copyright has expired in
@@ -207,6 +212,14 @@ check that the file they downloaded is the file the release says it published.
 Every release in the chain is listed at `https://soranoha.org/history`, newest
 first, with its upstream Aozora Bunko revisions and added, removed, or
 re-encoded work counts derived directly from published manifests.
+
+The upstream revision a release names is a commit of Aozora Bunko's Git
+repository, `https://github.com/aozorabunko/aozorabunko`. GitHub stopped
+serving that repository in 2026. Software Heritage archived it in full before
+then, so the revision resolves there as `swh:1:rev:<upstream_rev>`, and the
+archive's last visit of the origin, snapshot
+`swh:1:snp:861faf52eb29116fdb2984563a031acec1a8d6b1`, holds every revision a
+release names.
 
 To ask what has changed since some earlier point in Aozora Bunko's own
 history, check that history out and compare it against a release. From a

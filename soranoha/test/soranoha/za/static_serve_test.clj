@@ -231,15 +231,18 @@
 
       (testing "the browse layer answers at the front door and at readable URLs"
         (doseq [path ["/" "/authors/" "/titles/" "/ndc/" "/rights" "/citation"
-                      "/history" "/ns/tei" "/schemas/tei-profile.odd"
+                      "/history" "/ns/tei" "/start-here" "/example" "/glossary"
+                      "/identifiers" "/validation" "/accountability"
+                      "/assessment" "/annotation-layers" "/external-links"
+                      "/schemas/tei-profile.odd"
                       "/schemas/person-record.schema.json"
                       "/license/cc0-1.0.txt"
                       "/style.css" "/search.js" "/copy.js" "/search-index.json"]]
           (let [response (http-get port path)]
             (is (= 200 (:status response)) path)
             (is (= "public, max-age=60" (:cache-control response)) path)))
-        (testing "and a held-back document is not served at all"
-          (doseq [path ["/start-here" "/glossary" "/protocol"]]
+        (testing "and an implementer document is not served at all"
+          (doseq [path ["/protocol" "/parser-invariants"]]
             (is (= 404 (:status (http-get port path))) path)))
         (let [response (http-get port (str "/works/" slug-a "/"))]
           (is (= 200 (:status response)))

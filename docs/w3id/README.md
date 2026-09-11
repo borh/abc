@@ -37,8 +37,7 @@ of an indirection service.
 Register `soranoha.org` and make it resolve before opening the pull request, so
 review does not encounter a dead redirect target. Both were done on 2026-09-11:
 the site answered on every registered prefix that morning, and the registration
-was submitted as [perma-id/w3id.org#6682](https://github.com/perma-id/w3id.org/pull/6682)
-the same day. `https://w3id.org/soranoha/ns/tei`
+was submitted to perma-id/w3id.org the same day. `https://w3id.org/soranoha/ns/tei`
 must resolve before genesis, because the IRI is already in published bytes,
 and so must `https://w3id.org/soranoha/rights`, which every manifest and every
 TEI file names.

@@ -103,6 +103,17 @@
             "$out/soranoha/resources/assessment/source-1.schema.json"
           cp ${./LICENSE} "$out/LICENSE"
           cp ${./LICENSE-CC0} "$out/LICENSE-CC0"
+          # the research layer's identifiers: every schema under these two
+          # directories, and the mapping and policy documents that carry
+          # their own IRIs
+          mkdir -p "$out/ab-validator/schemas" "$out/ab-validator/research/schemas" \
+            "$out/ab-validator/research/data" "$out/ab-validator/data"
+          cp ${ab-validator}/schemas/*.schema.json "$out/ab-validator/schemas/"
+          cp ${ab-validator}/research/schemas/*.schema.json "$out/ab-validator/research/schemas/"
+          cp ${ab-validator}/data/aat-to-parser-ir-mapping-v1.json \
+            ${ab-validator}/data/aat-to-parser-ir-mapping-v2.json "$out/ab-validator/data/"
+          cp ${ab-validator}/research/data/source-region-publication-policy-v0.json \
+            "$out/ab-validator/research/data/"
         '';
 
       # Maven model validation shares a mutable ID cache. Resolve dependencies

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://soranoha.example/schemas/parser-comparison-result.schema.json",
+  "$id": "https://w3id.org/soranoha/schemas/parser-comparison-result.schema.json",
   "title": "Soranoha parser comparison result IR",
   "type": "object",
   "additionalProperties": false,

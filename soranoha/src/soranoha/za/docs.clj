@@ -78,20 +78,67 @@
    {:route "schemas/person-record.schema.json"
     :path "soranoha/schemas/person-record.schema.json"}
    {:route "schemas/metadata-record.schema.json"
-    :path "soranoha/schemas/metadata-record.schema.json"}])
-
-(def ^:private by-path
-  ;; A generated page is keyed by the repository document it stands for, so a
-  ;; link to `rights.md` still reaches `/rights`. The page no longer carries
-  ;; that document's text, but it is still the route the project publishes for
-  ;; it, and a link to a served route must not degrade into a bare path.
-  (into {} (map (juxt #(or (:path %) (:source %)) identity))
-        (concat documents generated verbatim)))
+    :path "soranoha/schemas/metadata-record.schema.json"}
+   ;; the same kind of entry for the toolchain's research layer: a mapping or
+   ;; policy document carries its own IRI as `mapping_id` or `policy_id`, and
+   ;; parser-IR output names the mapping it was derived from. The route is the
+   ;; IRI's path, extension and all, because that is the string the bytes hold
+   {:route "mappings/aat-v1-to-parser-ir-v1/generated-probe"
+    :path "ab-validator/data/aat-to-parser-ir-mapping-v1.json"}
+   {:route "mappings/aat-v2-to-parser-ir-v1/generated-probe"
+    :path "ab-validator/data/aat-to-parser-ir-mapping-v2.json"}
+   {:route "policies/source-region-publication-v0"
+    :path "ab-validator/research/data/source-region-publication-policy-v0.json"}
+   ;; five schemas also declare a versioned `schema_id` without an extension,
+   ;; which records of that kind carry instead of the file name. Each resolves
+   ;; to the schema that defines it
+   {:route "schemas/parser-comparison-result-v2"
+    :path "ab-validator/schemas/parser-comparison-result-v2.schema.json"}
+   {:route "schemas/parser-study-axis-evidence-v1"
+    :path "ab-validator/schemas/parser-study-axis-evidence.schema.json"}
+   {:route "schemas/parser-study-axis-policy-v1"
+    :path "ab-validator/schemas/parser-study-axis-policy.schema.json"}
+   {:route "schemas/parser-study-diagnostic-lanes-v1"
+    :path "ab-validator/schemas/parser-study-diagnostic-lanes.schema.json"}
+   {:route "schemas/parser-study-evidence-index-v1"
+    :path "ab-validator/schemas/parser-study-evidence-index.schema.json"}])
 
 (defn root
   "The directory the served files are read from."
   []
   (or (System/getenv "SORANOHA_SITE_DOCS") ".."))
+
+(def ^:private schema-directories
+  "Directories whose every `*.schema.json` is served at `schemas/<file name>`.
+  Each file's `$id` is that IRI, so the rule and the identifiers cannot
+  disagree, and a schema added to either directory is served without an
+  entry here."
+  ["ab-validator/schemas" "ab-validator/research/schemas"])
+
+(defn schema-files
+  "One verbatim entry per schema file under `schema-directories`, read from
+  the document root at call time so the served set follows the checkout or
+  the store path in use."
+  []
+  (vec
+   (for [dir schema-directories
+         file (sort (map str (fs/list-dir (fs/file (root) dir) "*.schema.json")))]
+     {:route (str "schemas/" (fs/file-name file))
+      :path (str dir "/" (fs/file-name file))})))
+
+(defn verbatim-files
+  "Every file served as itself: the listed entries and the schema directories."
+  []
+  (into verbatim (schema-files)))
+
+(defn- by-path
+  ;; A generated page is keyed by the repository document it stands for, so a
+  ;; link to `rights.md` still reaches `/rights`. The page no longer carries
+  ;; that document's text, but it is still the route the project publishes for
+  ;; it, and a link to a served route must not degrade into a bare path.
+  []
+  (into {} (map (juxt #(or (:path %) (:source %)) identity))
+        (concat documents generated (verbatim-files))))
 
 (defn read-text [path]
   (slurp (fs/file (root) path) :encoding "UTF-8"))
@@ -119,6 +166,6 @@
     :else
     (let [[path fragment] (string/split target #"#" 2)
           resolved (str (fs/normalize (fs/path (fs/parent from) path)))]
-      (if-let [{:keys [route]} (get by-path resolved)]
+      (if-let [{:keys [route]} (get (by-path) resolved)]
         {:href (str "/" route (when fragment (str "#" fragment)))}
         resolved))))

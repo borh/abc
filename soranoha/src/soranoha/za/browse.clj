@@ -1340,7 +1340,7 @@
      (map (fn [entry] (page (str (:route entry) ".html") (document-page entry)))
           entries)
 
-     (map (fn [{:keys [route path]}] [route (docs/read-bytes path)]) docs/verbatim)
+     (map (fn [{:keys [route path]}] [route (docs/read-bytes path)]) (docs/verbatim-files))
 
      (map (fn [[id {:keys [person by-relation]}]]
             (page (str "authors/" id ".html")

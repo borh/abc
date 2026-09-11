@@ -11,6 +11,7 @@
   (:require [babashka.fs :as fs]
             [clojure.string :as string]
             [clojure.test :refer [deftest is testing]]
+            [soranoha.core.json :as record-json]
             [soranoha.za.docs :as docs]
             [soranoha.za.markdown :as markdown]))
 
@@ -28,8 +29,10 @@
   "The documents the site renders from their own text."
   docs/documents)
 
+(def ^:private verbatim (docs/verbatim-files))
+
 (def ^:private routes
-  (into #{} (map :route) (concat served docs/generated docs/verbatim)))
+  (into #{} (map :route) (concat served docs/generated verbatim)))
 
 (deftest a-generated-page-names-a-repository-document-that-exists
   ;; the long form is linked rather than served, so the page has to name a
@@ -51,13 +54,35 @@
     (testing route
       (is (fs/exists? (fs/file (docs/root) path)) path)
       (is (string? (markdown/title (docs/read-text path))))))
-  (doseq [{:keys [route path]} docs/verbatim]
+  (doseq [{:keys [route path]} verbatim]
     (testing route
       (is (fs/exists? (fs/file (docs/root) path)) path))))
 
+(deftest every-schema-file-is-served-at-the-iri-it-declares
+  ;; the directory rule and the files' own identifiers must agree, or a
+  ;; record would name a schema the site serves under another route
+  (let [entries (docs/schema-files)]
+    (is (< 40 (count entries)) "the ab-validator schema directories are served")
+    (doseq [{:keys [route path]} entries]
+      (testing route
+        (is (= (str "https://w3id.org/soranoha/" route)
+               (get (record-json/read-json-file (fs/file (docs/root) path)) "$id"))
+            path)))))
+
+(deftest minted-mapping-and-policy-identifiers-are-served
+  ;; these documents carry their IRI inside themselves as mapping_id or
+  ;; policy_id, and the route has to be that IRI's path
+  (doseq [{:keys [route path]} verbatim
+          :when (or (string/starts-with? route "mappings/")
+                    (string/starts-with? route "policies/"))]
+    (testing route
+      (let [document (record-json/read-json-file (fs/file (docs/root) path))
+            id (or (get document "mapping_id") (get document "policy_id"))]
+        (is (= (str "https://w3id.org/soranoha/" route) id) path)))))
+
 (deftest routes-are-distinct-and-usable-as-paths
   (is (= (count routes)
-         (+ (count served) (count docs/generated) (count docs/verbatim)))
+         (+ (count served) (count docs/generated) (count verbatim)))
       "two entries would otherwise overwrite each other in the serving tree")
   (doseq [route routes]
     (is (re-matches #"[a-z0-9][a-z0-9./-]*" route) route)

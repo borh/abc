@@ -44,8 +44,18 @@ http://{$SORANOHA_SERVE_LISTEN} {
 	# generated presentation: a projection of this release, replaced whole at
 	# the next activation, so it is cached like the pointer layer and never
 	# like a digest-addressed file
-	@browse path / /index.html /style.css /search.js /copy.js /search-index.json /authors /authors/* /titles /titles/* /ndc /ndc/* /bulk/* /rights /citation /history /ns/* /license/* /schemas/*
+	@browse path / /index.html /style.css /search.js /copy.js /search-index.json /authors /authors/* /titles /titles/* /ndc /ndc/* /bulk/* /rights /citation /history /ns/* /license/* /schemas/* /mappings/* /policies/*
 	header @browse Cache-Control "public, max-age=60"
+
+	# A mapping or policy document, and a schema reached by its versioned
+	# schema_id, is served at the path its IRI names, which has no extension.
+	# Every such file is JSON, so the type is stated here as it is for the
+	# extensionless work routes below.
+	@iri-json {
+		path /mappings/* /policies/* /schemas/*
+		not path *.json *.odd *.rng *.sch
+	}
+	header @iri-json Content-Type "application/json"
 
 	# Caddy types a response from the filename extension, and these routes have
 	# none, so they arrived with no Content-Type at all and a browser was left

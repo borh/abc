@@ -133,7 +133,7 @@
     (testing "so is every document, and every file the documents send a reader to"
       (doseq [{:keys [route]} docs/documents]
         (is (contains? pages (str route ".html")) route))
-      (doseq [{:keys [route]} docs/verbatim]
+      (doseq [{:keys [route]} (docs/verbatim-files)]
         (is (contains? pages route) route)))
 
     (testing "a work is reachable from the title index by the row of its reading"

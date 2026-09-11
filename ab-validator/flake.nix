@@ -36,7 +36,7 @@
     };
 
     aozorabunko-src = {
-      url = "git+ssh://forgejo@code.hyakutake-barbel.ts.net:63333/bor/aozorabunko.git?rev=0e9ea3e586eb0aa34039fabfc85a407d2f98b165&shallow=1";
+      url = "git+ssh://forgejo@code.hyakutake-barbel.ts.net:63333/bor/aozorabunko.git?rev=9bac324dfa6af3a5a035542440934266f76fb45d&shallow=1";
       flake = false;
     };
 

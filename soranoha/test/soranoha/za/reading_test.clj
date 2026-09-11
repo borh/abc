@@ -80,6 +80,21 @@
       (is (string/includes? unmapped "gaiji-unmapped"))
       (is (string/includes? unmapped "〔※［＃「熾」の火が金］〕")))))
 
+(deftest a-source-reference-is-the-element-s-id-so-a-link-can-reach-it-test
+  (let [rendered (read-html
+                  {"nodes" [{"type" "text" "text" "白いらつぱ草の花が"
+                             "source_span" {"coordinate_system" "decoded_utf8" "start" 0 "end" 27}}
+                            {"type" "ruby"
+                             "source_span" {"coordinate_system" "decoded_utf8" "start" 27 "end" 45}
+                             "ruby" {"base" "涌水" "reading" "わきみず" "scope" "explicit"
+                                     "direction" "right"}}]})]
+    (testing "a segment and a ruby each carry the span the TEI names, without the pointer's #"
+      (is (string/includes? rendered "id=\"source-0-27\""))
+      (is (string/includes? rendered "id=\"source-27-45\""))
+      (is (not (string/includes? rendered "id=\"#source"))))
+    (testing "and the paragraph around them has no id of its own to collide with"
+      (is (= 2 (count (re-seq #"id=\"source-" rendered)))))))
+
 (deftest a-source-reference-becomes-a-link-only-where-a-link-is-safe-test
   (testing "an external table reference names its companion file as text"
     ;; This is the target the corpus actually holds: an external table

@@ -214,12 +214,24 @@
     (when (#{"http" "https"} (string/lower-case scheme))
       target)))
 
+(defn- source-id
+  "The element's `@source` reference as an HTML id, so that a link can name
+  the place in the text the TEI names: `/works/<slug>/read#source-12-40`.
+  The reference is `#source-<start>-<end>` in the work's own byte
+  coordinates, unique within the document because two elements never
+  account for the same span, and a paragraph carries none of its own: a link
+  to a paragraph is a link to its first segment."
+  [element]
+  (some-> (attr element "source") (string/replace-first #"^#" "")))
+
 (defn- element-attrs
   ([element extra] (element-attrs element extra nil))
   ([element extra title]
-   (let [class (classes element extra)
+   (let [id (source-id element)
+         class (classes element extra)
          style (geometry element)]
      (cond-> {}
+       id (assoc :id id)
        class (assoc :class class)
        style (assoc :style style)
        (not (string/blank? title)) (assoc :title title)))))

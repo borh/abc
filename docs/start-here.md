@@ -51,7 +51,11 @@ convenience for human downloads. Every work page shows both forms.
 To read it rather than download it, open
 `https://soranoha.org/works/000092_000879/` for the bibliography and
 `https://soranoha.org/works/000092_000879/read` for the text itself, ruby and
-all, in horizontal or vertical setting.
+all, in horizontal or vertical setting. A place in the text has an address
+too: every segment of the reading view carries the id its TEI element carries
+as a source reference, so `.../read#source-694-733` opens the page at the
+segment that accounts for bytes 694 to 733 of the source text as UTF-8. The
+TEI file is where to find the number.
 
 If you have an Aozora Bunko card URL, you already have the identifier. The card
 `https://www.aozora.gr.jp/cards/000879/card92.html` gives work id `92` and card

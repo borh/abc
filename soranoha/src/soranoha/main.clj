@@ -744,15 +744,67 @@
                      "commit" (:commit outcome)})))
     outcome))
 
+(defn- published-catalog-fields
+  "What `rows` contribute to a work's published bytes: the work fields, the
+  person fields and the contributor relation of each row, as the record
+  builder reads them. A column the record does not read can change without
+  a published byte changing, and this is how the predicate knows."
+  [rows]
+  (set (map (juxt csv/parse-work-fields-from-row
+                  (comp :fields csv/parse-person-fields-from-row)
+                  csv/parse-contributor-from-row)
+            rows)))
+
+(defn- catalog-rows-at
+  "The catalog's rows at `rev`, read out of git history, or nil when git
+  cannot produce them."
+  [aozora-root rev]
+  (try
+    (let [{:keys [exit out]}
+          (process/sh {:out :bytes} "git" "-C" (str aozora-root) "show"
+                      (str rev ":index_pages/list_person_all_extended_utf8.zip"))]
+      (when (zero? exit)
+        (some-> (catalog/csv-text-from-zip-bytes out) csv/read-rows-from-string)))
+    (catch java.io.IOException _ nil)))
+
+(defn- published-works-with-changed-rows
+  "How many works selected in the checkout have different published catalog
+  fields at `head-rev` than at `current`, or nil when either catalog cannot
+  be read. Selection is taken from the checkout: no work archive moved, so
+  the set of works is the same at both revisions, and a row that changed a
+  work's standing is a changed row."
+  [aozora-root head-rev current]
+  (let [before (catalog-rows-at aozora-root head-rev)
+        after (catalog-rows-at aozora-root current)]
+    (when (and before after)
+      (let [selected (set (map #(catalog/row-work-id (:row %))
+                               (:candidates (select/select-candidates aozora-root after))))
+            by-work (fn [rows]
+                      (group-by catalog/row-work-id
+                                (filter #(selected (catalog/row-work-id %)) rows)))
+            before (by-work before)
+            after (by-work after)]
+        (count (filter (fn [work-id]
+                         (not= (published-catalog-fields (get before work-id))
+                               (published-catalog-fields (get after work-id))))
+                       selected))))))
+
 (defn release-needed!
   "Whether an upstream revision is worth a release, decided before anything
   is assembled or built.
 
-  A release is minted when a work archive moved, not on every upstream commit:
-  796 of aozorabunko's 5,476 first-parent commits touch no work archive, and a
-  release for one of those would carry a 9.1 MB manifest and a 14.45 MB catalog
-  to record a 40-hex string. `corpus.covers_from` is what lets a reader map
-  those revisions to the release that covers them.
+  A release is minted when a published byte would change, not on every
+  upstream commit: 796 of aozorabunko's 5,476 first-parent commits touch no
+  work archive, and a release for one of those would carry a 9.1 MB manifest
+  and a 14.45 MB catalog to record a 40-hex string. `corpus.covers_from` is
+  what lets a reader map those revisions to the release that covers them.
+
+  Two things decide it. A work archive that moved is a changed text. When
+  none moved, the catalog rows of the selected works are compared as the
+  record builder reads them: a corrected title or a changed date reaches the
+  catalog artifact, the TEI header and every citation, so it is a release,
+  while a column no record reads is not. Of the catalog-only commits about
+  one in ten changes a published work's row, roughly five releases a year.
 
   Decided here rather than inside the transaction because the transaction has
   no way to say `no release`: `corpus.upstream_rev` is a projection key
@@ -782,27 +834,29 @@
                                             (pinned-keys-from-files release-pub governance-pub)))
         head-rev (when (and head (not (:empty head)))
                    (get-in (:head-manifest head) ["corpus" "upstream_rev"]))
-        ;; Work archives are a proxy for the published bytes rather than the
-        ;; whole of them: the catalog CSV under index_pages/ is read too, at
-        ;; yomi/catalog.clj, and supplies the title, contributors, NDC and
-        ;; orthography that reach both the catalog artifact and the TEI header.
-        ;; Watching it as well would skip nothing, because every commit that
-        ;; touches a work archive touches the CSV in the same commit, all 4,673
-        ;; of them, so the predicate would fire on 5,469 of 5,476 revisions. Of
-        ;; the CSV-only commits about one in ten changes metadata of a
-        ;; publishable work, and the release covering it has never been more
-        ;; than 14 days behind across fifteen years of history, two days at the
-        ;; median, because a run of skipped commits has never exceeded 14.
+        ;; The archive diff first, because it is a path match and needs no
+        ;; parse; the catalog comparison only when no archive moved. Watching
+        ;; the CSV as a path would skip nothing: every commit that touches a
+        ;; work archive touches the CSV in the same commit, all 4,673 of
+        ;; them, so the path would fire on 5,469 of 5,476 revisions. Reading
+        ;; the rows is what separates a correction to a published work from
+        ;; a card-page edit the records never see.
         changed (when (and head-rev (not= head-rev current))
                   (git! aozora-root "diff" "--name-only" (str head-rev ".." current)
                         "--" "cards/*/files/*.zip"))
+        rows-changed (when (and changed (string/blank? changed))
+                       (published-works-with-changed-rows aozora-root head-rev current))
         report (cond
                  (nil? head-rev) {"needed" true "reason" "no-published-release"}
                  (= head-rev current) {"needed" false "reason" "revision-already-published"}
                  (nil? changed) {"needed" true "reason" "revisions-not-comparable"}
-                 (string/blank? changed) {"needed" false "reason" "no-work-archive-changed"}
-                 :else {"needed" true "reason" "work-archives-changed"
-                        "changed_archives" (count (string/split-lines changed))})]
+                 (not (string/blank? changed))
+                 {"needed" true "reason" "work-archives-changed"
+                  "changed_archives" (count (string/split-lines changed))}
+                 (nil? rows-changed) {"needed" true "reason" "revisions-not-comparable"}
+                 (pos? rows-changed) {"needed" true "reason" "catalog-rows-changed"
+                                      "changed_works" rows-changed}
+                 :else {"needed" false "reason" "nothing-published-changed"})]
     (println (record-json/write-deterministic-json-str
               (into (sorted-map)
                     (cond-> report

@@ -64,10 +64,13 @@ Forgejo Actions. The workflow first asks whether the corpus moved, then uses the
 existing release secret without exposing it to build children, publishes with
 both role pins, and installs a verified serving tree.
 
-A release is minted when a work archive changed, not on every upstream commit.
-`release-needed` verifies the published head, reads the revision it names, and
-compares that revision against the checkout under `cards/*/files/*.zip`; it
-exits 10 when nothing changed and the workflow mints nothing. Every uncertainty
+A release is minted when a published byte would change, not on every upstream
+commit. `release-needed` verifies the published head, reads the revision it
+names, and compares that revision against the checkout: first under
+`cards/*/files/*.zip`, and when no archive moved, the catalog rows of the
+selected works as the record builder reads them, so a corrected title is a
+release and a card-page edit is not. It exits 10 when nothing published
+changed and the workflow mints nothing. Every uncertainty
 reports that a release is needed, because refusing to release is the outcome
 that loses work. The revisions passed over are not lost either: the next
 release's `corpus.covers_from` names where its range starts, so any revision in

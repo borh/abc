@@ -44,6 +44,9 @@
                       :book "1100" :n "6006" :title "added-work"
                       :text "arrives at the second revision\n"})
 
+(def ^:private ghost {:work-id "009900" :person-id "000009" :card "000009"
+                      :book "9900" :n "9009" :title "catalogued, never archived"})
+
 (def ^:private slug-of corpus/work-slug)
 
 (defn- pd [work]
@@ -242,10 +245,21 @@
                                                         (str (get-in ks ["governance" "pub"]) "\n"))}))]
             (testing "the revision already published needs nothing"
               (is (= {"needed" false "reason" "revision-already-published"} (needed))))
-            (testing "a commit touching no work archive needs nothing"
+            (testing "a commit touching no work archive and no published row needs nothing"
               (spit (str (fs/path root "index_pages" "note.txt")) "site copy edit\n")
               (corpus/commit-corpus! root)
-              (is (= {"needed" false "reason" "no-work-archive-changed"} (needed))))
+              (is (= {"needed" false "reason" "nothing-published-changed"} (needed))))
+            (testing "a catalog row for a work that is not selected needs nothing"
+              ;; a row with no archive behind it is never selected, so
+              ;; nothing published reads it
+              (corpus/write-catalog! root [merosu kumo added ghost])
+              (corpus/commit-corpus! root)
+              (is (= {"needed" false "reason" "nothing-published-changed"} (needed))))
+            (testing "a catalog-only correction to a published work's row needs a release"
+              (corpus/write-catalog! root [merosu kumo (assoc added :title "added-work corrected") ghost])
+              (corpus/commit-corpus! root)
+              (is (= {"needed" true "reason" "catalog-rows-changed" "changed_works" 1}
+                     (needed))))
             (testing "a commit touching a work archive needs a release"
               (corpus/write-work! root (assoc added :text (str (:text added) "\u3002")))
               (corpus/commit-corpus! root)

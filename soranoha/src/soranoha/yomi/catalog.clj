@@ -3,7 +3,20 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as string]
             [soranoha.core.hash :as hash])
-  (:import [java.util.zip ZipEntry ZipFile]))
+  (:import [java.io ByteArrayInputStream]
+           [java.util.zip ZipEntry ZipFile ZipInputStream]))
+
+(defn csv-text-from-zip-bytes
+  "The CSV entry of a catalog archive held in memory, for a catalog that is
+  not the checkout's: one read out of git history. Nil when the archive
+  holds no CSV entry."
+  [^bytes zip-bytes]
+  (with-open [in (ZipInputStream. (ByteArrayInputStream. zip-bytes))]
+    (loop []
+      (when-let [entry (.getNextEntry in)]
+        (if (string/ends-with? (.getName entry) ".csv")
+          (String. (.readAllBytes in) "UTF-8")
+          (recur))))))
 
 (defn read-catalog-zip
   "Read the official catalog ZIP under `aozora-root`; returns

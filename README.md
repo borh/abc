@@ -64,8 +64,18 @@ configured `AB_DB_ROOT`; they are not part of the ordinary validation gate.
 
 ## Source Identity
 
-The root `flake.lock` is the canonical lock. The `ab-validator/flake.lock` supports direct research workflows and must
-remain coherent with the root lock for shared non-path inputs.
+Nix owns source identity and the toolchain; domain behaviour stays in Clojure,
+Rust and Python. Every evidence-bearing input (the TEI P5 source, the TEI-EAJ
+reference, the corpus snapshot, the notation specification, dictionary and
+converter sources) is pinned by revision or release tag in its flake URL, not
+only in the lock, so a routine lock update cannot move it. Infrastructure inputs
+such as nixpkgs and clj-nix are lock-only pins.
+
+The root `flake.lock` is the canonical lock. The `ab-validator/flake.lock`
+supports direct research workflows and must agree with the root lock for shared
+non-path inputs, so a shared input moves in both locks in one change.
+`just flake-input-policy` enforces both rules, and `just tei-version-coherence`
+holds every TEI reference in the repository at P5 4.11.0.
 
 `just typecheck` checks the five publication-whitespace functions with Typed Clojure.
 Its annotations and locked checker dependencies live in `soranoha/dev/typecheck`,

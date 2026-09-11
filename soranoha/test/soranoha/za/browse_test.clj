@@ -473,7 +473,7 @@
       (is (string/includes? (page-of by) "CC-BY-2.1-JP"))
       (is (string/includes? (page-of by)
                             "https://creativecommons.org/licenses/by/2.1/jp/"))
-      (is (string/includes? (page-of by) "クレジットの表示はこのライセンスの条件です"))
+      (is (string/includes? (page-of by) "クレジット表示はこのライセンスの条件です"))
       (is (string/includes? (page-of by) "Attribution is a condition of this licence.")))
     (testing "neither page claims the other's terms"
       (is (not (string/includes? (page-of pd) "condition of this licence")))
@@ -482,10 +482,16 @@
       (let [rights-page (page pages "rights.html")]
         (is (string/includes? rights-page "public-domain"))
         (is (string/includes? rights-page "CC-BY-2.1-JP"))
-        (is (not (string/includes?
-                  rights-page
-                  "クレジットの表示はお願いであって、利用の条件ではありません"))
-            "the corpus-wide claim is false once one work is licensed")))))
+        ;; Attribution being a request holds for most of the corpus and not
+        ;; for the CC BY works, so the sentence saying so has to carry its
+        ;; qualifier. Asserting the absence of the unqualified sentence is
+        ;; what this used to do, and it could not fail: the string it looked
+        ;; for was punctuated with a 、 the page never emits, while the real
+        ;; sentence contains the rest of it as a substring.
+        (is (string/includes? rights-page "ほとんどの作品では、クレジット表示はお願いであって")
+            "the request is stated as holding for most works, not all")
+        (is (string/includes? rights-page "クレジット表示はそのライセンスの条件です")
+            "and the licensed works are named as the exception")))))
 
 (deftest a-work-page-names-the-bytes-that-follow-its-source-archive
   ;; Standard zip readers refuse 058100_001505's archive: 984 bytes follow

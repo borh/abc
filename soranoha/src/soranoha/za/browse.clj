@@ -749,7 +749,7 @@
                 (if (= "public-domain" works-standing)
                   (bilingual "著作権の存続期間が満了しています。"
                              "The copyright term has expired.")
-                  (bilingual "クレジットの表示はこのライセンスの条件です。"
+                  (bilingual "クレジット表示はこのライセンスの条件です。"
                              "Attribution is a condition of this licence."))]))
        (when-not (string/blank? card_url)
          (list [:dt (bilingual "青空文庫" "Aozora Bunko card")]
@@ -1071,7 +1071,7 @@
    document
    "Rights and licensing"
    [[:p (bilingual
-         "複製、再頒布、翻案、翻訳、情報解析、公衆送信のいずれも、営利非営利を問わず自由に行えます。許諾を得る必要も、対価を支払う必要もありません。ほとんどの作品では、クレジットの表示はお願いであって利用の条件ではありません。権利者がクリエイティブ・コモンズ 表示ライセンスの下で公開している作品に限り、クレジットの表示はそのライセンスの条件です。どの作品がどちらにあたるかは、その作品のページに書いてあります。"
+         "複製、再頒布、翻案、翻訳、情報解析、公衆送信のいずれも、営利非営利を問わず自由に行えます。許諾を得る必要も、対価を支払う必要もありません。ほとんどの作品では、クレジット表示はお願いであって利用の条件ではありません。権利者がクリエイティブ・コモンズ 表示ライセンスの下で公開している作品に限り、クレジット表示はそのライセンスの条件です。どの作品がどちらにあたるかは、その作品のページに書いてあります。"
          "You may copy, redistribute, adapt, translate, mine and republish everything here, commercially or not, without asking and without payment. For almost every work, attribution is requested rather than required. For the works whose rightsholder publishes them under a Creative Commons Attribution licence, attribution is a condition of that licence. Each work's own page says which of the two it is.")]
     ;; the grant as this release states it, rather than as this document
     ;; describes it: a served page that disagreed with the signed manifest
@@ -1099,11 +1099,11 @@
     ;; are identified from the notice their rightsholder wrote into the
     ;; colophon, and that notice is what the standing beside each work records.
     [:p (bilingual
-         "残りは、著作権が存続しており、権利者がクリエイティブ・コモンズ 表示ライセンス（CC BY）の下で青空文庫に公開している作品です。これらも同じく自由に利用できますが、クレジットの表示は権利者が付した条件です。どのバージョンのライセンスによるかは、作品ページと TEI ファイルの双方に記載しています。Soranoha が公開するのは、表示のみを条件とするライセンスの作品に限られます。非営利、改変禁止、継承のいずれかを課すライセンスの作品は収録していません。"
+         "残りは、著作権が存続しており、権利者がクリエイティブ・コモンズ 表示ライセンス（CC BY）の下で青空文庫に公開している作品です。これらも同じく自由に利用できますが、クレジット表示は権利者が付した条件です。どのバージョンのライセンスによるかは、作品ページと TEI ファイルの双方に記載しています。Soranoha が公開するのは、表示のみを条件とするライセンスの作品に限られます。非営利、改変禁止、継承のいずれかを課すライセンスの作品は収録していません。"
          "The rest are works whose copyright subsists and whose rightsholder publishes them on Aozora Bunko under a Creative Commons Attribution licence. They may be used just as freely, but attribution is a condition their rightsholder set rather than a request. Each work's page and its TEI header name the version of the licence it is under. Soranoha publishes such a work only where attribution is the sole condition: a work under a licence adding NonCommercial, NoDerivatives or ShareAlike is not in the corpus.")]
     [:p (bilingual
          "Soranoha 自身の符号化（TEI マークアップ、プレーンテキストと Markdown への投影、検証レポート、リリースマニフェスト）は、CC0-1.0 によりパブリックドメインで提供します。符号化に著作権および関連する権利（データベースに関する権利を含む）が生じる範囲では、これを放棄します。"
-         "Soranoha's own encoding (the TEI markup, the plaintext and Markdown projections, the validation reports and the release manifests) is dedicated to the public domain under CC0-1.0. Where that encoding attracts copyright or a database right at all, those rights are waived.")]
+         "Soranoha's own encoding (the TEI markup, the plaintext and Markdown projections, the validation reports and the release manifests) is dedicated to the public domain under CC0-1.0. To the extent that copyright and related rights, including database rights, subsist in that encoding, they are waived.")]
     ;; the catalog is deliberately absent from the CC0 list above. Its
     ;; bibliographic fields come from Aozora Bunko's catalog CSV, which
     ;; carries its own attribution condition, and a redistributor who read
@@ -1115,7 +1115,7 @@
     ;; the served page as what they are: a redistributor who reads only this
     ;; page would otherwise never learn that anything was asked
     [:p (bilingual
-         "青空文庫は義務ではなく二つのことを求めています。作品名・著者・底本・入力者・校正者を記したクレジット表記を削らないこと、そして底本や表記を変更した場合はその記録を添えることです。Soranoha はどちらも行っており、クレジットは各 TEI ファイルの back と各作品ページに、変更の記録は検証レポートと底本との差異に残しています。再頒布される方にも同じ扱いをお願いします。"
+         "青空文庫は義務ではなく二つのことを求めています。作品名・著者・底本・入力者・校正者を記したクレジット表示を削らないこと、そして底本や表記を変更した場合はその記録を添えることです。Soranoha はどちらも行っており、クレジットは各 TEI ファイルの back と各作品ページに、変更の記録は検証レポートと底本との差異に残しています。再頒布される方にも同じ扱いをお願いします。"
          "Aozora Bunko asks two things without requiring them: that the credit block naming the work, its author, its source edition and the people who keyed and proofread it not be removed, and that a change of source edition or notation come with a record of what changed. Soranoha does both: we keep the credit block in every TEI file's back matter and on every work page, and we publish the record as the validation report and the divergences from the source that accompany each work. We ask the same of anyone redistributing these files.")]
 
     ;; the split a redistributor actually needs: the corpus and the program

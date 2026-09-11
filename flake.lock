@@ -34,16 +34,17 @@
       "locked": {
         "lastModified": 1777068010,
         "narHash": "sha256-g46OHD5oLs2iVkO+DjsD0dtD0sWp3YzJMKc94JoPLvM=",
-        "owner": "aozorabunko",
-        "repo": "aozorabunko",
+        "ref": "refs/heads/master",
         "rev": "0e9ea3e586eb0aa34039fabfc85a407d2f98b165",
-        "type": "github"
+        "shallow": true,
+        "type": "git",
+        "url": "ssh://forgejo@code.hyakutake-barbel.ts.net:63333/bor/aozorabunko.git"
       },
       "original": {
-        "owner": "aozorabunko",
-        "repo": "aozorabunko",
         "rev": "0e9ea3e586eb0aa34039fabfc85a407d2f98b165",
-        "type": "github"
+        "shallow": true,
+        "type": "git",
+        "url": "ssh://forgejo@code.hyakutake-barbel.ts.net:63333/bor/aozorabunko.git"
       }
     },
     "clj-nix": {

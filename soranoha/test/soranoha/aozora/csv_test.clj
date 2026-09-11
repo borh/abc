@@ -53,3 +53,47 @@
 
 (deftest an-empty-first-publication-column-stays-null
   (is (nil? (get (csv/parse-work-fields-from-row (assoc row "初出" "")) "first_published"))))
+
+(defn- reading-notation
+  "Stands in for the parser: one gaiji annotation becomes the character it
+  names, so a test can see which fields were read."
+  [s]
+  (string/replace s "※［＃小書き片仮名ガ］" "ガ"))
+
+(deftest the-prose-fields-are-read-and-the-catalog-s-own-fields-are-not
+  (let [work (csv/parse-work-fields-from-row
+              (assoc row
+                     "作品名" "八※［＃小書き片仮名ガ］岳登山記"
+                     "作品名読み" "※［＃小書き片仮名ガ］"
+                     "副題" "副※［＃小書き片仮名ガ］題"
+                     "原題" "原※［＃小書き片仮名ガ］題"
+                     "初出" "甲※［＃小書き片仮名ガ］<br>乙※［＃小書き片仮名ガ］"
+                     "底本名1" "底※［＃小書き片仮名ガ］本"
+                     "底本出版社名1" "社※［＃小書き片仮名ガ］"
+                     "底本初版発行年1" "1900※［＃小書き片仮名ガ］"
+                     "底本の親本名1" "親※［＃小書き片仮名ガ］本"
+                     "図書カードURL" "https://example.org/※［＃小書き片仮名ガ］")
+              reading-notation)]
+    (is (= "八ガ岳登山記" (get work "title")))
+    (is (= "副ガ題" (get work "subtitle")))
+    (is (= "原ガ題" (get work "original_title")))
+    (is (= "甲ガ\n乙ガ" (get work "first_published"))
+        "each statement of first publication is read on its own")
+    (is (= {"title" "底ガ本" "publisher" "社ガ" "parent_title" "親ガ本"
+            "first_edition_year" "1900※［＃小書き片仮名ガ］"}
+           (first (get work "source_editions")))
+        "an edition's names are prose and its year is not")
+    (is (= "※［＃小書き片仮名ガ］" (get work "title_reading"))
+        "a reading is the catalog's own")
+    (is (= "https://example.org/※［＃小書き片仮名ガ］" (get work "card_url"))
+        "and so is a URL")))
+
+(deftest without-a-reader-the-fields-are-carried-as-the-catalog-wrote-them
+  (is (= "八※［＃小書き片仮名ガ］岳登山記"
+         (get (csv/parse-work-fields-from-row (assoc row "作品名" "八※［＃小書き片仮名ガ］岳登山記"))
+              "title"))))
+
+(deftest a-statement-that-reads-as-nothing-is-no-statement
+  (is (= "乙" (get (csv/parse-work-fields-from-row (assoc row "初出" "甲<br>乙")
+                                                  (fn [s] (if (= s "甲") "" s)))
+                  "first_published"))))

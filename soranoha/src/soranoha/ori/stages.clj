@@ -14,6 +14,8 @@
             [soranoha.annotations.view :as view]
             [soranoha.ori.projection :as projection]
             [soranoha.ori.render :as render]
+            [soranoha.ori.tei :as tei]
+            [soranoha.ori.tei-header :as tei-header]
             [soranoha.ori.validate :as validate]
             [soranoha.aozora.ingest :as ingest]
             [soranoha.core.json :as record-json]
@@ -79,23 +81,88 @@
               (assoc "trailing_bytes_after_archive"
                      (:trailing-garbage-trimmed inspection))))}))})
 
+(defn- notation-as-text
+  "`field` read the way a text is read: parsed, rendered to TEI, projected to
+  plaintext. The one-line document the parser sees has no header, so the
+  first line is body text and not a title."
+  [{:keys [aozora-bin convert-bin mapping]} field]
+  (with-temp-dir
+    (fn [dir]
+      (let [parsed (run-process! {:args [aozora-bin "--mode" "aat"]
+                                  :stdin-bytes (utf8 (str field "\n"))})
+            _ (when-not (zero? (:exit parsed))
+                (throw (ex-info "ab-aozora adapter failed on a catalog field"
+                                {:exit (:exit parsed) :stderr (:err parsed) :field field})))
+            aat-file (str (fs/path dir "aat.json"))
+            parser-ir-file (str (fs/path dir "parser-ir.json"))
+            _ (fs/write-bytes aat-file (:out-bytes parsed))
+            converted (run-process!
+                       {:args [convert-bin "convert"
+                               "--aat" aat-file
+                               "--mapping" mapping
+                               "--work-content-hash" (core-hash/format-sha256
+                                                      (core-hash/sha256-bytes (utf8 field)))
+                               "--parser-ir-out" parser-ir-file
+                               "--divergence-out" (str (fs/path dir "divergence.json"))]})
+            _ (when-not (zero? (:exit converted))
+                (throw (ex-info "ab-aat-to-parser-ir convert failed on a catalog field"
+                                {:exit (:exit converted) :stderr (:err converted) :field field})))
+            parser-ir (json/read-json (slurp parser-ir-file))
+            document (render/text-document (:body (tei/render parser-ir)))
+            text (string/trimr (projection/plaintext
+                                (view/from-tei (tei-header/hiccup->pretty-xml-string document))))]
+        (when (string/blank? text)
+          (throw (ex-info "a catalog field read as nothing"
+                          {:field field})))
+        text))))
+
+(defn catalog-text-reader
+  "The reader the metadata stage hands to the catalog boundary.
+
+  Aozora Bunko writes ※［＃…］ into a title or a publisher's name when the
+  catalog cannot type a character, the same notation it writes into a text,
+  and the boundary used to publish it as it stood: 八※［＃小書き片仮名ガ］
+  岳登山記 as a page heading, a search row and a citation. A field that
+  carries the notation is read the way the text is read, so the title holds
+  what the body holds and follows it when the parser changes: ガ from Aozora
+  Bunko's own gaiji dictionary, 𫝹 where the annotation names the code point,
+  the digits without the instruction where 指数 asks for a superscript. A
+  field without it is returned as it is, and never reaches the parser, which
+  reads a bare 《》 as a ruby reading with no base and drops it; four subtitles
+  are written with those brackets.
+
+  The identity is the same three files the parse and convert stages hash."
+  [{:keys [aozora-bin convert-bin mapping] :as adapter}]
+  {:toolchain-id (core-hash/sha256-canonical-json
+                  {"aozora_bin" (core-hash/sha256-file aozora-bin)
+                   "convert_bin" (core-hash/sha256-file convert-bin)
+                   "mapping" (core-hash/sha256-file mapping)})
+   :read (fn [field]
+           (if (string/includes? field "［＃")
+             (notation-as-text adapter field)
+             field))})
+
 (defn metadata-stage
   "Work-local catalog rows and work id -> validated metadata and person records.
-  Schema documents are captured once and are part of this stage's identity."
-  [clj-toolchain-id assets-root]
+  Schema documents are captured once and are part of this stage's identity,
+  and so is `text-reader`, a `catalog-text-reader`: the records it reads
+  hold what the reader made of the catalog's prose."
+  [clj-toolchain-id assets-root text-reader]
   (let [schemas {:metadata (schema/read-schema (str (fs/path assets-root "schemas/metadata-record.schema.json")))
                  :person (schema/read-schema (str (fs/path assets-root "schemas/person-record.schema.json")))}]
     {:stage-id "metadata"
-     :stage-version "4"
+     :stage-version "5"
      :toolchain-id (core-hash/sha256-canonical-json
                     {"clj" clj-toolchain-id
                      "metadata-schema" (core-hash/sha256-canonical-json (:metadata schemas))
-                     "person-schema" (core-hash/sha256-canonical-json (:person schemas))})
+                     "person-schema" (core-hash/sha256-canonical-json (:person schemas))
+                     "catalog-text" (:toolchain-id text-reader)})
      :f (fn [{:keys [blob]} inputs]
           (let [{:keys [metadata-rec person-records]}
                 (ingest/build-records
                  {:rows (json/read-json (String. ^bytes (blob (get inputs "catalog-rows")) "UTF-8"))
-                  :work-id (get inputs "work_id") :schemas schemas})]
+                  :work-id (get inputs "work_id") :schemas schemas
+                  :read-text (:read text-reader)})]
             {"metadata-record" (utf8 (str (record-json/write-deterministic-json-str metadata-rec) "\n"))
              "persons" (json-bytes person-records)}))}))
 

@@ -42,6 +42,11 @@
    "公開日" "2026-01-01" "最終更新日" "2026-01-01"
    "図書カードURL" (str "https://www.aozora.gr.jp/cards/000001/card" id ".html")})
 
+(def ^:private catalog-as-written
+  "A reader that leaves the catalog's prose as the catalog wrote it. The rows
+  here carry no notation, so what these tests measure is unchanged by it."
+  {:toolchain-id "catalog-as-written" :read identity})
+
 (deftest metadata-traces-use-captured-schema-documents
   (let [dir (fs/create-temp-dir {:prefix "metadata-inputs"})
         assets (fs/path dir "assets")
@@ -52,7 +57,7 @@
       (doseq [filename ["metadata-record.schema.json" "person-record.schema.json"]]
         (spit (str (fs/path assets "schemas" filename))
               (slurp (str (fs/path "schemas" filename)))))
-      (let [stage (stages/metadata-stage "test" assets)
+      (let [stage (stages/metadata-stage "test" assets catalog-as-written)
             run (fn [stage rows]
                   (engine/run-stage! store stage
                                      {"catalog-rows" (cas/put-bytes!
@@ -74,18 +79,23 @@
                                (str "sha256:" (hash/sha256-canonical-json doc))))]
         (testing "same-process metadata schema edits bind both stage identity and embedded schema hash"
           (let [schema-hash (mutate-schema! "metadata-record.schema.json")
-                current (run (stages/metadata-stage "test" assets) [second-row])]
+                current (run (stages/metadata-stage "test" assets catalog-as-written) [second-row])]
             (is (not (:cached? current)))
             (is (= schema-hash (get (read-output current "metadata-record") "metadata_record_schema_hash")))
             (is (not= (get old-metadata "metadata_record_schema_hash") schema-hash))))
         (testing "person schema edits also change the referenced person identity"
           (let [schema-hash (mutate-schema! "person-record.schema.json")
-                current (run (stages/metadata-stage "test" assets) [second-row])
+                current (run (stages/metadata-stage "test" assets catalog-as-written) [second-row])
                 person (get (read-output current "persons") "000001")]
             (is (not (:cached? current)))
             (is (= schema-hash (get person "person_record_schema_hash")))
             (is (not= (get old-metadata "contributors")
                       (get (read-output current "metadata-record") "contributors")))))
+        (testing "a different reader of the catalog's prose is a different derivation"
+          (let [current (run (stages/metadata-stage "test" assets
+                                                    {:toolchain-id "another-reader" :read identity})
+                             [second-row])]
+            (is (not (:cached? current)))))
         (testing "an already-constructed stage keeps the schema documents its identity describes"
           (let [fresh (run stage [(catalog-row "000102" "新規")])]
             (is (= (get old-metadata "metadata_record_schema_hash")
@@ -121,6 +131,7 @@
         build #(binding [*out* (java.io.StringWriter.)] (main/build! opts))]
     (try
       (with-redefs [stages/resolve-adapter (constantly {})
+                    stages/catalog-text-reader (constantly catalog-as-written)
                     accountability/source-stage (constantly (:accountability corpus/stage-set))
                     accountability/coverage-stage (constantly (:coverage corpus/stage-set))
                     stages/parse-stage (constantly (:parse corpus/stage-set))

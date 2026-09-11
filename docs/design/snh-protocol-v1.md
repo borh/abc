@@ -693,6 +693,14 @@ statement is empty. The upstream catalog separates them with a literal `<br>`,
 which is markup from its card pages rather than text from a work, and which no
 published field carries.
 
+Aozora Bunko writes its `※［＃…］` notation into a title, a publisher's name or
+a statement of first publication when the catalog cannot type a character, the
+same notation it writes into a text. No published field carries it. A field
+that carries it upstream holds the plaintext projection of that field read as
+a text is read, by the same parser and renderer, so a title says what the body
+says and changes when the parser does. Readings, identifiers, dates and flags
+are the catalog's own and are published as written.
+
 `archive_stem` is the Aozora Bunko archive's own name for the work's primary text
 member, without its extension. Every published work has exactly one such
 member (the source bundle fails closed on none and on several), so the value

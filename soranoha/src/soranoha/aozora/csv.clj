@@ -187,7 +187,8 @@
   (when (and s (not= "" s)) s))
 
 (defn- first-publication
-  "Aozora Bunko's 初出 column, with its line breaks written as line breaks.
+  "Aozora Bunko's 初出 column, with its line breaks written as line breaks
+  and each statement read by `read-text`.
 
   A collection is one work in that catalog, and its 初出 names where each
   constituent piece first appeared. The catalog separates those statements
@@ -196,11 +197,13 @@
   statements long. No 初出 value contains a newline of its own, so reading
   the tag as the break it stands for loses nothing and leaves nothing
   downstream having to know the tag exists."
-  [value]
+  [value read-text]
   (some-> (nullable value)
           (string/replace #"<br\s*/?>" "\n")
           string/split-lines
           (->> (map string/trim)
+               (remove string/blank?)
+               (map (comp string/trim read-text))
                (remove string/blank?)
                (string/join "\n"))
           nonblank))
@@ -219,47 +222,61 @@
 
 (defn- source-edition-from
   "Build a source-edition map from the columns indexed `n` (1 or 2).
-  Returns nil when both title and publisher are blank."
-  [row n]
+  Returns nil when both title and publisher are blank. The names are prose
+  and go through `read-text`; the years do not."
+  [row n read-text]
   (let [title (nonblank (get row (edition-key n "底本名")))
-        publisher (nonblank (get row (edition-key n "底本出版社名")))]
+        publisher (nonblank (get row (edition-key n "底本出版社名")))
+        prose (fn [column] (some-> (nonblank (get row (edition-key n column))) nfc read-text))]
     (when (and title publisher)
-      (cond-> {"title" (nfc title)
-               "publisher" (nfc publisher)}
+      (cond-> {"title" (read-text (nfc title))
+               "publisher" (read-text (nfc publisher))}
         (nonblank (get row (edition-key n "底本初版発行年")))
         (assoc "first_edition_year" (nfc (get row (edition-key n "底本初版発行年"))))
-        (nonblank (get row (edition-key n "入力に使用した版")))
-        (assoc "input_edition" (nfc (get row (edition-key n "入力に使用した版"))))
-        (nonblank (get row (edition-key n "校正に使用した版")))
-        (assoc "proof_edition" (nfc (get row (edition-key n "校正に使用した版"))))
-        (nonblank (get row (edition-key n "底本の親本名")))
-        (assoc "parent_title" (nfc (get row (edition-key n "底本の親本名"))))
-        (nonblank (get row (edition-key n "底本の親本出版社名")))
-        (assoc "parent_publisher" (nfc (get row (edition-key n "底本の親本出版社名"))))
+        (prose "入力に使用した版")
+        (assoc "input_edition" (prose "入力に使用した版"))
+        (prose "校正に使用した版")
+        (assoc "proof_edition" (prose "校正に使用した版"))
+        (prose "底本の親本名")
+        (assoc "parent_title" (prose "底本の親本名"))
+        (prose "底本の親本出版社名")
+        (assoc "parent_publisher" (prose "底本の親本出版社名"))
         (nonblank (get row (edition-key n "底本の親本初版発行年")))
         (assoc "parent_first_edition_year"
                (nfc (get row (edition-key n "底本の親本初版発行年"))))))))
 
-(defn parse-work-fields-from-row [row]
-  (let [editions (filterv some? [(source-edition-from row 1)
-                                 (source-edition-from row 2)])]
-    {"work_id" (get row "作品ID")
-     "title" (nfc (get row "作品名"))
-     "title_reading" (nullable (get row "作品名読み"))
-     "sort_reading" (nullable (get row "ソート用読み"))
-     "subtitle" (nullable (get row "副題"))
-     "subtitle_reading" (nullable (get row "副題読み"))
-     "original_title" (nullable (get row "原題"))
-     "first_published" (first-publication (get row "初出"))
-     "ndc" (let [v (some-> (get row "分類番号") nfc string/trim)]
-             (when (and v (re-matches #"NDC [0-9A-Z]+( [0-9A-Z]+)*" v))
-               v))
-     "orthographic_style" (get row "文字遣い種別")
-     "copyright_expired" (parse-bool-flag (get row "作品著作権フラグ"))
-     "aozora_available" (get row "公開日")
-     "aozora_modified" (get row "最終更新日")
-     "card_url" (get row "図書カードURL")
-     "source_editions" editions}))
+(defn parse-work-fields-from-row
+  "One catalog row as the work fields of a record.
+
+  `read-text` reads each field that is prose from the source's world rather
+  than the catalog's own: a title, a publisher, a statement of where a piece
+  first appeared. Aozora Bunko writes the same ※［＃…］ notation into those
+  fields as into a text when a title needs a character the catalog cannot
+  type, and the reader is what turns it into the character. Readings,
+  identifiers, dates and flags are the catalog's own and are not read. With
+  one argument the fields are carried as the catalog wrote them."
+  ([row] (parse-work-fields-from-row row identity))
+  ([row read-text]
+   (let [editions (filterv some? [(source-edition-from row 1 read-text)
+                                  (source-edition-from row 2 read-text)])
+         prose (fn [column] (some-> (nullable (get row column)) read-text))]
+     {"work_id" (get row "作品ID")
+      "title" (read-text (nfc (get row "作品名")))
+      "title_reading" (nullable (get row "作品名読み"))
+      "sort_reading" (nullable (get row "ソート用読み"))
+      "subtitle" (prose "副題")
+      "subtitle_reading" (nullable (get row "副題読み"))
+      "original_title" (prose "原題")
+      "first_published" (first-publication (get row "初出") read-text)
+      "ndc" (let [v (some-> (get row "分類番号") nfc string/trim)]
+              (when (and v (re-matches #"NDC [0-9A-Z]+( [0-9A-Z]+)*" v))
+                v))
+      "orthographic_style" (get row "文字遣い種別")
+      "copyright_expired" (parse-bool-flag (get row "作品著作権フラグ"))
+      "aozora_available" (get row "公開日")
+      "aozora_modified" (get row "最終更新日")
+      "card_url" (get row "図書カードURL")
+      "source_editions" editions})))
 
 (defn parse-person-fields-from-row
   "Returns `{:fields, :corrections}`. `:fields` is the JSON-shaped
@@ -298,10 +315,11 @@
   persons-by-id is keyed by person_id; contributors are sorted by person_id and
   de-duplicated. Throws if a single person_id appears with divergent
   body fields. `:corrections-by-pid` maps person_id → vector of
-  {field, raw, corrected, rule} audit entries (deduplicated)."
-  [rows]
+  {field, raw, corrected, rule} audit entries (deduplicated). `read-text` is
+  handed to `parse-work-fields-from-row`."
+  [rows read-text]
   (assert (seq rows) "build-record-fragment-from-rows requires at least one row")
-  (let [works (mapv parse-work-fields-from-row rows)
+  (let [works (mapv #(parse-work-fields-from-row % read-text) rows)
         work-ids (distinct (map #(get % "work_id") works))]
     (assert (= 1 (count work-ids))
             (str "rows must share work_id; got: " (vec work-ids)))

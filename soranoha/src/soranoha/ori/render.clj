@@ -21,6 +21,12 @@
    header
    body])
 
+(defn text-document
+  "A document of `body` alone, for reading a fragment the way a work is read.
+  Same root as a work's, so the same projections accept it."
+  [body]
+  (tei-document nil body))
+
 (defn- interpretation-notes [parser-ir]
   (let [complete (get-in parser-ir ["derived_from" "parse_complete"])
         decoding (get-in parser-ir ["source" "decode_outcome"])

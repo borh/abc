@@ -28,14 +28,16 @@
 
 (defn build-records
   "Build and validate a work metadata record and its contributor person records
-  from catalog rows and explicit :metadata/:person schema documents. Returns {:metadata-rec record :person-records {id record}}."
-  [{:keys [rows work-id schemas]}]
+  from catalog rows and explicit :metadata/:person schema documents. Returns {:metadata-rec record :person-records {id record}}.
+  `:read-text` reads the prose fields; see `soranoha.aozora.csv/parse-work-fields-from-row`."
+  [{:keys [rows work-id schemas read-text]}]
+  (assert (fn? read-text) "build-records requires a :read-text function")
   (let [matching (filter #(= work-id (get % "作品ID")) rows)]
     (when-not (seq matching)
       (throw (ex-info (str "no rows for work_id " work-id " in supplied rows")
                       {:work-id work-id})))
     (let [{:keys [work persons-by-id contributors]}
-          (ac/build-record-fragment-from-rows matching)
+          (ac/build-record-fragment-from-rows matching read-text)
           person-records
           (into (sorted-map)
                 (map (fn [[pid body]]

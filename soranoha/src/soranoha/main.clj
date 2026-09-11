@@ -82,7 +82,8 @@
   (let [adapter (stages/resolve-adapter)
         profile (validate/profile-paths assets-root)]
     {:extract (stages/extract-stage clj-toolchain-id)
-     :metadata (stages/metadata-stage clj-toolchain-id assets-root)
+     :metadata (stages/metadata-stage clj-toolchain-id assets-root
+                                      (stages/catalog-text-reader adapter))
      :parse (stages/parse-stage adapter)
      :convert (stages/convert-stage adapter)
      :render (stages/render-stage clj-toolchain-id (build-rights-grant opts))

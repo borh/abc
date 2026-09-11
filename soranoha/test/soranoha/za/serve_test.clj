@@ -163,8 +163,7 @@
       ;; for implementers stay in the repository and have no page
       (doseq [rel ["start-here.html" "example.html" "glossary.html"
                    "identifiers.html" "assessment.html" "accountability.html"
-                   "validation.html" "annotation-layers.html"
-                   "external-links.html"]]
+                   "validation.html" "annotation-layers.html"]]
         (is (fs/regular-file? (fs/path out rel)) rel))
       (doseq [rel ["protocol.html" "parser-invariants.html"]]
         (is (not (fs/exists? (fs/path out rel))) rel))

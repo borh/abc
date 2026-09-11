@@ -3,8 +3,7 @@
             [clojure.test :refer [deftest is testing]]
             [soranoha.kura.cas :as cas]
             [soranoha.kura.engine :as engine]
-            [soranoha.kura.trace :as trace]
-            [soranoha.kura.verify :as verify]))
+            [soranoha.kura.trace :as trace]))
 
 (defn- temp-store! []
   (let [dir (str (fs/create-temp-dir {:prefix "kura-test"}))]
@@ -82,21 +81,4 @@
     (engine/run-stage! store flaky {"text" input-hex})
     (testing "divergent re-execution is a recorded determinism violation"
       (is (= 1 (count (trace/determinism-violations (:trace store))))))
-    (testing "deterministic stages report zero violations"
-      (let [report (verify/verify store)]
-        (is (false? (:ok? report)))))
-    (engine/close-store! store)))
-
-(deftest fixity-sweep-test
-  (let [store (temp-store!)
-        input-hex (cas/put-bytes! (:cas-dir store) (.getBytes "w" "UTF-8"))
-        run (engine/run-stage! store upcase-stage {"text" input-hex})
-        out-hex (get (:outputs run) "out")
-        report (verify/verify store)]
-    (is (true? (:ok? report)))
-    (is (pos? (get-in report [:fixity :checked])))
-    (testing "corrupted blob bytes are detected"
-      (fs/write-bytes (cas/blob-path (:cas-dir store) out-hex)
-                      (.getBytes "tampered" "UTF-8"))
-      (is (= [out-hex] (get-in (verify/verify store) [:fixity :corrupt]))))
     (engine/close-store! store)))

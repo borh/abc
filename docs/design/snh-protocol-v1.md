@@ -658,12 +658,6 @@ binds relied-upon source content hashes to built work inputs; the verifier
 checks that published works carry the same canonical source content hash.
 Withdrawal handling still subtracts the withdrawn set from admission.
 
-
-Internal RDF places attributed source classification and the relying
-decision in their own record graphs. Current reliance links appear only in
-`accepted-reliance`, separately from independently evaluated facts in
-`accepted`; no synthetic contribution or independent fact is introduced.
-
 ## 13. Release catalog payload version 1
 
 `snh-catalog/1` uses the registered `catalog` release-level type and the

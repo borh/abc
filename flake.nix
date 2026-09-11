@@ -142,7 +142,6 @@
             inherit pkgs;
             odd = ./soranoha/schemas/tei-profile.odd;
           };
-          pythonWithRdflib = pkgs.python3.withPackages (python: [ python.rdflib ]);
           # The adapter binaries and data the kernel's stages call. The mapping
           # is copied out of the ab-validator tree so its store path follows
           # its own content, not every edit to that tree.
@@ -295,7 +294,6 @@
           depsCache,
           tei,
           profile,
-          pythonWithRdflib,
           abToolEnv,
           ...
         }:
@@ -362,7 +360,6 @@
                   pkgs.clj-kondo
                   pkgs.cljfmt
                   pkgs.cmark
-                  pythonWithRdflib
                   # the static-serving acceptance runs the checked-in
                   # Caddyfile against an exported tree
                   pkgs.caddy
@@ -539,12 +536,7 @@
       );
 
       devShells = forEachSystem (
-        {
-          system,
-          pkgs,
-          pythonWithRdflib,
-          ...
-        }:
+        { system, pkgs, ... }:
         {
           default = pkgs.mkShell {
             inputsFrom = [ ab-validator.devShells.${system}.default ];
@@ -560,7 +552,7 @@
               pkgs.mypy
               pkgs.nixfmt
               pkgs.ruff
-              pythonWithRdflib
+              pkgs.python3
             ];
             shellHook = ''
               if [ -f scripts/soranoha-runtime-env.sh ]; then

@@ -1,4 +1,4 @@
-# Assessment evaluation and internal RDF
+# Assessment evaluation
 
 Assessment source records describe owner-reviewed Aozora Bunko reliance declarations and independent findings with their precise premises. The evaluator regenerates the publication snapshot using the kernel's CAS and constructive traces. The committed source accepts reliance for reviewed corpus editions recorded in `soranoha/data/assessment-source.json`. The publication policy requires applicable assessment evidence; other candidates remain quarantined.
 
@@ -58,31 +58,6 @@ The scheduled release workflow supplies the runner’s UTC date with `--as-of "$
 
 Assessment-owned source records, dossiers, publication snapshot, and policy live in `soranoha/data/` and are consumed through explicit paths. The same-revision check binds the assessment source and snapshot within the monorepo; the policy is validated separately.
 
-The toolchain identity covers the runtime and dependency environment, not Soranoha source code. Change the assessment `rule-version` whenever its legal rule or computation changes; that version identifies both the rule stage and its recorded basis. Change `reliance-version` when reliance eligibility or payload computation changes. Change `assessment-fact-version` when fact serialization or meaning changes, and the applicable RDF `fragment-versions` entry or `assembly-version` when that stage’s serialization or meaning changes. Keep these versions local to the affected stage so unrelated program changes preserve reusable results.
+The toolchain identity covers the runtime and dependency environment, not Soranoha source code. Change the assessment `rule-version` whenever its legal rule or computation changes; that version identifies both the rule stage and its recorded basis. Change `reliance-version` when reliance eligibility or payload computation changes. Change `assessment-fact-version` when fact serialization or meaning changes. Keep these versions local to the affected stage so unrelated program changes preserve reusable results.
 
-The build/render graph remains separate from assessment rules. All sources emit `snh-assessment-snapshot/2`, whose candidates distinguish independent assessments from edition-level reliance. The snapshot carries the attributed assertion and retained-evidence digests; it does not invent contributor findings. The manifest and signature formats remain unchanged. Assessment source files and RDF graphs remain internal inputs and projections.
-
-## Experimental RDF dataset
-
-Set `RDF_OUTPUT` to an absolute path and add these flags to the evaluation command:
-
-```sh
---rdf-out "$RDF_OUTPUT" --rdf-base https://w3id.org/soranoha/assessment/
-```
-
-The base IRI names the graphs and is the caller's to choose; the project's
-own namespace is used below. The result is deterministic N-Quads. Each historical finding has its own named graph and PROV review metadata. Reviewed premises are recorded as activity usage; deterministic conclusion derivations also use `prov:wasDerivedFrom`. Only the graph `<https://w3id.org/soranoha/assessment/accepted>` contains currently available conclusions. Do not treat a union of the historical graphs as accepted knowledge. ScopedFact resources preserve jurisdiction and effective date rather than asserting timeless properties of people or works.
-
-For example, query the accepted graph explicitly:
-
-```sparql
-PREFIX a: <urn:soranoha:assessment:>
-SELECT ?subject ?predicate ?value ?date WHERE {
-  GRAPH <https://w3id.org/soranoha/assessment/accepted> {
-    ?fact a:subject ?subject ; a:predicate ?predicate ;
-          a:value ?value ; a:effectiveDate ?date .
-  }
-}
-```
-
-Reliance resources separately attribute the upstream assertion and the owner’s reliance decision, including whether it currently applies. They do not assert individual public-domain facts. Finding, conclusion and reliance fragments reuse their own trace entries; assembly depends on fragment hashes. Base-IRI or vocabulary-profile changes affect projection, not assessment or rendering. JSON record identities remain authoritative; RDF serialization is an internal view and does not define signed identities. Future RDF/OWL mappings can evolve at this boundary without changing the evaluator's closed acceptance rules.
+The build/render graph remains separate from assessment rules. All sources emit `snh-assessment-snapshot/2`, whose candidates distinguish independent assessments from edition-level reliance. The snapshot carries the attributed assertion and retained-evidence digests; it does not invent contributor findings. The manifest and signature formats remain unchanged. Assessment source files remain internal inputs.

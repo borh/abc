@@ -50,9 +50,7 @@
    {:route "assessment" :path "soranoha/docs/assessment-evaluation.md"
     :ja "公開可否の判断"}
    {:route "annotation-layers" :path "docs/annotation-layers.md"
-    :ja "注釈の層"}
-   {:route "external-links" :path "soranoha/docs/external-links.md"
-    :ja "外部リンク"}])
+    :ja "注釈の層"}])
 
 (def generated
   "Pages the browse layer assembles itself, because each states facts it reads

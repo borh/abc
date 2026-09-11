@@ -6,7 +6,6 @@
             [soranoha.assessment.fixtures :as fixtures]
             [soranoha.assessment.graph :as graph]
             [soranoha.assessment.records :as records]
-            [soranoha.assessment.rdf :as rdf]
             [soranoha.kura.engine :as engine]))
 
 (defn- with-store [f]
@@ -59,15 +58,3 @@
                                       :candidates {} :as-of "2026-09-05" :toolchain-id "test"})]
         (is (= :assessment/unavailable (get-in view [:findings 0 :state])))
         (is (= :assessment/missing-selected-work (get-in view [:findings 0 :dependencies 0 :reason])))))))
-
-(deftest review-premises-express-usage-without-inferring-derivation
-  (with-store
-    (fn [store]
-      (let [source (fixtures/assessed-source "work" ["author:000001"] captures)
-            view (evaluate/evaluate! store source
-                                     {:observations captures :candidates {"work" ["author:000001"]}
-                                      :as-of "2026-09-05" :toolchain-id "test"})
-            text (rdf/nquads view {:base-iri "urn:assessment/" :mapping-profile rdf/default-mapping-profile})]
-        (is (str/includes? text "<http://www.w3.org/ns/prov#qualifiedUsage>"))
-        (is (not (re-find #"(?m)^<urn:assessment/claim/[^>]+> <http://www.w3.org/ns/prov#wasDerivedFrom>" text)))
-        (is (re-find #"(?m)^<urn:assessment/conclusion/[^>]+> <http://www.w3.org/ns/prov#wasDerivedFrom>" text))))))

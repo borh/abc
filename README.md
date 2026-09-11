@@ -20,7 +20,7 @@ contains:
   MIT or Apache-2.0).
 - `soranoha/`: publication kernel, TEI/plaintext conversion, record schemas,
   validation, and the snh protocol, including
-  [assessment evaluation and experimental RDF](soranoha/docs/assessment-evaluation.md).
+  [assessment evaluation](soranoha/docs/assessment-evaluation.md).
 
 ## Development
 

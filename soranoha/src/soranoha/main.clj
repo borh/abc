@@ -4,12 +4,9 @@
             [babashka.process :as process]
             [charred.api :as json]
             [clojure.string :as string]
-            [soranoha.annotations.main :as annotations]
-            [soranoha.links.main :as links]
             [soranoha.assessment.aozora :as aozora]
             [soranoha.assessment.evaluate :as assessment-evaluator]
             [soranoha.assessment.records :as assessment-records]
-            [soranoha.assessment.rdf :as assessment-rdf]
             [soranoha.assessment.snapshot :as assessment-snapshot]
             [soranoha.assessment.source :as assessment-source]
             [soranoha.core.config :as config]
@@ -19,7 +16,6 @@
             [soranoha.kura.engine :as engine]
             [soranoha.kura.cas :as cas]
             [soranoha.kura.trace :as trace]
-            [soranoha.kura.verify :as kura-verify]
             [soranoha.ori.stages :as stages]
             [soranoha.ori.accountability :as accountability]
             [soranoha.ori.validate :as validate]
@@ -38,7 +34,6 @@
             [soranoha.yomi.catalog :as catalog]
             [soranoha.yomi.select :as select]
             [soranoha.za.maturity :as maturity]
-            [soranoha.za.oracle :as oracle]
             [soranoha.za.release :as za-release]
             [soranoha.za.scaffold :as scaffold]
             [soranoha.za.serve :as serve])
@@ -355,54 +350,6 @@
     (execute-build! opts captured
                     (build-stages opts))))
 
-(defn- delta!
-  "Upstream-revision qualification: the three-set delta oracle over two
-  build run reports (strictly decoded), printed as deterministic JSON.
-  Run against each candidate aozorabunko revision's report and the
-  previous qualified run's; comparison requires matching
-  stage-coordinate tables: differing coordinates fail as incomparable
-  and require a new baseline run. The reports themselves stay
-  disposable. `ok` requires zero unexplained executions; the source and
-  artifact deltas are descriptive (content hashes already establish
-  what changed, and no executed stage is evidence for or against an
-  artifact change; a warm cache can produce changed bytes without
-  executing anything)."
-  [{:keys [report-a report-b]}]
-  (let [run-a (oracle/decode-run (fs/read-all-bytes (str report-a)))
-        run-b (oracle/decode-run (fs/read-all-bytes (str report-b)))
-        violations (oracle/unexplained-executions run-a run-b)
-        source (oracle/source-delta run-a run-b)
-        artifacts (oracle/report-artifact-delta run-a run-b)
-        executed (oracle/executed-stages run-b)
-        sorted-slugs (fn [slugs] (vec (sort slugs)))
-        delta-json (fn [d] (into (sorted-map)
-                                 (map (fn [[k v]] [(name k) (sorted-slugs v)]))
-                                 d))
-        stage-counts (into (sorted-map)
-                           (map (fn [[stage runs]]
-                                  [(name stage) (count runs)]))
-                           (group-by identity (mapcat val executed)))
-        touched (into (:added source) (:changed source))
-        result {"commit_a" (:commit run-a)
-                "commit_b" (:commit run-b)
-                "source_delta" (delta-json source)
-                "artifact_delta" (delta-json artifacts)
-                "executed_stage_counts" stage-counts
-                "executed_for_touched_sources"
-                (into (sorted-map)
-                      (keep (fn [slug]
-                              (when-let [stages (seq (get executed slug))]
-                                [slug (vec (sort (map name stages)))])))
-                      (sorted-slugs touched))
-                "unexplained_executions"
-                (mapv (fn [{:keys [slug stage trace-key]}]
-                        {"slug" slug "stage" (name stage)
-                         "trace_key" trace-key})
-                      (sort-by (juxt :slug #(name (:stage %))) violations))
-                "ok" (empty? violations)}]
-    (println (record-json/write-deterministic-json-str result))
-    result))
-
 (defn- require-flags! [command flags]
   (doseq [[flag value] flags]
     (when (string/blank? (str value))
@@ -499,14 +446,12 @@
           content-hash)))))
 
 (defn- evaluate-assessment!
-  [{:keys [root aozora-root evidence-root as-of clj-toolchain-id rdf-out rdf-base aozora-fetch]}
+  [{:keys [root aozora-root evidence-root as-of clj-toolchain-id aozora-fetch]}
    {:keys [source retained]}]
   (require-flags! "assessment evaluation"
                   {"--root" (config/root root)
                    "--aozora-root" aozora-root
                    "--clj-toolchain-id" clj-toolchain-id})
-  (when rdf-out
-    (require-flags! "internal RDF export" {"--rdf-base" rdf-base}))
   (let [root (config/ensure-layout! (config/root root))]
     (with-store root
       (fn [store]
@@ -524,14 +469,6 @@
                           (assoc captured :as-of as-of :toolchain-id clj-toolchain-id
                                  :reliance-observations reliance-observations))
               snapshot (assessment-snapshot/encode evaluation)]
-          (when rdf-out
-            (let [rdf (assessment-rdf/project!
-                       store evaluation {:base-iri rdf-base
-                                         :mapping-profile assessment-rdf/default-mapping-profile
-                                         :toolchain-id clj-toolchain-id})]
-              (fs/write-bytes (str rdf-out)
-                              (cas/get-bytes (:cas-dir store)
-                                             (get-in rdf [:outputs "nquads"])))))
           {:snapshot snapshot :evaluation evaluation
            :source-commit commit :source-hashes (:source-hashes captured)})))))
 
@@ -730,7 +667,7 @@
                 (throw (ex-info "built sources differ from assessment inputs"
                                 {:reason :assessment-source-changed-during-build})))
               (committed-assessment-inputs! opts assessment-source-bytes snapshot-bytes)
-              (let [current (evaluate-assessment! (dissoc opts :rdf-out) assessment-inputs)]
+              (let [current (evaluate-assessment! opts assessment-inputs)]
                 (when-not (and (= source-commit (:source-commit current))
                                (= source-hashes (:source-hashes current)))
                   (throw (ex-info "assessed sources changed during the build"
@@ -1084,32 +1021,6 @@
                       {:reason :invalid-release-doi :release-doi doi})))
     doi))
 
-(defn- serving-tree!
-  "Export the serving tree (blobs/, releases/, governance/, plus the
-  work-facing symlink layer works/, withdrawn/, releases/latest) from
-  the verified chain into --out, which must not yet exist."
-  [{:keys [chain-clone branch out release-pub governance-pub release-doi
-           release-name release-maturity]}]
-  (require-flags! "serving-tree"
-                  {"--chain-clone" chain-clone
-                   "--out" out
-                   "--release-pub" release-pub
-                   "--governance-pub" governance-pub})
-  (let [result (serve/export-tree!
-                {:clone (str chain-clone)
-                 :branch branch
-                 :pinned-keys (pinned-keys-from-files release-pub
-                                                      governance-pub)
-                 :release-doi (release-doi! release-doi)
-                 :release-name (maturity/release-name! release-name)
-                 :maturity (do (maturity/label! release-maturity) release-maturity)
-                 :out-dir (str out)})]
-    (println (record-json/write-deterministic-json-str
-              {"head" (:head result)
-               "releases" (:releases result)
-               "blobs" (:blobs result)}))
-    result))
-
 (defn serving-activate!
   "Activate a verified export under the deployment's provisioned serving root."
   [{:keys [chain-clone branch serve-root release-pub governance-pub release-doi
@@ -1184,21 +1095,10 @@
                      "reason" (some-> (:reason report) name)})))
     report))
 
-(defn- verify!
-  [{:keys [root]}]
-  (let [report (with-store (config/root root) kura-verify/verify)]
-    (println (str "determinism_violations: "
-                  (count (:determinism-violations report))))
-    (println (str "fixity: " (pr-str (:fixity report))))
-    (println (str "ok: " (:ok? report)))
-    report))
-
 (def ^:private cli-spec
   {:root {:coerce :string}
    :aozora-root {:coerce :string}
    :assets-root {:coerce :string}
-   :report-a {:coerce :string}
-   :report-b {:coerce :string}
    :chain-clone {:coerce :string}
    :branch {:coerce :string}
    :upstream-origin {:coerce :string}
@@ -1208,11 +1108,6 @@
    :slug {:coerce :string}
    :all {:coerce :boolean}
    :as-of {:coerce :string}
-   :rdf-out {:coerce :string}
-   :rdf-base {:coerce :string}
-   :tei {:coerce :string}
-   :layers {:coerce []}
-   :links {:coerce []}
    :policy {:coerce :string}
    :release-pub {:coerce :string}
    :governance-pub {:coerce :string}
@@ -1243,17 +1138,7 @@
       (let [opts (merge {:branch "main"} (deployment-options parsed))]
         (case command
           "build" (build! opts)
-          "text-view" (println (record-json/write-deterministic-json-str
-                                (annotations/export-view! (:tei opts) (:out opts))))
-          "annotation-validate" (println (record-json/write-deterministic-json-str
-                                          (annotations/validate-files (:tei opts) (:layers opts))))
-          "tei-enrich" (println (record-json/write-deterministic-json-str
-                                 (annotations/enrich-files! (:tei opts) (:layers opts) (:out opts))))
-          "links-export" (println (record-json/write-deterministic-json-str
-                                   (links/export-files! (:links opts) (:rdf-base opts) (:out opts))))
-          "delta" (when-not (get (delta! opts) "ok")
-                    (System/exit 1))
-        ;; scheduled-runner exit contract: success covers the no-op; a
+          ;; scheduled-runner exit contract: success covers the no-op; a
         ;; requeue asks the next scheduled run to retry from the new head;
         ;; a determinism halt is an ordinary failure
           "release" (let [{:keys [outcome]} (release! opts)]
@@ -1271,7 +1156,6 @@
           "governance" (let [{:keys [outcome]} (governance! opts)]
                          (when-not (#{:published :already-applied} outcome)
                            (System/exit 1)))
-          "serving-tree" (serving-tree! opts)
           "serving-activate" (serving-activate! opts)
           "publication-init" (publication-init! opts)
           "assessment-evaluate" (assessment-evaluate! opts)
@@ -1282,10 +1166,8 @@
           "aozora-reliance-prepare" (aozora-reliance-prepare! opts)
           "archive-verify" (when-not (= :success (:result (archive-verify! opts)))
                              (System/exit 1))
-          "verify" (when-not (:ok? (verify! opts))
-                     (System/exit 1))
           (do (binding [*out* *err*]
-                (println "usage: build|text-view|annotation-validate|tei-enrich|links-export|delta|release|release-needed|release-delta|corpus-delta|governance-event-prepare|governance|serving-tree|serving-activate|publication-init|assessment-evaluate|assessment-drift|aozora-reliance-prepare|archive-verify|verify [--root R --aozora-root A --assets-root S ...]"))
+                (println "usage: build|release|release-needed|release-delta|corpus-delta|governance-event-prepare|governance|serving-activate|publication-init|assessment-evaluate|assessment-drift|aozora-reliance-prepare|archive-verify [--root R --aozora-root A --assets-root S ...]"))
               (System/exit 2))))
       (System/exit 0)
       (catch clojure.lang.ExceptionInfo e

@@ -44,7 +44,7 @@ http://{$SORANOHA_SERVE_LISTEN} {
 	# generated presentation: a projection of this release, replaced whole at
 	# the next activation, so it is cached like the pointer layer and never
 	# like a digest-addressed file
-	@browse path / /index.html /style.css /search.js /copy.js /search-index.json /authors /authors/* /titles /titles/* /ndc /ndc/* /bulk/* /rights /citation /history /start-here /example /glossary /identifiers /validation /accountability /assessment /annotation-layers /external-links /ns/* /license/* /schemas/* /mappings/* /policies/*
+	@browse path / /index.html /style.css /search.js /copy.js /search-index.json /authors /authors/* /titles /titles/* /ndc /ndc/* /bulk/* /rights /citation /history /start-here /example /glossary /identifiers /validation /accountability /assessment /annotation-layers /ns/* /license/* /schemas/* /mappings/* /policies/*
 	header @browse Cache-Control "public, max-age=60"
 
 	# A mapping or policy document, and a schema reached by its versioned

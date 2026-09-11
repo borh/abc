@@ -4,7 +4,6 @@
             [clojure.test :refer [deftest is testing]]
             [clojure.string :as str]
             [soranoha.annotations.layer :as layer]
-            [soranoha.annotations.main :as main]
             [soranoha.annotations.stages :as stages]
             [soranoha.annotations.tei :as tei]
             [soranoha.annotations.view :as view]
@@ -14,8 +13,7 @@
             [soranoha.ori.stages :as publication-stages]
             [soranoha.ori.projection :as projection]
             [soranoha.ori.validate :as validation])
-  (:import [java.nio.file FileAlreadyExistsException]
-           [org.w3c.dom Document Node NodeList]))
+  (:import [org.w3c.dom Document Node NodeList]))
 
 (defn document [body]
   (str "<TEI xmlns='http://www.tei-c.org/ns/1.0'><teiHeader><fileDesc>"
@@ -139,22 +137,6 @@
         (let [result (validation/tei-validation-result (validation/profile-paths ".") file)]
           (is (= "passed" (get result "status")) (pr-str (get result "findings"))))
         (finally (fs/delete-tree dir))))))
-
-(deftest file-boundary-validates-layers-and-refuses-overwrite
-  (let [dir (fs/create-temp-dir {:prefix "analysis-files"})
-        path #(str (fs/path dir %))
-        base (document "<p>本文</p>")
-        text-view (view/from-tei base)]
-    (try
-      (spit (path "base.xml") base)
-      (spit (path "layer.json") (layer/write-layer text-view (analysis text-view "sentences" [["s1" 0 6 "sentence"]])))
-      (is (= "written" (get (main/export-view! (path "base.xml") (path "view.json")) "result")))
-      (is (= "本文" (get (json/read-json (slurp (path "view.json"))) "text")))
-      (is (= "passed" (get (main/validate-files (path "base.xml") [(path "layer.json")]) "result")))
-      (is (= "written" (get (main/enrich-files! (path "base.xml") [(path "layer.json")] (path "enriched.xml")) "result")))
-      (is (thrown? FileAlreadyExistsException (main/export-view! (path "base.xml") (path "view.json"))))
-      (is (thrown? FileAlreadyExistsException (main/enrich-files! (path "base.xml") [(path "layer.json")] (path "enriched.xml"))))
-      (finally (fs/delete-tree dir)))))
 
 (deftest changed-analysis-reruns-enrichment-and-reuses-base-stages
   (let [dir (fs/create-temp-dir {:prefix "analysis-dag"})

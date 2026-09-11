@@ -2,12 +2,9 @@
   (:require [babashka.fs :as fs]
             [charred.api :as json]
             [clojure.java.io :as io]
-            [clojure.java.shell :as shell]
             [clojure.test :refer [deftest is]]
-            [soranoha.assessment.rdf :as rdf]
             [soranoha.core.hash :as hash]
             [soranoha.kura.cas :as cas]
-            [soranoha.kura.engine :as engine]
             [soranoha.core.schema :as validator]
             [soranoha.snh.decode :as decode]
             [soranoha.snh.fixture :as fx]
@@ -182,26 +179,3 @@
           (is (= :reliance-source-content-mismatch
                  (reason #((assembler (str (fs/path dir "cas"))) nil))))))
       (finally (fs/delete-tree dir)))))
-
-(deftest reliance-rdf-is-attributed-and-separate-from-independent-facts
-  (let [dir (fs/create-temp-dir)
-        store (engine/open-store! {:cas-dir (str (fs/path dir "cas")) :db-path (str (fs/path dir "trace.sqlite"))})
-        payloads (into {} (keep (fn [{:strs [slug reliance]}] (when reliance [slug reliance])))
-                       (get (snapshot) "candidates"))
-        view {:facts {} :findings [] :source {"controls" []} :reliances payloads}
-        options {:base-iri "urn:test/" :mapping-profile rdf/default-mapping-profile :toolchain-id "test"}]
-    (try
-      (let [result (rdf/project! store view options)
-            text (String. (cas/get-bytes (:cas-dir store) (get-in result [:outputs "nquads"])) "UTF-8")
-            parsed (shell/sh "python3" "-c"
-                             (str "import sys\nfrom rdflib import Dataset\n"
-                                  "d=Dataset(); d.parse(data=sys.stdin.read(),format='nquads')\n"
-                                  "q='PREFIX a: <urn:soranoha:assessment:> PREFIX prov: <http://www.w3.org/ns/prov#> '\n"
-                                  "assert len(list(d.query(q+'SELECT ?x WHERE { GRAPH <urn:test/accepted-reliance> { ?x a:sourceClassificationReliance ?r } }'))) == 1\n"
-                                  "assert len(list(d.query(q+'SELECT ?x WHERE { GRAPH ?g { ?x a a:ScopedFact } }'))) == 0\n"
-                                  "assert len(list(d.query(q+'SELECT ?x WHERE { GRAPH ?g { ?x prov:wasAttributedTo <https://www.aozora.gr.jp/> } }'))) == 2\n")
-                             :in text)]
-        (is (= 0 (:exit parsed)) (:err parsed))
-        (is (= text (rdf/nquads view options)))
-        (is (every? :cached? (:fragments (rdf/project! store view options)))))
-      (finally (engine/close-store! store) (fs/delete-tree dir)))))

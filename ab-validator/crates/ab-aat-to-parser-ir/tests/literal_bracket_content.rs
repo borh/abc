@@ -5,11 +5,9 @@ use serde_json::Value;
 
 fn converter() -> PreparedConverter {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let research =
-        std::env::var_os("AB_RESEARCH_ROOT").map_or_else(|| root.join("research"), Into::into);
     let mapping =
         MappingDocument::from_path(&root.join("data/aat-to-parser-ir-mapping-v2.json")).unwrap();
-    let schemas = SchemaSet::load_for_aat_version(&root, &research, 2).unwrap();
+    let schemas = SchemaSet::load_for_aat_version(&root, 2).unwrap();
     PreparedConverter::new(mapping, schemas).unwrap()
 }
 

@@ -92,8 +92,8 @@
     :path "soranoha/schemas/person-record.schema.json"}
    {:route "schemas/metadata-record.schema.json"
     :path "soranoha/schemas/metadata-record.schema.json"}
-   ;; the same kind of entry for the toolchain's research layer: a mapping or
-   ;; policy document carries its own IRI as `mapping_id` or `policy_id`, and
+   ;; the same kind of entry for the toolchain: a mapping or policy document
+   ;; carries its own IRI as `mapping_id` or `policy_id`, and
    ;; parser-IR output names the mapping it was derived from. The route is the
    ;; IRI's path, extension and all, because that is the string the bytes hold
    {:route "mappings/aat-v1-to-parser-ir-v1/generated-probe"
@@ -101,20 +101,7 @@
    {:route "mappings/aat-v2-to-parser-ir-v1/generated-probe"
     :path "ab-validator/data/aat-to-parser-ir-mapping-v2.json"}
    {:route "policies/source-region-publication-v0"
-    :path "ab-validator/research/data/source-region-publication-policy-v0.json"}
-   ;; five schemas also declare a versioned `schema_id` without an extension,
-   ;; which records of that kind carry instead of the file name. Each resolves
-   ;; to the schema that defines it
-   {:route "schemas/parser-comparison-result-v2"
-    :path "ab-validator/schemas/parser-comparison-result-v2.schema.json"}
-   {:route "schemas/parser-study-axis-evidence-v1"
-    :path "ab-validator/schemas/parser-study-axis-evidence.schema.json"}
-   {:route "schemas/parser-study-axis-policy-v1"
-    :path "ab-validator/schemas/parser-study-axis-policy.schema.json"}
-   {:route "schemas/parser-study-diagnostic-lanes-v1"
-    :path "ab-validator/schemas/parser-study-diagnostic-lanes.schema.json"}
-   {:route "schemas/parser-study-evidence-index-v1"
-    :path "ab-validator/schemas/parser-study-evidence-index.schema.json"}])
+    :path "ab-validator/data/source-region-publication-policy-v0.json"}])
 
 (defn root
   "The directory the served files are read from."
@@ -124,9 +111,9 @@
 (def ^:private schema-directories
   "Directories whose every `*.schema.json` is served at `schemas/<file name>`.
   Each file's `$id` is that IRI, so the rule and the identifiers cannot
-  disagree, and a schema added to either directory is served without an
-  entry here."
-  ["ab-validator/schemas" "ab-validator/research/schemas"])
+  disagree, and a schema added to a directory is served without an entry
+  here."
+  ["ab-validator/schemas"])
 
 (defn schema-files
   "One verbatim entry per schema file under `schema-directories`, read from

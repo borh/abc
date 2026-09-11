@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.com/ab-validator/aozora-syntax-coverage.schema.json",
   "title": "Aozora Bunko Syntax Coverage Matrix",
-  "description": "Schema for data/aozora-syntax-coverage.toml. Each [[syntax]] row enumerates one Aozora Bunko syntactic feature. The flat fields mirror crates/ab-index/src/syntax_coverage.rs::SyntaxRow. Open-keyed parser/adapter sub-tables and a corpus_prevalence sub-table are validated below.",
+  "description": "Schema for data/aozora-syntax-coverage.toml. Each [[syntax]] row enumerates one Aozora Bunko syntactic feature. Open-keyed parser/adapter sub-tables and a corpus_prevalence sub-table are validated below.",
   "type": "object",
   "required": ["syntax"],
   "properties": {

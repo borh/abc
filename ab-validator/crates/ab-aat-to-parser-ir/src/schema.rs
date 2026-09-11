@@ -15,15 +15,8 @@ pub struct SchemaSet {
 }
 
 impl SchemaSet {
-    /// Use the compiled schema set unless research explicitly supplies another root.
-    pub fn for_aat_version(
-        repo_root: &Path,
-        research_root: Option<&Path>,
-        aat_version: u64,
-    ) -> Result<Self> {
-        if let Some(root) = research_root {
-            return Self::load_for_aat_version(repo_root, root, aat_version);
-        }
+    /// The compiled schema set for one AAT schema version.
+    pub fn for_aat_version(aat_version: u64) -> Result<Self> {
         let aat = match aat_version {
             1 => include_bytes!("../../../data/aat-schema-v1.json").as_slice(),
             2 => include_bytes!("../../../data/aat-schema.json").as_slice(),
@@ -32,13 +25,13 @@ impl SchemaSet {
         Ok(Self {
             aat_schema: parse_json_value(aat)?,
             mapping_schema: parse_json_value(include_bytes!(
-                "../../../research/schemas/aat-parser-ir-mapping.schema.json"
+                "../../../schemas/aat-parser-ir-mapping.schema.json"
             ))?,
             parser_ir_schema: parse_json_value(include_bytes!(
-                "../../../research/schemas/parser-ir.schema.json"
+                "../../../schemas/parser-ir.schema.json"
             ))?,
             abc_divergence_record_schema: parse_json_value(include_bytes!(
-                "../../../research/schemas/aat-parser-ir-divergence.schema.json"
+                "../../../schemas/aat-parser-ir-divergence.schema.json"
             ))?,
             bundle_schema: parse_json_value(include_bytes!(
                 "../../../data/aat-parser-ir-divergence-bundle-v1.schema.json"
@@ -46,16 +39,12 @@ impl SchemaSet {
         })
     }
 
-    /// Load the (AAT schema, research schema) tuple for a given AAT schema
-    /// `version`. The AAT schema file is selected by version — 1 loads the
-    /// frozen `data/aat-schema-v1.json`, 2 loads the current
-    /// `data/aat-schema.json` — while the Research-owned schemas (mapping,
-    /// parser-IR, divergence record, bundle) are shared across versions.
-    pub fn load_for_aat_version(
-        repo_root: &Path,
-        research_root: &Path,
-        aat_version: u64,
-    ) -> Result<Self> {
+    /// Read the same schema set from the files under `repo_root`, for tests
+    /// that edit a schema before conversion. The AAT schema file is selected
+    /// by version, 1 for the frozen `data/aat-schema-v1.json` and 2 for the
+    /// current `data/aat-schema.json`; the mapping, parser-IR, divergence
+    /// record and bundle schemas are shared across versions.
+    pub fn load_for_aat_version(repo_root: &Path, aat_version: u64) -> Result<Self> {
         let aat_schema_path = match aat_version {
             1 => repo_root.join("data/aat-schema-v1.json"),
             2 => repo_root.join("data/aat-schema.json"),
@@ -64,11 +53,11 @@ impl SchemaSet {
         Ok(Self {
             aat_schema: read_json(&aat_schema_path)?,
             mapping_schema: read_json(
-                &research_root.join("schemas/aat-parser-ir-mapping.schema.json"),
+                &repo_root.join("schemas/aat-parser-ir-mapping.schema.json"),
             )?,
-            parser_ir_schema: read_json(&research_root.join("schemas/parser-ir.schema.json"))?,
+            parser_ir_schema: read_json(&repo_root.join("schemas/parser-ir.schema.json"))?,
             abc_divergence_record_schema: read_json(
-                &research_root.join("schemas/aat-parser-ir-divergence.schema.json"),
+                &repo_root.join("schemas/aat-parser-ir-divergence.schema.json"),
             )?,
             bundle_schema: read_json(
                 &repo_root.join("data/aat-parser-ir-divergence-bundle-v1.schema.json"),
@@ -189,13 +178,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn embedded_schemas_match_owned_files_and_explicit_roots_fail_closed() {
+    fn embedded_schemas_match_owned_files() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         for version in [1, 2] {
-            let embedded =
-                SchemaSet::for_aat_version(Path::new("/nonexistent"), None, version).unwrap();
-            let files =
-                SchemaSet::for_aat_version(&root, Some(&root.join("research")), version).unwrap();
+            let embedded = SchemaSet::for_aat_version(version).unwrap();
+            let files = SchemaSet::load_for_aat_version(&root, version).unwrap();
             assert_eq!(embedded.aat_schema, files.aat_schema);
             assert_eq!(embedded.mapping_schema, files.mapping_schema);
             assert_eq!(embedded.parser_ir_schema, files.parser_ir_schema);
@@ -205,7 +192,7 @@ mod tests {
             );
             assert_eq!(embedded.bundle_schema, files.bundle_schema);
         }
-        assert!(SchemaSet::for_aat_version(&root, Some(Path::new("/nonexistent")), 2).is_err());
-        assert!(SchemaSet::for_aat_version(&root, None, 3).is_err());
+        assert!(SchemaSet::load_for_aat_version(Path::new("/nonexistent"), 2).is_err());
+        assert!(SchemaSet::for_aat_version(3).is_err());
     }
 }

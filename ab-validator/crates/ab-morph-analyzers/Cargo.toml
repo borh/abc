@@ -13,13 +13,13 @@ categories = ["text-processing"]
 ab-morph-diff.workspace = true
 ab-ortho-detect.workspace = true
 ab-plaintext.workspace = true
+anyhow.workspace = true
+clap.workspace = true
 rkyv.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 sha2.workspace = true
 sudachi.workspace = true
 vaporetto.workspace = true
 vibrato-rkyv.workspace = true
 zstd.workspace = true
-
-[dev-dependencies]
-serde_json.workspace = true

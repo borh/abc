@@ -19,7 +19,7 @@ fn source_heading_regions_survive_validated_conversion() {
                 &repo.join("data/aat-to-parser-ir-mapping-v2.json"),
             )
             .unwrap(),
-            schemas: SchemaSet::for_aat_version(&repo, None, 2).unwrap(),
+            schemas: SchemaSet::for_aat_version(2).unwrap(),
             options: ConversionOptions::default(),
         })
         .unwrap();

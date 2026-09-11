@@ -10,11 +10,6 @@ measurement record; they do not establish publication eligibility.
 - `aozora2html` projects rendered XHTML. Source-only distinctions need separate
   source evidence; an XHTML comparison is a rendered-body comparison.
 - `aozora-epub3 --mode html` extracts and filters body XHTML from an EPUB.
-- The research `aozora` adapter maps upstream inspect JSON and preserves
-  unsupported node kinds as raw data.
-
-See `research/adapters/aozora2html/`, `research/adapters/aozora-epub3/`, and
-`research/adapters/aozora/` for the implementations.
 
 ## Historical parser observations
 

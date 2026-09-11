@@ -51,7 +51,7 @@ fn real_page_break_does_not_create_a_spanless_terminal_duplicate() {
         aat,
         mapping: MappingDocument::from_path(&repo.join("data/aat-to-parser-ir-mapping-v2.json"))
             .unwrap(),
-        schemas: SchemaSet::for_aat_version(&repo, None, 2).unwrap(),
+        schemas: SchemaSet::for_aat_version(2).unwrap(),
         options: ConversionOptions::default(),
     })
     .unwrap();

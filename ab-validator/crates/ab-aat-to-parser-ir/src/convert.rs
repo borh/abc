@@ -2738,13 +2738,11 @@ mod tests {
     #[test]
     fn invalid_production_conversion_stops_before_divergence_bundle() {
         let repo_root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-        let research_root = repo_root.join("research");
         let mut mapping =
             MappingDocument::from_path(&repo_root.join("data/aat-to-parser-ir-mapping-v1.json"))
                 .unwrap();
         let mut schemas =
-            SchemaSet::load_for_aat_version(&repo_root, &research_root, mapping.source_aat_version)
-                .unwrap();
+            SchemaSet::load_for_aat_version(&repo_root, mapping.source_aat_version).unwrap();
         schemas.parser_ir_schema = json!({
             "$schema": "https://json-schema.org/draft/2020-12/schema",
             "not": {}

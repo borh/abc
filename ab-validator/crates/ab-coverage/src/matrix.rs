@@ -40,8 +40,8 @@ impl CoverageMatrix {
     }
 }
 
-/// One `[[syntax]]` entry. Mirrors `crates/ab-index/src/syntax_coverage.rs::SyntaxRow`
-/// and adds the open-keyed `parsers` / `adapters` maps and the prevalence sub-table.
+/// One `[[syntax]]` entry: the flat row fields plus the open-keyed `parsers` /
+/// `adapters` maps and the prevalence sub-table.
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]
 pub struct Row {

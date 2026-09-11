@@ -20,8 +20,6 @@ pub struct CorpusAuditConfig {
     pub summary_json: PathBuf,
     pub report_md: PathBuf,
     pub compat_edn_out: Option<PathBuf>,
-    pub research_root: Option<PathBuf>,
-    pub repo_root: PathBuf,
     pub jobs: usize,
     pub expect_mapping_version: Option<String>,
     pub expect_mapping_hash: Option<String>,
@@ -250,15 +248,7 @@ pub fn run_audit(config: CorpusAuditConfig) -> Result<AuditSummary> {
         config.expect_mapping_version.as_deref(),
         config.expect_mapping_hash.as_deref(),
     )?;
-    let research_root = config
-        .research_root
-        .clone()
-        .or_else(|| std::env::var_os("AB_RESEARCH_ROOT").map(PathBuf::from));
-    let schemas = SchemaSet::for_aat_version(
-        &config.repo_root,
-        research_root.as_deref(),
-        mapping.source_aat_version,
-    )?;
+    let schemas = SchemaSet::for_aat_version(mapping.source_aat_version)?;
     let converter = PreparedConverter::new(mapping.clone(), schemas)?;
     let mapping_hash = mapping.document_hash.clone();
     let inputs = collect_inputs(&config.aat_dirs)?;

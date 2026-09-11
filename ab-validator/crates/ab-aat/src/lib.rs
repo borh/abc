@@ -75,11 +75,9 @@ pub struct DecodedSource {
     pub span_text: String,
     /// Complete sanitized text before the body/tail projection.
     ///
-    /// `pub` (not `pub(crate)`) because the classified-source capture reader
-    /// now lives in the `ab-capture` crate; it aligns spans against
-    /// this field (see `classified_source::…`). Nothing inside `ab-aat`
-    /// reads it, so `pub(crate)` would be both dead code here and unreachable
-    /// from the capture crate.
+    /// `pub` (not `pub(crate)`) so a reader outside this crate can align
+    /// spans against it. Nothing inside `ab-aat` reads it, so `pub(crate)`
+    /// would be dead code here.
     pub sanitized_text: String,
     /// The encoding that was successfully decoded (utf-8, utf-8-bom, windows-31j, or lossy variant).
     pub encoding: &'static str,
@@ -139,9 +137,8 @@ impl DecodedSource {
 /// through `maps` (sanitized → decoded `text`); the former also
 /// needs `body_offset` added first (body-relative → full-sanitized).
 ///
-/// `pub` (with `pub` `maps`/`body_offset`/`to_decoded`) because the
-/// classified-source capture reader now lives in the `ab-capture`
-/// crate and composes sanitized→decoded offsets through this context. The
+/// `pub` (with `pub` `maps`/`body_offset`/`to_decoded`) so a reader outside
+/// this crate can compose sanitized→decoded offsets through this context. The
 /// remaining members stay private (used only within this crate).
 #[derive(Debug)]
 pub struct SpanContext {
@@ -7618,8 +7615,8 @@ mod tests {
         raws
     }
 
-    // Ten shared bare-toggle vectors from
-    // reports/aat-fidelity/bare-toggle-model-vectors.json; each Rust test
+    // Ten bare-toggle vectors from
+    // tests/fixtures/bare-toggle-model-vectors.json; each Rust test
     // mirrors the normative `classify_line` adopt/decline decision.
 
     #[test]

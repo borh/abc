@@ -8,7 +8,7 @@ fn convert(body: &str) -> Value {
     let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let mapping =
         MappingDocument::from_path(&repo.join("data/aat-to-parser-ir-mapping-v2.json")).unwrap();
-    let schemas = SchemaSet::for_aat_version(&repo, None, 2).unwrap();
+    let schemas = SchemaSet::for_aat_version(2).unwrap();
     ab_aat_to_parser_ir::convert(ConversionRequest {
         aat: serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
             .unwrap(),
@@ -172,8 +172,7 @@ fn font_size_schema_rejects_mixed_absolute_and_relative_payloads() {
             _ => {}
         }
     }
-    let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let schemas = SchemaSet::for_aat_version(&repo, None, 2).unwrap();
+    let schemas = SchemaSet::for_aat_version(2).unwrap();
     for (source, field, value) in [
         ("字［＃「字」は小文字］", "level", json!(1)),
         ("字［＃「字」は２段階小さな文字］", "size", json!("small")),

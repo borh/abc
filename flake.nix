@@ -8,7 +8,6 @@
       url = "path:./ab-validator";
       inputs = {
         nixpkgs.follows = "nixpkgs";
-        clj-nix.follows = "clj-nix";
         aozorabunko-src.follows = "aozorabunko-src";
       };
     };
@@ -115,17 +114,15 @@
               "$out/soranoha/resources/assessment/source-1.schema.json"
             cp ${./LICENSE} "$out/LICENSE"
             cp ${./LICENSE-CC0} "$out/LICENSE-CC0"
-            # the research layer's identifiers: every schema under these two
-            # directories, and the mapping and policy documents that carry
+            # the toolchain's identifiers: every schema under its schema
+            # directory, and the mapping and policy documents that carry
             # their own IRIs
-            mkdir -p "$out/ab-validator/schemas" "$out/ab-validator/research/schemas" \
-              "$out/ab-validator/research/data" "$out/ab-validator/data"
+            mkdir -p "$out/ab-validator/schemas" "$out/ab-validator/data"
             cp ${ab-validator}/schemas/*.schema.json "$out/ab-validator/schemas/"
-            cp ${ab-validator}/research/schemas/*.schema.json "$out/ab-validator/research/schemas/"
             cp ${ab-validator}/data/aat-to-parser-ir-mapping-v1.json \
-              ${ab-validator}/data/aat-to-parser-ir-mapping-v2.json "$out/ab-validator/data/"
-            cp ${ab-validator}/research/data/source-region-publication-policy-v0.json \
-              "$out/ab-validator/research/data/"
+              ${ab-validator}/data/aat-to-parser-ir-mapping-v2.json \
+              ${ab-validator}/data/source-region-publication-policy-v0.json \
+              "$out/ab-validator/data/"
           '';
         in
         {
@@ -431,23 +428,6 @@
           monorepo-workflow-run-lib = mkMonorepoCheck "soranoha-monorepo-workflow-run-lib" [ ] ''
             bash tests/workflow-run-lib-smoke.sh
           '';
-          monorepo-aat-run-set = mkMonorepoCheck "soranoha-monorepo-aat-run-set" [ ] ''
-            bash tests/aat-run-set-smoke.sh
-          '';
-          monorepo-fidelity-lock-idempotency =
-            mkMonorepoCheck "soranoha-monorepo-fidelity-lock-idempotency" [ ]
-              ''
-                bash tests/fidelity-lock-idempotency-smoke.sh
-              '';
-          monorepo-batch-run-staleness = mkMonorepoCheck "soranoha-monorepo-batch-run-staleness" [ ] ''
-            bash ab-validator/tests/batch-run-staleness-smoke.sh
-          '';
-          monorepo-aat-materialization-workflow =
-            mkMonorepoCheck "soranoha-monorepo-aat-materialization-workflow" [ ]
-              ''
-                bash tests/aat-materialization-workflow-smoke.sh
-                bash tests/aat-diagnostic-run-set-smoke.sh
-              '';
           monorepo-python-quality =
             mkMonorepoCheck "soranoha-monorepo-python-quality"
               [
@@ -498,8 +478,8 @@
                 PY
 
                 export ABC_TEI_EAJ_ALIGNMENT_PROBE_BIN="${abValidatorPackages.ab-aat-to-parser-ir}/bin/ab-aat-to-parser-ir"
-                python "$src/ab-validator/research/tools/tei_eaj_aozora_reports.py" \
-                  --compare-script "$src/ab-validator/research/tools/tei_eaj_compare.py" \
+                python "$src/ab-validator/tools/tei-eaj/tei_eaj_aozora_reports.py" \
+                  --compare-script "$src/ab-validator/tools/tei-eaj/tei_eaj_compare.py" \
                   --tei-eaj-root "${teiEaj}" \
                   --source-rev ${teiEaj.rev} \
                   --abc-melos abc/melos.xml \

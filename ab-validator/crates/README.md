@@ -21,7 +21,6 @@ the contract and should not be treated as version-stable adapter APIs.
 | --- | --- |
 | `ab-source-syntax` | Lowest-level Aozora source tokenizer: source events, source spans, lossy comparison body extraction, and source annotations. Used by adapters and source-projection checks. |
 | `ab-encoding` | Shared encoding labels and normalization helpers used by source readers and validation code. |
-| `ab-ir` | Parser-neutral block/inline IR, AAT JSON projection helpers, visible projection, provenance counts, and AAT selector support. Optional typed helper; the JSON schema remains the adapter contract. |
 
 ## Text and morphology pipeline
 
@@ -30,10 +29,7 @@ the contract and should not be treated as version-stable adapter APIs.
 | `ab-plaintext` | Converts AAT JSON or raw Aozora honbun bytes into `PlainTextDocument` for checks and morphology. |
 | `ab-morph-diff` | Morpheme analysis alignment and diff model, including pairwise and n-way comparison helpers. |
 | `ab-morph-analyzers` | `MorphAnalyzer` trait plus Vibrato, Sudachi, and Vaporetto implementations. |
-| `ab-morph-run` | Top-level morphology runner, source resolution, summaries, reports, and warehouse integration. |
-| `ab-warehouse` | Parquet warehouse schema, writer, staging/final paths, and SQL helpers. |
 | `ab-ortho-detect` | Orthographic variant detection rules and heuristics. |
-| `ab-ortho-detect-ml` | Machine learning classifier backend for orthographic detection. |
 
 ## Parser core and facade
 
@@ -55,22 +51,18 @@ from upstream's `aozora-proptest`. The CLI entry point `ab-aozora` is locally au
 | `ab-aozora-corpus` | fork | Archive indexing and parallel corpus processing helpers. |
 | `ab-notation-strategies` | fork | Proptest strategies generating Aozora notation input, plus the shared proptest configuration the workspace's property suites run under. Dev-only. Descends from upstream's `aozora-proptest`. |
 
-## Evaluation, conversion, and research harness
+## Evaluation and conversion
 
 | Crate | Purpose |
 | --- | --- |
 | `ab-aat` | In-memory AAT document model, serialization, and oracle evaluation. |
 | `ab-aat-to-parser-ir` | CLI and library converting AAT v1 JSON into parser-IR with divergence tracking. |
-| `ab-capture` | Source capture, classified provenance, and lane recording. |
 | `ab-check` | CLI and backend for AAT schema validity, source projection, and parser invariants. |
 | `ab-coverage` | Coverage matrix tooling and merge CLI for Aozora syntax coverage data. |
-| `ab-parser-rq-source-accountability` | Release-qualification instrument for source accountability and marker accounting. Named for the `parser-rq-source-accountability-*` records it emits. |
-| `ab-parser-rq-diagnostic-authorization` | Release-qualification instrument for diagnostic authorization policies. Named for the `parser-rq-diagnostic-authorization-v1` instrument identity it publishes under. |
 
-## Indexing and shared utilities
+## Shared utilities
 
 | Crate | Purpose |
 | --- | --- |
-| `ab-index` | Feature-index builder and query CLI. |
 | `ab-diff-utils` | Shared first-difference, frequency-table, and hash helpers. |
-| `ab-artifact-store` | Authenticated content-addressed blob publication and retrieval. Used by the release-qualification instruments and by `ab-capture`, but tied to neither. |
+| `ab-artifact-store` | Authenticated content-addressed blob publication and retrieval, used by `ab-aat`. |

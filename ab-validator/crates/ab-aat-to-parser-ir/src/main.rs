@@ -14,7 +14,6 @@ use ab_aat_to_parser_ir::{
 };
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
-use serde::Deserialize;
 
 mod audit;
 
@@ -39,37 +38,11 @@ enum Command {
         parser_ir_out: PathBuf,
         #[arg(long)]
         divergence_out: PathBuf,
-        #[arg(long)]
-        research_root: Option<PathBuf>,
         /// Fail closed unless the loaded mapping's `mapping_version` equals this.
         #[arg(long = "expect-mapping-version")]
         expect_mapping_version: Option<String>,
         /// Fail closed unless the loaded mapping's content hash equals this
         /// (`sha256:…`, the same hash the audit summary reports as `mapping_hash`).
-        #[arg(long = "expect-mapping-hash")]
-        expect_mapping_hash: Option<String>,
-    },
-    Qualify {
-        #[arg(long)]
-        aat: PathBuf,
-        #[arg(long)]
-        mapping: PathBuf,
-        #[arg(long)]
-        work_id: String,
-        #[arg(long)]
-        qualification_identity_ref: String,
-        #[arg(long)]
-        policy: PathBuf,
-        #[arg(long)]
-        parser_ir_out: PathBuf,
-        #[arg(long)]
-        ledger_out: PathBuf,
-        #[arg(long)]
-        record_out: PathBuf,
-        #[arg(long)]
-        research_root: Option<PathBuf>,
-        #[arg(long = "expect-mapping-version")]
-        expect_mapping_version: Option<String>,
         #[arg(long = "expect-mapping-hash")]
         expect_mapping_hash: Option<String>,
     },
@@ -80,8 +53,6 @@ enum Command {
         mapping: PathBuf,
         #[arg(long)]
         ortho_annotations_out: PathBuf,
-        #[arg(long)]
-        research_root: Option<PathBuf>,
         #[arg(long = "expect-mapping-version")]
         expect_mapping_version: Option<String>,
         #[arg(long = "expect-mapping-hash")]
@@ -100,8 +71,6 @@ enum Command {
         compat_edn_out: Option<PathBuf>,
         #[arg(long, default_value_t = 0)]
         jobs: usize,
-        #[arg(long)]
-        research_root: Option<PathBuf>,
         #[arg(long = "expect-mapping-version")]
         expect_mapping_version: Option<String>,
         #[arg(long = "expect-mapping-hash")]
@@ -116,8 +85,6 @@ enum Command {
         summary_json: PathBuf,
         #[arg(long)]
         report_md: PathBuf,
-        #[arg(long)]
-        research_root: Option<PathBuf>,
         #[arg(long = "expect-mapping-version")]
         expect_mapping_version: Option<String>,
         #[arg(long = "expect-mapping-hash")]
@@ -134,8 +101,6 @@ enum Command {
         summary_json: PathBuf,
         #[arg(long)]
         report_md: PathBuf,
-        #[arg(long)]
-        research_root: Option<PathBuf>,
         #[arg(long = "expect-mapping-version")]
         expect_mapping_version: Option<String>,
         #[arg(long = "expect-mapping-hash")]
@@ -163,24 +128,16 @@ fn main() -> Result<()> {
             mapping,
             parser_ir_out,
             divergence_out,
-            research_root,
             expect_mapping_version,
             expect_mapping_hash,
         } => {
-            let repo_root = resolve_repo_root(&mapping)?;
-            let research_root =
-                research_root.or_else(|| std::env::var_os("AB_RESEARCH_ROOT").map(PathBuf::from));
             let aat = ab_aat_to_parser_ir::schema::read_json(&aat)?;
             let mapping = MappingDocument::from_path(&mapping)?;
             mapping.check_expected_generation(
                 expect_mapping_version.as_deref(),
                 expect_mapping_hash.as_deref(),
             )?;
-            let schemas = SchemaSet::for_aat_version(
-                &repo_root,
-                research_root.as_deref(),
-                mapping.source_aat_version,
-            )?;
+            let schemas = SchemaSet::for_aat_version(mapping.source_aat_version)?;
             let orthographic_annotations = match ortho_annotations {
                 Some(path) => Some(
                     ab_aat_to_parser_ir::ortho_annotations::read_ortho_annotations_bundle(&path)?,
@@ -204,89 +161,20 @@ fn main() -> Result<()> {
                 ab_aat_to_parser_ir::to_canonical_json_pretty(output.divergence_bundle)? + "\n",
             )?;
         }
-        Command::Qualify {
-            aat,
-            mapping,
-            work_id,
-            qualification_identity_ref,
-            policy,
-            parser_ir_out,
-            ledger_out,
-            record_out,
-            research_root,
-            expect_mapping_version,
-            expect_mapping_hash,
-        } => {
-            let repo_root = resolve_repo_root(&mapping)?;
-            let research_root =
-                research_root.or_else(|| std::env::var_os("AB_RESEARCH_ROOT").map(PathBuf::from));
-            let policy: ParserIrQualificationPolicy =
-                serde_json::from_value(ab_aat_to_parser_ir::schema::read_json(&policy)?)
-                    .context("invalid Parser-IR qualification policy")?;
-            anyhow::ensure!(
-                policy
-                    .expected_work_ids
-                    .iter()
-                    .any(|expected| expected == &work_id),
-                "work id {work_id:?} is not in the qualification policy's closed workset"
-            );
-            let aat = ab_aat_to_parser_ir::schema::read_json(&aat)?;
-            let mapping = MappingDocument::from_path(&mapping)?;
-            mapping.check_expected_generation(
-                expect_mapping_version.as_deref(),
-                expect_mapping_hash.as_deref(),
-            )?;
-            let schemas = SchemaSet::for_aat_version(
-                &repo_root,
-                research_root.as_deref(),
-                mapping.source_aat_version,
-            )?;
-            let converter = PreparedConverter::new(mapping, schemas)?;
-            let capture = ab_aat_to_parser_ir::qualification::qualify_work(
-                ab_aat_to_parser_ir::qualification::QualificationRequest {
-                    converter: &converter,
-                    aat,
-                    options: ConversionOptions::default(),
-                    work_id,
-                    qualification_identity_ref,
-                    policy_hash: policy.policy_hash,
-                },
-            )?;
-            if let Some(bytes) = capture.parser_ir_bytes {
-                std::fs::write(parser_ir_out, bytes)?;
-            }
-            if let Some(bytes) = capture.validation_ledger_bytes {
-                std::fs::write(ledger_out, bytes)?;
-            }
-            std::fs::write(
-                record_out,
-                ab_aat_to_parser_ir::to_canonical_json_pretty(serde_json::to_value(
-                    capture.record,
-                )?)? + "\n",
-            )?;
-        }
         Command::DetectOrthoAnnotations {
             aat,
             mapping,
             ortho_annotations_out,
-            research_root,
             expect_mapping_version,
             expect_mapping_hash,
         } => {
-            let repo_root = resolve_repo_root(&mapping)?;
-            let research_root =
-                research_root.or_else(|| std::env::var_os("AB_RESEARCH_ROOT").map(PathBuf::from));
             let aat = ab_aat_to_parser_ir::schema::read_json(&aat)?;
             let mapping = MappingDocument::from_path(&mapping)?;
             mapping.check_expected_generation(
                 expect_mapping_version.as_deref(),
                 expect_mapping_hash.as_deref(),
             )?;
-            let schemas = SchemaSet::for_aat_version(
-                &repo_root,
-                research_root.as_deref(),
-                mapping.source_aat_version,
-            )?;
+            let schemas = SchemaSet::for_aat_version(mapping.source_aat_version)?;
             let vibrato = std::sync::Arc::new(
                 ab_morph_analyzers::VibratoAnalyzer::unidic_cwj_default()
                     .context("detect-ortho-annotations requires AB_VIBRATO_DICT or the flake-provided Unidic CWJ dictionary")?,
@@ -310,19 +198,15 @@ fn main() -> Result<()> {
             report_md,
             compat_edn_out,
             jobs,
-            research_root,
             expect_mapping_version,
             expect_mapping_hash,
         } => {
-            let repo_root = resolve_repo_root(&mapping)?;
             let summary = audit::run_audit(audit::CorpusAuditConfig {
                 aat_dirs,
                 mapping_path: mapping,
                 summary_json,
                 report_md,
                 compat_edn_out,
-                research_root,
-                repo_root,
                 jobs,
                 expect_mapping_version,
                 expect_mapping_hash,
@@ -339,13 +223,9 @@ fn main() -> Result<()> {
             mapping,
             summary_json,
             report_md,
-            research_root,
             expect_mapping_version,
             expect_mapping_hash,
         } => {
-            let repo_root = resolve_repo_root(&mapping)?;
-            let research_root =
-                research_root.or_else(|| std::env::var_os("AB_RESEARCH_ROOT").map(PathBuf::from));
             let inputs = aat_inputs
                 .iter()
                 .map(|spec| parse_input_spec(spec))
@@ -355,11 +235,7 @@ fn main() -> Result<()> {
                 expect_mapping_version.as_deref(),
                 expect_mapping_hash.as_deref(),
             )?;
-            let schemas = SchemaSet::for_aat_version(
-                &repo_root,
-                research_root.as_deref(),
-                mapping.source_aat_version,
-            )?;
+            let schemas = SchemaSet::for_aat_version(mapping.source_aat_version)?;
             let summary = run_structural_probe(StructuralProbeConfig {
                 inputs,
                 mapping,
@@ -379,13 +255,9 @@ fn main() -> Result<()> {
             mapping,
             summary_json,
             report_md,
-            research_root,
             expect_mapping_version,
             expect_mapping_hash,
         } => {
-            let repo_root = resolve_repo_root(&mapping)?;
-            let research_root =
-                research_root.or_else(|| std::env::var_os("AB_RESEARCH_ROOT").map(PathBuf::from));
             let aat_dirs = aat_dirs
                 .iter()
                 .map(|spec| parse_input_spec(spec))
@@ -395,11 +267,7 @@ fn main() -> Result<()> {
                 expect_mapping_version.as_deref(),
                 expect_mapping_hash.as_deref(),
             )?;
-            let schemas = SchemaSet::for_aat_version(
-                &repo_root,
-                research_root.as_deref(),
-                mapping.source_aat_version,
-            )?;
+            let schemas = SchemaSet::for_aat_version(mapping.source_aat_version)?;
             let summary = run_tei_eaj_structural_expansion(TeiEajStructuralExpansionConfig {
                 workset_path: workset,
                 aat_dirs,
@@ -430,39 +298,4 @@ fn main() -> Result<()> {
         }
     }
     Ok(())
-}
-
-#[derive(Debug, Deserialize)]
-struct ParserIrQualificationPolicy {
-    policy_hash: String,
-    expected_work_ids: Vec<String>,
-}
-
-fn resolve_repo_root(mapping: &std::path::Path) -> Result<PathBuf> {
-    if let Some(value) = std::env::var_os("AB_VALIDATOR_REPO_ROOT") {
-        return Ok(PathBuf::from(value));
-    }
-
-    let cwd = std::env::current_dir().context("failed to read current directory")?;
-    if let Some(mapping_dir) = mapping.parent()
-        && mapping_dir.file_name().and_then(|name| name.to_str()) == Some("data")
-        && let Some(candidate) = mapping_dir.parent()
-    {
-        let candidate = if candidate.as_os_str().is_empty() {
-            cwd.clone()
-        } else if candidate.is_absolute() {
-            candidate.to_path_buf()
-        } else {
-            cwd.join(candidate)
-        };
-        if candidate.join("data/aat-schema.json").is_file() {
-            return Ok(candidate);
-        }
-    }
-
-    if cwd.join("data/aat-schema.json").is_file() {
-        return Ok(cwd);
-    }
-
-    Ok(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.."))
 }

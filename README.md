@@ -59,9 +59,6 @@ nix build ./ab-validator#checks.x86_64-linux.cargo-clippy
 nix build ./ab-validator#checks.x86_64-linux.cargo-fmt
 ```
 
-Heavy corpus measurements are operator-driven and require local data under the
-configured `AB_DB_ROOT`; they are not part of the ordinary validation gate.
-
 ## Source Identity
 
 Nix owns source identity and the toolchain; domain behaviour stays in Clojure,
@@ -72,7 +69,7 @@ only in the lock, so a routine lock update cannot move it. Infrastructure inputs
 such as nixpkgs and clj-nix are lock-only pins.
 
 The root `flake.lock` is the canonical lock. The `ab-validator/flake.lock`
-supports direct research workflows and must agree with the root lock for shared
+supports working in that component directly and must agree with the root lock for shared
 non-path inputs, so a shared input moves in both locks in one change.
 `just flake-input-policy` enforces both rules, and `just tei-version-coherence`
 holds every TEI reference in the repository at P5 4.11.0.

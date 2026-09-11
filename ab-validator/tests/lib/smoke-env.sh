@@ -23,15 +23,6 @@ smoke_workspace_root() {
   printf '%s\n' "$repo_parent"
 }
 
-smoke_research_root() {
-  if [[ -n "${AB_RESEARCH_ROOT:-}" ]]; then
-    printf '%s\n' "$AB_RESEARCH_ROOT"
-    return
-  fi
-
-  printf '%s/research\n' "$AB_VALIDATOR_ROOT"
-}
-
 smoke_tmp_dir() {
   local name="$1"
   mktemp -d "${TMPDIR:-/tmp}/${name}.XXXXXX"

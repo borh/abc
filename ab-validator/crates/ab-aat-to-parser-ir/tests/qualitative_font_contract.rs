@@ -11,7 +11,7 @@ fn font_sums_reject_numeric_fields_on_qualitative_comparisons() {
             "font_size",
         ),
         (
-            include_str!("../../../research/schemas/parser-ir.schema.json"),
+            include_str!("../../../schemas/parser-ir.schema.json"),
             "layoutScope",
             "font-size",
         ),

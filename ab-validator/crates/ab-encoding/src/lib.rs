@@ -1,7 +1,7 @@
 //! Canonical source-byte decoder for Aozora Bunko source files.
 //!
-//! Single source of truth for the decode + hash pipeline shared by `ab-check`,
-//! `ab-index`, and (text-only) `ab-coverage`. The decoder strips a UTF-8 BOM,
+//! Single source of truth for the decode + hash pipeline shared by `ab-check`
+//! and (text-only) `ab-coverage`. The decoder strips a UTF-8 BOM,
 //! then tries strict UTF-8, then falls back to Windows-31J (Shift_JIS) with a
 //! `windows-31j-lossy` classification when bytes are invalid (matching the
 //! behaviour of reference Aozora parsers).

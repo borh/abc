@@ -1,8 +1,0 @@
-{
-  "person_record_schema_id": "https://w3id.org/soranoha/schemas/person-record.schema.json",
-  "person_record_schema_hash": "sha256:22ac48bab97ab190d821904001b8642dbd92b1a23f7964207cb0a073d91cfdf0",
-  "person_id": "abc-000000000001",
-  "family_name": "Parser RQ",
-  "given_name": "Fixture",
-  "person_copyright_expired": true
-}

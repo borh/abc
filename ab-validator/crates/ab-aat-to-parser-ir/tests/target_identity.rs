@@ -66,7 +66,7 @@ fn convert(body: &str) -> Value {
     let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let mapping =
         MappingDocument::from_path(&repo.join("data/aat-to-parser-ir-mapping-v2.json")).unwrap();
-    let schemas = SchemaSet::for_aat_version(&repo, None, 2).unwrap();
+    let schemas = SchemaSet::for_aat_version(2).unwrap();
     ab_aat_to_parser_ir::convert(ConversionRequest {
         aat: serde_json::from_slice(&ab_aat::aat_json_from_bytes(source.as_bytes()).unwrap())
             .unwrap(),
@@ -1270,7 +1270,7 @@ fn editorial_source_targets_reject_overlapping_or_reversed_segments() {
                 &repo.join("data/aat-to-parser-ir-mapping-v2.json"),
             )
             .unwrap(),
-            schemas: SchemaSet::for_aat_version(&repo, None, 2).unwrap(),
+            schemas: SchemaSet::for_aat_version(2).unwrap(),
             options: ConversionOptions::default(),
         })
         .unwrap_err();
@@ -1393,8 +1393,7 @@ fn supplied_note_roles_reject_invented_placement_and_missing_targets() {
         assert_eq!(annotation["note_kind"], role);
         assert!(annotation.get("position").is_none());
         assert_eq!(ir["interpretation_problems"], json!([]));
-        let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-        let schemas = SchemaSet::for_aat_version(&repo, None, 2).unwrap();
+        let schemas = SchemaSet::for_aat_version(2).unwrap();
         let mut invalid = ir.clone();
         fn inject(value: &mut Value) {
             match value {

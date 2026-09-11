@@ -1,1 +1,0 @@
-{:hooks {:analyze-call {babashka.fs/with-temp-dir hooks.with-temp-dir/with-temp-dir}}}

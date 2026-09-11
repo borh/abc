@@ -12,33 +12,25 @@ unset SORANOHA_RUNTIME_ENV_LOADED_PID
 unset SORANOHA_CONFIG
 unset SORANOHA_STATE_ROOT
 unset SORANOHA_REPORT_DIR
-unset AB_DB_ROOT
-unset AB_MORPH_WAREHOUSE_DIR
-unset AB_MORPH_WAREHOUSE_AAT_DIR
-unset AB_AOZORA2HTML_AAT_DIR
-unset AB_AAT_RUN_SET
 unset AB_TEI_EAJ_WORKSET
-unset AB_RESEARCH_OUTPUT_ROOT
-unset AB_RESEARCH_REPORT_DIR
 unset AB_TEI_P5_ROOT
 
 mkdir -p "$tmp/workspace"
 
 cat > "$tmp/machine.env" <<'ENV'
 export SORANOHA_STATE_ROOT=/machine/state
-export AB_DB_ROOT=/config/ab-validator
-export AB_RESEARCH_OUTPUT_ROOT=/config/research
+export SORANOHA_REPORT_DIR=/config/reports
 ENV
 
-AB_DB_ROOT=/explicit/ab \
+SORANOHA_REPORT_DIR=/explicit/reports \
 SORANOHA_WORKSPACE_ROOT="$tmp/workspace" \
 SORANOHA_CONFIG="$tmp/machine.env" \
 bash -c '
   set -euo pipefail
   source "$1"
-  test "$AB_DB_ROOT" = "/explicit/ab"
-  test "$AB_RESEARCH_OUTPUT_ROOT" = "/config/research"
-  test "$AB_RESEARCH_REPORT_DIR" = "/config/research/reports"
+  test "$SORANOHA_REPORT_DIR" = "/explicit/reports"
+  test "$SORANOHA_STATE_ROOT" = "/machine/state"
+  test "$AB_TEI_EAJ_WORKSET" = "/explicit/reports/tei-eaj-aozora/tei-eaj-aozora-workset-export.json"
 ' bash "$runtime_env"
 
 SORANOHA_WORKSPACE_ROOT="$tmp/workspace" \
@@ -47,12 +39,8 @@ bash -c '
   set -euo pipefail
   source "$1"
   test "$SORANOHA_STATE_ROOT" = "/machine/state"
-  test "$AB_DB_ROOT" = "/config/ab-validator"
-  test "$AB_MORPH_WAREHOUSE_DIR" = "/config/ab-validator/morph-warehouse"
-  test "$AB_AAT_RUN_SET" = "$SORANOHA_WORKSPACE_ROOT/ab-validator/reports/aat-fidelity/run-sets/current.json"
-  test "$AB_AOZORA2HTML_AAT_DIR" = "/config/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter"
-  test "$AB_RESEARCH_REPORT_DIR" = "/config/research/reports"
-  test "$AB_TEI_EAJ_WORKSET" = "/config/research/reports/tei-eaj-aozora/tei-eaj-aozora-workset-export.json"
+  test "$SORANOHA_REPORT_DIR" = "/config/reports"
+  test "$AB_TEI_EAJ_WORKSET" = "/config/reports/tei-eaj-aozora/tei-eaj-aozora-workset-export.json"
 ' bash "$runtime_env"
 
 SORANOHA_WORKSPACE_ROOT="$tmp/workspace" \
@@ -60,16 +48,16 @@ SORANOHA_CONFIG="$tmp/missing.env" \
 bash -c '
   set -euo pipefail
   source "$1"
-  case "$AB_DB_ROOT" in
-    "$SORANOHA_WORKSPACE_ROOT"/ab-validator/scratch/state) ;;
-    *) echo "unexpected AB_DB_ROOT=$AB_DB_ROOT" >&2; exit 1 ;;
+  case "$SORANOHA_STATE_ROOT" in
+    "$SORANOHA_WORKSPACE_ROOT"/scratch/state) ;;
+    *) echo "unexpected SORANOHA_STATE_ROOT=$SORANOHA_STATE_ROOT" >&2; exit 1 ;;
   esac
-  case "$AB_RESEARCH_OUTPUT_ROOT" in
-    "$SORANOHA_WORKSPACE_ROOT"/ab-validator/research/out) ;;
-    *) echo "unexpected AB_RESEARCH_OUTPUT_ROOT=$AB_RESEARCH_OUTPUT_ROOT" >&2; exit 1 ;;
+  case "$SORANOHA_REPORT_DIR" in
+    "$SORANOHA_WORKSPACE_ROOT"/out/reports) ;;
+    *) echo "unexpected SORANOHA_REPORT_DIR=$SORANOHA_REPORT_DIR" >&2; exit 1 ;;
   esac
-  case "$AB_DB_ROOT $AB_RESEARCH_OUTPUT_ROOT $AB_RESEARCH_REPORT_DIR" in
-    */db/*) echo "repo-local defaults must not point at /db: $AB_DB_ROOT $AB_RESEARCH_OUTPUT_ROOT $AB_RESEARCH_REPORT_DIR" >&2; exit 1 ;;
+  case "$SORANOHA_STATE_ROOT $SORANOHA_REPORT_DIR" in
+    */db/*) echo "repo-local defaults must not point at /db: $SORANOHA_STATE_ROOT $SORANOHA_REPORT_DIR" >&2; exit 1 ;;
   esac
 ' bash "$runtime_env"
 

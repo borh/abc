@@ -9,9 +9,7 @@
 //!   3. `remap_spans` carries morpheme spans back to ORIGINAL-doc coordinates,
 //!      rebuilding each surface from the original katakana, and
 //!   4. the recorded `NormalizationPolicy::policy_hash()` for that detector is
-//!      the pinned heuristic-v1 constant — the same value the warehouse run
-//!      records (`resolve_run_normalization`, ab-morph-run) and the tokenizer
-//!      profile declares (abc). One transformation, one identity.
+//!      the pinned heuristic-v1 constant. One transformation, one identity.
 //!
 //! Reproducibility (spec P5): re-running the chain from the same source under
 //! the same policy regenerates a byte-identical derived input — asserted by
@@ -33,9 +31,8 @@ use ab_ortho_detect::{
 };
 
 /// The pinned heuristic-v1 normalization-policy hash. Single-sourced with
-/// `ab-ortho-detect`'s `policy::tests` and `ab-morph-run`'s
-/// `resolve_run_normalization_heuristic_matches_policy_hash`; a change here is a
-/// cross-project breaking change to the recorded input-normalization identity.
+/// `ab-ortho-detect`'s `policy::tests`; a change here is a breaking change to
+/// the recorded input-normalization identity.
 const HEURISTIC_V1_POLICY_HASH: &str =
     "sha256:1670ff1d5ff27575dc63ffd448cb140b3d497247bb7b36e1b4e2f1623aa0fa2c";
 

@@ -137,8 +137,8 @@ pub fn split_sentences(input: &str) -> Vec<SentenceSpan<'_>> {
     split_sentences_with_options(input, &SplitOptions::default())
 }
 
-/// Legacy entry point preserved for existing call sites (ab-morph-run,
-/// ab-ortho-detect). Delegates to [`split_sentences_with_options`] with default
+/// Legacy entry point preserved for existing call sites (ab-ortho-detect).
+/// Delegates to [`split_sentences_with_options`] with default
 /// options, so the improved v2 rules propagate to all consumers.
 pub fn sentence_split(text: &str) -> Vec<SentenceSpan<'_>> {
     split_sentences_with_options(text, &SplitOptions::default())

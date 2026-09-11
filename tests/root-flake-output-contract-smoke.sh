@@ -52,12 +52,8 @@ expected = {
     "packages": {"tei-p5-reference", "tei-profile-artifacts"},
     "devShells": {"default"},
     "checks": {
-        "monorepo-aat-materialization-workflow",
-        "monorepo-aat-run-set",
         "monorepo-active-path-hygiene",
-        "monorepo-batch-run-staleness",
         "monorepo-ceremony-image",
-        "monorepo-fidelity-lock-idempotency",
         "monorepo-figure-quotes",
         "monorepo-flake-input-policy",
         "monorepo-nix-format",

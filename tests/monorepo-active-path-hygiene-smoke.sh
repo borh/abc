@@ -7,10 +7,9 @@ cd "$repo_root"
 mapfile -t active_files < <(
   find \
     flake.nix justfile config scripts tests \
-    nix soranoha/src ab-validator/research/src ab-validator/research/tools \
+    nix soranoha/src ab-validator/tools \
     ab-validator/flake.nix ab-validator/justfile ab-validator/adapters \
-    ab-validator/benchmarks ab-validator/crates ab-validator/reports \
-    ab-validator/scripts \
+    ab-validator/crates ab-validator/scripts \
     -type f \( \
       -name '*.clj' -o \
       -name '*.nix' -o \
@@ -23,7 +22,6 @@ mapfile -t active_files < <(
     \) \
     -not -path '*/target/*' \
     -not -path '*/__pycache__/*' \
-    -not -name 'monorepo-path-hygiene-smoke.sh' \
     -not -name 'monorepo-active-path-hygiene-smoke.sh' \
     -print | sort
 )
@@ -48,29 +46,6 @@ from pathlib import Path, PurePosixPath
 
 TARGETS = {"soranoha", "ab-validator"}
 ABSOLUTE_PATH_EXCEPTIONS = {
-    (PurePosixPath("tests/runtime-config-smoke.sh"), "/config/research/reports"),
-    (
-        PurePosixPath("tests/runtime-config-smoke.sh"),
-        "/config/ab-validator/morph-warehouse",
-    ),
-    (
-        PurePosixPath("tests/runtime-config-smoke.sh"),
-        "/config/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter",
-    ),
-    (
-        PurePosixPath("tests/runtime-config-smoke.sh"),
-        "/config/research/reports/tei-eaj-aozora/tei-eaj-aozora-workset-export.json",
-    ),
-    (PurePosixPath("tests/runtime-config-smoke.sh"), "/ab-validator/scratch/state"),
-    (PurePosixPath("tests/runtime-config-smoke.sh"), "/ab-validator/research/out"),
-    (
-        PurePosixPath("ab-validator/reports/lib/tests/test_aat_runs.py"),
-        "/db/ab-validator/aat-corpus/pinned/aat/aozora-adapter",
-    ),
-    (
-        PurePosixPath("ab-validator/justfile"),
-        "/ab-validator/scratch/state",
-    ),
 }
 APPROVED_ROOTS = {
     "$repo_root",

@@ -9,10 +9,7 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 else
   mapfile -t python_files < <(
     find . \
-      -path './ab-validator/benchmarks/baselines' -prune -o \
-      -path './ab-validator/docs/superpowers/reports' -prune -o \
       -path './ab-validator/scratch' -prune -o \
-      -path './ab-validator/research/out' -prune -o \
       -path './out' -prune -o \
       -path './scratch' -prune -o \
       -name '*.py' -print \

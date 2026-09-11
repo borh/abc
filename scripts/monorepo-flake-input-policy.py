@@ -18,7 +18,6 @@ RELEASE_CRITICAL_INPUTS = {
     "mecab-dic-converter-src",
     "tei-eaj-aozora-tei",
     "tei-p5",
-    "upstream-aozora-notation-spec-src",
 }
 
 INFRASTRUCTURE_INPUTS = {

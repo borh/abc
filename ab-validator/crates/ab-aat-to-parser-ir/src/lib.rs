@@ -5,7 +5,6 @@ pub mod divergence;
 pub mod mapping;
 pub mod ortho_annotations;
 pub mod ortho_detect;
-pub mod qualification;
 pub mod schema;
 pub mod structural_probe;
 pub mod tei_eaj_alignment_probe;

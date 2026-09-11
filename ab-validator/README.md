@@ -1,10 +1,9 @@
-# The Aozora parser, and the research that checks it
+# The Aozora parser
 
-`ab-validator` contains the Rust Aozora parser, validation harnesses,
-source-authority measurement tools, and morphology utilities. Its primary
+`ab-validator` contains the Rust Aozora parser, its validation harnesses, the
+source-authority inventory, and the morphological analyzer adapters. Its primary
 executables are `ab-aozora` and `ab-aat-to-parser-ir`, which process every source
-published by Soranoha. Research adapters, schemas, fixtures, and reports live
-under `research/`.
+published by Soranoha. The TEI-EAJ alignment probe lives under `tools/tei-eaj/`.
 
 The parser core under `crates/` is forked from
 [P4suta/aozora](https://github.com/P4suta/aozora) (revision

@@ -606,32 +606,32 @@ status_reason = "A figure the source places but does not supply. Read as an edit
 
 [syntax.parsers.aozora2]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Not measured. The reference implementations are not vendored here, and their image paths key on a filename this construction does not supply, so their behaviour cannot be inferred from the image rows above."
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Not measured. Single::Figure parses caption（path、横W×縦H）入る, which requires the path this construction omits."
 
 [syntax.parsers.aozora2html]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Not measured."
 
 [syntax.adapters.aozora2]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Not measured."
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Not measured."
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Not measured."
 
 [syntax.corpus_prevalence]
@@ -712,7 +712,7 @@ source_inventory_row = "break.page_line"
 status = "typed"
 aat_nodes = ["paragraph", "text"]
 raw_fallback = true
-evidence = "crates/ab-aat-to-parser-ir/tests/integration.rs; ../ab-validator/research/test/ab-validator/research/tools/parser_ir_tei_test.clj"
+evidence = "crates/ab-aat-to-parser-ir/tests/integration.rs"
 notes = "AAT source-derived page breaks project to parser-IR page-break and TEI pb; source-derived explicit line breaks project to parser-IR line-break and TEI lb."
 
 [[syntax]]
@@ -744,7 +744,7 @@ notes = "TEI P5 can preserve page centering as rend=center on a paragraph or seg
 
 [syntax.parsers.aozora2]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes page-center markers; parser-specific typed behavior remains to be measured."
 
 [syntax.parsers.aozora-rs]
@@ -754,12 +754,12 @@ notes = "wholeline parser recognizes page centering, but the current AAT project
 
 [syntax.parsers.aozora2html]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes page-center markers; parser-specific typed behavior remains to be measured."
 
 [syntax.adapters.aozora2]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No typed page-center AAT projection has been measured."
 
 [syntax.adapters.aozora-rs]
@@ -769,7 +769,7 @@ notes = "AAT projection flushes paragraphs for wholeline/single break handling a
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No typed page-center AAT projection has been measured."
 
 [syntax.corpus_prevalence]
@@ -1094,7 +1094,7 @@ id = "annotation.layout_note"
 priority = 2
 category = "source_annotation"
 feature_keys = ["source_note", "layout_note", "metamark"]
-reference_sources = ["docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
+reference_sources = ["abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
 source_examples = ["［＃「A」と「B」の句の上には、この二つの句を括る波括弧あり］", "［＃「｝」は前の５行にわたる］"]
 source_patterns = ['［＃「[^\n]+」と「[^\n]+」の句の上には、この二つの句を括る波括弧あり］', '［＃「[^\n]+」は前の[０-９0-9一二三四五六七八九十]+行にわたる」?］', '［＃以下「[^\n]+」と「[^\n]+」は「[^\n]+」の下で二行に分かれ、「[^\n]+」「[^\n]+」の下に上向きのくくり記号］', '［＃「[^\n]+」と「[^\n]+」の中間に「[^\n]+」］', '［＃「[^\n]+」と「[^\n]+」は[０-９0-9一二三四五六七八九十]+行］', '［＃場面設定の表題、及び「[^」]+」で始まる最初の行以外は、[０-９0-9一二三四五六七八九十]+文字下げた位置で頭を揃える］', '［＃本文の台詞部分は[０-９0-9一二三四五六七八九十]+行目から、その台詞の最後まで天より[０-９0-9一二三四五六七八九十]+字下げ。ト書き部分は天より[０-９0-9一二三四五六七八九十]+字下げ（ト書きの段落の１行目は[０-９0-9一二三四五六七八九十]+字下げてある）］', '［＃「[^」]+」は「[^」]+」と「[^」]+」の[０-９0-9一二三四五六七八九十]+行の中央］']
 ir_nodes = ["source-note"]
@@ -1118,32 +1118,32 @@ notes = "The source-authority gate records layout/metamark notes as raw-preserve
 
 [syntax.parsers.aozora2]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes layout/metamark notes; parser-specific typed behavior not yet measured."
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes layout/metamark notes; parser-specific typed behavior not yet measured."
 
 [syntax.parsers.aozora2html]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes layout/metamark notes; parser-specific typed behavior not yet measured."
 
 [syntax.adapters.aozora2]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No typed layout/metamark AAT contract exists; adapter behavior remains to be measured."
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No typed layout/metamark AAT contract exists; adapter behavior remains to be measured."
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No typed layout/metamark AAT contract exists; adapter behavior remains to be measured."
 
 [syntax.corpus_prevalence]
@@ -1158,7 +1158,7 @@ id = "source.note_label"
 priority = 2
 category = "source_annotation"
 feature_keys = ["source_note", "source_label", "role_label"]
-reference_sources = ["docs/aat-contract.md", "docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
+reference_sources = ["docs/aat-contract.md", "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
 source_examples = ["［＃劇場名］", "［＃長男］", "［＃探偵小説家、生理学者。本名は、林髞］"]
 source_patterns = ['^［＃「Ｏ」は覆面の英字です。］$', '^［＃[^「］]*(劇場名|ホテル名|お手伝いさん|夫人|スカーフ|小説家|生理学者|長男|次男|三男|長女|次女|三女|従弟|従妹|家庭教師|父|母|甥|夫|ゴーリキー|トゥルビン家のありし日|並木道|昼食|国男|注釈番号)[^］]*］$', '^［＃(中條|倉知)[^］]*］$', '^［＃(宮本顕治|村田安|村田敏子、荒木茂の姪|松平正次|労農赤色海軍|協同組合住宅|吼えろ、支那|西村茂樹|辻馬車)］$', '^［＃[А-Яа-яЁё]+(、[^］]+|＝[^］]+)?］$', '^［＃[^「］]*(同窓会|の意|別称|学者|随筆家|科学思想家|＝[^］]+|死ぬこと)[^］]*］$', '^［＃(この日、[^］]+|ここには[^］]+引用されている|ここに[^］]+「[^」]+」入る|以上、[^］]+による解説|以下、新聞の切抜き|ドイツの開発した、[^］]+|マリアナ基地からの[^］]+|天皇、[^］]+|実際は[^］]+最終のたより)］$', '^［＃(わが息子|われらが青春|アコーデオン|カバンを持った男|カルタ遊び|ケーキ|サマータイム|メリー・ツィン|モスクワの官営売店|モスクワプロレタリア作家協会|ロシアプロレタリア作家同盟|中村吉蔵|久米正雄|五ヵ年計画|伊藤白蓮|全日本無産者芸術団体協議会|八十勝|共産主義青年同盟|宮本トミ|宮本友子|宮本捨吉)］$', '^［＃[^「］]*(バチェラー八重子|ペレール|ルイバコフ|中山正直|中川八十勝|中村吉右衛門|宮本顕治|富樫はつ|小林房次郎|山尾市次郎|岡東浩|弁護士、政治家)[^］]*］$', '^［＃「[^」]+」は注釈番号］$', '^［＃(「（[^（）]+）」|（[^（）]+）)は自注］$']
 ir_nodes = ["source-note"]
@@ -1182,32 +1182,32 @@ notes = "The gate records source-side labels as raw-preserved source-note materi
 
 [syntax.parsers.aozora2]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes label notes; parser-specific typed behavior remains to be measured."
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes label notes; parser-specific typed behavior remains to be measured."
 
 [syntax.parsers.aozora2html]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes label notes; parser-specific typed behavior remains to be measured."
 
 [syntax.adapters.aozora2]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No typed source-label AAT projection has been measured."
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No typed source-label AAT projection has been measured."
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No typed source-label AAT projection has been measured."
 
 [syntax.corpus_prevalence]
@@ -1222,7 +1222,7 @@ id = "source.reviewed_residual_command"
 priority = 3
 category = "source_annotation"
 feature_keys = ["source_note", "layout_note", "residual_command"]
-reference_sources = ["docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
+reference_sources = ["abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
 source_examples = ["［＃ここから紙幣の文字の訳文］", "［＃「（一）」は自注］", "［＃現代語訳「...」］"]
 source_patterns = [
   '［＃ここからページ下部縦組み］',
@@ -1265,37 +1265,37 @@ source_inventory_row = "source.reviewed_residual_command"
 status = "raw_preserved"
 aat_nodes = ["raw"]
 raw_fallback = true
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "These markers are reviewed source-side residual commands. TEI can carry them as source notes today; richer typed rendition or structural projection remains a follow-up per marker family."
 
 [syntax.parsers.aozora2]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes these residual commands; parser-specific typed behavior remains to be measured."
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes these residual commands; parser-specific typed behavior remains to be measured."
 
 [syntax.parsers.aozora2html]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes these residual commands; parser-specific typed behavior remains to be measured."
 
 [syntax.adapters.aozora2]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No typed residual-command AAT projection has been measured."
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No typed residual-command AAT projection has been measured."
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No typed residual-command AAT projection has been measured."
 
 [syntax.corpus_prevalence]
@@ -1310,7 +1310,7 @@ id = "source.page_reference"
 priority = 2
 category = "source_annotation"
 feature_keys = ["source_note", "page_reference", "cross_reference"]
-reference_sources = ["docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
+reference_sources = ["abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
 source_examples = ["［＃「一三九頁」は「應神天皇」の「天の日矛」］", "［＃欄外に「続千載集巻四、秋上、太政大臣。」の校注あり］"]
 source_patterns = ['［＃「[一二三四五六七八九〇０-９0-9]+(頁|ページ)」は「[^」]+」(の「[^」]+」)?］', '［＃欄外に「[^」]+」の校注あり］', '［＃、[０-９0-9]+-(上段|下段)-[０-９0-9]+］']
 ir_nodes = ["source-note"]
@@ -1329,37 +1329,37 @@ source_inventory_row = "source.page_reference"
 status = "raw_preserved"
 aat_nodes = ["raw"]
 raw_fallback = true
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "The source-authority gate records page/cross-reference notes as raw-preserved source-note material. Turning them into typed TEI refs is downstream editorial enrichment."
 
 [syntax.parsers.aozora2]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes page/cross-reference notes; parser-specific typed behavior remains to be measured."
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes page/cross-reference notes; parser-specific typed behavior remains to be measured."
 
 [syntax.parsers.aozora2html]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes page/cross-reference notes; parser-specific typed behavior remains to be measured."
 
 [syntax.adapters.aozora2]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No typed page-reference AAT projection has been measured."
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No typed page-reference AAT projection has been measured."
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No typed page-reference AAT projection has been measured."
 
 [syntax.corpus_prevalence]
@@ -1646,32 +1646,32 @@ notes = "TEI P5 can preserve these as glyph notes or charDecl/g references. v1 s
 
 [syntax.parsers.aozora2]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes glyph-variant notes; parser-specific typed behavior remains to be measured."
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes glyph-variant notes; parser-specific typed behavior remains to be measured."
 
 [syntax.parsers.aozora2html]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes glyph-variant notes; parser-specific typed behavior remains to be measured."
 
 [syntax.adapters.aozora2]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No typed glyph-variant AAT projection has been measured."
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No typed glyph-variant AAT projection has been measured."
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No typed glyph-variant AAT projection has been measured."
 
 [syntax.corpus_prevalence]
@@ -1830,32 +1830,32 @@ notes = "TEI P5 can preserve the construct as a highlighted dotted-letter span o
 
 [syntax.parsers.aozora2]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes dotted-letter markers; parser-specific typed behavior remains to be measured."
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes dotted-letter markers; parser-specific typed behavior remains to be measured."
 
 [syntax.parsers.aozora2html]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes dotted-letter markers; parser-specific typed behavior remains to be measured."
 
 [syntax.adapters.aozora2]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No typed dotted-letter AAT projection has been measured."
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No typed dotted-letter AAT projection has been measured."
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No typed dotted-letter AAT projection has been measured."
 
 [syntax.corpus_prevalence]
@@ -2374,7 +2374,7 @@ id = "decoration.typeface"
 priority = 2
 category = "inline_annotation"
 feature_keys = ["typeface", "handwritten", "kyokashotai"]
-reference_sources = ["docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
+reference_sources = ["abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
 source_examples = ["［＃ここから手書き文字］", "［＃ここから教科書体］", "［＃「text」は手書き文字］", "［＃ゴシック体、地付き、地より２字あげ］"]
 source_patterns = ['［＃ここから(手書き文字|教科書体)］', '［＃ここで(手書き文字|教科書体)終わり］', '［＃「[^\n]+」は手書き文字］', '［＃ゴシック体、地付き(、地より[０-９0-9一二三四五六七八九十]+字(あげ|上げ))?］']
 ir_nodes = ["Inline::Style", "Block::Style"]
@@ -2398,32 +2398,32 @@ notes = "TEI can preserve these as rendition/style metadata, but current AAT/par
 
 [syntax.parsers.aozora2]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes typeface markers; parser-specific typed behavior not yet measured."
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes typeface markers; parser-specific typed behavior not yet measured."
 
 [syntax.parsers.aozora2html]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes typeface markers; parser-specific typed behavior not yet measured."
 
 [syntax.adapters.aozora2]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No reviewed typeface-style AAT contract exists; adapter behavior remains to be measured."
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No reviewed typeface-style AAT contract exists; adapter behavior remains to be measured."
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No reviewed typeface-style AAT contract exists; adapter behavior remains to be measured."
 
 [syntax.corpus_prevalence]
@@ -3112,7 +3112,7 @@ id = "layout.multicolumn"
 priority = 2
 category = "layout"
 feature_keys = ["multicolumn", "dan-gumi"]
-reference_sources = ["references/aozorabunko/rules/kijyunn.html", "docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
+reference_sources = ["references/aozorabunko/rules/kijyunn.html", "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
 source_examples = ["［＃ここから一字下げ、折り返して二字下げ、ここから二段組］", "［＃ここから２段組み］", "［＃ここで段組み終わり］"]
 source_patterns = ['［＃ここから(?:[０-９0-9]+|[一二三四五六七八九])字下げ、(?:折り返して(?:[０-９0-9]+|[一二三四五六七八九])字下げ、)?(?:ここから)?(?:[０-９0-9]+|[一二三四五六七八九])段組み?］', '［＃ここで字下げ終わり、ここで段組み?終わり］', '［＃ここから[０-９0-9]+段組み?］', '［＃ここで([０-９0-9]+段組み?|段組み?)終わり］', '［＃段組み適用外］', '［＃「[^\n]+」と「[^\n]+」は[０-９0-9]+列に並ぶ］', '［＃「[^\n]+」と「[^\n]+」は横並びになっている］', '［＃[０-９0-9]+段目］', '［＃[^］]*１行内で[０-９0-9]+行に分けられている］', '［＃[^］]*[０-９0-9]+行組み[^］]*］', '［＃ここから[０-９0-9]+段組み、段間に罫］', '［＃ここで[０-９0-9]+段組み、罫囲み終わり］', '［＃ここで段組、[^］]+終わり］', '［＃ここから[０-９0-9]+段組、[上下]段］', '［＃ここで[０-９0-9]+段組、[上下]段終わり］']
 ir_nodes = ["layout_blocks", "editor-note"]
@@ -3128,32 +3128,32 @@ status_reason = "Typed column scopes preserve supplied counts; unsupported arran
 
 [syntax.parsers.aozora2]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes multi-column markers; parser-specific typed behavior not yet measured."
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes multi-column markers; parser-specific typed behavior not yet measured."
 
 [syntax.parsers.aozora2html]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes multi-column markers; parser-specific typed behavior not yet measured."
 
 [syntax.adapters.aozora2]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "This adapter has not been measured against the current column-count scope contract."
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "This adapter has not been measured against the current column-count scope contract."
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "This adapter has not been measured against the current column-count scope contract."
 
 [syntax.corpus_prevalence]
@@ -3176,7 +3176,7 @@ id = "structure.quote_block"
 priority = 2
 category = "structure"
 feature_keys = ["quote_block", "letter_block"]
-reference_sources = ["docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
+reference_sources = ["abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
 source_examples = ["［＃ここから引用文、３字下げ］", "［＃引用文終わり］", "［＃これより手紙文、１字下げ］", "［＃ここから引用文、一字下げ］", "［＃引用、終わり］"]
 source_patterns = ['［＃(ここから|ここより|これより)(引用文|手紙文)、[^］]+］', '［＃(ここで)?引用文終わ?り］', '［＃引用、終わり］']
 ir_nodes = ["Raw", "Block::Layout"]
@@ -3192,32 +3192,32 @@ status_reason = "The opener states a role and an indentation measure; both are c
 
 [syntax.parsers.aozora2]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes quote/letter block markers; parser-specific typed behavior not yet measured."
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes quote/letter block markers; parser-specific typed behavior not yet measured."
 
 [syntax.parsers.aozora2html]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes quote/letter block markers; parser-specific typed behavior not yet measured."
 
 [syntax.adapters.aozora2]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No typed quote/letter block AAT contract exists; adapter behavior remains to be measured."
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No typed quote/letter block AAT contract exists; adapter behavior remains to be measured."
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No typed quote/letter block AAT contract exists; adapter behavior remains to be measured."
 
 [syntax.corpus_prevalence]
@@ -3240,7 +3240,7 @@ id = "structure.table"
 priority = 2
 category = "structure"
 feature_keys = ["table", "table_group", "table_border"]
-reference_sources = ["references/aozorabunko/rules/kijyunn.html", "docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
+reference_sources = ["references/aozorabunko/rules/kijyunn.html", "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
 source_examples = ["［＃ここから表］", "［＃ここで表終わり］", "［＃ここから表組］", "［＃ここから１字下げ、表組み、罫無し］", "［＃ここから２字下げ、罫囲みの表］", "［＃ここから表罫囲み］", "［＃ここから横組みの表］", "［＃ここからプログラム、表罫囲み］", "［＃ここから罫仕切り、----で挾まれた部分が一つの仕切り内］"]
 source_patterns = ['［＃ここから表(組|組み|罫囲み)?］', '［＃ここで表(組|組み|罫囲み)?終わり］', '［＃ここ(から|で)罫仕切り[^］]*］', '［＃ここで字下げ、表罫囲み終わり］', '［＃ここからプログラム、表罫囲み］', '［＃ここでプログラム（表罫囲み）終わり］', '［＃[０-９0-9一二三四五六七八九十]+行目］', '［＃ここに表組入る、別ファイル（[^）]+）参照］', '［＃ここから横組みの表］', '［＃ここで横組みの表終わり］', '[＃、](罫囲みの表|表罫囲み|表組み|表組|図表|表)[、］]', '、罫(無|な)し[、］]']
 ir_nodes = ["Raw", "Block::Layout"]
@@ -3256,32 +3256,32 @@ status_reason = "A supplied table role is typed on the scope it is supplied for,
 
 [syntax.parsers.aozora2]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes table markers; parser-specific typed behavior not yet measured."
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes table markers; parser-specific typed behavior not yet measured."
 
 [syntax.parsers.aozora2html]
 recognition = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "Source inventory observes table markers; parser-specific typed behavior not yet measured."
 
 [syntax.adapters.aozora2]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No typed table AAT contract exists; adapter behavior remains to be measured."
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No typed table AAT contract exists; adapter behavior remains to be measured."
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "unknown"
-evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+evidence = "abc:ab-validator/docs/superpowers/reports/2026-07-04-source-authority-representability.md"
 notes = "No typed table AAT contract exists; adapter behavior remains to be measured."
 
 [syntax.corpus_prevalence]
@@ -3736,7 +3736,7 @@ source_inventory_row = "break.line_explicit"
 status = "typed"
 aat_nodes = ["text"]
 raw_fallback = true
-evidence = "crates/ab-aat-to-parser-ir/tests/integration.rs; ../ab-validator/research/test/ab-validator/research/tools/parser_ir_tei_test.clj"
+evidence = "crates/ab-aat-to-parser-ir/tests/integration.rs"
 notes = "Source-derived AAT text with x-break-kind = line is projected as parser-IR line-break and TEI lb while preserving surrounding text nodes."
 
 [[syntax]]

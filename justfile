@@ -102,8 +102,7 @@ check-no-build: runtime-config-smoke active-path-hygiene root-flake-output-contr
 evidence-gate: soranoha-tests typecheck
 	@system="$({{nix_eval}} eval --impure --raw --expr builtins.currentSystem)"; \
 	{{nix_eval}} build ".#checks.$system.tei-profile-drift" \
-		"./ab-validator#checks.$system.research-clojure-tests" \
-		"./ab-validator#checks.$system.research-python-tests" --print-build-logs
+		"./ab-validator#checks.$system.tei-eaj-python-tests" --print-build-logs
 
 # Soranoha kernel + snh conformance suite plus clj-kondo/cljfmt, hermetic
 # against the root wrapper's shared Clojure/dependency-cache context.
@@ -134,16 +133,6 @@ release-parser-reproducible:
 	&& {{nix_eval}} build "$parser_ir^*" --rebuild --no-link --print-build-logs \
 	&& echo "release parser binaries rebuild reproducibly"
 
-# Authenticate instrument policies against their declared source closure, and
-# establish that capture generation is deterministic, which is what makes a
-# capture worth retaining as evidence. Both require building their suites;
-# check-no-build's `flake check --no-build` evaluates them without running them.
-parser-rq-instrument-identity:
-	@system="$({{nix_eval}} eval --impure --raw --expr builtins.currentSystem)"; \
-	{{nix_eval}} build "./ab-validator#checks.$system.parser-rq-publication-pytest" \
-		"./ab-validator#checks.$system.parser-rq-predicate-hardening-capture-smoke" \
-		--no-link --print-build-logs
-
 # Build every flake check. `flake check --no-build` evaluates without running,
 # which is how thirty checks stayed silently red while appearing gated, so the
 # ab-validator set is built here by name. The names come from the flake rather
@@ -161,7 +150,7 @@ flake-checks:
 	for name in $names; do targets="$targets ./ab-validator#checks.$system.$name"; done; \
 	{{nix_eval}} build --no-link --print-build-logs $targets
 
-validate: check-no-build evidence-gate parser-rq-instrument-identity flake-checks release-parser-reproducible
+validate: check-no-build evidence-gate flake-checks release-parser-reproducible
 
 typecheck:
 	@system="$({{nix_eval}} eval --impure --raw --expr builtins.currentSystem)"; \

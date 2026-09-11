@@ -5,9 +5,6 @@
         "aozorabunko-src": [
           "aozorabunko-src"
         ],
-        "clj-nix": [
-          "clj-nix"
-        ],
         "flake-utils": "flake-utils",
         "mecab-dic-converter-src": "mecab-dic-converter-src",
         "nixpkgs": [
@@ -15,8 +12,7 @@
         ],
         "rust-overlay": "rust-overlay",
         "soranoha-assets": "soranoha-assets",
-        "tei-eaj-aozora-tei": "tei-eaj-aozora-tei",
-        "upstream-aozora-notation-spec-src": "upstream-aozora-notation-spec-src"
+        "tei-eaj-aozora-tei": "tei-eaj-aozora-tei"
       },
       "locked": {
         "path": "./ab-validator",
@@ -282,23 +278,6 @@
         "owner": "TEIC",
         "ref": "P5_Release_4.11.0",
         "repo": "TEI",
-        "type": "github"
-      }
-    },
-    "upstream-aozora-notation-spec-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1782996881,
-        "narHash": "sha256-/Zs3OqKkyw+cUQDldW+tMBs26F6GZZ0yfPAszyvXz50=",
-        "owner": "P4suta",
-        "repo": "aozora-notation-spec",
-        "rev": "b60665fd50b596c967254f99b61f418495656fef",
-        "type": "github"
-      },
-      "original": {
-        "owner": "P4suta",
-        "repo": "aozora-notation-spec",
-        "rev": "b60665fd50b596c967254f99b61f418495656fef",
         "type": "github"
       }
     }

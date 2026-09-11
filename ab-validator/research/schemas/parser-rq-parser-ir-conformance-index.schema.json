@@ -1,6 +1,0 @@
-{
-  "$schema":"https://json-schema.org/draft/2020-12/schema","$id":"https://w3id.org/soranoha/schemas/parser-rq-parser-ir-conformance-index.schema.json","type":"object","additionalProperties":false,
-  "required":["schema_id","schema_version","qualification_identity_ref","policy_hash","expected_work_ids","records"],
-  "properties":{"schema_id":{"const":"https://w3id.org/soranoha/schemas/parser-rq-parser-ir-conformance-index.schema.json"},"schema_version":{"const":"1.0.0"},"qualification_identity_ref":{"$ref":"#/$defs/hash"},"policy_hash":{"$ref":"#/$defs/hash"},"expected_work_ids":{"type":"array","minItems":1,"uniqueItems":true,"items":{"type":"string","minLength":1}},"records":{"type":"array","minItems":1,"uniqueItems":true,"items":{"type":"object","additionalProperties":false,"required":["work_id","record"],"properties":{"work_id":{"type":"string","minLength":1},"record":{"$ref":"#/$defs/blob"}}}}},
-  "$defs":{"hash":{"type":"string","pattern":"^sha256:[0-9a-f]{64}$"},"blob":{"type":"object","additionalProperties":false,"required":["sha256","bytes","media_type"],"properties":{"sha256":{"$ref":"#/$defs/hash"},"bytes":{"type":"integer","minimum":0},"media_type":{"const":"application/json"}}}}
-}

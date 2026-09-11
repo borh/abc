@@ -62,7 +62,7 @@
   ;; the directory rule and the files' own identifiers must agree, or a
   ;; record would name a schema the site serves under another route
   (let [entries (docs/schema-files)]
-    (is (< 40 (count entries)) "the ab-validator schema directories are served")
+    (is (= 3 (count entries)) "the ab-validator schema directory is served")
     (doseq [{:keys [route path]} entries]
       (testing route
         (is (= (str "https://w3id.org/soranoha/" route)

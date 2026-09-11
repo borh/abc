@@ -15,7 +15,7 @@ fn supplied_diacritics_preserve_composition_and_source() {
         aat,
         mapping: MappingDocument::from_path(&repo.join("data/aat-to-parser-ir-mapping-v2.json"))
             .unwrap(),
-        schemas: SchemaSet::for_aat_version(&repo, None, 2).unwrap(),
+        schemas: SchemaSet::for_aat_version(2).unwrap(),
         options: ConversionOptions::default(),
     })
     .unwrap();

@@ -12,10 +12,8 @@
 //! `mod tests` instead (`bare_toggle_zero_adoption_is_structurally_unchanged`,
 //! `bare_toggle_pass_is_deterministic`), the natural home for anything
 //! that must call a `pub(crate)` function directly.
-//! The mirror test reads the shared vector file
-//! `reports/aat-fidelity/bare-toggle-model-vectors.json`, the
-//! same vectors `reports/aat-fidelity/bare-toggle-placement.py`'s
-//! `classify_tokens` classifies on the Python side. This side asserts the
+//! The mirror test reads the vector file
+//! `tests/fixtures/bare-toggle-model-vectors.json`. It asserts the
 //! OBSERVABLE adapter outcome only — container counts and raw-node
 //! survivors — not the internal per-line counters (`orphan_open`/
 //! `orphan_close`/`reopen`/`interleave_events`/`proper_nestings`/
@@ -125,7 +123,7 @@ fn collect_nodes<'a>(v: &'a Value, kind: &str, out: &mut Vec<&'a Value>) {
 fn bare_toggle_model_matches_shared_vectors() {
     let raw = fs::read_to_string(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../../reports/aat-fidelity/bare-toggle-model-vectors.json"
+        "/tests/fixtures/bare-toggle-model-vectors.json"
     ))
     .expect("shared bare-toggle vector file must be readable");
     let file: VectorFile =

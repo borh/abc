@@ -1,4 +1,0 @@
-;; Shape of runtime configuration for the external parser-RQ blob store.
-;; Supply the real root at runtime; committed manifests contain only logical
-;; blob identities and never copy this locator.
-{:root "<runtime>"}

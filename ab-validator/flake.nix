@@ -15,19 +15,9 @@
       flake = false;
     };
 
-    clj-nix = {
-      url = "github:jlesquembre/clj-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    upstream-aozora-notation-spec-src = {
-      url = "github:P4suta/aozora-notation-spec/b60665fd50b596c967254f99b61f418495656fef";
-      flake = false;
     };
 
     aozorabunko-src = {
@@ -46,8 +36,6 @@
       nixpkgs,
       soranoha-assets,
       tei-eaj-aozora-tei,
-      clj-nix,
-      upstream-aozora-notation-spec-src,
       aozorabunko-src,
       mecab-dic-converter-src,
       flake-utils,
@@ -58,7 +46,6 @@
       system:
       let
         overlays = [
-          clj-nix.overlays.default
           (import rust-overlay)
           (_final: prev: { jdk = prev.jdk25_headless; })
         ];
@@ -102,7 +89,7 @@
         source = cleanProjectSource ./.;
 
         # Cargo resolves every workspace member even for a single-package build.
-        # Keep the workspace Rust inputs, but exclude research tooling and reports.
+        # Keep the workspace Rust inputs and nothing else.
         publicationRustFiles = lib.fileset.unions [
           ./Cargo.toml
           ./Cargo.lock
@@ -122,53 +109,18 @@
             ./data/aat-schema-v1.json
             ./data/aat-schema.json
             ./data/aat-parser-ir-divergence-bundle-v1.schema.json
-            ./research/schemas/aat-parser-ir-mapping.schema.json
-            ./research/schemas/parser-ir.schema.json
-            ./research/schemas/aat-parser-ir-divergence.schema.json
+            ./schemas/aat-parser-ir-mapping.schema.json
+            ./schemas/parser-ir.schema.json
+            ./schemas/aat-parser-ir-divergence.schema.json
           ];
         };
 
-        researchCljDepsCache = pkgs.mk-deps-cache {
-          lockfile = ./research/deps-lock.json;
-        };
-        researchRoot = "${source}/research";
-        # Every workspace binary reads the research tree through this
-        # variable at run time.
-        researchEnv = {
-          AB_RESEARCH_ROOT = researchRoot;
-        };
         stageSharedVectors = ''
           mkdir -p ../soranoha/test/fixtures
           cp -R ${soranoha-assets}/test/fixtures/canonicalization ../soranoha/test/fixtures/
         '';
-        researchClojureTests =
-          pkgs.runCommand "research-clojure-tests"
-            {
-              nativeBuildInputs = [
-                pkgs.clojure
-                pkgs.git
-                pkgs.python3
-                pkgs.clj-kondo
-                pkgs.cljfmt
-              ];
-            }
-            ''
-                  mkdir -p repo/ab-validator
-                  cp -R ${source}/. repo/ab-validator/
-              cp ${source}/justfile repo/justfile
-              cp -R ${soranoha-assets} repo/soranoha
-                  chmod -R u+w repo
-                  cd repo/ab-validator/research
-                  export HOME="${researchCljDepsCache}"
-                  export JAVA_TOOL_OPTIONS="-Duser.home=${researchCljDepsCache}"
-                  export CLJ_CONFIG="$HOME/.clojure" CLJ_CACHE="$TMPDIR/cp-cache" GITLIBS="$HOME/.gitlibs"
-                  clj-kondo --fail-level warning --lint src test
-                  cljfmt check src test
-                  clojure -M:test -m kaocha.runner
-                  touch "$out"
-            '';
-        researchPythonTests =
-          pkgs.runCommand "research-python-tests"
+        teiEajPythonTests =
+          pkgs.runCommand "tei-eaj-python-tests"
             {
               nativeBuildInputs = [
                 pkgs.python3
@@ -176,42 +128,22 @@
               ];
             }
             ''
-                  mkdir -p repo
-              cp -R ${source} repo/ab-validator
-                  chmod -R u+w repo
-                  cd repo/ab-validator/research
-                  python -m pytest tools -q
-                  touch "$out"
+              cp -R ${source}/tools/tei-eaj tei-eaj
+              chmod -R u+w tei-eaj
+              cd tei-eaj
+              python -m pytest -q .
+              touch "$out"
             '';
         teiEajApp = subcommand: {
           type = "app";
           program = toString (
             pkgs.writeShellScript "tei-eaj-${subcommand}" ''
-              exec ${pkgs.python3}/bin/python ${source}/research/tools/tei_eaj_aozora_reports.py \
-                --compare-script ${source}/research/tools/tei_eaj_compare.py \
+              exec ${pkgs.python3}/bin/python ${source}/tools/tei-eaj/tei_eaj_aozora_reports.py \
+                --compare-script ${source}/tools/tei-eaj/tei_eaj_compare.py \
                 --tei-eaj-root ${tei-eaj-aozora-tei} \
                 --source-rev ${tei-eaj-aozora-tei.rev} ${subcommand} "$@"
             ''
           );
-        };
-
-        upstreamAozoraNotationSpec =
-          pkgs.runCommand "upstream-aozora-notation-spec"
-            {
-              src = cleanProjectSource upstream-aozora-notation-spec-src;
-            }
-            ''
-              mkdir -p "$out"
-              cp -R "$src"/. "$out"/
-              test -f "$out/conformance/schema/vector.schema.json"
-              test -d "$out/conformance/vectors"
-              test -f "$out/conformance/RUNNER.md"
-              test -f "$out/src/grammar/aozora.abnf"
-            '';
-
-        aozorabunkoCorpus = pkgs.symlinkJoin {
-          name = "aozorabunko-corpus";
-          paths = [ aozorabunko-src ];
         };
 
         sudachiDictionaryFullZip = pkgs.fetchurl {
@@ -451,37 +383,10 @@
             pkgs.zstd
           ];
           buildInputs = workspaceExtraBuildInputs;
-          env = researchEnv;
           doCheck = true;
           # the test suite reads the canonicalization vectors the kernel
           # shares with the workspace
           extra.preBuild = stageSharedVectors;
-        };
-
-        parserRqCandidate = mkRustBin {
-          pname = "parser-rq-candidate";
-          nativeBuildInputs = [ pkgs.pkg-config ];
-          buildInputs = workspaceExtraBuildInputs;
-          env = researchEnv;
-          cargoBuildFlags = [
-            "-p"
-            "ab-check"
-            "-p"
-            "ab-aozora"
-            "-p"
-            "ab-aat-to-parser-ir"
-            "-p"
-            "ab-parser-rq-source-accountability"
-            "-p"
-            "ab-parser-rq-diagnostic-authorization"
-          ];
-          doCheck = false;
-          extra = {
-            preBuild = stageSharedVectors;
-            postInstall = ''
-              ln -s ${pkgs.time}/bin/time "$out/bin/time"
-            '';
-          };
         };
 
         workspaceCheck = mkRustBin {
@@ -492,15 +397,10 @@
             pkgs.zstd
           ];
           buildInputs = workspaceExtraBuildInputs;
-          env = researchEnv;
           cargoBuildFlags = [ "--workspace" ];
           doCheck = true;
           extra = {
-            cargoTestFlags = [
-              "--workspace"
-              "--features"
-              "ab-morph-run/test-analyzer"
-            ];
+            cargoTestFlags = [ "--workspace" ];
             preBuild = stageSharedVectors;
           };
         };
@@ -527,7 +427,6 @@
           export HOME="$TMPDIR/home"
           export CARGO_HOME="$TMPDIR/cargo-home"
           mkdir -p "$HOME" "$CARGO_HOME"
-          export AB_RESEARCH_ROOT="${researchRoot}"
           mkdir -p .cargo
           cat > .cargo/config.toml <<EOF
           [source.crates-io]
@@ -593,7 +492,6 @@
           pkgs.cargo-nextest
           pkgs.cargo-watch
           pkgs.just
-          pkgs.duckdb
           pkgs.pkg-config
           pkgs.ripgrep
           pkgs.fd
@@ -608,8 +506,6 @@
           ps.tomli
           ps.pytest
         ]);
-
-        pythonWithAatDuckdb = pkgs.python3.withPackages (ps: [ ps.duckdb ]);
 
         mkSmokeCheck =
           {
@@ -643,132 +539,6 @@
               ${extraPreScript}
 
               bash "${testScript}"
-              touch "$out"
-            '';
-
-        # A pytest run over a writable copy of the source tree. `withAssets`
-        # lays the copy out as a monorepo checkout beside the soranoha assets
-        # for tests that read across that boundary.
-        mkPytestCheck =
-          {
-            name,
-            paths,
-            withAssets ? false,
-            nativeBuildInputs ? [ ],
-            preScript ? "",
-          }:
-          pkgs.runCommand name
-            {
-              nativeBuildInputs = nativeBuildInputs ++ [ pythonWithAatSchemaDeps ];
-            }
-            ''
-              work_dir="$(mktemp -d)"
-              ${
-                if withAssets then
-                  ''
-                    mkdir -p "$work_dir/repo"
-                    cp -R "${source}" "$work_dir/repo/ab-validator"
-                    cp -R ${soranoha-assets} "$work_dir/repo/soranoha"
-                    chmod -R +w "$work_dir/repo"
-                    cd "$work_dir/repo/ab-validator"
-                  ''
-                else
-                  ''
-                    cp -R "${source}" "$work_dir/source"
-                    chmod -R +w "$work_dir/source"
-                    cd "$work_dir/source"
-                  ''
-              }
-              ${preScript}
-              python -m pytest ${lib.escapeShellArgs paths} -q
-              touch "$out"
-            '';
-
-        # `reports/**` pytest (aat-fidelity dump comparator + lib helpers).
-        reportsPytestCheck = mkPytestCheck {
-          name = "reports-pytest-check";
-          nativeBuildInputs = [ pkgs.git ];
-          preScript = stageSharedVectors;
-          paths = [
-            "reports/aat-fidelity/tests"
-            "reports/lib/tests"
-            "reports/parser-conformance/tests"
-            "reports/source-regions/tests"
-          ];
-        };
-
-        parserRqPublicationPytestCheck = mkPytestCheck {
-          name = "parser-rq-publication-pytest-check";
-          withAssets = true;
-          paths = [ "reports/parser-ir/tests" ];
-        };
-
-        parserRqCoreAttemptPythonTests = mkPytestCheck {
-          name = "parser-rq-core-attempt-python-tests";
-          paths = [ "reports/parser-ir/test_parser_rq_core_attempt_capture.py" ];
-        };
-
-        parserRqCampaignProvenancePythonTests = mkPytestCheck {
-          name = "parser-rq-campaign-provenance-python-tests";
-          paths = [ "reports/parser-ir/test_parser_rq_campaign_provenance.py" ];
-        };
-
-        parserRqPredicateHardeningCapturePythonTests = mkPytestCheck {
-          name = "parser-rq-predicate-hardening-capture-python-tests";
-          paths = [ "reports/parser-ir/test_parser_rq_predicate_hardening_capture.py" ];
-        };
-
-        parserRqResourceCgroupSmokeApp = pkgs.writeShellApplication {
-          name = "parser-rq-resource-cgroup-smoke";
-          runtimeInputs = [
-            pkgs.systemd
-            pkgs.python3
-            pkgs.coreutils
-            pkgs.jq
-          ];
-          text = ''
-            exec bash ${source}/tests/parser-rq-resource-cgroup-live-smoke.sh \
-              ${source}/reports/parser-ir/parser-rq-resource-wrapper.py
-          '';
-        };
-
-        parserRqResourceCaptureSmokeCheck =
-          pkgs.runCommand "parser-rq-resource-capture-smoke"
-            {
-              nativeBuildInputs = [
-                pkgs.python3
-                pkgs.python3Packages.pytest
-                pkgs.coreutils
-              ];
-            }
-            ''
-              python -m pytest -q \
-                ${source}/reports/parser-ir/tests/test_parser_rq_resource_capture.py \
-                ${source}/reports/parser-ir/tests/test_parser_rq_resource_wrapper.py
-              bash ${source}/tests/parser-rq-resource-capture-smoke.sh ${source}
-              touch "$out"
-            '';
-
-        parserRqPredicateHardeningCaptureSmokeCheck =
-          # Capture generation only. The lint and the focused Clojure test that
-          # used to run here are already covered by research-clojure-tests,
-          # whose kaocha :unit suite matches every -test namespace and whose
-          # clj-kondo and cljfmt run over the same src and test paths.
-          pkgs.runCommand "parser-rq-predicate-hardening-capture-smoke"
-            {
-              nativeBuildInputs = [
-                abAozora
-                abAatToParserIr
-                pkgs.python3
-                pkgs.coreutils
-                pkgs.diffutils
-              ];
-              AB_AOZORA_BIN = "${abAozora}/bin/ab-aozora";
-              AB_AAT_TO_PARSER_IR_BIN = "${abAatToParserIr}/bin/ab-aat-to-parser-ir";
-            }
-            ''
-              bash ${source}/tests/parser-rq-predicate-hardening-capture-smoke.sh \
-                ${source} ${researchRoot}
               touch "$out"
             '';
 
@@ -821,43 +591,6 @@
           };
         };
 
-        aatFidelityDuckdbSmokeCheck = mkSmokeCheck {
-          name = "aat-fidelity-duckdb-smoke-check";
-          testScript = "tests/aat-fidelity-duckdb-smoke.sh";
-          nativeBuildInputs = [
-            pythonWithAatDuckdb
-            pkgs.duckdb
-            pkgs.glibc.bin
-          ];
-          extraEnv = {
-            AB_AAT_TRIAGE_PYTHON = "${pythonWithAatDuckdb}/bin/python3";
-            AB_DUCKDB_BIN = "${pkgs.duckdb}/bin/duckdb";
-          };
-          extraPreScript = ''
-            export AB_DB_ROOT="$TMPDIR/ab-validator"
-          '';
-        };
-
-        publicationBundleSmokeCheck = mkSmokeCheck {
-          name = "parser-ir-publication-bundle-smoke-check";
-          testScript = "tests/parser-ir-publication-bundle-smoke.sh";
-          nativeBuildInputs = [
-            pkgs.jq
-            pythonWithAatSchemaDeps
-            pkgs.ripgrep
-          ];
-        };
-
-        publicationBundleBatchSmokeCheck = mkSmokeCheck {
-          name = "parser-ir-publication-bundle-batch-smoke-check";
-          testScript = "tests/parser-ir-publication-bundle-batch-smoke.sh";
-          nativeBuildInputs = [
-            pkgs.jq
-            pythonWithAatSchemaDeps
-            pkgs.ripgrep
-          ];
-        };
-
         taxonomyDriftCheck =
           pkgs.runCommand "taxonomy-drift-check"
             {
@@ -885,15 +618,6 @@
               touch "$out"
             '';
 
-        monorepoPathHygieneSmokeCheck = mkSmokeCheck {
-          name = "monorepo-path-hygiene-smoke-check";
-          testScript = "tests/monorepo-path-hygiene-smoke.sh";
-          nativeBuildInputs = [
-            pkgs.python3
-            pkgs.ripgrep
-          ];
-        };
-
         monorepoWorkspaceLayoutSmokeCheck = mkSmokeCheck {
           name = "monorepo-workspace-layout-smoke-check";
           testScript = "tests/monorepo-workspace-layout-smoke.sh";
@@ -919,66 +643,39 @@
           ];
         };
 
-        # The morphological-analysis engine (`ab-morph-run analyze-aat`). Built
-        # through nix so the morph-warehouse skip gate can pin it by content
-        # (store path / binary hash); running it via `cargo` from live source
-        # would leave the engine version out of the run's input identity.
-        abMorphRun = mkRustBin {
-          pname = "ab-morph-run";
+        # The one analyzer entry point that survives in the tree. The Sudachi
+        # resource directory is baked in as the binary's default (see
+        # ab-morph-analyzers::sudachi); the crate's own default is the
+        # build-sandbox path and does not exist at run time.
+        tokenizeBin = mkRustBin {
+          pname = "tokenize";
           nativeBuildInputs = [
             pkgs.pkg-config
             pkgs.zstd
           ];
           buildInputs = workspaceExtraBuildInputs;
-          env = researchEnv // {
-            # Baked into the binary as the Sudachi resource-dir default (see
-            # ab-morph-analyzers::sudachi); the crate's own default is the
-            # build-sandbox path and does not exist at run time.
+          env = {
             AB_SUDACHI_RESOURCE_DIR = sudachiResources;
           };
           cargoBuildFlags = [
             "--package"
-            "ab-morph-run"
+            "ab-morph-analyzers"
+            "--bin"
+            "tokenize"
           ];
         };
 
         # `nix run .#tokenize -- --analyzer vibrato:unidic-cwj-202512 <<< text`
-        # runs the analyzers the corpus runs, against the flake dictionaries,
-        # for checking a phrase by hand. AB_VIBRATO_CACHE_DIR still redirects
-        # the decompressed-dictionary cache (about 1 GB per dictionary).
+        # runs one analyzer against the flake dictionaries, for checking a
+        # phrase by hand. AB_VIBRATO_CACHE_DIR still redirects the
+        # decompressed-dictionary cache (about 1 GB per dictionary).
         tokenizeApp = pkgs.writeShellApplication {
           name = "tokenize";
           text = ''
             export AB_VIBRATO_DICT_DIR="${vibratoDictionaries}/share/vibrato"
             export AB_SUDACHI_DICT="${sudachiDictionaryFull}/share/sudachi/system.dic"
-            exec ${abMorphRun}/bin/ab-morph-run tokenize "$@"
+            exec ${tokenizeBin}/bin/tokenize "$@"
           '';
-        };
-
-        # ab-index: builds the corpus feature index (index.json) consumed by
-        # ab-check. Packaged through nix so run-aat-full.sh can pin it by content
-        # (store path) in the AAT dump's input identity; running it via cargo from
-        # live source would leave the indexer's version out of the dump identity.
-        abIndex = mkRustBin {
-          pname = "ab-index";
-          cargoBuildFlags = [
-            "--package"
-            "ab-index"
-          ];
-          env = researchEnv;
-        };
-
-        # ab-check: the fidelity engine that produces the aat/ tree (runs the
-        # adapter per work, emits AAT JSON). Packaged through nix so its version is
-        # pinnable by content in the dump identity; it is the primary output
-        # producer, so leaving it unpinned is the worst engine-hole.
-        abCheck = mkRustBin {
-          pname = "ab-check";
-          cargoBuildFlags = [
-            "--package"
-            "ab-check"
-          ];
-          env = researchEnv;
         };
 
         # The AAT adapter is pinned by executable content for corpus measurements.
@@ -1007,20 +704,8 @@
             pythonWithAatSchemaDeps
           ];
           extraEnv = {
-            AB_RESEARCH_ROOT = "${researchRoot}";
             AB_AAT_TO_PARSER_IR_BIN = "${abAatToParserIr}/bin/ab-aat-to-parser-ir";
           };
-
-        };
-
-        aozoraNotationSpecComparatorSmokeCheck = mkSmokeCheck {
-          name = "aozora-notation-spec-comparator-smoke-check";
-          testScript = "tests/aozora-notation-spec-comparator-smoke.sh";
-          nativeBuildInputs = [
-            pkgs.jq
-            pkgs.python3
-            pkgs.ripgrep
-          ];
         };
 
       in
@@ -1028,16 +713,10 @@
         packages = {
           default = abValidator;
           ab-validator = abValidator;
-          parser-rq-candidate = parserRqCandidate;
           ab-aat-to-parser-ir = abAatToParserIr;
-          ab-morph-run = abMorphRun;
-          ab-index = abIndex;
-          ab-check = abCheck;
           ab-aozora = abAozora;
-          aat-triage-python = pythonWithAatDuckdb;
           ab-source-inventory = sourceInventoryBin;
-          aozorabunko-corpus = aozorabunkoCorpus;
-          upstream-aozora-notation-spec = upstreamAozoraNotationSpec;
+          tokenize = tokenizeBin;
           sudachi-dictionary-full = sudachiDictionaryFull;
           mecab-dic-converter = mecabDicConverter;
           vibrato-dict-cwj = vibratoDictCwj;
@@ -1064,36 +743,21 @@
             tei-eaj-aozora-reports-with-probes = teiEajApp "all-with-probes";
             tei-eaj-aozora-reports = teiEajApp "all";
             ab-aat-to-parser-ir = mkApp abAatToParserIr "Run the AAT to parser-IR conversion CLI";
-            parser-rq-resource-cgroup-smoke = mkApp parserRqResourceCgroupSmokeApp "Run the host-controlled cgroup-v2 resource smoke";
             tokenize = mkApp tokenizeApp "Tokenize stdin with one workspace analyzer (--analyzer vibrato:<dictionary> or sudachi-a|b|c) and print a JSON object per morpheme";
           };
 
         checks = {
-          research-clojure-tests = researchClojureTests;
-          research-python-tests = researchPythonTests;
+          tei-eaj-python-tests = teiEajPythonTests;
           default = workspaceCheck;
           cargo-fmt = cargoFmtCheck;
           cargo-check = cargoCheck;
           cargo-clippy = cargoClippyCheck;
           cargo-deny = cargoDenyCheck;
-          upstream-aozora-notation-spec = upstreamAozoraNotationSpec;
-          aozora-notation-spec-comparator-smoke = aozoraNotationSpecComparatorSmokeCheck;
           taxonomy-drift = taxonomyDriftCheck;
-          monorepo-path-hygiene-smoke = monorepoPathHygieneSmokeCheck;
           monorepo-workspace-layout-smoke = monorepoWorkspaceLayoutSmokeCheck;
-          parser-ir-publication-bundle-smoke = publicationBundleSmokeCheck;
-          parser-ir-publication-bundle-batch-smoke = publicationBundleBatchSmokeCheck;
           aat-to-parser-ir-smoke = abAatToParserIrCheck;
           source-inventory-smoke = sourceInventorySmokeCheck;
           source-representability-gate = sourceRepresentabilityGateCheck;
-          aat-fidelity-duckdb-smoke = aatFidelityDuckdbSmokeCheck;
-          reports-pytest = reportsPytestCheck;
-          parser-rq-publication-pytest = parserRqPublicationPytestCheck;
-          parser-rq-core-attempt-python-tests = parserRqCoreAttemptPythonTests;
-          parser-rq-campaign-provenance-python-tests = parserRqCampaignProvenancePythonTests;
-          parser-rq-predicate-hardening-capture-python-tests = parserRqPredicateHardeningCapturePythonTests;
-          parser-rq-resource-capture-smoke = parserRqResourceCaptureSmokeCheck;
-          parser-rq-predicate-hardening-capture-smoke = parserRqPredicateHardeningCaptureSmokeCheck;
         };
 
         devShells = {
@@ -1103,7 +767,6 @@
             RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
             AB_SUDACHI_DICT = "${sudachiDictionaryFull}/share/sudachi/system.dic";
             AB_SUDACHI_RESOURCE_DIR = sudachiResources;
-            AB_DUCKDB_BIN = "${pkgs.duckdb}/bin/duckdb";
 
             shellHook = ''
               if command -v sccache > /dev/null 2>&1; then

@@ -105,24 +105,8 @@ tokenization (`シマッタ！`, `オロカ！`).
    bb scripts/ortho-gold/recall_floor.clj /tmp/gold-human-ml.jsonl
    ```
 
-4. **Retrain ML** (if labeling a new set):
-
-   ```bash
-   cargo run -p ab-ortho-detect-ml -- train \
-     --gold data/ortho-gold/sentences-human-REVIEWER.jsonl \
-     --out data/ortho-gold/models/model-human.bin
-   cargo run -p ab-ortho-detect-ml -- hash \
-     --model data/ortho-gold/models/model-human.bin
-   ```
-
-5. **Cross-validate** (for out-of-sample generalization):
-
-   ```bash
-   cargo run -p ab-ortho-detect-ml -- cross-validate \
-     --gold data/ortho-gold/sentences-human-REVIEWER.jsonl \
-     --k 5 \
-     --report reports/ortho-detect/YYYY-MM-DD-human-cv.md
-   ```
+The trainer and cross-validator that produced `models/` were retired with the
+research layer; the archived repository holds them.
 
 ## Historical evaluation (2026-07-05)
 

@@ -13,7 +13,7 @@ fn convert(body: &str) -> Value {
             .unwrap(),
         mapping: MappingDocument::from_path(&repo.join("data/aat-to-parser-ir-mapping-v2.json"))
             .unwrap(),
-        schemas: SchemaSet::for_aat_version(&repo, None, 2).unwrap(),
+        schemas: SchemaSet::for_aat_version(2).unwrap(),
         options: ConversionOptions::default(),
     })
     .unwrap()
@@ -87,8 +87,7 @@ fn explicit_placeholder_does_not_invent_quantity_or_edition() {
 
 #[test]
 fn gap_is_apparatus_and_has_one_supplied_extent() {
-    let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let schemas = SchemaSet::for_aat_version(&repo, None, 2).unwrap();
+    let schemas = SchemaSet::for_aat_version(2).unwrap();
     let validators = ab_aat_to_parser_ir::schema::SchemaValidators::compile(&schemas).unwrap();
     let ir = convert("□□［＃底本２字伏字］");
     let index = ir["nodes"]

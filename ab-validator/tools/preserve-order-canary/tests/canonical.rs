@@ -33,8 +33,7 @@ fn sort_keys_deep_sorts_insertion_ordered_maps() {
 ///   --aat <this test's fixture written to a temp file> \
 ///   --mapping data/aat-to-parser-ir-mapping-v1.json \
 ///   --parser-ir-out /tmp/canary-parser-ir.json \
-///   --divergence-out /tmp/canary-divergence.json \
-///   --research-root research
+///   --divergence-out /tmp/canary-divergence.json
 /// ```
 ///
 /// The fixture is the same minimal AAT document used by
@@ -122,16 +121,9 @@ fn repo_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
-fn research_root(repo: &Path) -> PathBuf {
-    std::env::var_os("AB_RESEARCH_ROOT")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| repo.join("research"))
-}
-
 #[test]
 fn convert_and_serialize_parser_ir_is_canonical_under_preserve_order() {
     let repo = repo_root();
-    let abc = research_root(&repo);
     // The mapping loaded below (`aat-to-parser-ir-mapping-v1.json`) declares
     // `source_aat_version: 1`; `MappingDocument::preflight` requires the
     // loaded AAT schema version to match, so this canary (whose fixture AAT
@@ -139,7 +131,7 @@ fn convert_and_serialize_parser_ir_is_canonical_under_preserve_order() {
     // fails preflight with "mapping/schema tuple mismatch".) This preserves
     // the canary's original assertion: preserve_order active, canonical
     // (sorted-key) parser-IR serialization is unaffected by map ordering.
-    let schemas = ab_aat_to_parser_ir::SchemaSet::load_for_aat_version(&repo, &abc, 1).unwrap();
+    let schemas = ab_aat_to_parser_ir::SchemaSet::load_for_aat_version(&repo, 1).unwrap();
     let mapping = ab_aat_to_parser_ir::MappingDocument::from_path(
         &repo.join("data/aat-to-parser-ir-mapping-v1.json"),
     )

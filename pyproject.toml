@@ -2,10 +2,7 @@
 line-length = 100
 target-version = "py311"
 extend-exclude = [
-  "ab-validator/benchmarks/baselines",
-  "ab-validator/docs/superpowers/reports",
   "ab-validator/scratch",
-  "ab-validator/research/out",
   "out",
   "scratch",
 ]
@@ -36,10 +33,7 @@ disable_error_code = [
   "var-annotated",
 ]
 exclude = [
-  "ab-validator/benchmarks/baselines/",
-  "ab-validator/docs/superpowers/reports/",
   "ab-validator/scratch/",
-  "ab-validator/research/out/",
   "out/",
   "scratch/",
 ]

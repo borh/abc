@@ -6,8 +6,7 @@ a divergence bundle backed by the measured mapping artifact in
 
 The crate is a measurement consumer, not a generic mapping DSL. Runtime
 divergence records are authorized by the checked-in mapping, and parser-IR plus
-divergence output are validated against compiled schemas. Research invocations can select other schemas
-with `--research-root`.
+divergence output are validated against the compiled schemas.
 
 ## Byte coordinates
 

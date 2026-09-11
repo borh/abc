@@ -27,20 +27,13 @@ SKIPPED = (
     ".git",
     "archive",
     "ab-validator/docs",
-    "ab-validator/research/docs",
 )
 
 # A pin held in source rather than in a record. The constant is deliberate:
 # it states which schema the surrounding field mapping was written against, so
 # a schema change has to be reviewed alongside the mapping. What it cannot do
-# by itself is notice that the schema moved.
-SOURCE_PINS = (
-    (
-        "ab-validator/crates/ab-morph-run/src/import_aozora.rs",
-        "ABC_METADATA_RECORD_SCHEMA_HASH",
-        "https://w3id.org/soranoha/schemas/metadata-record.schema.json",
-    ),
-)
+# by itself is notice that the schema moved. No source holds one at present.
+SOURCE_PINS: tuple[tuple[str, str, str], ...] = ()
 
 ID_SUFFIX = "_schema_id"
 HASH_SUFFIX = "_schema_hash"

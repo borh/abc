@@ -50,12 +50,11 @@ convenience for human downloads. Every work page shows both forms.
 
 To read it rather than download it, open
 `https://soranoha.org/works/000092_000879/` for the bibliography and
-`https://soranoha.org/works/000092_000879/read` for the text itself, ruby and
-all, in horizontal or vertical setting. A place in the text has an address
-too: every segment of the reading view carries the id its TEI element carries
-as a source reference, so `.../read#source-694-733` opens the page at the
-segment that accounts for bytes 694 to 733 of the source text as UTF-8. The
-TEI file is where to find the number.
+`https://soranoha.org/works/000092_000879/read` for the text itself, with ruby
+glosses, in horizontal or vertical setting. Reading views support deep linking:
+each segment carries an HTML id matching its TEI source reference attribute
+(for example, `.../read#source-694-733`), anchoring directly to the corresponding
+UTF-8 byte span in the source text.
 
 If you have an Aozora Bunko card URL, you already have the identifier. The card
 `https://www.aozora.gr.jp/cards/000879/card92.html` gives work id `92` and card
@@ -221,8 +220,8 @@ archive's last visit of the origin, snapshot
 `swh:1:snp:861faf52eb29116fdb2984563a031acec1a8d6b1`, holds every revision a
 release names.
 
-To ask what has changed since some earlier point in Aozora Bunko's own
-history, check that history out and compare it against a release. From a
+To compare a release against an earlier point in Aozora Bunko's history,
+check that history out and compare it against the release. From a
 checkout of this repository:
 
 ```sh
@@ -238,13 +237,10 @@ because a release records each work's source identity. The chain is verified
 against the published keys first, and the comparison runs locally against the
 supplied checkout.
 
-For most work you can ignore this entirely. It matters when you need a result
-to remain reproducible over time. Citing the release keeps the exact bytes you
-analyzed identifiable even if subsequent releases change the corpus. The
-[glossary](user-glossary.md) explains manifest, chain and admission without
-assuming any of the cryptography; the
-[protocol specification](design/snh-protocol-v1.md) is the full contract for
-anyone implementing a verifier.
+Citing the release keeps the exact analyzed bytes identifiable across subsequent
+corpus updates. The [glossary](user-glossary.md) explains manifest, chain and
+admission concepts; the [protocol specification](design/snh-protocol-v1.md)
+defines the verifier contract.
 
 ## Where to go next
 

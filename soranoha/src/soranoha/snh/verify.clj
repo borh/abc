@@ -437,35 +437,6 @@
     (fail! :zero-head-after-genesis {:commit commit}))
   {:empty true})
 
-(defn- verify-chain-from
-  [v commit pinned-keys]
-  (let [head (head-at v commit)]
-    (if (= sign/zero-head-hex head)
-      (pre-genesis-state! v commit)
-      (let [head-manifest (decoded-manifest v commit head)
-            facts (atom {})]
-        (loop [c commit
-               m-hex head
-               m head-manifest
-               chain []
-               gov-ids #{}
-               younger nil]
-          (let [{:keys [parent parent-head genesis? events verified]}
-                (verify-commit! v c pinned-keys
-                                {:m-hex m-hex :m m :younger younger :facts facts})
-                chain (conj chain m-hex)
-                gov-ids (with-event gov-ids m)]
-            (if genesis?
-              {:head head
-               :head-manifest head-manifest
-               :chain chain
-               :governance-events gov-ids
-               :chain-length (count chain)}
-              (let [pm (decoded-manifest v parent parent-head)]
-                (check-transition! c m pm events)
-                (recur parent parent-head pm chain gov-ids
-                       {:commit c :verified verified})))))))))
-
 (defn- verify-run!
   "Everything a contiguous run of publication commits establishes standing
   alone: every commit from `commit` back to (but not including) `stop`
@@ -523,6 +494,18 @@
             (check-transition! c m pm events)
             (recur parent parent-head pm chain gov-ids
                    {:commit c :verified verified})))))))
+
+(defn- verify-chain-from
+  "The chain walked in one pass: a run from `commit` with no stop, so it
+  ends at genesis and leaves no transition open. The initial commit is the
+  one case a run refuses and this accepts, as the pre-genesis state."
+  [v commit pinned-keys]
+  (if (= sign/zero-head-hex (head-at v commit))
+    (pre-genesis-state! v commit)
+    (let [{:keys [chain] :as run} (verify-run! v commit nil pinned-keys)]
+      (-> run
+          (dissoc :open)
+          (assoc :chain-length (count chain))))))
 
 (def ^:private shortest-automatic-run
   "How short a run the automatic segment count will produce. A run's newest

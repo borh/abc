@@ -90,8 +90,8 @@ text: plaintext drops ruby readings and notes for analysis workflows that consum
 base text, and the reading view shows them.
 
 Private experimental lineages may be explicitly reset; a public lineage requires
-a fresh reviewed genesis and the independent authorship checkpoint described in
-the [deployment guide](../private-publication.md).
+a fresh reviewed genesis and the independent authorship checkpoint that
+[Zenodo deposits and ORCID anchoring](../zenodo-deposits.md) specifies.
 
 Protocol semantic changes require a permanent architectural decision record with
 the changed contract and rationale, together with corresponding specification,

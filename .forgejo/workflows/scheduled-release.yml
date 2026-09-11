@@ -1,6 +1,6 @@
 # Publish on the repository-scoped runner using the NixOS deployment config.
 # The signing seed reaches only the release process through stdin; build children
-# must not inherit it. Public exposure follows docs/private-publication.md.
+# must not inherit it.
 # Release exit 3 requests a retry from the new head; other failures stop the job.
 # release-needed exit 10 means the corpus did not move, so no release is minted.
 name: scheduled-release

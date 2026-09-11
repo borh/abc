@@ -268,7 +268,5 @@ loose files, and a Zenodo deposit is the latter.
   produces the bytes the anchor deposits.
 - [Citing Soranoha](citation.md), for how the version DOI appears in a
   citation.
-- [Private corpus testing](private-publication.md), for the deployment the
-  release deposit is recorded into.
 - [Archival](archival.md), the other independent record. A deposit holds loose
   manifest bytes; the archive holds the repository they were published from.

@@ -29,7 +29,7 @@ moved are converted again.
 
 Use it to answer whether the current toolchain would produce different
 documents from the same sources, which is the one question
-[`corpus-delta`](private-publication.md) cannot: that command compares source
+[`corpus-delta`](start-here.md#what-signed-means-and-why-you-might-care) cannot: that command compares source
 identities, and source identities are the whole answer only under an unchanged
 toolchain. Reach for this recipe when the toolchain has moved, and for
 `corpus-delta` otherwise, because comparing sources costs seconds and this

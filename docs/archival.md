@@ -41,8 +41,7 @@ https://soranoha.org/chain/soranoha-chain.git
 ```
 
 It is read-only and provides an anonymous public view of the publication origin.
-Publishers write to the same repository over SSH on the tailnet, as described in
-[private corpus testing](private-publication.md). This URL serves as the stable
+Publishers write to the same repository over authenticated SSH. This URL serves as the stable
 origin qualifier for every archived SWHID; changing it invalidates previously
 recorded identifiers.
 

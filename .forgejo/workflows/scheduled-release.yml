@@ -45,6 +45,21 @@ jobs:
             *) exit "$rc" ;;
           esac
 
+      - name: check the committed snapshot against the selection
+        # A selection or assessment change that lands without regenerating
+        # soranoha/data/assessment-snapshot.json stops the release with a
+        # totality violation after the chain is already fetched and verified.
+        # The same comparison here fails first, and names the slugs that
+        # differ, so the fix is to regenerate and commit the snapshot.
+        run: |
+          test ! -f skip-release || { echo "skipping snapshot check (corpus unmoved)"; exit 0; }
+          export PATH="/run/current-system/sw/bin:$PATH"
+          nix run ./src#soranoha-kernel -- assessment-drift \
+            --deployment /etc/soranoha/publisher.json \
+            --assessment "$PWD/src/soranoha/data/assessment-snapshot.json" \
+            --assessment-source "$PWD/src/soranoha/data/assessment-source.json" \
+            --as-of "$(date -u +%F)"
+
       - name: release
         env:
           SORANOHA_RELEASE_SEED: ${{ secrets.SORANOHA_RELEASE_SEED }}

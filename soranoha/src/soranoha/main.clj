@@ -623,6 +623,19 @@
      (when-not (java.util.Arrays/equals ^bytes (:bytes expected) ^bytes (:bytes actual))
        (snapshot-drift (:value expected) supplied)))))
 
+(defn assessment-drift!
+  "Compare the committed snapshot with one regenerated now, and say how they
+  differ. This is the check the release runs before it builds, exposed so an
+  operator can run it after changing selection or assessment code and before
+  dispatching a release. Prints the drift report, or a null drift when the
+  bytes agree."
+  [{:keys [assessment] :as opts}]
+  (require-flags! "assessment-drift" {"--assessment" assessment})
+  (let [drift (release-preflight-drift opts)]
+    (println (record-json/write-deterministic-json-str
+              (into (sorted-map) {"assessment" (str assessment) "drift" drift})))
+    drift))
+
 (defn release-preflight!
   "Validate file inputs and capture local sources before building.
   Live assessment applicability is checked at the publication boundary."
@@ -1267,13 +1280,17 @@
           "serving-activate" (serving-activate! opts)
           "publication-init" (publication-init! opts)
           "assessment-evaluate" (assessment-evaluate! opts)
+          ;; exit 1 on drift: the committed snapshot would stop a release, so
+          ;; this stops the dispatch first
+          "assessment-drift" (when (assessment-drift! opts)
+                               (System/exit 1))
           "aozora-reliance-prepare" (aozora-reliance-prepare! opts)
           "archive-verify" (when-not (= :success (:result (archive-verify! opts)))
                              (System/exit 1))
           "verify" (when-not (:ok? (verify! opts))
                      (System/exit 1))
           (do (binding [*out* *err*]
-                (println "usage: build|text-view|annotation-validate|tei-enrich|links-export|delta|release|release-needed|release-delta|corpus-delta|governance-event-prepare|governance|serving-tree|serving-activate|publication-init|assessment-evaluate|aozora-reliance-prepare|archive-verify|verify [--root R --aozora-root A --assets-root S ...]"))
+                (println "usage: build|text-view|annotation-validate|tei-enrich|links-export|delta|release|release-needed|release-delta|corpus-delta|governance-event-prepare|governance|serving-tree|serving-activate|publication-init|assessment-evaluate|assessment-drift|aozora-reliance-prepare|archive-verify|verify [--root R --aozora-root A --assets-root S ...]"))
               (System/exit 2))))
       (System/exit 0)
       (catch clojure.lang.ExceptionInfo e

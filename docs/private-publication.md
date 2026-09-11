@@ -59,6 +59,23 @@ Use a new export directory for subsequent iterations; the build cache is reused.
 Review the resulting admission partition and export measurements, then commit
 the accepted source and snapshot together at their repository paths.
 
+A change to selection or assessment code makes the committed snapshot stale
+without touching it. Before dispatching, regenerate and compare:
+
+```sh
+nix run .#soranoha-kernel -- assessment-drift \
+  --deployment /etc/soranoha/publisher.json \
+  --assessment "$PWD/soranoha/data/assessment-snapshot.json" \
+  --assessment-source "$PWD/soranoha/data/assessment-source.json" \
+  --as-of "$(date -u +%F)"
+```
+
+It exits 1 and names the slugs that differ when the committed snapshot no
+longer matches the selection; the release job runs the same check before
+minting. On 2026-09-11 the first genesis after the reset below failed on this:
+rights admission had moved into selection three days earlier and the snapshot
+still listed the 71 works that refusal removes.
+
 Dispatch `.forgejo/workflows/scheduled-release.yml` at that commit through
 Forgejo Actions. The workflow first asks whether the corpus moved, then uses the
 existing release secret without exposing it to build children, publishes with
@@ -293,6 +310,12 @@ Restart the runner and serving path unit, then dispatch a fresh release:
 ```sh
 sudo systemctl start gitea-runner-soranoha.service soranoha-serve.path
 ```
+
+Reset on 2026-09-11: the chain held six releases at `snh-manifest/1`, and the
+verifier at every revision that generates the site's front door reads only
+`snh-manifest/3` (ADR 0003 replaces the wire version rather than succeeding
+it). The procedure above was run as written, followed by `publication-init`
+and a dispatched release, which minted a schema-3 genesis of 17,308 works.
 
 The source mirror, `production/root` CAS/trace cache, `production/evidence`,
 reviewed assessment inputs and pinned role keys remain intact. Speely's

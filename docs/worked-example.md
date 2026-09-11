@@ -52,7 +52,7 @@ The Clojure kernel combines the parser IR with catalog metadata to produce TEI,
 and projects the three remaining artifacts from the TEI representation.
 
 You can run it yourself from a checkout; see
-[the repository README](../README.md) for the development shell.
+[the development guide](development.md) for the development shell.
 
 ## The header
 

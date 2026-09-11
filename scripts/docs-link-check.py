@@ -3,7 +3,7 @@
 
 A link between documents is checked here rather than in the Clojure suite
 because it is a property of the repository, and the suite runs against a copy
-of the `soranoha` directory alone: it cannot see `README.md`, a dossier or a
+of the `soranoha` directory alone: it cannot see a licence, a dossier or a
 test file that a document points at.
 
 Two things are checked. The target file has to exist. When the target names a

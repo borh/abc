@@ -3,7 +3,7 @@
 
   Whether a link target exists at all is checked by
   `scripts/docs-link-check.py`, which runs against the repository. This suite
-  runs against a copy of the `soranoha` directory, so it cannot see a README
+  runs against a copy of the `soranoha` directory, so it cannot see a licence
   or a test file a document points at. What it can check is the part that
   belongs to serving: every served file is present and titled, no two entries
   claim one route, and a link either becomes a route this site publishes or

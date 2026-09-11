@@ -63,10 +63,16 @@ documentation, and a search index the pages query in the browser. None of it is
 hashed into the chain or checked by a verifier, and no manifest names a browse
 file, although the rights grant's `statement_url` is a route the browse layer
 answers. It exists so the corpus has an entry point that is not a 64-character
-hex string. Because generation is a pure function of the release
-being exported, the exporter's reuse check covers those pages exactly as it
-covers chain content, and the same commit re-exports byte-identically. Serving
-stays one static tree with no application runtime.
+hex string. Each artifact has two names for one blob:
+`/works/<identifier>/<type>` for citation links, and a descriptive filename for
+browser downloads. Site text is bilingual, Japanese first. Because generation is
+a pure function of the release being exported, the exporter's reuse check covers
+those pages exactly as it covers chain content, and the same commit re-exports
+byte-identically. Serving stays one static tree with no application runtime,
+configured entirely by [the checked-in Caddyfile](../../soranoha/config/caddy/Caddyfile).
+Changing it requires bumping the revision and hash pin in the estate's
+`soranoha-serve.nix`, which keeps serving policy immutable system state rather
+than release data.
 
 The reading view renders each work's published TEI into HTML at export time
 from that work's own artifact bytes, rather than using a stylesheet reference

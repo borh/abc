@@ -56,35 +56,11 @@ parameters something better to record than a downloaded checksum: the image is a
 function of pinned inputs, so it can be rebuilt later and compared against what the
 inventory says was used.
 
-Add this module to the estate configuration, beside the other Soranoha profiles.
-Build it on a networked machine; nothing about the build touches key material.
-
-```nix
-# snh-ceremony-iso.nix
-{ lib, modulesPath, pkgs, ... }:
-{
-  imports = [ "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix" ];
-
-  # The whole toolchain the ceremony uses. cryptsetup is already in the
-  # installer's base profile; the openssl CLI is not, and an offline machine
-  # cannot fetch it. e2fsprogs is named explicitly so the image does not
-  # depend on mkfs.ext4 arriving through some other package's closure.
-  environment.systemPackages = [ pkgs.openssl pkgs.cryptsetup pkgs.e2fsprogs ];
-
-  # This image installs nothing and reaches nothing. The network options need
-  # mkForce rather than a plain false: the installer's network stack defines
-  # them at normal priority, so an ordinary definition fails evaluation with a
-  # conflicting-definition error rather than taking effect.
-  services.openssh.enable = false;
-  networking.networkmanager.enable = lib.mkForce false;
-  networking.wireless.enable = lib.mkForce false;
-
-  image.fileName = "snh-ceremony.iso";
-  system.stateVersion = "26.11";
-}
-```
-
-Expose it as a `nixosConfigurations` entry and build the image:
+The module is [nix/snh-ceremony-iso.nix](../nix/snh-ceremony-iso.nix), exposed by
+the repository flake as `nixosModules.snh-ceremony-iso` for an estate configuration
+to import, and as the configuration `nixosConfigurations.snh-ceremony` that builds
+the image from this repository alone. Build it on a networked machine; nothing about
+the build touches key material.
 
 ```sh
 nix build .#nixosConfigurations.snh-ceremony.config.system.build.isoImage

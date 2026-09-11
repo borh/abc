@@ -562,5 +562,16 @@
           };
         }
       );
+
+      # The offline key ceremony's boot image, described in
+      # docs/key-ceremony.md. The module is what an estate configuration
+      # imports; the configuration builds the image from this repository
+      # alone, so the image the inventory records can be rebuilt and compared.
+      nixosModules.snh-ceremony-iso = ./nix/snh-ceremony-iso.nix;
+
+      nixosConfigurations.snh-ceremony = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [ self.nixosModules.snh-ceremony-iso ];
+      };
     };
 }

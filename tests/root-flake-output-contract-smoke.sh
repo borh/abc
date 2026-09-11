@@ -24,7 +24,20 @@ if "inventory" in raw_outputs:
 else:
     outputs = raw_outputs
 systems = {"aarch64-linux", "x86_64-linux"}
-expected_output_names = {"apps", "checks", "devShells", "formatter", "packages"}
+expected_output_names = {
+    "apps",
+    "checks",
+    "devShells",
+    "formatter",
+    "nixosConfigurations",
+    "nixosModules",
+    "packages",
+}
+# Outputs keyed by name rather than by system.
+expected_flat = {
+    "nixosConfigurations": {"snh-ceremony"},
+    "nixosModules": {"snh-ceremony-iso"},
+}
 expected = {
     "apps": {
         "flake-input-policy",
@@ -79,6 +92,13 @@ for output_name, expected_names in expected.items():
             errors.append(
                 f"{output_name}.{system}: expected {sorted(expected_names)}, got {sorted(actual_names)}"
             )
+
+for output_name, expected_names in expected_flat.items():
+    actual_names = set(outputs.get(output_name, {}))
+    if actual_names != expected_names:
+        errors.append(
+            f"{output_name}: expected {sorted(expected_names)}, got {sorted(actual_names)}"
+        )
 
 formatter_systems = set(outputs.get("formatter", {}))
 if formatter_systems != systems:

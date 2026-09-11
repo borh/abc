@@ -105,7 +105,7 @@
         (fail! :invalid-effective-date {:slug slug :effective_date date}))))
   snapshot)
 
-(defn check-report!
+(defn- check-report!
   [report]
   (let [admitted (get report "admitted")
         excluded (mapv #(get % "slug") (get report "excluded"))

@@ -157,7 +157,7 @@
          (= "decoded_utf8" coordinate_system)
          (integer? start) (integer? end) (<= 0 start) (< start end))))
 
-(defn from-document [^Document document]
+(defn- from-document [^Document document]
   (let [texts (filterv #(= "text" (local-name %)) (children (.getDocumentElement document)))
         bodies (into [] (mapcat #(filter (fn [node] (= "body" (local-name node))) (children %))) texts)]
     (when-not (= 1 (count bodies))

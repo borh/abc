@@ -6,9 +6,9 @@
             [soranoha.ori.schematron :as schematron]
             [soranoha.ori.relaxng :as tei]))
 
-(def logical-odd-path "schemas/tei-profile.odd")
-(def logical-rng-path "schemas/tei-profile.rng")
-(def logical-schematron-path "schemas/tei-profile.sch")
+(def ^:private logical-odd-path "schemas/tei-profile.odd")
+(def ^:private logical-rng-path "schemas/tei-profile.rng")
+(def ^:private logical-schematron-path "schemas/tei-profile.sch")
 
 (defn profile-paths
   "The TEI profile trio under an explicit assets root."

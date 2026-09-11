@@ -6,6 +6,9 @@
 (defn read-json-file [file]
   (json/read-json (io/file file)))
 
+(defn read-json-bytes [^bytes bytes]
+  (json/read-json (String. bytes "UTF-8")))
+
 (defn prepare-deterministic-json [value]
   (cond
     (map? value)
@@ -13,9 +16,6 @@
           (map (fn [[k v]]
                  [k (prepare-deterministic-json v)]))
           value)
-
-    (vector? value)
-    (mapv prepare-deterministic-json value)
 
     (sequential? value)
     (mapv prepare-deterministic-json value)

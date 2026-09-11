@@ -22,13 +22,13 @@
 (def ^:private void-elements
   #{:area :base :br :col :embed :hr :img :input :link :meta :source :track :wbr})
 
-(defn escape-text [^String s]
+(defn- escape-text [^String s]
   (-> s
       (string/replace "&" "&amp;")
       (string/replace "<" "&lt;")
       (string/replace ">" "&gt;")))
 
-(defn escape-attr [^String s]
+(defn- escape-attr [^String s]
   (-> (escape-text s)
       (string/replace "\"" "&quot;")))
 

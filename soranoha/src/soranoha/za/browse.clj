@@ -360,10 +360,6 @@
 ;; Personal names, bylines and download filenames are rendered by
 ;; soranoha.za.naming, which the bulk archives share: a name on a page and
 ;; the name inside a ZIP must agree.
-(def ^:private person-name-ja naming/person-name-ja)
-(def ^:private person-name-romaji naming/person-name-romaji)
-(def ^:private person-label naming/person-label)
-(def ^:private byline naming/byline)
 
 (def ^:private kana-rows
   [["a" "あ行" "あいうえおぁぃぅぇぉゔ"]
@@ -449,7 +445,7 @@
   (let [slug (get work "slug")]
     [:li
      [:a {:href (str "/works/" slug "/")} (get work "title")]
-     (when-let [by (byline work)]
+     (when-let [by (naming/byline work)]
        [:span {:class "by"} (str " — " by)])
      (when-let [label (and facts (variant-label work facts))]
        [:span {:class "variant"} (str " " label)])]))
@@ -465,9 +461,9 @@
                           (keep (fn [[key group]]
                                   (when (< 1 (count group))
                                     [key (variant-facts group)])))
-                          (group-by (juxt #(get % "title") byline) works))]
+                          (group-by (juxt #(get % "title") naming/byline) works))]
       (into [:ul {:class "works"}]
-            (map #(work-link % (get ambiguous [(get % "title") (byline %)])) works)))
+            (map #(work-link % (get ambiguous [(get % "title") (naming/byline %)])) works)))
     [:p (bilingual "該当する作品はありません。" "No works here.")]))
 
 (defn- archive-label [artifact-type]
@@ -742,8 +738,8 @@
        (mapcat (fn [contributor]
                  [[:dt (get contributor "relation_to_work")]
                   [:dd [:a {:href (str "/authors/" (get contributor "person_id"))}
-                        (person-label contributor)]
-                   (when-let [romaji (person-name-romaji contributor)]
+                        (naming/person-label contributor)]
+                   (when-let [romaji (naming/person-name-romaji contributor)]
                      [:span {:class "by" :lang "ja-Latn"} (str " " romaji)])]])
                contributors)
        (when-not (string/blank? original_title)
@@ -879,7 +875,7 @@
      [[:h1 title]
       (when-not (string/blank? title_reading)
         [:p {:class "reading"} title_reading])
-      (when-let [by (byline work)]
+      (when-let [by (naming/byline work)]
         [:p {:class "reading"} by])
 
       ;; a checkbox, not a script: the toggle has to keep working with
@@ -1250,7 +1246,7 @@
                (str "[" (json-escape (get work "slug"))
                     "," (json-escape (or (get work "title") ""))
                     "," (json-escape (or (get work "title_reading") ""))
-                    "," (json-escape (or (byline work) ""))
+                    "," (json-escape (or (naming/byline work) ""))
                     "]"))
              works))
        "]}"))
@@ -1340,11 +1336,11 @@
       (page "authors/index.html"
             (author-index (mapv (fn [[id {:keys [person works]}]]
                                   {:person-id id
-                                   :label (person-label person)
+                                   :label (naming/person-label person)
                                    :count* (count works)})
                                 (sort-by (fn [[id {:keys [person]}]]
-                                           [(or (person-name-romaji person) "￿")
-                                            (or (person-name-ja person) "")
+                                           [(or (naming/person-name-romaji person) "￿")
+                                            (or (naming/person-name-ja person) "")
                                             id])
                                          people-index))))
 
@@ -1367,8 +1363,8 @@
 
      (map (fn [[id {:keys [person by-relation]}]]
             (page (str "authors/" id ".html")
-                  (author-page {:label (person-label person)
-                                :romaji (person-name-romaji person)
+                  (author-page {:label (naming/person-label person)
+                                :romaji (naming/person-name-romaji person)
                                 :person-id id
                                 :person person}
                                (sort-by key

@@ -62,9 +62,6 @@
   [head-hex]
   (subs head-hex 0 12))
 
-(def ^:private person-name-ja naming/person-name-ja)
-(def ^:private person-name-romaji naming/person-name-romaji)
-
 (defn- contributors-by-role
   "Aozora Bunko's role strings grouped as the citation formats need them. A person
   can hold more than one role on a work, and each role is cited separately."
@@ -153,7 +150,7 @@
         edition (primary-edition work)
         authors (or (seq (naming/authors-of work)) (get work "contributors"))
         by (->> authors
-                (map #(or (person-name-romaji %) (person-name-ja %)))
+                (map #(or (naming/person-name-romaji %) (naming/person-name-ja %)))
                 (remove string/blank?)
                 (string/join ", "))]
     (str (when-not (string/blank? by) (str by ". "))
@@ -195,6 +192,7 @@
   (let [{:strs [slug title_reading original_title first_published
                 orthographic_style ndc]} work
         edition (primary-edition work)
+        year (edition-year work)
         by-role (contributors-by-role work)]
     (cond-> {"id" (str "soranoha-" slug)
              "type" "chapter"
@@ -218,7 +216,7 @@
       (assoc "publisher" (get edition "publisher"))
       ;; CSL date-parts holds numbers; a string here makes Zotero and Pandoc
       ;; treat the year as an uninterpretable literal.
-      (edition-year work) (assoc "issued" {"date-parts" [[(edition-year work)]]})
+      year (assoc "issued" {"date-parts" [[year]]})
       (blank->nil original_title) (assoc "original-title" original_title)
       (blank->nil ndc) (assoc "call-number" ndc)
       doi (assoc "DOI" doi)

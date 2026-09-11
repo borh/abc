@@ -83,6 +83,6 @@
     (testing "samples are bounded while counts stay complete"
       (let [wide (into {} (map (fn [i] [(format "w-%04d" i) ["author:000001"]]))
                        (range 50))
-            drift (scaffold/projection-drift wide {} 20)]
+            drift (scaffold/projection-drift wide {})]
         (is (= 50 (:only-in-checkout-count drift)))
         (is (= 20 (count (:only-in-checkout-sample drift))))))))

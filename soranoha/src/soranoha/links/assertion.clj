@@ -32,7 +32,7 @@
     (require! (not (contains? #{"." ".."} (get entity field))) "Local identifier cannot be a dot segment"))
   (when (= field :entity/iri) (rdf/iri (get entity field))))
 
-(defn validate-assertion [assertion]
+(defn- validate-assertion [assertion]
   (fields! assertion [:link/target :link/relation :link/external :link/attribution])
   (let [{:link/keys [target relation external attribution]} assertion
         {:attribution/keys [agent method evidence]} attribution]

@@ -9,6 +9,7 @@
   (:require [babashka.fs :as fs]
             [babashka.process :as process]
             [charred.api :as json]
+            [soranoha.core.config :as config]
             [soranoha.core.hash :as core-hash]
             [soranoha.core.rights :as core-rights]
             [soranoha.annotations.view :as view]
@@ -27,33 +28,20 @@
 (defn- utf8 ^bytes [^String s] (.getBytes s "UTF-8"))
 (defn- json-bytes ^bytes [value] (utf8 (record-json/write-deterministic-json-str value)))
 
-(defn- env-value [k]
-  (let [v (System/getenv k)]
-    (when-not (string/blank? v) v)))
-
-(defn- require-env [k what]
-  (or (env-value k)
-      (throw (ex-info (str what " unavailable; set " k) {:env_var k}))))
-
 (defn resolve-adapter
   "Resolve the ab-aozora adapter, converter, and v2 mapping once from the
   environment the flake wrapper supplies (never per work)."
   []
-  {:aozora-bin (require-env "AB_AOZORA_BIN" "ab-aozora parser")
-   :convert-bin (require-env "AB_AAT_TO_PARSER_IR_BIN"
-                             "ab-aat-to-parser-ir converter")
-   :mapping (require-env "AB_AAT_TO_PARSER_IR_MAPPING_V2"
-                         "aat->parser-IR v2 mapping document")})
+  {:aozora-bin (config/require-env "AB_AOZORA_BIN" "ab-aozora parser")
+   :convert-bin (config/require-env "AB_AAT_TO_PARSER_IR_BIN"
+                                    "ab-aat-to-parser-ir converter")
+   :mapping (config/require-env "AB_AAT_TO_PARSER_IR_MAPPING_V2"
+                                "aat->parser-IR v2 mapping document")})
 
 (defn- run-process! [{:keys [args stdin-bytes]}]
   (let [{:keys [exit out err]}
         @(process/process args {:in stdin-bytes :out :bytes :err :string})]
     {:exit exit :out-bytes out :err err}))
-
-(defn- with-temp-dir [f]
-  (let [dir (fs/create-temp-dir {:prefix "soranoha-stage"})]
-    (try (f dir)
-         (finally (fs/delete-tree dir)))))
 
 (defn extract-stage
   "Work ZIP (by content hash) -> primary text bytes + source facts."
@@ -86,7 +74,8 @@
   plaintext. The one-line document the parser sees has no header, so the
   first line is body text and not a title."
   [{:keys [aozora-bin convert-bin mapping]} field]
-  (with-temp-dir
+  (config/with-temp-dir
+    "soranoha-stage"
     (fn [dir]
       (let [parsed (run-process! {:args [aozora-bin "--mode" "aat"]
                                   :stdin-bytes (utf8 (str field "\n"))})
@@ -152,7 +141,7 @@
      :f (fn [{:keys [blob]} inputs]
           (let [{:keys [metadata-rec person-records]}
                 (ingest/build-records
-                 {:rows (json/read-json (String. ^bytes (blob (get inputs "catalog-rows")) "UTF-8"))
+                 {:rows (record-json/read-json-bytes (blob (get inputs "catalog-rows")))
                   :work-id (get inputs "work_id") :schemas schemas
                   :read-text (:read text-reader)})]
             {"metadata-record" (utf8 (str (record-json/write-deterministic-json-str metadata-rec) "\n"))
@@ -182,7 +171,8 @@
                   {"convert_bin" (core-hash/sha256-file convert-bin)
                    "mapping" (core-hash/sha256-file mapping)})
    :f (fn [{:keys [blob-path]} inputs]
-        (with-temp-dir
+        (config/with-temp-dir
+          "soranoha-stage"
           (fn [dir]
             (let [parser-ir-file (str (fs/path dir "parser-ir.json"))
                   divergence-file (str (fs/path dir "divergence.json"))
@@ -274,7 +264,8 @@
                                   (when (fs/exists? path)
                                     (core-hash/sha256-file path)))})
    :f (fn [{:keys [blob]} inputs]
-        (with-temp-dir
+        (config/with-temp-dir
+          "soranoha-stage"
           (fn [dir]
             (let [tei-file (fs/file (fs/path dir "tei.xml"))]
               (io/copy ^bytes (blob (get inputs "tei")) tei-file)

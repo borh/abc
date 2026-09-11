@@ -52,7 +52,7 @@
       (fail! :artifact-missing-from-cas {:hex hex})))
 
 (defn- bare-hex [source-content-hash]
-  (or (some->> source-content-hash (re-matches #"sha256:([0-9a-f]{64})") second)
+  (or (hash/bare-sha256-hex source-content-hash)
       (fail! :malformed-source-content-hash {:value source-content-hash})))
 
 (defn- work-entry

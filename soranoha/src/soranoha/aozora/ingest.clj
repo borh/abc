@@ -17,8 +17,7 @@
    "given_name_romaji"
    "date_of_birth"
    "date_of_death"
-   "person_copyright_expired"
-   "external_links"])
+   "person_copyright_expired"])
 
 (defn- build-person-record [body person-schema]
   (merge (zipmap person-body-keys (map #(get body %) person-body-keys))

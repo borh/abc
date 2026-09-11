@@ -55,7 +55,7 @@
           (when (string/includes? body "／″＼")
             (is (string/includes? (projection/markdown reading) "〲") body))
           (is (empty? (get ir "interpretation_problems")) body)
-          (is (every? #(empty? (get % "unaccounted_families")) (get coverage "occurrences")) coverage)
+          (is (every? #(empty? (get % "unaccounted_families")) (get coverage "occurrences")) (pr-str coverage))
           (dotimes [index (.getLength choices)]
             (let [^Element choice (.item choices index)
                   ^Node original (.item (.getElementsByTagNameNS choice view/tei-namespace "orig") 0)
@@ -65,5 +65,5 @@
               (is (every? #(not= original (.getParentNode ^Node (:view/node %))) (:view/segments reading)))))
           (spit path tei)
           (let [validation (validation/tei-validation-result (validation/profile-paths ".") path)]
-            (is (= "passed" (get validation "status")) validation))))
+            (is (= "passed" (get validation "status")) (pr-str validation)))))
       (finally (engine/close-store! store) (fs/delete-tree dir)))))

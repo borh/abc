@@ -86,7 +86,7 @@
           ""
           lines))
 
-(defn- inline-pattern []
+(def ^:private inline-pattern
   ;; Code spans first: their content is literal, so nothing inside one may be
   ;; reinterpreted as a link or as emphasis.
   #"`([^`]+)`|\[([^\]]+)\]\(([^)]+)\)|<(https?://[^>\s]+)>|\*\*([^*]+)\*\*|\*([^*]+)\*")
@@ -95,7 +95,7 @@
   "Parse one run of text into hiccup. `link` resolves a Markdown link target to
   either a hiccup attribute map or a string to show instead of an anchor."
   [text link]
-  (let [matcher (re-matcher (inline-pattern) text)]
+  (let [matcher (re-matcher inline-pattern text)]
     (loop [cursor 0 out []]
       (if (.find matcher)
         (let [start (.start matcher)

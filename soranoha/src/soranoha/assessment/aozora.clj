@@ -308,46 +308,45 @@
   Shared evidence is read once per invocation; :parallelism defaults to four.
   :source-hash may supply a content-addressed derivation from an archive file
   to its admitted canonical bundle hash; it never supplies acquisition results."
-  ([aozora-root evidence-root records] (check! aozora-root evidence-root records {}))
-  ([aozora-root evidence-root records opts]
-   (let [source-hash (or (:source-hash opts) #(:bundle-hash (bundle/inspect-zip %)))
-         candidates (delay (selection aozora-root))
-         live (delay {:index (catalog-index (fetch opts catalog-url))
-                      :rules (hash/sha256-bytes (fetch opts rules-url))})
-         rules (into {} (for [[digest group] (group-by #(get % "rules_sha256") records)]
-                          [digest (delay (retained evidence-root (first group) "rules_sha256") true)]))]
-     (reduce
-      (fn [results [_ group]]
-        (let [index (delay (catalog-index (retained evidence-root (first group) "catalog_sha256")))]
-          (into results
-                (parallel/ordered-pmap
-                 (or (:parallelism opts) 4)
-                 (fn [record]
-                   [(get record "slug")
-                    (outcome
-                     (fn []
-                       (when (some? (get record "exception")) (refuse! :aozora/recorded-exception))
-                       (let [candidate (selected @candidates (get record "slug"))
-                             a (assertion @index candidate)
-                             pinned (get record "source_content_hash")
-                             card-bytes (retained evidence-root record "card_sha256")]
-                         (check-card! card-bytes a)
-                         (let [file-bytes (retained evidence-root record "file_sha256")]
-                           (when-not (= pinned (bundle-hash file-bytes source-hash))
-                             (refuse! :aozora/retained-edition-mismatch))
-                           @(get rules (get record "rules_sha256"))
-                           (when-not (= pinned (source-hash (:file candidate)))
-                             (refuse! :aozora/checkout-edition-mismatch))
-                           (when-not (= (get record "rules_sha256") (:rules @live))
-                             (refuse! :aozora/rules-changed))
-                           (let [current (assertion (:index @live) candidate)
-                                 current-card (fetch opts (:card current))]
-                             (when-not (and (= a current)
-                                            (Arrays/equals ^bytes card-bytes ^bytes current-card))
-                               (check-card! current-card current))
-                             (let [current-file (fetch opts (:file current))]
-                               (when-not (or (Arrays/equals ^bytes file-bytes ^bytes current-file)
-                                             (= pinned (bundle-hash current-file source-hash)))
-                                 (refuse! :aozora/current-edition-mismatch))))))))])
-                 group))))
-      {} (group-by #(get % "catalog_sha256") records)))))
+  [aozora-root evidence-root records opts]
+  (let [source-hash (or (:source-hash opts) #(:bundle-hash (bundle/inspect-zip %)))
+        candidates (delay (selection aozora-root))
+        live (delay {:index (catalog-index (fetch opts catalog-url))
+                     :rules (hash/sha256-bytes (fetch opts rules-url))})
+        rules (into {} (for [[digest group] (group-by #(get % "rules_sha256") records)]
+                         [digest (delay (retained evidence-root (first group) "rules_sha256") true)]))]
+    (reduce
+     (fn [results [_ group]]
+       (let [index (delay (catalog-index (retained evidence-root (first group) "catalog_sha256")))]
+         (into results
+               (parallel/ordered-pmap
+                (or (:parallelism opts) 4)
+                (fn [record]
+                  [(get record "slug")
+                   (outcome
+                    (fn []
+                      (when (some? (get record "exception")) (refuse! :aozora/recorded-exception))
+                      (let [candidate (selected @candidates (get record "slug"))
+                            a (assertion @index candidate)
+                            pinned (get record "source_content_hash")
+                            card-bytes (retained evidence-root record "card_sha256")]
+                        (check-card! card-bytes a)
+                        (let [file-bytes (retained evidence-root record "file_sha256")]
+                          (when-not (= pinned (bundle-hash file-bytes source-hash))
+                            (refuse! :aozora/retained-edition-mismatch))
+                          @(get rules (get record "rules_sha256"))
+                          (when-not (= pinned (source-hash (:file candidate)))
+                            (refuse! :aozora/checkout-edition-mismatch))
+                          (when-not (= (get record "rules_sha256") (:rules @live))
+                            (refuse! :aozora/rules-changed))
+                          (let [current (assertion (:index @live) candidate)
+                                current-card (fetch opts (:card current))]
+                            (when-not (and (= a current)
+                                           (Arrays/equals ^bytes card-bytes ^bytes current-card))
+                              (check-card! current-card current))
+                            (let [current-file (fetch opts (:file current))]
+                              (when-not (or (Arrays/equals ^bytes file-bytes ^bytes current-file)
+                                            (= pinned (bundle-hash current-file source-hash)))
+                                (refuse! :aozora/current-edition-mismatch))))))))])
+                group))))
+     {} (group-by #(get % "catalog_sha256") records))))

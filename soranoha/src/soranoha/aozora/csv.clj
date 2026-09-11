@@ -8,13 +8,13 @@
   (:import [java.text Normalizer Normalizer$Form]
            [java.time DateTimeException LocalDate YearMonth]))
 
-(def ^:private bom-char (char 0xFEFF))
+(def ^:private bom-char 0xFEFF)
 
 (defn- nfc [^String s]
   (when s (Normalizer/normalize s Normalizer$Form/NFC)))
 
 (defn- strip-bom [^String s]
-  (if (and s (pos? (.length s)) (= (char bom-char) (.charAt s 0)))
+  (if (and s (pos? (.length s)) (== bom-char (int (.charAt s 0))))
     (.substring s 1)
     s))
 
@@ -94,14 +94,13 @@
   [^String n-str]
   (format "-%02dXX" (dec (Integer/parseInt n-str))))
 
-(defn- valid-calendar-shape?
-  "Reject impossible calendar dates (Feb 31, etc.) for YYYY-MM-DD /
-  YYYY-MM lexical forms, including negative-year (BCE) forms, which
-  java.time accepts as a leading `-` in `LocalDate.parse` /
-  `YearMonth.parse`. The schema regex rules out month ≤ 0, ≥ 13,
-  day ≤ 0, ≥ 32; this catches month/day pairs that the regex can't
-  (e.g. 2020-02-31, -0426-02-31). YYYY-only forms have no
-  day-of-year to validate."
+(defn calendar-valid?
+  "False for a YYYY-MM-DD or YYYY-MM string naming a day or month that
+  does not exist (2020-02-31, -0426-02-31); true for every other value,
+  including nil and YYYY-only forms, which have no day to check. The
+  schema regex bounds month and day separately, so this is the check
+  the regex cannot make. java.time parses the leading minus of a BCE
+  year."
   [^String s]
   (cond
     (nil? s) true
@@ -111,7 +110,7 @@
     (try (YearMonth/parse s) true (catch DateTimeException _ false))
     :else true))
 
-(defn parse-date
+(defn- parse-date
   "Normalize an Aozora Bunko date-cell string to the v0.1 EDTF lexical union
   (Level 0: YYYY[-MM[-DD]] with optional leading '-'; Level 1: decade
   YYYX and century YYXX, both with optional leading '-'). Returns
@@ -174,7 +173,7 @@
                               (and y mo d) (str (pad4-year y) "-" (pad2 mo) "-" (pad2 d))
                               (and y mo)   (str (pad4-year y) "-" (pad2 mo))
                               :else        (pad4-year y))]
-              (if (valid-calendar-shape? corrected)
+              (if (calendar-valid? corrected)
                 [corrected
                  (mapv (fn [r] {"raw" raw "corrected" corrected "rule" r}) rules)]
                 ;; Invalid calendar date (e.g. 2020-02-31); pass raw through.

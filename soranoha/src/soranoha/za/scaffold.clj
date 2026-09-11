@@ -6,7 +6,7 @@
   (:require [soranoha.aozora.csv :as csv]
             [soranoha.yomi.catalog :as catalog]))
 
-(def role-token
+(def ^:private role-token
   "役割フラグ → contribution-id role token. Closed by construction: a
   catalog value outside this map fails rather than guessing at a new
   rights-relevant capacity."
@@ -86,18 +86,18 @@
   or changes a role while every slug survives). Counts are complete and
   each listed sample is bounded and reported beside its own count, so a
   large drift stays readable without truncating silently."
-  ([checkout snapshot] (projection-drift checkout snapshot 20))
-  ([checkout snapshot sample-limit]
-   (let [only-checkout (sort (remove (set (keys snapshot)) (keys checkout)))
-         only-snapshot (sort (remove (set (keys checkout)) (keys snapshot)))
-         differing (sort (for [[slug ids] checkout
-                               :let [other (get snapshot slug)]
-                               :when (and other (not= ids other))]
-                           slug))]
-     (when (or (seq only-checkout) (seq only-snapshot) (seq differing))
-       {:only-in-checkout-count (count only-checkout)
-        :only-in-checkout-sample (vec (take sample-limit only-checkout))
-        :only-in-snapshot-count (count only-snapshot)
-        :only-in-snapshot-sample (vec (take sample-limit only-snapshot))
-        :contributions-differ-count (count differing)
-        :contributions-differ-sample (vec (take sample-limit differing))}))))
+  [checkout snapshot]
+  (let [sample-limit 20
+        only-checkout (sort (remove (set (keys snapshot)) (keys checkout)))
+        only-snapshot (sort (remove (set (keys checkout)) (keys snapshot)))
+        differing (sort (for [[slug ids] checkout
+                              :let [other (get snapshot slug)]
+                              :when (and other (not= ids other))]
+                          slug))]
+    (when (or (seq only-checkout) (seq only-snapshot) (seq differing))
+      {:only-in-checkout-count (count only-checkout)
+       :only-in-checkout-sample (vec (take sample-limit only-checkout))
+       :only-in-snapshot-count (count only-snapshot)
+       :only-in-snapshot-sample (vec (take sample-limit only-snapshot))
+       :contributions-differ-count (count differing)
+       :contributions-differ-sample (vec (take sample-limit differing))})))

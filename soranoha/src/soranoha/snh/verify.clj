@@ -212,14 +212,14 @@
                                v commit slug (assoc % "type" "annotation-layer") reuse)
                              layers)
                      record (:record (get by-type "tei-validation"))
-                     tei-hex (:hex (get by-type "tei"))]
-               :when (do (when-not (= (:validated-artifact record)
-                                      (str "sha256:" tei-hex))
-                           (fail! :validation-artifact-mismatch
-                                  {:commit commit :slug slug
-                                   :validated (:validated-artifact record)
-                                   :tei tei-hex}))
-                         (= "failed" (:status record)))]
+                     tei-hex (:hex (get by-type "tei"))
+                     _ (when-not (= (:validated-artifact record)
+                                    (str "sha256:" tei-hex))
+                         (fail! :validation-artifact-mismatch
+                                {:commit commit :slug slug
+                                 :validated (:validated-artifact record)
+                                 :tei tei-hex}))]
+               :when (= "failed" (:status record))]
            slug))]
     (when-not (= (get-in manifest ["validation_summary" "invalid_slugs"]) failed)
       (fail! :validation-summary-mismatch

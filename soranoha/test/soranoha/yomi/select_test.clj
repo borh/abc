@@ -32,7 +32,7 @@
     ;; The same, under terms the release cannot honour.
     (write-zip! (fs/path root "cards" "000004" "files" "500_ruby_600.zip")
                 [["500_ruby_600.txt"
-                  (str "本文\nhttps://creativecommons.org/licenses/by-nc-nd/4.0/")]])
+                  "本文\nhttps://creativecommons.org/licenses/by-nc-nd/4.0/"]])
     ;; The same again, stating no terms at all.
     (write-zip! (fs/path root "cards" "000005" "files" "700_ruby_800.zip")
                 [["700_ruby_800.txt" "本文\n底本：ある本"]])

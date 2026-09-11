@@ -18,25 +18,16 @@
   (InputSource. (.toString (.toURI (io/file path)))))
 
 (defn- build-sax-error-handler [violations-atom]
-  (reify org.xml.sax.ErrorHandler
-    (^void warning [_ ^SAXParseException e]
-      (swap! violations-atom conj
-             {:severity :warning
-              :line (.getLineNumber e)
-              :column (.getColumnNumber e)
-              :message (.getMessage e)}))
-    (^void error [_ ^SAXParseException e]
-      (swap! violations-atom conj
-             {:severity :error
-              :line (.getLineNumber e)
-              :column (.getColumnNumber e)
-              :message (.getMessage e)}))
-    (^void fatalError [_ ^SAXParseException e]
-      (swap! violations-atom conj
-             {:severity :fatal
-              :line (.getLineNumber e)
-              :column (.getColumnNumber e)
-              :message (.getMessage e)}))))
+  (let [record! (fn [severity ^SAXParseException e]
+                  (swap! violations-atom conj
+                         {:severity severity
+                          :line (.getLineNumber e)
+                          :column (.getColumnNumber e)
+                          :message (.getMessage e)}))]
+    (reify org.xml.sax.ErrorHandler
+      (^void warning [_ ^SAXParseException e] (record! :warning e))
+      (^void error [_ ^SAXParseException e] (record! :error e))
+      (^void fatalError [_ ^SAXParseException e] (record! :fatal e)))))
 
 (defn- error-handler-props ^com.thaiopensource.util.PropertyMap [handler]
   (let [builder (PropertyMapBuilder.)]

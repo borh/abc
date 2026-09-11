@@ -6,9 +6,11 @@
 
     ab-validator = {
       url = "path:./ab-validator";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.clj-nix.follows = "clj-nix";
-      inputs.aozorabunko-src.follows = "aozorabunko-src";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        clj-nix.follows = "clj-nix";
+        aozorabunko-src.follows = "aozorabunko-src";
+      };
     };
 
     clj-nix = {
@@ -37,7 +39,6 @@
       ab-validator,
       clj-nix,
       tei-p5,
-      aozorabunko-src,
       ...
     }:
     let
@@ -51,7 +52,7 @@
       # builds (including Darwin). The root wraps only ab-validator's Linux outputs.
       forAllSystems = nixpkgs.lib.genAttrs systems;
 
-      lib = nixpkgs.lib;
+      inherit (nixpkgs) lib;
 
       pkgsFor =
         system:
@@ -60,122 +61,150 @@
           overlays = [ (_final: prev: { jdk = prev.jdk25_headless; }) ];
         };
 
-      optionalOutputAttrs =
-        flake: outputName: system:
-        lib.attrByPath [ outputName system ] { } flake;
+      # The dependency cache doubles as HOME so nothing under the real one
+      # reaches the classpath; the scratch directory holds the classpath
+      # cache and XDG config so both stay writable.
+      cljCacheExports = cache: scratch: ''
+        export HOME="${cache}"
+        export JAVA_TOOL_OPTIONS="-Duser.home=${cache}"
+        export CLJ_CONFIG="${cache}/.clojure"
+        export GITLIBS="${cache}/.gitlibs"
+        export CLJ_CACHE="${scratch}/cp-cache"
+        export XDG_CONFIG_HOME="${scratch}/xdg-config"
+      '';
 
-      # Resolve the runtime against the offline dependency cache with user
-      # configuration disabled. The same closure and deps.edn form the stage
-      # toolchain identity, preventing stale traces after dependency changes.
-      # Tests share tool derivations but do not use the wrapper's full environment.
-      soranohaCljContext =
+      exportsOf =
+        env: lib.concatLines (lib.mapAttrsToList (name: value: ''export ${name}="${value}"'') env);
+
+      # Everything an output needs for one system, computed once per system
+      # rather than once per output.
+      perSystem =
         system:
         let
           pkgs = pkgsFor system;
-          cljPkgs = import nixpkgs {
+          # clj-nix's dependency-cache builder, without the jdk override: the
+          # cache is a fetch, and the toolchain identity below hashes it.
+          cljNix = import nixpkgs {
             inherit system;
             overlays = [ clj-nix.overlays.default ];
           };
-          depsCache = cljPkgs.mk-deps-cache { lockfile = ./soranoha/deps-lock.json; };
-        in
-        {
-          inherit depsCache;
+          abValidatorPackages = ab-validator.packages.${system};
+
+          # Resolve the runtime against the offline dependency cache with user
+          # configuration disabled. The same closure and deps.edn form the stage
+          # toolchain identity, preventing stale traces after dependency changes.
+          # Tests share tool derivations but do not use the wrapper's full environment.
+          depsCache = cljNix.mk-deps-cache { lockfile = ./soranoha/deps-lock.json; };
           toolchainId =
             "clj-nix-"
             + builtins.hashString "sha256" "${pkgs.clojure}\n${depsCache}\n${builtins.hashFile "sha256" ./soranoha/deps.edn}";
+
+          # The documents the browse layer serves, laid out exactly as they sit in
+          # the repository, so one repository-relative path names a file for both
+          # the served site and the link check. A developer running from the
+          # `soranoha` directory reaches the same layout through the default root
+          # of `..`; the wrapper points SORANOHA_SITE_DOCS at this instead,
+          # because a Nix store path has no repository around it.
+          siteDocs = pkgs.runCommand "soranoha-site-docs" { } ''
+            mkdir -p "$out/soranoha"
+            cp -R ${./docs} "$out/docs"
+            cp -R ${./soranoha/docs} "$out/soranoha/docs"
+            cp -R ${./soranoha/schemas} "$out/soranoha/schemas"
+            mkdir -p "$out/soranoha/resources/assessment"
+            cp ${./soranoha/resources/assessment/source-1.schema.json} \
+              "$out/soranoha/resources/assessment/source-1.schema.json"
+            cp ${./LICENSE} "$out/LICENSE"
+            cp ${./LICENSE-CC0} "$out/LICENSE-CC0"
+            # the research layer's identifiers: every schema under these two
+            # directories, and the mapping and policy documents that carry
+            # their own IRIs
+            mkdir -p "$out/ab-validator/schemas" "$out/ab-validator/research/schemas" \
+              "$out/ab-validator/research/data" "$out/ab-validator/data"
+            cp ${ab-validator}/schemas/*.schema.json "$out/ab-validator/schemas/"
+            cp ${ab-validator}/research/schemas/*.schema.json "$out/ab-validator/research/schemas/"
+            cp ${ab-validator}/data/aat-to-parser-ir-mapping-v1.json \
+              ${ab-validator}/data/aat-to-parser-ir-mapping-v2.json "$out/ab-validator/data/"
+            cp ${ab-validator}/research/data/source-region-publication-policy-v0.json \
+              "$out/ab-validator/research/data/"
+          '';
+        in
+        {
+          inherit
+            system
+            pkgs
+            cljNix
+            abValidatorPackages
+            depsCache
+            toolchainId
+            ;
+          tei = import ./nix/tei.nix { inherit pkgs tei-p5; };
+          profile = import ./nix/tei-profile-artifacts.nix {
+            inherit pkgs;
+            odd = ./soranoha/schemas/tei-profile.odd;
+          };
+          pythonWithRdflib = pkgs.python3.withPackages (python: [ python.rdflib ]);
+          # The adapter binaries and data the kernel's stages call. The mapping
+          # is copied out of the ab-validator tree so its store path follows
+          # its own content, not every edit to that tree.
+          abToolEnv = {
+            AB_AAT_TO_PARSER_IR_BIN = "${abValidatorPackages.ab-aat-to-parser-ir}/bin/ab-aat-to-parser-ir";
+            AB_AOZORA_BIN = "${abValidatorPackages.ab-aozora}/bin/ab-aozora";
+            AB_SOURCE_INVENTORY_BIN = "${abValidatorPackages.ab-source-inventory}/bin/ab-source-inventory";
+            AB_AOZORA_SYNTAX_MATRIX = "${ab-validator}/data/aozora-syntax-coverage.toml";
+            AB_AAT_TO_PARSER_IR_MAPPING_V2 = builtins.path {
+              path = "${ab-validator}/data/aat-to-parser-ir-mapping-v2.json";
+              name = "aat-to-parser-ir-mapping-v2.json";
+            };
+            SORANOHA_SITE_DOCS = "${siteDocs}";
+          };
         };
 
-      # The documents the browse layer serves, laid out exactly as they sit in
-      # the repository, so one repository-relative path names a file for both
-      # the served site and the link check. A developer running from the
-      # `soranoha` directory reaches the same layout through the default root
-      # of `..`; the wrapper below points SORANOHA_SITE_DOCS at this instead,
-      # because a Nix store path has no repository around it.
-      siteDocsFor =
-        system:
-        let
-          pkgs = pkgsFor system;
-        in
-        pkgs.runCommand "soranoha-site-docs" { } ''
-          mkdir -p "$out/soranoha"
-          cp -R ${./docs} "$out/docs"
-          cp -R ${./soranoha/docs} "$out/soranoha/docs"
-          cp -R ${./soranoha/schemas} "$out/soranoha/schemas"
-          mkdir -p "$out/soranoha/resources/assessment"
-          cp ${./soranoha/resources/assessment/source-1.schema.json} \
-            "$out/soranoha/resources/assessment/source-1.schema.json"
-          cp ${./LICENSE} "$out/LICENSE"
-          cp ${./LICENSE-CC0} "$out/LICENSE-CC0"
-          # the research layer's identifiers: every schema under these two
-          # directories, and the mapping and policy documents that carry
-          # their own IRIs
-          mkdir -p "$out/ab-validator/schemas" "$out/ab-validator/research/schemas" \
-            "$out/ab-validator/research/data" "$out/ab-validator/data"
-          cp ${ab-validator}/schemas/*.schema.json "$out/ab-validator/schemas/"
-          cp ${ab-validator}/research/schemas/*.schema.json "$out/ab-validator/research/schemas/"
-          cp ${ab-validator}/data/aat-to-parser-ir-mapping-v1.json \
-            ${ab-validator}/data/aat-to-parser-ir-mapping-v2.json "$out/ab-validator/data/"
-          cp ${ab-validator}/research/data/source-region-publication-policy-v0.json \
-            "$out/ab-validator/research/data/"
-        '';
+      forEachSystem = f: forAllSystems (system: f (perSystem system));
 
       # Maven model validation shares a mutable ID cache. Resolve dependencies
       # on one worker; publication stage concurrency is independent.
       mkSoranohaApp =
-        system:
+        {
+          pkgs,
+          depsCache,
+          toolchainId,
+          abToolEnv,
+          ...
+        }:
         { name, invocation }:
-        let
-          pkgs = pkgsFor system;
-          abValidatorPackages = optionalOutputAttrs ab-validator "packages" system;
-          kernelDepsCache = (soranohaCljContext system).depsCache;
-          cljToolchainId = (soranohaCljContext system).toolchainId;
-        in
         pkgs.writeShellScript name ''
           set -euo pipefail
           export PATH="${
-            pkgs.lib.makeBinPath [
+            lib.makeBinPath [
               pkgs.bash
               pkgs.coreutils
               pkgs.git
               pkgs.clojure
             ]
           }"
-          export AB_AAT_TO_PARSER_IR_BIN="${
-            abValidatorPackages."ab-aat-to-parser-ir"
-          }/bin/ab-aat-to-parser-ir"
-          export AB_AOZORA_BIN="${abValidatorPackages."ab-aozora"}/bin/ab-aozora"
-          export AB_SOURCE_INVENTORY_BIN="${
-            abValidatorPackages."ab-source-inventory"
-          }/bin/ab-source-inventory"
-          export AB_AOZORA_SYNTAX_MATRIX="${ab-validator}/data/aozora-syntax-coverage.toml"
-          export AB_AAT_TO_PARSER_IR_MAPPING_V2="${
-            builtins.path {
-              path = "${ab-validator}/data/aat-to-parser-ir-mapping-v2.json";
-              name = "aat-to-parser-ir-mapping-v2.json";
-            }
-          }"
-          export SORANOHA_SITE_DOCS="${siteDocsFor system}"
-          export HOME="${kernelDepsCache}"
-          export JAVA_TOOL_OPTIONS="-Duser.home=${kernelDepsCache}"
-          export CLJ_CONFIG="$HOME/.clojure"
-          export GITLIBS="$HOME/.gitlibs"
-          # inherited launcher variables would alter the JVM or classpath
-          # without changing the reported identity
-          unset JAVA_CMD CLJ_JVM_OPTS JAVA_OPTS JDK_JAVA_OPTIONS _JAVA_OPTIONS
+          ${exportsOf abToolEnv}
           # classpath scratch must stay writable; cleaned via trap, so the
           # final clojure call must not exec-replace this shell
           scratch="$(mktemp -d)"
           trap 'rm -rf "$scratch"' EXIT
-          export CLJ_CACHE="$scratch/cp-cache"
-          export XDG_CONFIG_HOME="$scratch/xdg-config"
+          ${cljCacheExports depsCache "$scratch"}
+          # inherited launcher variables would alter the JVM or classpath
+          # without changing the reported identity
+          unset JAVA_CMD CLJ_JVM_OPTS JAVA_OPTS JDK_JAVA_OPTIONS _JAVA_OPTIONS
           cd "${./soranoha}"
-          ${invocation} "$@" --clj-toolchain-id "${cljToolchainId}"
+          ${invocation} "$@" --clj-toolchain-id "${toolchainId}"
         '';
+
+      # The bench entry points run from the source tree with the test path
+      # on the classpath.
+      benchInvocation =
+        heap: main: args:
+        "clojure -Sthreads 1 -J-Xmx${heap} -J--enable-native-access=ALL-UNNAMED -Sdeps '{:paths [\"src\" \"resources\" \"test\"]}' -M -m ${main} ${args}";
 
       monorepoScripts =
         pkgs:
         let
-          runtimePath = nixpkgs.lib.makeBinPath [
+          runtimePath = lib.makeBinPath [
             pkgs.bash
             pkgs.coreutils
             pkgs.git
@@ -194,9 +223,7 @@
         {
           tei-version-coherence = mkWrappedScript "soranoha-tei-version-coherence" ''exec bash scripts/monorepo-tei-version-coherence.sh "$@"'';
           flake-input-policy = mkWrappedScript "soranoha-flake-input-policy" ''exec python scripts/monorepo-flake-input-policy.py "$@"'';
-          validate = pkgs.writeShellScript "soranoha-validate" ''
-            set -euo pipefail
-            export PATH="${runtimePath}:$PATH"
+          validate = mkWrappedScript "soranoha-validate" ''
             workspace_root="$PWD"
             bash tests/monorepo-active-path-hygiene-smoke.sh
             bash tests/root-flake-output-contract-smoke.sh
@@ -213,45 +240,39 @@
         };
     in
     {
-      formatter = forAllSystems (
-        system:
-        let
-          pkgs = pkgsFor system;
-        in
-        pkgs.nixfmt
-      );
+      formatter = forEachSystem ({ pkgs, ... }: pkgs.nixfmt);
 
-      apps = forAllSystems (
-        system:
+      apps = forEachSystem (
+        { pkgs, profile, ... }@ctx:
         let
-          pkgs = pkgsFor system;
           scripts = monorepoScripts pkgs;
-          profile = import ./nix/tei-profile-artifacts.nix {
-            inherit pkgs;
-            odd = ./soranoha/schemas/tei-profile.odd;
-          };
           mkScriptApp = program: description: {
             type = "app";
             program = "${program}";
             meta.description = description;
           };
+          time = "${pkgs.time}/bin/time";
         in
         {
-          soranoha-kernel = mkScriptApp (mkSoranohaApp system {
+          soranoha-kernel = mkScriptApp (mkSoranohaApp ctx {
             name = "soranoha-kernel";
             invocation = "clojure -Sthreads 1 -M:soranoha/build";
           }) "Soranoha kernel CLI (build/delta/verify) with content-derived Clojure toolchain identity";
-          soranoha-replay = mkScriptApp (mkSoranohaApp system {
+          soranoha-replay = mkScriptApp (mkSoranohaApp ctx {
             name = "soranoha-replay";
-            invocation = ''clojure -Sthreads 1 -J-Xmx4g -J--enable-native-access=ALL-UNNAMED -Sdeps '{:paths ["src" "resources" "test"]}' -M -m soranoha.bench.replay --assets-root ${./soranoha}'';
+            invocation = benchInvocation "4g" "soranoha.bench.replay" "--assets-root ${./soranoha}";
           }) "Replay source revisions through the production build and delta oracle";
-          soranoha-publication-replay = mkScriptApp (mkSoranohaApp system {
+          soranoha-publication-replay = mkScriptApp (mkSoranohaApp ctx {
             name = "soranoha-publication-replay";
-            invocation = ''${pkgs.time}/bin/time --format 'replay_elapsed_seconds=%e replay_peak_rss_kib=%M' clojure -Sthreads 1 -J-Xmx4g -J--enable-native-access=ALL-UNNAMED -Sdeps '{:paths ["src" "resources" "test"]}' -M -m soranoha.bench.publication --time-bin ${pkgs.time}/bin/time --assets-root ${./soranoha}'';
+            invocation =
+              "${time} --format 'replay_elapsed_seconds=%e replay_peak_rss_kib=%M' "
+              +
+                benchInvocation "4g" "soranoha.bench.publication"
+                  "--time-bin ${time} --assets-root ${./soranoha}";
           }) "Simulate complete publication with recorded observations and isolated fixture keys";
-          soranoha-compare-serving = mkScriptApp (mkSoranohaApp system {
+          soranoha-compare-serving = mkScriptApp (mkSoranohaApp ctx {
             name = "soranoha-compare-serving";
-            invocation = ''clojure -Sthreads 1 -J-Xmx512m -J--enable-native-access=ALL-UNNAMED -Sdeps '{:paths ["src" "resources" "test"]}' -M -m soranoha.bench.serving --time-bin ${pkgs.time}/bin/time'';
+            invocation = benchInvocation "512m" "soranoha.bench.serving" "--time-bin ${time}";
           }) "Compare serving activation time and peak memory in balanced order";
           regenerate-tei-profile = mkScriptApp (pkgs.writeShellScript "regenerate-tei-profile" ''
             set -euo pipefail
@@ -266,23 +287,32 @@
         }
       );
 
-      checks = forAllSystems (
-        system:
+      checks = forEachSystem (
+        {
+          pkgs,
+          cljNix,
+          abValidatorPackages,
+          depsCache,
+          tei,
+          profile,
+          pythonWithRdflib,
+          abToolEnv,
+          ...
+        }:
         let
-          pkgs = pkgsFor system;
-          soranohaClj = soranohaCljContext system;
-          tei = import ./nix/tei.nix { inherit pkgs tei-p5; };
-          profile = import ./nix/tei-profile-artifacts.nix {
-            inherit pkgs;
-            odd = ./soranoha/schemas/tei-profile.odd;
-          };
-          researchApps = optionalOutputAttrs ab-validator "apps" system;
-          abValidatorPackages = optionalOutputAttrs ab-validator "packages" system;
+          # A check that runs a script from the repository root. bash,
+          # coreutils and python are on every check's path; `extraTools`
+          # adds what one script needs beyond them.
           mkMonorepoCheck =
-            name: nativeBuildInputs: script:
+            name: extraTools: script:
             pkgs.runCommand name
               {
-                inherit nativeBuildInputs;
+                nativeBuildInputs = [
+                  pkgs.bash
+                  pkgs.coreutils
+                  pkgs.python3
+                ]
+                ++ extraTools;
                 src = self;
               }
               ''
@@ -290,6 +320,7 @@
                 ${script}
                 touch "$out"
               '';
+          teiEaj = ab-validator.inputs.tei-eaj-aozora-tei;
         in
         {
           tei-profile-drift = pkgs.runCommand "soranoha-tei-profile-drift" { } ''
@@ -302,11 +333,7 @@
           '';
           soranoha-typecheck =
             let
-              cljPkgs = import nixpkgs {
-                inherit system;
-                overlays = [ clj-nix.overlays.default ];
-              };
-              cache = cljPkgs.mk-deps-cache {
+              cache = cljNix.mk-deps-cache {
                 lockfile = ./soranoha/dev/typecheck/deps-lock.json;
               };
             in
@@ -316,10 +343,7 @@
               mkdir -p work/src/soranoha/ori
               cp ${./soranoha/src/soranoha/ori/publication_whitespace.clj} work/src/soranoha/ori/publication_whitespace.clj
               cd work
-              export JAVA_TOOL_OPTIONS="-Duser.home=${cache}"
-              export CLJ_CONFIG="${cache}/.clojure"
-              export CLJ_CACHE="$TMPDIR/cp-cache"
-              export GITLIBS="${cache}/.gitlibs"
+              ${cljCacheExports cache "$TMPDIR"}
               clojure -Sthreads 1 -M:check
               touch "$out"
             '';
@@ -338,7 +362,7 @@
                   pkgs.clj-kondo
                   pkgs.cljfmt
                   pkgs.cmark
-                  (pkgs.python3.withPackages (python: [ python.rdflib ]))
+                  pythonWithRdflib
                   # the static-serving acceptance runs the checked-in
                   # Caddyfile against an exported tree
                   pkgs.caddy
@@ -354,22 +378,8 @@
                 find src test -name '*.clj' -print0 \
                   | xargs -0 cljfmt check
 
-                export HOME="${soranohaClj.depsCache}"
-                export JAVA_TOOL_OPTIONS="-Duser.home=${soranohaClj.depsCache}"
-                export AB_AOZORA_BIN="${abValidatorPackages."ab-aozora"}/bin/ab-aozora"
-                export AB_AAT_TO_PARSER_IR_BIN="${
-                  abValidatorPackages."ab-aat-to-parser-ir"
-                }/bin/ab-aat-to-parser-ir"
-                export AB_AAT_TO_PARSER_IR_MAPPING_V2="${ab-validator}/data/aat-to-parser-ir-mapping-v2.json"
-                export AB_SOURCE_INVENTORY_BIN="${
-                  abValidatorPackages."ab-source-inventory"
-                }/bin/ab-source-inventory"
-                export AB_AOZORA_SYNTAX_MATRIX="${ab-validator}/data/aozora-syntax-coverage.toml"
-                export SORANOHA_SITE_DOCS="${siteDocsFor system}"
-                export CLJ_CONFIG="$HOME/.clojure"
-                export CLJ_CACHE="$TMPDIR/cp-cache"
-                export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
-                export GITLIBS="$HOME/.gitlibs"
+                ${exportsOf abToolEnv}
+                ${cljCacheExports depsCache "$TMPDIR"}
 
                 set -o pipefail
                 clojure -Sthreads 1 -M:test 2>&1 | tee test-output.log
@@ -383,107 +393,47 @@
 
           monorepo-tei-p5-reference = tei.reference;
           monorepo-tei-version-coherence =
-            mkMonorepoCheck "soranoha-monorepo-tei-version-coherence"
-              [
-                pkgs.bash
-                pkgs.coreutils
-                pkgs.gnugrep
-              ]
+            mkMonorepoCheck "soranoha-monorepo-tei-version-coherence" [ pkgs.gnugrep ]
               ''
                 AB_TEI_P5_ROOT="${tei.reference}" bash scripts/monorepo-tei-version-coherence.sh "$src"
               '';
-          monorepo-flake-input-policy =
-            mkMonorepoCheck "soranoha-monorepo-flake-input-policy"
-              [
-                pkgs.python3
-              ]
-              ''
-                python scripts/monorepo-flake-input-policy.py "$src"
-              '';
-          monorepo-schema-hash-coherence =
-            mkMonorepoCheck "soranoha-monorepo-schema-hash-coherence"
-              [
-                pkgs.python3
-              ]
-              ''
-                python scripts/monorepo-schema-hash-coherence.py "$src"
-              '';
-          monorepo-figure-quotes =
-            mkMonorepoCheck "soranoha-monorepo-figure-quotes"
-              [
-                pkgs.python3
-              ]
-              ''
-                python scripts/catalog-figures-check.py --quotes-only
-              '';
-          monorepo-runtime-config =
-            mkMonorepoCheck "soranoha-monorepo-runtime-config"
-              [
-                pkgs.bash
-                pkgs.coreutils
-              ]
-              ''
-                bash tests/runtime-config-smoke.sh
-              '';
+          monorepo-flake-input-policy = mkMonorepoCheck "soranoha-monorepo-flake-input-policy" [ ] ''
+            python scripts/monorepo-flake-input-policy.py "$src"
+          '';
+          monorepo-schema-hash-coherence = mkMonorepoCheck "soranoha-monorepo-schema-hash-coherence" [ ] ''
+            python scripts/monorepo-schema-hash-coherence.py "$src"
+          '';
+          monorepo-figure-quotes = mkMonorepoCheck "soranoha-monorepo-figure-quotes" [ ] ''
+            python scripts/catalog-figures-check.py --quotes-only
+          '';
+          monorepo-runtime-config = mkMonorepoCheck "soranoha-monorepo-runtime-config" [ ] ''
+            bash tests/runtime-config-smoke.sh
+          '';
           monorepo-active-path-hygiene =
             mkMonorepoCheck "soranoha-monorepo-active-path-hygiene"
               [
-                pkgs.bash
-                pkgs.coreutils
                 pkgs.findutils
-                pkgs.python3
                 pkgs.ripgrep
               ]
               ''
                 bash tests/monorepo-active-path-hygiene-smoke.sh
               '';
-          monorepo-workflow-run-lib =
-            mkMonorepoCheck "soranoha-monorepo-workflow-run-lib"
-              [
-                pkgs.bash
-                pkgs.coreutils
-                pkgs.python3
-              ]
-              ''
-                bash tests/workflow-run-lib-smoke.sh
-              '';
-          monorepo-aat-run-set =
-            mkMonorepoCheck "soranoha-monorepo-aat-run-set"
-              [
-                pkgs.bash
-                pkgs.coreutils
-                pkgs.python3
-              ]
-              ''
-                bash tests/aat-run-set-smoke.sh
-              '';
+          monorepo-workflow-run-lib = mkMonorepoCheck "soranoha-monorepo-workflow-run-lib" [ ] ''
+            bash tests/workflow-run-lib-smoke.sh
+          '';
+          monorepo-aat-run-set = mkMonorepoCheck "soranoha-monorepo-aat-run-set" [ ] ''
+            bash tests/aat-run-set-smoke.sh
+          '';
           monorepo-fidelity-lock-idempotency =
-            mkMonorepoCheck "soranoha-monorepo-fidelity-lock-idempotency"
-              [
-                pkgs.bash
-                pkgs.coreutils
-                pkgs.python3
-              ]
+            mkMonorepoCheck "soranoha-monorepo-fidelity-lock-idempotency" [ ]
               ''
                 bash tests/fidelity-lock-idempotency-smoke.sh
               '';
-          monorepo-batch-run-staleness =
-            mkMonorepoCheck "soranoha-monorepo-batch-run-staleness"
-              [
-                pkgs.bash
-                pkgs.coreutils
-                pkgs.python3
-              ]
-              ''
-                bash ab-validator/tests/batch-run-staleness-smoke.sh
-              '';
+          monorepo-batch-run-staleness = mkMonorepoCheck "soranoha-monorepo-batch-run-staleness" [ ] ''
+            bash ab-validator/tests/batch-run-staleness-smoke.sh
+          '';
           monorepo-aat-materialization-workflow =
-            mkMonorepoCheck "soranoha-monorepo-aat-materialization-workflow"
-              [
-                pkgs.bash
-                pkgs.coreutils
-                pkgs.python3
-              ]
+            mkMonorepoCheck "soranoha-monorepo-aat-materialization-workflow" [ ]
               ''
                 bash tests/aat-materialization-workflow-smoke.sh
                 bash tests/aat-diagnostic-run-set-smoke.sh
@@ -495,7 +445,6 @@
                 pkgs.git
                 pkgs.gnused
                 pkgs.mypy
-                pkgs.python3
                 pkgs.ruff
               ]
               ''
@@ -518,19 +467,13 @@
                   | xargs -0 nixfmt --check
               '';
           tei-eaj-aozora-alignment-probe-generation =
-            mkMonorepoCheck "soranoha-tei-eaj-aozora-alignment-probe-generation"
-              [
-                pkgs.coreutils
-                pkgs.gnugrep
-                pkgs.python3
-              ]
+            mkMonorepoCheck "soranoha-tei-eaj-aozora-alignment-probe-generation" [ pkgs.gnugrep ]
               ''
                 work="$TMPDIR/tei-eaj-alignment-probe"
                 mkdir -p "$work/abc"
                 cd "$work"
 
-                tei_root="$(${researchApps."tei-eaj-aozora-tei-source".program})"
-                cp "$tei_root/data/complete/tei_lib_lv4/1567_tei.xml" abc/melos.xml
+                cp "${teiEaj}/data/complete/tei_lib_lv4/1567_tei.xml" abc/melos.xml
                 chmod u+w abc/melos.xml
                 python - <<'PY'
                 from pathlib import Path
@@ -544,13 +487,11 @@
                 path.write_text(text, encoding="utf-8")
                 PY
 
-                export ABC_TEI_EAJ_ALIGNMENT_PROBE_BIN="${
-                  abValidatorPackages."ab-aat-to-parser-ir"
-                }/bin/ab-aat-to-parser-ir"
+                export ABC_TEI_EAJ_ALIGNMENT_PROBE_BIN="${abValidatorPackages.ab-aat-to-parser-ir}/bin/ab-aat-to-parser-ir"
                 python "$src/ab-validator/research/tools/tei_eaj_aozora_reports.py" \
                   --compare-script "$src/ab-validator/research/tools/tei_eaj_compare.py" \
-                  --tei-eaj-root "$tei_root" \
-                  --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
+                  --tei-eaj-root "${teiEaj}" \
+                  --source-rev ${teiEaj.rev} \
                   --abc-melos abc/melos.xml \
                   --abc-tei 1567=abc/melos.xml \
                   all-with-probes \
@@ -581,19 +522,10 @@
                 PY
               '';
         }
-
       );
 
-      packages = forAllSystems (
-        system:
-        let
-          pkgs = pkgsFor system;
-          tei = import ./nix/tei.nix { inherit pkgs tei-p5; };
-          profile = import ./nix/tei-profile-artifacts.nix {
-            inherit pkgs;
-            odd = ./soranoha/schemas/tei-profile.odd;
-          };
-        in
+      packages = forEachSystem (
+        { tei, profile, ... }:
         {
           tei-p5-reference = tei.reference;
           # The compiled profile, exposed so the checked-in artifacts can be
@@ -606,19 +538,16 @@
         }
       );
 
-      devShells = forAllSystems (
-        system:
-        let
-          pkgs = pkgsFor system;
-          abValidatorShells = optionalOutputAttrs ab-validator "devShells" system;
-        in
+      devShells = forEachSystem (
+        {
+          system,
+          pkgs,
+          pythonWithRdflib,
+          ...
+        }:
         {
           default = pkgs.mkShell {
-            AB_BOOTSTRAP_VIBRATO_DICT = "0";
-            TEI_SCHEMA_PATH = "${./soranoha/schemas/tei-profile.rng}";
-            inputsFrom = lib.optionals (builtins.hasAttr "default" abValidatorShells) [
-              abValidatorShells.default
-            ];
+            inputsFrom = [ ab-validator.devShells.${system}.default ];
             packages = [
               pkgs.caddy
               pkgs.clojure
@@ -631,16 +560,9 @@
               pkgs.mypy
               pkgs.nixfmt
               pkgs.ruff
-              (pkgs.python3.withPackages (python: [ python.rdflib ]))
+              pythonWithRdflib
             ];
             shellHook = ''
-              if command -v sccache > /dev/null 2>&1; then
-                # sccache creates a Unix startup-notification socket beneath TMPDIR.
-                # NIMAS session TMPDIR paths can exceed the socket-path limit.
-                export TMPDIR=/tmp
-                export TMP="$TMPDIR"
-                export TEMPDIR="$TMPDIR"
-              fi
               if [ -f scripts/soranoha-runtime-env.sh ]; then
                 source scripts/soranoha-runtime-env.sh
               fi

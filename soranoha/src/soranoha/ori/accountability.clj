@@ -2,22 +2,16 @@
   "Independent source-marker evidence. Recognition does not certify interpretation."
   (:require [babashka.fs :as fs]
             [babashka.process :as process]
-            [charred.api :as json]
             [clojure.java.io :as io]
-            [clojure.string :as str]
+            [soranoha.core.config :as config]
             [soranoha.core.hash :as hash]
             [soranoha.core.json :as record-json]))
 
 (defn resolve-tool
   "Resolve the independent source scanner and its source-authority matrix."
   []
-  (into {} (map (fn [[key variable]]
-                  (let [value (System/getenv variable)]
-                    (when (str/blank? value)
-                      (throw (ex-info (str "Source accountability requires " variable)
-                                      {:env_var variable})))
-                    [key value])))
-        [[:bin "AB_SOURCE_INVENTORY_BIN"] [:matrix "AB_AOZORA_SYNTAX_MATRIX"]]))
+  {:bin (config/require-env "AB_SOURCE_INVENTORY_BIN" "source accountability scanner")
+   :matrix (config/require-env "AB_AOZORA_SYNTAX_MATRIX" "source authority matrix")})
 
 (defn source-stage
   "Source bytes -> lexical accountability, independently cached from interpretation."
@@ -28,20 +22,20 @@
                   {"binary" (hash/sha256-file bin)
                    "matrix" (hash/sha256-file matrix)})
    :f (fn [{:keys [blob]} inputs]
-        (let [dir (fs/create-temp-dir {:prefix "soranoha-source-accountability"})
-              source (str (fs/path dir "source.txt"))
-              output (str (fs/path dir "accountability.json"))]
-          (try
-            (io/copy ^bytes (blob (get inputs "source")) (io/file source))
-            (let [{:keys [exit err]}
-                  @(process/process [bin "--source" source "--matrix" matrix
-                                     "--output-json" output]
-                                    {:out :string :err :string})]
-              (when-not (zero? exit)
-                (throw (ex-info "Source accountability scanner failed"
-                                {:exit exit :stderr err})))
-              {"source-accountability" (java.nio.file.Files/readAllBytes (fs/path output))})
-            (finally (fs/delete-tree dir)))))})
+        (config/with-temp-dir
+          "soranoha-source-accountability"
+          (fn [dir]
+            (let [source (str (fs/path dir "source.txt"))
+                  output (str (fs/path dir "accountability.json"))]
+              (io/copy ^bytes (blob (get inputs "source")) (io/file source))
+              (let [{:keys [exit err]}
+                    @(process/process [bin "--source" source "--matrix" matrix
+                                       "--output-json" output]
+                                      {:out :string :err :string})]
+                (when-not (zero? exit)
+                  (throw (ex-info "Source accountability scanner failed"
+                                  {:exit exit :stderr err})))
+                {"source-accountability" (java.nio.file.Files/readAllBytes (fs/path output))})))))})
 
 (def ^:private compatible-families
   {"kunten" {:markers #{"CommandFullwidth" "CommandAscii"}
@@ -306,7 +300,7 @@
    :f (fn [{:keys [blob]} inputs]
         (let [input-bytes (into {} (map (fn [name] [name (blob (get inputs name))]))
                                 ["source-accountability" "parser-ir"])
-              read-input #(json/read-json (String. ^bytes (get input-bytes %) "UTF-8"))
+              read-input #(record-json/read-json-bytes (get input-bytes %))
               report (assoc (coverage-report (read-input "source-accountability") (read-input "parser-ir"))
                             "artifacts" (into {} (map (fn [[name bytes]]
                                                         [name (str "sha256:" (hash/sha256-bytes bytes))]))

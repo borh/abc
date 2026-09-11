@@ -101,12 +101,18 @@
 (defn- layout-attributes [layout]
   (if (vector? layout) layout [layout]))
 
+(defn- emphasis-rend
+  "The rend value for an emphasis: its style and the decoration's kind and
+  position, whichever are present."
+  [m]
+  (string/join " " (remove nil? [(get m "style")
+                                 (get-in m ["decoration" "kind"])
+                                 (get-in m ["decoration" "position"])])))
+
 (defn- inline-layout-rend [layout]
   (case (get layout "kind")
     "chitsuki" (layout-rend layout)
-    "emphasis" (string/join " " (remove nil? [(get layout "style")
-                                              (get-in layout ["decoration" "kind"])
-                                              (get-in layout ["decoration" "position"])]))
+    "emphasis" (emphasis-rend layout)
     "font-size" (case (get layout "size_type")
                   "absolute" (str "font-size absolute(" (get layout "size") ")")
                   "qualitative" (str "font-size qualitative(" (get layout "direction") ")"
@@ -252,15 +258,13 @@
                            children)]
       (assoc rendered :inline-context? outer))))
 
-(defn- render-text-node
-  ([acc node _depth]
-   (let [content (whitespace/source-text->tei-inline (get node "text"))]
-     (if (and (seq content) (::source-reference node))
-       (append-inline acc (into (sourced node [:seg]) content))
-       (update acc :current-paragraph into content)))))
+(defn- render-text-node [acc node _depth]
+  (let [content (whitespace/source-text->tei-inline (get node "text"))]
+    (if (and (seq content) (::source-reference node))
+      (append-inline acc (into (sourced node [:seg]) content))
+      (update acc :current-paragraph into content))))
 
-(defn- render-ruby-node
-  ([acc node depth]
+(defn- render-ruby-node [acc node depth]
    ;; Both sides of a ruby carry their content in either of two places: the
    ;; plain string the converter derived, or the child nodes it kept when that
    ;; string could not hold them. Asking whether a side is present therefore
@@ -275,44 +279,43 @@
    ;; profile has no empty one. The work spent on a ruby that is then dropped
    ;; is the price of asking the question accurately, and it is spent only on
    ;; the rubies that get dropped.
-   (let [ruby (get node "ruby")
-         attrs (cond-> {:type "furigana"}
-                 (get ruby "direction")
-                 (assoc :rend (get ruby "direction")))
-         side (fn [state children text]
-                (if (seq children)
-                  (render-inline-children (assoc state :current-paragraph []) children depth)
-                  (assoc state :current-paragraph
-                         (if (present-ruby-text? text) [text] []))))
-         before (:current-paragraph acc)
-         base (side acc (get node "inline_children") (get ruby "base"))
-         reading (side base (get node "reading_children") (get ruby "reading"))]
-     (if (and (seq (:current-paragraph base)) (seq (:current-paragraph reading)))
-       (append-inline (assoc reading :current-paragraph before)
-                      (sourced node [:ruby attrs
-                                     (into [:rb] (:current-paragraph base))
-                                     (into [:rt] (:current-paragraph reading))]))
-       (mark-omitted acc "ruby")))))
+  (let [ruby (get node "ruby")
+        attrs (cond-> {:type "furigana"}
+                (get ruby "direction")
+                (assoc :rend (get ruby "direction")))
+        side (fn [state children text]
+               (if (seq children)
+                 (render-inline-children (assoc state :current-paragraph []) children depth)
+                 (assoc state :current-paragraph
+                        (if (present-ruby-text? text) [text] []))))
+        before (:current-paragraph acc)
+        base (side acc (get node "inline_children") (get ruby "base"))
+        reading (side base (get node "reading_children") (get ruby "reading"))]
+    (if (and (seq (:current-paragraph base)) (seq (:current-paragraph reading)))
+      (append-inline (assoc reading :current-paragraph before)
+                     (sourced node [:ruby attrs
+                                    (into [:rb] (:current-paragraph base))
+                                    (into [:rt] (:current-paragraph reading))]))
+      (mark-omitted acc "ruby"))))
 
-(defn- render-gaiji-node
-  ([acc node _depth]
-   (let [identity (gaiji-declaration node)
-         base-id (:xml-id identity)
-         id (or (get (:gaiji-identities acc) identity)
-                (if-not (contains? (:char-declaration-ids acc) base-id)
-                  base-id
-                  (loop [ordinal 0]
-                    (let [candidate (str base-id "-at-" (or (get-in node ["source_span" "start"])
-                                                            (get-in node ["span" "start"]) 0)
-                                         (when (pos? ordinal) (str "-" ordinal)))]
-                      (if (contains? (:char-declaration-ids acc) candidate)
-                        (recur (inc ordinal)) candidate)))))
-         declaration (assoc identity :xml-id id)]
-     (-> acc
-         (assoc-in [:gaiji-identities identity] id)
-         (register-char-declaration declaration)
-         (append-inline (sourced node (cond-> [:g {:ref (str "#" id)}]
-                                        (seq (:unicode declaration)) (conj (:unicode declaration)))))))))
+(defn- render-gaiji-node [acc node _depth]
+  (let [identity (gaiji-declaration node)
+        base-id (:xml-id identity)
+        id (or (get (:gaiji-identities acc) identity)
+               (if-not (contains? (:char-declaration-ids acc) base-id)
+                 base-id
+                 (loop [ordinal 0]
+                   (let [candidate (str base-id "-at-" (or (get-in node ["source_span" "start"])
+                                                           (get-in node ["span" "start"]) 0)
+                                        (when (pos? ordinal) (str "-" ordinal)))]
+                     (if (contains? (:char-declaration-ids acc) candidate)
+                       (recur (inc ordinal)) candidate)))))
+        declaration (assoc identity :xml-id id)]
+    (-> acc
+        (assoc-in [:gaiji-identities identity] id)
+        (register-char-declaration declaration)
+        (append-inline (sourced node (cond-> [:g {:ref (str "#" id)}]
+                                       (seq (:unicode declaration)) (conj (:unicode declaration))))))))
 
 (defn- render-editor-note-node [acc node depth]
   (let [before (:current-paragraph acc)
@@ -425,99 +428,91 @@
         (append-inline (assoc lower :current-paragraph before)
                        (into wrapper (:current-paragraph lower)))))))
 
-(defn- render-emphasis-node
-  ([acc node depth]
-   (render-inline-wrapper acc
-                          (seq (get node "inline_children"))
-                          (get node "text")
-                          depth
-                          (sourced node [:hi {:rend (string/join " " (remove nil? [(get node "style")
-                                                                                   (get-in node ["decoration" "kind"])
-                                                                                   (get-in node ["decoration" "position"])]))}]))))
+(defn- render-emphasis-node [acc node depth]
+  (render-inline-wrapper acc
+                         (seq (get node "inline_children"))
+                         (get node "text")
+                         depth
+                         (sourced node [:hi {:rend (emphasis-rend node)}])))
 
-(defn- render-layout-span-node
-  ([acc node depth]
-   (let [layout (get node "layout")
-         layouts (layout-attributes layout)
-         rends (mapv inline-layout-rend layouts)
-         geometry? (some #(= "chitsuki" (get % "kind")) layouts)]
-     (if (every? some? rends)
-       (let [rend (string/join " " rends)
-             params (if (vector? layout)
-                      (not-empty (string/join ";" (mapcat (fn [attribute]
-                                                            (when-let [params (layout-params attribute)]
-                                                              (map #(str (get attribute "kind") "." %)
-                                                                   (string/split params #";"))))
-                                                          layouts)))
-                      (layout-params layout))]
-         (render-inline-wrapper acc
-                                (seq (get node "inline_children"))
-                                (get node "text")
-                                depth
-                                (sourced node [(if geometry? :seg :hi) (cond-> {:rend rend}
-                                                                         (seq layouts)
-                                                                         (assoc :snh/layout-kind (string/join " " (map #(get % "kind") layouts)))
+(defn- render-layout-span-node [acc node depth]
+  (let [layout (get node "layout")
+        layouts (layout-attributes layout)
+        rends (mapv inline-layout-rend layouts)
+        geometry? (some #(= "chitsuki" (get % "kind")) layouts)]
+    (if (every? some? rends)
+      (let [rend (string/join " " rends)
+            params (if (vector? layout)
+                     (not-empty (string/join ";" (mapcat (fn [attribute]
+                                                           (when-let [params (layout-params attribute)]
+                                                             (map #(str (get attribute "kind") "." %)
+                                                                  (string/split params #";"))))
+                                                         layouts)))
+                     (layout-params layout))]
+        (render-inline-wrapper acc
+                               (seq (get node "inline_children"))
+                               (get node "text")
+                               depth
+                               (sourced node [(if geometry? :seg :hi) (cond-> {:rend rend}
+                                                                        (seq layouts)
+                                                                        (assoc :snh/layout-kind (string/join " " (map #(get % "kind") layouts)))
 
-                                                                         params
-                                                                         (assoc :snh/layout-params params))])))
-       (mark-omitted acc "layout-span")))))
+                                                                        params
+                                                                        (assoc :snh/layout-params params))])))
+      (mark-omitted acc "layout-span"))))
 
 (defn- heading-attrs [node]
   (cond-> {:n (str (get node "level"))}
     (some? (get node "indent"))
     (assoc :style (str "padding-inline-start: " (get node "indent") "em"))))
 
-(defn- render-heading-node
-  ([acc node depth]
+(defn- render-heading-node [acc node depth]
    ;; `dogyo` and `mado` are the source saying that a heading sits in the run
    ;; of text rather than above it. A heading nested inside inline content
    ;; says as much by where it stands, so it is read the same way. The
    ;; converter reaches this: its inline child projection maps the `heading`
    ;; kind, and the style it copies over is any of `normal`, `dogyo`, `mado`.
-   (if (or (:inline-context? acc) (#{"dogyo" "mado"} (get node "style")))
-     (render-inline-wrapper acc
-                            (seq (get node "inline_children"))
-                            (get node "text")
-                            depth
-                            (sourced node [:seg (assoc (heading-attrs node)
-                                                       :type "heading"
-                                                       :rend (get node "style"))]))
-     (let [children (seq (get node "inline_children"))
-           base (-> acc flush-paragraph flush-division)]
-       (if children
-         (let [scratch (assoc base :current-paragraph [])
-               rendered (render-inline-children scratch children depth)
-               head-fragment (:current-paragraph rendered)]
-           (-> rendered
-               (assoc :current-paragraph [])
-               (update :current-division conj
-                       (into (sourced node [:head (heading-attrs node)])
-                             head-fragment))))
-         (update base :current-division conj
-                 (sourced node [:head (heading-attrs node)
-                                (get node "text")])))))))
+  (if (or (:inline-context? acc) (#{"dogyo" "mado"} (get node "style")))
+    (render-inline-wrapper acc
+                           (seq (get node "inline_children"))
+                           (get node "text")
+                           depth
+                           (sourced node [:seg (assoc (heading-attrs node)
+                                                      :type "heading"
+                                                      :rend (get node "style"))]))
+    (let [children (seq (get node "inline_children"))
+          base (-> acc flush-paragraph flush-division)]
+      (if children
+        (let [scratch (assoc base :current-paragraph [])
+              rendered (render-inline-children scratch children depth)
+              head-fragment (:current-paragraph rendered)]
+          (-> rendered
+              (assoc :current-paragraph [])
+              (update :current-division conj
+                      (into (sourced node [:head (heading-attrs node)])
+                            head-fragment))))
+        (update base :current-division conj
+                (sourced node [:head (heading-attrs node)
+                               (get node "text")]))))))
 
-(defn- render-indentation-node
-  ([acc node _depth]
-   (if (present-text? (get node "text"))
-     (append-inline acc
-                    (sourced node [:seg {:type "indentation"
-                                         :n (str (get node "depth"))}
-                                   (get node "text")]))
-     (mark-omitted acc "indentation"))))
+(defn- render-indentation-node [acc node _depth]
+  (if (present-text? (get node "text"))
+    (append-inline acc
+                   (sourced node [:seg {:type "indentation"
+                                        :n (str (get node "depth"))}
+                                  (get node "text")]))
+    (mark-omitted acc "indentation")))
 
-(defn- render-page-break-node
-  ([acc node _depth]
-   (append-inline acc
-                  (sourced node (cond-> [(if (= "column-break" (get node "type")) :cb :pb) {}]
-                                  (#{"kaicho" "kaimihiraki"} (get node "marker"))
-                                  (assoc-in [1 :rend] (get node "marker"))
-                                  (some? (get node "page_number"))
-                                  (assoc-in [1 :n] (get node "page_number")))))))
+(defn- render-page-break-node [acc node _depth]
+  (append-inline acc
+                 (sourced node (cond-> [(if (= "column-break" (get node "type")) :cb :pb) {}]
+                                 (#{"kaicho" "kaimihiraki"} (get node "marker"))
+                                 (assoc-in [1 :rend] (get node "marker"))
+                                 (some? (get node "page_number"))
+                                 (assoc-in [1 :n] (get node "page_number"))))))
 
-(defn- render-line-break-node
-  ([acc node _depth]
-   (append-inline acc (sourced node [:lb]))))
+(defn- render-line-break-node [acc node _depth]
+  (append-inline acc (sourced node [:lb])))
 
 (defn- render-image-node [acc node depth]
   (let [before (:current-paragraph acc)
@@ -549,13 +544,11 @@
     (append-inline (assoc annotations :current-paragraph before)
                    (sourced node (into figure (:current-paragraph annotations))))))
 
-(defn- render-caption-node
-  ([acc node depth]
-   (render-inline-wrapper acc (get node "inline_children") (get node "text") depth
-                          (sourced node [:seg {:type "caption"}]))))
+(defn- render-caption-node [acc node depth]
+  (render-inline-wrapper acc (get node "inline_children") (get node "text") depth
+                         (sourced node [:seg {:type "caption"}])))
 
-(defn- render-quote-node
-  ([acc node depth]
+(defn- render-quote-node [acc node depth]
    ;; The parser IR's `quote` node is one quotation delimiter, carrying
    ;; `marker_type` open or close and the single character as its text. It is
    ;; a marker, not a container: the quoted passage is a sibling. Rendering it
@@ -563,15 +556,14 @@
    ;; not, which is the opposite of what the source means. The character is
    ;; source text and carries the information on its own, so it is emitted the
    ;; same way any other text run is.
-   (if (present-text? (get node "text"))
-     (render-text-node acc node depth)
-     (mark-omitted acc "quote"))))
+  (if (present-text? (get node "text"))
+    (render-text-node acc node depth)
+    (mark-omitted acc "quote")))
 
-(defn- render-source-note-node
-  ([acc node _depth]
-   (cond
-     (not (present-text? (get node "text")))
-     (mark-omitted acc "source-note")
+(defn- render-source-note-node [acc node _depth]
+  (cond
+    (not (present-text? (get node "text")))
+    (mark-omitted acc "source-note")
 
      ;; ［＃本文終わり］. TEI already says where the body ends: the colophon is
      ;; a `div type="source"` and everything before it is the body. Emitting
@@ -579,30 +571,30 @@
      ;; a note about the source edition, which it is not. The line stays in the
      ;; parser IR and the source inventory counts it as a region boundary, so
      ;; nothing about it goes unrecorded.
-     (= "body-end-boundary" (get node "note_type"))
-     (mark-omitted acc "body-end-boundary")
+    (= "body-end-boundary" (get node "note_type"))
+    (mark-omitted acc "body-end-boundary")
 
-     :else
+    :else
      ;; `front` and `back` put a note in the document's front or back matter,
      ;; which a note standing inside a phrase cannot mean: reaching them costs
      ;; the paragraph that phrase belongs to. Inline, the note is where it
      ;; stands. The current converter emits source notes only as blocks, so
      ;; this shape arrives from parser IR written by hand or by another
      ;; producer rather than from the corpus.
-     (case (if (and (:inline-context? acc)
-                    (#{"front" "back"} (get node "placement")))
-             "body"
-             (get node "placement"))
-       "front" (-> acc
-                   flush-paragraph
-                   flush-division
-                   (update :front-notes conj (source-note-hiccup node)))
-       "body" (append-inline acc (source-note-hiccup node))
-       "back" (-> acc
+    (case (if (and (:inline-context? acc)
+                   (#{"front" "back"} (get node "placement")))
+            "body"
+            (get node "placement"))
+      "front" (-> acc
                   flush-paragraph
                   flush-division
-                  (update :back-notes conj (source-note-hiccup node)))
-       (mark-omitted acc "source-note")))))
+                  (update :front-notes conj (source-note-hiccup node)))
+      "body" (append-inline acc (source-note-hiccup node))
+      "back" (-> acc
+                 flush-paragraph
+                 flush-division
+                 (update :back-notes conj (source-note-hiccup node)))
+      (mark-omitted acc "source-note"))))
 
 (def ^:private node-renderers
   {"text" render-text-node
@@ -638,7 +630,7 @@
        (throw (ex-info "Unsupported TEI parser-IR node type"
                        {:node-type node-type}))))))
 
-(defn- initial-acc [primary-text-hash]
+(defn- initial-acc []
   {:body-children []
    :current-division []
    :current-paragraph []
@@ -647,7 +639,6 @@
    :front-notes []
    :back-notes []
    :source-spans (sorted-map)
-   :primary-text-hash primary-text-hash
    :char_declarations []
    :char-declaration-ids #{}
    :gaiji-identities {}
@@ -917,7 +908,7 @@
         [acc frames])
       [acc frames])))
 
-(defn- render-with-paragraphs [nodes paragraphs layout-blocks primary-text-hash]
+(defn- render-with-paragraphs [nodes paragraphs layout-blocks]
   (validate-paragraph-ranges! nodes paragraphs)
   (validate-layout-blocks! nodes paragraphs layout-blocks)
   (let [boundary? (paragraph-boundary-predicate paragraphs)
@@ -933,7 +924,7 @@
                                    (if-let [reference (source-reference {"source_span" span})]
                                      (assoc-in acc [:source-spans reference] span) acc))
                                  acc [(get block "source_span") (get-in block ["relative_placement" "anchor_span"])]))
-                       (initial-acc primary-text-hash) layout-blocks)
+                       (initial-acc) layout-blocks)
            index (Long/valueOf 0) frames []]
       (let [[acc frames] (close-layout-blocks acc frames index)]
         (if (= index (count nodes))
@@ -959,14 +950,13 @@
                                rendered)]
                 (recur rendered (inc index) frames)))))))))
 
-(defn- render-flat [nodes primary-text-hash]
+(defn- render-flat [nodes]
   (finalize-result
-   (render-node-seq (initial-acc primary-text-hash) nodes)))
+   (render-node-seq (initial-acc) nodes)))
 
 (defn render [parser-ir]
   (let [nodes (vec (get parser-ir "nodes"))
         paragraphs (seq (get parser-ir "paragraphs"))]
     (if (or paragraphs (seq (get parser-ir "layout_blocks")))
-      (render-with-paragraphs nodes (vec paragraphs) (get parser-ir "layout_blocks" [])
-                              (get-in parser-ir ["source" "primary_text_hash"]))
-      (render-flat nodes (get-in parser-ir ["source" "primary_text_hash"])))))
+      (render-with-paragraphs nodes (vec paragraphs) (get parser-ir "layout_blocks" []))
+      (render-flat nodes))))

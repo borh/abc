@@ -24,7 +24,10 @@
                    :string-index string-index
                    :code-unit (format "0x%04x" (int code-unit))})))
 
-(defn- validate-utf16! [^String value path position]
+(defn validate-utf16!
+  "Throw on a lone surrogate in `value`; return `value` otherwise. `path` and
+  `position` locate the string in the error."
+  [^String value path position]
   (let [length (.length value)]
     (loop [index 0]
       (when (< index length)

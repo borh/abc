@@ -21,28 +21,25 @@
 (defn- normalized-abs-path [f]
   (fs/normalize (fs/absolutize f)))
 
-(defn aozora-work-zip?
-  "The work-ZIP shape: cards/<6 digits>/files/<name>.zip. Returns the
-  normalized relpath when it matches, else nil."
-  [root file]
-  (let [rel (normalized-path
-             (fs/relativize (normalized-abs-path root)
-                            (normalized-abs-path file)))]
-    (when (re-matches #"^cards/[0-9]{6}/files/[^/]+\.zip$" rel)
-      rel)))
-
-(defn work-zip-files
-  "Every .zip under cards/, sorted by path, as {:file :relpath} where
-  :relpath is nil for zips outside the work-ZIP shape."
+(defn- work-zip-files
+  "Every .zip under cards/, sorted by path, as {:file :rel :relpath}.
+  :rel is the path relative to the root; :relpath repeats it when it
+  has the work-ZIP shape cards/<6 digits>/files/<name>.zip and is nil
+  otherwise."
   [aozora-root]
-  (->> (fs/glob (fs/path (str aozora-root) "cards") "**.zip")
-       (map fs/file)
-       (sort-by str)
-       (mapv (fn [file]
-               {:file file
-                :relpath (aozora-work-zip? aozora-root file)}))))
+  (let [root (normalized-abs-path aozora-root)]
+    (->> (fs/glob (fs/path (str aozora-root) "cards") "**.zip")
+         (map fs/file)
+         (sort-by str)
+         (mapv (fn [file]
+                 (let [rel (normalized-path
+                            (fs/relativize root (normalized-abs-path file)))]
+                   {:file file
+                    :rel rel
+                    :relpath (when (re-matches #"^cards/[0-9]{6}/files/[^/]+\.zip$" rel)
+                               rel)}))))))
 
-(defn card-directory
+(defn- card-directory
   "The contributor card directory a work ZIP lives under. The only element
   distinguishing one work_id filed under several contributor cards; fails
   closed on a relpath that names none."
@@ -52,7 +49,7 @@
                       {:code "unslugifiable-source-relpath"
                        :text_zip_relpath relpath}))))
 
-(defn work-identifier
+(defn- work-identifier
   "The catalog work id in the six-digit form Aozora Bunko files works under. Fails
   closed rather than padding a short value: this is half of a permanent public
   identifier, so a row that does not carry the documented shape must stop the
@@ -83,7 +80,7 @@
   [work-id relpath]
   (str (work-identifier work-id) "_" (card-directory relpath)))
 
-(defn candidate-slug-collisions
+(defn- candidate-slug-collisions
   "Pure: slugs claimed by more than one candidate, with their sources."
   [candidates]
   (->> candidates
@@ -169,8 +166,10 @@
                        selected)
         rows-by-work-id (group-by catalog/row-work-id rows)
         assessed (mapv #(assoc % :rights (admit rows-by-work-id %)) selected)
-        selected (filterv #(:standing (:rights %)) assessed)
-        selected (mapv #(assoc % :rights (:standing (:rights %))) selected)
+        selected (into [] (keep (fn [{:keys [rights] :as candidate}]
+                                  (when-let [standing (:standing rights)]
+                                    (assoc candidate :rights standing))))
+                       assessed)
         ;; Rights refusals record the licence as well as the reason, so the
         ;; build report shows which terms were declined without reopening the
         ;; archive.
@@ -191,12 +190,8 @@
                         refused-on-rights)
         rejected (->> candidates
                       (remove #(contains? accounted (:relpath %)))
-                      (mapv (fn [{:keys [file relpath]}]
-                              {"path" (or relpath
-                                          (normalized-path
-                                           (fs/relativize
-                                            (normalized-abs-path aozora-root)
-                                            (normalized-abs-path file))))
+                      (mapv (fn [{:keys [file rel relpath]}]
+                              {"path" rel
                                "reason" (cond
                                           (nil? relpath)
                                           "not-under-cards-files"

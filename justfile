@@ -67,7 +67,7 @@ site-preview works="8" port="8787":
 # The generator is pinned in nix/tei-profile-artifacts.nix, so the output is a
 # function of the ODD and that recipe alone.
 regenerate-tei-profile:
-	@out="$(nix build --no-link --print-out-paths .#tei-profile-artifacts)" && 		install -m 0644 "$out/tei-profile.rng" "$out/tei-profile.sch" 			"$out/tei-profile-generation.json" soranoha/schemas/ && 		echo "regenerated from $out"
+	@nix run .#regenerate-tei-profile && echo "regenerated soranoha/schemas from the ODD"
 
 nix-format-check:
 	@find . \

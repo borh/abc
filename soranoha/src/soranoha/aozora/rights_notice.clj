@@ -66,7 +66,7 @@
        ;; 非移植 are the unported deeds, whose URLs carry no port.
        :port (when (string/includes? clause "日本") "JP")})))
 
-(defn parse-notice
+(defn- parse-notice
   "The licence a colophon states, as `{:elements :version :port}`, or nil.
   Prefers the URL, which is unambiguous, and falls back to the prose form."
   [text]
@@ -75,7 +75,7 @@
       (when (some #{"BY"} (:elements parsed))
         parsed))))
 
-(defn copyright-flags
+(defn- copyright-flags
   "The distinct 作品著作権フラグ values across the catalog rows for one work."
   [rows]
   (into #{} (map #(get % flag-key)) rows))

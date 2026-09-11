@@ -1,4 +1,4 @@
-(ns ^:typed.clojure soranoha.ori.publication-whitespace
+(ns soranoha.ori.publication-whitespace
   (:require [clojure.string :as string]))
 
 (defn- normalize-newlines [text]
@@ -8,9 +8,4 @@
   "Render source text-node linebreak runs as TEI structure, not literal newline
   characters in mixed body text."
   [text]
-  (let [normalized (-> text
-                       normalize-newlines
-                       (string/replace #"\n+" "\n")
-                       (string/replace #"^\n+" "")
-                       (string/replace #"\n+$" ""))]
-    (interpose [:lb] (remove empty? (string/split normalized #"\n")))))
+  (interpose [:lb] (remove empty? (string/split (normalize-newlines text) #"\n"))))

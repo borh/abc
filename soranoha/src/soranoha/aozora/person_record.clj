@@ -2,29 +2,22 @@
   "Identity and validation for person records. record-hash hashes the
   canonical-identity form: schema_id and schema_hash included;
   source_csv_provenance excluded; nullable fields explicit as JSON null."
-  (:require [soranoha.core.jcs :as jcs]
+  (:require [soranoha.aozora.csv :as csv]
+            [soranoha.core.jcs :as jcs]
             [soranoha.core.hash :as hash]
-            [soranoha.core.schema :as schema])
-  (:import [java.time DateTimeException LocalDate]))
-
-(def ^:private full-date-shape-pattern #"^-?\d{4}-\d{2}-\d{2}$")
+            [soranoha.core.schema :as schema]))
 
 (defn- assert-calendar-valid!
-  "Reject records whose YYYY-MM-DD date fields are regex-shaped but
-  calendar-impossible (e.g. 2020-02-31, -0426-02-31). The JSON Schema
-  regex only bounds month 01-12 and day 01-31; full calendar validity
-  needs a date library. java.time accepts signed negative years, so
-  this gate covers BCE full dates too. Partial dates (YYYY, YYYY-MM)
-  skip this full-date check."
+  "Reject a record whose date field passes the schema regex but names a
+  day that does not exist. The schema bounds month and day separately;
+  the calendar check needs a date library."
   [record]
   (doseq [field ["date_of_birth" "date_of_death"]
           :let [v (get record field)]
-          :when (and v (re-matches full-date-shape-pattern v))]
-    (try (LocalDate/parse ^String v)
-         (catch DateTimeException _
-           (throw (ex-info (str "person-record validation failed: " field
-                                " is not a valid calendar date: " v)
-                           {:field field :value v}))))))
+          :when (not (csv/calendar-valid? v))]
+    (throw (ex-info (str "person-record validation failed: " field
+                         " is not a valid calendar date: " v)
+                    {:field field :value v}))))
 
 (defn validate!
   "Validate `record` against the supplied person schema plus a

@@ -29,6 +29,7 @@
   (:require [clojure.set :as set]
             [soranoha.aozora.csv :as csv]
             [soranoha.aozora.source-bundle :as source-bundle]
+            [soranoha.core.hash :as hash]
             [soranoha.core.parallel :as parallel]
             [soranoha.ori.stages :as stages]
             [soranoha.yomi.catalog :as catalog]
@@ -47,7 +48,7 @@
   strips the prefix on the way in, so the scan has to strip it on the way out
   or every work would compare as changed."
   [source-content-hash]
-  (or (some->> source-content-hash (re-matches #"sha256:([0-9a-f]{64})") second)
+  (or (hash/bare-sha256-hex source-content-hash)
       (throw (ex-info "malformed source content hash"
                       {:reason :malformed-source-content-hash
                        :value source-content-hash}))))

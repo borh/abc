@@ -15,35 +15,31 @@
 (defn has-blob? [cas-dir hex]
   (fs/exists? (blob-path cas-dir hex)))
 
-(defn put-bytes!
-  "Store bytes; returns their sha256 hex. Existing blobs are never rewritten."
-  [cas-dir ^bytes bytes]
-  (let [hex (hash/sha256-bytes bytes)
-        target (blob-path cas-dir hex)]
+(defn- commit-blob!
+  "Write the blob for `hex` through a temp file in its own directory and move
+  it into place atomically, unless it already exists. `write!` receives the
+  temp file. Returns `hex`."
+  [cas-dir hex write!]
+  (let [target (blob-path cas-dir hex)]
     (when-not (fs/exists? target)
       (fs/create-dirs (fs/parent target))
       (let [tmp (fs/create-temp-file {:dir (fs/parent target)
                                       :prefix (str "." hex ".")})]
-        (io/copy bytes (fs/file tmp))
+        (write! tmp)
         (Files/move (fs/path tmp) (fs/path target)
                     (into-array java.nio.file.CopyOption
                                 [StandardCopyOption/ATOMIC_MOVE]))))
     hex))
 
+(defn put-bytes!
+  "Store bytes; returns their sha256 hex. Existing blobs are never rewritten."
+  [cas-dir ^bytes bytes]
+  (commit-blob! cas-dir (hash/sha256-bytes bytes) #(io/copy bytes (fs/file %))))
+
 (defn put-file!
   "Store a file's bytes by streaming copy; returns sha256 hex."
   [cas-dir source]
-  (let [hex (hash/sha256-file source)
-        target (blob-path cas-dir hex)]
-    (when-not (fs/exists? target)
-      (fs/create-dirs (fs/parent target))
-      (let [tmp (fs/create-temp-file {:dir (fs/parent target)
-                                      :prefix (str "." hex ".")})]
-        (fs/copy source tmp {:replace-existing true})
-        (Files/move (fs/path tmp) (fs/path target)
-                    (into-array java.nio.file.CopyOption
-                                [StandardCopyOption/ATOMIC_MOVE]))))
-    hex))
+  (commit-blob! cas-dir (hash/sha256-file source) #(fs/copy source % {:replace-existing true})))
 
 (defn get-bytes
   "Blob bytes for a hash, or nil when absent (cache miss, not an error)."

@@ -1,18 +1,13 @@
 { pkgs, odd }:
 
 let
-  # TEI P5 version. Duplicated in <repo-root>/nix/tei.nix (separate
-  # flake). Drift is caught by the `monorepo-tei-version-coherence` check. Bump
-  # both together.
+  # TEI P5 version, stated again in ./tei.nix for the reference tree. The
+  # `monorepo-tei-version-coherence` check holds the two together; bump both.
   teiP5Version = "4.11.0";
-
-  teiAllSchema = pkgs.fetchurl {
-    url = "https://www.tei-c.org/Vault/P5/${teiP5Version}/xml/tei/custom/schema/relaxng/tei_all.rng";
-    hash = "sha256-7MSfAMN/SQtd9xa2cuPbpjXrHknM2I+5aYWUmN9CwIQ=";
-  };
+  teiStylesheetsVersion = "7.60.0";
 
   teiStylesheets = pkgs.fetchzip {
-    url = "https://github.com/TEIC/Stylesheets/releases/download/v7.60.0/tei-xsl-7.60.0.zip";
+    url = "https://github.com/TEIC/Stylesheets/releases/download/v${teiStylesheetsVersion}/tei-xsl-${teiStylesheetsVersion}.zip";
     hash = "sha256-KcDZmMNtJHFbaBlTgr37Yy6O6J/QLDcoAG20CmBDpKk=";
     stripRoot = false;
   };
@@ -22,7 +17,7 @@ let
     hash = "sha256-r9HruHPKcY1hvly09hFkoRA3/gybYSomI+avGvGe8wE=";
   };
 
-  generator = "TEI Stylesheets 7.60.0 with Saxon-HE ${pkgs.saxon-he.version}";
+  generator = "TEI Stylesheets ${teiStylesheetsVersion} with Saxon-HE ${pkgs.saxon-he.version}";
   generatorBuildHash =
     "sha256:"
     + builtins.hashString "sha256" (
@@ -118,11 +113,5 @@ let
       '';
 in
 {
-  version = teiP5Version;
-  inherit
-    teiAllSchema
-    teiStylesheets
-    teiP5Subset
-    artifacts
-    ;
+  inherit artifacts;
 }

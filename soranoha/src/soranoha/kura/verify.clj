@@ -7,7 +7,7 @@
             [soranoha.kura.cas :as cas]
             [soranoha.kura.trace :as trace]))
 
-(defn fixity-sweep
+(defn- fixity-sweep
   "Rehash every trace-referenced blob present in the CAS. Returns
   {:checked n :missing [hex...] :corrupt [hex...]}. Missing blobs are cache
   misses, reported but not corruption; a hash mismatch is corruption."

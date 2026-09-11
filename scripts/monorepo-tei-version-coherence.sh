@@ -23,7 +23,6 @@ fi
 
 grep -q "github:TEIC/TEI/${expected_tag}" "$repo_root/flake.nix"
 grep -q "teiP5Version = \"${expected_version}\";" "$repo_root/nix/tei-profile-artifacts.nix"
-grep -q "Vault/P5/\${teiP5Version}/xml/tei/custom/schema/relaxng/tei_all.rng" "$repo_root/nix/tei-profile-artifacts.nix"
 grep -q "Vault/P5/\${teiP5Version}/xml/tei/odd/p5subset.xml" "$repo_root/nix/tei-profile-artifacts.nix"
 
 test -f "$tei_root/Source/Specs/ruby.xml"

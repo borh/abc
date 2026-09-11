@@ -5,8 +5,9 @@
   Carries bibliographic facts only (such as `archive_stem` and romanized name
   parts) without rendered presentation strings. Filename rules and citation
   formatting belong to the serving layer."
-  (:require [charred.api :as json]
-            [clojure.string :as string]
+  (:require [clojure.string :as string]
+            [soranoha.core.hash :as hash]
+            [soranoha.core.json :as record-json]
             [soranoha.kura.cas :as cas]))
 
 (defn- fail! [reason data]
@@ -17,7 +18,7 @@
   (when-not hex (fail! reason data))
   (let [bytes (or (cas/get-bytes cas-dir hex)
                   (fail! :catalog-input-missing-from-cas (assoc data :hex hex)))]
-    (json/read-json (String. ^bytes bytes "UTF-8"))))
+    (record-json/read-json-bytes bytes)))
 
 (defn- archive-stem
   "The Aozora Bunko archive's own name for the work's primary text member, without
@@ -127,9 +128,7 @@
                  (or (get outputs slug)
                      (fail! :catalog-work-not-built {:slug slug}))]
              (work-entry slug
-                         (or (some->> source-content-hash
-                                      (re-matches #"sha256:([0-9a-f]{64})")
-                                      second)
+                         (or (hash/bare-sha256-hex source-content-hash)
                              (fail! :malformed-source-content-hash
                                     {:slug slug :value source-content-hash}))
                          (or rights (fail! :catalog-work-rights-missing

@@ -19,7 +19,6 @@ RELEASE_CRITICAL_INPUTS = {
     "tei-eaj-aozora-tei",
     "tei-p5",
     "upstream-aozora-notation-spec-src",
-    "upstream-aozorabunko-extractor-src",
 }
 
 INFRASTRUCTURE_INPUTS = {

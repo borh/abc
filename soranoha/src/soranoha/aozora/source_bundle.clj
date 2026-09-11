@@ -23,18 +23,18 @@
 ;; extension vocabulary moved from `abc` to `snh` in the pre-genesis IRI
 ;; migration; this string did not, because changing it would mint a second
 ;; construction claiming the same v1 and rewrite every work's source hash.
-(def construction "abc-source-bundle-v1")
-(def default-limits {:max-members 1024
-                     :max-member-bytes 16777216
-                     :max-total-bytes 33554432})
+(def ^:private construction "abc-source-bundle-v1")
+(def ^:private default-limits {:max-members 1024
+                               :max-member-bytes 16777216
+                               :max-total-bytes 33554432})
 (def ^:private legacy-name-charset (Charset/forName "windows-31j"))
 
-(defn bundle-identity-canonical-bytes
+(defn- bundle-identity-canonical-bytes
   "Canonical UTF-8 bytes for the string-only abc-source-bundle-v1 identity."
   [identity-object]
   (jcs/rfc8785-string-domain-json-bytes identity-object))
 
-(defn bundle-identity-hash [identity-object]
+(defn- bundle-identity-hash [identity-object]
   (hash/format-sha256
    (hash/sha256-bytes (bundle-identity-canonical-bytes identity-object))))
 
@@ -132,7 +132,7 @@
        (not (re-find #"^[A-Za-z]:" path))
        (not-any? #{"" "." ".."} (string/split path #"/" -1))))
 
-(defn validate-identity-object!
+(defn- validate-identity-object!
   "Validate the complete structural policy of an abc-source-bundle-v1
   persisted identity and return it unchanged. This validation is independent
   of JSON Schema so callers cannot re-sign a structurally non-canonical member
@@ -430,19 +430,16 @@
               candidates)
         (throw original-error))))
 
-(defn scan-zip
-  ([zip-file] (scan-zip zip-file default-limits))
-  ([zip-file limits]
-   (let [staged (stage-archive! zip-file)
-         limits (merge default-limits limits)]
-     (try
-       (try
-         (scan-open-zip zip-file staged limits)
-         (catch clojure.lang.ExceptionInfo e
-           (if (unreadable-zip-error? e)
-             (scan-zip-with-trailing-garbage-recovery zip-file staged limits e)
-             (throw e))))
-       (finally (Files/deleteIfExists (.toPath (io/file staged))))))))
+(defn- scan-zip [zip-file]
+  (let [staged (stage-archive! zip-file)]
+    (try
+      (try
+        (scan-open-zip zip-file staged default-limits)
+        (catch clojure.lang.ExceptionInfo e
+          (if (unreadable-zip-error? e)
+            (scan-zip-with-trailing-garbage-recovery zip-file staged default-limits e)
+            (throw e))))
+      (finally (Files/deleteIfExists (.toPath (io/file staged)))))))
 
 (defn- validate-admission-collisions! [archive-path members]
   (let [{:keys [nfc-collisions unicode-case-collisions]}
@@ -453,7 +450,7 @@
       (fail! :case-fold-member-path-collision archive-path collision)))
   members)
 
-(defn admit-scan! [scan]
+(defn- admit-scan! [scan]
   (let [archive-path (:archive-path scan)
         members (validate-admission-collisions! archive-path (:members scan))
         candidates (:semantic-text-candidates scan)
@@ -488,6 +485,5 @@
       (:trailing-garbage-trimmed scan)
       (assoc :trailing-garbage-trimmed (:trailing-garbage-trimmed scan)))))
 
-(defn inspect-zip
-  ([zip-file] (inspect-zip zip-file default-limits))
-  ([zip-file limits] (admit-scan! (scan-zip zip-file limits))))
+(defn inspect-zip [zip-file]
+  (admit-scan! (scan-zip zip-file)))

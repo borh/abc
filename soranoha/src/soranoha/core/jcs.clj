@@ -2,6 +2,7 @@
 ;; encoding follows charred; protocol identities use core.canonical instead.
 (ns soranoha.core.jcs
   (:require [charred.api :as json]
+            [soranoha.core.canonical :as canonical]
             [clojure.string :as string])
   (:import [java.nio.charset StandardCharsets]))
 
@@ -43,35 +44,8 @@
 ;; identities requiring RFC 8785 use the separate path below.
 (declare rfc8785-string-domain-json-string*)
 
-(defn- invalid-utf16! [path position string-index code-unit]
-  (throw (ex-info "RFC 8785 string contains malformed UTF-16"
-                  {:reason :invalid-utf16
-                   :path path
-                   :position position
-                   :string-index string-index
-                   :code-unit (format "0x%04x" (int code-unit))})))
-
-(defn- validate-utf16! [value path position]
-  (loop [index 0]
-    (when (< index (.length ^String value))
-      (let [code-unit (.charAt ^String value index)]
-        (cond
-          (Character/isHighSurrogate code-unit)
-          (if (and (< (inc index) (.length ^String value))
-                   (Character/isLowSurrogate
-                    (.charAt ^String value (inc index))))
-            (recur (+ index 2))
-            (invalid-utf16! path position index code-unit))
-
-          (Character/isLowSurrogate code-unit)
-          (invalid-utf16! path position index code-unit)
-
-          :else
-          (recur (inc index))))))
-  value)
-
 (defn- rfc8785-string [value path position]
-  (validate-utf16! value path position)
+  (canonical/validate-utf16! value path position)
   (json/write-json-str value
                        :escape-slash false
                        :escape-unicode false

@@ -174,8 +174,7 @@
         "rust-overlay": "rust-overlay",
         "soranoha-assets": "soranoha-assets",
         "tei-eaj-aozora-tei": "tei-eaj-aozora-tei",
-        "upstream-aozora-notation-spec-src": "upstream-aozora-notation-spec-src",
-        "upstream-aozorabunko-extractor-src": "upstream-aozorabunko-extractor-src"
+        "upstream-aozora-notation-spec-src": "upstream-aozora-notation-spec-src"
       }
     },
     "rust-overlay": {
@@ -256,23 +255,6 @@
         "owner": "P4suta",
         "repo": "aozora-notation-spec",
         "rev": "b60665fd50b596c967254f99b61f418495656fef",
-        "type": "github"
-      }
-    },
-    "upstream-aozorabunko-extractor-src": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1698412426,
-        "narHash": "sha256-DqNVhnY9IlTbFLCtPBx9AvwBNM8+u4s2v7JcXYVf7cw=",
-        "owner": "globis-org",
-        "repo": "aozorabunko-extractor",
-        "rev": "ce439c2b43a4ec0312d12bb89d49e8b186ff0c27",
-        "type": "github"
-      },
-      "original": {
-        "owner": "globis-org",
-        "repo": "aozorabunko-extractor",
-        "rev": "ce439c2b43a4ec0312d12bb89d49e8b186ff0c27",
         "type": "github"
       }
     }

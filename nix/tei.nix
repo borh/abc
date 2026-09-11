@@ -4,12 +4,8 @@ let
   # The reference and profile generator must use the same TEI P5 version;
   # monorepo-tei-version-coherence checks their declarations against the pin.
   teiP5Version = "4.11.0";
-  teiP5ReleaseTag = "P5_Release_${teiP5Version}";
 in
 {
-  version = teiP5Version;
-  releaseTag = teiP5ReleaseTag;
-
   reference =
     pkgs.runCommand "tei-p5-reference"
       {

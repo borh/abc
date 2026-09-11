@@ -53,7 +53,7 @@
           (is (= (or expected-markdown expected) (string/trim (projection/markdown reading))) body)
           (is (empty? (get ir "interpretation_problems")) body)
           (is (every? #(not-any? #{"accent.dotted_letter" "glyph.variant_note"}
-                                 (get % "unaccounted_families")) (get coverage "occurrences")) coverage)
+                                 (get % "unaccounted_families")) (get coverage "occurrences")) (pr-str coverage))
           (let [^Document document (:view/document reading)]
             (is (= 1 (.getLength (.getElementsByTagNameNS document view/tei-namespace "orig"))))
             (is (= 1 (.getLength (.getElementsByTagNameNS document view/tei-namespace "reg"))))

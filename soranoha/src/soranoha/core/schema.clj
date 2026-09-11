@@ -10,7 +10,7 @@
 (def ^:private ^SchemaRegistry schema-registry
   (SchemaRegistry/withDefaultDialect SpecificationVersion/DRAFT_2020_12))
 
-(defn- ^:private instance-location->path-segments
+(defn- instance-location->path-segments
   "Convert a networknt instance-location JSON Pointer string (e.g.
   \"/properties/foo/bar\") into a seq of path segments (e.g.
   [\"foo\" \"bar\"]), for structured validation diagnostics.
@@ -20,7 +20,7 @@
     []
     (into [] (remove empty?) (str/split location #"/"))))
 
-(defn- ^:private error->map
+(defn- error->map
   "Convert a single com.networknt.schema.Error into the Clojure map
   shape expected by `humanize-validation-errors`."
   [^com.networknt.schema.Error e]
@@ -28,7 +28,7 @@
    :schema-path   (str (.getSchemaLocation e))
    :message       (.getMessage e)})
 
-(defn humanize-validation-errors
+(defn- humanize-validation-errors
   "Format validation errors as readable strings.
   Returns an empty vector when `errors` is nil or empty."
   [errors]

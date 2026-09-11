@@ -5,8 +5,8 @@
 
 (def hex-pattern #"^[0-9a-f]{64}$")
 
-(defn bytes->hex [bytes]
-  (apply str (map #(format "%02x" (bit-and % 0xff)) bytes)))
+(defn bytes->hex [^bytes bytes]
+  (.formatHex (java.util.HexFormat/of) bytes))
 
 (defn sha256-bytes
   "Lowercase hex sha256 over a byte array."
@@ -42,6 +42,12 @@
   value)
 
 (def hash-pattern #"^sha256:[0-9a-f]{64}$")
+
+(defn bare-sha256-hex
+  "The 64 hex digits of a `sha256:<hex>` string, or nil when `value` is not
+  one. Callers decide what a malformed value means for them."
+  [value]
+  (some->> value (re-matches #"sha256:([0-9a-f]{64})") second))
 
 (defn format-sha256 [hex]
   (let [value (str "sha256:" hex)]

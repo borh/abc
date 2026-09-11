@@ -114,7 +114,7 @@
         research-stages))
 
 (defn- read-cas-json [store hex]
-  (json/read-json (String. ^bytes (cas/get-bytes (:cas-dir store) hex) "UTF-8")))
+  (record-json/read-json-bytes (cas/get-bytes (:cas-dir store) hex)))
 
 (defn run-work!
   "Execute (or trace-skip) the supplied stages for one selected work.
@@ -230,13 +230,20 @@
                       {:reason :ragged-metadata-row
                        :work-id (catalog/row-work-id row)})))))
 
+(defn- with-store
+  "Call `f` with the run store under `root` open, closing it afterwards."
+  [root f]
+  (let [store (engine/open-store! {:cas-dir (config/cas-dir root)
+                                   :db-path (config/trace-db-path root)})]
+    (try (f store)
+         (finally (engine/close-store! store)))))
+
 (defn execute-build!
   "Run the supplied candidates with the supplied stages and export their build report."
   [{:keys [concurrency clj-toolchain-id out]}
    {:keys [root commit catalog-csv-hash rows candidates rejected]} stage-set]
-  (let [store (engine/open-store! {:cas-dir (config/cas-dir root)
-                                   :db-path (config/trace-db-path root)})]
-    (try
+  (with-store root
+    (fn [store]
       (let [rows-by-work (group-by catalog/row-work-id rows)
             n (if (pos? concurrency)
                 concurrency
@@ -340,8 +347,7 @@
         (println (str "run_report: " report-path))
         (println (str "selected: " (count candidates)))
         (when out (println (str "exports: " (fs/absolutize out))))
-        report)
-      (finally (engine/close-store! store)))))
+        report))))
 
 (defn build! [opts]
   (let [captured (capture-build! opts)]
@@ -349,7 +355,7 @@
     (execute-build! opts captured
                     (build-stages opts))))
 
-(defn delta!
+(defn- delta!
   "Upstream-revision qualification: the three-set delta oracle over two
   build run reports (strictly decoded), printed as deterministic JSON.
   Run against each candidate aozorabunko revision's report and the
@@ -484,7 +490,7 @@
         (when-not (and bytes (= digest (hash/sha256-bytes bytes)))
           (throw (ex-info "Cached source facts failed fixity verification"
                           {:reason :source-facts-corrupt :digest digest})))
-        (let [facts (json/read-json (String. ^bytes bytes "UTF-8"))
+        (let [facts (record-json/read-json-bytes bytes)
               content-hash (get facts "work_content_hash")]
           (when-not (and (= (str "sha256:" zip) (get facts "archive_hash"))
                          (string? content-hash) (re-matches hash/hash-pattern content-hash))
@@ -501,35 +507,33 @@
                    "--clj-toolchain-id" clj-toolchain-id})
   (when rdf-out
     (require-flags! "internal RDF export" {"--rdf-base" rdf-base}))
-  (let [root (config/ensure-layout! (config/root root))
-        store (engine/open-store! {:cas-dir (config/cas-dir root)
-                                   :db-path (config/trace-db-path root)})]
-    (try
-      (let [commit (source-provenance! aozora-root)
-            source-hash (cached-source-hash store clj-toolchain-id)
-            captured (assessment-source/capture-checkout aozora-root source retained source-hash)
-            reliance-observations (when (seq (get source "reliances"))
-                                    (aozora/check! aozora-root evidence-root (get source "reliances")
-                                                   {:fetch aozora-fetch :source-hash source-hash}))
-            _ (when-not (= commit (source-provenance! aozora-root))
-                (throw (ex-info "source checkout changed during assessment capture"
-                                {:reason :assessment-source-changed})))
-            evaluation (assessment-evaluator/evaluate!
-                        store source
-                        (assoc captured :as-of as-of :toolchain-id clj-toolchain-id
-                               :reliance-observations reliance-observations))
-            snapshot (assessment-snapshot/encode evaluation)]
-        (when rdf-out
-          (let [rdf (assessment-rdf/project!
-                     store evaluation {:base-iri rdf-base
-                                       :mapping-profile assessment-rdf/default-mapping-profile
-                                       :toolchain-id clj-toolchain-id})]
-            (fs/write-bytes (str rdf-out)
-                            (cas/get-bytes (:cas-dir store)
-                                           (get-in rdf [:outputs "nquads"])))))
-        {:snapshot snapshot :evaluation evaluation
-         :source-commit commit :source-hashes (:source-hashes captured)})
-      (finally (engine/close-store! store)))))
+  (let [root (config/ensure-layout! (config/root root))]
+    (with-store root
+      (fn [store]
+        (let [commit (source-provenance! aozora-root)
+              source-hash (cached-source-hash store clj-toolchain-id)
+              captured (assessment-source/capture-checkout aozora-root source retained source-hash)
+              reliance-observations (when (seq (get source "reliances"))
+                                      (aozora/check! aozora-root evidence-root (get source "reliances")
+                                                     {:fetch aozora-fetch :source-hash source-hash}))
+              _ (when-not (= commit (source-provenance! aozora-root))
+                  (throw (ex-info "source checkout changed during assessment capture"
+                                  {:reason :assessment-source-changed})))
+              evaluation (assessment-evaluator/evaluate!
+                          store source
+                          (assoc captured :as-of as-of :toolchain-id clj-toolchain-id
+                                 :reliance-observations reliance-observations))
+              snapshot (assessment-snapshot/encode evaluation)]
+          (when rdf-out
+            (let [rdf (assessment-rdf/project!
+                       store evaluation {:base-iri rdf-base
+                                         :mapping-profile assessment-rdf/default-mapping-profile
+                                         :toolchain-id clj-toolchain-id})]
+              (fs/write-bytes (str rdf-out)
+                              (cas/get-bytes (:cas-dir store)
+                                             (get-in rdf [:outputs "nquads"])))))
+          {:snapshot snapshot :evaluation evaluation
+           :source-commit commit :source-hashes (:source-hashes captured)})))))
 
 (defn aozora-reliance-prepare!
   "Capture official edition evidence and write a draft owner source file.
@@ -575,7 +579,7 @@
                                    unavailable)}))
     result))
 
-(defn publication-init!
+(defn- publication-init!
   "Initialize an absent publication branch using the normal pre-genesis commit."
   [{:keys [chain-clone branch]}]
   (require-flags! "publication-init" {"--chain-clone" chain-clone "--branch" branch})
@@ -613,17 +617,15 @@
 (defn release-preflight-drift
   "Regenerate the committed snapshot from reviewed source records and
   freshly captured observations. nil means canonical bytes agree."
-  ([opts]
-   (release-preflight-drift
-    opts (:value (decode/decode "assessment-snapshot"
-                                (fs/read-all-bytes (str (:assessment opts)))))))
-  ([opts supplied]
-   (let [expected (:snapshot (evaluate-assessment! opts (assessment-inputs! opts)))
-         actual (decode/encode "assessment-snapshot" supplied)]
-     (when-not (java.util.Arrays/equals ^bytes (:bytes expected) ^bytes (:bytes actual))
-       (snapshot-drift (:value expected) supplied)))))
+  [opts]
+  (let [supplied (:value (decode/decode "assessment-snapshot"
+                                        (fs/read-all-bytes (str (:assessment opts)))))
+        expected (:snapshot (evaluate-assessment! opts (assessment-inputs! opts)))
+        actual (decode/encode "assessment-snapshot" supplied)]
+    (when-not (java.util.Arrays/equals ^bytes (:bytes expected) ^bytes (:bytes actual))
+      (snapshot-drift (:value expected) supplied))))
 
-(defn assessment-drift!
+(defn- assessment-drift!
   "Compare the committed snapshot with one regenerated now, and say how they
   differ. This is the check the release runs before it builds, exposed so an
   operator can run it after changing selection or assessment code and before
@@ -635,6 +637,17 @@
     (println (record-json/write-deterministic-json-str
               (into (sorted-map) {"assessment" (str assessment) "drift" drift})))
     drift))
+
+(defn- release-signer
+  "Read the release seed at `release-key`, confirm it signs for the pinned
+  release key, and return the function that signs a manifest hex with it."
+  [release-key pinned]
+  (let [seed (read-signing-seed release-key)]
+    (when-not (sign/seed-signs-for? seed (:release pinned))
+      (throw (ex-info "release signing seed does not correspond to the pinned release key"
+                      {:reason :seed-key-mismatch})))
+    (fn [manifest-hex]
+      (sign/sign seed (sign/manifest-message manifest-hex)))))
 
 (defn release-preflight!
   "Validate file inputs and capture local sources before building.
@@ -663,24 +676,18 @@
         authority (za-release/rights-authority!
                    (fs/read-all-bytes (str policy)))
         pinned (pinned-keys-from-files release-pub governance-pub)
-        seed (read-signing-seed release-key)]
-    (when-not (sign/seed-signs-for? seed (:release pinned))
-      (throw (ex-info "release signing seed does not correspond to the pinned release key"
-                      {:reason :seed-key-mismatch})))
+        sign-release (release-signer release-key pinned)]
     (committed-assessment-inputs! opts (:source-bytes assessment-inputs) snapshot-bytes)
     (require-flags! "assessment evaluation"
                     {"--root" (config/root (:root opts))
                      "--clj-toolchain-id" (:clj-toolchain-id opts)})
     (let [source-commit (source-provenance! aozora-root)
           {:keys [source-hashes]}
-          (let [root (config/ensure-layout! (config/root (:root opts)))
-                store (engine/open-store! {:cas-dir (config/cas-dir root)
-                                           :db-path (config/trace-db-path root)})]
-            (try
+          (with-store (config/ensure-layout! (config/root (:root opts)))
+            (fn [store]
               (assessment-source/capture-checkout
                aozora-root (:source assessment-inputs) (:retained assessment-inputs)
-               (cached-source-hash store (:clj-toolchain-id opts)))
-              (finally (engine/close-store! store))))]
+               (cached-source-hash store (:clj-toolchain-id opts)))))]
       (when-not (= source-commit (source-provenance! aozora-root))
         (throw (ex-info "source checkout changed during assessment capture"
                         {:reason :assessment-source-changed})))
@@ -690,9 +697,7 @@
               :assessment-inputs assessment-inputs
               :source-commit source-commit :source-hashes source-hashes
               :pinned pinned
-              :sign-release (fn [manifest-hex]
-                              (sign/sign seed
-                                         (sign/manifest-message manifest-hex)))}))))
+              :sign-release sign-release}))))
 
 (defn release!
   "Preflight the full selection, then build the artifacts requested by verified-head assembly."
@@ -1047,17 +1052,11 @@
                    "--governance-pub" governance-pub
                    "--release-key" release-key})
   (let [pinned (pinned-keys-from-files release-pub governance-pub)
-        seed (read-signing-seed release-key)
-        _ (when-not (sign/seed-signs-for? seed (:release pinned))
-            (throw (ex-info "release signing seed does not correspond to the pinned release key"
-                            {:reason :seed-key-mismatch})))
         outcome (transact/publish-governance!
                  {:clone (str chain-clone)
                   :branch branch
                   :pinned-keys pinned
-                  :sign-release (fn [manifest-hex]
-                                  (sign/sign seed
-                                             (sign/manifest-message manifest-hex)))
+                  :sign-release (release-signer release-key pinned)
                   :event-bytes (fs/read-all-bytes (str event))
                   :event-sig (fs/read-all-bytes (str event-sig))})]
     (println (record-json/write-deterministic-json-str
@@ -1085,7 +1084,7 @@
                       {:reason :invalid-release-doi :release-doi doi})))
     doi))
 
-(defn serving-tree!
+(defn- serving-tree!
   "Export the serving tree (blobs/, releases/, governance/, plus the
   work-facing symlink layer works/, withdrawn/, releases/latest) from
   the verified chain into --out, which must not yet exist."
@@ -1185,13 +1184,9 @@
                      "reason" (some-> (:reason report) name)})))
     report))
 
-(defn verify!
+(defn- verify!
   [{:keys [root]}]
-  (let [root (config/root root)
-        store (engine/open-store! {:cas-dir (config/cas-dir root)
-                                   :db-path (config/trace-db-path root)})
-        report (kura-verify/verify store)]
-    (engine/close-store! store)
+  (let [report (with-store (config/root root) kura-verify/verify)]
     (println (str "determinism_violations: "
                   (count (:determinism-violations report))))
     (println (str "fixity: " (pr-str (:fixity report))))

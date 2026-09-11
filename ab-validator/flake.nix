@@ -30,11 +30,6 @@
       flake = false;
     };
 
-    upstream-aozorabunko-extractor-src = {
-      url = "github:globis-org/aozorabunko-extractor/ce439c2b43a4ec0312d12bb89d49e8b186ff0c27";
-      flake = false;
-    };
-
     aozorabunko-src = {
       url = "git+ssh://forgejo@code.hyakutake-barbel.ts.net:63333/bor/aozorabunko.git?rev=9bac324dfa6af3a5a035542440934266f76fb45d&shallow=1";
       flake = false;
@@ -44,22 +39,20 @@
       url = "github:tomokane/mecab-dic-converter/d24dcf25ce47170ca9e661c003b5d3345e98dac9";
       flake = false;
     };
-
   };
 
   outputs =
     {
-      self,
       nixpkgs,
       soranoha-assets,
       tei-eaj-aozora-tei,
       clj-nix,
       upstream-aozora-notation-spec-src,
-      upstream-aozorabunko-extractor-src,
       aozorabunko-src,
       mecab-dic-converter-src,
       flake-utils,
       rust-overlay,
+      ...
     }:
     flake-utils.lib.eachDefaultSystem (
       system:
@@ -73,7 +66,7 @@
           inherit system overlays;
         };
 
-        lib = pkgs.lib;
+        inherit (pkgs) lib;
 
         rustToolchain = pkgs.rust-bin.stable.latest.default.override {
           extensions = [
@@ -89,15 +82,12 @@
           rustc = rustToolchain;
         };
 
-        hasCargoManifest = builtins.pathExists ./Cargo.toml;
-        hasCargoLock = builtins.pathExists ./Cargo.lock;
-
         cleanProjectSource =
           src:
           lib.cleanSourceWith {
             inherit src;
             filter =
-              path: type:
+              path: _type:
               let
                 baseName = baseNameOf path;
               in
@@ -138,15 +128,15 @@
           ];
         };
 
-        researchSource = pkgs.runCommand "ab-validator-research-source" { } ''
-          cp -R ${source}/research "$out"
-          chmod -R u+w "$out"
-          substituteInPlace "$out/deps.edn" --replace-fail '../../soranoha' '${soranoha-assets}'
-        '';
         researchCljDepsCache = pkgs.mk-deps-cache {
           lockfile = ./research/deps-lock.json;
         };
         researchRoot = "${source}/research";
+        # Every workspace binary reads the research tree through this
+        # variable at run time.
+        researchEnv = {
+          AB_RESEARCH_ROOT = researchRoot;
+        };
         stageSharedVectors = ''
           mkdir -p ../soranoha/test/fixtures
           cp -R ${soranoha-assets}/test/fixtures/canonicalization ../soranoha/test/fixtures/
@@ -200,7 +190,7 @@
               exec ${pkgs.python3}/bin/python ${source}/research/tools/tei_eaj_aozora_reports.py \
                 --compare-script ${source}/research/tools/tei_eaj_compare.py \
                 --tei-eaj-root ${tei-eaj-aozora-tei} \
-                --source-rev 77a675fc2771936f9544505d922d4cd45075338c ${subcommand} "$@"
+                --source-rev ${tei-eaj-aozora-tei.rev} ${subcommand} "$@"
             ''
           );
         };
@@ -217,28 +207,6 @@
               test -d "$out/conformance/vectors"
               test -f "$out/conformance/RUNNER.md"
               test -f "$out/src/grammar/aozora.abnf"
-            '';
-
-        rubyWithExtractorGems = pkgs.ruby.withPackages (gems: [
-          gems.rubyzip
-          gems."ruby-progressbar"
-        ]);
-
-        upstreamToolAozorabunkoExtractor =
-          pkgs.runCommand "upstream-tool-aozorabunko-extractor"
-            {
-              nativeBuildInputs = [ pkgs.makeWrapper ];
-              src = cleanProjectSource upstream-aozorabunko-extractor-src;
-              rubyPath = lib.makeBinPath [ rubyWithExtractorGems ];
-            }
-            ''
-              mkdir -p "$out/bin" "$out/lib/aozorabunko-extractor"
-              cp -R "$src"/. "$out/lib/aozorabunko-extractor/"
-
-              for script in clean_text_in_jsonl deduplicate_books extract_chats save_as_jsonl; do
-                makeWrapper "$out/lib/aozorabunko-extractor/$script.rb" "$out/bin/$script" \
-                  --prefix PATH : "$rubyPath"
-              done
             '';
 
         aozorabunkoCorpus = pkgs.symlinkJoin {
@@ -303,6 +271,10 @@
           meta.description = "Convert compiled MeCab dictionaries to Vibrato/Lindera formats";
         };
 
+        # The NINJAL UniDic release every dictionary below is built from; the
+        # release also names the dictionary files the analyzer resolves.
+        unidicRelease = "202512";
+
         # Build a vibrato .dic.zst from a NINJAL Unidic zip (MeCab format).
         buildUnidicVibratoDict =
           {
@@ -317,7 +289,7 @@
               stripRoot = false;
             };
           in
-          pkgs.runCommand "vibrato-dict-${name}-202512"
+          pkgs.runCommand "vibrato-dict-${name}-${unidicRelease}"
             {
               nativeBuildInputs = [ mecabDicConverter ];
             }
@@ -325,7 +297,7 @@
               mkdir -p "$out/share/vibrato"
               mecab-dic-converter build-vibrato \
                 --dictionary-root ${unidicSrc} \
-                --output "$out/share/vibrato/${name}-202512.dic.zst"
+                --output "$out/share/vibrato/${name}-${unidicRelease}.dic.zst"
             '';
 
         # ── Individual vibrato dictionary packages ──
@@ -399,11 +371,22 @@
           outputHashes = cargoGitOutputHashes;
         };
 
+        # The two git dependencies of the workspace, at the revisions
+        # Cargo.lock pins; the same revisions name their sources in the
+        # cargo configuration the quality checks write.
+        sudachiRsUrl = "https://github.com/WorksApplications/sudachi.rs.git";
+        sudachiRsRev = "54e85e8f7e0a6c4b570cd7b103506b080dc60c92";
+        vibratoRkyvUrl = "https://github.com/o24s/vibrato-rkyv.git";
+        vibratoRkyvRev = "6467251cdb945f8f0ca0c6bfd8c96036ab9d4e12";
+
         sudachiRustSource = pkgs.fetchgit {
-          url = "https://github.com/WorksApplications/sudachi.rs.git";
-          rev = "54e85e8f7e0a6c4b570cd7b103506b080dc60c92";
+          url = sudachiRsUrl;
+          rev = sudachiRsRev;
           hash = cargoGitOutputHashes."sudachi-0.6.11-a1";
         };
+        # The crate source includes repo-root resources via ../../resources;
+        # the analyzers and the CLI read them from here at run time.
+        sudachiResources = "${sudachiRustSource}/resources";
 
         abCargoDeps = pkgs.runCommand "cargo-vendor-dir" { } ''
           cp -Lr --reflink=auto ${rustPlatform.importCargoLock abCargoLock} "$out"
@@ -420,65 +403,45 @@
 
           # The locked Sudachi crate lives under sudachi/ in its git repo, but
           # the crate source includes repo-root resources via ../../resources.
-          cp -R ${sudachiRustSource}/resources "$out/resources"
+          cp -R ${sudachiResources} "$out/resources"
         '';
 
-        # Darwin-only linkage the workspace CLIs need when built on macOS.
-        workspaceExtraBuildInputs = lib.optionals pkgs.stdenv.isDarwin [
-          pkgs.libiconv
-          pkgs.darwin.apple_sdk.frameworks.Security
-          pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
-        ];
-
-        # Stub for a workspace CLI when the Rust workspace is not scaffolded
-        # (no Cargo.toml/Cargo.lock). Defined once instead of re-inlined per CLI.
-        mkUnscaffoldedStub =
-          name:
-          pkgs.writeShellApplication {
-            inherit name;
-            text = ''
-              echo 'Rust workspace not scaffolded' >&2
-              exit 1
-            '';
-          };
+        # Darwin-only linkage the workspace CLIs need when built on macOS. The
+        # Security and SystemConfiguration frameworks come with the default
+        # Darwin SDK.
+        workspaceExtraBuildInputs = lib.optionals pkgs.stdenv.isDarwin [ pkgs.libiconv ];
 
         # Common skeleton for a workspace Rust binary built from `source` against
         # the shared abCargoDeps vendor dir. Each call site passes only its real
-        # differences (package flags, extra deps, doCheck).
+        # differences (package flags, extra deps, doCheck). `env` holds the
+        # variables baked into the build; a simple bin passes
+        # `nativeBuildInputs = [ ]` to drop the pkg-config default.
         mkRustBin =
           {
             pname,
             cargoBuildFlags ? null,
-            # Defaults suit the gated workspace CLIs. An ungated simple bin must
-            # pass `nativeBuildInputs = [ ]` and `gated = false` explicitly, else
-            # it silently gains pkg-config and stub-on-unscaffolded behavior.
             nativeBuildInputs ? [ pkgs.pkg-config ],
             buildInputs ? [ ],
             env ? { },
             doCheck ? false,
-            gated ? true,
-            stub ? (mkUnscaffoldedStub pname),
             extra ? { },
           }:
-          let
-            drv = rustPlatform.buildRustPackage (
-              {
-                inherit
-                  pname
-                  nativeBuildInputs
-                  buildInputs
-                  doCheck
-                  ;
-                version = "0.1.0";
-                src = source;
-                cargoDeps = abCargoDeps;
-              }
-              // lib.optionalAttrs (cargoBuildFlags != null) { inherit cargoBuildFlags; }
-              // env
-              // extra
-            );
-          in
-          if gated then (if hasCargoManifest && hasCargoLock then drv else stub) else drv;
+          rustPlatform.buildRustPackage (
+            {
+              inherit
+                pname
+                nativeBuildInputs
+                buildInputs
+                doCheck
+                env
+                ;
+              version = "0.1.0";
+              src = source;
+              cargoDeps = abCargoDeps;
+            }
+            // lib.optionalAttrs (cargoBuildFlags != null) { inherit cargoBuildFlags; }
+            // extra
+          );
 
         # ── Tokenizer CLI runners ──
         #
@@ -488,8 +451,8 @@
         # reproducible runners instead of ambient tools.
 
         vibratoRkyvSource = pkgs.fetchgit {
-          url = "https://github.com/o24s/vibrato-rkyv.git";
-          rev = "6467251cdb945f8f0ca0c6bfd8c96036ab9d4e12";
+          url = vibratoRkyvUrl;
+          rev = vibratoRkyvRev;
           hash = cargoGitOutputHashes."vibrato-rkyv-0.7.7";
         };
 
@@ -562,8 +525,8 @@
             dict="''${AB_VIBRATO_DICT:-unidic-novel}"
             case "$dict" in
               */* | *.dic.zst) dic_path="$dict" ;;
-              unidic-*) dic_path="${vibratoDictionaries}/share/vibrato/$dict-202512.dic.zst" ;;
-              *) dic_path="${vibratoDictionaries}/share/vibrato/unidic-$dict-202512.dic.zst" ;;
+              unidic-*) dic_path="${vibratoDictionaries}/share/vibrato/$dict-${unidicRelease}.dic.zst" ;;
+              *) dic_path="${vibratoDictionaries}/share/vibrato/unidic-$dict-${unidicRelease}.dic.zst" ;;
             esac
             exec ${vibratoCli}/bin/tokenize -i "$dic_path" "$@"
           '';
@@ -578,11 +541,11 @@
             defaults=()
             case " $* " in
               *" -r "* | *" --config-file "*) ;;
-              *) defaults+=(-r "${sudachiRustSource}/resources/sudachi.json") ;;
+              *) defaults+=(-r "${sudachiResources}/sudachi.json") ;;
             esac
             case " $* " in
               *" -p "* | *" --resource_dir "*) ;;
-              *) defaults+=(-p "${sudachiRustSource}/resources") ;;
+              *) defaults+=(-p "${sudachiResources}") ;;
             esac
             case " $* " in
               *" -l "* | *" --dict "*) ;;
@@ -640,23 +603,8 @@
             pkgs.zstd
           ];
           buildInputs = workspaceExtraBuildInputs;
-          env = {
-            AB_RESEARCH_ROOT = "${researchRoot}";
-          };
+          env = researchEnv;
           doCheck = true;
-          stub = pkgs.writeShellApplication {
-            name = "ab-validator";
-            text = ''
-              cat >&2 <<'EOF'
-              The ab-validator Rust workspace has not been scaffolded yet.
-              Create Cargo.toml and Cargo.lock, then run:
-
-                nix build .#ab-validator
-                nix develop
-              EOF
-              exit 1
-            '';
-          };
           extra = {
             preCheck = vibratoDictionaryPreCheck;
           };
@@ -666,9 +614,7 @@
           pname = "parser-rq-candidate";
           nativeBuildInputs = [ pkgs.pkg-config ];
           buildInputs = workspaceExtraBuildInputs;
-          env = {
-            AB_RESEARCH_ROOT = "${researchRoot}";
-          };
+          env = researchEnv;
           cargoBuildFlags = [
             "-p"
             "ab-check"
@@ -698,14 +644,9 @@
             pkgs.zstd
           ];
           buildInputs = workspaceExtraBuildInputs;
-          env = {
-            AB_RESEARCH_ROOT = "${researchRoot}";
-          };
+          env = researchEnv;
           cargoBuildFlags = [ "--workspace" ];
           doCheck = true;
-          stub = pkgs.runCommand "ab-validator-workspace-not-yet-scaffolded" { } ''
-            touch "$out"
-          '';
           extra = {
             cargoTestFlags = [
               "--workspace"
@@ -744,14 +685,14 @@
           [source.crates-io]
           replace-with = "vendored-sources"
 
-          [source."git+https://github.com/WorksApplications/sudachi.rs.git?rev=54e85e8f7e0a6c4b570cd7b103506b080dc60c92"]
-          git = "https://github.com/WorksApplications/sudachi.rs.git"
-          rev = "54e85e8f7e0a6c4b570cd7b103506b080dc60c92"
+          [source."git+${sudachiRsUrl}?rev=${sudachiRsRev}"]
+          git = "${sudachiRsUrl}"
+          rev = "${sudachiRsRev}"
           replace-with = "vendored-sources"
 
-          [source."git+https://github.com/o24s/vibrato-rkyv.git?rev=6467251cdb945f8f0ca0c6bfd8c96036ab9d4e12"]
-          git = "https://github.com/o24s/vibrato-rkyv.git"
-          rev = "6467251cdb945f8f0ca0c6bfd8c96036ab9d4e12"
+          [source."git+${vibratoRkyvUrl}?rev=${vibratoRkyvRev}"]
+          git = "${vibratoRkyvUrl}"
+          rev = "${vibratoRkyvRev}"
           replace-with = "vendored-sources"
 
           [source.vendored-sources]
@@ -803,19 +744,15 @@
           pkgs.cargo-deny
           pkgs.cargo-nextest
           pkgs.cargo-watch
-          pkgs.criterion
           pkgs.just
           pkgs.duckdb
           pkgs.pkg-config
-          pkgs.openssl
           pkgs.ripgrep
           pkgs.fd
           pkgs.jq
           pkgs.hyperfine
           pkgs.python3
-          pkgs.nodejs_22
           pkgs.jdk
-          (pkgs.gradle_9.override { java = pkgs.jdk; })
         ];
 
         pythonWithAatSchemaDeps = pkgs.python3.withPackages (ps: [
@@ -835,9 +772,7 @@
             extraPreScript ? "",
           }:
           let
-            envExports = pkgs.lib.concatStringsSep "\n" (
-              pkgs.lib.mapAttrsToList (k: v: "export ${k}=\"${v}\"") extraEnv
-            );
+            envExports = lib.concatStringsSep "\n" (lib.mapAttrsToList (k: v: "export ${k}=\"${v}\"") extraEnv);
           in
           pkgs.runCommand name
             {
@@ -863,91 +798,77 @@
               touch "$out"
             '';
 
-        # `reports/**` pytest (aat-fidelity dump comparator + lib helpers)
-        # wired into the sandbox: copy-source-then-run idiom.
-        reportsPytestCheck =
-          pkgs.runCommand "reports-pytest-check"
+        # A pytest run over a writable copy of the source tree. `withAssets`
+        # lays the copy out as a monorepo checkout beside the soranoha assets
+        # for tests that read across that boundary.
+        mkPytestCheck =
+          {
+            name,
+            paths,
+            withAssets ? false,
+            nativeBuildInputs ? [ ],
+            preScript ? "",
+          }:
+          pkgs.runCommand name
             {
-              nativeBuildInputs = [
-                pkgs.git
-                pythonWithAatSchemaDeps
-              ];
+              nativeBuildInputs = nativeBuildInputs ++ [ pythonWithAatSchemaDeps ];
             }
             ''
               work_dir="$(mktemp -d)"
-              cp -R "${source}" "$work_dir/source"
-              chmod -R +w "$work_dir/source"
-              cd "$work_dir/source"
-              ${stageSharedVectors}
-              python -m pytest \
-                reports/aat-fidelity/tests \
-                reports/lib/tests \
-                reports/parser-conformance/tests \
-                reports/source-regions/tests \
-                -q
+              ${
+                if withAssets then
+                  ''
+                    mkdir -p "$work_dir/repo"
+                    cp -R "${source}" "$work_dir/repo/ab-validator"
+                    cp -R ${soranoha-assets} "$work_dir/repo/soranoha"
+                    chmod -R +w "$work_dir/repo"
+                    cd "$work_dir/repo/ab-validator"
+                  ''
+                else
+                  ''
+                    cp -R "${source}" "$work_dir/source"
+                    chmod -R +w "$work_dir/source"
+                    cd "$work_dir/source"
+                  ''
+              }
+              ${preScript}
+              python -m pytest ${lib.escapeShellArgs paths} -q
               touch "$out"
             '';
 
-        parserRqPublicationPytestCheck =
-          pkgs.runCommand "parser-rq-publication-pytest-check"
-            {
-              nativeBuildInputs = [ pythonWithAatSchemaDeps ];
-            }
-            ''
-              work_dir="$(mktemp -d)"
-              mkdir -p "$work_dir/repo"
-              cp -R "${source}" "$work_dir/repo/ab-validator"
-              cp -R ${soranoha-assets} "$work_dir/repo/soranoha"
-              chmod -R +w "$work_dir/repo"
-              cd "$work_dir/repo/ab-validator"
-              python -m pytest reports/parser-ir/tests -q
-              touch "$out"
-            '';
+        # `reports/**` pytest (aat-fidelity dump comparator + lib helpers).
+        reportsPytestCheck = mkPytestCheck {
+          name = "reports-pytest-check";
+          nativeBuildInputs = [ pkgs.git ];
+          preScript = stageSharedVectors;
+          paths = [
+            "reports/aat-fidelity/tests"
+            "reports/lib/tests"
+            "reports/parser-conformance/tests"
+            "reports/source-regions/tests"
+          ];
+        };
 
-        parserRqCoreAttemptPythonTests =
-          pkgs.runCommand "parser-rq-core-attempt-python-tests"
-            {
-              nativeBuildInputs = [ pythonWithAatSchemaDeps ];
-            }
-            ''
-              work_dir="$(mktemp -d)"
-              cp -R "${source}" "$work_dir/source"
-              chmod -R +w "$work_dir/source"
-              cd "$work_dir/source"
-              python -m pytest \
-                reports/parser-ir/test_parser_rq_core_attempt_capture.py -q
-              touch "$out"
-            '';
+        parserRqPublicationPytestCheck = mkPytestCheck {
+          name = "parser-rq-publication-pytest-check";
+          withAssets = true;
+          paths = [ "reports/parser-ir/tests" ];
+        };
 
-        parserRqCampaignProvenancePythonTests =
-          pkgs.runCommand "parser-rq-campaign-provenance-python-tests"
-            {
-              nativeBuildInputs = [ pythonWithAatSchemaDeps ];
-            }
-            ''
-              work_dir="$(mktemp -d)"
-              cp -R "${source}" "$work_dir/source"
-              chmod -R +w "$work_dir/source"
-              cd "$work_dir/source"
-              python -m pytest \
-                reports/parser-ir/test_parser_rq_campaign_provenance.py -q
-              touch "$out"
-            '';
+        parserRqCoreAttemptPythonTests = mkPytestCheck {
+          name = "parser-rq-core-attempt-python-tests";
+          paths = [ "reports/parser-ir/test_parser_rq_core_attempt_capture.py" ];
+        };
 
-        parserRqPredicateHardeningCapturePythonTests =
-          pkgs.runCommand "parser-rq-predicate-hardening-capture-python-tests"
-            {
-              nativeBuildInputs = [ pythonWithAatSchemaDeps ];
-            }
-            ''
-              work_dir="$(mktemp -d)"
-              cp -R "${source}" "$work_dir/source"
-              chmod -R +w "$work_dir/source"
-              cd "$work_dir/source"
-              python -m pytest \
-                reports/parser-ir/test_parser_rq_predicate_hardening_capture.py -q
-              touch "$out"
-            '';
+        parserRqCampaignProvenancePythonTests = mkPytestCheck {
+          name = "parser-rq-campaign-provenance-python-tests";
+          paths = [ "reports/parser-ir/test_parser_rq_campaign_provenance.py" ];
+        };
+
+        parserRqPredicateHardeningCapturePythonTests = mkPytestCheck {
+          name = "parser-rq-predicate-hardening-capture-python-tests";
+          paths = [ "reports/parser-ir/test_parser_rq_predicate_hardening_capture.py" ];
+        };
 
         parserRqResourceCgroupSmokeApp = pkgs.writeShellApplication {
           name = "parser-rq-resource-cgroup-smoke";
@@ -1012,7 +933,6 @@
             "--bin"
             "generate_taxonomy"
           ];
-          gated = false;
         };
 
         sourceInventoryBin = mkRustBin {
@@ -1024,7 +944,6 @@
             "--bin"
             "ab-source-inventory"
           ];
-          gated = false;
           extra.src = aozoraSource;
         };
 
@@ -1163,12 +1082,11 @@
             pkgs.zstd
           ];
           buildInputs = workspaceExtraBuildInputs;
-          env = {
-            AB_RESEARCH_ROOT = "${researchRoot}";
+          env = researchEnv // {
             # Baked into the binary as the Sudachi resource-dir default (see
             # ab-morph-analyzers::sudachi); the crate's own default is the
             # build-sandbox path and does not exist at run time.
-            AB_SUDACHI_RESOURCE_DIR = "${sudachiRustSource}/resources";
+            AB_SUDACHI_RESOURCE_DIR = sudachiResources;
           };
           cargoBuildFlags = [
             "--package"
@@ -1186,9 +1104,7 @@
             "--package"
             "ab-index"
           ];
-          env = {
-            AB_RESEARCH_ROOT = "${researchRoot}";
-          };
+          env = researchEnv;
         };
 
         # ab-check: the fidelity engine that produces the aat/ tree (runs the
@@ -1201,9 +1117,7 @@
             "--package"
             "ab-check"
           ];
-          env = {
-            AB_RESEARCH_ROOT = "${researchRoot}";
-          };
+          env = researchEnv;
         };
 
         # The AAT adapter is pinned by executable content for corpus measurements.
@@ -1251,7 +1165,6 @@
       in
       {
         packages = {
-          research-source = researchSource;
           default = abValidator;
           ab-validator = abValidator;
           parser-rq-candidate = parserRqCandidate;
@@ -1264,7 +1177,6 @@
           ab-source-inventory = sourceInventoryBin;
           aozorabunko-corpus = aozorabunkoCorpus;
           upstream-aozora-notation-spec = upstreamAozoraNotationSpec;
-          upstream-tool-aozorabunko-extractor = upstreamToolAozorabunkoExtractor;
           sudachi-dictionary-full = sudachiDictionaryFull;
           mecab-dic-converter = mecabDicConverter;
           vibrato-dict-cwj = vibratoDictCwj;
@@ -1281,67 +1193,34 @@
           sudachi = sudachiApp;
         };
 
-        apps.tei-eaj-aozora-alignment-probe = teiEajApp "alignment-probe";
-        apps.tei-eaj-aozora-reports-with-probes = teiEajApp "all-with-probes";
-        apps.tei-eaj-aozora-reports = teiEajApp "all";
-        apps.tei-eaj-aozora-tei-source = {
-          type = "app";
-          program = toString (
-            pkgs.writeShellScript "tei-eaj-source" ''
-              printf '%s\n' ${tei-eaj-aozora-tei}
-            ''
-          );
-        };
-        apps.default =
-          flake-utils.lib.mkApp {
-            drv = abValidator;
-          }
-          // {
-            meta.description = "Run the ab-validator CLI";
-          };
-
-        apps.ab-aat-to-parser-ir =
-          flake-utils.lib.mkApp {
-            drv = abAatToParserIr;
-          }
-          // {
-            meta.description = "Run the AAT to parser-IR conversion CLI";
-          };
-
-        apps.parser-rq-resource-cgroup-smoke =
-          flake-utils.lib.mkApp {
-            drv = parserRqResourceCgroupSmokeApp;
-          }
-          // {
-            meta.description = "Run the host-controlled cgroup-v2 resource smoke";
-          };
-
-        apps.vibrato-tokenize =
-          flake-utils.lib.mkApp {
-            drv = vibratoTokenizeApp;
-          }
-          // {
-            meta.description = "Tokenize stdin with the pinned Vibrato CLI; AB_VIBRATO_DICT selects a flake dictionary (default unidic-novel)";
-          };
-
-        apps.sudachi =
-          flake-utils.lib.mkApp {
-            drv = sudachiApp;
-          }
-          // {
-            meta.description = "Run the pinned Sudachi CLI with the flake's full system dictionary as default";
+        apps =
+          let
+            mkApp =
+              drv: description:
+              flake-utils.lib.mkApp { inherit drv; }
+              // {
+                meta.description = description;
+              };
+          in
+          {
+            tei-eaj-aozora-alignment-probe = teiEajApp "alignment-probe";
+            tei-eaj-aozora-reports-with-probes = teiEajApp "all-with-probes";
+            tei-eaj-aozora-reports = teiEajApp "all";
+            default = mkApp abValidator "Run the ab-validator CLI";
+            ab-aat-to-parser-ir = mkApp abAatToParserIr "Run the AAT to parser-IR conversion CLI";
+            parser-rq-resource-cgroup-smoke = mkApp parserRqResourceCgroupSmokeApp "Run the host-controlled cgroup-v2 resource smoke";
+            vibrato-tokenize = mkApp vibratoTokenizeApp "Tokenize stdin with the pinned Vibrato CLI; AB_VIBRATO_DICT selects a flake dictionary (default unidic-novel)";
+            sudachi = mkApp sudachiApp "Run the pinned Sudachi CLI with the flake's full system dictionary as default";
           };
 
         checks = {
           research-clojure-tests = researchClojureTests;
           research-python-tests = researchPythonTests;
           default = workspaceCheck;
-          ab-validator = workspaceCheck;
           cargo-fmt = cargoFmtCheck;
           cargo-check = cargoCheck;
           cargo-clippy = cargoClippyCheck;
           cargo-deny = cargoDenyCheck;
-          cargo-test = workspaceCheck;
           upstream-aozora-notation-spec = upstreamAozoraNotationSpec;
           aozora-notation-spec-comparator-smoke = aozoraNotationSpecComparatorSmokeCheck;
           taxonomy-drift = taxonomyDriftCheck;
@@ -1368,7 +1247,7 @@
 
             RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
             AB_SUDACHI_DICT = "${sudachiDictionaryFull}/share/sudachi/system.dic";
-            AB_SUDACHI_RESOURCE_DIR = "${sudachiRustSource}/resources";
+            AB_SUDACHI_RESOURCE_DIR = sudachiResources;
             AB_DUCKDB_BIN = "${pkgs.duckdb}/bin/duckdb";
 
             shellHook = ''
@@ -1382,55 +1261,12 @@
               export CARGO_HOME="''${CARGO_HOME:-$PWD/.cargo}"
               export RUST_BACKTRACE="1"
 
-              # All five nix-built vibrato UniDic dictionaries, joined into one
-              # store path. Exporting its share/vibrato dir means the analyzer
-              # resolves every dictionary by name (unidic-cwj-202512,
-              # unidic-kindai-bungo-202512, …) with NO symlinking into the repo
-              # and no per-dictionary `just dictionary-build-*` step. GC-safe:
-              # the dev shell holds the store path.
+              # Every nix-built vibrato UniDic dictionary, joined into one store
+              # path, so the analyzer resolves each by name (unidic-cwj-202512,
+              # unidic-kindai-bungo-202512, ...) with nothing linked into the
+              # repository. The dev shell holds the store path, so the
+              # dictionaries survive garbage collection.
               export AB_VIBRATO_DICT_DIR="${vibratoDictionaries}/share/vibrato"
-
-              # Legacy dictionary/compiled/ dirs are still created + honored as a
-              # fallback for tooling that predates AB_VIBRATO_DICT_DIR.
-              mkdir -p dictionary/compiled dictionary/optimized
-
-              # Build a vibrato dictionary from NINJAL and symlink it into
-              # dictionary/compiled/ so the analyzer auto-discovers it.
-              # Usage: vibrato-dict-link cwj
-              #        vibrato-dict-link novel
-              vibrato-dict-link() {
-                local flake_dir
-                flake_dir="$(git rev-parse --show-toplevel 2>/dev/null)/ab-validator"
-                if [ ! -e "$flake_dir/flake.nix" ]; then flake_dir="."; fi
-                local name="''${1:-cwj}"
-                local pkg="vibrato-dict-$name"
-                local attr="$pkg"
-                if ! nix eval "$flake_dir#packages.$(nix eval --impure --raw --expr builtins.currentSystem).$attr" >/dev/null 2>&1; then
-                  attr="ab-validator-$pkg"
-                fi
-                echo "building .#$attr ..." >&2
-                nix build "$flake_dir#$attr" --no-link --print-out-paths | while read -r out; do
-                  for dict in "$out"/share/vibrato/*.dic.zst; do
-                    [ -f "$dict" ] || continue
-                    ln -sf "$dict" "dictionary/compiled/$(basename "$dict")"
-                    echo "  linked $(basename "$dict")" >&2
-                  done
-                done
-              }
-              export -f vibrato-dict-link
-
-              # Bootstrap: only needed when AB_VIBRATO_DICT_DIR is disabled AND
-              # no dictionaries are linked; build the default cwj dictionary so
-              # the fallback path still works. With AB_VIBRATO_DICT_DIR set (the
-              # default above) every dictionary is already resolvable.
-              if [ "''${AB_BOOTSTRAP_VIBRATO_DICT:-1}" != "0" ] && \
-                 [ -z "''${AB_VIBRATO_DICT_DIR:-}" ] && \
-                 ! compgen -G "dictionary/compiled/*.dic.zst" > /dev/null && \
-                 ! compgen -G "dictionary/compiled/*.dic" > /dev/null; then
-                echo "" >&2
-                echo "No vibrato dictionaries found. Building default (unidic-cwj) …" >&2
-                vibrato-dict-link cwj
-              fi
             '';
           };
 
